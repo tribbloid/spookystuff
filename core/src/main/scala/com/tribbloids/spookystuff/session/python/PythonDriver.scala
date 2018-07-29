@@ -10,6 +10,7 @@ import org.apache.commons.io.FileUtils
 import org.apache.spark.ml.dsl.utils.FlowUtils
 import org.slf4j.LoggerFactory
 
+import scala.collection.mutable
 import scala.collection.mutable.ArrayBuffer
 import scala.concurrent.TimeoutException
 import scala.util.Try
@@ -19,8 +20,8 @@ object PythonDriver {
   import com.tribbloids.spookystuff.utils.SpookyViews._
 
   final val DEFAULT_PYTHON_PATH = System.getProperty("user.home") \\ ".spookystuff" \\ "python"
-//  final val MODULE_NAME = "pyspookystuff"
-//  final val MODULE_RESOURCE = "com/tribbloids/" :/ MODULE_NAME
+  //  final val MODULE_NAME = "pyspookystuff"
+  //  final val MODULE_RESOURCE = "com/tribbloids/" :/ MODULE_NAME
   final val PYTHON_RESOURCE = "python"
 
   final val errorPattern: Pattern = Pattern.compile(".*(Error|Exception):.*$")
@@ -33,7 +34,7 @@ object PythonDriver {
     */
   lazy val pythonPath: String = {
     val pythonPath: String = PythonDriver.DEFAULT_PYTHON_PATH // extract pyspookystuff from resources temporarily on workers
-//    val modulePath = pythonPath \\ PythonDriver.MODULE_NAME
+    //    val modulePath = pythonPath \\ PythonDriver.MODULE_NAME
 
     val pythonDir = new File(pythonPath)
     FileUtils.deleteQuietly(pythonDir)
@@ -44,20 +45,20 @@ object PythonDriver {
         SpookyUtils.extractResource(resource, pythonPath)
     }
 
-//    val moduleResourceOpt = SpookyUtils.getCPResource(PythonDriver.MODULE_RESOURCE)
-//    moduleResourceOpt.foreach {
-//      resource =>
-//        //        SpookyUtils.asynchIfNotExist(modulePath){
-//
-//        SpookyUtils.extractResource(resource, modulePath)
-//      //        }
-//    }
+    //    val moduleResourceOpt = SpookyUtils.getCPResource(PythonDriver.MODULE_RESOURCE)
+    //    moduleResourceOpt.foreach {
+    //      resource =>
+    //        //        SpookyUtils.asynchIfNotExist(modulePath){
+    //
+    //        SpookyUtils.extractResource(resource, modulePath)
+    //      //        }
+    //    }
     pythonPath
   }
 
   val NO_RETURN_VALUE: String =   "======== *!?no return value!?* ========"
   val EXECUTION_RESULT: String =  "======== *!?execution result!?* ========"
-  val ERROR_INFO: String =        "======== *!?error info!?* ========"
+  val ERROR_HEADER: String =        "======== *!?error info!?* ========"
 
   /**
     * Checks if there is a syntax error or an exception
@@ -111,7 +112,9 @@ class PythonDriver(
     */
   lazy val historyLines: ArrayBuffer[String] = ArrayBuffer.empty
   lazy val pendingLines: ArrayBuffer[String] = ArrayBuffer.empty
-  lazy val importedLines: scala.collection.mutable.Set[String] = scala.collection.mutable.Set.empty
+
+  lazy val registeredImports: mutable.Set[String] = mutable.Set.empty
+  lazy val pendingImports: ArrayBuffer[String] = ArrayBuffer.empty
 
   import PythonDriver._
 
@@ -249,29 +252,40 @@ class PythonDriver(
     rows
   }
 
-  private def _interpretCaptureError(code: String, spookyOpt: Option[SpookyContext] = None): Array[String] = {
-    val indentedCode = FlowUtils.indent(code)
+  private def _interpretCaptureError(
+                                      preamble: String = "",
+                                      code: String = "",
+                                      spookyOpt: Option[SpookyContext] = None
+                                    ): Array[String] = {
+
     val codeTryExcept =
       s"""
+         |$preamble
+         |
          |try:
-         |$indentedCode
+         |${FlowUtils.indent(code)}
          |except Exception as e:
-         |    print('$ERROR_INFO')
+         |    print('$ERROR_HEADER')
          |    raise
        """.stripMargin
 
     val rows = _interpret(codeTryExcept, detectError = false)
 
-    val splitterIndexOpt = rows.zipWithIndex.find(_._1 == ERROR_INFO)
+    val splitterIndexOpt = rows.zipWithIndex.find(_._1 == ERROR_HEADER)
     splitterIndexOpt match {
       case None =>
       case Some(i) =>
         val split = rows.splitAt(i._2)
-        throw PyInterpretationException(
-          indentedCode,
+        val e = PyInterpretationException(
+          s"""
+             |$preamble
+             |
+             |${FlowUtils.indent(code)}
+           """.stripMargin,
           split._2.slice(1, Int.MaxValue).mkString("\n"),
           historyCodeOpt = historyCodeOpt
         )
+        throw e
     }
 
     spookyOpt.foreach(
@@ -286,10 +300,13 @@ class PythonDriver(
                  code: String,
                  spookyOpt: Option[SpookyContext] = None
                ): Array[String] = this.synchronized{
-    def lazyCode = pendingLines.mkString("\n")
-    val allCode = lazyCode + "\n" + code
-    val result = _interpretCaptureError(allCode, spookyOpt)
+    val _pendingImports = pendingImports.mkString("\n")
+    val _pendingCode = pendingLines.mkString("\n")
+    val allCode = _pendingCode + "\n" + code
+    val result = _interpretCaptureError(_pendingImports, allCode, spookyOpt)
+    this.historyLines += _pendingImports
     this.historyLines += allCode
+    this.pendingImports.clear()
     this.pendingLines.clear()
     result
   }
@@ -366,14 +383,10 @@ class PythonDriver(
       .map(_.trim)
       .foreach {
         code =>
-          if (!importedLines.contains(code)) {
-            effectiveCodes += code
-            importedLines += code
+          if (!registeredImports.contains(code)) {
+            pendingImports += code
+            registeredImports += code
           }
       }
-    this._interpret(
-      effectiveCodes.mkString("\n"),
-      None
-    )
   }
 }
