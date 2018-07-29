@@ -267,7 +267,7 @@ class PythonDriver(
          |except Exception as e:
          |    print('$ERROR_HEADER')
          |    raise
-       """.stripMargin
+       """.trim.stripMargin
 
     val rows = _interpret(codeTryExcept, detectError = false)
 
@@ -280,8 +280,10 @@ class PythonDriver(
           s"""
              |$preamble
              |
-             |${FlowUtils.indent(code)}
-           """.stripMargin,
+             |### [Capture Error] ###
+             |
+             |$code
+           """.trim.stripMargin,
           split._2.slice(1, Int.MaxValue).mkString("\n"),
           historyCodeOpt = historyCodeOpt
         )
