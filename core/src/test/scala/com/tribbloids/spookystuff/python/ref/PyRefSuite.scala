@@ -1,24 +1,7 @@
 package com.tribbloids.spookystuff.python.ref
 
-import com.tribbloids.spookystuff.python.PyConverter
-import com.tribbloids.spookystuff.python.ref.{CaseInstanceRef, JSONInstanceRef}
+import com.tribbloids.spookystuff.python.{CaseExample, JSONExample, PyConverter}
 import com.tribbloids.spookystuff.testutils.FunSpecx
-
-/**
-  * Created by peng on 27/11/16.
-  */
-
-case class JSONExample(
-                        a: Int,
-                        var bOpt: Option[String]
-                      ) extends JSONInstanceRef
-
-case class CaseExample(
-                        a: Int,
-                        var bOpt: Option[String]
-//                        child1: Option[CaseExample] = None,
-//                        child2: Option[JSONExample] = None
-                      ) extends CaseInstanceRef
 
 class PyRefSuite extends FunSpecx {
 

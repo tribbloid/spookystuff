@@ -67,6 +67,7 @@ class Python2DriverSuite extends SpookyEnvFixture {
   it("sendAndGetResult should work in multiple threads") {
 
     val runner: Runner = this.runner
+    import runner._
 
     val rdd = sc.parallelize(1 to 100)
     assert(rdd.partitions.length > 1)
