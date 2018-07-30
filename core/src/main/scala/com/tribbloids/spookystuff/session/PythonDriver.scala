@@ -171,10 +171,10 @@ class PythonDriver(
         }
       }
     }
-      .orElse(
+      .getOrElse(
         Try(this.closeProcess())
+          .getOrElse(this.interrupt())
       )
-      .getOrElse(this.interrupt())
   }
 
   final def PROMPTS = "^(>>> |\\.\\.\\. )+"

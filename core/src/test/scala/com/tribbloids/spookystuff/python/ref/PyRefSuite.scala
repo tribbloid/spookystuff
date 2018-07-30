@@ -10,7 +10,7 @@ class PyRefSuite extends FunSpecx {
     val str = example.createOpt.get
     str.shouldBe(
       s"""
-         |pyspookystuff.session.python.JSONExample(**(json.loads(
+         |pyspookystuff.python.JSONExample(**(json.loads(
          |${PyConverter.QQQ}
          |{
          |  "a" : 1
@@ -26,7 +26,7 @@ class PyRefSuite extends FunSpecx {
     val str = example.createOpt.get
     str.shouldBe(
       s"""
-         |pyspookystuff.session.python.JSONExample(**(json.loads(
+         |pyspookystuff.python.JSONExample(**(json.loads(
          |${PyConverter.QQQ}
          |{
          |  "a" : 1,
@@ -40,7 +40,7 @@ class PyRefSuite extends FunSpecx {
     val str2 = example.createOpt.get
     str2.shouldBe(
       s"""
-         |pyspookystuff.session.python.JSONExample(**(json.loads(
+         |pyspookystuff.python.JSONExample(**(json.loads(
          |${PyConverter.QQQ}
          |{
          |  "a" : 1
@@ -57,7 +57,7 @@ class PyRefSuite extends FunSpecx {
     val str = example.createOpt.get
     str.shouldBe(
       s"""
-         |pyspookystuff.session.python.CaseExample(a=json.loads(
+         |pyspookystuff.python.CaseExample(a=json.loads(
          |${PyConverter.QQQ}
          |1
          |${PyConverter.QQQ}
@@ -71,7 +71,7 @@ class PyRefSuite extends FunSpecx {
     val str = example.createOpt.get
     str.shouldBe(
       s"""
-         |pyspookystuff.session.python.CaseExample(a=json.loads(
+         |pyspookystuff.python.CaseExample(a=json.loads(
          |${PyConverter.QQQ}
          |1
          |${PyConverter.QQQ}
@@ -86,7 +86,7 @@ class PyRefSuite extends FunSpecx {
     val str2 = example.createOpt.get
     str2.shouldBe(
       s"""
-         |pyspookystuff.session.python.CaseExample(a=json.loads(
+         |pyspookystuff.python.CaseExample(a=json.loads(
          |${PyConverter.QQQ}
          |1
          |${PyConverter.QQQ}
