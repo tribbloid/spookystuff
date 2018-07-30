@@ -4,12 +4,13 @@ import com.tribbloids.spookystuff.SpookyContext
 import com.tribbloids.spookystuff.uav.UAVConf
 import com.tribbloids.spookystuff.uav.system.UAV
 import com.tribbloids.spookystuff.uav.utils.Lock
+import org.apache.spark.SparkContext
 import org.apache.spark.rdd.RDD
 import org.slf4j.LoggerFactory
 
 import scala.util.{Failure, Try}
 
-//TODO: try not using any of these in non-testing code, they ar
+//TODO: try not using any of these in non-testing code, Spark tasks should be location agnostic
 object LinkUtils {
 
   import com.tribbloids.spookystuff.utils.SpookyViews._
@@ -45,6 +46,7 @@ object LinkUtils {
     result
   }
 
+  @deprecated
   def linkRDD(
                spooky: SpookyContext,
                onHold: Boolean = true
@@ -65,10 +67,13 @@ object LinkUtils {
     result
   }
 
-  def unlockAll(): Unit = {// TODO: made distributed
-    Link.registered.values.foreach {
-      link =>
-        link.unlock()
+  def unlockAll(sc: SparkContext): Unit = {
+    sc.runEverywhere(){
+      _ =>
+        Link.registered.values.foreach {
+          link =>
+            link.unlock()
+        }
     }
   }
 }

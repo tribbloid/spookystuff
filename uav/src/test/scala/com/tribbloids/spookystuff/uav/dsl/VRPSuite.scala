@@ -35,7 +35,7 @@ class VRPSuite extends DummyUAVFixture with VRPFixture {
                traces: Seq[Trace]
              ): Array[List[TraceView]] = {
 
-    LinkUtils.unlockAll()
+    LinkUtils.unlockAll(sc)
 
     val rdd = sc.parallelize(
       traces
@@ -60,7 +60,7 @@ class VRPSuite extends DummyUAVFixture with VRPFixture {
 
     defaultSchema.ec.scratchRDDs.clearAll()
 
-    LinkUtils.unlockAll()
+    LinkUtils.unlockAll(sc)
 
     grouped
   }
