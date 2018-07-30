@@ -9,6 +9,7 @@ import com.tribbloids.spookystuff.uav.system.UAV
 import com.tribbloids.spookystuff.uav.telemetry.{Dispatcher, Link, SimLinkSuite}
 import com.tribbloids.spookystuff.utils.SpookyUtils
 import org.apache.spark.rdd.RDD
+import org.scalatest.Ignore
 
 /**
   * Created by peng on 27/01/17.
@@ -109,14 +110,14 @@ class MAVLinkSuite extends SimLinkSuite with APMQuadFixture {
   }
 }
 
-//@Ignore
+@Ignore
 class MAVLinkSuite_Direct extends MAVLinkSuite {
   override lazy val factories: Seq[Routing] = Seq(
     Routings.Direct()
   )
 }
 
-//@Ignore
+@Ignore
 class MAVLinkSuite_GCS extends MAVLinkSuite {
   override lazy val factories: Seq[Routing] = Seq(
     Routings.Forked()
