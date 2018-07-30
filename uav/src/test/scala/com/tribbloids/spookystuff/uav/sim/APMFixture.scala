@@ -1,9 +1,8 @@
 package com.tribbloids.spookystuff.uav.sim
 
-import com.tribbloids.spookystuff.session.PythonDriver
 import com.tribbloids.spookystuff.uav.SimUAVFixture
 import com.tribbloids.spookystuff.uav.telemetry.Link
-import com.tribbloids.spookystuff.utils.lifespan.{Cleanable, Lifespan}
+import com.tribbloids.spookystuff.utils.lifespan.Cleanable
 import org.apache.spark.rdd.RDD
 import org.slf4j.LoggerFactory
 
@@ -28,10 +27,8 @@ trait APMFixture extends SimUAVFixture {
     this._simURIRDD = sc.parallelize(1 to parallelism)
       .map {
         i =>
-          //NOT cleaned by TaskCompletionListener
-          val apmSimDriver = new PythonDriver(_lifespan = Lifespan.JVM(nameOpt = Some(s"APMSim$i")))
           val sim = simFactory.getNext
-          sim._Py(apmSimDriver).connStr.$STR
+          sim.PY.connStr.$STR
       }
       .flatMap(v => v)
       .persist()

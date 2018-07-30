@@ -1,8 +1,9 @@
 package com.tribbloids.spookystuff.uav.sim
 
-import com.tribbloids.spookystuff.python.ref.{CaseInstanceRef, SingletonRef}
+import com.tribbloids.spookystuff.python.ref.{BindedRef, CaseInstanceRef}
+import com.tribbloids.spookystuff.session.PythonDriver
 import com.tribbloids.spookystuff.utils.CachingUtils
-import com.tribbloids.spookystuff.utils.lifespan.LocalCleanable
+import com.tribbloids.spookystuff.utils.lifespan.{Lifespan, LocalCleanable}
 
 /**
   * Created by peng on 27/10/16.
@@ -38,9 +39,11 @@ case class APMSim private (
                             speedup: Int = APMSim.SPEEDUP,
                             vType: String = "copter",
                             version: String = "3.3"
-                          ) extends CaseInstanceRef with SingletonRef with LocalCleanable {
+                          ) extends CaseInstanceRef with BindedRef with LocalCleanable {
 
   APMSim.existing += this
+
+  override def driverTemplate: PythonDriver = new PythonDriver(_lifespan = Lifespan.JVM(nameOpt = Some(s"APMSim$iNum")))
 
   override def cleanImpl() = {
     super.cleanImpl()

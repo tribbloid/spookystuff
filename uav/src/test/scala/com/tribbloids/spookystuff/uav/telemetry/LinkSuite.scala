@@ -26,7 +26,7 @@ object LinkSuite {
     //    assert(uavsSeq.size == 1, uavsSeq.mkString("\n"))
     //    val uavStatuses = uavStatusesSeq.head
 
-    val uavStatuses = linkRDD.map(v => v.status()).collect().toSeq
+    val uavStatuses: Seq[LinkStatus] = linkRDD.map(v => v.status()).collect().toSeq
 
     val uavs = uavStatuses.map(_.uav)
     val uris = uavs.flatMap(_.uris)
@@ -35,7 +35,7 @@ object LinkSuite {
 
     lazy val info = "Links are incorrect:\n" + uavStatuses.map {
       status =>
-        s"${status.uav}\t${status.lock}"
+        s"${status.uav}\t${status.lockStr}"
     }
       .mkString("\n")
     if (
@@ -63,7 +63,7 @@ object LinkSuite {
              |${
             v.map {
               vv =>
-                s"${vv._2.uav} @ ${vv._2.lock}"
+                s"${vv._2.uav} @ ${vv._2.lockStr}"
             }
               .mkString("\n")
           }
@@ -88,7 +88,7 @@ trait LinkSuite extends UAVFixture {
     // DON'T DELETE! some tests create proxy processes and they all take a few seconds to release the port binding!
   }
 
-  def onHold = false
+  def onHold = true
 
   def getLinkRDD(spooky: SpookyContext) = {
 
@@ -97,7 +97,7 @@ trait LinkSuite extends UAVFixture {
     val result = trial.map {
       opt =>
         val v = opt.get
-        Thread.sleep(1000) //eliminate race condition
+//        Thread.sleep(1000) //eliminate race condition
         v
     }
 
@@ -274,7 +274,7 @@ abstract class SimLinkSuite extends SimUAVFixture with LinkSuite {
         val linkRDD: RDD[Link] = getLinkRDD(spooky)
         linkRDD.foreach {
           link =>
-            for (_ <- 1 to 2) {
+            for (_ <- 1 to 3) {
               link.connect()
               link.disconnect()
             }

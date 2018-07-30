@@ -117,9 +117,7 @@ case class Dispatcher(
       val preferred: Option[Link] = local.headOption
         .orElse {
           _logInfo :+= s"${ctx.toString}: ThreadLocal link not found ... choosing from open links"
-          val locks = Link.registered.values.map(_.lock)
-          if (locks.nonEmpty)
-            _logInfo :+= locks.mkString("[\n", "\n", "\n]")
+            _logInfo :+= Link.statusStrs.mkString("[\n","\n","\n]")
 
           val preferred = prefer(available)
           preferred
@@ -152,9 +150,9 @@ case class Dispatcher(
         s"No telemetry Link for ${uavList.mkString("[", ", ", "]")}:"
       }
       else {
-        "All telemetry links are busy:"
+        s"All telemetry links are not accessible (lock = ${_lock}):"
       }
-      val info = (Seq(msg) ++ Link.statusStrs).mkString("[\n","\n","\n]")
+      val info = msg + "\n" + Link.statusStrs.mkString("[\n","\n","\n]")
       throw new LinkDepletedException(ctx.toString + " " +info)
     }
   }

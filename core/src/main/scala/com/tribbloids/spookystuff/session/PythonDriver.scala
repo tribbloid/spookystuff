@@ -110,11 +110,11 @@ class PythonDriver(
   /**
     * NOT thread safe
     */
-  lazy val historyLines: ArrayBuffer[String] = ArrayBuffer.empty
-  lazy val pendingLines: ArrayBuffer[String] = ArrayBuffer.empty
+  val historyLines: ArrayBuffer[String] = ArrayBuffer.empty
+  val pendingLines: ArrayBuffer[String] = ArrayBuffer.empty
 
-  lazy val registeredImports: mutable.Set[String] = mutable.Set.empty
-  lazy val pendingImports: ArrayBuffer[String] = ArrayBuffer.empty
+  val registeredImports: mutable.Set[String] = mutable.Set.empty
+  val pendingImports: ArrayBuffer[String] = ArrayBuffer.empty
 
   import PythonDriver._
 
@@ -172,9 +172,13 @@ class PythonDriver(
       }
     }
       .getOrElse(
-        Try(this.closeProcess())
-          .getOrElse(this.interrupt())
+        closeOrInterrupt()
       )
+  }
+
+  def closeOrInterrupt() = {
+    Try(this.closeProcess())
+      .getOrElse(this.interrupt())
   }
 
   final def PROMPTS = "^(>>> |\\.\\.\\. )+"
@@ -277,13 +281,15 @@ class PythonDriver(
       case Some(i) =>
         val split = rows.splitAt(i._2)
         val e = PyInterpretationException(
-          s"""
-             |$preamble
-             |
+          FlowUtils.indent(
+            s"""
+               |$preamble
+               |
              |### [Capture Error] ###
-             |
+               |
              |$code
-           """.trim.stripMargin,
+           """.trim.stripMargin
+          ),
           split._2.slice(1, Int.MaxValue).mkString("\n"),
           historyCodeOpt = historyCodeOpt
         )

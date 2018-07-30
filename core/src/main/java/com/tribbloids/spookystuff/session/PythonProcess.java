@@ -71,7 +71,12 @@ public class PythonProcess {
   }
 
   public void closeProcess() throws IOException {
-    process.destroy();
+    try {
+      process.destroy();
+    }
+    catch (Throwable e){
+      process.destroyForcibly();
+    }
     reader.close();
     writer.close();
     stdin.close();

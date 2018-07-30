@@ -1,16 +1,21 @@
 package com.tribbloids.spookystuff.uav.telemetry.mavlink
 
-import java.util.concurrent.TimeUnit
+import java.util.concurrent.{Executors, TimeUnit}
 
 import com.tribbloids.spookystuff.python.ref.{BindedRef, CaseInstanceRef}
 import com.tribbloids.spookystuff.session.{ConflictDetection, PythonDriver}
-import com.tribbloids.spookystuff.uav.UAVConf
+import com.tribbloids.spookystuff.uav.{UAVConf, UAVException}
+import com.tribbloids.spookystuff.utils.FutureInterruptable
 import com.tribbloids.spookystuff.utils.lifespan.Cleanable
-import com.tribbloids.spookystuff.utils.{CommonUtils, FutureInterruptable}
-import org.slf4j.LoggerFactory
 
-import scala.concurrent.{Await, TimeoutException}
+import scala.concurrent.{Await, ExecutionContext, TimeoutException}
 import scala.util.{Failure, Success, Try}
+
+object MAVProxy {
+
+  val threadPool = Executors.newCachedThreadPool()
+  val executionContext = ExecutionContext.fromExecutor(threadPool)
+}
 
 /**
   * MAVProxy: https://github.com/ArduPilot/MAVProxy
@@ -35,19 +40,41 @@ case class MAVProxy(
     "firstOut" -> outs.headOption.toSet //need at least 1 out for executor
   )
 
-  @volatile var _started: FutureInterruptable[Unit] = _
+  @volatile var _started: FutureInterruptable[String] = _
+  def startedOpt: Option[FutureInterruptable[String]] = {
+    Option(_started).flatMap {
+      v =>
+        if (v.isCompleted) {
+          _started = null
+          None
+        }
+        else Some(v)
+    }
+  }
 
+  // should always restart?
   def start(): Unit = this.synchronized{
-    Option(_started).getOrElse {
-      val attempt = FutureInterruptable{
-        val resultOpt = this.PY.startAndBlock().$STR
-        for (result <- resultOpt)
-          LoggerFactory.getLogger(this.getClass).info(result)
-      }(CommonUtils.isolatedExecutionContext)
+    implicit val ctx = MAVProxy.executionContext
 
-      Try(Await.result(attempt, 2 -> TimeUnit.SECONDS)) match {
+    startedOpt.getOrElse {
+      val attempt: FutureInterruptable[String] = FutureInterruptable{
+        val resultOpt = this.PY.startAndBlock().$STR
+        resultOpt.getOrElse("NONE")
+      }
+
+      def errorInfo = s"MAVProxy is terminated! perhaps due to unreachable endpoint ${this.master}"
+
+      //      attempt.onComplete {
+      //        case Success(v) =>
+      //          LoggerFactory.getLogger(this.getClass).error("IMPOSSIBLE! " + v)
+      //        case Failure(e) =>
+      //          LoggerFactory.getLogger(this.getClass).error(errorInfo, e)
+      //      }
+
+      Try(Await.result(attempt, 5 -> TimeUnit.SECONDS)) match {
         case Failure(e: TimeoutException) => //normal
-        case Failure(e: Throwable) => throw e
+        case Failure(e: Throwable) =>
+          throw new UAVException(errorInfo, e)
         case Success(v) => throw new RuntimeException("IMPOSSIBLE!")
       }
 
@@ -55,12 +82,17 @@ case class MAVProxy(
     }
   }
 
-  override def stopDriver(): Unit = {
-    super.stopDriver()
-    for (future <- Option(_started)) {
-      future.interrupt()
-      _started = null
+  override def stopDriver(): Unit = this.synchronized{
+    Option(_driver).foreach{
+      v =>
+        v.closeOrInterrupt()
+        v.clean(true)
     }
+    _driver = null
+    for (future <- startedOpt) {
+      future.interrupt()
+    }
+    _started = null
   }
 
   override def chainClean: Seq[Cleanable] = Nil //interpreter is blocked and cannot run any delete code

@@ -61,12 +61,13 @@ abstract class CommonUtils {
     result
   }
 
-  def isolatedExecutionContext = {
-
-    val threadPool = Executors.newSingleThreadExecutor()
-    val ctx = ExecutionContext.fromExecutor(threadPool)
-    ctx
-  }
+//  def isolatedExecutionContext = {
+//
+//    // TODO: switch to cached thread pool with inifite size
+//    val threadPool = Executors.newSingleThreadExecutor()
+//    val ctx = ExecutionContext.fromExecutor(threadPool)
+//    ctx
+//  }
 
   def withDeadline[T](
                        n: Duration,
@@ -76,7 +77,7 @@ abstract class CommonUtils {
                        callbackOpt: Option[Int => Unit] = None
                      ): T = {
 
-    val future = FutureInterruptable(fn)(isolatedExecutionContext)
+    val future = FutureInterruptable(fn)(WithDeadline.executionContext)
 
     val TIMEOUT = "TIMEOUT!!!!" + s"\t@ ${_callerShowStr}"
 

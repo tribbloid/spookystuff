@@ -54,7 +54,7 @@ case class Lock(
     val leftSecStr =
       if (isExpired) "expired"
       else if (expireAfter == Long.MaxValue) "permanent"
-      else if (!ctx.isCompleted) s"possessed"
+      else if (!ctx.isCompleted) s"possessed by task/thread"
       else "" + timeMillisLeft + "ms left"
 
     s"${ctx.toString} ($leftSecStr)${_id.map(" (" + _ + ")").getOrElse("")}"

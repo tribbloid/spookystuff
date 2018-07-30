@@ -19,4 +19,6 @@ case class LinkStatus(
                      ) extends IDMixin {
 
   override def _id: Any = uav
+
+  val lockStr = lock.toString
 }

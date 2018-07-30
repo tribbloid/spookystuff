@@ -91,12 +91,11 @@ trait PyRef extends Cleanable {
 
     driverToBindingsAlive.getOrElse(
       driver,
-      newPyDecorator(newPy(driver, spookyOpt))
+      newPy(driver, spookyOpt)
     )
       .asInstanceOf[Binding]
   }
 
-  protected def newPyDecorator(v: => PyBinding): PyBinding = v //TODO: remove useless!
   protected def newPy(driver: PythonDriver, spookyOpt: Option[SpookyContext]): PyBinding = {
     new PyBinding(this, driver, spookyOpt)
   }
