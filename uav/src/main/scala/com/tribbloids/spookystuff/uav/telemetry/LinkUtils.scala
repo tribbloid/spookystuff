@@ -20,7 +20,7 @@ object LinkUtils {
                   onHold: Boolean = true
                 ): RDD[Try[Link]] = {
 
-    val uuidSeed = spooky.sparkContext.uuidSeed()
+    val uuidSeed = spooky.sparkContext.uuidSeed(debuggingInfo = Some("Dispatching Link(s)"))
 
     val locked = uuidSeed.mapOncePerCore {
       case (i, uuid) =>
@@ -39,8 +39,6 @@ object LinkUtils {
         }
     }
 
-    //    locked.persist()
-    //    locked.count()
     val result = locked
 
     result

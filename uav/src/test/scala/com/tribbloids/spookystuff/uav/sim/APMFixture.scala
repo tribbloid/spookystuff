@@ -1,12 +1,12 @@
 package com.tribbloids.spookystuff.uav.sim
 
-import com.tribbloids.spookystuff.uav.SimUAVFixture
+import com.tribbloids.spookystuff.uav.SITLFixture
 import com.tribbloids.spookystuff.uav.telemetry.Link
 import com.tribbloids.spookystuff.utils.lifespan.Cleanable
 import org.apache.spark.rdd.RDD
 import org.slf4j.LoggerFactory
 
-trait APMFixture extends SimUAVFixture {
+trait APMFixture extends SITLFixture {
 
   import com.tribbloids.spookystuff.utils.SpookyViews._
 

@@ -44,7 +44,7 @@ class WaypointIT extends APMQuadFixture {
       .toObjectRDD(S.formattedCode)
       .collect()
 
-    result.foreach(println)
+    result.foreach(println) //TODO: validate location
   }
 
   it("Run 1.5 track per drone") {
@@ -55,5 +55,7 @@ class WaypointIT extends APMQuadFixture {
         genPartitioner = GenPartitioners.Narrow
       )
       .collect()
+
+    result.foreach(println)
   }
 }

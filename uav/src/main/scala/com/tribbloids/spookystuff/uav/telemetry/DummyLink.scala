@@ -1,6 +1,5 @@
 package com.tribbloids.spookystuff.uav.telemetry
 
-import com.tribbloids.spookystuff.session.ConflictDetection
 import com.tribbloids.spookystuff.uav.UAVConf
 import com.tribbloids.spookystuff.uav.spatial.point.Location
 import com.tribbloids.spookystuff.uav.system.UAV
@@ -19,7 +18,9 @@ case class DummyLink(
 
   override val resourceURIs: Set[String] = uav.uris.toSet
 
-  override protected def _connect(): Unit = {}
+  override protected def _connect(): Unit = {
+    Thread.sleep(1000) //simulate telemetry delay
+  }
 
   override protected def _disconnect(): Unit = {}
 

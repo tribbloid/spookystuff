@@ -17,7 +17,7 @@ object LinkSuite {
 
   def validate(spooky: SpookyContext, linkRDD: RDD[Link]) = {
 
-    //    val uavStatusesSeq = for (i <- 1 to 10) yield {
+    //    val uavStatusesSeq = for (i <- 1 to 5) yield {
     //      linkRDD.map(v => v.status()).collect().toSeq
     //    }
     //
@@ -26,7 +26,7 @@ object LinkSuite {
     //    assert(uavsSeq.size == 1, uavsSeq.mkString("\n"))
     //    val uavStatuses = uavStatusesSeq.head
 
-    val uavStatuses: Seq[LinkStatus] = linkRDD.map(v => v.status()).collect().toSeq
+    val uavStatuses: Seq[LinkStatus] = linkRDD.map(v => v.status()).collect().toList
 
     val uavs = uavStatuses.map(_.uav)
     val uris = uavs.flatMap(_.uris)
@@ -75,6 +75,8 @@ object LinkSuite {
 
 trait LinkSuite extends UAVFixture {
 
+  def onHold = true
+
   import com.tribbloids.spookystuff.utils.SpookyViews._
 
   override def setUp(): Unit = {
@@ -88,16 +90,18 @@ trait LinkSuite extends UAVFixture {
     // DON'T DELETE! some tests create proxy processes and they all take a few seconds to release the port binding!
   }
 
-  def onHold = true
-
+  /**
+    * can only use once per test: before existing registered links are cleared in setUp()
+    * @param spooky
+    * @return
+    */
   def getLinkRDD(spooky: SpookyContext) = {
 
     val trial = LinkUtils.tryLinkRDD(spooky, onHold = onHold)
 
-    val result = trial.map {
+    val result: RDD[Link] = trial.map {
       opt =>
         val v = opt.get
-//        Thread.sleep(1000) //eliminate race condition
         v
     }
 
@@ -136,33 +140,31 @@ trait LinkSuite extends UAVFixture {
   runTests(factories) {
     spooky =>
 
-      it("Link should be registered in both Link and Cleanable") {
+      it("sanity tests") {
 
-        for (i <- 0 to 10) {
-          val linkRDD = getLinkRDD(spooky)
-          val uavs = linkRDD.map(_.uav).collect()
-          println(s"=== $i\t===: " + uavs.mkString("\t"))
-        }
+        val linkRDD = getLinkRDD(spooky)
 
-        spooky.sparkContext.runEverywhere() {
-          _ =>
-            val registered = Link.registered.values.toSet
-            val cleanable = Cleanable.getTyped[Link].toSet
-            Predef.assert(registered.subsetOf(cleanable))
-        }
-      }
-
-      //TODO: remove? already tested in validate()
-      it("Link should use different UAVs") {
-        for (i <- 0 to 10) {
-          val linkRDD = getLinkRDD(spooky)
+        val uavss = for (i <- 0 to 10) yield {
           val uavs = linkRDD.map(_.uav).collect().toSeq
           println(s"=== $i\t===: " + uavs.mkString("\t"))
 
+          //should be registered in both Link and Cleanable
+          spooky.sparkContext.runEverywhere() {
+            _ =>
+              val registered = Link.registered.values.toSet
+              val cleanable = Cleanable.getTyped[Link].toSet
+              Predef.assert(registered.subsetOf(cleanable))
+          }
+
+          //Link should use different UAVs
           val uris = uavs.map(_.primaryURI)
           Predef.assert(uris.size == this.parallelism, "Duplicated URIs:\n" + uris.mkString("\n"))
           Predef.assert(uris.size == uris.distinct.size, "Duplicated URIs:\n" + uris.mkString("\n"))
+
+          uavs
         }
+
+        assert(uavss.distinct.size == 1, "getLinkRDD() is not idemponent" + uavss.mkString("\n"))
       }
 
       it("Link created in the same Task should be reused") {
@@ -242,7 +244,7 @@ trait LinkSuite extends UAVFixture {
   }
 }
 
-abstract class SimLinkSuite extends SimUAVFixture with LinkSuite {
+abstract class SimLinkSuite extends SITLFixture with LinkSuite {
 
   import com.tribbloids.spookystuff.utils.SpookyViews._
 

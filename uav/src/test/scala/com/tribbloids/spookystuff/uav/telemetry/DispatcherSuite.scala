@@ -14,10 +14,10 @@ class DispatcherSuite extends DummyUAVFixture with LinkSuite {
   )
 }
 
-//class DispatcherSuite_OnHold extends DispatcherSuite {
-//
-//  override def onHold = true
-//}
+class DispatcherSuite_Transient extends DispatcherSuite {
+
+  override def onHold = false
+}
 
 //@Ignore
 //class DummyLinkSuite_SingleUAV extends DummyLinkSuite {

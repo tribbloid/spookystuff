@@ -3,7 +3,7 @@ package com.tribbloids.spookystuff.uav.telemetry
 import com.tribbloids.spookystuff.SpookyContext
 import com.tribbloids.spookystuff.session.Session
 import com.tribbloids.spookystuff.uav.system.UAV
-import com.tribbloids.spookystuff.uav.{SimUAVFixture, UAVMetrics}
+import com.tribbloids.spookystuff.uav.{SITLFixture, UAVMetrics}
 import org.apache.spark.rdd.RDD
 
 /**
@@ -30,7 +30,7 @@ object LinkITFixture{
   }
 }
 
-abstract class LinkITFixture extends SimUAVFixture {
+abstract class LinkITFixture extends SITLFixture {
 
   def assertMaxLinkCreated(n: Int): Unit = {
     val acc = spooky.getMetrics[UAVMetrics].linkCreated.value

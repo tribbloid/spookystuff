@@ -9,10 +9,11 @@ import org.apache.spark.rdd.RDD
 import org.apache.spark.sql.DataFrame
 import org.apache.spark.storage.{RDDInfo, StorageLevel}
 import org.apache.spark.{HashPartitioner, SparkContext, TaskContext}
+import org.slf4j.LoggerFactory
 
 import scala.collection.generic.CanBuildFrom
 import scala.collection.immutable.ListMap
-import scala.collection.{Map, TraversableLike}
+import scala.collection.{Map, TraversableLike, immutable}
 import scala.concurrent.duration.Duration
 import scala.concurrent.{Await, Future}
 import scala.language.{higherKinds, implicitConversions}
@@ -96,69 +97,34 @@ abstract class SpookyViews extends CommonViews {
       result
     }
 
-//    def bareSeed(
-//                  parallelismOpt: Option[Int] = None
-//                ): RDD[(Int, Unit)] = {
-//
-//      val n = parallelismOpt.getOrElse(self.defaultParallelism)
-//      val uuids = (1 to n).map(_ => Unit)
-//      seed(uuids, parallelismOpt, mustHaveNonEmptyPartitions = true)
-//    }
+    //    def bareSeed(
+    //                  parallelismOpt: Option[Int] = None
+    //                ): RDD[(Int, Unit)] = {
+    //
+    //      val n = parallelismOpt.getOrElse(self.defaultParallelism)
+    //      val uuids = (1 to n).map(_ => Unit)
+    //      seed(uuids, parallelismOpt, mustHaveNonEmptyPartitions = true)
+    //    }
 
     def uuidSeed(
-                  parallelismOpt: Option[Int] = None
+                  parallelismOpt: Option[Int] = None,
+                  debuggingInfo: Option[String] = None
                 ): RDD[(Int, UUID)] = {
 
       val n = parallelismOpt.getOrElse(self.defaultParallelism)
-      val uuids = (1 to n).map(_ => UUID.randomUUID())
+      val uuids: immutable.Seq[UUID] = (1 to n).map(_ => UUID.randomUUID())
+      debuggingInfo.foreach {
+        info =>
+          LoggerFactory.getLogger(this.getClass).info(
+            s"""
+               |$info
+               |${uuids.mkString("\n")}
+             """.stripMargin
+          )
+      }
+
       seed(uuids, parallelismOpt, mustHaveNonEmptyPartitions = true)
     }
-
-    //TODO: change to concurrent execution
-    //    def mapAtLeastOncePerCore[T: ClassTag](
-    //                                            f: => T,
-    //                                            sizeOpt: Option[Int] = None
-    //                                          ): RDD[T] = {
-    //      val perExec = mapAtLeastOncePerExecutorCore(f, sizeOpt)
-    //      val v = f
-    //      self.makeRDD(Seq(v), 1).union(perExec)
-    //    }
-    //
-    //    //TODO: these are considered anti-pattern in spark, they never consider autoscaling, initialization of resource should be lazy/preemptive
-    //    def exeAtLeastOncePerCore[T: ClassTag](
-    //                                            f: => T,
-    //                                            sizeOpt: Option[Int] = None
-    //                                          ): Long = {
-    //      mapAtLeastOncePerCore(f, sizeOpt).count()
-    //    }
-    //
-    //
-    //    def foreachWorker[T: ClassTag](
-    //                                    f: => T,
-    //                                    sizeOpt: Option[Int] = None
-    //                                  ): Long = mapPerWorker(f, sizeOpt).count()
-    //
-    //    //TODO: change to concurrent execution
-    //    def mapPerComputer[T: ClassTag](
-    //                                     f: => T,
-    //                                     sizeOpt: Option[Int] = None
-    //                                   ): RDD[T] = {
-    //      val v = f
-    //
-    //      if (self.isLocal) {
-    //        self.makeRDD(Seq(v), 1)
-    //      }
-    //      else {
-    //        val perWorker = mapPerWorker(f, sizeOpt)
-    //        self.makeRDD(Seq(v)).union(perWorker)
-    //      }
-    //    }
-    //    def foreachComputer[T: ClassTag](
-    //                                      f: => T,
-    //                                      sizeOpt: Option[Int] = None
-    //                                    ): Long = {
-    //      mapPerComputer(f, sizeOpt).count()
-    //    }
 
     def runEverywhere[T: ClassTag](alsoOnDriver: Boolean = true)(f: ((Int, UUID)) => T): Seq[T] = {
       val localFuture: Option[Future[T]] = if (alsoOnDriver) Some(Future[T] {

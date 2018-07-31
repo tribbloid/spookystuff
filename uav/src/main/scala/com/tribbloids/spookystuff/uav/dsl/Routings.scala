@@ -13,7 +13,9 @@ import scala.util.Random
 object Routings {
 
   case object Dummy extends Routing {
-    def apply(uav: UAV) = DummyLink(uav)
+    def apply(uav: UAV) = {
+      DummyLink(uav)
+    }
   }
 
   case class Direct(

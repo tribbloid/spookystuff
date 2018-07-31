@@ -45,6 +45,6 @@ trait DummyUAVFixture extends UAVFixture {
   }
 }
 
-trait SimUAVFixture extends UAVFixture {
+trait SITLFixture extends UAVFixture {
   override lazy val routing: Routing = Routings.Forked()
 }
