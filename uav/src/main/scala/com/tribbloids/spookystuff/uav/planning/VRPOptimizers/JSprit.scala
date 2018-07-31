@@ -23,7 +23,8 @@ case class JSprit(
 
     val spooky = schema.ec.spooky
     val tryLinkRDD = LinkUtils.tryLinkRDD(spooky)
-    val linkRDD = tryLinkRDD.map(_.get)
+    val linkRDD = tryLinkRDD.flatMap(_.toOption)
+    linkRDD.persist()
 
     val allUAVs = linkRDD.map(v => v.status()).collect()
     val uavs = problem.numUAVOverride match {

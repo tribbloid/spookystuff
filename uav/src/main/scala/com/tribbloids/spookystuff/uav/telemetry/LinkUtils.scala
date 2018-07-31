@@ -6,9 +6,8 @@ import com.tribbloids.spookystuff.uav.system.UAV
 import com.tribbloids.spookystuff.uav.utils.Lock
 import org.apache.spark.SparkContext
 import org.apache.spark.rdd.RDD
-import org.slf4j.LoggerFactory
 
-import scala.util.{Failure, Random, Try}
+import scala.util.Try
 
 //TODO: try not using any of these in non-testing code, Spark tasks should be location agnostic
 object LinkUtils {
@@ -17,12 +16,16 @@ object LinkUtils {
 
   def tryLinkRDD(
                   spooky: SpookyContext,
+                  parallelismOpt: Option[Int] = None,
                   onHold: Boolean = true
                 ): RDD[Try[Link]] = {
 
-    val uuidSeed = spooky.sparkContext.uuidSeed(debuggingInfo = Some("Dispatching Link(s)"))
+    val uuidSeed = spooky.sparkContext.uuidSeed(
+      parallelismOpt,
+      debuggingInfo = Some("Dispatching Link(s)")
+    )
 
-    val locked = uuidSeed.mapOncePerCore {
+    val locked = uuidSeed.map {
       case (i, uuid) =>
         spooky.withSession {
           session =>
@@ -44,26 +47,26 @@ object LinkUtils {
     result
   }
 
-  @deprecated
-  def linkRDD(
-               spooky: SpookyContext,
-               onHold: Boolean = true
-             ): RDD[Link] = {
-
-    val proto = tryLinkRDD(spooky, onHold)
-    val result = proto.flatMap {
-      v =>
-        v
-          .recoverWith {
-            case e =>
-              LoggerFactory.getLogger(this.getClass).warn(e.toString)
-              Failure(e)
-          }
-          .toOption
-    }
-
-    result
-  }
+//  @deprecated
+//  def linkRDD(
+//               spooky: SpookyContext,
+//               onHold: Boolean = true
+//             ): RDD[Link] = {
+//
+//    val proto = tryLinkRDD(spooky, onHold)
+//    val result = proto.flatMap {
+//      v =>
+//        v
+//          .recoverWith {
+//            case e =>
+//              LoggerFactory.getLogger(this.getClass).warn(e.toString)
+//              Failure(e)
+//          }
+//          .toOption
+//    }
+//
+//    result
+//  }
 
   def unlockAll(sc: SparkContext): Unit = {
     sc.runEverywhere(){

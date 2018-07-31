@@ -15,7 +15,7 @@ import com.tribbloids.spookystuff.uav.{DummyUAVFixture, UAVConf, UAVTestUtils}
   */
 class VRPSuite extends DummyUAVFixture with VRPFixture {
 
-  override def parallelism: Int = 4
+  override def parallelism: Int = 4 //TODO: this makes test unable to be run on smaller machine and waste resources
 
   def pattern(n: Int) = UAVTestUtils.LawnMowerPattern(
     n,
@@ -48,9 +48,9 @@ class VRPSuite extends DummyUAVFixture with VRPFixture {
 
     spooky.rebroadcast()
     val gp = getVRP
-    val inst = gp.Inst(defaultSchema)
+    val gpInst = gp.Inst(defaultSchema)
 
-    val groupedRDD = inst.groupByKey(rdd)
+    val groupedRDD = gpInst.groupByKey(rdd)
 
     val grouped = groupedRDD.keys.mapPartitions {
       itr =>
