@@ -2,6 +2,7 @@ package com.tribbloids.spookystuff.uav.telemetry
 
 import com.tribbloids.spookystuff.uav.DummyUAVFixture
 import com.tribbloids.spookystuff.uav.dsl.{Routing, Routings}
+import org.scalatest.Ignore
 
 /**
   * Created by peng on 6/20/17.
@@ -14,6 +15,7 @@ class DispatcherSuite extends DummyUAVFixture with LinkSuite {
   )
 }
 
+@Ignore
 class DispatcherSuite_Transient extends DispatcherSuite {
 
   override def onHold = false
