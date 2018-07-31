@@ -63,15 +63,21 @@ case class Lock(
   /**
     *
     * @param keyOpt access will be granted if the key contains identical UUID or threadID
-    * @return -1  if access is denied
-    *         0   if lock has expired and open to all
-    *         1   if a valid key is provided
+    * @return strength of the availability, >0 means available, higher number means more preferable:
+    *         -1  access denied
+    *         0   lock has expired / open to all
+    *         1   on top of 1, key has identical threadID
+    *         2   key has identical taskID
+    *         3   key has identical ID (strongest)
     */
   def getAvailability(keyOpt: Option[Lock] = None): Int = {
 
     for (key <-keyOpt) {
-      if (Try(this._id.get == key._id.get).getOrElse(false)) return 1
-      if (this.ctx.threadID == key.ctx.threadID) return 0
+      if (Try(this._id.get == key._id.get).getOrElse(false)) return 3
+      else if (Try(this.ctx.taskAttemptID.get == key.ctx.taskAttemptID.get).getOrElse(false)) return 2
+      //since 1 thread cannot run multiple tasks at the same time,
+      //having identical threadID but different taskAttemptID implies that previous task has completed
+      else if (this.ctx.threadID == key.ctx.threadID) return 1
     }
 
     if (isExpired) 0

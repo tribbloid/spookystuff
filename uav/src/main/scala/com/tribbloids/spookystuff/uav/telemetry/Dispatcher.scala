@@ -19,10 +19,10 @@ import scala.util.Try
   *   threadLocal > prefer > others
   */
 case class Dispatcher(
-                       uavList: Seq[UAV],
+                       uavList: List[UAV],
                        session: Session,
-                       lock: Lock = Lock.Transient(),
-                       prefer: Seq[Link] => Option[Link] = {_.headOption},
+                       lock: Lock = Lock.Transient(), // Lock.ctx is ignored, session.lifespan.ctx will be used instead
+                       prefer: List[Link] => Option[Link] = {_.headOption},
                        recommissionWithNewProxy: Boolean = true
                      ) {
 
@@ -61,8 +61,8 @@ case class Dispatcher(
     }
   }
 
-  def _getAvailableOpt: Seq[(UAV, Option[Link])] = {
-    val registered: Seq[(UAV, Option[Link])] = uavList.map {
+  def _getAvailableOpt: List[(UAV, Option[Link])] = {
+    val registered: List[(UAV, Option[Link])] = uavList.map {
       uav =>
         uav -> Link.registered.get(uav)
     }
@@ -75,7 +75,7 @@ case class Dispatcher(
     available
   }
 
-  def getAvailable: Seq[Link] = {
+  def getAvailable: List[Link] = {
     getOrCreateAll()
     _getAvailableOpt.flatMap(_._2)
   }
@@ -98,62 +98,72 @@ case class Dispatcher(
 
     var _logInfo = ArrayBuffer.empty[String]
 
-    val chosen = Link.synchronized {
+    val chosenOpt = Link.synchronized {
       val available = getAvailable
 
-      val local = available.filter {
+      val ranked = available.groupBy {
         link =>
-          link.lock.getAvailability(Some(_lock)) == 1
+          link.lock.getAvailability(Some(_lock))
       }
+        .toList
+        .sortBy(_._1)
 
-      require(
-        local.size <= 1,
-        s"""
-           |Multiple Links cannot have shared lock:
-           |${local.map(_.status()).mkString("\n")}
+      val strongestOpt = ranked.lastOption
+
+      val preferred = strongestOpt.flatMap {
+        case (strength, list) =>
+          if (strength == 3) {
+            require(
+              list.size == 1,
+              s"""
+                 |Multiple Links cannot have shared lock:
+                 |${list.map(_.status()).mkString("\n")}
           """.stripMargin
-      )
+            )
 
-      val preferred: Option[Link] = local.headOption
-        .orElse {
-          _logInfo :+= s"${ctx.toString}: ThreadLocal link not found ... choosing from open links"
+            list.headOption
+          }
+          else if (strength >= 0) {
+            _logInfo :+= s"${ctx.toString}: ThreadLocal link not found ... choosing from others (strength=$strength)"
             _logInfo :+= Link.statusStrs.mkString("[\n","\n","\n]")
 
-          val preferred = prefer(available)
-          preferred
-        }
-
+            val preferred = prefer(list)
+            preferred
+          }
+          else None
+      }
       preferred.foreach(_.lock = _lock)
-
       preferred
-    }
-
-    val recommissioned = chosen.map {
-      v =>
-        val result = if (recommissionWithNewProxy) {
-          val factory = spooky.getConf[UAVConf].routing
-          v.recommission(factory)
-        }
-        else {
-          v
-        }
-        result.connect()
-
-        result
     }
 
     LoggerFactory.getLogger(this.getClass).info(_logInfo.mkString("\n"))
 
-    recommissioned.getOrElse {
+    val chosen = chosenOpt.getOrElse {
 
       val msg = if (Link.registered.isEmpty) {
-        s"No telemetry Link for ${uavList.mkString("[", ", ", "]")}:"
+        s"No Link for ${uavList.mkString("[", ", ", "]")}:"
       }
       else {
-        s"All telemetry links are not accessible (lock = ${_lock}):"
+        s"All Links are not accessible (lock = ${_lock}):"
       }
       val info = msg + "\n" + Link.statusStrs.mkString("[\n","\n","\n]")
       throw new LinkDepletedException(ctx.toString + " " +info)
     }
+
+
+    val recommissioned = {
+      val result = if (recommissionWithNewProxy) {
+        val factory = spooky.getConf[UAVConf].routing
+        chosen.recommission(factory)
+      }
+      else {
+        chosen
+      }
+      result.connect()
+
+      result
+    }
+
+    recommissioned
   }
 }

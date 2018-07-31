@@ -252,7 +252,7 @@ abstract class SimLinkSuite extends SITLFixture with LinkSuite {
         TestHelper.setLoggerDuring(classOf[Link], classOf[MAVLink], SpookyUtils.getClass) {
           intercept[Throwable] {
             Dispatcher(
-              Seq(drone),
+              List(drone),
               session
             )
               .get

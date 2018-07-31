@@ -13,7 +13,7 @@ object LinkITFixture{
 
   def testMove(
                 spooky: SpookyContext,
-                connStrs: Seq[String]
+                connStrs: List[String]
               ): String = {
 
     val drones = connStrs.map(v => UAV(Seq(v)))
@@ -43,7 +43,7 @@ abstract class LinkITFixture extends SITLFixture {
     val rdd = sc.parallelize(Seq(this.fleetURIs.head))
       .map {
         connStr =>
-          LinkITFixture.testMove(spooky, Seq(connStr))
+          LinkITFixture.testMove(spooky, List(connStr))
       }
     val location = rdd.collect().head
 

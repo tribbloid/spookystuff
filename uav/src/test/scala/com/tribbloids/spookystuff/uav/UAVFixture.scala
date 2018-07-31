@@ -49,7 +49,7 @@ trait UAVFixture extends SpookyEnvFixture {
     UAVMetrics
   }
 
-  def fleetURIs: Seq[String]
+  def fleetURIs: List[String]
   def fleet = fleetURIs.map(v => UAV(Seq(v)))
 
   //  def parallelism: Int = 3
@@ -59,7 +59,7 @@ trait UAVFixture extends SpookyEnvFixture {
   override def setUp(): Unit = {
     super.setUp()
     val uavConf = spooky.getConf[UAVConf]
-//    uavConf.fastConnectionRetries = 2
+    //    uavConf.fastConnectionRetries = 2
     uavConf.fleet = Fleet.Inventory(fleet)
     uavConf.routing = routing
     spooky.zeroMetrics()
@@ -90,9 +90,10 @@ trait UAVFixture extends SpookyEnvFixture {
 trait DummyUAVFixture extends UAVFixture {
   override def routing: Routing = Routings.Dummy
 
-  override  val fleetURIs: Seq[String] = (0 until parallelism).map {
-    v =>      s"dummy:localhost:$v"
+  override  val fleetURIs: List[String] = (0 until parallelism).map {
+    v => s"dummy:localhost:$v"
   }
+    .toList
 }
 
 trait SITLFixture extends UAVFixture {

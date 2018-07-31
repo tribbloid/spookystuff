@@ -71,7 +71,7 @@ case class UAVConf(
 
   def uavsInFleet: Set[UAV] = fleet.apply()
 
-  def uavsInFleetShuffled: Seq[UAV] = Random.shuffle(uavsInFleet.toList)
+  def uavsInFleetShuffled: List[UAV] = Random.shuffle(uavsInFleet.toList)
 
   // TODO: use reflection to automate
   override def importFrom(sparkConf: SparkConf): UAVConf.this.type = {

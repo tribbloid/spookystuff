@@ -12,9 +12,9 @@ trait APMFixture extends SITLFixture {
 
   private var _simURIRDD: RDD[String] = _
 
-  override lazy val fleetURIs: Seq[String] = initializeFleet
+  override lazy val fleetURIs: List[String] = initializeFleet
 
-  def initializeFleet: Seq[String] = {
+  def initializeFleet: List[String] = {
 
     UAVFixture.cleanSweep(sc)
     Thread.sleep(2000)
@@ -29,7 +29,7 @@ trait APMFixture extends SITLFixture {
       .flatMap(v => v)
       .persist()
 
-    val result = _simURIRDD.collect().toSeq
+    val result = _simURIRDD.collect().toList
     assert(result.size == result.distinct.size)
     val info = result.mkString("\n")
     LoggerFactory.getLogger(this.getClass).info(

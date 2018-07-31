@@ -94,7 +94,7 @@ class MAVLinkSuite extends SimLinkSuite with APMQuadFixture {
         TestHelper.setLoggerDuring(classOf[Link], classOf[MAVLink], SpookyUtils.getClass) {
           intercept[UAVException]{
             Dispatcher(
-              Seq(drone),
+              List(drone),
               session
             )
               .get

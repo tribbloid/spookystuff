@@ -25,11 +25,11 @@ object LinkUtils {
       debuggingInfo = Some("Dispatching Link(s)")
     )
 
-    val locked = uuidSeed.map {
+    val result = uuidSeed.map {
       case (i, uuid) =>
         spooky.withSession {
           session =>
-            val fleet: Seq[UAV] = spooky.getConf[UAVConf].uavsInFleetShuffled
+            val fleet: List[UAV] = spooky.getConf[UAVConf].uavsInFleetShuffled
             val lock = if (onHold) Lock.OnHold(Some(uuid))
             else Lock.Transient(Some(uuid))
             val linkTry = Dispatcher (
@@ -41,8 +41,6 @@ object LinkUtils {
             linkTry
         }
     }
-
-    val result = locked
 
     result
   }

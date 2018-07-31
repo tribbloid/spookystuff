@@ -23,7 +23,8 @@ object UAVViews {
     val linkTry: Try[Link] = {
       Dispatcher(
         uavConf.uavsInFleetShuffled,
-        session
+        session,
+        Lock.Transient(None)
       )
         .tryGet
     }

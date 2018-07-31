@@ -34,7 +34,7 @@ private[uav] case class PreferUAV(
     assert(fleet.contains(uavStatus.uav), "cannot prefer UAV not in the fleet")
 
     Dispatcher(
-      Seq(uavStatus.uav),
+      List(uavStatus.uav),
       session,
       Lock.Transient(lockIDOpt)
     )
