@@ -22,7 +22,7 @@ case class JSprit(
                              ): RDD[(TraceView, TraceView)] = {
 
     val spooky = schema.ec.spooky
-    val tryLinkRDD = LinkUtils.tryLinkRDD(spooky)
+    val tryLinkRDD = LinkUtils.tryLinkRDD(spooky, Some(rdd.partitions.length))
     val linkRDD = tryLinkRDD.flatMap(_.toOption)
     linkRDD.persist()
 
