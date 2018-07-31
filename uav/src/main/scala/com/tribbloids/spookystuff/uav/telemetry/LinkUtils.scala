@@ -8,7 +8,7 @@ import org.apache.spark.SparkContext
 import org.apache.spark.rdd.RDD
 import org.slf4j.LoggerFactory
 
-import scala.util.{Failure, Try}
+import scala.util.{Failure, Random, Try}
 
 //TODO: try not using any of these in non-testing code, Spark tasks should be location agnostic
 object LinkUtils {
@@ -72,6 +72,14 @@ object LinkUtils {
           link =>
             link.unlock()
         }
+    }
+  }
+
+  def cleanAll(sc: SparkContext): Unit = {
+    sc.runEverywhere() {
+      _ =>
+        Link.registered.values.toList
+          .foreach(_.clean())
     }
   }
 }

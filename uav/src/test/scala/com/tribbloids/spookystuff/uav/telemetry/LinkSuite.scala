@@ -11,8 +11,6 @@ import com.tribbloids.spookystuff.utils.{CommonUtils, SpookyUtils}
 import com.tribbloids.spookystuff.{SpookyContext, SpookyEnvFixture}
 import org.apache.spark.rdd.RDD
 
-import scala.util.Random
-
 object LinkSuite {
 
   def validate(spooky: SpookyContext, linkRDD: RDD[Link]) = {
@@ -81,10 +79,7 @@ trait LinkSuite extends UAVFixture {
 
   override def setUp(): Unit = {
     super.setUp()
-    sc.runEverywhere() {
-      _ =>
-        Random.shuffle(Link.registered.values.toList).foreach(_.clean())
-    }
+    LinkUtils.cleanAll(sc)
     Thread.sleep(2000)
     // Waiting for both python drivers to terminate.
     // DON'T DELETE! some tests create proxy processes and they all take a few seconds to release the port binding!
