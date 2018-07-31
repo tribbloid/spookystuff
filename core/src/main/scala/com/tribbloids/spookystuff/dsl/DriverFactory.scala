@@ -277,9 +277,17 @@ object DriverFactories {
         copySparkFile2Local(fileName, localURI)
       }
 
-      sc.addFile(localURITry.get)
+      val _localURI = localURITry.get
+      val _localFileName = PhantomJS.uri2fileName(_localURI)
 
-      LoggerFactory.getLogger(this.getClass).info(s"Finished deploying PhantomJS to $localURI")
+      Try {
+        SparkFiles.get(_localFileName)
+      }
+        .recover {
+          case e: Throwable =>
+            sc.addFile(_localURI)
+            LoggerFactory.getLogger(this.getClass).info(s"PhantomJS Deployed to $localURI")
+        }
     }
 
     /**
