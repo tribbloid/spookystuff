@@ -86,7 +86,7 @@ trait LinkSuite extends UAVFixture {
   }
 
   /**
-    * can only use once per test: before existing registered links are cleared in setUp()
+    * can only use once per test: before existing registered links are unlocked in setUp()
     * @param spooky
     * @return
     */
@@ -104,7 +104,7 @@ trait LinkSuite extends UAVFixture {
     result
   }
 
-  def factories: Seq[Routing]
+  def routings: Seq[Routing]
 
   private def factory2Fixtures(factory: Routing): (SpookyContext, String) = {
 
@@ -132,7 +132,7 @@ trait LinkSuite extends UAVFixture {
     }
   }
 
-  runTests(factories) {
+  runTests(routings) {
     spooky =>
 
       it("sanity tests") {
@@ -165,7 +165,7 @@ trait LinkSuite extends UAVFixture {
       it("Link created in the same Task should be reused") {
 
         val fleet = this.fleet
-        val linkStrs = sc.parallelize(fleetURIs).map {
+        val linkStrs: Array[Boolean] = sc.parallelize(fleetURIs).map {
           connStr =>
             val session = new Session(spooky)
             val link1 = Dispatcher(
@@ -179,30 +179,27 @@ trait LinkSuite extends UAVFixture {
             )
               .get
             Thread.sleep(5000) //otherwise a task will complete so fast such that another task hasn't start yet.
-          val result = link1.toString -> link2.toString
+          val result = link1 == link2
             result
         }
           .collect()
         assert(spooky.getMetrics[UAVMetrics].linkCreated.value == parallelism)
         assert(spooky.getMetrics[UAVMetrics].linkDestroyed.value == 0)
-        linkStrs.foreach {
-          tuple =>
-            assert(tuple._1 == tuple._2)
-        }
+        linkStrs.foreach {Predef.assert}
       }
 
-      for (factory2 <- factories) {
+      for (routing2 <- routings) {
 
         it(
-          s"~> ${factory2.getClass.getSimpleName}:" +
+          s"~> ${ routing2.getClass.getSimpleName}:" +
             s" available Link can be recommissioned in another Task"
         ) {
 
-          val factory1 = spooky.getConf[UAVConf].routing
+          val routing1 = spooky.getConf[UAVConf].routing
 
           val linkRDD1: RDD[Link] = getLinkRDD(spooky)
 
-          spooky.getConf[UAVConf].routing = factory2
+          spooky.getConf[UAVConf].routing = routing2
           spooky.rebroadcast()
 
           try {
@@ -210,9 +207,11 @@ trait LinkSuite extends UAVFixture {
             assert(spooky.getMetrics[UAVMetrics].linkCreated.value == parallelism)
             assert(spooky.getMetrics[UAVMetrics].linkDestroyed.value == 0)
 
+            LinkUtils.unlockAll(sc)
+
             val linkRDD2: RDD[Link] = getLinkRDD(spooky)
 
-            if (factory1 == factory2) {
+            if (routing1 == routing2) {
               assert(spooky.getMetrics[UAVMetrics].linkCreated.value == parallelism)
               assert(spooky.getMetrics[UAVMetrics].linkDestroyed.value == 0)
               linkRDD1.map(_.toString).collect().mkString("\n").shouldBe(
@@ -231,7 +230,7 @@ trait LinkSuite extends UAVFixture {
             }
           }
           finally {
-            spooky.getConf[UAVConf].routing = factory1
+            spooky.getConf[UAVConf].routing = routing1
             spooky.rebroadcast()
           }
         }
@@ -243,7 +242,7 @@ abstract class SimLinkSuite extends SITLFixture with LinkSuite {
 
   import com.tribbloids.spookystuff.utils.SpookyViews._
 
-  runTests(factories) {
+  runTests(routings) {
     spooky =>
 
       it("Link to unreachable drone should be disabled until blacklist timer reset") {

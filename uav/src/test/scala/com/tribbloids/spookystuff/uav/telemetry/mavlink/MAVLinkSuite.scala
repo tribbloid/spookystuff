@@ -16,12 +16,12 @@ import org.scalatest.Ignore
   */
 class MAVLinkSuite extends SimLinkSuite with APMQuadFixture {
 
-  override lazy val factories: Seq[Routing] = Seq(
+  override lazy val routings: Seq[Routing] = Seq(
     Routings.Direct(),
     Routings.Forked()
   )
 
-  runTests(factories.filter(_.isInstanceOf[Routings.Direct])) {
+  runTests(routings.filter(_.isInstanceOf[Routings.Direct])) {
     spooky =>
       it("should use first drone uri as primary endpoint") {
         val linkRDD = getLinkRDD(spooky).asInstanceOf[RDD[MAVLink]]
@@ -46,7 +46,7 @@ class MAVLinkSuite extends SimLinkSuite with APMQuadFixture {
       }
   }
 
-  runTests(factories.filter(_.isInstanceOf[Routings.Forked])) {
+  runTests(routings.filter(_.isInstanceOf[Routings.Forked])) {
     spooky =>
 
       it("should use first proxy out as primary endpoint") {
@@ -112,14 +112,14 @@ class MAVLinkSuite extends SimLinkSuite with APMQuadFixture {
 
 @Ignore
 class MAVLinkSuite_Direct extends MAVLinkSuite {
-  override lazy val factories: Seq[Routing] = Seq(
+  override lazy val routings: Seq[Routing] = Seq(
     Routings.Direct()
   )
 }
 
 @Ignore
 class MAVLinkSuite_GCS extends MAVLinkSuite {
-  override lazy val factories: Seq[Routing] = Seq(
+  override lazy val routings: Seq[Routing] = Seq(
     Routings.Forked()
   )
 }

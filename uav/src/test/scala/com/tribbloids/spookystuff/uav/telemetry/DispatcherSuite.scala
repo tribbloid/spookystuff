@@ -10,7 +10,7 @@ import org.scalatest.Ignore
   */
 class DispatcherSuite extends DummyUAVFixture with LinkSuite {
 
-  override lazy val factories: Seq[Routing] = Seq(
+  override lazy val routings: Seq[Routing] = Seq(
     Routings.Dummy
   )
 }
