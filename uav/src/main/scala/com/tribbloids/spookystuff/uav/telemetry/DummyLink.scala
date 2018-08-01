@@ -36,7 +36,7 @@ case class DummyLink(
 
   override protected def _getCurrentLocation: Location = currentLocation
 
-  override val synch: SynchronousAPI = new SynchronousAPI {
+  override val synchAPI: SynchronousAPI = new SynchronousAPI {
 
     override def goto(location: Location) = ???
 

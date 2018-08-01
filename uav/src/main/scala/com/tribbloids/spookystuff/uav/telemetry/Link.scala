@@ -353,7 +353,7 @@ trait Link extends LocalCleanable with ConflictDetection {
   //====================== Synchronous API ======================
   // TODO this should be abandoned and mimic by Asynch API
 
-  val synch: SynchronousAPI
+  val synchAPI: SynchronousAPI
   abstract class SynchronousAPI {
     def testMove: String
 

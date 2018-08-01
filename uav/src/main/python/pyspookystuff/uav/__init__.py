@@ -130,6 +130,7 @@ mode_mapping_tracker = {
         self.waitFor(isUnarmed, 60)
 
     # all the following are blocking API
+    # TODO: sometimes it never leave the ground! WTF?
     @retry(const.armRetries)
     def assureClearanceAlt(self, minAlt, maxAlt=121.92, error=None):  # max altitude capped to 400 ft
         # type: (float, float) -> None

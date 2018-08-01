@@ -66,7 +66,7 @@ case class Takeoff(
       LoggerFactory.getLogger(this.getClass)
         .info(s"taking off and climbing to ${minAlt.value} ~ ${maxAlt.value}")
 
-      link.synch.clearanceAlt(minAlt.value)
+      link.synchAPI.clearanceAlt(minAlt.value)
     }
   }
 

@@ -184,7 +184,7 @@ case class MAVLink(
     global
   }
 
-  object synch extends SynchronousAPI {
+  object synchAPI extends SynchronousAPI {
 
     override def testMove: String = {
       Endpoints.primary.PY.testMove()
