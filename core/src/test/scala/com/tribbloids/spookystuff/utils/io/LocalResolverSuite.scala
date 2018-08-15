@@ -2,47 +2,52 @@ package com.tribbloids.spookystuff.utils.io
 
 import java.beans.Transient
 
-import com.tribbloids.spookystuff.testutils.{FunSpecx, TestHelper}
-import com.tribbloids.spookystuff.utils.{CommonConst, CommonUtils}
+import com.tribbloids.spookystuff.testutils.{AssertSerializable, FunSpecx, LocalPathDocsFixture, TestHelper}
+import com.tribbloids.spookystuff.utils.CommonConst
 import org.apache.spark.SparkConf
 import org.apache.spark.serializer.KryoSerializer
 
 import scala.util.Random
 
+object LocalResolverSuite {
+
+  val nonExisting = s"test.txt"
+  val nonExistingRelative = "non-existing/not-a-file.txt"
+  val nonExistingAbsolute = "/non-existing/not-a-file.txt"
+}
+
 /**
   * Created by peng on 07/10/15.
   */
-class LocalResolverSuite extends FunSpecx {
+class LocalResolverSuite extends FunSpecx with LocalPathDocsFixture {
+
+  import LocalResolverSuite._
 
   @transient lazy val resolver: URIResolver = LocalResolver
   @transient lazy val schemaPrefix = ""
 
-  val nonExistingRelativePath = "non-existing/not-a-file.txt"
-  val nonExistingAbsolutePath = "/non-existing/not-a-file.txt"
-
-
   val sc = TestHelper.TestSC
 
   it("can convert relative path of non-existing file") {
-    val abs = resolver.toAbsolute(nonExistingRelativePath)
-    assert(abs == schemaPrefix + CommonConst.USER_DIR +"/"+ nonExistingRelativePath)
+    val abs = resolver.toAbsolute(nonExistingRelative)
+    assert(abs == schemaPrefix + CommonConst.USER_DIR +"/"+ nonExistingRelative)
   }
 
   it("can convert absolute path of non-existing file") {
-    val abs = resolver.toAbsolute(nonExistingAbsolutePath)
-    assert(abs == schemaPrefix + nonExistingAbsolutePath)
+    val abs = resolver.toAbsolute(nonExistingAbsolute)
+    assert(abs == schemaPrefix + nonExistingAbsolute)
   }
 
-  it("resolver.toAbsolute is idempotent") {
-    val once = resolver.toAbsolute("TestPolicies.xml")
+  it(".toAbsolute is idempotent") {
+    val once = resolver.toAbsolute(nonExisting)
     val twice = resolver.toAbsolute(once)
     assert(once === twice)
     assert(once.startsWith(schemaPrefix))
     if (once.contains("file:")) assert(once.split("file:").head.isEmpty)
   }
 
-  it("resolver.resourceOrAbsolute is idempotent") {
-    val once = resolver.resourceOrAbsolute("TestPolicies.xml")
+  it(".resourceOrAbsolute is idempotent") {
+    val once = resolver.resourceOrAbsolute(nonExisting)
     val twice = resolver.resourceOrAbsolute(once)
     assert(once === twice)
     assert(once.startsWith(schemaPrefix))
@@ -67,24 +72,62 @@ class LocalResolverSuite extends FunSpecx {
     assert(resolver.toString == des.toString)
   }
 
-  it("resolver.lockAccessDuring() can guarantee sequential access") {
+  it(".lockAccessDuring() can guarantee sequential access") {
+    testLockAccess(HTML_URL)
+  }
+  it("... even for non existing path") {
+    testLockAccess(nonExisting)
+  }
+
+  private def testLockAccess(url: String) = {
     val rdd = sc.parallelize(1 to 100, 4)
 
     @Transient var ss = 0
 
-    val path = CommonUtils.\\\(CommonConst.TEMP_DIR, "TestLock.txt")
     val resolver: URIResolver = this.resolver
-    rdd.foreach {
-      i =>
-        resolver.lockAccessDuring(path) {
-          lockedPath =>
-            ss += 1
-            Predef.assert(ss == 1)
-            Thread.sleep(Random.nextInt(1000))
-            ss -=1
-        }
+    rdd.foreach { i =>
+      resolver.lockAccessDuring(url) { lockedPath =>
+        ss += 1
+        Predef.assert(ss == 1)
+        Thread.sleep(Random.nextInt(1000))
+        ss -= 1
+      }
     }
 
-    assert(!resolver.isAlreadyExisting(path + ".lock")())
+    assert(!resolver.isAlreadyExisting(HTML_URL + ".lock")())
+  }
+
+  it(".input can get metadata concurrently") {
+
+    val rdd = sc.parallelize(1 to 100, 10)
+
+    val resolver: URIResolver = this.resolver
+    val HTML_URL = this.HTML_URL
+    val mdRDD = rdd.map {
+      i =>
+        val md = resolver.input(HTML_URL) {_.allMetadata}
+        md
+    }
+    val mds = mdRDD.collect()
+
+    AssertSerializable(mds.head)
+    assert(mds.head == mds.last)
+  }
+
+  it(".output can get metadata concurrently") {
+
+    val rdd = sc.parallelize(1 to 100, 10)
+
+    val resolver: URIResolver = this.resolver
+    val HTML_URL = this.HTML_URL
+    val mdRDD = rdd.map {
+      i =>
+        val md = resolver.output(HTML_URL, overwrite = false) {_.allMetadata}
+        md
+    }
+    val mds = mdRDD.collect()
+
+    AssertSerializable(mds.head)
+    assert(mds.head == mds.last)
   }
 }

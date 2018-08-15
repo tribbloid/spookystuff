@@ -112,4 +112,11 @@ object FlowUtils {
     val conf = new SparkConf()
     new KryoSerializer(conf)
   }
+
+  def isSerializable(v: Class[_]) = {
+
+    classOf[java.io.Serializable].isAssignableFrom(v) ||
+      v.isPrimitive ||
+      v.isArray
+  }
 }

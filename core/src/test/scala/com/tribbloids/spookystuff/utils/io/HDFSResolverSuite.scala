@@ -7,7 +7,7 @@ import org.apache.hadoop.security.UserGroupInformation
 /**
  * Created by peng on 07/10/15.
  */
-class HDFSResolverSuite extends LocalResolverSuite with LocalPathDocsFixture {
+class HDFSResolverSuite extends LocalResolverSuite {
 
   @transient override lazy val resolver = HDFSResolver(new Configuration())
   @transient override lazy val schemaPrefix = "file:"

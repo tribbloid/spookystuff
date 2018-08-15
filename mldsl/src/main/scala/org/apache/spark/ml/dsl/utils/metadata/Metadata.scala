@@ -1,8 +1,9 @@
 package org.apache.spark.ml.dsl.utils.metadata
 
-import java.lang.reflect.InvocationTargetException
+import java.lang.reflect.{InvocationTargetException, Method}
 
 import com.tribbloids.spookystuff.utils.TreeException
+import org.apache.spark.ml.dsl.utils.FlowUtils
 import org.apache.spark.ml.dsl.utils.messaging.{MessageRelay, MessageWriter, Nested, Registry}
 import org.apache.spark.ml.dsl.utils.refl.ScalaType
 import org.json4s
@@ -90,23 +91,28 @@ object Metadata extends MessageRelay[Metadata] {
 
   case class ReflectionParser[T: ClassTag]() {
 
-    @transient lazy val clazz = implicitly[ClassTag[T]].runtimeClass
+    @transient lazy val clazz: Class[_] = implicitly[ClassTag[T]].runtimeClass
 
-    @transient lazy val validGetters = {
+    @transient lazy val validGetters: Array[(String, Method)] = {
 
       val methods = clazz.getMethods
-      val commonGetters = methods.filter {
+      val _methods = methods.filter {
         m =>
-          m.getName.startsWith("get") && (m.getParameterTypes.length == 0)
+          (m.getParameterTypes.length == 0) &&
+            FlowUtils.isSerializable(m.getReturnType)
+      }
+      val commonGetters = _methods.filter {
+        m =>
+          m.getName.startsWith("get")
       }
         .map(v => v.getName.stripPrefix("get") -> v)
-      val booleanGetters = methods.filter {
+      val booleanGetters = _methods.filter {
         m =>
-          m.getName.startsWith("is") && (m.getParameterTypes.length == 0)
+          m.getName.startsWith("is")
       }
         .map(v => v.getName -> v)
 
-      commonGetters ++ booleanGetters
+      (commonGetters ++ booleanGetters).sortBy(_._1)
     }
 
     def apply(obj: T) = {
