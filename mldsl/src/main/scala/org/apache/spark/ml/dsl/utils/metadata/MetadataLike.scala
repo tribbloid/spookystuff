@@ -3,7 +3,7 @@ package org.apache.spark.ml.dsl.utils.metadata
 import scala.collection.immutable.ListMap
 
 
-trait MetadataLike {
+trait MetadataLike extends Serializable {
   def map: ListMap[String, Any]
 
   //  def +(tuple: (Param[_], Any)) = this.copy(this.map + (tuple._1.key -> tuple._2))

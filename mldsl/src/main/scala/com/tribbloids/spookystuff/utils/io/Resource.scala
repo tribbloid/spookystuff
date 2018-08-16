@@ -53,7 +53,7 @@ abstract class Resource[T] extends LocalCleanable {
   protected def _metadata: ResourceMD
 
   lazy val rootMetadata: ResourceMD = {
-    val reflective = Resource.resource2MD(this)
+    val reflective = Resource.resourceParser(this)
     reflective ++ _metadata
   }
 
@@ -105,7 +105,7 @@ object Resource extends {
 
   //  implicit def unbox[T](obj: Resource[T]): T = obj.body
 
-  val resource2MD = Metadata.ReflectionParser[Resource[_]]()
+  val resourceParser = Metadata.ReflectionParser[Resource[_]]()
 
   final val DIR = "directory"
   final val DIR_MIME = "inode/directory; charset=UTF-8"
