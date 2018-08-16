@@ -108,7 +108,9 @@ class LocalResolverSuite extends FunSpecx with LocalPathDocsFixture {
         val md = resolver.input(HTML_URL) {_.allMetadata}
         md
     }
-    val mds = mdRDD.collect()
+    val mds = mdRDD.collect().map{
+      _.map.filterNot(_._1.contains("Space"))
+    }
 
     AssertSerializable(mds.head)
     assert(mds.head == mds.last)
@@ -125,7 +127,9 @@ class LocalResolverSuite extends FunSpecx with LocalPathDocsFixture {
         val md = resolver.output(HTML_URL, overwrite = false) {_.allMetadata}
         md
     }
-    val mds = mdRDD.collect()
+    val mds = mdRDD.collect().map{
+      _.map.filterNot(_._1.contains("Space"))
+    }
 
     AssertSerializable(mds.head)
     assert(mds.head == mds.last)
