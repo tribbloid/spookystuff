@@ -25,14 +25,14 @@ class ExploreDirectoriesIT extends IntegrationFixture {
         Wget('_)
       }
     val nodes = rootDoc
-      .explore(S"root directory URI".texts)(
+      .explore(S"root directory Path".texts)(
         Wget('A)
       )()
       .extract(S.uri ~ 'uri)
     val result = nodes
       .flatExtract(S"root file")(
         A"Name".text ~ 'leaf,
-        A"URI".text ~ 'fullPath
+        A"Path".text ~ 'fullPath
       )
       .toDF(sort = true)
 

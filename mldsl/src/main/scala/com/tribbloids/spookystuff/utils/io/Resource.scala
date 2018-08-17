@@ -37,6 +37,8 @@ abstract class Resource[T] extends LocalCleanable {
   }
 
   def getURI: String
+  def getPath: String = getURI
+
   def getName: String
 
   def getType: String = UNKNOWN
