@@ -179,7 +179,7 @@ class TestHelper() extends NOTSerializable {
     val session = SparkSession.builder.config(TestSparkConf).getOrCreate()
     val sc = session.sparkContext
 
-    CommonUtils.retry(10, 1000, silent = true) {
+    CommonUtils.retry(20, 5000, silent = true) {
       // wait for all executors in local-cluster mode to be online
       require(
         sc.defaultParallelism == numCores,
