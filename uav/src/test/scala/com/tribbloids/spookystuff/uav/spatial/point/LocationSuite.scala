@@ -2,9 +2,9 @@ package com.tribbloids.spookystuff.uav.spatial.point
 
 import breeze.linalg.{Vector => Vec}
 import com.tribbloids.spookystuff.SpookyEnvFixture
-import com.tribbloids.spookystuff.testutils.AssertSerializable
 import com.tribbloids.spookystuff.uav.UAVConf
 import com.tribbloids.spookystuff.uav.spatial.Anchors
+import com.tribbloids.spookystuff.utils.AssertSerializable
 
 /**
   * Created by peng on 14/02/17.

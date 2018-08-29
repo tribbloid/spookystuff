@@ -2,11 +2,10 @@ package org.apache.spark.mllib.uav
 
 import com.tribbloids.spookystuff.actions.{Trace, TraceView}
 import com.tribbloids.spookystuff.row.FetchedRow
-import com.tribbloids.spookystuff.testutils.AssertSerializable
 import com.tribbloids.spookystuff.uav.actions.Waypoint
 import com.tribbloids.spookystuff.uav.planning.TrafficControls.Avoid
 import com.tribbloids.spookystuff.uav.spatial.point.NED
-import com.tribbloids.spookystuff.utils.TreeException
+import com.tribbloids.spookystuff.utils.{AssertSerializable, TreeException}
 import org.apache.spark.ml.uav.{AvoidGradient, AvoidSGDRunner}
 import org.apache.spark.rdd.RDD
 
