@@ -1,7 +1,7 @@
 package com.tribbloids.spookystuff.extractors
 
 import com.tribbloids.spookystuff.SpookyEnvFixture
-import com.tribbloids.spookystuff.testutils.AssertSerializable
+import com.tribbloids.spookystuff.utils.AssertSerializable
 
 import scala.runtime.AbstractPartialFunction
 

@@ -3,7 +3,6 @@ package com.tribbloids.spookystuff.utils
 import java.io.NotSerializableException
 
 import com.tribbloids.spookystuff.SpookyEnvFixture
-import com.tribbloids.spookystuff.testutils.AssertSerializable
 import org.apache.spark.SparkException
 
 case class Thing(str: String)

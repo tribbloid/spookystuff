@@ -2,8 +2,7 @@ package com.tribbloids.spookystuff.testbeans
 
 import java.io.NotSerializableException
 
-import com.tribbloids.spookystuff.testutils.AssertSerializable
-import com.tribbloids.spookystuff.utils.NOTSerializable
+import com.tribbloids.spookystuff.utils.{AssertSerializable, NOTSerializable}
 import org.scalatest.Assertions
 
 case class WithID(_id: Int) {

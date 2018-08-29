@@ -1,11 +1,7 @@
 package com.tribbloids.spookystuff.testutils
 
-import org.apache.spark.SparkEnv
 import org.apache.spark.ml.dsl.utils.OptionConversion
-import org.apache.spark.serializer.{JavaSerializer, KryoSerializer, Serializer}
 import org.scalatest.{FunSpec, Suite}
-
-import scala.reflect.ClassTag
 
 /**
   * Created by peng on 17/05/16.
@@ -181,52 +177,4 @@ trait Suitex extends OptionConversion {
 }
 
 trait FunSpecx extends FunSpec with Suitex {
-}
-
-case class AssertWeaklySerializable[T <: AnyRef: ClassTag](
-                                                            element: T,
-                                                            serializers: Seq[Serializer] = {
-                                                              val conf = TestHelper.TestSparkConf
-                                                              Seq(
-                                                                new JavaSerializer(conf),
-                                                                new KryoSerializer(conf)
-                                                              )
-                                                            },
-                                                            condition: (T, T) => Any = {
-                                                              (v1: T, v2: T) => true
-                                                            }
-                                                          ) {
-
-  serializers.foreach{
-    ser =>
-      val serInstance = ser.newInstance()
-      val serElement = serInstance.serialize(element)
-      val element2 = serInstance.deserialize[T](serElement)
-      //      assert(!element.eq(element2))
-      condition (element, element2)
-  }
-}
-
-object AssertSerializable {
-
-  def apply[T <: AnyRef: ClassTag](
-                                    element: T,
-                                    serializers: Seq[Serializer] = {
-                                      val conf = SparkEnv.get.conf
-                                      Seq(
-                                        new JavaSerializer(conf),
-                                        new KryoSerializer(conf)
-                                      )
-                                    },
-                                    condition: (T, T) => Any = {
-                                      (v1: T, v2: T) =>
-                                        assert((v1: T) == (v2: T))
-                                        assert(v1.toString == v2.toString)
-                                        if (!v1.getClass.getCanonicalName.endsWith("$"))
-                                          assert(!(v1 eq v2))
-                                    }
-                                  ): Unit = {
-
-    AssertWeaklySerializable(element, serializers, condition)
-  }
 }

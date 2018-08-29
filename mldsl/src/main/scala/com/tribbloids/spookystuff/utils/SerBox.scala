@@ -18,11 +18,11 @@ object SerBox {
   val conf = new SparkConf()
     .registerKryoClasses(Array(classOf[TypeTag[_]]))
 
-  val javaSerde: () => SerializerInstance = {
+  val javaOverride: () => SerializerInstance = { //TODO: use singleton?
     () =>
       new JavaSerializer(conf).newInstance()
   }
-  val kryoSerde: () => SerializerInstance = {
+  val kryoOverride: () => SerializerInstance = { //TODO: use singleton?
     () =>
       new KryoSerializer(conf).newInstance()
   }
@@ -40,10 +40,10 @@ object SerBox {
   */
 case class SerBox[T: ClassTag](
                                 @transient obj: T,
-                                serOverride: Option[() => SerializerInstance] = None
+                                serOverride: () => SerializerInstance = null
                               ) extends Serializable with IDMixin {
 
-  @transient lazy val serOpt = serOverride.map(_.apply)
+  @transient lazy val serOpt: Option[SerializerInstance] = Option(serOverride).map(_.apply)
 
   @transient lazy val serObj: Serializable = obj match {
     case ss: Serializable =>
@@ -120,7 +120,7 @@ class WritableTypeTag[T](
                         ) extends Serializable {
 
   val boxOpt = Try {
-    new SerBox(_ttg, Some(SerBox.javaSerde)) //TypeTag is incompatible with Kryo
+    new SerBox(_ttg, SerBox.javaOverride) //TypeTag is incompatible with Kryo
   }
     .toOption
 

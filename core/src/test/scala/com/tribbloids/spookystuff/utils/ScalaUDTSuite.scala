@@ -3,7 +3,7 @@ package com.tribbloids.spookystuff.utils
 import com.tribbloids.spookystuff.SpookyEnvFixture
 import com.tribbloids.spookystuff.actions.Action
 import com.tribbloids.spookystuff.doc.{Doc, DocOption, Unstructured}
-import com.tribbloids.spookystuff.testutils.{AssertSerializable, FunSpecx}
+import com.tribbloids.spookystuff.testutils.FunSpecx
 import org.apache.spark.ml.dsl.utils.refl.{TypeUtils, UnreifiedScalaType}
 import org.apache.spark.sql.types.DataType
 
