@@ -1,7 +1,6 @@
 package com.tribbloids.spookystuff.utils
 
-import org.apache.spark.SparkConf
-import org.apache.spark.serializer.{JavaSerializer, KryoSerializer, Serializer}
+import org.apache.spark.serializer.Serializer
 
 import scala.reflect.ClassTag
 
@@ -9,13 +8,7 @@ object AssertSerializable {
 
   def apply[T <: AnyRef: ClassTag](
                                     element: T,
-                                    serializers: Seq[Serializer] = {
-                                      val conf = new SparkConf()
-                                      Seq(
-                                        new JavaSerializer(conf),
-                                        new KryoSerializer(conf)
-                                      )
-                                    },
+                                    serializers: Seq[Serializer] = SerBox.serializers,
                                     condition: (T, T) => Any = {
                                       (v1: T, v2: T) =>
                                         assert((v1: T) == (v2: T))
@@ -31,13 +24,7 @@ object AssertSerializable {
 
 case class AssertWeaklySerializable[T <: AnyRef: ClassTag](
                                                             element: T,
-                                                            serializers: Seq[Serializer] = {
-                                                              val conf = new SparkConf()
-                                                              Seq(
-                                                                new JavaSerializer(conf),
-                                                                new KryoSerializer(conf)
-                                                              )
-                                                            },
+                                                            serializers: Seq[Serializer] = SerBox.serializers,
                                                             condition: (T, T) => Any = {
                                                               (v1: T, v2: T) => true
                                                             }

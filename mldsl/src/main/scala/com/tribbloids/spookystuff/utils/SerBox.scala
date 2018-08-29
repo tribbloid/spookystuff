@@ -18,14 +18,19 @@ object SerBox {
   val conf = new SparkConf()
     .registerKryoClasses(Array(classOf[TypeTag[_]]))
 
+  val javaSerializer = new JavaSerializer(conf)
   val javaOverride: () => SerializerInstance = { //TODO: use singleton?
     () =>
-      new JavaSerializer(conf).newInstance()
+      javaSerializer.newInstance()
   }
+
+  val kryoSerializer = new KryoSerializer(conf)
   val kryoOverride: () => SerializerInstance = { //TODO: use singleton?
     () =>
-      new KryoSerializer(conf).newInstance()
+      kryoSerializer.newInstance()
   }
+
+  val serializers = List(javaSerializer, kryoSerializer)
 
   implicit def boxing[T: ClassTag](v: T): SerBox[T] = SerBox(v)
 }

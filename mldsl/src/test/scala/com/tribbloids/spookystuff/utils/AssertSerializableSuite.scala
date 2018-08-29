@@ -1,6 +1,5 @@
 package com.tribbloids.spookystuff.utils
 
-import com.tribbloids.spookystuff.testutils.TestHelper
 import org.scalatest.FunSpec
 
 import scala.util.Try
