@@ -17,18 +17,17 @@ trait Suitex extends OptionConversion {
   // will validate their true paths to avoid
   val classpathFiles = List(
     "log4j.properties",
-    "rootkey.csv",
-    "dummy.dummy"
+    "rootkey.csv"
   )
 
   {
-    val resolvedFiles = classpathFiles.map {
+    val resolvedInfos = classpathFiles.map {
       v =>
-      val resolved = CommonUtils.getCPResource(v).map(_.toString).getOrElse("[MISSING]")
-      LoggerFactory.getLogger(this.getClass).info(s"resolving classpath: $v -> $resolved")
-      resolved
+        val resolved = CommonUtils.getCPResource(v).map(_.toString).getOrElse("[MISSING]")
+        val info = s"$v -> $resolved"
+        info
     }
-    resolvedFiles
+    LoggerFactory.getLogger(this.getClass).info("resolving files in classpath ...\n" + resolvedInfos.mkString("\n"))
   }
 
   @transient implicit class TestStringView(str: String) {
