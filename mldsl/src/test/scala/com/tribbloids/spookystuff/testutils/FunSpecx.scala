@@ -1,7 +1,9 @@
 package com.tribbloids.spookystuff.testutils
 
+import com.tribbloids.spookystuff.utils.CommonUtils
 import org.apache.spark.ml.dsl.utils.OptionConversion
 import org.scalatest.{FunSpec, Suite}
+import org.slf4j.LoggerFactory
 
 /**
   * Created by peng on 17/05/16.
@@ -11,6 +13,23 @@ trait Suitex extends OptionConversion {
 
   final val ACTUAL = "[ACTUAL  /  LEFT]"
   final val EXPECTED = "[EXPECTED / RIGHT]"
+
+  // will validate their true paths to avoid
+  val classpathFiles = List(
+    "log4j.properties",
+    "rootkey.csv",
+    "dummy.dummy"
+  )
+
+  {
+    val resolvedFiles = classpathFiles.map {
+      v =>
+      val resolved = CommonUtils.getCPResource(v).map(_.toString).getOrElse("[MISSING]")
+      LoggerFactory.getLogger(this.getClass).info(s"resolving classpath: $v -> $resolved")
+      resolved
+    }
+    resolvedFiles
+  }
 
   @transient implicit class TestStringView(str: String) {
 
