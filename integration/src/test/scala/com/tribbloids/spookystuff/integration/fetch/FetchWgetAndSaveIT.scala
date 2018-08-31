@@ -38,7 +38,7 @@ class FetchWgetAndSaveIT extends IntegrationFixture {
     assert(savedPageRows(0).docs.length === 1)
     val pageTime = savedPageRows(0).docs.head.timeMillis
     assert(pageTime < finishTime)
-    assert(pageTime > finishTime-60000) //long enough even after the second time it is retrieved from s3 cache
+    assert(pageTime > finishTime - 60000) //long enough even after the second time it is retrieved from s3 cache
 
     val content = savedPageRows(0).docs.head.raw
 
@@ -47,7 +47,8 @@ class FetchWgetAndSaveIT extends IntegrationFixture {
         s"file:${CommonConst.USER_DIR}/temp/spooky-integration/save/Wikipedia.png"
     )
 
-    val loadedContent = DocUtils.load(s"file://${CommonConst.USER_DIR}/temp/spooky-integration/save/Wikipedia.png")(spooky)
+    val loadedContent =
+      DocUtils.load(s"file://${CommonConst.USER_DIR}/temp/spooky-integration/save/Wikipedia.png")(spooky)
 
     assert(loadedContent === content)
 
@@ -73,7 +74,7 @@ class FetchWgetAndSaveIT extends IntegrationFixture {
     assert(unionRows(1).docs.head.name === "b")
   }
 
-  override def numPages= spooky.spookyConf.defaultGenPartitioner match {
+  override def numPages = spooky.spookyConf.defaultGenPartitioner match {
     //    case FetchOptimizers.WebCacheAware => 1
     case _ => 1
   }

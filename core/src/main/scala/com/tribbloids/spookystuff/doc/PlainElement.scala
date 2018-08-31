@@ -4,9 +4,9 @@ package com.tribbloids.spookystuff.doc
   * Created by peng on 03/09/16.
   */
 case class PlainElement(
-                         v: String,
-                         override val uri: String
-                       ) extends Unstructured{
+    v: String,
+    override val uri: String
+) extends Unstructured {
 
   override def findAll(selector: CSSQuery): Elements[Unstructured] = Elements.empty
 

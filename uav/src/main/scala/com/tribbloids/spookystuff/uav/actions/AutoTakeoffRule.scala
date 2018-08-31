@@ -26,12 +26,13 @@ object AutoTakeoffRule extends RewriteRule[Trace] {
       case nav: UAVNavigation => nav
     }
 
-    val result = if (navs.isEmpty)
-      v1
-    else if (!navs.head.isInstanceOf[Takeoff])
-      List(Takeoff()) ++ v1
-    else
-      v1
+    val result =
+      if (navs.isEmpty)
+        v1
+      else if (!navs.head.isInstanceOf[Takeoff])
+        List(Takeoff()) ++ v1
+      else
+        v1
 
     result
   }

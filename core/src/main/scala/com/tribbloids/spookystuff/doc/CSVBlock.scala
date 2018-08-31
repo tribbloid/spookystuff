@@ -19,10 +19,10 @@ import org.apache.commons.csv.{CSVFormat, CSVParser}
   * </splitter>
   */
 case class CSVBlock(
-                     _text: String,
-                     override val uri: String,
-                     csvFormat: CSVFormat
-                   ) extends Unstructured {
+    _text: String,
+    override val uri: String,
+    csvFormat: CSVFormat
+) extends Unstructured {
 
   import scala.collection.JavaConverters._
 
@@ -37,11 +37,10 @@ case class CSVBlock(
   override def children(selector: CSSQuery): Elements[Unstructured] = {
     if (!this.headers.contains(selector)) new EmptyElements
     else {
-      val data = parsedList.map {
-        record =>
-          val datum = record.get(selector)
+      val data = parsedList.map { record =>
+        val datum = record.get(selector)
 
-          new CSVCell(uri, datum, selector)
+        new CSVCell(uri, datum, selector)
       }
       new Elements(
         data
@@ -52,20 +51,18 @@ case class CSVBlock(
   override def childrenWithSiblings(selector: CSSQuery, range: Range): Elements[Siblings[Unstructured]] = {
     if (!this.headers.contains(selector)) new EmptyElements
     else {
-      val data = parsedList.map {
-        record =>
-          val index = headers.indexOf(selector)
-          val siblingHeaders = headers.slice(index + range.min, index + range.max)
-          val delimiter = csvFormat.getDelimiter.toString
-          new Siblings(
-            siblingHeaders.map {
-              h =>
-                val datum = record.get(h)
-                new CSVCell(uri, datum, selector)
-            },
-            delimiter,
-            delimiter
-          )
+      val data = parsedList.map { record =>
+        val index = headers.indexOf(selector)
+        val siblingHeaders = headers.slice(index + range.min, index + range.max)
+        val delimiter = csvFormat.getDelimiter.toString
+        new Siblings(
+          siblingHeaders.map { h =>
+            val datum = record.get(h)
+            new CSVCell(uri, datum, selector)
+          },
+          delimiter,
+          delimiter
+        )
       }
       new Elements(
         data
@@ -96,10 +93,10 @@ case class CSVBlock(
 }
 
 class CSVCell(
-               override val uri: String,
-               val _ownText: String,
-               val header: String
-             ) extends Unstructured {
+    override val uri: String,
+    val _ownText: String,
+    val header: String
+) extends Unstructured {
 
   override def findAll(selector: CSSQuery): Elements[Unstructured] = new EmptyElements
 
@@ -117,13 +114,15 @@ class CSVCell(
 
   override def boilerPipe: Option[String] = ownText
 
-  override def findAllWithSiblings(selector: CSSQuery, range: Range): Elements[Siblings[Unstructured]] = new EmptyElements
+  override def findAllWithSiblings(selector: CSSQuery, range: Range): Elements[Siblings[Unstructured]] =
+    new EmptyElements
 
   override def href: Option[String] = ownText
 
   override def code: Option[String] = ownText
 
-  override def childrenWithSiblings(selector: CSSQuery, range: Range): Elements[Siblings[Unstructured]] = new EmptyElements
+  override def childrenWithSiblings(selector: CSSQuery, range: Range): Elements[Siblings[Unstructured]] =
+    new EmptyElements
 
   override def allAttr: Option[Map[String, String]] = Some(Map())
 

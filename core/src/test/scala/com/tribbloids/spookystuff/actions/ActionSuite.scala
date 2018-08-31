@@ -11,7 +11,7 @@ import org.apache.spark.ml.dsl.utils.messaging.MessageWriter
 import org.apache.spark.rdd.RDD
 
 import scala.collection.immutable.ListMap
-import scala.concurrent.{TimeoutException, duration}
+import scala.concurrent.{duration, TimeoutException}
 import scala.util.Random
 
 class ActionSuite extends SpookyEnvFixture {
@@ -22,9 +22,11 @@ class ActionSuite extends SpookyEnvFixture {
     import scala.concurrent.duration._
 
     val randomTimeout = Random.nextInt().seconds
-    val action = Wget(Const.keyDelimiter+"{~}").in(randomTimeout)
+    val action = Wget(Const.keyDelimiter + "{~}").in(randomTimeout)
 
-    val rewritten = action.interpolate(FetchedRow(DataRow(data = ListMap(Field("~") -> "http://www.dummy.com")), Seq()), emptySchema).get
+    val rewritten = action
+      .interpolate(FetchedRow(DataRow(data = ListMap(Field("~") -> "http://www.dummy.com")), Seq()), emptySchema)
+      .get
 
     //    val a = rewritten.uri.asInstanceOf[Literal[FR, String]].dataType.asInstanceOf[UnreifiedScalaType].ttg.tpe.normalize
     //    val b = Literal("http://www.dummy.com").dataType.asInstanceOf[UnreifiedScalaType].ttg.tpe.normalize
@@ -39,7 +41,9 @@ class ActionSuite extends SpookyEnvFixture {
 
     val action = Wget("'{~}").as('dummy_name)
 
-    val rewritten = action.interpolate(FetchedRow(DataRow(data = ListMap(Field("~") -> "http://www.dummy.com")), Seq()), emptySchema).get
+    val rewritten = action
+      .interpolate(FetchedRow(DataRow(data = ListMap(Field("~") -> "http://www.dummy.com")), Seq()), emptySchema)
+      .get
 
     assert(rewritten === Wget(Lit.erased("http://www.dummy.com")))
     assert(rewritten.name === "dummy_name")
@@ -55,17 +59,16 @@ class ActionSuite extends SpookyEnvFixture {
   )
 
   //TODO: finish assertion
-  exampleActionList.foreach{
-    a =>
-      it(s"${a.getClass.getSimpleName} has an UDT") {
-        val rdd: RDD[(Selector, Action)] = sc.parallelize(Seq(("1": Selector) -> a))
-        val df = sql.createDataFrame(rdd)
+  exampleActionList.foreach { a =>
+    it(s"${a.getClass.getSimpleName} has an UDT") {
+      val rdd: RDD[(Selector, Action)] = sc.parallelize(Seq(("1": Selector) -> a))
+      val df = sql.createDataFrame(rdd)
 
-        df.show(false)
-        df.printSchema()
+      df.show(false)
+      df.printSchema()
 
-        //        df.toJSON.collect().foreach(println)
-      }
+      //        df.toJSON.collect().foreach(println)
+    }
   }
 
   describe("Click") {
@@ -179,8 +182,7 @@ class ActionSuite extends SpookyEnvFixture {
     try {
       DefectiveExport.fetch(spooky)
       sys.error("impossible")
-    }
-    catch {
+    } catch {
       case e: ActionException =>
         assert(!e.getMessage.contains("Snapshot"))
         assert(!e.getMessage.contains("Screenshot"))
@@ -191,8 +193,7 @@ class ActionSuite extends SpookyEnvFixture {
     try {
       DefectiveWebExport.fetch(spooky)
       sys.error("impossible")
-    }
-    catch {
+    } catch {
       case e: ActionException =>
         println(e)
         assert(e.getMessage.contains("ErrorDump/DefectiveWebExport"))
@@ -205,12 +206,10 @@ class ActionSuite extends SpookyEnvFixture {
       (
         Delay(1.seconds) +>
           DefectiveWebExport
-        )
-        .head
+      ).head
         .fetch(spooky)
       sys.error("impossible")
-    }
-    catch {
+    } catch {
       case e: ActionException =>
         println(e)
         assert(e.getMessage.contains("Delay/1_second/ErrorDump/DefectiveWebExport"))
@@ -228,17 +227,15 @@ class ActionSuite extends SpookyEnvFixture {
 
     val (result, time) = CommonUtils.timer {
       try {
-        a
-          .fetch(spooky)
+        a.fetch(spooky)
         sys.error("impossible")
-      }
-      catch {
+      } catch {
         case e: ActionException =>
           println(e)
           assert(e.getCause.isInstanceOf[TimeoutException])
       }
     }
-    assert(time <= 40*1000*Const.remoteResourceLocalRetries)
+    assert(time <= 40 * 1000 * Const.remoteResourceLocalRetries)
   }
 }
 
@@ -260,7 +257,7 @@ case object DefectiveWebExport extends Export {
 case object OverdueExport extends Export with Timed {
 
   override def doExeNoName(session: Session): Seq[DocOption] = {
-    Thread.sleep(120*1000)
+    Thread.sleep(120 * 1000)
     Nil
   }
 }

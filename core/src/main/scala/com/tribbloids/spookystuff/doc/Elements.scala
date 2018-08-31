@@ -1,10 +1,10 @@
 package com.tribbloids.spookystuff.doc
 
-import scala.collection.{SeqLike, mutable}
+import scala.collection.{mutable, SeqLike}
 
 /**
- * Created by peng on 18/07/15.
- */
+  * Created by peng on 18/07/15.
+  */
 object Elements {
 
   //  implicit def canBuildFrom[T <: Unstructured]: CanBuildFrom[Elements[Unstructured], T, Elements[T]] =
@@ -32,9 +32,7 @@ object Elements {
   def empty[T <: Unstructured] = new EmptyElements[T]()
 }
 
-class Elements[+T <: Unstructured](val self: List[T]) extends Unstructured
-with Seq[T]
-with SeqLike[T, Elements[T]] {
+class Elements[+T <: Unstructured](val self: List[T]) extends Unstructured with Seq[T] with SeqLike[T, Elements[T]] {
 
   def uris: Seq[String] = self.map(_.uri)
 
@@ -66,11 +64,13 @@ with SeqLike[T, Elements[T]] {
 
   override def findAll(selector: String) = new Elements(self.flatMap(_.findAll(selector)))
 
-  override def findAllWithSiblings(selector: String, range: Range) = new Elements(self.flatMap(_.findAllWithSiblings(selector, range)))
+  override def findAllWithSiblings(selector: String, range: Range) =
+    new Elements(self.flatMap(_.findAllWithSiblings(selector, range)))
 
   override def children(selector: CSSQuery) = new Elements(self.flatMap(_.children(selector)))
 
-  override def childrenWithSiblings(selector: CSSQuery, range: Range) = new Elements(self.flatMap(_.childrenWithSiblings(selector, range)))
+  override def childrenWithSiblings(selector: CSSQuery, range: Range) =
+    new Elements(self.flatMap(_.childrenWithSiblings(selector, range)))
 
   override def ownText: Option[String] = ownTexts.headOption
 

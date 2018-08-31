@@ -2,7 +2,6 @@ package com.tribbloids.spookystuff.utils
 
 class CommonConst {
 
-
   import scala.concurrent.duration._
 
   val maxLoop = Int.MaxValue

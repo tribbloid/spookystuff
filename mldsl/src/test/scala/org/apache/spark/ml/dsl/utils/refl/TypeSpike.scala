@@ -10,8 +10,8 @@ class TypeSpike extends FunSpecx {
   import ScalaReflection.universe._
 
   it("Map type equality") {
-    val ttg1 = typeTag[Map[_,_]]
-    val ttg2 = typeTag[immutable.Map[_,_]]
+    val ttg1 = typeTag[Map[_, _]]
+    val ttg2 = typeTag[immutable.Map[_, _]]
 
     assert(ttg1.tpe =:= ttg2.tpe)
   }

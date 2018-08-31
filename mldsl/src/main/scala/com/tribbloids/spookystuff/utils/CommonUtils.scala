@@ -30,23 +30,22 @@ abstract class CommonUtils {
   }
   def addSuffix(suffix: String, part: String) = {
     if (part.endsWith(suffix)) part
-    else part+suffix
+    else part + suffix
   }
 
   def /:/(parts: String*): String = qualifiedName("/")(parts: _*)
   def :/(part: String): String = addSuffix("/", part)
 
   def \\\(parts: String*): String = {
-    val _parts = parts.flatMap {
-      v =>
-        Option(v).map (
-          _.replace('/',File.separatorChar)
-        )
+    val _parts = parts.flatMap { v =>
+      Option(v).map(
+        _.replace('/', File.separatorChar)
+      )
     }
     qualifiedName(File.separator)(_parts: _*)
   }
   def :\(part: String): String = {
-    val _part = part.replace('/',File.separatorChar)
+    val _part = part.replace('/', File.separatorChar)
     addSuffix(File.separator, _part)
   }
 
@@ -69,12 +68,12 @@ abstract class CommonUtils {
 //  }
 
   def withDeadline[T](
-                       n: Duration,
-                       heartbeatOpt: Option[Duration] = Some(10.seconds)
-                     )(
-                       fn: =>T,
-                       callbackOpt: Option[Int => Unit] = None
-                     ): T = {
+      n: Duration,
+      heartbeatOpt: Option[Duration] = Some(10.seconds)
+  )(
+      fn: => T,
+      callbackOpt: Option[Int => Unit] = None
+  ): T = {
 
     val future = FutureInterruptable(fn)(AwaitWithHeartbeat.executionContext)
 
@@ -83,8 +82,7 @@ abstract class CommonUtils {
     try {
       val hb = AwaitWithHeartbeat(heartbeatOpt)(callbackOpt)
       hb.result(future, n)
-    }
-    catch {
+    } catch {
       case e: TimeoutException =>
         future.interrupt()
         LoggerFactory.getLogger(this.getClass).debug(TIMEOUT)
@@ -127,18 +125,16 @@ abstract class CommonUtils {
   }
 
   def blockManagerIDOpt: Option[BlockManagerId] = {
-    Option(SparkEnv.get).map(v =>
-      v.blockManager.blockManagerId
-    )
+    Option(SparkEnv.get).map(v => v.blockManager.blockManagerId)
   }
 
-  private val useTaskLocationStrV2: Boolean = try { // some classloaders won't load org.apache.spark.package$ by default, hence the bypass
-    org.apache.spark.SPARK_VERSION.substring(0, 3).toDouble >= 1.6
-  }
-  catch {
-    case e: Throwable =>
-      true
-  }
+  private val useTaskLocationStrV2: Boolean =
+    try { // some classloaders won't load org.apache.spark.package$ by default, hence the bypass
+      org.apache.spark.SPARK_VERSION.substring(0, 3).toDouble >= 1.6
+    } catch {
+      case e: Throwable =>
+        true
+    }
 
   /**
     * From doc of org.apache.spark.scheduler.TaskLocation
@@ -151,17 +147,15 @@ abstract class CommonUtils {
     */
   def taskLocationStrOpt: Option[String] = {
 
-    blockManagerIDOpt.map {
-      bmID =>
-        val hostPort = bmID.hostPort
+    blockManagerIDOpt.map { bmID =>
+      val hostPort = bmID.hostPort
 
-        if (useTaskLocationStrV2) {
-          val executorID = bmID.executorId
-          s"executor_${hostPort}_$executorID"
-        }
-        else {
-          hostPort
-        }
+      if (useTaskLocationStrV2) {
+        val executorID = bmID.executorId
+        s"executor_${hostPort}_$executorID"
+      } else {
+        hostPort
+      }
     }
   }
 }

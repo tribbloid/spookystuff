@@ -14,9 +14,8 @@ import scala.language.implicitConversions
 import scala.reflect.ClassTag
 
 case class Metadata(
-                     override val map: ListMap[String, Any] = ListMap.empty
-                   ) extends MetadataLike {
-}
+    override val map: ListMap[String, Any] = ListMap.empty
+) extends MetadataLike {}
 
 object Metadata extends MessageRelay[Metadata] {
 
@@ -36,24 +35,20 @@ object Metadata extends MessageRelay[Metadata] {
   override def messageMF = implicitly[Manifest[M]]
 
   override def toMessage_>>(md: Metadata): M = {
-    val result: Seq[(String, json4s.JValue)] = md.map
-      .toSeq
+    val result: Seq[(String, json4s.JValue)] = md.map.toSeq
       .map {
         case (k, v) =>
-          val mapped = Nested[Any](v).map[JValue] {
-            elem: Any =>
-              TreeException.|||^[JValue](Seq(
-                {
-                  () =>
-                    val codec = Registry.Default.findCodecOrDefault(v)
-                    assertWellFormed(codec.toWriter_>>(elem).toJValue)
-                },
-                {
-                  () =>
-                    JString(elem.toString)
+          val mapped = Nested[Any](v).map[JValue] { elem: Any =>
+            TreeException
+              .|||^[JValue](Seq(
+                { () =>
+                  val codec = Registry.Default.findCodecOrDefault(v)
+                  assertWellFormed(codec.toWriter_>>(elem).toJValue)
+                }, { () =>
+                  JString(elem.toString)
                 }
               ))
-                .get
+              .get
           }
           k -> MessageWriter(mapped.self).toJValue
       }
@@ -62,16 +57,13 @@ object Metadata extends MessageRelay[Metadata] {
   }
 
   override def toProto_<<(m: M, rootTag: String): Metadata = {
-    val map = m
-      .toSeq
+    val map = m.toSeq
       .map {
         case (k, jv) =>
-          val mapped = Nested[Any](jv).map(
-            fn = identity,
-            preproc = {
-              case v: JValue => v.values
-              case v@ _ => v
-            })
+          val mapped = Nested[Any](jv).map(fn = identity, preproc = {
+            case v: JValue => v.values
+            case v @ _     => v
+          })
           k -> mapped.self
         //          RecursiveTransform(jv, failFast = true)(
         //            {
@@ -87,7 +79,7 @@ object Metadata extends MessageRelay[Metadata] {
 
   implicit def MapParser(map: Map[String, Any]) = apply(map.toSeq: _*)
 
-  def ParamsParser(vs: Tuple2[ParamLike, Any]*) = Metadata(ListMap(vs.map{case (k,v) => k.name -> v}: _*))
+  def ParamsParser(vs: Tuple2[ParamLike, Any]*) = Metadata(ListMap(vs.map { case (k, v) => k.name -> v }: _*))
 
   case class ReflectionParser[T: ClassTag]() {
 
@@ -96,36 +88,33 @@ object Metadata extends MessageRelay[Metadata] {
     @transient lazy val validGetters: Array[(String, Method)] = {
 
       val methods = clazz.getMethods
-      val _methods = methods.filter {
-        m =>
-          (m.getParameterTypes.length == 0) &&
-            FlowUtils.isSerializable(m.getReturnType)
+      val _methods = methods.filter { m =>
+        (m.getParameterTypes.length == 0) &&
+        FlowUtils.isSerializable(m.getReturnType)
       }
-      val commonGetters = _methods.filter {
-        m =>
+      val commonGetters = _methods
+        .filter { m =>
           m.getName.startsWith("get")
-      }
+        }
         .map(v => v.getName.stripPrefix("get") -> v)
-      val booleanGetters = _methods.filter {
-        m =>
+      val booleanGetters = _methods
+        .filter { m =>
           m.getName.startsWith("is")
-      }
+        }
         .map(v => v.getName -> v)
 
       (commonGetters ++ booleanGetters).sortBy(_._1)
     }
 
     def apply(obj: T) = {
-      val kvs = validGetters.flatMap {
-        tuple =>
-          try {
-            tuple._2.setAccessible(true)
-            Some(tuple._1 -> tuple._2.invoke(obj).asInstanceOf[Any])
-          }
-          catch {
-            case e: InvocationTargetException =>
-              None
-          }
+      val kvs = validGetters.flatMap { tuple =>
+        try {
+          tuple._2.setAccessible(true)
+          Some(tuple._1 -> tuple._2.invoke(obj).asInstanceOf[Any])
+        } catch {
+          case e: InvocationTargetException =>
+            None
+        }
       }
       Metadata(ListMap(kvs: _*))
     }

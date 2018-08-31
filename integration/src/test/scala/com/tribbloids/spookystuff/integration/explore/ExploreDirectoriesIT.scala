@@ -20,8 +20,9 @@ class ExploreDirectoriesIT extends IntegrationFixture {
 
   override def doMain(): Unit = {
     val url = resourcePath
-    val rootDoc = spooky.create(Seq(url))
-      .fetch{
+    val rootDoc = spooky
+      .create(Seq(url))
+      .fetch {
         Wget('_)
       }
     val nodes = rootDoc
@@ -47,7 +48,7 @@ class ExploreDirectoriesIT extends IntegrationFixture {
     )
 
     val formatted = result.toJSON.collect().mkString("\n")
-    formatted.shouldBe (
+    formatted.shouldBe(
       s"""
          |{"_":"$resourcePath","uri":"file:${_resourcePath}","leaf":"table.csv","fullPath":"file:${_resourcePath}/table.csv"}
          |{"_":"$resourcePath","uri":"file:${_resourcePath}","leaf":"hivetable.csv","fullPath":"file:${_resourcePath}/hivetable.csv"}

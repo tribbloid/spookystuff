@@ -4,8 +4,8 @@ import org.apache.spark.{HashPartitioner, Partitioner}
 import org.apache.spark.rdd.RDD
 
 /**
- * Created by peng on 5/14/15.
- */
+  * Created by peng on 5/14/15.
+  */
 object PartitionerFactories {
 
   case class PerCore(n: Int) extends (RDD[_] => Partitioner) {

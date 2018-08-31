@@ -37,7 +37,6 @@ trait XMLReaderMixin[T] {
   }
 }
 
-
 class XMLStageReader[T <: Params](implicit val mf: Manifest[T]) extends MLReader[T] with XMLReaderMixin[T] {
 
   override def load(path: String): T = {
@@ -56,14 +55,14 @@ class XMLStageReader[T <: Params](implicit val mf: Manifest[T]) extends MLReader
   def getAndSetParams(instance: T, metadata: Metadata): Unit = {
     metadata.params match {
       case JObject(pairs) =>
-        pairs.foreach { case (paramName, jValue) =>
-          val param = instance.getParam(paramName)
-          val value = param.jsonDecode(compact(render(jValue)))
-          instance.set(param, value)
+        pairs.foreach {
+          case (paramName, jValue) =>
+            val param = instance.getParam(paramName)
+            val value = param.jsonDecode(compact(render(jValue)))
+            instance.set(param, value)
         }
       case _ =>
-        throw new IllegalArgumentException(
-          s"Cannot recognize JSON metadata: ${metadata.metadataJson}.")
+        throw new IllegalArgumentException(s"Cannot recognize JSON metadata: ${metadata.metadataJson}.")
     }
   }
 }

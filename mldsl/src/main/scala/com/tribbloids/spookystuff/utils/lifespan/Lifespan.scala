@@ -41,11 +41,9 @@ abstract class Lifespan extends IDMixin with Serializable {
     ctx //always generate context on construction
 
     if (!Cleanable.uncleaned.contains(_id)) {
-      tpe.addCleanupHook (
-        ctx,
-        {
-          () =>
-            Cleanable.cleanSweep(_id)
+      tpe.addCleanupHook(
+        ctx, { () =>
+          Cleanable.cleanSweep(_id)
         }
       )
     }
@@ -68,9 +66,9 @@ abstract class Lifespan extends IDMixin with Serializable {
 abstract class LifespanType extends Serializable {
 
   def addCleanupHook(
-                      ctx: LifespanContext,
-                      fn: () => Unit
-                    ): Unit
+      ctx: LifespanContext,
+      fn: () => Unit
+  ): Unit
 
   def getCleanupBatchID(ctx: LifespanContext): Any
 }
@@ -86,9 +84,8 @@ object Lifespan {
     }
 
     override def addCleanupHook(ctx: LifespanContext, fn: () => Unit): Unit = {
-      tc(ctx).addTaskCompletionListener {
-        tc =>
-          fn()
+      tc(ctx).addTaskCompletionListener { tc =>
+        fn()
       }
     }
 
@@ -100,9 +97,9 @@ object Lifespan {
     }
   }
   case class Task(
-                   override val nameOpt: Option[String] = None,
-                   ctxFactory: () => LifespanContext = () => LifespanContext()
-                 ) extends Lifespan {
+      override val nameOpt: Option[String] = None,
+      ctxFactory: () => LifespanContext = () => LifespanContext()
+  ) extends Lifespan {
     def this() = this(None)
 
     override def tpe: LifespanType = Task
@@ -114,8 +111,7 @@ object Lifespan {
         sys.addShutdownHook {
           fn()
         }
-      }
-      catch {
+      } catch {
         case e: IllegalStateException if e.getMessage.contains("Shutdown") =>
       }
     }
@@ -128,9 +124,9 @@ object Lifespan {
     }
   }
   case class JVM(
-                  override val nameOpt: Option[String] = None,
-                  ctxFactory: () => LifespanContext = () => LifespanContext()
-                ) extends Lifespan {
+      override val nameOpt: Option[String] = None,
+      ctxFactory: () => LifespanContext = () => LifespanContext()
+  ) extends Lifespan {
     def this() = this(None)
 
     override def tpe: LifespanType = JVM
@@ -156,9 +152,9 @@ object Lifespan {
   }
   //CAUTION: keep the empty constructor! Kryo deserializer use them to initialize object
   case class Auto(
-                   override val nameOpt: Option[String] = None,
-                   ctxFactory: () => LifespanContext = () => LifespanContext()
-                 ) extends Lifespan {
+      override val nameOpt: Option[String] = None,
+      ctxFactory: () => LifespanContext = () => LifespanContext()
+  ) extends Lifespan {
     def this() = this(None)
 
     override def tpe: LifespanType = Auto

@@ -10,19 +10,16 @@ import org.apache.spark.sql.{DataFrame, Dataset}
 import org.apache.spark.sql.expressions.UserDefinedFunction
 import org.apache.spark.sql.types.{StructField, StructType}
 
-abstract class UDFTransformerLike
-  extends Transformer
-    with HasOutputCol
-    with DynamicParamsMixin {
+abstract class UDFTransformerLike extends Transformer with HasOutputCol with DynamicParamsMixin {
 
   def udfImpl: UserDefinedFunction
 
   def setUDFSafely(_udfImpl: UserDefinedFunction) = {
-    _udfImpl.inputTypes.toSeq.flatten.foreach {
-      dataType =>
-        assert(!dataType.isInstanceOf[VectorUDT], s"UDF input type ${classOf[VectorUDT].getCanonicalName} is obsolete!")
+    _udfImpl.inputTypes.toSeq.flatten.foreach { dataType =>
+      assert(!dataType.isInstanceOf[VectorUDT], s"UDF input type ${classOf[VectorUDT].getCanonicalName} is obsolete!")
     }
-    assert(!_udfImpl.dataType.isInstanceOf[VectorUDT], s"UDF output type ${classOf[VectorUDT].getCanonicalName} is obsolete!")
+    assert(!_udfImpl.dataType.isInstanceOf[VectorUDT],
+           s"UDF output type ${classOf[VectorUDT].getCanonicalName} is obsolete!")
     this.setUDF(_udfImpl)
   }
 
@@ -57,11 +54,10 @@ object UDFTransformer extends DefaultParamsReadable[UDFTransformer] {
   * TODO: use UDF registry's name as uid & name
   */
 case class UDFTransformer(
-                           uid: String = Identifiable.randomUID("udf")
-                         )
-  extends UDFTransformerLike
+    uid: String = Identifiable.randomUID("udf")
+) extends UDFTransformerLike
     with HasInputCols
-    with DefaultParamsWritable{
+    with DefaultParamsWritable {
 
   lazy val UDF: Param[UserDefinedFunction] = GenericParam[UserDefinedFunction]()
   def udfImpl: UserDefinedFunction = UDF

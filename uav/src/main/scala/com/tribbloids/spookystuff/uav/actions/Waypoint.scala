@@ -2,7 +2,7 @@ package com.tribbloids.spookystuff.uav.actions
 
 import com.tribbloids.spookystuff.extractors.Col
 import com.tribbloids.spookystuff.extractors.impl.Lit
-import com.tribbloids.spookystuff.row.{SpookySchema, FetchedRow}
+import com.tribbloids.spookystuff.row.{FetchedRow, SpookySchema}
 import com.tribbloids.spookystuff.session.Session
 import com.tribbloids.spookystuff.uav.spatial.Anchors
 import com.tribbloids.spookystuff.uav.spatial.point.{Location, NED}
@@ -35,30 +35,31 @@ trait WaypointLike extends UAVNavigation {
 
 // How to accommodate camera & gimbal control? Right now do not refactor! Simplicity first.
 case class Waypoint(
-                     override val to: Col[Location],
-                     override val cooldown: Duration = UAVConst.UAVNavigation.delayMin
-                   ) extends WaypointLike {
+    override val to: Col[Location],
+    override val cooldown: Duration = UAVConst.UAVNavigation.delayMin
+) extends WaypointLike {
 
   override def doInterpolate(
-                              pageRow: FetchedRow,
-                              schema: SpookySchema
-                            ): Option[this.type] = {
+      pageRow: FetchedRow,
+      schema: SpookySchema
+  ): Option[this.type] = {
 
     val vOpt: Option[Any] = to.resolve(schema).lift(pageRow)
 
     val uavConf = schema.spooky.getConf[UAVConf]
 
-    vOpt.map {
-      v =>
-        val p = Location.parse(v)
-          .replaceAnchors {
-            case Anchors.Home =>
-              uavConf._home
-          }
-        this.copy(
+    vOpt.map { v =>
+      val p = Location
+        .parse(v)
+        .replaceAnchors {
+          case Anchors.Home =>
+            uavConf._home
+        }
+      this
+        .copy(
           to = Lit(p)
         )
-          .asInstanceOf[this.type]
+        .asInstanceOf[this.type]
     }
   }
 

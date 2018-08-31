@@ -18,26 +18,26 @@ class TestTrace_PhantomJS extends SpookyEnvFixture with FunSpecx {
     val t1 = (
       Visit("http://webscraper.io/test-sites/e-commerce/ajax/computers/laptops")
         :: Snapshot().as('a)
-        :: Loop (
-        ClickNext("button.btn","1"::Nil)
+        :: Loop(
+        ClickNext("button.btn", "1" :: Nil)
           +> Delay(2.seconds)
-          +> Snapshot() ~'b
-      ):: Nil
-      )
+          +> Snapshot() ~ 'b
+      ) :: Nil
+    )
 
     val t2 = (
       Visit("http://webscraper.io/test-sites/e-commerce/ajax/computers/laptops")
         :: Snapshot().as('c)
-        :: Loop (
-        ClickNext("button.btn","1"::Nil)
+        :: Loop(
+        ClickNext("button.btn", "1" :: Nil)
           +> Delay(2.seconds)
-          +> Snapshot() ~'d
-      ):: Nil
-      )
+          +> Snapshot() ~ 'd
+      ) :: Nil
+    )
 
-    t1.injectFrom(t2.asInstanceOf[t1.type ])
+    t1.injectFrom(t2.asInstanceOf[t1.type])
 
-    assert(t1.outputNames === Set("c","d"))
+    assert(t1.outputNames === Set("c", "d"))
   }
 
   it("dryrun should discard preceding actions when calculating Driverless action's backtrace") {
@@ -89,26 +89,27 @@ class TestTrace_PhantomJS extends SpookyEnvFixture with FunSpecx {
         +> Click("dummy")
         +> Snapshot()
         +> Loop(
-        Click("next")
-          +> TextInput("box", "something")
-          +> Snapshot()
-          +> If(
-          {(v: Doc, _: AbstractSession) => v.uri startsWith "http" },
-          Click("o1")
-            +> TextInput("box1", "something1")
-            +> Snapshot(),
-          Click("o2")
-            +> TextInput("box2", "something2")
+          Click("next")
+            +> TextInput("box", "something")
             +> Snapshot()
+            +> If(
+              { (v: Doc, _: AbstractSession) =>
+                v.uri startsWith "http"
+              },
+              Click("o1")
+                +> TextInput("box1", "something1")
+                +> Snapshot(),
+              Click("o2")
+                +> TextInput("box2", "something2")
+                +> Snapshot()
+            )
         )
-      )
-      )
+    )
 
-    traces.foreach{
-      trace =>
-        val str = TraceView(trace).TreeNode.toString
-        println(str)
-        assert(str contains "\n")
+    traces.foreach { trace =>
+      val str = TraceView(trace).TreeNode.toString
+      println(str)
+      assert(str contains "\n")
     }
   }
 
@@ -202,10 +203,10 @@ class TestTrace_PhantomJS extends SpookyEnvFixture with FunSpecx {
       Visit("http://www.wikipedia.org") ::
         WaitFor("input#searchInput").in(40.seconds) ::
         Snapshot().as('A) ::
-        TextInput("input#searchInput","Deep learning") ::
+        TextInput("input#searchInput", "Deep learning") ::
         Submit("button.pure-button") ::
         Snapshot().as('B) :: Nil
-      ).fetch(spooky)
+    ).fetch(spooky)
 
     val resultsList = results
     assert(resultsList.length === 2)
@@ -237,7 +238,7 @@ class TestTrace_PhantomJS extends SpookyEnvFixture with FunSpecx {
       Visit("http://www.wikipedia.org/") ::
         WaitFor("a.link-box:contains(English)") ::
         Snapshot() :: Nil
-      ).fetch(spooky)
+    ).fetch(spooky)
 
     val code = results.head.asInstanceOf[Doc].code.get.split('\n').map(_.trim).mkString
     assert(code.contains("Wikipedia"))
@@ -249,7 +250,7 @@ class TestTrace_PhantomJS extends SpookyEnvFixture with FunSpecx {
       Visit("http://www.wikipedia.org/") ::
         WaitFor("cssSelector: a.link-box") ::
         Snapshot() :: Nil
-      ).fetch(spooky)
+    ).fetch(spooky)
 
     val code = results.head.asInstanceOf[Doc].code.get.split('\n').map(_.trim).mkString
     assert(code.contains("Wikipedia"))
@@ -260,11 +261,9 @@ class TestTrace_PhantomJS extends SpookyEnvFixture with FunSpecx {
     val results = (
       Visit("https://www.coursera.org/yale") ::
         Snapshot() :: Nil
-      )
-      .fetch(spooky)
+    ).fetch(spooky)
 
-    val title = results.head.asInstanceOf[Doc]
-      .root.\("title").head.text.get
+    val title = results.head.asInstanceOf[Doc].root.\("title").head.text.get
     assert(title.toLowerCase.contains("coursera"))
   }
 

@@ -34,8 +34,7 @@ class LeftVisitJoinIT extends IntegrationFixture {
       )
       .select(S"h1".text ~ 'header)
       .flatSelect(S"notexist", ordinalField = 'notexist_key)( //this is added to ensure that temporary joinKey in KV store won't be used.
-        'A.attr("class") ~ 'notexist_class
-      )
+        'A.attr("class") ~ 'notexist_class)
 
     val df = joined
       .toDF(sort = true)
@@ -68,9 +67,8 @@ class LeftVisitJoinIT extends IntegrationFixture {
     )
   }
 
-  override def numPages= spooky.spookyConf.defaultGenPartitioner match {
+  override def numPages = spooky.spookyConf.defaultGenPartitioner match {
     //    case FetchOptimizers.WebCacheAware => 6
     case _ => 6
   }
 }
-

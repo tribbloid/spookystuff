@@ -33,16 +33,14 @@ object JSpritRunner {
     new MinimiaxCost(cohesiveness)
 
   def getCostMatrix(
-                     schema: SpookySchema,
-                     trace_indices: Seq[(TraceView, Int)]
-                   ): FastVehicleRoutingTransportCostsMatrix = {
+      schema: SpookySchema,
+      trace_indices: Seq[(TraceView, Int)]
+  ): FastVehicleRoutingTransportCostsMatrix = {
 
     val costEstimator = schema.ec.spooky.getConf[UAVConf].costEstimator
 
-    val dMat = for (
-      i <- trace_indices;
-      j <- trace_indices
-    ) yield {
+    val dMat = for (i <- trace_indices;
+                    j <- trace_indices) yield {
       if (i._2 == j._2)
         (i._2, j._2, 0.0)
       else {
@@ -60,9 +58,8 @@ object JSpritRunner {
     val jRoutingCostMat: FastVehicleRoutingTransportCostsMatrix = {
       val builder = FastVehicleRoutingTransportCostsMatrix.Builder
         .newInstance(size, false)
-      dMat.foreach {
-        entry =>
-          builder.addTransportTimeAndDistance(entry._1, entry._2, entry._3, entry._3)
+      dMat.foreach { entry =>
+        builder.addTransportTimeAndDistance(entry._1, entry._2, entry._3, entry._3)
       }
       builder.build()
     }
@@ -70,9 +67,9 @@ object JSpritRunner {
   }
 
   def solveVRP(
-                vrp: VehicleRoutingProblem,
-                gp: GenPartitioners.VRP
-              ): (VehicleRoutingProblemSolution, Double) = {
+      vrp: VehicleRoutingProblem,
+      gp: GenPartitioners.VRP
+  ): (VehicleRoutingProblemSolution, Double) = {
 
     val stateManager: StateManager = new StateManager(vrp)
 
@@ -108,11 +105,10 @@ object JSpritRunner {
 
     val vra: VehicleRoutingAlgorithm = algorithmBuilder.buildAlgorithm
 
-    gp.covergencePlotPathOpt.foreach {
-      v =>
-        val file = new File(v)
-        if (!file.exists()) file.getParentFile.mkdirs()
-        vra.addListener(new AlgorithmSearchProgressChartListener(v))
+    gp.covergencePlotPathOpt.foreach { v =>
+      val file = new File(v)
+      if (!file.exists()) file.getParentFile.mkdirs()
+      vra.addListener(new AlgorithmSearchProgressChartListener(v))
     }
     val prematureAlgorithmTermination: VariationCoefficientTermination = new VariationCoefficientTermination(150, 0.001)
     vra.addListener(prematureAlgorithmTermination)
@@ -123,9 +119,8 @@ object JSpritRunner {
     val best = Solutions.bestOf(solutions)
 
     SolutionPrinter.print(vrp, best, Print.VERBOSE)
-    gp.solutionPlotPathOpt.foreach {
-      v =>
-        plot(vrp, best, v)
+    gp.solutionPlotPathOpt.foreach { v =>
+      plot(vrp, best, v)
     }
 
     best -> objectiveFunction.getCosts(best)
@@ -137,20 +132,20 @@ object JSpritRunner {
     }
     val home = schema.ec.spooky.getConf[UAVConf]._home
     for (nav <- navs) {
-      val opt = Try{nav.getLocation(schema)}.toOption.flatMap {
+      val opt = Try { nav.getLocation(schema) }.toOption.flatMap {
         _.getCoordinate(NED, home)
       }
       if (opt.nonEmpty) return opt.get
     }
-    NED(navs.size,0,0)
+    NED(navs.size, 0, 0)
   }
 
   def plot(
-            vrp: VehicleRoutingProblem,
-            solution: VehicleRoutingProblemSolution,
-            path: String,
-            title: String = "JSprit"
-          ): Unit = {
+      vrp: VehicleRoutingProblem,
+      solution: VehicleRoutingProblemSolution,
+      path: String,
+      title: String = "JSprit"
+  ): Unit = {
 
     val file = new File(path)
     if (!file.exists()) file.getParentFile.mkdirs()
@@ -163,24 +158,22 @@ object JSpritRunner {
 }
 
 case class JSpritRunner(
-                         problem: GenPartitioners.VRP,
-                         schema: SpookySchema,
-                         uavs: Array[LinkStatus],
-                         traces: Array[TraceView]
-                       ) {
+    problem: GenPartitioners.VRP,
+    schema: SpookySchema,
+    uavs: Array[LinkStatus],
+    traces: Array[TraceView]
+) {
 
   val spooky = schema.ec.spooky
 
   val trace_uavOpt_index: Array[((TraceView, Option[LinkStatus]), Int)] = {
     val fromUAVs: Array[(TraceView, Option[LinkStatus])] =
-      uavs.map {
-        uav =>
-          TraceView(List(Waypoint(uav.currentLocation))) -> Some(uav)
+      uavs.map { uav =>
+        TraceView(List(Waypoint(uav.currentLocation))) -> Some(uav)
       }
 
-    val fromTraces: Array[(TraceView, Option[LinkStatus])] = traces.map {
-      trace =>
-        trace -> None
+    val fromTraces: Array[(TraceView, Option[LinkStatus])] = traces.map { trace =>
+      trace -> None
     }
 
     (fromUAVs ++ fromTraces).zipWithIndex
@@ -190,9 +183,8 @@ case class JSpritRunner(
 
   lazy val define: VehicleRoutingProblem = {
 
-    val trace_indices: Array[(TraceView, Int)] = trace_uavOpt_index.map {
-      triplet =>
-        triplet._1._1 -> triplet._2
+    val trace_indices: Array[(TraceView, Int)] = trace_uavOpt_index.map { triplet =>
+      triplet._1._1 -> triplet._2
     }
 
     val jRoutingCostMat: FastVehicleRoutingTransportCostsMatrix =
@@ -203,7 +195,8 @@ case class JSpritRunner(
     val jServices: Array[Service] = getJServices
 
     val vrp = {
-      val builder = VehicleRoutingProblem.Builder.newInstance()
+      val builder = VehicleRoutingProblem.Builder
+        .newInstance()
         .setRoutingCost(jRoutingCostMat)
       for (v <- jVehicles) {
         builder.addVehicle(v)
@@ -218,73 +211,75 @@ case class JSpritRunner(
   }
 
   def getJVehicles: Array[VehicleImpl] = {
-    val cap = Capacity.Builder.newInstance()
+    val cap = Capacity.Builder
+      .newInstance()
       .addDimension(0, 1)
       .build()
-    val jVType = VehicleTypeImpl.Builder.newInstance("UAV")
+    val jVType = VehicleTypeImpl.Builder
+      .newInstance("UAV")
       .setCapacityDimensions(cap)
       .build()
 
     val jVehicles = trace_uavOpt_index
-      .flatMap {
-        triplet =>
-          triplet._1._2.map { v => v -> triplet._2 }
+      .flatMap { triplet =>
+        triplet._1._2.map { v =>
+          v -> triplet._2
+        }
       }
-      .map {
-        tuple =>
-          val status = tuple._1
-          val location = status.currentLocation
-          val coord = location.getCoordinate(NED, homeLocation).get
-          val jLocation = JLocation.Builder.newInstance()
-            .setIndex(tuple._2)
-            .setCoordinate(
-              Coordinate.newInstance(
-                coord.east,
-                coord.north
-              )
+      .map { tuple =>
+        val status = tuple._1
+        val location = status.currentLocation
+        val coord = location.getCoordinate(NED, homeLocation).get
+        val jLocation = JLocation.Builder
+          .newInstance()
+          .setIndex(tuple._2)
+          .setCoordinate(
+            Coordinate.newInstance(
+              coord.east,
+              coord.north
             )
-            .build()
-          val jVehicle = VehicleImpl.Builder
-            .newInstance(status.uav.primaryURI)
-            .setType(jVType)
-            .setStartLocation(jLocation)
-            .setReturnToDepot(false)
-            .build()
-          jVehicle
+          )
+          .build()
+        val jVehicle = VehicleImpl.Builder
+          .newInstance(status.uav.primaryURI)
+          .setType(jVType)
+          .setStartLocation(jLocation)
+          .setReturnToDepot(false)
+          .build()
+        jVehicle
       }
     jVehicles
   }
 
   def getJServices: Array[Service] = {
     val jServices: Array[Service] = trace_uavOpt_index
-      .flatMap {
-        triplet =>
-          triplet._1._2 match {
-            case Some(_) =>
-              None
-            case None =>
-              Some(triplet._1._1 -> triplet._2)
-          }
+      .flatMap { triplet =>
+        triplet._1._2 match {
+          case Some(_) =>
+            None
+          case None =>
+            Some(triplet._1._1 -> triplet._2)
+        }
       }
-      .map {
-        tuple =>
-          val trace = tuple._1.children
+      .map { tuple =>
+        val trace = tuple._1.children
 
-          val plotCoord = JSpritRunner.getPlotCoord(trace, schema)
-          val location = JLocation.Builder
-            .newInstance()
-            .setIndex(tuple._2)
-            .setCoordinate(
-              Coordinate.newInstance(
-                plotCoord.east,
-                plotCoord.north
-              )
+        val plotCoord = JSpritRunner.getPlotCoord(trace, schema)
+        val location = JLocation.Builder
+          .newInstance()
+          .setIndex(tuple._2)
+          .setCoordinate(
+            Coordinate.newInstance(
+              plotCoord.east,
+              plotCoord.north
             )
-            .build()
+          )
+          .build()
 
-          Service.Builder.newInstance(tuple._1.hashCode().toString)
-            .setLocation(location)
-            .build()
+        Service.Builder
+          .newInstance(tuple._1.hashCode().toString)
+          .setLocation(location)
+          .build()
       }
     jServices
   }
@@ -305,16 +300,15 @@ case class JSpritRunner(
     import scala.collection.JavaConverters._
 
     val routes = solve.getRoutes.asScala.toList
-    val status_KVs: Seq[(LinkStatus, List[TraceView])] = routes.map {
-      route =>
-        val status = uavs.find(_.uav.primaryURI == route.getVehicle.getId).get
-        val tours = route.getTourActivities.getActivities.asScala.toList
-        val traces = for (tour <- tours) yield {
-          val index = tour.getLocation.getIndex
-          val trace: TraceView = trace_uavOpt_index.find(_._2 == index).get._1._1
-          trace
-        }
-        status -> traces
+    val status_KVs: Seq[(LinkStatus, List[TraceView])] = routes.map { route =>
+      val status = uavs.find(_.uav.primaryURI == route.getVehicle.getId).get
+      val tours = route.getTourActivities.getActivities.asScala.toList
+      val traces = for (tour <- tours) yield {
+        val index = tour.getLocation.getIndex
+        val trace: TraceView = trace_uavOpt_index.find(_._2 == index).get._1._1
+        trace
+      }
+      status -> traces
     }
     val status_KVMap = Map(status_KVs: _*)
     status_KVMap

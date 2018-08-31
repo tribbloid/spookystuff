@@ -42,16 +42,14 @@ class SpookyViewsSuite extends SpookyEnvFixture {
     val counter = Metrics.accumulator(0)
     val counter2 = Metrics.accumulator(0)
 
-    val res1 = src.flatMap(v => Seq(v, v*2, v*3))
-    val res2 = src.multiPassFlatMap{
-      v =>
-        val rand = Random.nextBoolean()
-        counter2 +=1
-        if (rand) {
-          counter +=1
-          Some(Seq(v, v*2, v*3))
-        }
-        else None
+    val res1 = src.flatMap(v => Seq(v, v * 2, v * 3))
+    val res2 = src.multiPassFlatMap { v =>
+      val rand = Random.nextBoolean()
+      counter2 += 1
+      if (rand) {
+        counter += 1
+        Some(Seq(v, v * 2, v * 3))
+      } else None
     }
 
     assert(res1.collect().toSeq == res2.collect().toSeq)
@@ -94,22 +92,21 @@ class SpookyViewsSuite extends SpookyEnvFixture {
     assert(nullStr \\ nullStr \\ "abc" \\ null \\ null == "abc")
   }
 
-
   import com.tribbloids.spookystuff.utils.SpookyViews._
 
   it("injectPassthroughPartitioner should not move partitions") {
-    val rdd1: RDD[WithID] = sc.parallelize(1 to 100)
+    val rdd1: RDD[WithID] = sc
+      .parallelize(1 to 100)
       .map(v => WithID(v))
     val rdd2: RDD[(Int, WithID)] = rdd1.injectPassthroughPartitioner
     assert(rdd2.partitioner.get.getClass == classOf[PartitionIdPassthrough])
 
-    val zipped = rdd1.zipPartitions(rdd2) {
-      (itr1, itr2) =>
-        val a1 = itr1.toList.sortBy(_.hashCode)
-        val a2 = itr2.map(_._2).toList.sortBy(_.hashCode)
-        Iterator(
-          a1 -> a2
-        )
+    val zipped = rdd1.zipPartitions(rdd2) { (itr1, itr2) =>
+      val a1 = itr1.toList.sortBy(_.hashCode)
+      val a2 = itr2.map(_._2).toList.sortBy(_.hashCode)
+      Iterator(
+        a1 -> a2
+      )
     }
 
     val array = zipped.collect()
@@ -120,18 +117,18 @@ class SpookyViewsSuite extends SpookyEnvFixture {
   //TODO: doesn't work by now
   ignore("... even if the RDD is not Serializable") {
 
-    val rdd1: RDD[WithID] = sc.parallelize(1 to 100)
+    val rdd1: RDD[WithID] = sc
+      .parallelize(1 to 100)
       .map(v => NOTSerializableID(v))
     val rdd2: RDD[(Int, WithID)] = rdd1.injectPassthroughPartitioner
     assert(rdd2.partitioner.get.getClass == classOf[PartitionIdPassthrough])
 
-    val zipped = rdd1.zipPartitions(rdd2) {
-      (itr1, itr2) =>
-        val a1 = itr1.toList.sortBy(_.hashCode)
-        val a2 = itr2.map(_._2).toList.sortBy(_.hashCode)
-        Iterator(
-          a1 -> a2
-        )
+    val zipped = rdd1.zipPartitions(rdd2) { (itr1, itr2) =>
+      val a1 = itr1.toList.sortBy(_.hashCode)
+      val a2 = itr2.map(_._2).toList.sortBy(_.hashCode)
+      Iterator(
+        a1 -> a2
+      )
     }
 
     val array = zipped.collect()
@@ -140,10 +137,11 @@ class SpookyViewsSuite extends SpookyEnvFixture {
   }
 
   it("mapOncePerCore") {
-    val result = sc.uuidSeed().mapOncePerCore {
-      _ =>
+    val result = sc
+      .uuidSeed()
+      .mapOncePerCore { _ =>
         LifespanContext()
-    }
+      }
       .collect()
 
     result.foreach(println)
@@ -153,10 +151,11 @@ class SpookyViewsSuite extends SpookyEnvFixture {
   }
 
   it("mapOncePerWorker") {
-    val result = sc.uuidSeed().mapOncePerWorker {
-      _ =>
+    val result = sc
+      .uuidSeed()
+      .mapOncePerWorker { _ =>
         LifespanContext()
-    }
+      }
       .collect()
 
     result.foreach(println)
@@ -166,9 +165,8 @@ class SpookyViewsSuite extends SpookyEnvFixture {
   }
 
   it("runEverywhere") {
-    val result = sc.runEverywhere(alsoOnDriver = false) {
-      _ =>
-        LifespanContext()
+    val result = sc.runEverywhere(alsoOnDriver = false) { _ =>
+      LifespanContext()
     }
 
     result.foreach(println)
@@ -178,9 +176,8 @@ class SpookyViewsSuite extends SpookyEnvFixture {
   }
 
   it("runEverywhere (alsoOnDriver)") {
-    val result = sc.runEverywhere() {
-      _ =>
-        LifespanContext()
+    val result = sc.runEverywhere() { _ =>
+      LifespanContext()
     }
     result.foreach(println)
     assert(result.length === TestHelper.numWorkers + 1, result.mkString("\n"))
@@ -191,22 +188,21 @@ class SpookyViewsSuite extends SpookyEnvFixture {
 
   it("result of allTaskLocationStrs can be used as partition's preferred location") {
     //TODO: change to more succinct ignore
-    if (org.apache.spark.SPARK_VERSION.replaceAllLiterally(".","").toInt >= 160) {
+    if (org.apache.spark.SPARK_VERSION.replaceAllLiterally(".", "").toInt >= 160) {
       val tlStrs = sc.allTaskLocationStrs
       tlStrs.foreach(println)
       val length = tlStrs.size
-      val seq: Seq[((Int, String), Seq[String])] = (1 to 100).map {
-        i =>
-          val nodeName = tlStrs(Random.nextInt(length))
-          (i -> nodeName) -> Seq(nodeName)
+      val seq: Seq[((Int, String), Seq[String])] = (1 to 100).map { i =>
+        val nodeName = tlStrs(Random.nextInt(length))
+        (i -> nodeName) -> Seq(nodeName)
       }
 
       val created = sc.makeRDD[(Int, String)](seq)
       //TODO: this RDD is extremely partitioned, can we use coalesce to reduce it?
-      val conditions = created.map {
-        tuple =>
+      val conditions = created
+        .map { tuple =>
           tuple._2 == SpookyUtils.taskLocationStrOpt.get
-      }
+        }
         .collect()
       assert(conditions.count(identity) == 100)
     }
@@ -215,9 +211,8 @@ class SpookyViewsSuite extends SpookyEnvFixture {
   it("interpolate can use common character as delimiter") {
 
     val original = "ORA'{TEST}"
-    val interpolated = original.interpolate("'"){
-      v =>
-        "Replaced"
+    val interpolated = original.interpolate("'") { v =>
+      "Replaced"
     }
     assert(interpolated == "ORAReplaced")
   }
@@ -225,9 +220,8 @@ class SpookyViewsSuite extends SpookyEnvFixture {
   it("interpolate can use special regex character as delimiter") {
 
     val original = "ORA${TEST}"
-    val interpolated = original.interpolate("$"){
-      v =>
-        "Replaced"
+    val interpolated = original.interpolate("$") { v =>
+      "Replaced"
     }
     assert(interpolated == "ORAReplaced")
   }
@@ -235,9 +229,8 @@ class SpookyViewsSuite extends SpookyEnvFixture {
   it("interpolate should ignore string that contains delimiter without bracket") {
 
     val original = "ORA$TEST"
-    val interpolated = original.interpolate("$"){
-      v =>
-        "Replaced"
+    val interpolated = original.interpolate("$") { v =>
+      "Replaced"
     }
     assert(interpolated == original)
   }
@@ -245,9 +238,8 @@ class SpookyViewsSuite extends SpookyEnvFixture {
   it("interpolate should allow delimiter to be escaped") {
 
     val original = "ORA$${TEST}"
-    val interpolated = original.interpolate("$"){
-      v =>
-        "Replaced"
+    val interpolated = original.interpolate("$") { v =>
+      "Replaced"
     }
     assert(interpolated == original)
   }

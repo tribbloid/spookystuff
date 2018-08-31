@@ -15,7 +15,7 @@ trait RemoteTransformer extends RemoteTransformerLike with Dynamic {
 
   override def copy(extra: ParamMap): RemoteTransformer = this.defaultCopy(extra)
 
-  def +> (another: RemoteTransformer): RemoteTransformerChain = new RemoteTransformerChain(Seq(this)) +> another
+  def +>(another: RemoteTransformer): RemoteTransformerChain = new RemoteTransformerChain(Seq(this)) +> another
 
   /*
   This dynamic function automatically add a setter to any Param-typed property
@@ -37,8 +37,7 @@ trait RemoteTransformer extends RemoteTransformerLike with Dynamic {
       }
 
       this
-    }
-    else throw new IllegalArgumentException(s"function $methodName doesn't exist")
+    } else throw new IllegalArgumentException(s"function $methodName doesn't exist")
   }
 
   /*
@@ -109,14 +108,13 @@ trait RemoteTransformer extends RemoteTransformerLike with Dynamic {
     str + exampleStr
   }
 
-  override def test(spooky: SpookyContext): Unit= {
+  override def test(spooky: SpookyContext): Unit = {
 
     val names = this.params.map(_.name)
     assert(names.length == names.distinct.length) //ensure that there is no name duplicity
 
-    this.exampleParamMap.toSeq.foreach {
-      pair =>
-        this.set(pair)
+    this.exampleParamMap.toSeq.foreach { pair =>
+      this.set(pair)
     }
 
     val result: FetchedDataset = this.transform(this.exampleInput(spooky)).persist()
@@ -124,20 +122,18 @@ trait RemoteTransformer extends RemoteTransformerLike with Dynamic {
 
     result.toDF(sort = true).show()
 
-    keys.foreach{
-      key =>
-        val distinct = result.rdd.flatMap(_.dataRow.get(key)).distinct()
-        val values = distinct.take(2)
-        assert(values.length >= 1)
-        if (key.isDepth) {
-          key.depthRangeOpt.foreach {
-              range =>
-                assert(range.max == distinct.map(_.asInstanceOf[Int]).max())
-                assert(range.min == distinct.map(_.asInstanceOf[Int]).min())
-            }
+    keys.foreach { key =>
+      val distinct = result.rdd.flatMap(_.dataRow.get(key)).distinct()
+      val values = distinct.take(2)
+      assert(values.length >= 1)
+      if (key.isDepth) {
+        key.depthRangeOpt.foreach { range =>
+          assert(range.max == distinct.map(_.asInstanceOf[Int]).max())
+          assert(range.min == distinct.map(_.asInstanceOf[Int]).min())
         }
-        LoggerFactory.getLogger(this.getClass).info(s"column '${key.name} has passed the test")
-        result.unpersist()
+      }
+      LoggerFactory.getLogger(this.getClass).info(s"column '${key.name} has passed the test")
+      result.unpersist()
     }
 
     assert(result.toObjectRDD(S_*).flatMap(identity).count() >= 1)

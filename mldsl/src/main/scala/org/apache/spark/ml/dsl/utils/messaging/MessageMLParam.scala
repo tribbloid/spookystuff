@@ -9,15 +9,16 @@ import org.json4s._
   */
 @DeveloperApi
 class MessageMLParam[Obj](
-                           outer: Codec[Obj],
-                           parent: String,
-                           name: String,
-                           doc: String,
-                           isValid: Obj => Boolean,
-                           formats: Formats
-                         ) extends org.apache.spark.ml.param.Param[Obj](parent, name, doc, isValid) {
+    outer: Codec[Obj],
+    parent: String,
+    name: String,
+    doc: String,
+    isValid: Obj => Boolean,
+    formats: Formats
+) extends org.apache.spark.ml.param.Param[Obj](parent, name, doc, isValid) {
 
   import outer._
+
   /** Creates a param pair with the given value (for Java). */
   //    override def w(value: M): ParamPair[M] = super.w(value)
 

@@ -26,10 +26,20 @@ class LocalityImplSuite extends SpookyEnvFixture {
 
   val base = sc.parallelize(baseArray, np)
 
-  def rdd1: RDD[(Int, WithID)] = base.map { v => v._1 -> WithID(Random.nextInt(1000))}.persist()
-  def rdd2: RDD[(Int, WithID)] = base.map { v => v._2 -> WithID(Random.nextInt(1000))}.persist()
+  def rdd1: RDD[(Int, WithID)] =
+    base
+      .map { v =>
+        v._1 -> WithID(Random.nextInt(1000))
+      }
+      .persist()
+  def rdd2: RDD[(Int, WithID)] =
+    base
+      .map { v =>
+        v._2 -> WithID(Random.nextInt(1000))
+      }
+      .persist()
 
-  describe("Spike: when 2 RDDs are cogrouped"){
+  describe("Spike: when 2 RDDs are cogrouped") {
 
     it("the first operand will NOT move if it has a partitioner") {
       val still = rdd1
@@ -39,13 +49,13 @@ class LocalityImplSuite extends SpookyEnvFixture {
       Validate(still, moved).assertLocalityWithoutOrder()
     }
 
-    it("the first operand containing unserializable objects will not trigger an exception" +
-      "if it has a partitioner") {
+    it(
+      "the first operand containing unserializable objects will not trigger an exception" +
+        "if it has a partitioner") {
       val still = rdd1
         .partitionBy(new HashPartitioner(np))
-        .mapValues {
-          v =>
-            NOTSerializableID(v._id): WithID
+        .mapValues { v =>
+          NOTSerializableID(v._id): WithID
         }
       val moved = rdd2
 
@@ -65,15 +75,14 @@ class LocalityImplSuite extends SpookyEnvFixture {
       Validate(moved, still, firstStay = false).assertLocalityWithoutOrder()
     }
 
-
-    it("the second operand containing unserializable objects will not trigger an exception" +
-      "if it has a partitioner") {
+    it(
+      "the second operand containing unserializable objects will not trigger an exception" +
+        "if it has a partitioner") {
       val moved = rdd1
       val still = rdd2
         .partitionBy(new HashPartitioner(np))
-        .mapValues {
-          v =>
-            NOTSerializableID(v._id): WithID
+        .mapValues { v =>
+          NOTSerializableID(v._id): WithID
         }
 
       if (!sc.isLocal) {
@@ -140,33 +149,33 @@ class LocalityImplSuite extends SpookyEnvFixture {
   //TODO: duplicate, delete!
   ignore("each partition of the first operand of cogroup should not move, but elements are shuffled") {
     // sc is the SparkContext
-    val rdd1: RDD[(Int, Int)] = sc.parallelize(1 to 10, 4)
-      .map(v => v->v)
+    val rdd1: RDD[(Int, Int)] = sc
+      .parallelize(1 to 10, 4)
+      .map(v => v -> v)
       .partitionBy(new HashPartitioner(4))
     rdd1.persist().count()
 
-    val rdd2: RDD[(Int, Int)] = sc.parallelize(1 to 10, 4)
-      .map(v => (11-v)->v)
+    val rdd2: RDD[(Int, Int)] = sc
+      .parallelize(1 to 10, 4)
+      .map(v => (11 - v) -> v)
 
     val cogrouped: RDD[(Int, (Iterable[Int], Iterable[Int]))] = rdd1.cogroup(rdd2)
-    val joined: RDD[(Int, (Int, Int))] = cogrouped.mapValues {
-      v =>
-        v._1.head -> v._2.head
+    val joined: RDD[(Int, (Int, Int))] = cogrouped.mapValues { v =>
+      v._1.head -> v._2.head
     }
 
     println(joined.toDebugString)
 
-    val zipped = joined.zipPartitions(rdd1, rdd2) {
-      (itr1, itr2, itr3) =>
-        val list1 = itr1.toList
-        val a1 = list1.map(_._2._1)
-        val b1 = list1.map(_._2._2)
-        val a2 = itr2.map(_._2).toList
-        val b2 = itr3.map(_._2).toList
+    val zipped = joined.zipPartitions(rdd1, rdd2) { (itr1, itr2, itr3) =>
+      val list1 = itr1.toList
+      val a1 = list1.map(_._2._1)
+      val b1 = list1.map(_._2._2)
+      val a2 = itr2.map(_._2).toList
+      val b2 = itr3.map(_._2).toList
 
-        Iterator(
-          (a1, b1, a2, b2)
-        )
+      Iterator(
+        (a1, b1, a2, b2)
+      )
     }
 
     val array = zipped.collect()
@@ -179,8 +188,9 @@ class LocalityImplSuite extends SpookyEnvFixture {
   describe("cogroupBase() can preserve both locality and in-partition orders") {
 
     val allImpls: Seq[Locality_OrdinalityImpl[Int, WithID]] = {
-      def partitioned = rdd1
-        .partitionBy(new HashPartitioner(np))
+      def partitioned =
+        rdd1
+          .partitionBy(new HashPartitioner(np))
 
       Seq(
         BroadcastLocalityImpl(rdd1),
@@ -192,35 +202,32 @@ class LocalityImplSuite extends SpookyEnvFixture {
   }
 
   private def testAllImpls(
-                            allImpls: Seq[Locality_OrdinalityImpl[Int, WithID]],
-                            rdd2: RDD[(Int, WithID)] = this.rdd2
-                          ) = {
-    allImpls.foreach {
-      impl =>
-        it(impl.getClass.getSimpleName) {
-          val first = impl.rdd1
-          val second = rdd2
-          val result = impl.cogroupBase(second)
-          Validate(
-            first,
-            second,
-            cogroupBaseOverride = Some(result)
-          ).assertLocalityAndOrder()
-        }
+      allImpls: Seq[Locality_OrdinalityImpl[Int, WithID]],
+      rdd2: RDD[(Int, WithID)] = this.rdd2
+  ) = {
+    allImpls.foreach { impl =>
+      it(impl.getClass.getSimpleName) {
+        val first = impl.rdd1
+        val second = rdd2
+        val result = impl.cogroupBase(second)
+        Validate(
+          first,
+          second,
+          cogroupBaseOverride = Some(result)
+        ).assertLocalityAndOrder()
+      }
     }
   }
 
   describe("... even if the first operand is not serializable") {
 
     val allImpls: Seq[Locality_OrdinalityImpl[Int, WithID]] = {
-      val rdd = rdd1.mapValues {
-        v =>
-          NOTSerializableID(v._id): WithID
+      val rdd = rdd1.mapValues { v =>
+        NOTSerializableID(v._id): WithID
       }
 
-      def partitioned = rdd1.partitionBy(new HashPartitioner(np)).mapValues {
-        v =>
-          NOTSerializableID(v._id): WithID
+      def partitioned = rdd1.partitionBy(new HashPartitioner(np)).mapValues { v =>
+        NOTSerializableID(v._id): WithID
       }
 
       Seq(
@@ -237,20 +244,19 @@ class LocalityImplSuite extends SpookyEnvFixture {
     val keys2 = (11 to 20).map(_ + size)
 
     val rdd1_extra = rdd1.union(
-      sc.parallelize(keys1).map {
-        i =>
-          i -> WithID(i)
+      sc.parallelize(keys1).map { i =>
+        i -> WithID(i)
       }
     )
     val rdd2_extra = rdd2.union(
-      sc.parallelize(keys2).map {
-        i =>
-          i -> WithID(i)
+      sc.parallelize(keys2).map { i =>
+        i -> WithID(i)
       }
     )
     val allImpls: Seq[Locality_OrdinalityImpl[Int, WithID]] = {
-      def partitioned = rdd1_extra
-        .partitionBy(new HashPartitioner(rdd1_extra.partitions.length))
+      def partitioned =
+        rdd1_extra
+          .partitionBy(new HashPartitioner(rdd1_extra.partitions.length))
 
       Seq(
         BroadcastLocalityImpl(rdd1_extra),
@@ -259,18 +265,17 @@ class LocalityImplSuite extends SpookyEnvFixture {
       )
     }
     testAllImpls(allImpls, rdd2_extra)
-    allImpls.foreach {
-      impl =>
-        it(impl.getClass.getSimpleName + ".cogroupBase() is always left-outer") {
+    allImpls.foreach { impl =>
+      it(impl.getClass.getSimpleName + ".cogroupBase() is always left-outer") {
 
-          val result = impl.cogroupBase(rdd2_extra)
-          val keys = result.keys.persist()
-          val count1 = keys.filter(i => keys1.contains(i)).count()
-          val count2 = keys.filter(i => keys2.contains(i)).count()
+        val result = impl.cogroupBase(rdd2_extra)
+        val keys = result.keys.persist()
+        val count1 = keys.filter(i => keys1.contains(i)).count()
+        val count2 = keys.filter(i => keys2.contains(i)).count()
 
-          assert(count1 == 10)
-          assert(count2 == 0)
-        }
+        assert(count1 == 10)
+        assert(count2 == 0)
+      }
     }
   }
 }
@@ -278,51 +283,48 @@ class LocalityImplSuite extends SpookyEnvFixture {
 object LocalityImplSuite extends Assertions {
 
   case class Validate[K: ClassTag, V: ClassTag](
-                                                 first: RDD[(K, V)],
-                                                 second: RDD[(K, V)],
-                                                 firstStay: Boolean = true,
-                                                 cogroupBaseOverride: Option[RDD[(K, (V, Iterable[V]))]] = None
-                                               ) {
+      first: RDD[(K, V)],
+      second: RDD[(K, V)],
+      firstStay: Boolean = true,
+      cogroupBaseOverride: Option[RDD[(K, (V, Iterable[V]))]] = None
+  ) {
 
     assert(first.partitions.length == second.partitions.length, "number of partitions mismatch")
 
     val (shouldStay: (Int, Int), shouldMove: (Int, Int)) = if (firstStay) {
-      (0->2, 1->3)
-    }
-    else {
-      (1->3, 0->2)
+      (0 -> 2, 1 -> 3)
+    } else {
+      (1 -> 3, 0 -> 2)
     }
 
-    val cogroupBase: RDD[(K, (V, Iterable[V]))] = cogroupBaseOverride.getOrElse{
+    val cogroupBase: RDD[(K, (V, Iterable[V]))] = cogroupBaseOverride.getOrElse {
 
       val cogrouped = first.cogroup[V](second)
 
-      cogrouped.mapValues {
-        triplet =>
-          Predef.assert(triplet._1.size == 1)
-          triplet._1.head -> triplet._2
+      cogrouped.mapValues { triplet =>
+        Predef.assert(triplet._1.size == 1)
+        triplet._1.head -> triplet._2
       }
     }
 
     val cogroupedValues: RDD[(V, Iterable[V])] = cogroupBase.values
 
     val allZipped: RDD[List[List[V]]] = cogroupedValues
-      .zipPartitions(first, second) {
-        (itr1, itr2, itr3) =>
-          val first = itr2.map(_._2).toList
-          val second = itr3.map(_._2).toList
-          val cogrouped = itr1.toList
+      .zipPartitions(first, second) { (itr1, itr2, itr3) =>
+        val first = itr2.map(_._2).toList
+        val second = itr3.map(_._2).toList
+        val cogrouped = itr1.toList
 
-          Iterator(List(first, second, cogrouped.map(_._1), cogrouped.flatMap(_._2)))
+        Iterator(List(first, second, cogrouped.map(_._1), cogrouped.flatMap(_._2)))
       }
       .persist()
     first.persist()
     second.persist()
 
-    val allZipped_sorted = allZipped.map {
-      v =>
+    val allZipped_sorted = allZipped
+      .map { v =>
         v.map(vv => vv.sortBy(_.hashCode))
-    }
+      }
       .persist()
 
     val size = allZipped.count()

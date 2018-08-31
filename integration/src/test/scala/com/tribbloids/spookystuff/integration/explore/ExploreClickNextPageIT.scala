@@ -18,9 +18,8 @@ class ExploreClickNextPageIT extends IntegrationFixture {
 
   override def doMain(): Unit = {
 
-    val snapshotAllPages = (
-      Snapshot()
-        +> Loop (
+    val snapshotAllPages = (Snapshot()
+      +> Loop(
         Click("ul.pagination a[rel=next]")
 //          +> Delay(2.seconds)
           +> Snapshot()
@@ -62,7 +61,7 @@ class ExploreClickNextPageIT extends IntegrationFixture {
     )
 
     val formatted = result.toJSON.collect().mkString("\n")
-    formatted.shouldBe (
+    formatted.shouldBe(
       """
         |{"depth":0,"page_index":[0],"title":"E-commerce training site","num_product":3}
         |{"depth":1,"index":[1],"page_index":[0,0],"category":"Computers","title":"Computers category","num_product":3}
@@ -80,7 +79,7 @@ class ExploreClickNextPageIT extends IntegrationFixture {
     )
   }
 
-  override def numSessions =  6
+  override def numSessions = 6
 
   override def numPages = 12
 }

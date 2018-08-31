@@ -19,14 +19,14 @@ object Lock {
   }
 
   def Transient(
-                 _id: Option[UUID] = Some(UUID.randomUUID()), //can only be lifted by PreferUAV that has the same token.
-                 ctx: LifespanContext = LifespanContext()
-               ) = Lock(_id, ctx, 0)
+      _id: Option[UUID] = Some(UUID.randomUUID()), //can only be lifted by PreferUAV that has the same token.
+      ctx: LifespanContext = LifespanContext()
+  ) = Lock(_id, ctx, 0)
 
   def OnHold(
-              _id: Option[UUID] = Some(UUID.randomUUID()), //can only be lifted by PreferUAV that has the same token.
-              ctx: LifespanContext = LifespanContext()
-            ) = Lock(_id, ctx, System.currentTimeMillis() + LOCK_EXPIRE_AFTER)
+      _id: Option[UUID] = Some(UUID.randomUUID()), //can only be lifted by PreferUAV that has the same token.
+      ctx: LifespanContext = LifespanContext()
+  ) = Lock(_id, ctx, System.currentTimeMillis() + LOCK_EXPIRE_AFTER)
 }
 
 /**
@@ -41,10 +41,10 @@ object Lock {
   *   - contain identical threadID (in this case, either in the same task or previous task that use it has completed)
   */
 case class Lock(
-                 _id: Option[UUID], //can only be lifted by PreferUAV that has the same token.
-                 ctx: LifespanContext,
-                 expireAfter: Long
-               ) extends IDMixin {
+    _id: Option[UUID], //can only be lifted by PreferUAV that has the same token.
+    ctx: LifespanContext,
+    expireAfter: Long
+) extends IDMixin {
 
   def timeMillisLeft: Long = expireAfter - System.currentTimeMillis()
 
@@ -72,7 +72,7 @@ case class Lock(
     */
   def getAvailability(keyOpt: Option[Lock] = None): Int = {
 
-    for (key <-keyOpt) {
+    for (key <- keyOpt) {
       if (Try(this._id.get == key._id.get).getOrElse(false)) return 3
       else if (Try(this.ctx.taskAttemptID.get == key.ctx.taskAttemptID.get).getOrElse(false)) return 2
       //since 1 thread cannot run multiple tasks at the same time,

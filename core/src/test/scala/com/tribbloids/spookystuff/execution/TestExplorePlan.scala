@@ -3,7 +3,7 @@ package com.tribbloids.spookystuff.execution
 import com.tribbloids.spookystuff.actions.{Trace, Wget}
 import com.tribbloids.spookystuff.extractors.impl.Lit
 import com.tribbloids.spookystuff.testutils.LocalPathDocsFixture
-import com.tribbloids.spookystuff.{QueryException, SpookyEnvFixture, dsl}
+import com.tribbloids.spookystuff.{dsl, QueryException, SpookyEnvFixture}
 import org.apache.spark.HashPartitioner
 
 /**
@@ -32,7 +32,7 @@ class TestExplorePlan extends SpookyEnvFixture with LocalPathDocsFixture {
     println(explored.plan.toString)
   }
 
-  it("ExplorePlan should create a new beaconRDD if its upstream doesn't have one"){
+  it("ExplorePlan should create a new beaconRDD if its upstream doesn't have one") {
     val partitioner = new HashPartitioner(8)
 
     val src = spooky
@@ -48,7 +48,6 @@ class TestExplorePlan extends SpookyEnvFixture with LocalPathDocsFixture {
 
     assert(rdd1.plan.beaconRDDOpt.get.partitioner.get eq partitioner)
   }
-
 
   it("ExplorePlan should inherit old beaconRDD from upstream if exists") {
     val partitioner = new HashPartitioner(8)
@@ -78,8 +77,9 @@ class TestExplorePlan extends SpookyEnvFixture with LocalPathDocsFixture {
 
     val resourcePath = DIR_URL
 
-    val df = spooky.create(Seq(resourcePath.toString))
-      .fetch{
+    val df = spooky
+      .create(Seq(resourcePath.toString))
+      .fetch {
         Wget('_)
       }
       .explore(S"root directory".attr("path"))(
@@ -97,7 +97,7 @@ class TestExplorePlan extends SpookyEnvFixture with LocalPathDocsFixture {
 
   it("ExplorePlan will throw an exception if OrdinalField == DepthField") {
     val rdd1 = spooky
-      .fetch{
+      .fetch {
         Wget(HTML_URL)
       }
 
@@ -148,9 +148,8 @@ class TestExplorePlan extends SpookyEnvFixture with LocalPathDocsFixture {
       assert(ds.rdd.count() == 2)
       assert(ds.spooky.spookyMetrics.pagesFetched.value <= 3) //TODO: this can be reduced further
 
-      ds.squashedRDD.foreach {
-        squashedRow =>
-          Predef.assert(squashedRow.traceView.keyBy == TestExplorePlan.CustomKeyBy)
+      ds.squashedRDD.foreach { squashedRow =>
+        Predef.assert(squashedRow.traceView.keyBy == TestExplorePlan.CustomKeyBy)
       }
     }
   }

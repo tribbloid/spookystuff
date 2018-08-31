@@ -25,38 +25,36 @@ object GenPartitionerLike {
     implicit def ctg: ClassTag[K]
 
     final def createBeaconRDD(
-                               ref: RDD[_]
-                             ): Option[BeaconRDD[K]] = {
+        ref: RDD[_]
+    ): Option[BeaconRDD[K]] = {
 
       val result: Option[BeaconRDD[K]] = _createBeaconRDD(ref)
-      result.foreach {
-        rdd =>
-          rdd.assertIsBeacon()
+      result.foreach { rdd =>
+        rdd.assertIsBeacon()
       }
       result
     }
 
     def _createBeaconRDD(
-                          ref: RDD[_]
-                        ): Option[BeaconRDD[K]] = None
+        ref: RDD[_]
+    ): Option[BeaconRDD[K]] = None
 
     //TODO: comparing to old implementation, does this create too much object overhead?
     def groupByKey[V: ClassTag](
-                                 rdd: RDD[(K, V)],
-                                 beaconRDDOpt: Option[BeaconRDD[K]] = None
-                               ): RDD[(K, Iterable[V])] = {
+        rdd: RDD[(K, V)],
+        beaconRDDOpt: Option[BeaconRDD[K]] = None
+    ): RDD[(K, Iterable[V])] = {
       val itrRDD = rdd.mapValues(v => Iterable(v))
       reduceByKey(itrRDD, {
         _ ++ _
-      },
-        beaconRDDOpt)
+      }, beaconRDDOpt)
     }
 
     def reduceByKey[V: ClassTag](
-                                  rdd: RDD[(K, V)],
-                                  reducer: (V, V) => V,
-                                  beaconRDDOpt: Option[BeaconRDD[K]] = None
-                                ): RDD[(K, V)]
+        rdd: RDD[(K, V)],
+        reducer: (V, V) => V,
+        beaconRDDOpt: Option[BeaconRDD[K]] = None
+    ): RDD[(K, V)]
 
     //      groupByKey(rdd, beaconRDDOpt)
     //        .map(
@@ -75,10 +73,10 @@ object GenPartitionerLike {
     def schema: SpookySchema
 
     def reduceByKey[V: ClassTag](
-                                  rdd: RDD[(K, V)],
-                                  reducer: (V, V) => V,
-                                  beaconRDDOpt: Option[BeaconRDD[K]] = None
-                                ): RDD[(K, V)] = {
+        rdd: RDD[(K, V)],
+        reducer: (V, V) => V,
+        beaconRDDOpt: Option[BeaconRDD[K]] = None
+    ): RDD[(K, V)] = {
 
       val ec = schema.ec
       ec.persist(rdd) //TODO: optional?
@@ -86,19 +84,19 @@ object GenPartitionerLike {
 
       val keysRepartitioned = repartitionKey(keys, beaconRDDOpt)
 
-      val result = LocalityRDDView(keysRepartitioned).cogroupBase(rdd)
+      val result = LocalityRDDView(keysRepartitioned)
+        .cogroupBase(rdd)
         .values
-        .map {
-          tuple =>
-            tuple._1 -> tuple._2.reduce(reducer)
+        .map { tuple =>
+          tuple._1 -> tuple._2.reduce(reducer)
         }
       result
     }
 
     def repartitionKey(
-                        rdd: RDD[K],
-                        beaconRDDOpt: Option[BeaconRDD[K]] = None
-                      ): RDD[(K, K)]
+        rdd: RDD[K],
+        beaconRDDOpt: Option[BeaconRDD[K]] = None
+    ): RDD[(K, K)]
   }
 
   trait Passthrough extends AnyGenPartitioner {
@@ -108,14 +106,14 @@ object GenPartitionerLike {
     }
 
     case class Inst[K](
-                        implicit val ctg: ClassTag[K]
-                      ) extends Instance[K] {
+        implicit val ctg: ClassTag[K]
+    ) extends Instance[K] {
 
       override def reduceByKey[V: ClassTag](
-                                             rdd: RDD[(K, V)],
-                                             reducer: (V, V) => V,
-                                             beaconRDDOpt: Option[BeaconRDD[K]] = None
-                                           ): RDD[(K, V)] = {
+          rdd: RDD[(K, V)],
+          reducer: (V, V) => V,
+          beaconRDDOpt: Option[BeaconRDD[K]] = None
+      ): RDD[(K, V)] = {
         rdd
       }
     }

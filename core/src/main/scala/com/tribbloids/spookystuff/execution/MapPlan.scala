@@ -8,9 +8,9 @@ import com.tribbloids.spookystuff.row._
 import org.apache.spark.sql.types.{ArrayType, IntegerType}
 
 case class MapPlan(
-                    override val child: ExecutionPlan,
-                    rowMapperFactory: RowMapperFactory
-                  ) extends UnaryPlan(child) {
+    override val child: ExecutionPlan,
+    rowMapperFactory: RowMapperFactory
+) extends UnaryPlan(child) {
 
   @transient lazy val mapFn = {
     rowMapperFactory.apply(child.schema)
@@ -30,9 +30,9 @@ case class MapPlan(
 object OptimizedMapPlan {
 
   def apply(
-             child: ExecutionPlan,
-             rowMapperFactory: RowMapperFactory
-           ) = {
+      child: ExecutionPlan,
+      rowMapperFactory: RowMapperFactory
+  ) = {
 
     child match {
       case plan: ExplorePlan if !plan.isCached =>
@@ -74,12 +74,12 @@ object MapPlan {
   }
 
   case class Flatten(
-                      onField: Field,
-                      ordinalField: Field,
-                      sampler: Sampler[Any],
-                      isLeft: Boolean
-                    )(val childSchema: SpookySchema) extends RowMapper {
-
+      onField: Field,
+      ordinalField: Field,
+      sampler: Sampler[Any],
+      isLeft: Boolean
+  )(val childSchema: SpookySchema)
+      extends RowMapper {
 
     import org.apache.spark.ml.dsl.utils.refl.ScalaType._
 
@@ -108,8 +108,9 @@ object MapPlan {
   }
 
   case class Remove(
-                     toBeRemoved: Seq[Field]
-                   )(val childSchema: SpookySchema) extends RowMapper {
+      toBeRemoved: Seq[Field]
+  )(val childSchema: SpookySchema)
+      extends RowMapper {
 
     override val schema = childSchema -- toBeRemoved
 
@@ -117,11 +118,12 @@ object MapPlan {
   }
 
   case class SavePages(
-                        path: Extractor[String],
-                        extension: Extractor[String],
-                        page: Extractor[Doc],
-                        overwrite: Boolean
-                      )(val childSchema: SpookySchema) extends RowMapper {
+      path: Extractor[String],
+      extension: Extractor[String],
+      page: Extractor[Doc],
+      overwrite: Boolean
+  )(val childSchema: SpookySchema)
+      extends RowMapper {
 
     val resolver: childSchema.Resolver = childSchema.newResolver
 
@@ -134,28 +136,24 @@ object MapPlan {
     override def apply(v: SquashedFetchedRow): SquashedFetchedRow = {
       val wSchema = v.WSchema(schema)
 
-      wSchema
-        .unsquash
-        .foreach{
-          pageRow =>
-            var pathStr: Option[String] = _path.lift(pageRow).map(_.toString).map {
-              str =>
-                val splitted = str.split(":")
-                if (splitted.size <= 2) str
-                else splitted.head + ":" + splitted.slice(1, Int.MaxValue).mkString("%3A")
-            }
+      wSchema.unsquash
+        .foreach { pageRow =>
+          var pathStr: Option[String] = _path.lift(pageRow).map(_.toString).map { str =>
+            val splitted = str.split(":")
+            if (splitted.size <= 2) str
+            else splitted.head + ":" + splitted.slice(1, Int.MaxValue).mkString("%3A")
+          }
 
-            val ext = _ext.lift(pageRow).getOrElse("")
-            if (ext.nonEmpty) pathStr = pathStr.map(_ + "." + ext)
+          val ext = _ext.lift(pageRow).getOrElse("")
+          if (ext.nonEmpty) pathStr = pathStr.map(_ + "." + ext)
 
-            pathStr.foreach {
-              str =>
-                val page = _pageExpr.lift(pageRow)
+          pathStr.foreach { str =>
+            val page = _pageExpr.lift(pageRow)
 
-                schema.spooky.spookyMetrics.pagesSaved += 1
+            schema.spooky.spookyMetrics.pagesSaved += 1
 
-                page.foreach(_.save(Seq(str), overwrite)(schema.spooky))
-            }
+            page.foreach(_.save(Seq(str), overwrite)(schema.spooky))
+          }
         }
       v
     }

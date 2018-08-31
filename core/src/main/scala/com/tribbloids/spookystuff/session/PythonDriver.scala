@@ -40,9 +40,8 @@ object PythonDriver {
     FileUtils.deleteQuietly(pythonDir)
 
     val resourceOpt = SpookyUtils.getCPResource(PythonDriver.PYTHON_RESOURCE)
-    resourceOpt.foreach {
-      resource =>
-        SpookyUtils.extractResource(resource, pythonPath)
+    resourceOpt.foreach { resource =>
+      SpookyUtils.extractResource(resource, pythonPath)
     }
 
     //    val moduleResourceOpt = SpookyUtils.getCPResource(PythonDriver.MODULE_RESOURCE)
@@ -56,9 +55,9 @@ object PythonDriver {
     pythonPath
   }
 
-  val NO_RETURN_VALUE: String =   "======== *!?no return value!?* ========"
-  val EXECUTION_RESULT: String =  "======== *!?execution result!?* ========"
-  val ERROR_HEADER: String =        "======== *!?error info!?* ========"
+  val NO_RETURN_VALUE: String = "======== *!?no return value!?* ========"
+  val EXECUTION_RESULT: String = "======== *!?execution result!?* ========"
+  val ERROR_HEADER: String = "======== *!?error info!?* ========"
 
   /**
     * Checks if there is a syntax error or an exception
@@ -69,21 +68,21 @@ object PythonDriver {
 
     val indexed = lines.zipWithIndex
     val tracebackRows: Seq[Int] = indexed.filter(_._1.startsWith("Traceback ")).map(_._2)
-    val errorRows: Seq[Int] = indexed.filter {
-      v =>
+    val errorRows: Seq[Int] = indexed
+      .filter { v =>
         val matcher = errorPattern.matcher(v._1)
         matcher.find
-    }.map(_._2)
+      }
+      .map(_._2)
 
     if ((tracebackRows.nonEmpty && errorRows.nonEmpty) || syntaxErrorIn(lines)) true
     else false
   }
 
   def syntaxErrorIn(lines: Seq[String]): Boolean = {
-    val syntaxErrorLine = lines.filter {
-      v =>
-        val matcher = syntaxErrorPattern.matcher(v)
-        matcher.find
+    val syntaxErrorLine = lines.filter { v =>
+      val matcher = syntaxErrorPattern.matcher(v)
+      matcher.find
     }
     syntaxErrorLine.nonEmpty
   }
@@ -96,14 +95,14 @@ object PythonDriver {
   */
 //TODO: not reusing Python worker for spark, is it not optimal?
 class PythonDriver(
-                    val pythonExe: String = "python2",
-                    val autoImports: String =
-                    """
+    val pythonExe: String = "python2",
+    val autoImports: String = """
                       |import os
                       |from __future__ import print_function
                     """.trim.stripMargin,
-                    override val _lifespan: Lifespan = new Lifespan.Auto()
-                  ) extends PythonProcess(pythonExe) with LocalCleanable {
+    override val _lifespan: Lifespan = new Lifespan.Auto()
+) extends PythonProcess(pythonExe)
+    with LocalCleanable {
 
   import scala.concurrent.duration._
 
@@ -151,27 +150,26 @@ class PythonDriver(
   override def cleanImpl(): Unit = {
     Try {
       CommonUtils.retry(5) {
-        try { if (process.isAlive) {
-          CommonUtils.withDeadline(3.seconds) {
-            try {
-              this._interpret("exit()")
+        try {
+          if (process.isAlive) {
+            CommonUtils.withDeadline(3.seconds) {
+              try {
+                this._interpret("exit()")
+              } catch {
+                case e: PyException =>
+              }
             }
-            catch {
-              case e: PyException =>
-            }
+            Thread.sleep(1000)
+            assert(!process.isAlive)
           }
-          Thread.sleep(1000)
-          assert(!process.isAlive)
-        }}
-        catch {
+        } catch {
           case e: TimeoutException =>
             throw Silent(e)
           case e: Throwable =>
             throw e
         }
       }
-    }
-      .getOrElse(
+    }.getOrElse(
         closeOrInterrupt()
       )
   }
@@ -192,7 +190,9 @@ class PythonDriver(
     s"$logPrefix $effectiveLine"
   }
 
-  private def _interpret(code: String, spookyOpt: Option[SpookyContext] = None, detectError: Boolean = true): Array[String] = {
+  private def _interpret(code: String,
+                         spookyOpt: Option[SpookyContext] = None,
+                         detectError: Boolean = true): Array[String] = {
     val indentedCode = FlowUtils.indent(code)
 
     LoggerFactory.getLogger(this.getClass).debug(s">>> $logPrefix INPUT >>>\n" + indentedCode)
@@ -207,20 +207,20 @@ class PythonDriver(
         .map(
           removePrompts
         )
-    }
-    catch {
+    } catch {
       case e: Throwable =>
         spookyOpt.foreach(
           _.spookyMetrics.pythonInterpretationError += 1
         )
         val cause = e
         if (this.isCleaned) {
-          LoggerFactory.getLogger(this.getClass).debug(
-            s"ignoring ${cause.getClass.getSimpleName}, python process is cleaned"
-          )
+          LoggerFactory
+            .getLogger(this.getClass)
+            .debug(
+              s"ignoring ${cause.getClass.getSimpleName}, python process is cleaned"
+            )
           return Array.empty[String]
-        }
-        else {
+        } else {
           val ee = new PyException(
             indentedCode,
             this.outputBuffer,
@@ -238,8 +238,9 @@ class PythonDriver(
     //      LoggerFactory.getLogger(this.getClass).info(s"$$$$$$ PYTHON-${this.taskOrThread.id} [NO OUTPUT] ===============\n" + rows.mkString("\n"))
     //    }
 
-    val hasError = if (detectError) primitiveErrorIn(rows)
-    else syntaxErrorIn(rows)
+    val hasError =
+      if (detectError) primitiveErrorIn(rows)
+      else syntaxErrorIn(rows)
 
     if (hasError) {
       spookyOpt.foreach(
@@ -257,10 +258,10 @@ class PythonDriver(
   }
 
   private def _interpretCaptureError(
-                                      preamble: String = "",
-                                      code: String = "",
-                                      spookyOpt: Option[SpookyContext] = None
-                                    ): Array[String] = {
+      preamble: String = "",
+      code: String = "",
+      spookyOpt: Option[SpookyContext] = None
+  ): Array[String] = {
 
     val codeTryExcept =
       s"""
@@ -305,9 +306,9 @@ class PythonDriver(
 
   //TODO: due to unchecked use of thread-unsafe mutable objects (e.g. ArrayBuffer), all following APIs are rendered synchronized.
   def interpret(
-                 code: String,
-                 spookyOpt: Option[SpookyContext] = None
-               ): Array[String] = this.synchronized{
+      code: String,
+      spookyOpt: Option[SpookyContext] = None
+  ): Array[String] = this.synchronized {
     val _pendingImports = pendingImports.mkString("\n")
     val _pendingCode = pendingLines.mkString("\n")
     val allCode = _pendingCode + "\n" + code
@@ -324,10 +325,10 @@ class PythonDriver(
     * @return stdout strings -> print(resultVar)
     */
   def eval(
-            code: String,
-            resultVarOpt: Option[String] = None,
-            spookyOpt: Option[SpookyContext] = None
-          ): (Seq[String], Option[String]) = this.synchronized{
+      code: String,
+      resultVarOpt: Option[String] = None,
+      spookyOpt: Option[SpookyContext] = None
+  ): (Seq[String], Option[String]) = this.synchronized {
     resultVarOpt match {
       case None =>
         val _code =
@@ -350,24 +351,26 @@ class PythonDriver(
              |del($resultVar)
           """.trim.stripMargin
         val rows = interpret(_code, spookyOpt).toSeq
-        val splitterIndex = rows.zipWithIndex.find(_._1 == EXECUTION_RESULT)
+        val splitterIndex = rows.zipWithIndex
+          .find(_._1 == EXECUTION_RESULT)
           .getOrElse {
             assertNotCleaned("Empty output")
             if (!this.process.isAlive)
               throw new AssertionError(s"$logPrefix python driver is dead")
             else
               throw new AssertionError(s"$logPrefix Cannot find $EXECUTION_RESULT\n" + rows.mkString("\n"))
-          }._2
+          }
+          ._2
         val split = rows.splitAt(splitterIndex)
 
         val _result = split._2.slice(1, Int.MaxValue).mkString("\n")
-        val resultOpt = if (_result == NO_RETURN_VALUE) None
-        else Some(_result)
+        val resultOpt =
+          if (_result == NO_RETURN_VALUE) None
+          else Some(_result)
 
         split._1 -> resultOpt
     }
   }
-
 
   def evalExpr(expr: String, spookyOpt: Option[SpookyContext] = None): Option[String] = {
     val tempName = "_temp" + SpookyUtils.randomSuffix
@@ -381,20 +384,19 @@ class PythonDriver(
     result._2
   }
 
-  def lazyInterpret(code: String): Unit = this.synchronized{
+  def lazyInterpret(code: String): Unit = this.synchronized {
     pendingLines += code
   }
 
-  def batchImport(codes: Seq[String]): Unit = this.synchronized{
+  def batchImport(codes: Seq[String]): Unit = this.synchronized {
     val effectiveCodes = ArrayBuffer[String]()
     codes
       .map(_.trim)
-      .foreach {
-        code =>
-          if (!registeredImports.contains(code)) {
-            pendingImports += code
-            registeredImports += code
-          }
+      .foreach { code =>
+        if (!registeredImports.contains(code)) {
+          pendingImports += code
+          registeredImports += code
+        }
       }
   }
 }

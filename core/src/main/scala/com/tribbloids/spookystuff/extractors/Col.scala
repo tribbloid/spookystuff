@@ -19,12 +19,13 @@ object Col {
       //      case str: String if ctg <:< ClassTag(classOf[String]) =>
       case str: String =>
         val delimiter = Const.keyDelimiter
-        val regex = (delimiter+"\\{[^\\{\\}\r\n]*\\}").r
+        val regex = (delimiter + "\\{[^\\{\\}\r\n]*\\}").r
 
-        val result = if (regex.findFirstIn(str).isEmpty)
-          Lit[String](str)
-        else
-          Extractors.ReplaceKeyExpr(str)
+        val result =
+          if (regex.findFirstIn(str).isEmpty)
+            Lit[String](str)
+          else
+            Extractors.ReplaceKeyExpr(str)
 
         result.asInstanceOf[Extractor[T]]
       case _ =>
@@ -44,8 +45,8 @@ object Col {
 }
 
 case class Col[T](
-                   ex: Extractor[_ >: T]
-                 ) extends ProtoAPI{
+    ex: Extractor[_ >: T]
+) extends ProtoAPI {
 
   override def toString = this.memberStr
 
@@ -55,14 +56,14 @@ case class Col[T](
   def value: T = {
     ex match {
       case v: Lit[_, T] => v.value
-      case _ => throw new UnsupportedOperationException("Not a literal")
+      case _            => throw new UnsupportedOperationException("Not a literal")
     }
   }
 
   override def toMessage_>> : Any = {
     ex match {
       case v: Lit[_, T] => v.value
-      case _ => ex.message
+      case _            => ex.message
     }
   }
 }

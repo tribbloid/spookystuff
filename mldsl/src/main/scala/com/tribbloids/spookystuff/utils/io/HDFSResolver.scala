@@ -12,9 +12,9 @@ import org.apache.hadoop.security.UserGroupInformation
   * Created by peng on 17/05/17.
   */
 case class HDFSResolver(
-                         hadoopConf: SerBox[Configuration],
-                         ugiFactory: () => Option[UserGroupInformation] = HDFSResolver.noUGIFactory
-                       ) extends URIResolver {
+    hadoopConf: SerBox[Configuration],
+    ugiFactory: () => Option[UserGroupInformation] = HDFSResolver.noUGIFactory
+) extends URIResolver {
 
   import Resource._
 
@@ -28,7 +28,7 @@ case class HDFSResolver(
 
   def ugiOpt = ugiFactory()
 
-  protected def doAsUGI[T](f: =>T): T = {
+  protected def doAsUGI[T](f: => T): T = {
     ugiOpt match {
       case None =>
         f
@@ -41,8 +41,7 @@ case class HDFSResolver(
               }
             }
           }
-        }
-        catch {
+        } catch {
           case e: Throwable =>
             // UGI.doAs wraps any exception in PrivilegedActionException, should be unwrapped and thrown
             throw CommonUtils.unboxException[PrivilegedActionException](e)
@@ -55,17 +54,16 @@ case class HDFSResolver(
 
     lazy val fs: FileSystem = path.getFileSystem(_hadoopConf) //DON'T close! shared by all in the process
 
-    override lazy val absolutePathStr: String = doAsUGI{
+    override lazy val absolutePathStr: String = doAsUGI {
 
       if (path.isAbsolute) {
         if (path.isAbsoluteAndSchemeAuthorityNull)
           "file:" + path.toString
         else
           path.toString
-      }
-      else {
+      } else {
         val root = fs.getWorkingDirectory.toString.stripSuffix("/")
-        root +"/" +path.toString
+        root + "/" + path.toString
       }
     }
 
@@ -102,13 +100,11 @@ case class HDFSResolver(
 
           val children = fs.listStatus(path).toSeq
 
-          children.map {
-            status =>
-              val childExecution = Execution(status.getPath)
-              childExecution.input(_.rootMetadata)
+          children.map { status =>
+            val childExecution = Execution(status.getPath)
+            childExecution.input(_.rootMetadata)
           }
-        }
-        else Nil
+        } else Nil
       }
     }
 
@@ -132,8 +128,7 @@ case class HDFSResolver(
       }
       try {
         f(ir)
-      }
-      finally {
+      } finally {
         ir.clean()
       }
     }
@@ -153,8 +148,7 @@ case class HDFSResolver(
       try {
         val result = f(or)
         result
-      }
-      finally {
+      } finally {
         or.clean()
       }
     }

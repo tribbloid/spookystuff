@@ -31,42 +31,35 @@ object LinkSuite {
 
     assert(uavs.nonEmpty)
 
-    lazy val info = "Links are incorrect:\n" + uavStatuses.map {
-      status =>
+    lazy val info = "Links are incorrect:\n" + uavStatuses
+      .map { status =>
         s"${status.uav}\t${status.lockStr}"
-    }
+      }
       .mkString("\n")
-    if (
-      uavs.length != spooky.sparkContext.defaultParallelism ||
+    if (uavs.length != spooky.sparkContext.defaultParallelism ||
         uavs.length != uavs.distinct.length ||
-        uris.length != uris.distinct.length
-    ) {
+        uris.length != uris.distinct.length) {
       throw new AssertionError(info)
     }
 
-    val uri_statuses = uavStatuses.flatMap {
-      status =>
-        status.uav.uris.map {
-          uri =>
-            uri -> status
-        }
+    val uri_statuses = uavStatuses.flatMap { status =>
+      status.uav.uris.map { uri =>
+        uri -> status
+      }
     }
     val grouped = uri_statuses.groupBy(_._1)
-    grouped.values.foreach {
-      v =>
-        assert(
-          v.length == 1,
-          s""""
+    grouped.values.foreach { v =>
+      assert(
+        v.length == 1,
+        s""""
              |multiple UAVs sharing the same uris:
-             |${
-            v.map {
-              vv =>
-                s"${vv._2.uav} @ ${vv._2.lockStr}"
-            }
-              .mkString("\n")
-          }
+             |${v
+             .map { vv =>
+               s"${vv._2.uav} @ ${vv._2.lockStr}"
+             }
+             .mkString("\n")}
              """.stripMargin
-        )
+      )
     }
   }
 }
@@ -94,10 +87,9 @@ trait LinkSuite extends UAVFixture {
 
     val trial = LinkUtils.tryLinkRDD(spooky, onHold = onHold)
 
-    val result: RDD[Link] = trial.map {
-      opt =>
-        val v = opt.get
-        v
+    val result: RDD[Link] = trial.map { opt =>
+      val v = opt.get
+      v
     }
 
     LinkSuite.validate(spooky, result)
@@ -132,109 +124,111 @@ trait LinkSuite extends UAVFixture {
     }
   }
 
-  runTests(routings) {
-    spooky =>
+  runTests(routings) { spooky =>
+    it("sanity tests") {
 
-      it("sanity tests") {
+      val linkRDD = getLinkRDD(spooky)
 
-        val linkRDD = getLinkRDD(spooky)
+      val uavss = for (i <- 0 to 10) yield {
+        val uavs = linkRDD.map(_.uav).collect().toSeq
+        println(s"=== $i\t===: " + uavs.mkString("\t"))
 
-        val uavss = for (i <- 0 to 10) yield {
-          val uavs = linkRDD.map(_.uav).collect().toSeq
-          println(s"=== $i\t===: " + uavs.mkString("\t"))
-
-          //should be registered in both Link and Cleanable
-          spooky.sparkContext.runEverywhere() {
-            _ =>
-              val registered = Link.registered.values.toSet
-              val cleanable = Cleanable.getTyped[Link].toSet
-              Predef.assert(registered.subsetOf(cleanable))
-          }
-
-          //Link should use different UAVs
-          val uris = uavs.map(_.primaryURI)
-          Predef.assert(uris.size == this.parallelism, "Duplicated URIs:\n" + uris.mkString("\n"))
-          Predef.assert(uris.size == uris.distinct.size, "Duplicated URIs:\n" + uris.mkString("\n"))
-
-          uavs
+        //should be registered in both Link and Cleanable
+        spooky.sparkContext.runEverywhere() { _ =>
+          val registered = Link.registered.values.toSet
+          val cleanable = Cleanable.getTyped[Link].toSet
+          Predef.assert(registered.subsetOf(cleanable))
         }
 
-        assert(uavss.distinct.size == 1, "getLinkRDD() is not idemponent" + uavss.mkString("\n"))
+        //Link should use different UAVs
+        val uris = uavs.map(_.primaryURI)
+        Predef.assert(uris.size == this.parallelism, "Duplicated URIs:\n" + uris.mkString("\n"))
+        Predef.assert(uris.size == uris.distinct.size, "Duplicated URIs:\n" + uris.mkString("\n"))
+
+        uavs
       }
 
-      it("Link created in the same Task should be reused") {
+      assert(uavss.distinct.size == 1, "getLinkRDD() is not idemponent" + uavss.mkString("\n"))
+    }
 
-        val fleet = this.fleet
-        val linkStrs: Array[Boolean] = sc.parallelize(fleetURIs).map {
-          connStr =>
-            val session = new Session(spooky)
-            val link1 = Dispatcher(
-              fleet,
-              session
-            )
-              .get
-            val link2 = Dispatcher(
-              fleet,
-              session
-            )
-              .get
-            Thread.sleep(5000) //otherwise a task will complete so fast such that another task hasn't start yet.
+    it("Link created in the same Task should be reused") {
+
+      val fleet = this.fleet
+      val linkStrs: Array[Boolean] = sc
+        .parallelize(fleetURIs)
+        .map { connStr =>
+          val session = new Session(spooky)
+          val link1 = Dispatcher(
+            fleet,
+            session
+          ).get
+          val link2 = Dispatcher(
+            fleet,
+            session
+          ).get
+          Thread.sleep(5000) //otherwise a task will complete so fast such that another task hasn't start yet.
           val result = link1 == link2
-            result
+          result
         }
-          .collect()
-        assert(spooky.getMetrics[UAVMetrics].linkCreated.value == parallelism)
-        assert(spooky.getMetrics[UAVMetrics].linkDestroyed.value == 0)
-        linkStrs.foreach {Predef.assert}
-      }
+        .collect()
+      assert(spooky.getMetrics[UAVMetrics].linkCreated.value == parallelism)
+      assert(spooky.getMetrics[UAVMetrics].linkDestroyed.value == 0)
+      linkStrs.foreach { Predef.assert }
+    }
 
-      for (routing2 <- routings) {
+    for (routing2 <- routings) {
 
-        it(
-          s"~> ${ routing2.getClass.getSimpleName}:" +
-            s" available Link can be recommissioned in another Task"
-        ) {
+      it(
+        s"~> ${routing2.getClass.getSimpleName}:" +
+          s" available Link can be recommissioned in another Task"
+      ) {
 
-          val routing1 = spooky.getConf[UAVConf].routing
+        val routing1 = spooky.getConf[UAVConf].routing
 
-          val linkRDD1: RDD[Link] = getLinkRDD(spooky)
+        val linkRDD1: RDD[Link] = getLinkRDD(spooky)
 
-          spooky.getConf[UAVConf].routing = routing2
-          spooky.rebroadcast()
+        spooky.getConf[UAVConf].routing = routing2
+        spooky.rebroadcast()
 
-          try {
+        try {
 
+          assert(spooky.getMetrics[UAVMetrics].linkCreated.value == parallelism)
+          assert(spooky.getMetrics[UAVMetrics].linkDestroyed.value == 0)
+
+          LinkUtils.unlockAll(sc)
+
+          val linkRDD2: RDD[Link] = getLinkRDD(spooky)
+
+          if (routing1 == routing2) {
             assert(spooky.getMetrics[UAVMetrics].linkCreated.value == parallelism)
             assert(spooky.getMetrics[UAVMetrics].linkDestroyed.value == 0)
-
-            LinkUtils.unlockAll(sc)
-
-            val linkRDD2: RDD[Link] = getLinkRDD(spooky)
-
-            if (routing1 == routing2) {
-              assert(spooky.getMetrics[UAVMetrics].linkCreated.value == parallelism)
-              assert(spooky.getMetrics[UAVMetrics].linkDestroyed.value == 0)
-              linkRDD1.map(_.toString).collect().mkString("\n").shouldBe(
+            linkRDD1
+              .map(_.toString)
+              .collect()
+              .mkString("\n")
+              .shouldBe(
                 linkRDD2.map(_.toString).collect().mkString("\n"),
                 sort = true
               )
-            }
-            else {
-              assert(spooky.getMetrics[UAVMetrics].linkCreated.value == parallelism)
-              // TODO: should be parallelism*2!
-              assert(spooky.getMetrics[UAVMetrics].linkDestroyed.value == 0)
-              linkRDD1.map(_.uav).collect().mkString("\n").shouldBe(
+          } else {
+            assert(spooky.getMetrics[UAVMetrics].linkCreated.value == parallelism)
+            // TODO: should be parallelism*2!
+            assert(spooky.getMetrics[UAVMetrics].linkDestroyed.value == 0)
+            linkRDD1
+              .map(_.uav)
+              .collect()
+              .mkString("\n")
+              .shouldBe(
                 linkRDD2.map(_.uav).collect().mkString("\n"),
                 sort = true
               )
-            }
           }
-          finally {
-            spooky.getConf[UAVConf].routing = routing1
-            spooky.rebroadcast()
-          }
+        } finally {
+          spooky.getConf[UAVConf].routing = routing1
+          spooky.rebroadcast()
         }
       }
+    }
   }
 }
 
@@ -242,50 +236,45 @@ abstract class SimLinkSuite extends SITLFixture with LinkSuite {
 
   import com.tribbloids.spookystuff.utils.SpookyViews._
 
-  runTests(routings) {
-    spooky =>
+  runTests(routings) { spooky =>
+    it("Link to unreachable drone should be disabled until blacklist timer reset") {
+      val session = new Session(spooky)
+      val drone = UAV(Seq("dummy"))
+      TestHelper.setLoggerDuring(classOf[Link], classOf[MAVLink], SpookyUtils.getClass) {
+        intercept[Throwable] {
+          Dispatcher(
+            List(drone),
+            session
+          ).get
+        }
 
-      it("Link to unreachable drone should be disabled until blacklist timer reset") {
-        val session = new Session(spooky)
-        val drone = UAV(Seq("dummy"))
-        TestHelper.setLoggerDuring(classOf[Link], classOf[MAVLink], SpookyUtils.getClass) {
-          intercept[Throwable] {
-            Dispatcher(
-              List(drone),
-              session
-            )
-              .get
-          }
+        val badLink = Link.registered(drone)
+        assert(badLink.statusStr.contains("DRONE@dummy -> unreachable for"))
+        //          assert {
+        //            val e = badLink.lastFailureOpt.get._1
+        //            e.isInstanceOf[AssertionError] //|| e.isInstanceOf[Wrap]
+        //          }
+      }
+    }
 
-          val badLink = Link.registered(drone)
-          assert(badLink.statusStr.contains("DRONE@dummy -> unreachable for"))
-          //          assert {
-          //            val e = badLink.lastFailureOpt.get._1
-          //            e.isInstanceOf[AssertionError] //|| e.isInstanceOf[Wrap]
-          //          }
+    it("Link.connect()/disconnect() should not leave dangling process") {
+      val linkRDD: RDD[Link] = getLinkRDD(spooky)
+      linkRDD.foreach { link =>
+        for (_ <- 1 to 3) {
+          link.connect()
+          link.disconnect()
         }
       }
+      //wait for zombie process to be deregistered
+      CommonUtils.retry(5, 2000) {
+        sc.runEverywhere() { _ =>
+          SpookyEnvFixture.processShouldBeClean(Seq("mavproxy"), Seq("mavproxy"), cleanSweepNotInTask = false)
 
-      it("Link.connect()/disconnect() should not leave dangling process") {
-        val linkRDD: RDD[Link] = getLinkRDD(spooky)
-        linkRDD.foreach {
-          link =>
-            for (_ <- 1 to 3) {
-              link.connect()
-              link.disconnect()
-            }
-        }
-        //wait for zombie process to be deregistered
-        CommonUtils.retry(5, 2000) {
-          sc.runEverywhere() {
-            _ =>
-              SpookyEnvFixture.processShouldBeClean(Seq("mavproxy"), Seq("mavproxy"), cleanSweepNotInTask = false)
-
-              Link.registered.foreach {
-                v => v._2.disconnect()
-              }
+          Link.registered.foreach { v =>
+            v._2.disconnect()
           }
         }
       }
+    }
   }
 }

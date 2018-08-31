@@ -17,9 +17,9 @@ trait Unstructured extends Serializable {
     findAll(selector).headOption
 
   def findAllWithSiblings(
-                           selector: CSSQuery,
-                           range: Range
-                         ): Elements[Siblings[Unstructured]]
+      selector: CSSQuery,
+      range: Range
+  ): Elements[Siblings[Unstructured]]
 
   final def findFirstWithSiblings(selector: CSSQuery, range: Range): Option[Siblings[Unstructured]] =
     findAllWithSiblings(selector, range).headOption
@@ -32,9 +32,9 @@ trait Unstructured extends Serializable {
     children(selector).headOption
 
   def childrenWithSiblings(
-                            selector: CSSQuery,
-                            range: Range
-                          ): Elements[Siblings[Unstructured]]
+      selector: CSSQuery,
+      range: Range
+  ): Elements[Siblings[Unstructured]]
 
   final def childWithSiblings(selector: CSSQuery, range: Range): Option[Siblings[Unstructured]] =
     findAllWithSiblings(selector, range).headOption

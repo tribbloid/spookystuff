@@ -26,8 +26,7 @@ object UAVUtils {
 
   def sanityCheck(sc: SparkContext) = {
     sc.runEverywhere()(
-      _ =>
-        localSanityCheck
+      _ => localSanityCheck
     )
   }
 }

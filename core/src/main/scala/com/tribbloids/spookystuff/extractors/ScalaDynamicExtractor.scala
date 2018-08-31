@@ -10,8 +10,8 @@ import org.apache.spark.sql.catalyst.ScalaReflection.universe._
 import scala.language.{dynamics, implicitConversions}
 
 case class ScalaDynamic(
-                         methodName: String
-                       ) extends ReflectionLock{
+    methodName: String
+) extends ReflectionLock {
 
   import org.apache.spark.ml.dsl.utils.refl.ScalaType._
 
@@ -19,14 +19,12 @@ case class ScalaDynamic(
     val tpe = dType.asTypeTag.tpe
 
     //Java reflection preferred as more battle tested?
-    val allMembers = tpe
-      .members.toList
+    val allMembers = tpe.members.toList
 
     val members = allMembers
       .filter(_.name.decodedName.toString == methodName)
-      .map {
-        v =>
-          v.asMethod
+      .map { v =>
+        v.asMethod
       }
 
     members
@@ -35,9 +33,8 @@ case class ScalaDynamic(
   def getExpectedTypeCombinations(argDTypesOpt: Option[List[DataType]]): Seq[Option[List[Type]]] = locked {
     val expectedTypeList: Seq[Option[List[Type]]] = argDTypesOpt match {
       case Some(dTypes) =>
-        val tpess = dTypes.map {
-          v =>
-            List(v.asTypeTag.tpe)
+        val tpess = dTypes.map { v =>
+          List(v.asTypeTag.tpe)
         }
         val cartesian = FlowUtils.cartesianProductList(tpess)
         cartesian.map(
@@ -57,33 +54,31 @@ case class ScalaDynamic(
     val expectedTypeCombinations: Seq[Option[List[Type]]] =
       getExpectedTypeCombinations(argDTypesOpt)
 
-    val valid = methods.flatMap {
-      method =>
-        val paramTypess_returnType: (List[List[Type]], Type) = {
-          TypeUtils.getParameter_ReturnTypes(method, baseDType.asTypeTag.tpe)
-        }
-        val actualTypess: List[List[Type]] = paramTypess_returnType._1
-        val firstTypeOpt = actualTypess.headOption
+    val valid = methods.flatMap { method =>
+      val paramTypess_returnType: (List[List[Type]], Type) = {
+        TypeUtils.getParameter_ReturnTypes(method, baseDType.asTypeTag.tpe)
+      }
+      val actualTypess: List[List[Type]] = paramTypess_returnType._1
+      val firstTypeOpt = actualTypess.headOption
 
-        if (actualTypess.size > 1)
-          None //no currying
-        else {
-          if (expectedTypeCombinations.exists(v => TypeUtils.fitIntoArgs(v, firstTypeOpt)))
-            Some(method)
-          else
-            None
-        }
+      if (actualTypess.size > 1)
+        None //no currying
+      else {
+        if (expectedTypeCombinations.exists(v => TypeUtils.fitIntoArgs(v, firstTypeOpt)))
+          Some(method)
+        else
+          None
+      }
     }
     assert(valid.size <= 1)
-    valid.headOption.getOrElse{
-      val errorStrs = expectedTypeCombinations.map {
-        tt =>
-          val argsStr = tt.map{
-            t =>
-              "(" + t.mkString(", ") + ")"
+    valid.headOption.getOrElse {
+      val errorStrs = expectedTypeCombinations.map { tt =>
+        val argsStr = tt
+          .map { t =>
+            "(" + t.mkString(", ") + ")"
           }
-            .getOrElse("")
-          s"method ${baseDType.asTypeTag.tpe}.$methodName$argsStr does not exist"
+          .getOrElse("")
+        s"method ${baseDType.asTypeTag.tpe}.$methodName$argsStr does not exist"
       }
       throw new UnsupportedOperationException(
         errorStrs.mkString("\n")
@@ -101,9 +96,8 @@ case class ScalaDynamic(
 
     val expectedClasssList: Seq[Option[List[Class[_]]]] = argDTypesOpt match {
       case Some(argDTypes) =>
-        val classess: List[List[Class[_]]] = argDTypes.map {
-          v =>
-            List(v.asTypeTag.asClass) :+ classOf[Object]
+        val classess: List[List[Class[_]]] = argDTypes.map { v =>
+          List(v.asTypeTag.asClass) :+ classOf[Object]
         }
         val cartesian = FlowUtils.cartesianProductList(classess)
         cartesian.map(
@@ -114,27 +108,24 @@ case class ScalaDynamic(
     }
 
     val encodedMethodName = TermName(methodName).encodedName.toString
-    val methods = expectedClasssList.flatMap {
-      classs =>
-        try {
-          val method = baseClz.getMethod(encodedMethodName, classs.getOrElse(Nil): _*)
-          Some(method)
-        }
-        catch {
-          case e: NoSuchMethodException => None
-        }
+    val methods = expectedClasssList.flatMap { classs =>
+      try {
+        val method = baseClz.getMethod(encodedMethodName, classs.getOrElse(Nil): _*)
+        Some(method)
+      } catch {
+        case e: NoSuchMethodException => None
+      }
     }
 
     assert(methods.size <= 1)
-    methods.headOption.getOrElse{
-      val errorStrs = expectedClasssList.map {
-        tt =>
-          val argsStr = tt.map {
-            t =>
-              "(" + t.mkString(", ") + ")"
+    methods.headOption.getOrElse {
+      val errorStrs = expectedClasssList.map { tt =>
+        val argsStr = tt
+          .map { t =>
+            "(" + t.mkString(", ") + ")"
           }
-            .getOrElse("")
-          s"method $baseClz.$methodName$argsStr does not exist"
+          .getOrElse("")
+        s"method $baseClz.$methodName$argsStr does not exist"
       }
       throw new UnsupportedOperationException(
         errorStrs.mkString("\n")
@@ -147,10 +138,10 @@ case class ScalaDynamic(
 // first, handle all ArgsOpt as Values
 // second, handle ArgsOpt that can be other GenExtractor[T, _]
 case class ScalaDynamicExtractor[T](
-                                     base: GenExtractor[T, _],
-                                     methodName: String,
-                                     argsOpt: Option[List[GenExtractor[T, _]]]
-                                   ) extends GenExtractor[T, Any] {
+    base: GenExtractor[T, _],
+    methodName: String,
+    argsOpt: Option[List[GenExtractor[T, _]]]
+) extends GenExtractor[T, Any] {
 
   import org.apache.spark.ml.dsl.utils.refl.ScalaType._
 
@@ -170,9 +161,8 @@ case class ScalaDynamicExtractor[T](
     //TODO: merge
     val baseDType: DataType = base.resolveType(tt)
     val argDTypes = argsOpt.map {
-      _.map {
-        v =>
-          v.resolveType(tt): DataType
+      _.map { v =>
+        v.resolveType(tt): DataType
       }
     }
     val scalaMethod: MethodSymbol = dynamic.getMethodByScala(baseDType, argDTypes)
@@ -186,11 +176,9 @@ case class ScalaDynamicExtractor[T](
 
     val lifted = if (_resolveTypeTag(tt).tpe <:< typeOf[Option[Any]]) {
       resolvedFn.andThen(
-        v =>
-          v.asInstanceOf[Option[Option[Any]]].flatten
+        v => v.asInstanceOf[Option[Option[Any]]].flatten
       )
-    }
-    else resolvedFn
+    } else resolvedFn
 
     Unlift(lifted)
   }
@@ -220,48 +208,44 @@ case class ScalaDynamicExtractor[T](
     val baseLift: (T) => Option[Any] = base.resolve(tt).lift
 
     val argDTypesOpt: Option[List[DataType]] = argsOpt.map {
-      _.map {
-        v =>
-          v.resolveType(tt): DataType
+      _.map { v =>
+        v.resolveType(tt): DataType
       }
     }
-    val argLifts: List[(T) => Option[Any]] = argsOpt.map {
-      _.map {
-        v =>
+    val argLifts: List[(T) => Option[Any]] = argsOpt
+      .map {
+        _.map { v =>
           v.resolve(tt).lift
+        }
       }
-    }
       .getOrElse(Nil)
 
     val javaMethod: Method = dynamic.getMethodByJava(baseDType, argDTypesOpt)
 
     val javaArgTypes = javaMethod.getParameterTypes
     val zipped = argLifts.zip(javaArgTypes)
-    val effectiveArgs: List[(T) => Any] = zipped.map {
-      tuple =>
-        if (classOf[Option[Any]] isAssignableFrom tuple._2)
-          tuple._1
-        else
-          Unlift(tuple._1)
+    val effectiveArgs: List[(T) => Any] = zipped.map { tuple =>
+      if (classOf[Option[Any]] isAssignableFrom tuple._2)
+        tuple._1
+      else
+        Unlift(tuple._1)
     }
 
     val result = new Function1[T, Option[Any]] {
 
       override def apply(vv: T): Option[Any] = {
         val baseOpt = baseLift.apply(vv)
-        baseOpt.flatMap {
-          baseVal =>
-            try {
-              val result = javaMethod.invoke(
-                baseVal,
-                effectiveArgs.map(_.apply(vv).asInstanceOf[Object]): _*
-              )
-              Option(result) //TODO: handle option output!
-            }
-            catch {
-              case e: MatchError =>
-                None
-            }
+        baseOpt.flatMap { baseVal =>
+          try {
+            val result = javaMethod.invoke(
+              baseVal,
+              effectiveArgs.map(_.apply(vv).asInstanceOf[Object]): _*
+            )
+            Option(result) //TODO: handle option output!
+          } catch {
+            case e: MatchError =>
+              None
+          }
         }
       }
     }
@@ -271,17 +255,16 @@ case class ScalaDynamicExtractor[T](
 }
 
 case class ScalaResolvedFunction[T](
-                                     extractor: ScalaDynamicExtractor[T],
-                                     tt: DataType,
-                                     baseLift: (T) => Option[Any],
-                                     argLifts: Option[List[(T) => Option[Any]]]
-                                   ) extends Function1[T, Option[Any]] {
+    extractor: ScalaDynamicExtractor[T],
+    tt: DataType,
+    baseLift: (T) => Option[Any],
+    argLifts: Option[List[(T) => Option[Any]]]
+) extends Function1[T, Option[Any]] {
 
   @transient lazy val baseDType: DataType = extractor.base.resolveType(tt)
   @transient lazy val argDTypes: Option[List[DataType]] = extractor.argsOpt.map {
-    _.map {
-      v =>
-        v.resolveType(tt): DataType
+    _.map { v =>
+      v.resolveType(tt): DataType
     }
   }
 
@@ -296,17 +279,17 @@ case class ScalaResolvedFunction[T](
       .map(_.apply(vv))
     if (argOpts.contains(None)) None
     else {
-      baseOpt.map {
-        baseVal =>
-          val loader = Option(baseVal).map {
-            v =>
-              baseVal.getClass.getClassLoader
-          }.getOrElse(return None)
-          val baseMirror = runtimeMirror(loader)
+      baseOpt.map { baseVal =>
+        val loader = Option(baseVal)
+          .map { v =>
+            baseVal.getClass.getClassLoader
+          }
+          .getOrElse(return None)
+        val baseMirror = runtimeMirror(loader)
 
-          val instanceMirror: InstanceMirror = baseMirror.reflect(baseVal)
-          val methodMirror: MethodMirror = instanceMirror.reflectMethod(scalaMethod)
-          methodMirror.apply(argOpts.map(_.get): _*)
+        val instanceMirror: InstanceMirror = baseMirror.reflect(baseVal)
+        val methodMirror: MethodMirror = instanceMirror.reflectMethod(scalaMethod)
+        methodMirror.apply(argOpts.map(_.get): _*)
       }
     }
   }
@@ -329,7 +312,7 @@ trait ScalaDynamicMixin[T, +R] extends Dynamic with ReflectionLock {
     val argExs: Seq[GenExtractor[T, Any]] = args.toSeq.map {
       case ex: GenExtractor[_, _] =>
         ex.asInstanceOf[GenExtractor[T, Any]]
-      case v@ _ =>
+      case v @ _ =>
         val tt = UnreifiedScalaType.forRuntimeInstance(v)
         new Lit[T, Any](Option(v), tt)
     }

@@ -9,18 +9,18 @@ import org.apache.spark.rdd.RDD
 import scala.collection.immutable
 
 case class AvoidSGDRunner(
-                           pid2TracesRDD: RDD[(Int, List[TraceView])],
-                           schema: SpookySchema,
-                           outer: Avoid
-                         ) {
+    pid2TracesRDD: RDD[(Int, List[TraceView])],
+    schema: SpookySchema,
+    outer: Avoid
+) {
 
   val pid2Traces: Map[Int, Seq[Trace]] = pid2TracesRDD
-    .mapValues {
-      seq =>
-        seq.map(_.children)
+    .mapValues { seq =>
+      seq.map(_.children)
     }
     .collectAsMap()
-    .toMap.map(identity)
+    .toMap
+    .map(identity)
 
   val pid2Traces_resampled = outer.resampler match {
     case None =>
@@ -49,24 +49,20 @@ case class AvoidSGDRunner(
       convergenceTol = 0.001
     )
     val weights_brz = weights.asBreeze
-    val pid2TracesRDD_shifted: Map[Int, Seq[Trace]] = gradient
-      .id2Traces_withEncoded
-      .mapValues {
-        array =>
-          array.map {
-            trace =>
-              val shifted = trace.map {
-                action =>
-                  val shifted = action match {
-                    case v: VectorEncodedNav =>
-                      v.shiftByWeights(weights_brz).self.outer
-                    case _ =>
-                      action
-                  }
-                  shifted
-              }
-              shifted
+    val pid2TracesRDD_shifted: Map[Int, Seq[Trace]] = gradient.id2Traces_withEncoded
+      .mapValues { array =>
+        array.map { trace =>
+          val shifted = trace.map { action =>
+            val shifted = action match {
+              case v: VectorEncodedNav =>
+                v.shiftByWeights(weights_brz).self.outer
+              case _ =>
+                action
+            }
+            shifted
           }
+          shifted
+        }
       }
     val result: Seq[(Trace, Trace)] = {
       val list: immutable.Iterable[Seq[(Trace, Trace)]] = for (entry <- pid2Traces_resampled) yield {
@@ -84,9 +80,8 @@ case class AvoidSGDRunner(
   lazy val conversionMap_broadcast = schema.spooky.sparkContext.broadcast(conversionMap)
 
   // after this line, for test only
-  lazy val pid2Traces_converted: Map[Int, Seq[Trace]] = pid2Traces_resampled.mapValues {
-    v =>
-      v.map(vv => conversionMap(vv))
+  lazy val pid2Traces_converted: Map[Int, Seq[Trace]] = pid2Traces_resampled.mapValues { v =>
+    v.map(vv => conversionMap(vv))
   }
 
   lazy val pid2Traces_flatten: Map[(Int, Int), Trace] = {

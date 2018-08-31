@@ -3,7 +3,7 @@ package com.tribbloids.spookystuff
 import com.tribbloids.spookystuff.actions._
 import com.tribbloids.spookystuff.doc.Doc
 import com.tribbloids.spookystuff.session.WebProxySetting
-import com.tribbloids.spookystuff.utils.{Lambda0, Lambda}
+import com.tribbloids.spookystuff.utils.{Lambda, Lambda0}
 
 import scala.language.implicitConversions
 

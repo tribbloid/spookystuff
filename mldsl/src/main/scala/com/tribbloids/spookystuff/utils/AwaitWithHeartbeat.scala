@@ -15,8 +15,8 @@ object AwaitWithHeartbeat {
 }
 
 case class AwaitWithHeartbeat(
-                               intervalOpt: Option[Duration] = Some(10.seconds)
-                             )(callbackOpt: Option[Int => Unit] = None) {
+    intervalOpt: Option[Duration] = Some(10.seconds)
+)(callbackOpt: Option[Int => Unit] = None) {
 
   protected def _callerShowStr = {
     val result = FlowUtils.callerShowStr(
@@ -35,10 +35,11 @@ case class AwaitWithHeartbeat(
         val startTime = System.currentTimeMillis()
         val terminateAt = startTime + nMillis
 
-        val effectiveHeartbeatFn: Int => Unit = callbackOpt.getOrElse {
-          i: Int =>
-            val remainMillis = terminateAt - System.currentTimeMillis()
-            LoggerFactory.getLogger(this.getClass).info(
+        val effectiveHeartbeatFn: Int => Unit = callbackOpt.getOrElse { i: Int =>
+          val remainMillis = terminateAt - System.currentTimeMillis()
+          LoggerFactory
+            .getLogger(this.getClass)
+            .info(
               s"T - ${remainMillis.toDouble / 1000} second(s)" +
                 "\t@ " + _callerShowStr
             )
@@ -52,8 +53,7 @@ case class AwaitWithHeartbeat(
           try {
             val result = Await.result(future, epochMillis.milliseconds)
             return result
-          }
-          catch {
+          } catch {
             case e: TimeoutException if heartbeatMillis < remainMillis =>
           }
         }

@@ -19,9 +19,8 @@ class SpookyConfSuite extends SpookyEnvFixture {
 
     AssertSerializable(
       conf,
-      condition = {
-        (v1: SpookyConf, v2: SpookyConf) =>
-          v1.cacheFilePath == v2.cacheFilePath
+      condition = { (v1: SpookyConf, v2: SpookyConf) =>
+        v1.cacheFilePath == v2.cacheFilePath
       }
     )
   }
@@ -60,8 +59,7 @@ class SpookyConfSuite extends SpookyEnvFixture {
 
     try {
       assert(ConfUtils.getPropertyOrEnv("dummy.property").contains("AA"))
-    }
-    finally {
+    } finally {
       System.setProperty("dummy.property", "")
     }
   }

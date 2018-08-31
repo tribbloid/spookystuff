@@ -11,18 +11,16 @@ import scala.runtime.ScalaRunTime
 object Fleet {
 
   case class Inventory(
-                        uavs: Iterable[UAV],
-                        hosts: (UAV, String) => Boolean = (_, _) => true
-                      ) extends Fleet {
+      uavs: Iterable[UAV],
+      hosts: (UAV, String) => Boolean = (_, _) => true
+  ) extends Fleet {
 
     def apply(): Set[UAV] = {
       val hostPort = SpookyUtils.blockManagerIDOpt.get.hostPort
-      uavs.flatMap {
-        d =>
-          if (hosts(d, hostPort)) Some(d)
-          else None
-      }
-        .toSet
+      uavs.flatMap { d =>
+        if (hosts(d, hostPort)) Some(d)
+        else None
+      }.toSet
     }
   }
 
@@ -31,9 +29,9 @@ object Fleet {
     */
   //TODO: implement later
   case class Discover(
-                       delegate: Fleet
+      delegate: Fleet
 //                       base: BaseLocator
-                     ) extends Fleet {
+  ) extends Fleet {
 
     def apply(): Set[UAV] = {
       val before = delegate()

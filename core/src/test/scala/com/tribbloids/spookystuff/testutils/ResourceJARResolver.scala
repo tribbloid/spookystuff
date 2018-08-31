@@ -12,21 +12,22 @@ import com.tribbloids.spookystuff.utils.{CommonConst, CommonUtils, SpookyUtils}
 case class ResourceJARResolver(rootPath: String) {
 
   //TODO: this should be within TEMP_PATH, however current temp directory cleanup is broken and may results in resources extracted in new suite being deleted by previous suite
-  final val UNPACK_RESOURCE_PATH = CommonUtils.:\(CommonUtils.\\\(
-    CommonConst.UNPACK_RESOURCE_PATH,
-    "generated-resources",
-    rootPath
-  ))
+  final val UNPACK_RESOURCE_PATH = CommonUtils.:\(
+    CommonUtils.\\\(
+      CommonConst.UNPACK_RESOURCE_PATH,
+      "generated-resources",
+      rootPath
+    ))
   final val RESOURCE_NAME = rootPath + File.separator
 
   // run once and for all TODO: or clean up at shutdown hook
   val testResources: Unit = {
     val resourceOpt = SpookyUtils.getCPResource(RESOURCE_NAME)
-    resourceOpt.foreach {
-      resource =>
-        SpookyUtils.extractResource(
-          resource, UNPACK_RESOURCE_PATH
-        )
+    resourceOpt.foreach { resource =>
+      SpookyUtils.extractResource(
+        resource,
+        UNPACK_RESOURCE_PATH
+      )
     }
     Thread.sleep(5000) //for eventual consistency
   }

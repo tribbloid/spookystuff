@@ -7,13 +7,13 @@ import org.apache.spark.ml.param.shared.{HasInputCol, HasInputCols, HasOutputCol
 import scala.util.Random
 
 case class AbstractNamedStage[+T <: PipelineStage](
-                                                    stage: T,
-                                                    name: String,
-                                                    tags: Set[String] = Set(),
-                                                    outputColOverride: Option[String] = None, //set to manually override output column name
-                                                    //                       intermediate: Boolean = false //TODO: enable
-                                                    _id: String = "" + Random.nextLong() //TODO: multiple Stages with same uid can't be used together?
-                                                  ) {
+    stage: T,
+    name: String,
+    tags: Set[String] = Set(),
+    outputColOverride: Option[String] = None, //set to manually override output column name
+    //                       intermediate: Boolean = false //TODO: enable
+    _id: String = "" + Random.nextLong() //TODO: multiple Stages with same uid can't be used together?
+) {
 
   import ShimViews._
 
@@ -36,16 +36,16 @@ case class AbstractNamedStage[+T <: PipelineStage](
   }
   def hasOutputs = stage match {
     case s: HasOutputCol => true //TODO: do we really need this? implementation is inconsistent
-    case _ => false
+    case _               => false
   }
   def setOutput(v: String) = {
     stage.trySetOutputCol(v)
   }
 
   def inputs: Seq[String] = stage match {
-    case s: HasInputCol => Seq(s.getInputCol)
+    case s: HasInputCol   => Seq(s.getInputCol)
     case ss: HasInputCols => ss.getInputCols
-    case _ => Seq()
+    case _                => Seq()
   }
 
   //always have inputs
@@ -62,36 +62,32 @@ case class AbstractNamedStage[+T <: PipelineStage](
   }
 
   def show(
-            showID: Boolean = true,
-            showInputs: Boolean = true,
-            showOutput: Boolean = true
-          ): String = {
+      showID: Boolean = true,
+      showInputs: Boolean = true,
+      showOutput: Boolean = true
+  ): String = {
 
     val in = try {
       inputs
-    }
-    catch {
+    } catch {
       case e: Throwable =>
         Seq("Pending...")
     }
 
     val inStr = if (showInputs) {
       in.mkString("[", ",", "]") + " > "
-    }
-    else ""
+    } else ""
 
     val out = try {
       outputOpt
-    }
-    catch {
+    } catch {
       case e: Throwable =>
         Some("Pending...")
     }
 
     val outStr = if (showOutput) {
       " > " + out.mkString("[", ",", "]")
-    }
-    else ""
+    } else ""
 
     val body = name + {
       if (showID) ":" + id

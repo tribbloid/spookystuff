@@ -20,7 +20,7 @@ abstract class Actions(override val children: Trace) extends ActionLike {
     val zipped = this.children.zip(same.asInstanceOf[Actions].children)
 
     for (tuple <- zipped) {
-      tuple._1.injectFrom(tuple._2.asInstanceOf[tuple._1.type ]) //recursive
+      tuple._1.injectFrom(tuple._2.asInstanceOf[tuple._1.type]) //recursive
     }
   }
 }

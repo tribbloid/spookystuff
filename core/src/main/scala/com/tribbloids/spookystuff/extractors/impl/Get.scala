@@ -17,7 +17,7 @@ case class Get(field: Field) extends Leaf[FR, Any] {
     case schema: SpookySchema =>
       schema
         .typedFor(field)
-        .orElse{
+        .orElse {
           schema.typedFor(field.*)
         }
         .map(_.dataType)
@@ -27,17 +27,15 @@ case class Get(field: Field) extends Leaf[FR, Any] {
   }
 
   override def resolve(tt: DataType): PartialFunction[FR, Any] = Unlift(
-    v =>
-      v.dataRow.orWeak(field)
+    v => v.dataRow.orWeak(field)
   )
 
   def GetSeq: GenExtractor[FR, Seq[Any]] = this.andOptionTyped[Any, Seq[Any]](
     {
       case v: TraversableOnce[Any] => Some(v.toSeq)
-      case v: Array[Any] => Some(v.toSeq)
-      case _ => None
-    },
-    {
+      case v: Array[Any]           => Some(v.toSeq)
+      case _                       => None
+    }, {
       _.ensureArray
     }
   )
@@ -45,10 +43,9 @@ case class Get(field: Field) extends Leaf[FR, Any] {
   def AsSeq: GenExtractor[FR, Seq[Any]] = this.andOptionTyped[Any, Seq[Any]](
     {
       case v: TraversableOnce[Any] => Some(v.toSeq)
-      case v: Array[Any] => Some(v.toSeq)
-      case v@ _ => Some(Seq(v))
-    },
-    {
+      case v: Array[Any]           => Some(v.toSeq)
+      case v @ _                   => Some(Seq(v))
+    }, {
       _.asArray
     }
   )

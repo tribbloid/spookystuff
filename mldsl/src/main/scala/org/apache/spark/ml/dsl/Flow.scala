@@ -30,29 +30,28 @@ trait StepGraph {
   def replicate(suffix: String = ""): StepGraph
 
   protected def replicateColl(
-                               idConversion: mutable.Map[String, String] = mutable.Map[String, String](),
-                               suffix: String = "",
-                               condition: ((String, StepLike)) => Boolean = {_: (String, StepLike) => true} //TODO: use it!
-                             ): StepMap[String, StepLike] = {
+      idConversion: mutable.Map[String, String] = mutable.Map[String, String](),
+      suffix: String = "",
+      condition: ((String, StepLike)) => Boolean = { _: (String, StepLike) =>
+        true
+      } //TODO: use it!
+  ): StepMap[String, StepLike] = {
 
-    val replicatedSteps = coll.map {
-      tuple =>
-        val step = tuple._2.replicate(suffix)
-        idConversion += (tuple._1 -> step.id)
-        step
+    val replicatedSteps = coll.map { tuple =>
+      val step = tuple._2.replicate(suffix)
+      idConversion += (tuple._1 -> step.id)
+      step
     }
 
-    val newStepList = replicatedSteps.map {
-      step =>
-        step.wth(
-          dependencyIDs = step.dependencyIDs.map(idConversion),
-          usageIDs = step.usageIDs.map(idConversion)
-        )
+    val newStepList = replicatedSteps.map { step =>
+      step.wth(
+        dependencyIDs = step.dependencyIDs.map(idConversion),
+        usageIDs = step.usageIDs.map(idConversion)
+      )
     }.toSeq
 
-    val newSteps: StepMap[String, StepLike] = StepMap(newStepList.map {
-      step =>
-        step.id -> step
+    val newSteps: StepMap[String, StepLike] = StepMap(newStepList.map { step =>
+      step.id -> step
     }: _*)
     newSteps
   }
@@ -73,10 +72,8 @@ trait StepGraph {
   //TODO: optimize
   def connectAll(fromIDs: Seq[String], toIDs: Seq[String]): StepMap[String, StepLike] = {
     var result = coll
-    for (
-      i <- fromIDs;
-      j <- toIDs
-    ) {
+    for (i <- fromIDs;
+         j <- toIDs) {
       result = result.connect(i, j)
     }
     result
@@ -102,25 +99,23 @@ trait StepGraph {
     this.cutInputs(id).cutOutputs(id) - id
   }
 
-  def remove(ids: String*): StepMap[String, StepLike] = ids.foldLeft(coll){
-    (coll, id) =>
-      coll.remove1(id)
+  def remove(ids: String*): StepMap[String, StepLike] = ids.foldLeft(coll) { (coll, id) =>
+    coll.remove1(id)
   }
 
   protected def unionImpl(coll2: StepMap[String, StepLike]): StepMap[String, StepLike] = {
     val allSteps = coll ++ coll2
-    val result: StepMap[String, StepLike] = StepMap[String, StepLike](allSteps.mapValues{
-      step =>
-        val id = step.id
-        step.wth(
-          dependencyIDs = (coll.get(id) ++ coll2.get(id)).map(_.dependencyIDs).reduce(_ ++ _).distinct,
-          usageIDs = (coll.get(id) ++ coll2.get(id)).map(_.usageIDs).reduce(_ ++ _)
-        )
+    val result: StepMap[String, StepLike] = StepMap[String, StepLike](allSteps.mapValues { step =>
+      val id = step.id
+      step.wth(
+        dependencyIDs = (coll.get(id) ++ coll2.get(id)).map(_.dependencyIDs).reduce(_ ++ _).distinct,
+        usageIDs = (coll.get(id) ++ coll2.get(id)).map(_.usageIDs).reduce(_ ++ _)
+      )
     }.toSeq: _*)
     result
   }
 
-  def UU (another: StepMap[String, StepLike]) = unionImpl(another)
+  def UU(another: StepMap[String, StepLike]) = unionImpl(another)
 
   implicit def stepsToView(steps: StepMap[String, StepLike]): StepMapView = new StepMapView(steps)
 }
@@ -140,10 +135,10 @@ trait MayHaveTails extends StepGraph {
   final lazy val leftConnectors: Seq[Connector] = leftTails.collect {
     case v: Connector => v
   }
-  final lazy val leftRoots: Seq[StepLike] =  leftTails.collect {
+  final lazy val leftRoots: Seq[StepLike] = leftTails.collect {
     case v if v.dependencyIDs.isEmpty && (!rightTails.contains(v)) => v
   }
-  final lazy val leftDetached: Seq[Source] =  leftTails.collect {
+  final lazy val leftDetached: Seq[Source] = leftTails.collect {
     case v: Source if v.usageIDs.isEmpty => v
   }
   final lazy val leftIntakes: Seq[Step] = leftTails.flatMap {
@@ -188,7 +183,7 @@ trait MayHaveHeads extends StepGraph {
   def headExists = headIDs.nonEmpty
 
   final lazy val heads = headIDs.map(coll)
-  final lazy val PASSTHROUGHOutput: Option[Connector] = heads.find(_ == PASSTHROUGH)map(_.asInstanceOf[Connector])
+  final lazy val PASSTHROUGHOutput: Option[Connector] = heads.find(_ == PASSTHROUGH) map (_.asInstanceOf[Connector])
   final lazy val hasPASSTHROUGHOutput: Boolean = heads.contains(PASSTHROUGH)
   //all heads must have outIDs
 
@@ -239,7 +234,7 @@ object FlowComponent {
           Some(name)
         )
       case (v, s: String) =>
-        NamedStage (
+        NamedStage(
           v,
           s,
           Set(s)
@@ -277,10 +272,9 @@ trait FlowComponent extends MayHaveHeads with MayHaveTails {
 
   //validations
   {
-    coll.values.foreach{
-      stage =>
-        if (!this.tailIDs.contains(stage.id))
-          assume(stage.dependencyIDs.nonEmpty, "non-tail stage should have non-empty dependency")
+    coll.values.foreach { stage =>
+      if (!this.tailIDs.contains(stage.id))
+        assume(stage.dependencyIDs.nonEmpty, "non-tail stage should have non-empty dependency")
     }
 
     if (coll.values.toSeq.contains(PASSTHROUGH)) {
@@ -302,39 +296,38 @@ trait FlowComponent extends MayHaveHeads with MayHaveTails {
 
     // detached port should not have any tail removed
     val newLeftTailIDs = (
-      this.leftTails.flatMap{
+      this.leftTails.flatMap {
         case PASSTHROUGH => right.leftTailIDs
         case v: StepLike => Seq(v.id)
       }
         ++ right.leftDetached.map(_.id)
-      ).distinct
-    val newRightTailIDs = if(right.headExists) {
+    ).distinct
+    val newRightTailIDs = if (right.headExists) {
       (
         right.rightTails.flatMap {
           case PASSTHROUGH => this.rightTailIDs
           case v: StepLike => Seq(v.id)
         }
           ++ this.rightRoots.map(_.id)
-        ).distinct
-    }
-    else {
+      ).distinct
+    } else {
       this.rightTailIDs
     }
 
     val newTailIDs = newLeftTailIDs ++ newRightTailIDs
     val obsoleteIDs = (right.leftConnectors ++ this.PASSTHROUGHOutput)
-      .filterNot(v => newTailIDs.contains(v.id)).map(_.id) //if in the new TailIDs, cannot be deleted which causes not found error.
+      .filterNot(v => newTailIDs.contains(v.id))
+      .map(_.id) //if in the new TailIDs, cannot be deleted which causes not found error.
 
     val allSteps = (coll ++ right.coll).remove(obsoleteIDs: _*)
     val newSteps = allSteps.connectAll(effectiveFromIDs, toIDs)
 
-    val newHeadIDs =  if(right.headExists) {
+    val newHeadIDs = if (right.headExists) {
       this.headIDs.toBuffer -- fromIDs ++ right.heads.flatMap {
         case PASSTHROUGH => effectiveFromIDs
         case v: StepLike => Seq(v.id)
       }
-    }
-    else {
+    } else {
       this.headIDs
     }
 
@@ -360,16 +353,15 @@ trait FlowComponent extends MayHaveHeads with MayHaveTails {
     val toIDs = left.rightIntakes.map(_.id)
 
     // detached port should not have any tail removed
-    val newLeftTailIDs = if(left.headExists) {
+    val newLeftTailIDs = if (left.headExists) {
       (
         left.leftTails.flatMap {
           case PASSTHROUGH => this.leftTailIDs
           case v: StepLike => Seq(v.id)
         }
           ++ this.leftRoots.map(_.id)
-        ).distinct
-    }
-    else {
+      ).distinct
+    } else {
       this.leftTailIDs
     }
     val newRightTailIDs = (
@@ -378,23 +370,22 @@ trait FlowComponent extends MayHaveHeads with MayHaveTails {
         case v: StepLike => Seq(v.id)
       }
         ++ left.rightDetached.map(_.id)
-      ).distinct
+    ).distinct
 
     val newTailIDs = newLeftTailIDs ++ newRightTailIDs
     val obsoleteIDs = (left.rightConnectors ++ this.PASSTHROUGHOutput)
-      .filterNot(v => newTailIDs.contains(v.id)).map(_.id) //if in the new TailIDs, cannot be deleted which causes not found error.
-
+      .filterNot(v => newTailIDs.contains(v.id))
+      .map(_.id) //if in the new TailIDs, cannot be deleted which causes not found error.
 
     val allSteps = (coll ++ left.coll).remove(obsoleteIDs: _*)
     val newSteps = allSteps.connectAll(effectiveFromIDs, toIDs)
 
-    val newHeadIDs = if(left.headExists) {
+    val newHeadIDs = if (left.headExists) {
       this.headIDs.toBuffer -- fromIDs ++ left.heads.flatMap {
         case PASSTHROUGH => effectiveFromIDs
         case v: StepLike => Seq(v.id)
       }
-    }
-    else {
+    } else {
       this.headIDs
     }
 
@@ -409,7 +400,7 @@ trait FlowComponent extends MayHaveHeads with MayHaveTails {
     result
   }
 
-  def merge_>(right: FlowComponent): Flow = mergeImpl_> (this.fromIDs, right)
+  def merge_>(right: FlowComponent): Flow = mergeImpl_>(this.fromIDs, right)
   def merge(right: FlowComponent) = merge_>(right)
   def >>>(right: FlowComponent) = merge_>(right)
   def >(right: FlowComponent) = merge_>(right)
@@ -427,9 +418,8 @@ trait FlowComponent extends MayHaveHeads with MayHaveTails {
     //    checkConnectivity_>(fromIDs, right)
     val rebasedFirst: Flow = this.mergeImpl_>(Seq(fromIDs.head), right)
 
-    this.fromIDs.slice(1, Int.MaxValue).foldLeft(rebasedFirst){
-      (flow, id) =>
-        flow.mergeImpl_>(Seq(id), right.replicate())
+    this.fromIDs.slice(1, Int.MaxValue).foldLeft(rebasedFirst) { (flow, id) =>
+      flow.mergeImpl_>(Seq(id), right.replicate())
     }
   }
   def rebase(right: FlowComponent) = rebase_>(right)
@@ -440,9 +430,8 @@ trait FlowComponent extends MayHaveHeads with MayHaveTails {
     //    checkConnectivity_<(fromIDs, left)
     val rebasedFirst: Flow = this.mergeImpl_<(Seq(fromIDs.head), left)
 
-    this.fromIDs.slice(1, Int.MaxValue).foldLeft(rebasedFirst){
-      (flow, id) =>
-        flow.mergeImpl_<(Seq(id), left.replicate())
+    this.fromIDs.slice(1, Int.MaxValue).foldLeft(rebasedFirst) { (flow, id) =>
+      flow.mergeImpl_<(Seq(id), left.replicate())
     }
   }
   def esaber(prev: FlowComponent) = prev.rebase_<(this)
@@ -458,7 +447,7 @@ trait FlowComponent extends MayHaveHeads with MayHaveTails {
     result.validateOnSources()
     result
   }
-  def U (another: FlowComponent) = union(another)
+  def U(another: FlowComponent) = union(another)
 
   def commit_>(right: FlowComponent): Flow = {
     val intakes = right.leftIntakes
@@ -487,62 +476,64 @@ trait FlowComponent extends MayHaveHeads with MayHaveTails {
   def <-<(left: FlowComponent) = left.commit_<(this)
 
   case class StepVisualWrapper(
-                                override val self: StepLike,
-                                showID: Boolean = true,
-                                showInputs: Boolean = true,
-                                showOutput: Boolean = true,
-                                showPrefix: Boolean = true
-                              ) extends StepWrapperLike(self){
+      override val self: StepLike,
+      showID: Boolean = true,
+      showInputs: Boolean = true,
+      showOutput: Boolean = true,
+      showPrefix: Boolean = true
+  ) extends StepWrapperLike(self) {
 
-    def prefixes: Seq[String] = if (showPrefix) {
-      val buffer = ArrayBuffer[String]()
-      if (FlowComponent.this.headIDs contains self.id) buffer += "HEAD"
-      //      else {
-      val isLeftTail = FlowComponent.this.leftTailIDs contains self.id
-      val isRightTail = FlowComponent.this.rightTailIDs contains  self.id
-      if (isLeftTail && isRightTail) buffer += "TAIL"
-      else {
-        if (isLeftTail) buffer += "TAIL>"
-        if (isRightTail) buffer += "<TAIL"
-      }
-      //      }
-      buffer
-    }
-    else Nil
+    def prefixes: Seq[String] =
+      if (showPrefix) {
+        val buffer = ArrayBuffer[String]()
+        if (FlowComponent.this.headIDs contains self.id) buffer += "HEAD"
+        //      else {
+        val isLeftTail = FlowComponent.this.leftTailIDs contains self.id
+        val isRightTail = FlowComponent.this.rightTailIDs contains self.id
+        if (isLeftTail && isRightTail) buffer += "TAIL"
+        else {
+          if (isLeftTail) buffer += "TAIL>"
+          if (isRightTail) buffer += "<TAIL"
+        }
+        //      }
+        buffer
+      } else Nil
 
-    override def toString = prefixes.map("(" + _ +")").mkString("") + " " + {
+    override def toString = prefixes.map("(" + _ + ")").mkString("") + " " + {
       self match {
-        case v: Step => v.stage.show(showID, showInputs, showOutput)
-        case v: Connector => "["+v.id+"]"
+        case v: Step      => v.stage.show(showID, showInputs, showOutput)
+        case v: Connector => "[" + v.id + "]"
       }
     }
 
-    override def copy(self: StepLike): StepWrapperLike = StepVisualWrapper(self, showID, showInputs, showOutput, showPrefix)
+    override def copy(self: StepLike): StepWrapperLike =
+      StepVisualWrapper(self, showID, showInputs, showOutput, showPrefix)
   }
   //TODO: not optimized, children are repeatedly created when calling .path
   //TODO: use mapChildren to recursively get TreeNode[(Seq[String] -> Tree)] efficiently
   case class ForwardNode(
-                          wrapper: StepWrapperLike
-                        ) extends StepTreeNode[ForwardNode] {
+      wrapper: StepWrapperLike
+  ) extends StepTreeNode[ForwardNode] {
 
     //    def prefix = if (this.children.nonEmpty) "v "
-    def prefix = if (this.children.nonEmpty) "> "
-    else "> "
+    def prefix =
+      if (this.children.nonEmpty) "> "
+      else "> "
 
-    override def nodeName: String =  prefix + super.nodeName
+    override def nodeName: String = prefix + super.nodeName
 
     override val self: StepLike = wrapper.self
 
     override lazy val children: Seq[ForwardNode] = {
-      self.usageIDs.map {
-        id =>
+      self.usageIDs
+        .map { id =>
           FlowComponent.this.coll(id)
-      }
+        }
         .toList
         .sortBy(_.name)
-        .map{
-          v =>
-            ForwardNode(wrapper.copy(
+        .map { v =>
+          ForwardNode(
+            wrapper.copy(
               v
             ))
         }
@@ -550,22 +541,23 @@ trait FlowComponent extends MayHaveHeads with MayHaveTails {
   }
 
   case class BackwardNode(
-                           wrapper: StepWrapperLike
-                         ) extends StepTreeNode[BackwardNode] {
+      wrapper: StepWrapperLike
+  ) extends StepTreeNode[BackwardNode] {
 
     //    def prefix = if (this.children.nonEmpty) "^ "
-    def prefix = if (this.children.nonEmpty) "< "
-    else "< "
+    def prefix =
+      if (this.children.nonEmpty) "< "
+      else "< "
 
     override def nodeName: String = prefix + super.nodeName
 
     override val self: StepLike = wrapper.self
 
     override lazy val children: Seq[BackwardNode] = {
-      self.dependencyIDs.map {
-        id =>
+      self.dependencyIDs
+        .map { id =>
           FlowComponent.this.coll(id)
-      }
+        }
         .map(v => BackwardNode(wrapper.copy(v)))
     }
   }
@@ -573,22 +565,19 @@ trait FlowComponent extends MayHaveHeads with MayHaveTails {
   def disambiguateNames[T <: PipelineStage](ids_MultiPartNames: Map[String, Seq[String]]): Map[String, Seq[String]] = {
     val ids_disambiguatedNames = ids_MultiPartNames
       .groupBy(_._2)
-      .map {
-        tuple =>
-          val coNamed = tuple._2
-          val revised: Map[String, Seq[String]] = if (coNamed.size > 1) {
-            coNamed.zipWithIndex.map {
-              withIndex =>
-                val id = withIndex._1._1
-                val names = withIndex._1._2
-                val lastName = names.last
-                val withSuffix = lastName + withIndex._2
-                val namesWithSuffix = names.slice(0, names.size - 1) :+ withSuffix
-                id -> namesWithSuffix
-            }
+      .map { tuple =>
+        val coNamed = tuple._2
+        val revised: Map[String, Seq[String]] = if (coNamed.size > 1) {
+          coNamed.zipWithIndex.map { withIndex =>
+            val id = withIndex._1._1
+            val names = withIndex._1._2
+            val lastName = names.last
+            val withSuffix = lastName + withIndex._2
+            val namesWithSuffix = names.slice(0, names.size - 1) :+ withSuffix
+            id -> namesWithSuffix
           }
-          else coNamed
-          revised
+        } else coNamed
+        revised
       }
       .reduce(_ ++ _)
     ids_disambiguatedNames
@@ -629,33 +618,38 @@ trait FlowComponent extends MayHaveHeads with MayHaveTails {
   // it only append steps that has all dependencies in the list
   // it is fast and can be used whenever a new Flow is constructed and has typed sources.
   def buildStagesImpl[T <: PipelineStage](
-                                           compaction: PathCompaction = Flow.DEFAULT_COMPACTION,
-                                           fieldsEvidenceOpt: Option[Array[StructField]] = None, //set this to make pipeline adaptive to df being transformed.
-                                           adaptation: SchemaAdaptation = Flow.DEFAULT_SCHEMA_ADAPTATION
-                                         ): Pipeline = {
+      compaction: PathCompaction = Flow.DEFAULT_COMPACTION,
+      fieldsEvidenceOpt: Option[Array[StructField]] = None, //set this to make pipeline adaptive to df being transformed.
+      adaptation: SchemaAdaptation = Flow.DEFAULT_SCHEMA_ADAPTATION
+  ): Pipeline = {
     propagateCols(compaction)
 
     val stageBuffer = ArrayBuffer[T]()
 
     val effectiveAdaptation = fieldsEvidenceOpt match {
       case None => SchemaAdaptations.Force
-      case _ => adaptation
+      case _    => adaptation
     }
 
     // has to preserve order of insertion.
     val queue: StepBuffer[String, StepLike] = effectiveAdaptation match {
       case SchemaAdaptations.Force =>
-        StepBuffer.newBuilder[String, StepLike].++= {
-          sourceColl
-        }.result()
+        StepBuffer
+          .newBuilder[String, StepLike]
+          .++= {
+            sourceColl
+          }
+          .result()
       case _ =>
-        StepBuffer.newBuilder[String, StepLike].++= {
-          fieldsEvidenceOpt.get.map {
-            field =>
+        StepBuffer
+          .newBuilder[String, StepLike]
+          .++= {
+            fieldsEvidenceOpt.get.map { field =>
               val source = Source(field.name, dataTypes = Set(field.dataType))
               source.id -> source
+            }
           }
-        }.result()
+          .result()
     }
 
     // if nonEmpty, validate sink in each iteration by performing a PipelineStage.transformSchema
@@ -663,9 +657,8 @@ trait FlowComponent extends MayHaveHeads with MayHaveTails {
       case _: SchemaAdaptations.TypeUnsafe =>
         None
       case _ =>
-        fieldsEvidenceOpt.map {
-          fields =>
-            new StructType(fields)
+        fieldsEvidenceOpt.map { fields =>
+          new StructType(fields)
         }
     }
 
@@ -673,9 +666,11 @@ trait FlowComponent extends MayHaveHeads with MayHaveTails {
       case (id: String, step: Step) => id -> step
     }
     val warehouse: StepBuffer[String, Step] = {
-      StepBuffer.newBuilder.++= {
-        allSteps
-      }.result()
+      StepBuffer.newBuilder
+        .++= {
+          allSteps
+        }
+        .result()
     }
 
     // has 2 resolutions:
@@ -683,31 +678,27 @@ trait FlowComponent extends MayHaveHeads with MayHaveTails {
     // if dependency is fulfilled but but doesn't pass schema check (if any), do not return it/fail fast depending on adaptation
 
     def nextOptImpl(): Option[(String, Step)] = {
-      val candidate = warehouse.find {
-        v =>
-          if (v._2.dependencyIDs.forall(queue.contains)) {
+      val candidate = warehouse.find { v =>
+        if (v._2.dependencyIDs.forall(queue.contains)) {
 
-            // schema validation here.
-            try {
-              currentSchemaOpt = currentSchemaOpt.map {
-                schema =>
-                  v._2.stage.stage.transformSchema(schema)
+          // schema validation here.
+          try {
+            currentSchemaOpt = currentSchemaOpt.map { schema =>
+              v._2.stage.stage.transformSchema(schema)
+            }
+            true
+          } catch {
+            case e: Throwable =>
+              effectiveAdaptation match {
+                case _: SchemaAdaptations.FailOnInconsistentSchema =>
+                  throw e
+                case SchemaAdaptations.IgnoreIrrelevant =>
+                  false
+                case _ =>
+                  sys.error("impossible")
               }
-              true
-            }
-            catch {
-              case e: Throwable =>
-                effectiveAdaptation match {
-                  case _: SchemaAdaptations.FailOnInconsistentSchema =>
-                    throw e
-                  case SchemaAdaptations.IgnoreIrrelevant =>
-                    false
-                  case _ =>
-                    sys.error("impossible")
-                }
-            }
           }
-          else false
+        } else false
       }
       candidate
     }
@@ -751,7 +742,7 @@ trait FlowComponent extends MayHaveHeads with MayHaveTails {
         )
     }
 
-    assert (
+    assert(
       warehouse.isEmpty,
       "Cyclic pipeline stage dependency:\n" + warehouse.values.map(_.stage).mkString("\n")
     )
@@ -760,20 +751,20 @@ trait FlowComponent extends MayHaveHeads with MayHaveTails {
   }
 
   def build(
-             compaction: PathCompaction = Flow.DEFAULT_COMPACTION,
-             fieldsEvidence: Array[StructField] = null, //set this to make pipeline adaptive to df being transformed.
-             schemaEvidence: StructType = null, //set this to make pipeline adaptive to df being transformed.
-             dfEvidence: DataFrame = null, //set this to make pipeline adaptive to df being transformed.
-             adaptation: SchemaAdaptation = Flow.DEFAULT_SCHEMA_ADAPTATION
-           ): Pipeline = {
+      compaction: PathCompaction = Flow.DEFAULT_COMPACTION,
+      fieldsEvidence: Array[StructField] = null, //set this to make pipeline adaptive to df being transformed.
+      schemaEvidence: StructType = null, //set this to make pipeline adaptive to df being transformed.
+      dfEvidence: DataFrame = null, //set this to make pipeline adaptive to df being transformed.
+      adaptation: SchemaAdaptation = Flow.DEFAULT_SCHEMA_ADAPTATION
+  ): Pipeline = {
 
     buildStagesImpl[PipelineStage](
       compaction,
       Option(fieldsEvidence)
-        .orElse{
+        .orElse {
           Option(schemaEvidence).map(_.fields)
         }
-        .orElse{
+        .orElse {
           Option(dfEvidence).map(_.schema.fields)
         },
       adaptation
@@ -781,25 +772,25 @@ trait FlowComponent extends MayHaveHeads with MayHaveTails {
   }
 
   def buildModel(
-                  compaction: PathCompaction = Flow.DEFAULT_COMPACTION,
-                  fieldsEvidence: Array[StructField] = null, //set this to make pipeline adaptive to df being transformed.
-                  schemaEvidence: StructType = null, //set this to make pipeline adaptive to df being transformed.
-                  dfEvidence: DataFrame = null, //set this to make pipeline adaptive to df being transformed.
-                  adaptation: SchemaAdaptation = Flow.DEFAULT_SCHEMA_ADAPTATION
-                ): PipelineModel = {
+      compaction: PathCompaction = Flow.DEFAULT_COMPACTION,
+      fieldsEvidence: Array[StructField] = null, //set this to make pipeline adaptive to df being transformed.
+      schemaEvidence: StructType = null, //set this to make pipeline adaptive to df being transformed.
+      dfEvidence: DataFrame = null, //set this to make pipeline adaptive to df being transformed.
+      adaptation: SchemaAdaptation = Flow.DEFAULT_SCHEMA_ADAPTATION
+  ): PipelineModel = {
 
-    coll.foreach{
+    coll.foreach {
       case (_, v: Step) => assert(v.stage.stage.isInstanceOf[Transformer])
-      case _ =>
+      case _            =>
     }
 
     val pipeline = buildStagesImpl[Transformer](
       compaction,
       Option(fieldsEvidence)
-        .orElse{
+        .orElse {
           Option(schemaEvidence).map(_.fields)
         }
-        .orElse{
+        .orElse {
           Option(dfEvidence).map(_.schema.fields)
         },
       adaptation
@@ -813,60 +804,60 @@ trait FlowComponent extends MayHaveHeads with MayHaveTails {
   // use to validate in FlowComponent Constructor and fail early.
   // stateless, replicate self before applying propagateCols, stateful changes are discarded.
   protected def validateOnSchema(fieldsEvidence: Array[StructField]): Unit = {
-    this.replicate().buildStagesImpl[PipelineStage](
-      Flow.COMPACTION_FOR_TYPECHECK,
-      fieldsEvidenceOpt = Some(fieldsEvidence),
-      adaptation = Flow.SCHEMA_ADAPTATION_FOR_TYPECHECK
-    )
+    this
+      .replicate()
+      .buildStagesImpl[PipelineStage](
+        Flow.COMPACTION_FOR_TYPECHECK,
+        fieldsEvidenceOpt = Some(fieldsEvidence),
+        adaptation = Flow.SCHEMA_ADAPTATION_FOR_TYPECHECK
+      )
   }
 
   protected def validateOnSources(): Unit = {
     val fields: List[Set[StructField]] = this.sourceColl
       .filter(_._2.dataTypes.nonEmpty)
       .values
-      .map{
-        source =>
-          source.dataTypes.map(t => new StructField(source.name, t))
+      .map { source =>
+        source.dataTypes.map(t => new StructField(source.name, t))
       }
       .toList
 
     val cartesian = FlowUtils.cartesianProductSet(fields)
     val schemas = cartesian.map(v => new StructType(v.toArray))
-    schemas.foreach{
-      schema =>
-        if (schema.fields.nonEmpty) validateOnSchema(schema.fields)
+    schemas.foreach { schema =>
+      if (schema.fields.nonEmpty) validateOnSchema(schema.fields)
     }
   }
 
   def showForwardTree(
-                       tails: Seq[StepLike],
-                       showID: Boolean,
-                       showInputs: Boolean,
-                       showOutput: Boolean,
-                       showPrefix: Boolean
-                     ): String = {
-    tails.map {
-      tail =>
+      tails: Seq[StepLike],
+      showID: Boolean,
+      showInputs: Boolean,
+      showOutput: Boolean,
+      showPrefix: Boolean
+  ): String = {
+    tails
+      .map { tail =>
         val prettyTail = StepVisualWrapper(tail, showID, showInputs, showOutput, showPrefix)
         val treeNode = ForwardNode(prettyTail)
         treeNode.treeString
-    }
+      }
       .mkString("")
   }
 
   def showBackwardTree(
-                        heads: Seq[StepLike],
-                        showID: Boolean,
-                        showInputs: Boolean,
-                        showOutput: Boolean,
-                        showPrefix: Boolean
-                      ): String = {
-    heads.map {
-      head =>
+      heads: Seq[StepLike],
+      showID: Boolean,
+      showInputs: Boolean,
+      showOutput: Boolean,
+      showPrefix: Boolean
+  ): String = {
+    heads
+      .map { head =>
         val prettyHead = StepVisualWrapper(head, showID, showInputs, showOutput, showPrefix)
         val treeNode = BackwardNode(prettyHead)
         treeNode.treeString
-    }
+      }
       .mkString("")
   }
 
@@ -878,8 +869,8 @@ trait FlowComponent extends MayHaveHeads with MayHaveTails {
   )
 
   protected def flipChar(char: Char): Char = {
-    mirrorImgs.find(_._1 == char).map(_._2).getOrElse{
-      mirrorImgs.find(_._2 == char).map(_._1).getOrElse{
+    mirrorImgs.find(_._1 == char).map(_._2).getOrElse {
+      mirrorImgs.find(_._2 == char).map(_._1).getOrElse {
         char
       }
     }
@@ -887,24 +878,22 @@ trait FlowComponent extends MayHaveHeads with MayHaveTails {
 
   protected final val layoutPrefs = LayoutPrefsImpl(unicode = true, explicitAsciiBends = false)
   def showASCIIArt(
-                    forward: Boolean,
-                    showID: Boolean,
-                    showInputs: Boolean,
-                    showOutput: Boolean,
-                    showPrefix: Boolean
-                  ): String = {
+      forward: Boolean,
+      showID: Boolean,
+      showInputs: Boolean,
+      showOutput: Boolean,
+      showPrefix: Boolean
+  ): String = {
 
     try {
       // TODO: underlying library doesn't support scala 2.11, discard/replace!
-      val prettyColl = coll.mapValues {
-        v =>
-          StepVisualWrapper(v, showID, showInputs, showOutput, showPrefix)
+      val prettyColl = coll.mapValues { v =>
+        StepVisualWrapper(v, showID, showInputs, showOutput, showPrefix)
       }
 
       val vertices: Set[StepVisualWrapper] = prettyColl.values.toSet
-      val edges: List[(StepVisualWrapper, StepVisualWrapper)] = prettyColl.values.toList.flatMap{
-        v =>
-          v.self.usageIDs.map(prettyColl).map(vv => v -> vv)
+      val edges: List[(StepVisualWrapper, StepVisualWrapper)] = prettyColl.values.toList.flatMap { v =>
+        v.self.usageIDs.map(prettyColl).map(vv => v -> vv)
       }
       val graph: Graph[StepVisualWrapper] = Graph[StepVisualWrapper](vertices = vertices, edges = edges)
 
@@ -917,35 +906,32 @@ trait FlowComponent extends MayHaveHeads with MayHaveTails {
           .mkString("\n")
           .map(flipChar)
       }
-    }
-    catch {
+    } catch {
       case e: Throwable => "[Only supported on Scala 2.10]"
     }
   }
 
   def show(
-            showID: Boolean = true,
-            showInputs: Boolean = true,
-            showOutput: Boolean = true,
-            showPrefix: Boolean = true,
-            forward: Boolean = true,
-            asciiArt: Boolean = false,
-            compactionOpt: Option[PathCompaction] = Some(Flow.DEFAULT_COMPACTION)
-          ) = {
+      showID: Boolean = true,
+      showInputs: Boolean = true,
+      showOutput: Boolean = true,
+      showPrefix: Boolean = true,
+      forward: Boolean = true,
+      asciiArt: Boolean = false,
+      compactionOpt: Option[PathCompaction] = Some(Flow.DEFAULT_COMPACTION)
+  ) = {
     compactionOpt.foreach(this.propagateCols)
 
-    if (!asciiArt){
+    if (!asciiArt) {
       if (forward) {
 
         "\\ left >\n" + showForwardTree(leftTails, showID, showInputs, showOutput, showPrefix) +
           "/ right <\n" + showForwardTree(rightTails, showID, showInputs, showOutput, showPrefix)
-      }
-      else {
+      } else {
 
         showBackwardTree(this.heads, showID, showInputs, showOutput, showPrefix)
       }
-    }
-    else {
+    } else {
       showASCIIArt(forward, showID, showInputs, showOutput, showPrefix)
     }
   }
@@ -999,12 +985,11 @@ object Flow extends MessageRelay[Flow] {
   def FORWARD_RIGHT: String = "forwardRight"
   def FORWARD_LEFT: String = "forwardLeft"
 
-
   case class M(
-                declarations: Declaration,
-                flowLines: Seq[GraphRepr],
-                headIDs: HeadIDs
-              ) extends MessageAPI_<<{
+      declarations: Declaration,
+      flowLines: Seq[GraphRepr],
+      headIDs: HeadIDs
+  ) extends MessageAPI_<< {
 
     implicit def stepsToView(steps: StepMap[String, StepLike]): StepMapView = new StepMapView(steps)
 
@@ -1014,7 +999,7 @@ object Flow extends MessageRelay[Flow] {
       var buffer: StepMap[String, StepLike] = StepMap(steps.map(v => v.id -> v): _*)
 
       def treeNodeReprToLink(repr: StepTreeNode.M): Unit = {
-        if (! buffer.contains(repr.id)) {
+        if (!buffer.contains(repr.id)) {
           buffer = buffer.updated(repr.id, Source(repr.id, repr.dataTypes.map(_.toProto_<<)))
         }
         val children = repr.stage
@@ -1022,10 +1007,8 @@ object Flow extends MessageRelay[Flow] {
         children.foreach(treeNodeReprToLink)
       }
 
-      for (
-        graph <- flowLines;
-        tree <- graph.flowLine
-      ) {
+      for (graph <- flowLines;
+           tree <- graph.flowLine) {
         treeNodeReprToLink(tree)
       }
 
@@ -1042,17 +1025,17 @@ object Flow extends MessageRelay[Flow] {
   }
 
   case class Declaration(
-                          stage: Seq[Step.M]
-                        )
+      stage: Seq[Step.M]
+  )
 
   case class GraphRepr(
-                        flowLine: Seq[StepTreeNode.M],
-                        `@direction`: Option[String] = None
-                      )
+      flowLine: Seq[StepTreeNode.M],
+      `@direction`: Option[String] = None
+  )
 
-  case class HeadIDs (
-                       headID: Seq[String]
-                     )
+  case class HeadIDs(
+      headID: Seq[String]
+  )
   //  class FlowWriter(flow: Flow) extends MLWriter {
   //
   //    SharedReadWrite.validateStages(flow.stages)
@@ -1156,19 +1139,22 @@ object Flow extends MessageRelay[Flow] {
   * @param fromIDsOpt
   */
 case class Flow(
-                 coll: StepMap[String, StepLike],
-                 leftTailIDs: Seq[String],
-                 rightTailIDs: Seq[String],
-                 headIDs: Seq[String],
-                 fromIDsOpt: Option[Seq[String]] = None //overrriden by using "from" function
-               ) extends FlowComponent {
+    coll: StepMap[String, StepLike],
+    leftTailIDs: Seq[String],
+    rightTailIDs: Seq[String],
+    headIDs: Seq[String],
+    fromIDsOpt: Option[Seq[String]] = None //overrriden by using "from" function
+) extends FlowComponent {
 
   override def fromIDs = fromIDsOpt.getOrElse(headIDs)
 
-  lazy val stages = coll.values.collect {
-    case st: Step =>
-      st.stage.stage
-  }.toArray.distinct
+  lazy val stages = coll.values
+    .collect {
+      case st: Step =>
+        st.stage.stage
+    }
+    .toArray
+    .distinct
 
   def from(name: String) = {
     val newFromIDs = coll.values.filter(_.name == name).map(_.id).toSeq

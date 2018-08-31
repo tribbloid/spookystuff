@@ -11,16 +11,18 @@ import scala.reflect.ClassTag
   * @tparam T
   */
 case class Nested[T: ClassTag](
-                                self: Any,
-                                errorTreeOpt: Option[Throwable] = None
-                              ) {
+    self: Any,
+    errorTreeOpt: Option[Throwable] = None
+) {
 
   def map[S: ClassTag](
-                        fn: T => S,
-                        fallback: Any => S = {_: Any => null.asInstanceOf[S]},
-                        preproc: Any => Any = identity,
-                        failFast: Boolean = true
-                      ): Nested[S] = {
+      fn: T => S,
+      fallback: Any => S = { _: Any =>
+        null.asInstanceOf[S]
+      },
+      preproc: Any => Any = identity,
+      failFast: Boolean = true
+  ): Nested[S] = {
 
     val errorBuffer = ArrayBuffer.empty[Throwable]
 
@@ -47,8 +49,7 @@ case class Nested[T: ClassTag](
       case v: T =>
         try {
           fn(v)
-        }
-        catch {
+        } catch {
           case e: Throwable =>
             //            v match {
             //              case product: Product =>
@@ -62,7 +63,7 @@ case class Nested[T: ClassTag](
       //        expandProduct(prod)
       case null =>
         null
-      case v@ _ =>
+      case v @ _ =>
         val e = new UnsupportedOperationException(s"$v is not an instance of ${implicitly[ClassTag[T]]}")
         errorBuffer += e
         fallback(v)
@@ -73,8 +74,7 @@ case class Nested[T: ClassTag](
       val treeException = TreeException.wrap(errorBuffer)
       if (failFast) throw treeException
       Some(treeException)
-    }
-    else {
+    } else {
       None
     }
     Nested[S](mapped, treeException)

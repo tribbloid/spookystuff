@@ -7,20 +7,18 @@ object FlowUtils {
 
   def cartesianProductSet[T](xss: Seq[Set[T]]): Set[List[T]] = xss match {
     case Nil => Set(Nil)
-    case h :: t => for(
-      xh <- h;
-      xt <- cartesianProductSet(t)
-    )
-      yield xh :: xt
+    case h :: t =>
+      for (xh <- h;
+           xt <- cartesianProductSet(t))
+        yield xh :: xt
   }
 
   def cartesianProductList[T](xss: Seq[Seq[T]]): Seq[List[T]] = xss match {
     case Nil => List(Nil)
-    case h :: t => for(
-      xh <- h;
-      xt <- cartesianProductList(t)
-    )
-      yield xh :: xt
+    case h :: t =>
+      for (xh <- h;
+           xt <- cartesianProductList(t))
+        yield xh :: xt
   }
 
   //  def jValue(obj: Any)(implicit formats: Formats = DefaultFormats): JValue = Extraction.decompose(obj)
@@ -40,18 +38,17 @@ object FlowUtils {
     classOf[Thread].getCanonicalName
   )
   private def extraFilter(vs: Array[StackTraceElement]) = {
-    vs.filterNot {
-      v =>
-        v.getClassName.startsWith("scala") ||
-          breakpointInfoBlacklist.contains(v.getClassName)
+    vs.filterNot { v =>
+      v.getClassName.startsWith("scala") ||
+      breakpointInfoBlacklist.contains(v.getClassName)
     }
   }
 
   def getBreakpointInfo(
-                         filterInitializer: Boolean = true,
-                         filterLazyRelay: Boolean = true,
-                         filterDefaultRelay: Boolean = true
-                       ): Array[StackTraceElement] = {
+      filterInitializer: Boolean = true,
+      filterLazyRelay: Boolean = true,
+      filterDefaultRelay: Boolean = true
+  ): Array[StackTraceElement] = {
     val stackTraceElements: Array[StackTraceElement] = Thread.currentThread().getStackTrace
     var effectiveElements = stackTraceElements
 
@@ -63,26 +60,24 @@ object FlowUtils {
   }
 
   def stackTracesShowStr(
-                          vs: Array[StackTraceElement],
-                          maxDepth: Int = 1
-                        ): String = {
+      vs: Array[StackTraceElement],
+      maxDepth: Int = 1
+  ): String = {
     vs.slice(0, maxDepth)
       .mkString("\n\t< ")
   }
 
   def callerShowStr(
-                     depth: Int = 0,
-                     exclude: Seq[Class[_]] = Nil
-                   ): String  ={
+      depth: Int = 0,
+      exclude: Seq[Class[_]] = Nil
+  ): String = {
     stackTracesShowStr {
       val bp = getBreakpointInfo()
-      val filteredIndex = bp.toSeq.indexWhere (
-        {
-          element =>
-            !exclude.exists {
-              v =>
-                element.getClassName.startsWith(v.getCanonicalName)
-            }
+      val filteredIndex = bp.toSeq.indexWhere(
+        { element =>
+          !exclude.exists { v =>
+            element.getClassName.startsWith(v.getCanonicalName)
+          }
         },
         depth
       )
@@ -116,7 +111,7 @@ object FlowUtils {
   def isSerializable(v: Class[_]) = {
 
     classOf[java.io.Serializable].isAssignableFrom(v) ||
-      v.isPrimitive ||
-      v.isArray
+    v.isPrimitive ||
+    v.isArray
   }
 }

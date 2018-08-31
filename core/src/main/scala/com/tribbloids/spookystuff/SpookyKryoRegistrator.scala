@@ -23,7 +23,7 @@ class SpookyKryoRegistrator extends KryoRegistrator {
       //used by PageRow
       classOf[TypeTag[_]],
       classOf[FetchedRow],
-      classOf[ListMap[_,_]],
+      classOf[ListMap[_, _]],
       classOf[UUID],
       classOf[Elements[_]],
       classOf[Siblings[_]],
@@ -39,7 +39,6 @@ class SpookyKryoRegistrator extends KryoRegistrator {
       classOf[SerializableWritable[_]],
       classOf[SpookyContext],
       classOf[SpookyMetrics],
-
       //used by Expressions
       //      classOf[NamedFunction1]
 

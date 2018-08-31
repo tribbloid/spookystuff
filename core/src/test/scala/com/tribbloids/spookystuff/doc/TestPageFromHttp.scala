@@ -9,7 +9,7 @@ class TestPageFromHttp extends SpookyEnvFixture {
 
   it("wget html, save and load") {
 
-    val results = CommonUtils.retry(5){Wget(HTML_URL).fetch(spooky)}
+    val results = CommonUtils.retry(5) { Wget(HTML_URL).fetch(spooky) }
 
     assert(results.length === 1)
     val page = results.head.asInstanceOf[Doc]
@@ -18,7 +18,7 @@ class TestPageFromHttp extends SpookyEnvFixture {
     assert(page.charset.map(_.toLowerCase).get == "utf-8")
     assert(page.findAll("title").texts.head startsWith "Wikipedia")
 
-    page.autoSave(spooky,overwrite = true)
+    page.autoSave(spooky, overwrite = true)
 
     val loadedContent = DocUtils.load(page.saved.head)(spooky)
 
@@ -40,7 +40,7 @@ class TestPageFromHttp extends SpookyEnvFixture {
     assert(page.\("notexist").isEmpty)
     assert(page.\\("notexist").isEmpty)
 
-    page.autoSave(spooky,overwrite = true)
+    page.autoSave(spooky, overwrite = true)
 
     val loadedContent = DocUtils.load(page.saved.head)(spooky)
 
@@ -58,7 +58,7 @@ class TestPageFromHttp extends SpookyEnvFixture {
     assert(page.charset.map(_.toLowerCase).get == "utf-8")
     assert(page.findAll("title").text.get == "")
 
-    page.autoSave(spooky,overwrite = true)
+    page.autoSave(spooky, overwrite = true)
 
     val loadedContent = DocUtils.load(page.saved.head)(spooky)
 
@@ -76,7 +76,7 @@ class TestPageFromHttp extends SpookyEnvFixture {
     assert(page.charset.map(_.toLowerCase).get == "utf-8")
     assert(page.findAll("title").text.get == "Microsoft Word - Document1")
 
-    page.autoSave(spooky,overwrite = true)
+    page.autoSave(spooky, overwrite = true)
 
     val loadedContent = DocUtils.load(page.saved.head)(spooky)
 
@@ -84,7 +84,7 @@ class TestPageFromHttp extends SpookyEnvFixture {
   }
 
   it("childrenWithSiblings") {
-    val page = CommonUtils.retry(5){Wget(HTML_URL).fetch(spooky)}.head.asInstanceOf[Doc]
+    val page = CommonUtils.retry(5) { Wget(HTML_URL).fetch(spooky) }.head.asInstanceOf[Doc]
 
     val ranges = page.findAllWithSiblings("a.link-box em", -2 to 1)
     assert(ranges.size === 10)
@@ -97,7 +97,7 @@ class TestPageFromHttp extends SpookyEnvFixture {
   }
 
   it("childrenWithSiblings with overlapping elimiation") {
-    val page = CommonUtils.retry(5){Wget(HTML_URL).fetch(spooky)}.head.asInstanceOf[Doc]
+    val page = CommonUtils.retry(5) { Wget(HTML_URL).fetch(spooky) }.head.asInstanceOf[Doc]
 
     val ranges = page.findAllWithSiblings("div.central-featured-lang[lang^=e]", -2 to 2)
     assert(ranges.size === 2)
@@ -127,7 +127,7 @@ class TestPageFromHttp extends SpookyEnvFixture {
 
 //        page.findAll("*").flatMap(_.breadcrumb).map(_.mkString("/")).distinct.foreach(println)
 
-    page.autoSave(spooky,overwrite = true)
+    page.autoSave(spooky, overwrite = true)
 
     val loadedContent = DocUtils.load(page.saved.head)(spooky)
 
@@ -139,7 +139,8 @@ class TestPageFromHttp extends SpookyEnvFixture {
     val results = Wget(CSV_URL).fetch(spooky)
 
     assert(results.length === 1)
-    val page = results.head.asInstanceOf[Doc].setMetadata("csvFormat" -> CSVFormat.newFormat('\t').withQuote('"').withHeader())
+    val page =
+      results.head.asInstanceOf[Doc].setMetadata("csvFormat" -> CSVFormat.newFormat('\t').withQuote('"').withHeader())
 
     assert(page.mimeType == "text/csv")
     assert(Set("iso-8859-1", "utf-8") contains page.charset.map(_.toLowerCase).get) //the file is just using ASCII chars
@@ -149,7 +150,7 @@ class TestPageFromHttp extends SpookyEnvFixture {
 
     //    page.findAll("*").flatMap(_.breadcrumb).map(_.mkString("/")).distinct.foreach(println)
 
-    page.autoSave(spooky,overwrite = true)
+    page.autoSave(spooky, overwrite = true)
 
     val loadedContent = DocUtils.load(page.saved.head)(spooky)
 

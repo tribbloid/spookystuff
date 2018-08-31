@@ -22,11 +22,11 @@ object Compactions {
           .map(v => v -> v)
       )
 
-      val pairs = trie.pruneUp.flatMap{
-        node =>
+      val pairs = trie.pruneUp
+        .flatMap { node =>
           val k = node.key
           node.value.map(_ -> k)
-      }
+        }
         .map(tuple => tuple._1.reverse -> tuple._2.reverse)
       val lookup: Map[Seq[String], Seq[String]] = Map(pairs: _*)
       lookup
@@ -43,19 +43,18 @@ object Compactions {
           .map(v => v -> v)
       )
 
-      val pairs = trie.pruneUp.flatMap{
-        node =>
+      val pairs = trie.pruneUp
+        .flatMap { node =>
           val k = node.key
           node.value.map(_ -> k)
-      }
+        }
         .map(
           tuple =>
             if (!tuple._2.endsWith(tuple._1.lastOption.toSeq)) {
               tuple._1 -> (tuple._2 ++ tuple._1.lastOption)
-            }
-            else {
+            } else {
               tuple._1 -> tuple._2
-            }
+          }
         )
         .map(tuple => tuple._1.reverse -> tuple._2.reverse)
       val lookup: Map[Seq[String], Seq[String]] = Map(pairs: _*)

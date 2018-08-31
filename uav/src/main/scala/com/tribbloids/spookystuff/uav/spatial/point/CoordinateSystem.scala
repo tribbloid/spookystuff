@@ -33,7 +33,6 @@ trait CoordinateSystem extends Serializable {
   //TODO: this is unmathical, should be superceded by reverse operator
   def zeroOpt: Option[Coordinate] = None
 
-
   //  def fromXYZ(x: Double, y: Double, z: Double, existingOpt: Option[TrellisPoint] = None): TrellisPoint = {
   //    val point: TrellisPoint = existingOpt.getOrElse {
   //      JTSGeomFactory.createPoint(new JTSCoord(x, y, z))
@@ -47,11 +46,11 @@ trait CoordinateSystem extends Serializable {
     result
   }
   def fromXYZ(
-               x: Double,
-               y: Double,
-               z: Double,
-               sh: SearchHistory = SearchHistory()
-             ) = {
+      x: Double,
+      y: Double,
+      z: Double,
+      sh: SearchHistory = SearchHistory()
+  ) = {
     val result = new CoordinateRepr(x, y, z)
     result.searchHistory = sh
     result
@@ -65,12 +64,10 @@ trait CoordinateSystem extends Serializable {
   }
   type Coordinate = CSGeom[TrellisPoint]
   class CoordinateRepr(
-                        x: Double,
-                        y: Double,
-                        z: Double
-                      ) extends Coordinate(JTSGeomFactory.createPoint(new JTSCoord(x, y, z))) {
-
-  }
+      x: Double,
+      y: Double,
+      z: Double
+  ) extends Coordinate(JTSGeomFactory.createPoint(new JTSCoord(x, y, z))) {}
   type Repr <: CoordinateRepr
   def toRepr(v: Coordinate): Repr
 

@@ -32,8 +32,7 @@ object LLA extends CoordinateSystem {
 }
 
 case class LLA(
-                lat: Double,
-                lon: Double,
-                alt: Double
-              ) extends LLA.CoordinateRepr(lon, lat, alt) {
-}
+    lat: Double,
+    lon: Double,
+    alt: Double
+) extends LLA.CoordinateRepr(lon, lat, alt) {}

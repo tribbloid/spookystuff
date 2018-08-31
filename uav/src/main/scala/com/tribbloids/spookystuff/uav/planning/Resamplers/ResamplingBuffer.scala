@@ -6,18 +6,17 @@ import com.tribbloids.spookystuff.uav.spatial.point.{Location, NED}
 import scala.collection.mutable.ArrayBuffer
 
 case class ResamplingBuffer(
-                             from: (UAVNavigation#WSchema, (Int, Int)),
-                             to: (UAVNavigation#WSchema, (Int, Int)),
-                             ts: ArrayBuffer[Double] = ArrayBuffer.empty[Double]
-                           ) {
+    from: (UAVNavigation#WSchema, (Int, Int)),
+    to: (UAVNavigation#WSchema, (Int, Int)),
+    ts: ArrayBuffer[Double] = ArrayBuffer.empty[Double]
+) {
 
   case class WParams(
-                      granularity: Double = 1.0
-                    ) {
+      granularity: Double = 1.0
+  ) {
     val getEffective_ts: Seq[Double] = {
-      val filtered = ts.filter {
-        v =>
-          (v > 0.25) && (v < 0.75)
+      val filtered = ts.filter { v =>
+        (v > 0.25) && (v < 0.75)
       }
       if (filtered.isEmpty) Nil
       else
@@ -25,14 +24,12 @@ case class ResamplingBuffer(
     }
 
     val getResult: Seq[Waypoint] = {
-      val vectors = getEffective_ts.map {
-        t =>
-          (1-t) * from._1.vector + t * to._1.vector
+      val vectors = getEffective_ts.map { t =>
+        (1 - t) * from._1.vector + t * to._1.vector
       }
-      val wps = vectors.map {
-        v =>
-          val location: Location = NED.fromVec(v) -> to._1.home
-          Waypoint(location)
+      val wps = vectors.map { v =>
+        val location: Location = NED.fromVec(v) -> to._1.home
+        Waypoint(location)
       }
       wps
     }

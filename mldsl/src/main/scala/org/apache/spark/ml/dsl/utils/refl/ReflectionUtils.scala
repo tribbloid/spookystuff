@@ -9,10 +9,8 @@ object ReflectionUtils extends ReflectionLock {
   import org.apache.spark.sql.catalyst.ScalaReflection.universe._
 
   //TODO: move most of them to ScalaType
-  def getCaseAccessorSymbols(tt: ScalaType[_]): List[MethodSymbol] = locked{
-    val accessors = tt.asType.members
-      .toList
-      .reverse
+  def getCaseAccessorSymbols(tt: ScalaType[_]): List[MethodSymbol] = locked {
+    val accessors = tt.asType.members.toList.reverse
       .flatMap(filterCaseAccessors)
     accessors
   }
@@ -29,13 +27,12 @@ object ReflectionUtils extends ReflectionLock {
   }
 
   def getCaseAccessorFields(tt: ScalaType[_]): List[(String, Type)] = {
-    getCaseAccessorSymbols(tt).map {
-      ss =>
-        ss.name.decodedName.toString -> ss.typeSignature
+    getCaseAccessorSymbols(tt).map { ss =>
+      ss.name.decodedName.toString -> ss.typeSignature
     }
   }
 
-  def getConstructorParameters(tt: ScalaType[_]): Seq[(String, Type)] = locked{
+  def getConstructorParameters(tt: ScalaType[_]): Seq[(String, Type)] = locked {
     val formalTypeArgs = tt.asType.typeSymbol.asClass.typeParams
     val TypeRef(_, _, actualTypeArgs) = tt.asType
     val constructorSymbol = tt.asType.member(termNames.CONSTRUCTOR)
@@ -43,8 +40,8 @@ object ReflectionUtils extends ReflectionLock {
       constructorSymbol.asMethod.paramLists
     } else {
       // Find the primary constructor, and use its parameter ordering.
-      val primaryConstructorSymbol: Option[Symbol] = constructorSymbol.asTerm.alternatives.find(
-        s => s.isMethod && s.asMethod.isPrimaryConstructor)
+      val primaryConstructorSymbol: Option[Symbol] =
+        constructorSymbol.asTerm.alternatives.find(s => s.isMethod && s.asMethod.isPrimaryConstructor)
       if (primaryConstructorSymbol.isEmpty) {
         sys.error("Internal SQL error: Product object did not have a primary constructor.")
       } else {
@@ -61,7 +58,7 @@ object ReflectionUtils extends ReflectionLock {
     val tt = ScalaType.fromClass(v.getClass)
     val ks = getCaseAccessorFields(tt).map(_._1)
     val vs = v.productIterator.toList
-    assert (ks.size == vs.size)
+    assert(ks.size == vs.size)
     ks.zip(vs)
   }
 

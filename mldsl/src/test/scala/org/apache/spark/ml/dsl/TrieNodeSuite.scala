@@ -17,14 +17,15 @@ class TrieNodeSuite extends AbstractFlowSuite {
       "12",
       "123",
       "124"
-    )
-      .map(_.split("").toSeq)
+    ).map(_.split("").toSeq)
       .map(v => v -> v.mkString)
 
     val trie = TrieNode.build(map)
 
-    trie.toString().treeNodeShouldBe(
-      """
+    trie
+      .toString()
+      .treeNodeShouldBe(
+        """
         |TrieNode None, 0
         |:- TrieNode [A], Some(A), 1
         |:  +- TrieNode [A,B], Some(AB), 2
@@ -37,10 +38,13 @@ class TrieNodeSuite extends AbstractFlowSuite {
         |      :- TrieNode [1,2,4], Some(124), 3
         |      +- TrieNode [1,2,3], Some(123), 3
       """.stripMargin
-    )
+      )
 
-    trie.compact.rebuildDepth().toString().treeNodeShouldBe(
-      """
+    trie.compact
+      .rebuildDepth()
+      .toString()
+      .treeNodeShouldBe(
+        """
         |TrieNode None, 0
         |:- TrieNode [A,B,C,D], Some(ABCD), 1
         |:  :- TrieNode [A,B,C,D,F], Some(ABCDF), 2
@@ -49,7 +53,7 @@ class TrieNodeSuite extends AbstractFlowSuite {
         |   :- TrieNode [1,2,4], Some(124), 2
         |   +- TrieNode [1,2,3], Some(123), 2
       """.stripMargin
-    )
+      )
   }
 
   it("pruneUp can rename single children") {
@@ -64,14 +68,15 @@ class TrieNodeSuite extends AbstractFlowSuite {
       "12",
       "123",
       "124"
-    )
-      .map(_.split("").toSeq)
+    ).map(_.split("").toSeq)
       .map(v => v -> v.mkString)
 
     val trie = TrieNode.build(map)
 
-    trie.toString().treeNodeShouldBe(
-      """
+    trie
+      .toString()
+      .treeNodeShouldBe(
+        """
         |TrieNode None, 0
         |:- TrieNode [A], Some(A), 1
         |:  +- TrieNode [A,B], Some(AB), 2
@@ -84,10 +89,13 @@ class TrieNodeSuite extends AbstractFlowSuite {
         |      :- TrieNode [1,2,4], Some(124), 3
         |      +- TrieNode [1,2,3], Some(123), 3
       """.stripMargin
-    )
+      )
 
-    trie.pruneUp.rebuildDepth().toString().treeNodeShouldBe(
-      """
+    trie.pruneUp
+      .rebuildDepth()
+      .toString()
+      .treeNodeShouldBe(
+        """
         |TrieNode None, 0
         | TrieNode [A], Some(A), 1
         |  TrieNode [A], Some(AB), 2
@@ -100,7 +108,7 @@ class TrieNodeSuite extends AbstractFlowSuite {
         |   TrieNode [1,4], Some(124), 3
         |   TrieNode [1,3], Some(123), 3
       """.stripMargin
-    )
+      )
   }
 
   it("reversed pruneUp can minimize names") {
@@ -124,20 +132,21 @@ class TrieNodeSuite extends AbstractFlowSuite {
         .map(v => v -> v)
     )
 
-    val pairs = trie.pruneUp.flatMap{
-      node =>
+    val pairs = trie.pruneUp
+      .flatMap { node =>
         val k = node.key
         node.value.map(_ -> k)
-    }
+      }
       .map(tuple => tuple._1.reverse -> tuple._2.reverse)
 
     val map = Map(pairs: _*)
-    val result = names.map{
-      v =>
-        v.mkString -> map(v).mkString
+    val result = names.map { v =>
+      v.mkString -> map(v).mkString
     }
-    result.mkString("\n").shouldBe(
-      """
+    result
+      .mkString("\n")
+      .shouldBe(
+        """
         |(AB,B)
         |(ABC,C)
         |(ABCD,D)
@@ -147,7 +156,7 @@ class TrieNodeSuite extends AbstractFlowSuite {
         |(ABCDK,DK)
         |(ABCDEK,EK)
       """.stripMargin
-    )
+      )
   }
 
   it("reversed compact can minimize repeated names") {
@@ -170,20 +179,21 @@ class TrieNodeSuite extends AbstractFlowSuite {
         .map(v => v -> v)
     )
 
-    val pairs = trie.pruneUp.flatMap{
-      node =>
+    val pairs = trie.pruneUp
+      .flatMap { node =>
         val k = node.key
         node.value.map(_ -> k)
-    }
+      }
       .map(tuple => tuple._1.reverse -> tuple._2.reverse)
 
     val map = Map(pairs: _*)
-    val result = names.map{
-      v =>
-        v.mkString -> map(v).mkString
+    val result = names.map { v =>
+      v.mkString -> map(v).mkString
     }
-    result.mkString("\n").shouldBe(
-      """
+    result
+      .mkString("\n")
+      .shouldBe(
+        """
         |(A,A)
         |(AA,A)
         |(AAA,A)
@@ -192,7 +202,7 @@ class TrieNodeSuite extends AbstractFlowSuite {
         |(AAAAAA,A)
         |(AAAAAB,B)
       """.stripMargin
-    )
+      )
   }
 
   it("reversed compact can minimize some names") {
@@ -215,20 +225,21 @@ class TrieNodeSuite extends AbstractFlowSuite {
         .map(v => v -> v)
     )
 
-    val pairs = trie.pruneUp.flatMap{
-      node =>
+    val pairs = trie.pruneUp
+      .flatMap { node =>
         val k = node.key
         node.value.map(_ -> k)
-    }
+      }
       .map(tuple => tuple._1.reverse -> tuple._2.reverse)
 
     val map = Map(pairs: _*)
-    val result = names.map{
-      v =>
-        v.mkString(" ") -> map(v).mkString(" ")
+    val result = names.map { v =>
+      v.mkString(" ") -> map(v).mkString(" ")
     }
-    result.mkString("\n").shouldBe(
-      """
+    result
+      .mkString("\n")
+      .shouldBe(
+        """
         |(input Tokenizer,Tokenizer)
         |(input Tokenizer HashingTF,Tokenizer HashingTF)
         |(input Tokenizer StopWordsRemover HashingTF,StopWordsRemover HashingTF)
@@ -237,6 +248,6 @@ class TrieNodeSuite extends AbstractFlowSuite {
         |(input,input)
         |(input Tokenizer StopWordsRemover,StopWordsRemover)
       """.stripMargin
-    )
+      )
   }
 }

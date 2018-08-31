@@ -12,11 +12,11 @@ import com.tribbloids.spookystuff.utils.IDMixin
   * But LinkStatus is!
   */
 case class LinkStatus(
-                       uav: UAV,
-                       lock: Lock,
-                       home: Location = UAVConf.DEFAULT_HOME_LOCATION,
-                       currentLocation: Location = UAVConf.DEFAULT_HOME_LOCATION
-                     ) extends IDMixin {
+    uav: UAV,
+    lock: Lock,
+    home: Location = UAVConf.DEFAULT_HOME_LOCATION,
+    currentLocation: Location = UAVConf.DEFAULT_HOME_LOCATION
+) extends IDMixin {
 
   override def _id: Any = uav
 

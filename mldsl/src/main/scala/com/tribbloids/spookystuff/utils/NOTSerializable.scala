@@ -8,7 +8,7 @@ import com.esotericsoftware.kryo.{Kryo, KryoSerializable}
 /**
   * Any subclass in the closure cleaned by Spark ClosureCleaner will trigger a runtime error.
   */
-trait NOTSerializable extends Serializable with KryoSerializable{
+trait NOTSerializable extends Serializable with KryoSerializable {
 
   lazy val error = new NotSerializableException(s"${this.getClass.getCanonicalName} is NOT serializable")
 
@@ -21,9 +21,9 @@ trait NOTSerializable extends Serializable with KryoSerializable{
   def readObjectNoData(): Unit =
     throw error
 
-  override def write (kryo: Kryo, output: Output): Unit =
+  override def write(kryo: Kryo, output: Output): Unit =
     throw error
 
-  override def read (kryo: Kryo, input: Input): Unit =
+  override def read(kryo: Kryo, input: Input): Unit =
     throw error
 }

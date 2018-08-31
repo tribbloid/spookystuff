@@ -7,7 +7,6 @@ import org.apache.spark.sql.types.DataType
 /**
   * Created by peng on 28/05/16.
   */
-
 class ScalaUDTSuite extends FunSpecx {
 
   TestHelper.TestSC

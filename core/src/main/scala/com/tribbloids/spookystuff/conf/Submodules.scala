@@ -9,9 +9,9 @@ import scala.reflect.ClassTag
 /**
   * Created by peng on 18/06/17.
   */
-case class Submodules[U] private(
-                                  self: mutable.Map[String, U] = mutable.Map.empty
-                                ) extends Iterable[U] {
+case class Submodules[U] private (
+    self: mutable.Map[String, U] = mutable.Map.empty
+) extends Iterable[U] {
 
   def getOrBuild[T <: U](implicit ev: Submodules.Builder[T]): T = {
 
@@ -25,16 +25,16 @@ case class Submodules[U] private(
 
   def buildAll[T <: U: ClassTag](): Unit = {
     val ctg = implicitly[ClassTag[T]]
-    Submodules.builderRegistry.foreach {
-      builder =>
-        if (ctg >:> builder.ctg) {
-          this.getOrBuild(builder.asInstanceOf[Submodules.Builder[_ <: T]])
-        }
+    Submodules.builderRegistry.foreach { builder =>
+      if (ctg >:> builder.ctg) {
+        this.getOrBuild(builder.asInstanceOf[Submodules.Builder[_ <: T]])
+      }
     }
   }
 
   def get[T <: U](implicit ev: Submodules.Builder[T]): Option[T] = {
-    self.get(ev.ctg.runtimeClass.getCanonicalName)
+    self
+      .get(ev.ctg.runtimeClass.getCanonicalName)
       .map {
         _.asInstanceOf[T]
       }
@@ -58,14 +58,13 @@ object Submodules {
   }
 
   def apply[U](
-                vs: U*
-              ): Submodules[U] = {
+      vs: U*
+  ): Submodules[U] = {
 
     Submodules[U](
       mutable.Map(
-        vs.map {
-          v =>
-            v.getClass.getCanonicalName -> v
+        vs.map { v =>
+          v.getClass.getCanonicalName -> v
         }: _*
       )
     )

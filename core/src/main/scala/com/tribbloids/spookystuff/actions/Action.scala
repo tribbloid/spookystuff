@@ -30,10 +30,9 @@ trait Action extends ActionLike {
   var timeElapsed: Long = -1 //only set once
 
   override def dryrun: List[List[Action]] = {
-    if (hasOutput){
+    if (hasOutput) {
       List(List(this))
-    }
-    else {
+    } else {
       List()
     }
   }
@@ -43,15 +42,13 @@ trait Action extends ActionLike {
 
     val results = try {
       exe(session)
-    }
-    catch {
+    } catch {
       case e: Throwable =>
-
         val message: String = getSessionExceptionMessage(session)
 
         val ex = e match {
           case ae: ActionException => ae
-          case _ => new ActionException(message, e)
+          case _                   => new ActionException(message, e)
         }
         ex.setStackTrace(e.getStackTrace)
         throw ex
@@ -65,19 +62,17 @@ trait Action extends ActionLike {
 
   //execute errorDumps as side effects
   protected def getSessionExceptionMessage(
-                                            session: Session,
-                                            docOpt: Option[Doc] = None
-                                          ): String = {
+      session: Session,
+      docOpt: Option[Doc] = None
+  ): String = {
     var message: String = "\n{\n"
 
     message += {
-      session.backtrace.map {
-        action =>
-          "| " + action.toString
+      session.backtrace.map { action =>
+        "| " + action.toString
       } ++
         Seq("+> " + this.detailedStr)
-    }
-      .mkString("\n")
+    }.mkString("\n")
 
     val errorDump: Boolean = session.spooky.spookyConf.errorDump
     val errorDumpScreenshot: Boolean = session.spooky.spookyConf.errorScreenshot
@@ -95,19 +90,16 @@ trait Action extends ActionLike {
             try {
               val rawPage = ErrorScreenshot.exe(session).head.asInstanceOf[Doc]
               message += "\nScreenshot: " + this.errorDump(message, rawPage, session.spooky)
-            }
-            catch {
+            } catch {
               case e: Throwable =>
                 LoggerFactory.getLogger(this.getClass).error("Cannot take screenshot on ActionError:", e)
             }
           }
-        }
-        else {
-          docOpt.foreach {
-            doc =>
-              if (errorDump) {
-                message += "\nSnapshot: " + this.errorDump(message, doc, session.spooky)
-              }
+        } else {
+          docOpt.foreach { doc =>
+            if (errorDump) {
+              message += "\nSnapshot: " + this.errorDump(message, doc, session.spooky)
+            }
           }
         }
     }
@@ -116,21 +108,20 @@ trait Action extends ActionLike {
 
   protected def errorDump(message: String, rawPage: Doc, spooky: SpookyContext): String = {
 
-    val backtrace = if (rawPage.uid.backtrace.lastOption.exists(_ eq this)) rawPage.uid.backtrace
-    else rawPage.uid.backtrace :+ this
+    val backtrace =
+      if (rawPage.uid.backtrace.lastOption.exists(_ eq this)) rawPage.uid.backtrace
+      else rawPage.uid.backtrace :+ this
     val uid = rawPage.uid.copy(backtrace = backtrace)(name = null)
     val page = rawPage.copy(uid = uid)
     try {
       page.errorDump(spooky)
       "saved to: " + page.saved.last
-    }
-    catch {
+    } catch {
       case e: Throwable =>
         try {
           page.errorDumpLocally(spooky)
           "DFS inaccessible.........saved to: " + page.saved.last
-        }
-        catch {
+        } catch {
           case e: Throwable =>
             "all file systems inaccessible.........not saved"
         }
@@ -160,7 +151,7 @@ trait Action extends ActionLike {
   }
 
   final protected[actions] def exe(session: Session): Seq[DocOption] = {
-    withDriversDuring(session){
+    withDriversDuring(session) {
       doExe(session)
     }
   }
@@ -185,8 +176,9 @@ trait Timed extends Action {
   }
 
   def timeout(session: Session): Duration = {
-    val base = if (this._timeout == null) session.spooky.spookyConf.remoteResourceTimeout
-    else this._timeout
+    val base =
+      if (this._timeout == null) session.spooky.spookyConf.remoteResourceTimeout
+      else this._timeout
 
     base
   }
@@ -196,7 +188,8 @@ trait Timed extends Action {
     timeout(session) + Const.hardTerminateOverhead
   }
 
-  def webDriverWait(session: Session): WebDriverWait = new WebDriverWait(session.webDriver, this.timeout(session).toSeconds)
+  def webDriverWait(session: Session): WebDriverWait =
+    new WebDriverWait(session.webDriver, this.timeout(session).toSeconds)
 
   def getClickableElement(selector: Selector, session: Session) = {
 
@@ -245,8 +238,7 @@ trait Named extends Action {
   }
 }
 
-trait Driverless extends Action {
-}
+trait Driverless extends Action {}
 
 trait ActionPlaceholder extends Action {
 

@@ -15,10 +15,10 @@ object LinkUtils {
   import com.tribbloids.spookystuff.utils.SpookyViews._
 
   def tryLinkRDD(
-                  spooky: SpookyContext,
-                  parallelismOpt: Option[Int] = None,
-                  onHold: Boolean = true
-                ): RDD[Try[Link]] = {
+      spooky: SpookyContext,
+      parallelismOpt: Option[Int] = None,
+      onHold: Boolean = true
+  ): RDD[Try[Link]] = {
 
     val uuidSeed = spooky.sparkContext.uuidSeed(
       parallelismOpt,
@@ -27,18 +27,17 @@ object LinkUtils {
 
     val result = uuidSeed.map {
       case (i, uuid) =>
-        spooky.withSession {
-          session =>
-            val fleet: List[UAV] = spooky.getConf[UAVConf].uavsInFleetShuffled
-            val lock = if (onHold) Lock.OnHold(Some(uuid))
+        spooky.withSession { session =>
+          val fleet: List[UAV] = spooky.getConf[UAVConf].uavsInFleetShuffled
+          val lock =
+            if (onHold) Lock.OnHold(Some(uuid))
             else Lock.Transient(Some(uuid))
-            val linkTry = Dispatcher (
-              fleet,
-              session,
-              lock
-            )
-              .tryGet
-            linkTry
+          val linkTry = Dispatcher(
+            fleet,
+            session,
+            lock
+          ).tryGet
+          linkTry
         }
     }
 
@@ -67,20 +66,17 @@ object LinkUtils {
 //  }
 
   def unlockAll(sc: SparkContext): Unit = {
-    sc.runEverywhere(){
-      _ =>
-        Link.registered.values.foreach {
-          link =>
-            link.unlock()
-        }
+    sc.runEverywhere() { _ =>
+      Link.registered.values.foreach { link =>
+        link.unlock()
+      }
     }
   }
 
   def cleanAll(sc: SparkContext): Unit = {
-    sc.runEverywhere() {
-      _ =>
-        Link.registered.values.toList
-          .foreach(_.clean())
+    sc.runEverywhere() { _ =>
+      Link.registered.values.toList
+        .foreach(_.clean())
     }
   }
 }

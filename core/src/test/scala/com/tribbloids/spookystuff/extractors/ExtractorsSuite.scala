@@ -12,7 +12,7 @@ class ExtractorsSuite extends SpookyEnvFixture {
     val lit: Lit[FR, Int] = Lit(1)
 
     val json = lit.prettyJSON()
-    json.shouldBe (
+    json.shouldBe(
       "1"
     )
   }

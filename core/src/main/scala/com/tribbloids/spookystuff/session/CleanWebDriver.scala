@@ -11,9 +11,9 @@ object CleanWebDriver {
 }
 
 class CleanWebDriver(
-                      val self: WebDriver,
-                      override val _lifespan: Lifespan = Lifespan.Auto()
-                    ) extends LocalCleanable {
+    val self: WebDriver,
+    override val _lifespan: Lifespan = Lifespan.Auto()
+) extends LocalCleanable {
 
   override def cleanImpl(): Unit = {
     self.close()
@@ -23,7 +23,7 @@ class CleanWebDriver(
   override def isSilent(ee: Throwable): Boolean = {
     ee match {
       case e: NoSuchSessionException => true
-      case _ => false
+      case _                         => false
     }
   }
 }

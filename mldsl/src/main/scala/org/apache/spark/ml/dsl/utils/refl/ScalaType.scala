@@ -24,9 +24,7 @@ import scala.reflect.ClassTag
 //TODO: change to ThreadLocal to bypass thread safety?
 //TODO: use scala type class: http://danielwestheide.com/blog/2013/02/06/the-neophytes-guide-to-scala-part-12-type-classes.html
 //TODO: this should be a codec
-trait ScalaType[T] extends DataType
-  with (() => TypeTag[T])
-  with ReflectionLock with Serializable {
+trait ScalaType[T] extends DataType with (() => TypeTag[T]) with ReflectionLock with Serializable {
 
   override def defaultSize: Int = 0
   override def asNullable: this.type = this
@@ -51,19 +49,19 @@ trait ScalaType[T] extends DataType
 
   //TODO: aggregate into catalyst obj
   @transient lazy val tryReify: scala.util.Try[DataType] = locked {
-    TypeUtils.tryCatalystTypeFor(asTypeTag)
-      .flatMap {
-        t =>
-          scala.util.Try {
-            assert(t.getClass != this.getClass, "cyclic reification")
-            t
-          }
+    TypeUtils
+      .tryCatalystTypeFor(asTypeTag)
+      .flatMap { t =>
+        scala.util.Try {
+          assert(t.getClass != this.getClass, "cyclic reification")
+          t
+        }
       }
   }
 
   def reify: DataType = tryReify.get
-  def reifyOrSelf = tryReify.getOrElse{this}
-  def reifyOrNullType = tryReify.getOrElse{NullType}
+  def reifyOrSelf = tryReify.getOrElse { this }
+  def reifyOrNullType = tryReify.getOrElse { NullType }
 
   //TODO: add classManifest
 
@@ -93,13 +91,11 @@ trait ScalaType[T] extends DataType
       val mirror = ScalaType.this.mirror
       val supers = asType.typeSymbol.asClass.baseClasses
 
-      supers.flatMap {
-        ss =>
-          scala.util.Try {
-            val companionMirror = mirror.reflectModule(ss.companion.asModule)
-            companionMirror.instance
-          }
-            .toOption
+      supers.flatMap { ss =>
+        scala.util.Try {
+          val companionMirror = mirror.reflectModule(ss.companion.asModule)
+          companionMirror.instance
+        }.toOption
       }
     }
   }
@@ -165,7 +161,7 @@ object ScalaType {
   def getRuntimeType(v: Any): ScalaType[_] = {
     v match {
       case v: RuntimeTypeOverride => v.runtimeType
-      case _ => v.getClass
+      case _                      => v.getClass
     }
   }
 
@@ -193,9 +189,8 @@ object ScalaType {
       result
     }
 
-    lazy val atomicTypePairs: Seq[(DataType, TypeTag[_])] = atomicExamples.map {
-      v =>
-        ScalaType.fromTypeTag(v._2).tryReify.get -> v._2
+    lazy val atomicTypePairs: Seq[(DataType, TypeTag[_])] = atomicExamples.map { v =>
+      ScalaType.fromTypeTag(v._2).tryReify.get -> v._2
     }
 
     lazy val atomicTypeMap: Map[DataType, TypeTag[_]] = {
@@ -232,17 +227,16 @@ object ScalaType {
           val valueTag = value.scalaTypeOpt
           val pairs = (keyTag, valueTag) match {
             case (Some(kt), Some(vt)) => Some(kt -> vt)
-            case _ => None
+            case _                    => None
           }
 
-          pairs.map {
-            pair =>
-              (pair._1, pair._2) match {
-                case (ttg1: TypeTag[a], ttg2: TypeTag[b]) =>
-                  implicit val t1 = ttg1
-                  implicit val t2 = ttg2
-                  typeTag[Map[a, b]]
-              }
+          pairs.map { pair =>
+            (pair._1, pair._2) match {
+              case (ttg1: TypeTag[a], ttg2: TypeTag[b]) =>
+                implicit val t1 = ttg1
+                implicit val t2 = ttg2
+                typeTag[Map[a, b]]
+            }
           }
         case _ =>
           None
@@ -251,7 +245,8 @@ object ScalaType {
 
     def asTypeTag: TypeTag[_] = {
       scalaTypeOpt.getOrElse {
-        throw new UnsupportedOperationException(s"cannot convert Catalyst type $tt to Scala type: TypeTag=${tt.scalaTypeOpt}")
+        throw new UnsupportedOperationException(
+          s"cannot convert Catalyst type $tt to Scala type: TypeTag=${tt.scalaTypeOpt}")
       }
     }
 
@@ -277,10 +272,12 @@ object ScalaType {
         case ArrayType(boxed, _) =>
           Some(boxed)
         case MapType(keyType, valueType, valueContainsNull) =>
-          Some(StructType(Array(
-            StructField("_1", keyType),
-            StructField("_2", valueType, valueContainsNull)
-          )))
+          Some(
+            StructType(
+              Array(
+                StructField("_1", keyType),
+                StructField("_2", valueType, valueContainsNull)
+              )))
         case _ =>
           None
       }
@@ -294,18 +291,18 @@ object ScalaType {
     }
 
     def asArray: DataType = locked {
-      filterArray.getOrElse{
+      filterArray.getOrElse {
         ArrayType(tt)
       }
     }
 
     def ensureArray: DataType = locked {
-      filterArray.getOrElse{
+      filterArray.getOrElse {
         throw new UnsupportedOperationException(s"Type $tt is not an Array")
       }
     }
 
-    def =~= (another: DataType): Boolean = {
+    def =~=(another: DataType): Boolean = {
       val result = (tt eq another) ||
         (tt == another) ||
         (tt.reified == another.reified)
@@ -314,8 +311,8 @@ object ScalaType {
     }
 
     def should_=~=(another: DataType): Unit = {
-      val result = =~= (another)
-      assert (
+      val result = =~=(another)
+      assert(
         result,
         s"""
            |Type not equal:
@@ -355,11 +352,10 @@ object UnreifiedScalaType {
         ArrayType(reify(v), n)
       case StructType(fields) =>
         StructType(
-          fields.map {
-            ff =>
-              ff.copy(
-                dataType = reify(ff.dataType)
-              )
+          fields.map { ff =>
+            ff.copy(
+              dataType = reify(ff.dataType)
+            )
           }
         )
       case MapType(k, v, n) =>
@@ -376,7 +372,7 @@ object UnreifiedScalaType {
   */
 abstract class ScalaUDT[T >: Null: ClassTag] extends UserDefinedType[T] with ScalaType.Ctg[T] {
 
-  override val typeName = this.getClass.getSimpleName.stripSuffix("$")//.stripSuffix("Type").stripSuffix("UDT").toLowerCase
+  override val typeName = this.getClass.getSimpleName.stripSuffix("$") //.stripSuffix("Type").stripSuffix("UDT").toLowerCase
 
   def serDe = { //TODO: kryo is better
     val conf = new SparkConf()

@@ -75,4 +75,3 @@ trait CaseInstanceRef extends InstanceRef with Product {
     kwargsTuple._2
   }
 }
-

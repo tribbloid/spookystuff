@@ -44,9 +44,10 @@ object SerBox {
   * @tparam T
   */
 case class SerBox[T: ClassTag](
-                                @transient obj: T,
-                                serOverride: () => SerializerInstance = null
-                              ) extends Serializable with IDMixin {
+    @transient obj: T,
+    serOverride: () => SerializerInstance = null
+) extends Serializable
+    with IDMixin {
 
   @transient lazy val serOpt: Option[SerializerInstance] = Option(serOverride).map(_.apply)
 
@@ -74,7 +75,7 @@ case class SerBox[T: ClassTag](
       case (None, Left(_serObj)) =>
         _serObj match {
           case v: SerializableWritable[_] => v.value.asInstanceOf[T]
-          case _ => _serObj.asInstanceOf[T]
+          case _                          => _serObj.asInstanceOf[T]
         }
       case (Some(serde), Right(array)) =>
         serde.deserialize[T](ByteBuffer.wrap(array))
@@ -121,27 +122,24 @@ case class SerBox[T: ClassTag](
   * this is a makeshift wrapper to circumvent scala 2.10 reflection's serialization problem
   */
 class WritableTypeTag[T](
-                          @transient val _ttg: TypeTag[T]
-                        ) extends Serializable {
+    @transient val _ttg: TypeTag[T]
+) extends Serializable {
 
   val boxOpt = Try {
     new SerBox(_ttg, SerBox.javaOverride) //TypeTag is incompatible with Kryo
-  }
-    .toOption
+  }.toOption
 
   val dTypeOpt = TypeUtils.tryCatalystTypeFor(_ttg).toOption
 
   @transient lazy val value: TypeTag[T] = Option(_ttg)
-    .orElse{
-      boxOpt.map {
-        v =>
-          v.value
+    .orElse {
+      boxOpt.map { v =>
+        v.value
       }
     }
     .orElse {
-      dTypeOpt.flatMap {
-        dType =>
-          ScalaType.DataTypeView(dType).scalaTypeOpt.map(_.asInstanceOf[TypeTag[T]])
+      dTypeOpt.flatMap { dType =>
+        ScalaType.DataTypeView(dType).scalaTypeOpt.map(_.asInstanceOf[TypeTag[T]])
       }
     }
     .getOrElse(

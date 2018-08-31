@@ -14,14 +14,14 @@ import scala.language.implicitConversions
 //right now it vaguely resembles SparkPlan in catalyst
 //TODO: may subclass SparkPlan in the future to generate DataFrame directly, but not so fast
 abstract class ExecutionPlan(
-                              val children: Seq[ExecutionPlan],
-                              val ec: SpookyExecutionContext
-                            ) extends TreeNode[ExecutionPlan] with NOTSerializable {
+    val children: Seq[ExecutionPlan],
+    val ec: SpookyExecutionContext
+) extends TreeNode[ExecutionPlan]
+    with NOTSerializable {
 
   def this(
-            children: Seq[ExecutionPlan]
-          ) = this(
-
+      children: Seq[ExecutionPlan]
+  ) = this(
     children,
     children.map(_.ec).reduce(_ :++ _)
   )
@@ -34,7 +34,8 @@ abstract class ExecutionPlan(
   //Cannot be lazy, always defined on construction
   val schema: SpookySchema = SpookySchema(
     ec,
-    fieldTypes = children.map(_.schema.fieldTypes)
+    fieldTypes = children
+      .map(_.schema.fieldTypes)
       .reduceOption(_ ++ _)
       .getOrElse(ListMap[Field, DataType]())
   )
@@ -50,7 +51,7 @@ abstract class ExecutionPlan(
   //beconRDD is always empty, with fixed partitioning, cogroup with it to maximize Local Cache hitting chance
   //by default, inherit from the first child
   protected final def inheritedBeaconRDDOpt =
-  firstChildOpt.flatMap(_.beaconRDDOpt)
+    firstChildOpt.flatMap(_.beaconRDDOpt)
 
   lazy val beaconRDDOpt: Option[BeaconRDD[TraceView]] = inheritedBeaconRDDOpt
 
@@ -90,18 +91,17 @@ abstract class ExecutionPlan(
     }
   }
 
-  def unsquashedRDD: RDD[FetchedRow] = rdd()
-    .flatMap(v => v.WSchema(schema).unsquash)
+  def unsquashedRDD: RDD[FetchedRow] =
+    rdd()
+      .flatMap(v => v.WSchema(schema).unsquash)
 
   def persist[T](
-                  rdd: RDD[T],
-                  storageLevel: StorageLevel = ExecutionPlan.this.spooky.spookyConf.defaultStorageLevel
-                ) = scratchRDDs.persist(rdd, storageLevel)
+      rdd: RDD[T],
+      storageLevel: StorageLevel = ExecutionPlan.this.spooky.spookyConf.defaultStorageLevel
+  ) = scratchRDDs.persist(rdd, storageLevel)
 
 }
 
 abstract class UnaryPlan(
-                          val child: ExecutionPlan
-                        ) extends ExecutionPlan(Seq(child)) {
-
-}
+    val child: ExecutionPlan
+) extends ExecutionPlan(Seq(child)) {}

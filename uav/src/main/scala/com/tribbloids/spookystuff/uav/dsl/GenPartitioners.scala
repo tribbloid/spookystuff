@@ -16,45 +16,39 @@ import scala.reflect.ClassTag
 object GenPartitioners {
 
   case class VRP(
-                  base: GenPartitioner = {
-                    com.tribbloids.spookystuff.dsl.GenPartitioners.Wide()
-                  },
+      base: GenPartitioner = {
+        com.tribbloids.spookystuff.dsl.GenPartitioners.Wide()
+      },
+      // if missing, use ALL OF THEM!
+      numUAVOverride: Option[Int] = None,
+      // how much effort optimizer spend to reduce total length instead of max length
+      cohesiveness: Double = 0.05,
+      // for debugging only.
+      solutionPlotPathOpt: Option[String] = None,
+      covergencePlotPathOpt: Option[String] = None,
+      // only applies to HasCost
+      optimizer: VRPOptimizer = VRPOptimizers.JSprit,
+      // only applies to UAVNavigation
+      traffic: Option[TrafficControl] = {
+        None
+        //                    Some(CollisionAvoidances.Clearance())
+      }
+  ) extends GenPartitioner {
 
-                  // if missing, use ALL OF THEM!
-                  numUAVOverride: Option[Int] = None,
-
-                  // how much effort optimizer spend to reduce total length instead of max length
-                  cohesiveness: Double = 0.05,
-
-                  // for debugging only.
-                  solutionPlotPathOpt: Option[String] = None,
-                  covergencePlotPathOpt: Option[String] = None,
-
-                  // only applies to HasCost
-                  optimizer: VRPOptimizer = VRPOptimizers.JSprit,
-
-                  // only applies to UAVNavigation
-                  traffic: Option[TrafficControl] = {
-                    None
-                    //                    Some(CollisionAvoidances.Clearance())
-                  }
-                ) extends GenPartitioner {
-
-    override def getInstance[K >: TraceView <: TraceView : ClassTag](schema: SpookySchema): Instance[K] = {
+    override def getInstance[K >: TraceView <: TraceView: ClassTag](schema: SpookySchema): Instance[K] = {
       Inst(schema).asInstanceOf[Instance[K]]
     }
 
-    case class Inst(schema: SpookySchema)(
-      implicit val ctg: ClassTag[TraceView]) extends Instance[TraceView] {
+    case class Inst(schema: SpookySchema)(implicit val ctg: ClassTag[TraceView]) extends Instance[TraceView] {
 
       type K = TraceView
 
       //gather all UAVActions to driver and use a local solver (JSprit) to rearrange them.
       override def reduceByKey[V: ClassTag](
-                                             rdd: RDD[(K, V)],
-                                             reducer: (V, V) => V,
-                                             beaconRDDOpt: Option[BeaconRDD[K]] = None
-                                           ): RDD[(K, V)] = {
+          rdd: RDD[(K, V)],
+          reducer: (V, V) => V,
+          beaconRDDOpt: Option[BeaconRDD[K]] = None
+      ): RDD[(K, V)] = {
 
         import schema.ec
 
@@ -84,14 +78,12 @@ object GenPartitioners {
           instance.reduceByKey(hasCostRDD, reducer, None) //add beaconRDD
         }
 
-        optimizedRDD = optimizedRDD.mapPartitions {
-          itr =>
-            EstimateLocationRule._rewritePartition[V](itr, schema)
+        optimizedRDD = optimizedRDD.mapPartitions { itr =>
+          EstimateLocationRule._rewritePartition[V](itr, schema)
         }
-        traffic.foreach {
-          ca =>
-            val instance = ca.getInstance(schema)
-            optimizedRDD = instance.reduceByKey(optimizedRDD, reducer, None)
+        traffic.foreach { ca =>
+          val instance = ca.getInstance(schema)
+          optimizedRDD = instance.reduceByKey(optimizedRDD, reducer, None)
         }
 
         val optimizedRDD_final = optimizedRDD.map(tuple => (tuple._1: K) -> tuple._2)

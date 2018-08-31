@@ -9,17 +9,20 @@ import com.tribbloids.spookystuff.testutils.LocalPathDocsFixture
 import scala.concurrent.duration._
 
 /**
- * Created by peng on 10/17/14.
- */
+  * Created by peng on 10/17/14.
+  */
 class TestInMemoryDocCache extends SpookyEnvFixture with LocalPathDocsFixture {
 
   lazy val cache: AbstractDocCache = InMemoryDocCache
 
-  val visit: List[Action] = Visit(HTML_URL)::Snapshot().as('old)::Nil
+  val visit: List[Action] = Visit(HTML_URL) :: Snapshot().as('old) :: Nil
   def visitPage: Seq[Doc] = visit.fetch(spooky).map(_.asInstanceOf[Doc])
 
-  val wget = Wget(HTML_URL).as('oldWget)::Nil
-  def wgetPage: Seq[Doc] = wget.fetch(spooky).map(_.asInstanceOf[Doc].updated(cacheLevel = DocCacheLevel.All)) //By default wget from DFS are only cached in-memory
+  val wget = Wget(HTML_URL).as('oldWget) :: Nil
+  def wgetPage: Seq[Doc] =
+    wget
+      .fetch(spooky)
+      .map(_.asInstanceOf[Doc].updated(cacheLevel = DocCacheLevel.All)) //By default wget from DFS are only cached in-memory
 
   it("cache and restore") {
     val visitPage = this.visitPage
@@ -37,7 +40,7 @@ class TestInMemoryDocCache extends SpookyEnvFixture with LocalPathDocsFixture {
     assert(visitPage.head === page2.head)
   }
 
-  it ("cache visit and restore with different name") {
+  it("cache visit and restore with different name") {
     val visitPage = this.visitPage
     val lifespan = 15.seconds
     spooky.spookyConf.cachedDocsLifeSpan = lifespan
@@ -65,7 +68,7 @@ class TestInMemoryDocCache extends SpookyEnvFixture with LocalPathDocsFixture {
     assert(page2.head.code === page2.head.code)
   }
 
-  it ("cache wget and restore with different name") {
+  it("cache wget and restore with different name") {
     val wgetPage = this.wgetPage
     spooky.spookyConf.cachedDocsLifeSpan = 10.seconds
 

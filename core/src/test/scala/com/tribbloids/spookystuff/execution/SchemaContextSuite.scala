@@ -7,7 +7,7 @@ import com.tribbloids.spookystuff.row.SpookySchema
 /**
   * Created by peng on 14/06/16.
   */
-class SchemaContextSuite extends SpookyEnvFixture{
+class SchemaContextSuite extends SpookyEnvFixture {
 
   import com.tribbloids.spookystuff.dsl._
 
@@ -22,9 +22,11 @@ class SchemaContextSuite extends SpookyEnvFixture{
       )
 
     val schema1 = resolver0.build
-    schema1.structType.toString().shouldBe(
-      "StructType(StructField(a,StringType,true), StructField(b,IntegerType,true))"
-    )
+    schema1.structType
+      .toString()
+      .shouldBe(
+        "StructType(StructField(a,StringType,true), StructField(b,IntegerType,true))"
+      )
     val resolver1 = schema1.newResolver
     resolver1
       .include(
@@ -33,8 +35,10 @@ class SchemaContextSuite extends SpookyEnvFixture{
       )
 
     val schema2 = resolver1.build
-    schema2.structType.toString().shouldBe(
-      "StructType(StructField(a,StringType,true), StructField(b,IntegerType,true), StructField(c,StringType,true), StructField(d,DoubleType,true))"
-    )
+    schema2.structType
+      .toString()
+      .shouldBe(
+        "StructType(StructField(a,StringType,true), StructField(b,IntegerType,true), StructField(c,StringType,true), StructField(d,DoubleType,true))"
+      )
   }
 }

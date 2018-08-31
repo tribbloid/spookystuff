@@ -166,14 +166,15 @@ sealed trait Level2 {
 
     def last: Extractor[T] = self.andOptionTyped((v: Iterable[T]) => v.lastOption, _.unboxArrayOrMap)
 
-    def get(i: Int): Extractor[T] = self.andOptionTyped({
-      (v: Iterable[T]) =>
-        val realIdx = if (i >= 0) i
-        else v.size - i
+    def get(i: Int): Extractor[T] =
+      self.andOptionTyped({ (v: Iterable[T]) =>
+        val realIdx =
+          if (i >= 0) i
+          else v.size - i
 
-        if (realIdx>=v.size || realIdx<0) None
+        if (realIdx >= v.size || realIdx < 0) None
         else Some(v.toSeq.apply(realIdx))
-    }, _.unboxArrayOrMap)
+      }, _.unboxArrayOrMap)
 
     def size: Extractor[Int] = self.andFn(_.size)
 
@@ -187,10 +188,10 @@ sealed trait Level2 {
 
     //TODO: Why IterableExView.filter cannot be applied on ZippedExpr? is the scala compiler malfunctioning?
     def zipWithKeys(keys: Extractor[Any]): Zipped[Any, T] =
-      new Zipped[Any,T](keys.typed[Iterable[_]], self)
+      new Zipped[Any, T](keys.typed[Iterable[_]], self)
 
     def zipWithValues(values: Extractor[Any]): Zipped[T, Any] =
-      new Zipped[T,Any](self, values.typed[Iterable[_]])
+      new Zipped[T, Any](self, values.typed[Iterable[_]])
 
     protected def groupByImpl[K](f: T => K): (Iterable[T]) => Map[K, Seq[T]] =
       (v: Iterable[T]) => v.groupBy(f).mapValues(_.toSeq)
@@ -199,42 +200,42 @@ sealed trait Level2 {
 
       val keyType = UnreifiedScalaType.forType[K]
 
-      self.andTyped (
-        groupByImpl(f),
-        {
-          t =>
-            MapType(keyType, t)
+      self.andTyped(
+        groupByImpl(f), { t =>
+          MapType(keyType, t)
         }
       )
     }
 
-    def slice(from: Int = Int.MinValue, until: Int = Int.MaxValue): Extractor[Iterable[T]] = self.andOptionTyped (
-      (v: Iterable[T]) => Some(v.slice(from, until)), identity
+    def slice(from: Int = Int.MinValue, until: Int = Int.MaxValue): Extractor[Iterable[T]] = self.andOptionTyped(
+      (v: Iterable[T]) => Some(v.slice(from, until)),
+      identity
     )
 
-    def filter(f: T => Boolean): Extractor[Iterable[T]] = self.andOptionTyped ((v: Iterable[T]) => Some(v.filter(f)), identity)
+    def filter(f: T => Boolean): Extractor[Iterable[T]] =
+      self.andOptionTyped((v: Iterable[T]) => Some(v.filter(f)), identity)
 
-    def distinct: Extractor[Seq[T]] = self.andOptionTyped ((v: Iterable[T]) => Some(v.toSeq.distinct), identity)
+    def distinct: Extractor[Seq[T]] = self.andOptionTyped((v: Iterable[T]) => Some(v.toSeq.distinct), identity)
 
     def distinctBy[K](f: T => K): Extractor[Iterable[T]] = {
-      self.andTyped (
+      self.andTyped(
         groupByImpl(f)
           .andThen(
             v =>
-              v.values.flatMap{
+              v.values.flatMap {
                 case repr: Traversable[T] => repr.headOption
-                case _ => None //TODO: what's the point of this? removed
-              }
+                case _                    => None //TODO: what's the point of this? removed
+            }
           ),
         identity
       )
     }
 
-    def map[B: TypeTag](f: T => B): Extractor[Seq[B]] = self.andFn (
+    def map[B: TypeTag](f: T => B): Extractor[Seq[B]] = self.andFn(
       v => v.toSeq.map(f)
     )
 
-    def flatMap[B: TypeTag](f: T => GenTraversableOnce[B]): Extractor[Seq[B]] = self.andFn (
+    def flatMap[B: TypeTag](f: T => GenTraversableOnce[B]): Extractor[Seq[B]] = self.andFn(
       v => v.toSeq.flatMap(f)
     )
   }

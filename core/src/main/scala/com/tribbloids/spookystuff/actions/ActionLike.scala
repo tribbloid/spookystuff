@@ -15,8 +15,8 @@ object ActionLike extends AutomaticRelay[ActionLike] {
 
   //TODO: aggregate all object that has children
   case class TreeNodeView(
-                           actionLike: ActionLike
-                         ) extends TreeNode[TreeNodeView] {
+      actionLike: ActionLike
+  ) extends TreeNode[TreeNodeView] {
 
     override def children: Seq[TreeNodeView] = actionLike.children.map {
       TreeNodeView
@@ -45,9 +45,8 @@ abstract class ActionLike extends Product with Serializable with Verbose {
 
   final def interpolate(row: FetchedRow, schema: SpookySchema): Option[this.type] = {
     val result = this.doInterpolate(row, schema)
-    result.foreach{
-      action =>
-        action.injectFrom(this)
+    result.foreach { action =>
+      action.injectFrom(this)
     }
     result
   }
@@ -80,7 +79,7 @@ abstract class ActionLike extends Product with Serializable with Verbose {
 
   def fetch(spooky: SpookyContext): Seq[DocOption] = {
 
-    val results = CommonUtils.retry(Const.remoteResourceLocalRetries){
+    val results = CommonUtils.retry(Const.remoteResourceLocalRetries) {
       fetchOnce(spooky)
     }
     val numPages = results.count(_.isInstanceOf[Doc])
@@ -93,47 +92,47 @@ abstract class ActionLike extends Product with Serializable with Verbose {
 
     if (!this.hasOutput) return Nil
 
-    val pagesFromCache: Seq[Seq[DocOption]] = if (!spooky.spookyConf.cacheRead) Seq(null)
-    else dryrun.map (
-      dry =>
-        InMemoryDocCache.get(dry, spooky)
-          .orElse{
-            DFSDocCache.get(dry, spooky)
-          }
-          .orNull
-    )
+    val pagesFromCache: Seq[Seq[DocOption]] =
+      if (!spooky.spookyConf.cacheRead) Seq(null)
+      else
+        dryrun.map(
+          dry =>
+            InMemoryDocCache
+              .get(dry, spooky)
+              .orElse {
+                DFSDocCache.get(dry, spooky)
+              }
+              .orNull
+        )
 
-    if (!pagesFromCache.contains(null)){
+    if (!pagesFromCache.contains(null)) {
       spooky.spookyMetrics.fetchFromCacheSuccess += 1
 
       val results = pagesFromCache.flatten
       spooky.spookyMetrics.pagesFetchedFromCache += results.count(_.isInstanceOf[Doc])
-      this.children.foreach{
-        action =>
-          LoggerFactory.getLogger(this.getClass).info(s"(cached)+> ${action.toString}")
+      this.children.foreach { action =>
+        LoggerFactory.getLogger(this.getClass).info(s"(cached)+> ${action.toString}")
       }
 
       results
-    }
-    else {
+    } else {
       spooky.spookyMetrics.fetchFromCacheFailure += 1
 
-      if (!spooky.spookyConf.remote) throw new QueryException(
-        "Resource is not cached and not allowed to be fetched remotely, " +
-          "the later can be enabled by setting SpookyContext.conf.remote=true"
-      )
-      spooky.withSession {
-        session =>
-          try {
-            val result = this.apply(session)
-            spooky.spookyMetrics.fetchFromRemoteSuccess += 1
-            result
-          }
-          catch {
-            case e: Throwable =>
-              spooky.spookyMetrics.fetchFromRemoteFailure += 1
-              throw e
-          }
+      if (!spooky.spookyConf.remote)
+        throw new QueryException(
+          "Resource is not cached and not allowed to be fetched remotely, " +
+            "the later can be enabled by setting SpookyContext.conf.remote=true"
+        )
+      spooky.withSession { session =>
+        try {
+          val result = this.apply(session)
+          spooky.spookyMetrics.fetchFromRemoteSuccess += 1
+          result
+        } catch {
+          case e: Throwable =>
+            spooky.spookyMetrics.fetchFromRemoteFailure += 1
+            throw e
+        }
       }
     }
   }

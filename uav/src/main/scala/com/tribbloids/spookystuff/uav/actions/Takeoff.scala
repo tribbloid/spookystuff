@@ -22,11 +22,11 @@ import scala.concurrent.duration.Duration
 
 //TODO: change to be like this: wrap a Nav, if on the ground, arm and takeoff, if in the air, serve as an altitude lower bound
 case class Takeoff(
-                    minAlt: Col[Double] = -1,
-                    maxAlt: Col[Double] = -1,
-                    override val cooldown: Duration = Const.Interaction.delayMin,
-                    prevNavOpt: Option[UAVNavigation] = None
-                  ) extends UAVNavigation {
+    minAlt: Col[Double] = -1,
+    maxAlt: Col[Double] = -1,
+    override val cooldown: Duration = Const.Interaction.delayMin,
+    prevNavOpt: Option[UAVNavigation] = None
+) extends UAVNavigation {
 
   override def doInterpolate(row: FetchedRow, schema: SpookySchema): Option[this.type] = {
     val uav = schema.spooky.getConf[UAVConf]
@@ -35,11 +35,13 @@ case class Takeoff(
 
     minAltOpt -> maxAltOpt match {
       case (Some(min), Some(max)) =>
-        val _min = if (min > 0) min
-        else uav.takeoffMinAltitude
+        val _min =
+          if (min > 0) min
+          else uav.takeoffMinAltitude
 
-        val _max = if (max > 0) max
-        else uav.takeoffMaxAltitude
+        val _max =
+          if (max > 0) max
+          else uav.takeoffMaxAltitude
 
         assert(min <= max, s"minAlt $min should < maxAlt $max")
         Some(this.copy(minAlt = _min, maxAlt = _max).asInstanceOf[this.type])
@@ -63,7 +65,8 @@ case class Takeoff(
 
     override def engage(): Unit = {
 
-      LoggerFactory.getLogger(this.getClass)
+      LoggerFactory
+        .getLogger(this.getClass)
         .info(s"taking off and climbing to ${minAlt.value} ~ ${maxAlt.value}")
 
       link.synchAPI.clearanceAlt(minAlt.value)
@@ -109,16 +112,14 @@ case class Takeoff(
         minAlt = newMinAlt,
         maxAlt = newMaxAlt
       )
-    }
-    else if (dAlt < 0) {
+    } else if (dAlt < 0) {
       val newMaxAlt = maxAlt.value + dAlt
       val newMinAlt = Math.min(minAlt.value, newMaxAlt)
       this.copy(
         minAlt = newMinAlt,
         maxAlt = newMaxAlt
       )
-    }
-    else {
+    } else {
       this
     }
     result.asInstanceOf[this.type]

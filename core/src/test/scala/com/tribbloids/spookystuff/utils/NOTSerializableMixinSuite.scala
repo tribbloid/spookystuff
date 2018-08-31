@@ -16,10 +16,13 @@ class NOTSerializableMixinSuite extends SpookyEnvFixture {
     AssertSerializable(whatever)
 
     val in = 1 to 2
-    val out = sc.parallelize(in).map{
-      v =>
+    val out = sc
+      .parallelize(in)
+      .map { v =>
         whatever.str + v
-    }.collect().toSeq
+      }
+      .collect()
+      .toSeq
 
     assert(out == Seq("abc1", "abc2"))
   }
@@ -27,15 +30,14 @@ class NOTSerializableMixinSuite extends SpookyEnvFixture {
   it("case class with NotSerializableMixin will trigger a runtime error in closure cleaning") {
     val whatever = Thing2("abc")
 
-    intercept[NotSerializableException]{
+    intercept[NotSerializableException] {
       AssertSerializable(whatever)
     }
 
     val in = 1 to 2
     intercept[SparkException] {
-      sc.parallelize(in).map{
-        v =>
-          whatever.str + v
+      sc.parallelize(in).map { v =>
+        whatever.str + v
       }
     }
   }

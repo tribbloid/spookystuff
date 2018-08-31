@@ -64,14 +64,14 @@ sealed abstract class AbstractSession(val spooky: SpookyContext) extends LocalCl
   * should be manually cleaned By ActionLike, so don't set lifespan unless absolutely necessary
   */
 class Session(
-               override val spooky: SpookyContext,
-               override val _lifespan: Lifespan = new Lifespan.JVM()
-             ) extends AbstractSession(spooky){
+    override val spooky: SpookyContext,
+    override val _lifespan: Lifespan = new Lifespan.JVM()
+) extends AbstractSession(spooky) {
 
   @volatile private var _webDriverOpt: Option[CleanWebDriver] = None
   def webDriverOpt = _webDriverOpt.filter(!_.isCleaned)
   //throwing error instead of lazy creation is required for restarting timer
-  def webDriver = webDriverOpt.getOrElse{
+  def webDriver = webDriverOpt.getOrElse {
     throw new NoWebDriverException
   }
 
@@ -82,7 +82,9 @@ class Session(
           val driver = spooky.spookyConf.webDriverFactory.dispatch(this)
           spooky.spookyMetrics.webDriverDispatched += 1
           //      try {
-          driver.manage().timeouts()
+          driver
+            .manage()
+            .timeouts()
             .implicitlyWait(spooky.spookyConf.remoteResourceTimeout.toSeconds, TimeUnit.SECONDS)
             .pageLoadTimeout(spooky.spookyConf.remoteResourceTimeout.toSeconds, TimeUnit.SECONDS)
             .setScriptTimeout(spooky.spookyConf.remoteResourceTimeout.toSeconds, TimeUnit.SECONDS)
@@ -101,7 +103,7 @@ class Session(
   @volatile private var _pythonDriverOpt: Option[PythonDriver] = None
   def pythonDriverOpt = _pythonDriverOpt.filter(!_.isCleaned)
   //throwing error instead of lazy creation is required for restarting timer
-  def pythonDriver = pythonDriverOpt.getOrElse{
+  def pythonDriver = pythonDriverOpt.getOrElse {
     throw new NoPythonDriverException
   }
 
@@ -124,8 +126,7 @@ class Session(
     try {
       assert(n >= 0)
       f
-    }
-    catch {
+    } catch {
       case _: NoWebDriverException =>
         LoggerFactory.getLogger(this.getClass).debug(s"Web driver doesn't exist, creating ... $n time(s) left")
         getOrProvisionWebDriver
@@ -140,15 +141,13 @@ class Session(
   }
 
   override def cleanImpl(): Unit = {
-    Option(spooky.spookyConf.webDriverFactory).foreach{
-      factory =>
-        factory.release(this)
-        spooky.spookyMetrics.webDriverReleased += 1
+    Option(spooky.spookyConf.webDriverFactory).foreach { factory =>
+      factory.release(this)
+      spooky.spookyMetrics.webDriverReleased += 1
     }
-    Option(spooky.spookyConf.pythonDriverFactory).foreach{
-      factory =>
-        factory.release(this)
-        spooky.spookyMetrics.pythonDriverReleased += 1
+    Option(spooky.spookyConf.pythonDriverFactory).foreach { factory =>
+      factory.release(this)
+      spooky.spookyMetrics.pythonDriverReleased += 1
     }
     spooky.spookyMetrics.sessionReclaimed += 1
   }

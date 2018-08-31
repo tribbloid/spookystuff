@@ -30,8 +30,7 @@ class ChainedFlatSelectIT extends IntegrationFixture {
 
     val result = r2
       .flatExtract(S"notexist", ordinalField = 'notexist_key)( //this is added to ensure that temporary joinKey in KV store won't be used.
-        'A.attr("class") ~ 'notexist_class
-      )
+        'A.attr("class") ~ 'notexist_class)
       .toDF(sort = true)
 
     result.schema.treeString.shouldBe(
@@ -63,5 +62,5 @@ class ChainedFlatSelectIT extends IntegrationFixture {
     )
   }
 
-  override def numPages= 1
+  override def numPages = 1
 }

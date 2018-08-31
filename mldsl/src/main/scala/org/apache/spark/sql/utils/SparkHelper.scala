@@ -32,10 +32,10 @@ object SparkHelper {
   }
 
   def internalCreateDF(
-                        sql: SQLContext,
-                        rdd: RDD[InternalRow],
-                        schema: StructType
-                      ) = {
+      sql: SQLContext,
+      rdd: RDD[InternalRow],
+      schema: StructType
+  ) = {
 
     sql.internalCreateDataFrame(rdd, schema)
   }

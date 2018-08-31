@@ -21,24 +21,21 @@ class HDFSResolverSpike extends FunSpec {
       FTPResolver(5000)
     )
 
-    val mds = resolvers.map {
-      resolver =>
-        {
+    val mds = resolvers.map { resolver =>
+      {
 //          val path = "ftp://mirror.csclub.uwaterloo.ca/apache/"
-          val path = "ftp://mirror.csclub.uwaterloo.ca/apache/spark/spark-1.6.3/spark-1.6.3-bin-hadoop1-scala2.11.tgz"
-          val md = resolver.input(path){
-            in =>
-              in.allMetadata
-          }
-          md
+        val path = "ftp://mirror.csclub.uwaterloo.ca/apache/spark/spark-1.6.3/spark-1.6.3-bin-hadoop1-scala2.11.tgz"
+        val md = resolver.input(path) { in =>
+          in.allMetadata
         }
+        md
+      }
     }
 
     mds.foreach(println)
   }
 
   it("low level test case") {
-
 
     val conf = new Configuration()
     conf.set(FTPFileSystem.FS_FTP_USER_PREFIX + "mirror.csclub.uwaterloo.ca", "anonymous")
@@ -48,7 +45,7 @@ class HDFSResolverSpike extends FunSpec {
     val fs: FileSystem = path.getFileSystem(conf)
 
     val list = fs.listFiles(path, false)
-    while(list.hasNext) {
+    while (list.hasNext) {
       println(list.next())
     }
   }

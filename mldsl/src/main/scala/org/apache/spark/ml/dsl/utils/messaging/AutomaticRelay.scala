@@ -1,6 +1,6 @@
 package org.apache.spark.ml.dsl.utils.messaging
 
-import org.apache.spark.ml.dsl.utils.refl.{ReflectionUtils, ScalaType, RuntimeTypeOverride}
+import org.apache.spark.ml.dsl.utils.refl.{ReflectionUtils, RuntimeTypeOverride, ScalaType}
 
 import scala.collection.immutable.ListMap
 
@@ -8,11 +8,10 @@ import scala.language.existentials
 
 //TODO: add type information
 case class GenericProduct[T <: Product: Manifest](
-                                                   override val productPrefix: String,
-                                                   kvs: ListMap[String, Any],
-                                                   runtimeType: ScalaType[_]
-                                                 )
-  extends MessageAPI
+    override val productPrefix: String,
+    kvs: ListMap[String, Any],
+    runtimeType: ScalaType[_]
+) extends MessageAPI
     with Map[String, Any]
     with RuntimeTypeOverride {
 
@@ -40,14 +39,13 @@ abstract class AutomaticRelay[T <: Product: Manifest] extends MessageRelay[T] {
     val prefix = v.productPrefix
     val kvs = Map(ReflectionUtils.getCaseAccessorMap(v): _*)
 
-    val transformedKVs = kvs.mapValues {
-      v =>
-        Nested[Any](v).map[Any] {
-          v: Any =>
-            val codec = Registry.Default.findCodecOrDefault(v)
-            codec.toMessage_>>(v)
+    val transformedKVs = kvs.mapValues { v =>
+      Nested[Any](v)
+        .map[Any] { v: Any =>
+          val codec = Registry.Default.findCodecOrDefault(v)
+          codec.toMessage_>>(v)
         }
-          .self
+        .self
     }
 
     val casted = ListMap(transformedKVs.toSeq: _*)

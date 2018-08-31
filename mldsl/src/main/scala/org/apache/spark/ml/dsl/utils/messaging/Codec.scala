@@ -60,9 +60,10 @@ abstract class Codec[Proto] extends CodecLevel1 with HasRootTag {
   }
 
   def getRootTag(protoOpt: Option[Proto], messageOpt: Option[M]): String = {
-    messageOpt.map {
-      v => Codec.getRootTag(v)
-    }
+    messageOpt
+      .map { v =>
+        Codec.getRootTag(v)
+      }
       .getOrElse(this.rootTag)
   }
 
@@ -110,13 +111,15 @@ abstract class Codec[Proto] extends CodecLevel1 with HasRootTag {
   final def _toXMLAndBack[T: Codec](proto: T): T = {
     val codec = implicitly[Codec[T]]
     val xml = codec.toWriter_>>(proto).prettyXML
-    LoggerFactory.getLogger(this.getClass).info(
-      s"""
+    LoggerFactory
+      .getLogger(this.getClass)
+      .info(
+        s"""
          |========================= XML ========================
          |$xml
          |======================== /XML ========================
       """.stripMargin
-    )
+      )
     val back = this._fromXML[T](xml)
     back
   }
@@ -164,13 +167,13 @@ abstract class Codec[Proto] extends CodecLevel1 with HasRootTag {
   //  }
 
   def Param(
-             parent: String,
-             name: String,
-             doc: String,
-             isValid: Proto => Boolean,
-             // serializer = SparkEnv.get.serializer
-             formats: Formats = Codec.this.formats
-           ): MessageMLParam[Proto] = new MessageMLParam(this, parent, name, doc, isValid, formats)
+      parent: String,
+      name: String,
+      doc: String,
+      isValid: Proto => Boolean,
+      // serializer = SparkEnv.get.serializer
+      formats: Formats = Codec.this.formats
+  ): MessageMLParam[Proto] = new MessageMLParam(this, parent, name, doc, isValid, formats)
 
   def Param(parent: String, name: String, doc: String): MessageMLParam[Proto] =
     Param(parent, name, doc, (_: Proto) => true)

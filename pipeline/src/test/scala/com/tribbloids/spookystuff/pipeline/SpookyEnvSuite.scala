@@ -9,8 +9,8 @@ import org.apache.spark.{SparkConf, SparkContext}
 import org.scalatest.{BeforeAndAfter, BeforeAndAfterAll, FunSuite, Retries}
 
 /**
- * Created by peng on 11/30/14.
- */
+  * Created by peng on 11/30/14.
+  */
 abstract class SpookyEnvSuite extends FunSuite with BeforeAndAfter with BeforeAndAfterAll with Retries {
 
   var sc: SparkContext = _
@@ -21,8 +21,7 @@ abstract class SpookyEnvSuite extends FunSuite with BeforeAndAfter with BeforeAn
 
   override def withFixture(test: NoArgTest) = {
     if (isRetryable(test))
-      Utils.retry(4) { super.withFixture(test) }
-    else
+      Utils.retry(4) { super.withFixture(test) } else
       super.withFixture(test)
   }
 
@@ -51,7 +50,7 @@ abstract class SpookyEnvSuite extends FunSuite with BeforeAndAfter with BeforeAn
     super.afterAll()
   }
 
-  before{
+  before {
     setUp()
   }
 

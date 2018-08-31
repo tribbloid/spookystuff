@@ -6,8 +6,8 @@ import com.tribbloids.spookystuff.integration.UncacheableIntegrationFixture
 import org.apache.spark.SparkException
 
 /**
- * Created by peng on 11/26/14.
- */
+  * Created by peng on 11/26/14.
+  */
 class FetchTryOAuthWgetIT extends UncacheableIntegrationFixture {
 
   override lazy val driverFactories = Seq(
@@ -19,9 +19,10 @@ class FetchTryOAuthWgetIT extends UncacheableIntegrationFixture {
     val spooky = this.spooky
     import spooky.dsl._
 
-    val RDD = sc.parallelize(Seq("http://malformed uri"))
+    val RDD = sc
+      .parallelize(Seq("http://malformed uri"))
       .fetch(
-        ClusterRetry(OAuthV2(Wget('_)),3)
+        ClusterRetry(OAuthV2(Wget('_)), 3)
       )
       .select(S.code ~ 'page)
       .persist()
@@ -32,17 +33,17 @@ class FetchTryOAuthWgetIT extends UncacheableIntegrationFixture {
     assert(pageRows sameElements Array(null))
 
     // max cluster-wise retries defaults to 4 times, smaller than 5 but bigger than 3
-    intercept[SparkException]{
+    intercept[SparkException] {
       sc.parallelize(Seq("http://malformed uri"))
         .fetch(
-          ClusterRetry(OAuthV2(Wget('_)),5)
+          ClusterRetry(OAuthV2(Wget('_)), 5)
         )
         .select(S.code ~ 'page)
         .collect()
     }
   }
 
-  override def numPages= 0
+  override def numPages = 0
 
   override def numSessions = 1 //TODO: should be 6, why local retry and cluster-wise retry doesn't count?
 }

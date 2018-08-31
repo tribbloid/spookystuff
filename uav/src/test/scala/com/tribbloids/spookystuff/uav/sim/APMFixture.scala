@@ -20,11 +20,11 @@ trait APMFixture extends SITLFixture {
     Thread.sleep(2000)
 
     val simFactory = this.simFactory
-    this._simURIRDD = sc.parallelize(1 to parallelism)
-      .map {
-        i =>
-          val sim = simFactory.getNext
-          sim.PY.connStr.$STR
+    this._simURIRDD = sc
+      .parallelize(1 to parallelism)
+      .map { i =>
+        val sim = simFactory.getNext
+        sim.PY.connStr.$STR
       }
       .flatMap(v => v)
       .persist()
@@ -32,12 +32,14 @@ trait APMFixture extends SITLFixture {
     val result = _simURIRDD.collect().toList
     assert(result.size == result.distinct.size)
     val info = result.mkString("\n")
-    LoggerFactory.getLogger(this.getClass).info(
-      s"""
+    LoggerFactory
+      .getLogger(this.getClass)
+      .info(
+        s"""
          |APM simulation(s) are up and running:
          |$info
       """.stripMargin
-    )
+      )
     result
   }
 

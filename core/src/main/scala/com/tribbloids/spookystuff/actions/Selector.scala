@@ -8,7 +8,7 @@ import org.openqa.selenium.By
 
 import scala.language.implicitConversions
 
-object Selector extends MessageRelay[Selector]{
+object Selector extends MessageRelay[Selector] {
 
   final val SCHEMA = "By.sizzleCssSelector"
 
@@ -25,9 +25,8 @@ object Selector extends MessageRelay[Selector]{
       v => new BySizzleCssSelector(v)
     )
   }
-  final val factory_patterns = factories.map {
-    fn =>
-      fn -> fn("(.*)").toString.r
+  final val factory_patterns = factories.map { fn =>
+    fn -> fn("(.*)").toString.r
   }
 
   implicit def fromString(v: String): Selector = {

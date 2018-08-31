@@ -92,8 +92,8 @@ case class MessageMLWriter[T](message: MessageWriter[T]) extends MLWriter with S
 }
 
 class MessageParams(
-                     val uid: String
-                   ) extends Params {
+    val uid: String
+) extends Params {
 
   override def copy(extra: ParamMap): Params = this.defaultCopy(extra)
 }

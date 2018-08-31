@@ -1,6 +1,6 @@
 package com.tribbloids.spookystuff.execution
 
-import com.tribbloids.spookystuff.{SpookyEnvFixture, dsl}
+import com.tribbloids.spookystuff.{dsl, SpookyEnvFixture}
 
 /**
   * Created by peng on 02/04/16.
@@ -16,15 +16,13 @@ class TestExtractPlan extends SpookyEnvFixture {
 
     val extracted = src
       .extract(
-        '_1.typed[Int].andOptionFn{
-          v =>
-            if (v > 1) Some("" + v)
-            else None
+        '_1.typed[Int].andOptionFn { v =>
+          if (v > 1) Some("" + v)
+          else None
         },
-        '_2.typed[String].andOptionFn{
-          v =>
-            if (v.length < 5) Some(v.charAt(0).toInt)
-            else None
+        '_2.typed[String].andOptionFn { v =>
+          if (v.length < 5) Some(v.charAt(0).toInt)
+          else None
         }
       )
       .persist()
@@ -50,11 +48,10 @@ class TestExtractPlan extends SpookyEnvFixture {
   it("ExtractPlan can overwrite old values using ! postfix") {
 
     val extracted = src
-      .extract{
-        '_1.typed[Int].andOptionFn{
-          v =>
-            if (v > 1) Some("" + v)
-            else None
+      .extract {
+        '_1.typed[Int].andOptionFn { v =>
+          if (v > 1) Some("" + v)
+          else None
         } ~ '_2.!
       }
 
@@ -76,13 +73,12 @@ class TestExtractPlan extends SpookyEnvFixture {
 
   it("ExtractPlan cannot partially overwrite old values with the same field id but different DataType") {
 
-    intercept[IllegalArgumentException]{
+    intercept[IllegalArgumentException] {
       val extracted = src
-        .extract{
-          '_1.typed[Int].andOptionFn{
-            v =>
-              if (v > 1) Some(v)
-              else None
+        .extract {
+          '_1.typed[Int].andOptionFn { v =>
+            if (v > 1) Some(v)
+            else None
           } ~ '_2.!
         }
     }
@@ -90,11 +86,10 @@ class TestExtractPlan extends SpookyEnvFixture {
 
   it("ExtractPlan can append to old values using ~+ operator") {
     val extracted = src
-      .extract{
-        '_1.typed[Int].andOptionFn{
-          v =>
-            if (v > 1) Some("" + v)
-            else None
+      .extract {
+        '_1.typed[Int].andOptionFn { v =>
+          if (v > 1) Some("" + v)
+          else None
         } ~+ '_2
       }
 
@@ -107,18 +102,19 @@ class TestExtractPlan extends SpookyEnvFixture {
       """.stripMargin
     )
 
-    assert(extracted.toMapRDD().collect().toSeq == Seq(Map("_1" -> 1, "_2" -> Seq("a")), Map("_1" -> 2, "_2" -> Seq("b","2"))))
+    assert(
+      extracted.toMapRDD().collect().toSeq == Seq(Map("_1" -> 1, "_2" -> Seq("a")),
+                                                  Map("_1" -> 2, "_2" -> Seq("b", "2"))))
 
     extracted.toDF().show(false)
   }
 
   it("ExtractPlan can erase old values that has a different DataType using ~+ operator") {
     val extracted = src
-      .extract{
-        '_1.typed[Int].andOptionFn{
-          v =>
-            if (v > 1) Some(v)
-            else None
+      .extract {
+        '_1.typed[Int].andOptionFn { v =>
+          if (v > 1) Some(v)
+          else None
         } ~+ '_2
       }
 
@@ -138,14 +134,13 @@ class TestExtractPlan extends SpookyEnvFixture {
 
   it("In ExtractPlan, weak values are cleaned in case of a conflict") {
     val extracted = src
-      .extract{
+      .extract {
         '_2 ~ '_3.*
       }
-      .extract{
-        '_1.typed[Int].andOptionFn{
-          v =>
-            if (v > 1) Some("" + v)
-            else None
+      .extract {
+        '_1.typed[Int].andOptionFn { v =>
+          if (v > 1) Some("" + v)
+          else None
         } ~ '_3.*
       }
       .extract(
@@ -162,21 +157,22 @@ class TestExtractPlan extends SpookyEnvFixture {
       """.stripMargin
     )
 
-    assert(extracted.toMapRDD().collect().toSeq == Seq(Map("_1" -> 1, "_2" -> "a"), Map("_1" -> 2, "_2" -> "b", "_3" -> "2")))
+    assert(
+      extracted.toMapRDD().collect().toSeq == Seq(Map("_1" -> 1, "_2" -> "a"),
+                                                  Map("_1" -> 2, "_2" -> "b", "_3" -> "2")))
 
     extracted.toDF().show(false)
   }
 
   it("In ExtractPlan, weak values are not cleaned if being overwritten using ~! operator") {
     val extracted = src
-      .extract{
+      .extract {
         '_2 ~ '_3.*
       }
-      .extract{
-        '_1.typed[Int].andOptionFn{
-          v =>
-            if (v > 1) Some("" + v)
-            else None
+      .extract {
+        '_1.typed[Int].andOptionFn { v =>
+          if (v > 1) Some("" + v)
+          else None
         } ~ '_3.*.!
       }
       .extract(
@@ -193,7 +189,9 @@ class TestExtractPlan extends SpookyEnvFixture {
       """.stripMargin
     )
 
-    assert(extracted.toMapRDD().collect().toSeq == Seq(Map("_1" -> 1, "_2" -> "a", "_3" -> "a"), Map("_1" -> 2, "_2" -> "b", "_3" -> "2")))
+    assert(
+      extracted.toMapRDD().collect().toSeq == Seq(Map("_1" -> 1, "_2" -> "a", "_3" -> "a"),
+                                                  Map("_1" -> 2, "_2" -> "b", "_3" -> "2")))
 
     extracted.toDF().show(false)
   }

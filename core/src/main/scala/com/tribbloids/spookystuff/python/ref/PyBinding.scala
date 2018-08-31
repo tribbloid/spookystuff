@@ -15,31 +15,29 @@ import scala.language.dynamics
   * may be necessary to register with PythonDriver shutdown listener
   */
 class PyBinding(
-                 val ref: PyRef,
-                 val driver: PythonDriver,
-                 val spookyOpt: Option[SpookyContext]
-               ) extends Dynamic with LocalCleanable {
+    val ref: PyRef,
+    val driver: PythonDriver,
+    val spookyOpt: Option[SpookyContext]
+) extends Dynamic
+    with LocalCleanable {
 
   import ref._
 
   {
     assertNotCleaned("cannot create binding")
-    dependencies.foreach {
-      dep =>
-        dep._Py(driver, spookyOpt)
+    dependencies.foreach { dep =>
+      dep._Py(driver, spookyOpt)
     }
 
     driver.batchImport(imports)
 
-    val initOpt = createOpt.map {
-      create =>
-        (referenceOpt.toSeq ++ Seq(create)).mkString("=")
+    val initOpt = createOpt.map { create =>
+      (referenceOpt.toSeq ++ Seq(create)).mkString("=")
     }
 
-    initOpt.foreach {
-      code =>
-        if (lzy) driver.lazyInterpret(code)
-        else driver.interpret(code)
+    initOpt.foreach { code =>
+      if (lzy) driver.lazyInterpret(code)
+      else driver.interpret(code)
     }
 
     ref.driverToBindingsAlive += driver -> this
@@ -47,9 +45,8 @@ class PyBinding(
 
   //TODO: rename to something that is illegal in python syntax
   def $STR: Option[String] = {
-    referenceOpt.flatMap {
-      ref =>
-        driver.evalExpr(ref)
+    referenceOpt.flatMap { ref =>
+      driver.evalExpr(ref)
     }
   }
 
@@ -60,15 +57,13 @@ class PyBinding(
   // TODO: so far, doesn't support nested object
   def $MSG: Option[MessageWriter[JValue]] = {
 
-    referenceOpt.flatMap {
-      ref =>
-        //        val jsonOpt = driver.evalExpr(s"$ref.__dict__")
-        val jsonOpt = driver.evalExpr(s"json.dumps($ref.__dict__)")
-        jsonOpt.map {
-          json =>
-            val jValue = parse(json)
-            MessageWriter(jValue)
-        }
+    referenceOpt.flatMap { ref =>
+      //        val jsonOpt = driver.evalExpr(s"$ref.__dict__")
+      val jsonOpt = driver.evalExpr(s"json.dumps($ref.__dict__)")
+      jsonOpt.map { json =>
+        val jValue = parse(json)
+        MessageWriter(jValue)
+      }
     }
   }
 
@@ -82,8 +77,7 @@ class PyBinding(
       referenceOpt = Some(refName),
       dependencies = py._1,
       converter = converter
-    )
-      ._Py(
+    )._Py(
         driver,
         spookyOpt
       )
@@ -94,7 +88,7 @@ class PyBinding(
   protected def dynamicDecorator(fn: => PyBinding): PyBinding = fn
 
   def selectDynamic(fieldName: String) = {
-    dynamicDecorator{
+    dynamicDecorator {
       pyCallMethod(fieldName)(Nil -> "")
     }
   }
@@ -114,9 +108,8 @@ class PyBinding(
     */
   override protected def cleanImpl(): Unit = {
     if (!driver.isCleaned) {
-      delOpt.foreach {
-        code =>
-          driver.interpret(code, spookyOpt)
+      delOpt.foreach { code =>
+        driver.interpret(code, spookyOpt)
       }
     }
 

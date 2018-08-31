@@ -15,11 +15,11 @@ class GenPartitionerSuite extends SpookyEnvFixture {
 
   import com.tribbloids.spookystuff.utils.SpookyViews._
 
-
   it("DocCacheAware can co-partition 2 RDDs") {
     val numPartitions = Random.nextInt(80) + 9
 
-    val gp = GenPartitioners.DocCacheAware(_ => new HashPartitioner(numPartitions))
+    val gp = GenPartitioners
+      .DocCacheAware(_ => new HashPartitioner(numPartitions))
       .getInstance[Int](defaultSchema)
     val beaconOpt = gp.createBeaconRDD(sc.emptyRDD[Int])
     //    val beacon = sc.makeRDD(1 to 1000, 1000).map(v => v -> v*v)
@@ -27,15 +27,15 @@ class GenPartitionerSuite extends SpookyEnvFixture {
     //    val tlStrs = sc.allExecutorCoreLocationStrs
     //    val size = tlStrs.length
 
-    val srcRDD: RDD[(Int, String)] = sc.parallelize (
-      {
-        (1 to 1000).map {
-          v =>
+    val srcRDD: RDD[(Int, String)] = sc
+      .parallelize(
+        {
+          (1 to 1000).map { v =>
             v -> v.toString
-        }
-      },
-      numPartitions + 5
-    )
+          }
+        },
+        numPartitions + 5
+      )
       .persist()
 
     val ref1 = srcRDD.shufflePartitions.persist()
@@ -47,10 +47,11 @@ class GenPartitionerSuite extends SpookyEnvFixture {
     //    ref1.mapPartitions(i => Iterator(i.toList)).collect().foreach(println)
     //    ref2.mapPartitions(i => Iterator(i.toList)).collect().foreach(println)
 
-    val zipped1 = ref1.map(_._2).zipPartitions(ref2.map(_._2))(
-      (i1, i2) =>
-        Iterator(i1.toSet == i2.toSet)
-    )
+    val zipped1 = ref1
+      .map(_._2)
+      .zipPartitions(ref2.map(_._2))(
+        (i1, i2) => Iterator(i1.toSet == i2.toSet)
+      )
       .collect()
 
     assert(zipped1.length > zipped1.count(identity))
@@ -60,8 +61,7 @@ class GenPartitionerSuite extends SpookyEnvFixture {
     val grouped2 = gp.groupByKey(ref2, beaconOpt).flatMap(_._2)
 
     val zipped2RDD = grouped1.zipPartitions(grouped2)(
-      (i1, i2) =>
-        Iterator(i1.toSet == i2.toSet)
+      (i1, i2) => Iterator(i1.toSet == i2.toSet)
     )
     val zipped2 = zipped2RDD.collect()
     assert(zipped2.length == zipped2.count(identity))

@@ -46,7 +46,7 @@ class JoinAndExplorePagesIT extends IntegrationFixture {
       .persist()
 
     result.schema.treeString.shouldBe(
-"""
+      """
   |root
   | |-- i1: array (nullable = true)
   | |    |-- element: integer (containsNull = true)
@@ -84,7 +84,7 @@ class JoinAndExplorePagesIT extends IntegrationFixture {
     )
   }
 
-  override def numPages= 15
+  override def numPages = 15
 
   override val remoteFetchSuboptimality = 0 to 4
   override def pageFetchedCap = 40

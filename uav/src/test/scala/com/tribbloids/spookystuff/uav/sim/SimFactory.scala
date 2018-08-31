@@ -28,23 +28,25 @@ trait MAVLinkSimFactory extends SimFactory {
 
     APMSim.next(
       extraArgs = Seq(
-        "--model", model,
+        "--model",
+        model,
         "--gimbal",
-        "--home", homeStr
+        "--home",
+        homeStr
       )
     )
   }
 }
 
 case class APMQuadSimFactory(
-                           dispersionLatLng: Double = 0.001
-                         ) extends MAVLinkSimFactory {
+    dispersionLatLng: Double = 0.001
+) extends MAVLinkSimFactory {
 
   val homeCenter = UAVConf.DEFAULT_HOME_LOCATION.getCoordinate(LLA).get
 
   def getHomeLLA: LLA.Coordinate = {
-    val lat = homeCenter.lat + (Random.nextDouble() - 0.5)*dispersionLatLng
-    val lon = homeCenter.lon + (Random.nextDouble() - 0.5)*dispersionLatLng
+    val lat = homeCenter.lat + (Random.nextDouble() - 0.5) * dispersionLatLng
+    val lon = homeCenter.lon + (Random.nextDouble() - 0.5) * dispersionLatLng
     LLA(lat, lon, homeCenter.alt)
   }
 }

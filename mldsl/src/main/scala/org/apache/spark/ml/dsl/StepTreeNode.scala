@@ -13,12 +13,10 @@ trait StepTreeNode[BaseType <: StepTreeNode[BaseType]] extends TreeNode[StepTree
   lazy val paths: Seq[Seq[String]] = {
     val rootPath = Seq(self.name)
     if (children.nonEmpty) {
-      children.flatMap{
-        child =>
-          child.paths.map(_ ++ rootPath)
+      children.flatMap { child =>
+        child.paths.map(_ ++ rootPath)
       }
-    }
-    else Seq(rootPath)
+    } else Seq(rootPath)
   }
 
   lazy val mergedPath: Seq[String] = {
@@ -27,16 +25,20 @@ trait StepTreeNode[BaseType <: StepTreeNode[BaseType]] extends TreeNode[StepTree
     assert(numPaths.nonEmpty, "impossible")
     val result = {
       val maxBranchLength = numPaths.max
-      val commonAncestorLength = maxBranchLength.to(0, -1).find{
-        v =>
+      val commonAncestorLength = maxBranchLength
+        .to(0, -1)
+        .find { v =>
           paths.map(_.slice(0, v)).distinct.size == 1
-      }.getOrElse(0)
+        }
+        .getOrElse(0)
       val commonAncestor = paths.head.slice(0, commonAncestorLength)
 
-      val commonParentLength = maxBranchLength.to(0, -1).find{
-        v =>
+      val commonParentLength = maxBranchLength
+        .to(0, -1)
+        .find { v =>
           paths.map(_.reverse.slice(0, v)).distinct.size == 1
-      }.getOrElse(0)
+        }
+        .getOrElse(0)
       val commonParent = paths.head.reverse.slice(0, commonParentLength).reverse
 
       if (commonAncestor.size + commonParent.size > maxBranchLength) commonParent
@@ -65,10 +67,10 @@ object StepTreeNode extends MessageRelay[StepTreeNode[_]] {
   }
 
   case class M(
-                id: String,
-                dataTypes: Set[DataTypeRelay.M] = Set.empty,
-                stage: Seq[M] = Nil
-              ) extends MessageAPI_<< {
+      id: String,
+      dataTypes: Set[DataTypeRelay.M] = Set.empty,
+      stage: Seq[M] = Nil
+  ) extends MessageAPI_<< {
     override def toProto_<< : StepTreeNode[_] = ???
   }
 }

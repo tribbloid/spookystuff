@@ -36,19 +36,19 @@ import scala.reflect.ClassTag
   * all function ended with _! will be executed immediately, others will yield a logical plan that can be optimized & lazily executed
   */
 case class FetchedDataset(
-                           plan: ExecutionPlan
-                         ) extends FetchedRDDAPI {
+    plan: ExecutionPlan
+) extends FetchedRDDAPI {
 
   import SpookyViews._
 
   implicit def fromExecutionPlan(plan: ExecutionPlan): FetchedDataset = FetchedDataset(plan)
 
   def this(
-            sourceRDD: SquashedFetchedRDD,
-            fieldMap: ListMap[Field, DataType],
-            spooky: SpookyContext,
-            beaconRDDOpt: Option[BeaconRDD[TraceView]] = None
-          ) = {
+      sourceRDD: SquashedFetchedRDD,
+      fieldMap: ListMap[Field, DataType],
+      spooky: SpookyContext,
+      beaconRDDOpt: Option[BeaconRDD[TraceView]] = None
+  ) = {
 
     this(
       RDDPlan(
@@ -79,15 +79,13 @@ case class FetchedDataset(
 
   def rdd = unsquashedRDD
   def unsquashedRDD: RDD[FetchedRow] = this.squashedRDD.flatMap(
-    v =>
-      v.WSchema(schema).unsquash
+    v => v.WSchema(schema).unsquash
   )
 
   def docRDD: RDD[Seq[DocOption]] = {
 
-    squashedRDD.map {
-      row =>
-        row.WSchema(schema).withSpooky.getDoc
+    squashedRDD.map { row =>
+      row.WSchema(schema).withSpooky.getDoc
     }
   }
 
@@ -98,13 +96,11 @@ case class FetchedDataset(
     }
   }
 
-  def partitionRDD = rdd.mapPartitions {
-    ii =>
-      Iterator(TaskContext.get().partitionId() -> ii.toSeq)
+  def partitionRDD = rdd.mapPartitions { ii =>
+    Iterator(TaskContext.get().partitionId() -> ii.toSeq)
   }
-  def partitionSizeRDD = rdd.mapPartitions {
-    ii =>
-      Iterator(TaskContext.get().partitionId() -> ii.size)
+  def partitionSizeRDD = rdd.mapPartitions { ii =>
+    Iterator(TaskContext.get().partitionId() -> ii.size)
   }
 
   def spooky = plan.spooky
@@ -120,38 +116,38 @@ case class FetchedDataset(
     val dataRDD = this.dataRDD
     plan.persist(dataRDD)
 
-    val sorted = dataRDD.sortBy{_.sortIndex(sortIndices)}
+    val sorted = dataRDD.sortBy { _.sortIndex(sortIndices) }
     sorted.setName("sort")
 
-    sorted.foreachPartition{_ =>} //force execution
+    sorted.foreachPartition { _ =>
+      } //force execution
     plan.scratchRDDs.unpersist(dataRDD)
 
     sorted
   }
-  def toMapRDD(sort: Boolean = false): RDD[Map[String, Any]] = sparkContext.withJob(s"toMapRDD(sort=$sort)"){
+  def toMapRDD(sort: Boolean = false): RDD[Map[String, Any]] = sparkContext.withJob(s"toMapRDD(sort=$sort)") {
     {
       if (!sort) dataRDD
       else dataRDDSorted
-    }
-      .map(_.toMap)
+    }.map(_.toMap)
   }
 
-  def toJSON(sort: Boolean = false): RDD[String] = sparkContext.withJob(s"toJSON(sort=$sort)"){
+  def toJSON(sort: Boolean = false): RDD[String] = sparkContext.withJob(s"toJSON(sort=$sort)") {
 
     {
       if (!sort) dataRDD
       else dataRDDSorted
-    }
-      .map(_.compactJSON)
+    }.map(_.compactJSON)
   }
 
   protected def toInternalRowRDD(
-                                  sort: Boolean = false,
-                                  spookySchema: SpookySchema
-                                ): RDD[InternalRow] = {
+      sort: Boolean = false,
+      spookySchema: SpookySchema
+  ): RDD[InternalRow] = {
 
-    val dataRDD = if (!sort) this.dataRDD
-    else dataRDDSorted
+    val dataRDD =
+      if (!sort) this.dataRDD
+      else dataRDDSorted
 
     import ScalaType._
 
@@ -162,28 +158,25 @@ case class FetchedDataset(
     //    }
 
     //TOOD: how to make it serializable so it can be reused by different partitions?
-    @transient lazy val field2Converter: Map[Field, Any => Any] = spookySchema.fieldTypes.mapValues {
-      tpe =>
-        val reified = tpe.reified
-        val converter = CatalystTypeConverters.createToCatalystConverter(reified)
-        converter
+    @transient lazy val field2Converter: Map[Field, Any => Any] = spookySchema.fieldTypes.mapValues { tpe =>
+      val reified = tpe.reified
+      val converter = CatalystTypeConverters.createToCatalystConverter(reified)
+      converter
     }
 
     val rowEncoder = RowEncoder.apply(spookySchema.structType)
 
     dataRDD
-      .map {
-        v =>
-          val converted: Seq[Any] = spookySchema.fields.map {
-            field =>
-              val raw: Any = v.data.get(field).orNull
-              //              val encoder: ExpressionEncoder[Any] = field2Encoder(field)
-              val converter = field2Converter(field)
-              converter.apply(raw)
-          }
-          val internalRow = new GenericInternalRow(converted.toArray)
+      .map { v =>
+        val converted: Seq[Any] = spookySchema.fields.map { field =>
+          val raw: Any = v.data.get(field).orNull
+          //              val encoder: ExpressionEncoder[Any] = field2Encoder(field)
+          val converter = field2Converter(field)
+          converter.apply(raw)
+        }
+        val internalRow = new GenericInternalRow(converted.toArray)
 
-          internalRow
+        internalRow
       }
   }
 
@@ -229,22 +222,21 @@ case class FetchedDataset(
   def newResolver = schema.newResolver
 
   def toStringRDD(
-                   ex: Extractor[Any],
-                   default: String = null
-                 ): RDD[String] = {
+      ex: Extractor[Any],
+      default: String = null
+  ): RDD[String] = {
 
     val _ex = newResolver.include(ex.toStr).head
 
-    unsquashedRDD.map (
-      v =>
-        _ex.applyOrElse[FetchedRow, String](v, _ => default)
+    unsquashedRDD.map(
+      v => _ex.applyOrElse[FetchedRow, String](v, _ => default)
     )
   }
 
   def toObjectRDD[T: ClassTag](
-                                ex: Extractor[T],
-                                default: T = null
-                              ): RDD[T] = {
+      ex: Extractor[T],
+      default: T = null
+  ): RDD[T] = {
 
     val _ex = newResolver.include(ex).head
 
@@ -279,13 +271,14 @@ case class FetchedDataset(
     * this is an action that will be triggered immediately
     */
   def savePages_!(
-                   path: Col[String],
-                   extension: Col[String] = null,
-                   page: Extractor[Doc] = S,
-                   overwrite: Boolean = false
-                 ): this.type = {
+      path: Col[String],
+      extension: Col[String] = null,
+      page: Extractor[Doc] = S,
+      overwrite: Boolean = false
+  ): this.type = {
     val saved = savePages(path, extension, page, overwrite)
-    saved.foreach{_ =>}
+    saved.foreach { _ =>
+      }
     this
   }
 
@@ -299,11 +292,11 @@ case class FetchedDataset(
     */
   //always use the same path pattern for filtered pages, if you want pages to be saved with different path, use multiple saveContent with different names
   def savePages(
-                 path: Col[String],
-                 extension: Col[String] = null, //set to
-                 page: Col[Doc] = S,
-                 overwrite: Boolean = false
-               ): FetchedDataset = {
+      path: Col[String],
+      extension: Col[String] = null, //set to
+      page: Col[Doc] = S,
+      overwrite: Boolean = false
+  ): FetchedDataset = {
 
     val _pageEx: Extractor[Doc] = page.ex.typed[Doc]
 
@@ -315,11 +308,11 @@ case class FetchedDataset(
   }
 
   def flatten(
-               ex: Extractor[Any],
-               isLeft: Boolean = true,
-               ordinalField: Field = null,
-               sampler: Sampler[Any] = spooky.spookyConf.defaultFlattenSampler
-             ): FetchedDataset = {
+      ex: Extractor[Any],
+      isLeft: Boolean = true,
+      ordinalField: Field = null,
+      sampler: Sampler[Any] = spooky.spookyConf.defaultFlattenSampler
+  ): FetchedDataset = {
 
     val (on, extracted) = ex match {
       case Get(ff) =>
@@ -338,55 +331,54 @@ case class FetchedDataset(
     * @param on denotes enclosing elements of each shards
     */
   def flatExtract(
-                   on: Extractor[Any], //TODO: used to be Iterable[Unstructured], any tradeoff?
-                   isLeft: Boolean = true,
-                   ordinalField: Field = null,
-                   sampler: Sampler[Any] = spooky.spookyConf.defaultFlattenSampler
-                 )(exprs: Extractor[Any]*): FetchedDataset = {
+      on: Extractor[Any], //TODO: used to be Iterable[Unstructured], any tradeoff?
+      isLeft: Boolean = true,
+      ordinalField: Field = null,
+      sampler: Sampler[Any] = spooky.spookyConf.defaultFlattenSampler
+  )(exprs: Extractor[Any]*): FetchedDataset = {
     this
       .flatten(on.withJoinFieldIfMissing, isLeft, ordinalField, sampler)
       .extract(exprs: _*)
   }
 
   def flatSelect(
-                  on: Extractor[Any], //TODO: used to be Iterable[Unstructured], any tradeoff?
-                  ordinalField: Field = null,
-                  sampler: Sampler[Any] = spooky.spookyConf.defaultFlattenSampler,
-                  isLeft: Boolean = true
-                )(exprs: Extractor[Any]*) = flatExtract(on, isLeft, ordinalField, sampler)(exprs: _*)
+      on: Extractor[Any], //TODO: used to be Iterable[Unstructured], any tradeoff?
+      ordinalField: Field = null,
+      sampler: Sampler[Any] = spooky.spookyConf.defaultFlattenSampler,
+      isLeft: Boolean = true
+  )(exprs: Extractor[Any]*) = flatExtract(on, isLeft, ordinalField, sampler)(exprs: _*)
 
   //TODO: test
   def agg(exprs: Seq[(FetchedRow => Any)], reducer: RowReducer): FetchedDataset = AggPlan(plan, exprs, reducer)
   def distinctBy(exprs: (FetchedRow => Any)*): FetchedDataset = agg(exprs, (v1, v2) => v1)
 
   protected def _defaultCooldown(v: Option[Duration]) = {
-    val _delay: Trace = v.map {
-      dd =>
-        Delay(dd)
+    val _delay: Trace = v.map { dd =>
+      Delay(dd)
     }.toList
     _delay
   }
 
   protected def _defaultVisit(
-                               cooldown: Option[Duration] = None,
-                               filter: DocFilter = Const.defaultDocumentFilter,
-                               on: Col[String] = Get(Const.defaultJoinField)
-                             ) = {
+      cooldown: Option[Duration] = None,
+      filter: DocFilter = Const.defaultDocumentFilter,
+      on: Col[String] = Get(Const.defaultJoinField)
+  ) = {
 
     val _cooldown: Duration = cooldown.getOrElse(Const.Interaction.delayMin)
     val result = (
       Visit(on, cooldown = _cooldown)
         +> Snapshot(filter)
-      )
+    )
 
     result
   }
 
   protected def _defaultWget(
-                              cooldown: Option[Duration] = None,
-                              filter: DocFilter = Const.defaultDocumentFilter,
-                              on: Col[String] = Get(Const.defaultJoinField)
-                            ) = {
+      cooldown: Option[Duration] = None,
+      filter: DocFilter = Const.defaultDocumentFilter,
+      on: Col[String] = Get(Const.defaultJoinField)
+  ) = {
 
     val _delay: Trace = _defaultCooldown(cooldown)
 
@@ -397,60 +389,62 @@ case class FetchedDataset(
 
   // Always left
   def fetch(
-             traces: Set[Trace],
-             keyBy: Trace => Any = identity,
-             genPartitioner: GenPartitioner = spooky.spookyConf.defaultGenPartitioner
-           ): FetchedDataset = FetchPlan(plan, traces.rewriteGlobally(plan.schema), keyBy, genPartitioner)
+      traces: Set[Trace],
+      keyBy: Trace => Any = identity,
+      genPartitioner: GenPartitioner = spooky.spookyConf.defaultGenPartitioner
+  ): FetchedDataset = FetchPlan(plan, traces.rewriteGlobally(plan.schema), keyBy, genPartitioner)
 
   //shorthand of fetch
   def visit(
-             on: Col[String],
-             cooldown: Option[Duration] = None,
-             keyBy: Trace => Any = identity,
-             filter: DocFilter = Const.defaultDocumentFilter,
-             failSafe: Int = -1,
-             genPartitioner: GenPartitioner = spooky.spookyConf.defaultGenPartitioner
-           ): FetchedDataset = {
+      on: Col[String],
+      cooldown: Option[Duration] = None,
+      keyBy: Trace => Any = identity,
+      filter: DocFilter = Const.defaultDocumentFilter,
+      failSafe: Int = -1,
+      genPartitioner: GenPartitioner = spooky.spookyConf.defaultGenPartitioner
+  ): FetchedDataset = {
 
     var trace = _defaultVisit(cooldown, filter, on)
     if (failSafe > 0) trace = ClusterRetry(trace, failSafe)
 
     this.fetch(
-      trace, keyBy,
+      trace,
+      keyBy,
       genPartitioner = genPartitioner
     )
   }
 
   //shorthand of fetch
   def wget(
-            on: Col[String],
-            cooldown: Option[Duration] = None,
-            keyBy: Trace => Any = identity,
-            filter: DocFilter = Const.defaultDocumentFilter,
-            failSafe: Int = -1,
-            genPartitioner: GenPartitioner = spooky.spookyConf.defaultGenPartitioner
-          ): FetchedDataset = {
+      on: Col[String],
+      cooldown: Option[Duration] = None,
+      keyBy: Trace => Any = identity,
+      filter: DocFilter = Const.defaultDocumentFilter,
+      failSafe: Int = -1,
+      genPartitioner: GenPartitioner = spooky.spookyConf.defaultGenPartitioner
+  ): FetchedDataset = {
 
     var trace = _defaultWget(cooldown, filter, on)
 
     if (failSafe > 0) trace = ClusterRetry(trace, failSafe)
 
     this.fetch(
-      trace, keyBy,
+      trace,
+      keyBy,
       genPartitioner = genPartitioner
     )
   }
 
   def join(
-            on: Extractor[Any], //name is discarded
-            joinType: JoinType = spooky.spookyConf.defaultJoinType,
-            ordinalField: Field = null, //left & idempotent parameters are missing as they are always set to true
-            sampler: Sampler[Any] = spooky.spookyConf.defaultJoinSampler
-          )(
-            traces: Set[Trace],
-            keyBy: Trace => Any = identity,
-            genPartitioner: GenPartitioner = spooky.spookyConf.defaultGenPartitioner
-          ): FetchedDataset = {
+      on: Extractor[Any], //name is discarded
+      joinType: JoinType = spooky.spookyConf.defaultJoinType,
+      ordinalField: Field = null, //left & idempotent parameters are missing as they are always set to true
+      sampler: Sampler[Any] = spooky.spookyConf.defaultJoinSampler
+  )(
+      traces: Set[Trace],
+      keyBy: Trace => Any = identity,
+      genPartitioner: GenPartitioner = spooky.spookyConf.defaultGenPartitioner
+  ): FetchedDataset = {
 
     val flat = this
       .flatten(on.withJoinFieldIfMissing, joinType.isLeft, ordinalField, sampler)
@@ -465,18 +459,16 @@ case class FetchedDataset(
     * @return RDD[Page]
     */
   def visitJoin(
-                 on: Extractor[Any],
-                 joinType: JoinType = spooky.spookyConf.defaultJoinType,
-                 ordinalField: Field = null, //left & idempotent parameters are missing as they are always set to true
-                 sampler: Sampler[Any] = spooky.spookyConf.defaultJoinSampler,
-
-                 cooldown: Option[Duration] = None,
-                 keyBy: Trace => Any = identity,
-
-                 filter: DocFilter = Const.defaultDocumentFilter,
-                 failSafe: Int = -1,
-                 genPartitioner: GenPartitioner = spooky.spookyConf.defaultGenPartitioner
-               ): FetchedDataset = {
+      on: Extractor[Any],
+      joinType: JoinType = spooky.spookyConf.defaultJoinType,
+      ordinalField: Field = null, //left & idempotent parameters are missing as they are always set to true
+      sampler: Sampler[Any] = spooky.spookyConf.defaultJoinSampler,
+      cooldown: Option[Duration] = None,
+      keyBy: Trace => Any = identity,
+      filter: DocFilter = Const.defaultDocumentFilter,
+      failSafe: Int = -1,
+      genPartitioner: GenPartitioner = spooky.spookyConf.defaultGenPartitioner
+  ): FetchedDataset = {
 
     var trace = _defaultVisit(cooldown, filter)
     if (failSafe > 0) {
@@ -484,7 +476,8 @@ case class FetchedDataset(
     }
 
     this.join(on, joinType, ordinalField, sampler)(
-      trace, keyBy,
+      trace,
+      keyBy,
       genPartitioner = genPartitioner
     )
   }
@@ -496,18 +489,16 @@ case class FetchedDataset(
     * @return RDD[Page]
     */
   def wgetJoin(
-                on: Extractor[Any],
-                joinType: JoinType = spooky.spookyConf.defaultJoinType,
-                ordinalField: Field = null, //left & idempotent parameters are missing as they are always set to true
-                sampler: Sampler[Any] = spooky.spookyConf.defaultJoinSampler,
-
-                cooldown: Option[Duration] = None,
-                keyBy: Trace => Any = identity,
-
-                filter: DocFilter = Const.defaultDocumentFilter,
-                failSafe: Int = -1,
-                genPartitioner: GenPartitioner = spooky.spookyConf.defaultGenPartitioner
-              ): FetchedDataset = {
+      on: Extractor[Any],
+      joinType: JoinType = spooky.spookyConf.defaultJoinType,
+      ordinalField: Field = null, //left & idempotent parameters are missing as they are always set to true
+      sampler: Sampler[Any] = spooky.spookyConf.defaultJoinSampler,
+      cooldown: Option[Duration] = None,
+      keyBy: Trace => Any = identity,
+      filter: DocFilter = Const.defaultDocumentFilter,
+      failSafe: Int = -1,
+      genPartitioner: GenPartitioner = spooky.spookyConf.defaultGenPartitioner
+  ): FetchedDataset = {
 
     var trace = _defaultWget(cooldown, filter)
     if (failSafe > 0) {
@@ -515,104 +506,119 @@ case class FetchedDataset(
     }
 
     this.join(on, joinType, ordinalField, sampler)(
-      trace, keyBy,
+      trace,
+      keyBy,
       genPartitioner = genPartitioner
     )
   }
 
   //TODO: how to unify this with join?
   def explore(
-               on: Extractor[Any],
-               joinType: JoinType = spooky.spookyConf.defaultJoinType,
-               ordinalField: Field = null,
-               sampler: Sampler[Any] = spooky.spookyConf.defaultJoinSampler
-             )(
-               traces: Set[Trace],
-               keyBy: Trace => Any = identity,
-               genPartitioner: GenPartitioner = spooky.spookyConf.defaultGenPartitioner,
-
-               depthField: Field = null,
-               range: Range = spooky.spookyConf.defaultExploreRange,
-               exploreAlgorithm: ExploreAlgorithm = spooky.spookyConf.defaultExploreAlgorithm,
-               epochSize: Int = spooky.spookyConf.epochSize,
-               checkpointInterval: Int = spooky.spookyConf.checkpointInterval // set to Int.MaxValue to disable checkpointing,
-             )(
-               extracts: Extractor[_]*
-               //apply immediately after depth selection, this include depth0
-             ): FetchedDataset = {
+      on: Extractor[Any],
+      joinType: JoinType = spooky.spookyConf.defaultJoinType,
+      ordinalField: Field = null,
+      sampler: Sampler[Any] = spooky.spookyConf.defaultJoinSampler
+  )(
+      traces: Set[Trace],
+      keyBy: Trace => Any = identity,
+      genPartitioner: GenPartitioner = spooky.spookyConf.defaultGenPartitioner,
+      depthField: Field = null,
+      range: Range = spooky.spookyConf.defaultExploreRange,
+      exploreAlgorithm: ExploreAlgorithm = spooky.spookyConf.defaultExploreAlgorithm,
+      epochSize: Int = spooky.spookyConf.epochSize,
+      checkpointInterval: Int = spooky.spookyConf.checkpointInterval // set to Int.MaxValue to disable checkpointing,
+  )(
+      extracts: Extractor[_]*
+      //apply immediately after depth selection, this include depth0
+  ): FetchedDataset = {
 
     val params = Params(depthField, ordinalField, range)
 
-    ExplorePlan(plan, on.withJoinFieldIfMissing, sampler, joinType,
-      traces.rewriteGlobally(plan.schema), keyBy, genPartitioner,
-      params, exploreAlgorithm, epochSize, checkpointInterval,
+    ExplorePlan(
+      plan,
+      on.withJoinFieldIfMissing,
+      sampler,
+      joinType,
+      traces.rewriteGlobally(plan.schema),
+      keyBy,
+      genPartitioner,
+      params,
+      exploreAlgorithm,
+      epochSize,
+      checkpointInterval,
       List(MapPlan.Extract(extracts))
     )
   }
 
   def visitExplore(
-                    on: Extractor[Any],
-                    joinType: JoinType = spooky.spookyConf.defaultJoinType,
-                    ordinalField: Field = null,
-                    sampler: Sampler[Any] = spooky.spookyConf.defaultJoinSampler,
-                    filter: DocFilter = Const.defaultDocumentFilter,
+      on: Extractor[Any],
+      joinType: JoinType = spooky.spookyConf.defaultJoinType,
+      ordinalField: Field = null,
+      sampler: Sampler[Any] = spooky.spookyConf.defaultJoinSampler,
+      filter: DocFilter = Const.defaultDocumentFilter,
+      failSafe: Int = -1,
+      cooldown: Option[Duration] = None,
+      keyBy: Trace => Any = identity,
+      genPartitioner: GenPartitioner = spooky.spookyConf.defaultGenPartitioner,
+      depthField: Field = null,
+      range: Range = spooky.spookyConf.defaultExploreRange,
+      exploreAlgorithm: ExploreAlgorithm = spooky.spookyConf.defaultExploreAlgorithm,
+      miniBatch: Int = 500,
+      checkpointInterval: Int = spooky.spookyConf.checkpointInterval, // set to Int.MaxValue to disable checkpointing,
 
-                    failSafe: Int = -1,
-                    cooldown: Option[Duration] = None,
-                    keyBy: Trace => Any = identity,
-                    genPartitioner: GenPartitioner = spooky.spookyConf.defaultGenPartitioner,
-
-                    depthField: Field = null,
-                    range: Range = spooky.spookyConf.defaultExploreRange,
-                    exploreAlgorithm: ExploreAlgorithm = spooky.spookyConf.defaultExploreAlgorithm,
-                    miniBatch: Int = 500,
-                    checkpointInterval: Int = spooky.spookyConf.checkpointInterval, // set to Int.MaxValue to disable checkpointing,
-
-                    select: Extractor[Any] = null,
-                    selects: Traversable[Extractor[Any]] = Seq()
-                  ): FetchedDataset = {
+      select: Extractor[Any] = null,
+      selects: Traversable[Extractor[Any]] = Seq()
+  ): FetchedDataset = {
 
     var trace = _defaultVisit(cooldown, filter)
     if (failSafe > 0) trace = ClusterRetry(trace, failSafe)
 
     explore(on, joinType, ordinalField, sampler)(
-      trace, keyBy, genPartitioner,
-
-      depthField, range, exploreAlgorithm, miniBatch, checkpointInterval
+      trace,
+      keyBy,
+      genPartitioner,
+      depthField,
+      range,
+      exploreAlgorithm,
+      miniBatch,
+      checkpointInterval
     )(
       Option(select).toSeq ++ selects: _*
     )
   }
 
   def wgetExplore(
-                   on: Extractor[Any],
-                   joinType: JoinType = spooky.spookyConf.defaultJoinType,
-                   ordinalField: Field = null,
-                   sampler: Sampler[Any] = spooky.spookyConf.defaultJoinSampler,
-                   filter: DocFilter = Const.defaultDocumentFilter,
+      on: Extractor[Any],
+      joinType: JoinType = spooky.spookyConf.defaultJoinType,
+      ordinalField: Field = null,
+      sampler: Sampler[Any] = spooky.spookyConf.defaultJoinSampler,
+      filter: DocFilter = Const.defaultDocumentFilter,
+      failSafe: Int = -1,
+      cooldown: Option[Duration] = None,
+      keyBy: Trace => Any = identity,
+      genPartitioner: GenPartitioner = spooky.spookyConf.defaultGenPartitioner,
+      depthField: Field = null,
+      range: Range = spooky.spookyConf.defaultExploreRange,
+      exploreAlgorithm: ExploreAlgorithm = spooky.spookyConf.defaultExploreAlgorithm,
+      miniBatch: Int = 500,
+      checkpointInterval: Int = spooky.spookyConf.checkpointInterval, // set to Int.MaxValue to disable checkpointing,
 
-                   failSafe: Int = -1,
-                   cooldown: Option[Duration] = None,
-                   keyBy: Trace => Any = identity,
-                   genPartitioner: GenPartitioner = spooky.spookyConf.defaultGenPartitioner,
-
-                   depthField: Field = null,
-                   range: Range = spooky.spookyConf.defaultExploreRange,
-                   exploreAlgorithm: ExploreAlgorithm = spooky.spookyConf.defaultExploreAlgorithm,
-                   miniBatch: Int = 500,
-                   checkpointInterval: Int = spooky.spookyConf.checkpointInterval, // set to Int.MaxValue to disable checkpointing,
-
-                   select: Extractor[Any] = null,
-                   selects: Traversable[Extractor[Any]] = Seq()
-                 ): FetchedDataset = {
+      select: Extractor[Any] = null,
+      selects: Traversable[Extractor[Any]] = Seq()
+  ): FetchedDataset = {
 
     var trace = _defaultWget(cooldown, filter)
     if (failSafe > 0) trace = ClusterRetry(trace, failSafe)
 
     explore(on, joinType, ordinalField, sampler)(
-      trace, keyBy, genPartitioner,
-
-      depthField, range, exploreAlgorithm, miniBatch, checkpointInterval
+      trace,
+      keyBy,
+      genPartitioner,
+      depthField,
+      range,
+      exploreAlgorithm,
+      miniBatch,
+      checkpointInterval
     )(
       Option(select).toSeq ++ selects: _*
     )

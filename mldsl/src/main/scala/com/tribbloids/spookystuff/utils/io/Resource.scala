@@ -10,8 +10,8 @@ import scala.language.implicitConversions
 
 @deprecated
 sealed class ResourceMDView(
-                             val self: ResourceMD
-                           ) {
+    val self: ResourceMD
+) {
 
   import self._
 
@@ -65,9 +65,8 @@ abstract class Resource[T] extends LocalCleanable {
 
     val grouped = children.groupBy(_.map("Type").toString)
     val childMaps: Map[String, Seq[ListMap[String, Any]]] = grouped.mapValues {
-      _.map {
-        md =>
-          md.map
+      _.map { md =>
+        md.map
       }
     }
     val result = rootMetadata ++ ResourceMD.MapParser(childMaps)
@@ -79,17 +78,18 @@ abstract class Resource[T] extends LocalCleanable {
 
 abstract class InputResource extends Resource[InputStream] {
 
-  override def cleanImpl(): Unit = Option(existingStream)
-    .foreach(_.close)
+  override def cleanImpl(): Unit =
+    Option(existingStream)
+      .foreach(_.close)
 }
 abstract class OutputResource extends Resource[OutputStream] {
 
-  override def cleanImpl(): Unit = Option(existingStream)
-    .foreach{
-      v =>
+  override def cleanImpl(): Unit =
+    Option(existingStream)
+      .foreach { v =>
         v.flush()
         v.close()
-    }
+      }
 }
 
 ///**

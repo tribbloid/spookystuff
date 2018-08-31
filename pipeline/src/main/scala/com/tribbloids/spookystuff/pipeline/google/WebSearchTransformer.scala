@@ -6,12 +6,12 @@ import com.tribbloids.spookystuff.actions._
 import com.tribbloids.spookystuff.utils.http.HttpUtils
 import com.tribbloids.spookystuff.pipeline.RemoteTransformer
 import com.tribbloids.spookystuff.rdd.FetchedDataset
-import com.tribbloids.spookystuff.{SpookyContext, dsl}
+import com.tribbloids.spookystuff.{dsl, SpookyContext}
 
 class WebSearchTransformer(
-                            override val uid: String =
-                            classOf[WebSearchTransformer].getCanonicalName + "_" + UUID.randomUUID().toString
-                          ) extends RemoteTransformer {
+    override val uid: String =
+      classOf[WebSearchTransformer].getCanonicalName + "_" + UUID.randomUUID().toString
+) extends RemoteTransformer {
 
   import dsl._
   import org.apache.spark.ml.param._
@@ -34,11 +34,12 @@ class WebSearchTransformer(
 
   override def transform(dataset: FetchedDataset): FetchedDataset = {
 
-    dataset.fetch(
-      Visit("http://www.google.com/") +>
-        TextInput("input[name=\"q\"]",getOrDefault(InputCol)) +>
-        Submit("input[name=\"btnG\"]")
-    )
+    dataset
+      .fetch(
+        Visit("http://www.google.com/") +>
+          TextInput("input[name=\"q\"]", getOrDefault(InputCol)) +>
+          Submit("input[name=\"btnG\"]")
+      )
       .wgetExplore(
         S"div#foot a:contains(Next)",
         range = 0 to getOrDefault(MaxPages),
@@ -46,13 +47,13 @@ class WebSearchTransformer(
         fetchOptimizer = FetchOptimizers.Narrow
       )
       .wgetJoin(
-        S".g h3.r a".hrefs.flatMap {
-          uri =>
-            val query = HttpUtils.uri(uri).getQuery
-            val realURI = if (query == null) Some(uri)
-            else if (uri.contains("/url?")) query.split("&").find(_.startsWith("q=")).map(_.replaceAll("q=",""))
+        S".g h3.r a".hrefs.flatMap { uri =>
+          val query = HttpUtils.uri(uri).getQuery
+          val realURI =
+            if (query == null) Some(uri)
+            else if (uri.contains("/url?")) query.split("&").find(_.startsWith("q=")).map(_.replaceAll("q=", ""))
             else None
-            realURI
+          realURI
         },
         ordinalField = getOrDefault(IndexCol),
         failSafe = 2 //not all links are viable

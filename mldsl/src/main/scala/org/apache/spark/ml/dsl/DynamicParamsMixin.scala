@@ -22,7 +22,8 @@ trait DynamicParamsMixin extends Params with Dynamic {
 
       val fieldName = methodName.stripPrefix("set")
       val expectedName = methodName.stripPrefix("set")
-      val fieldOption = this.params.find(v => (v.name == expectedName) || (FlowUtils.liftCamelCase(v.name) == expectedName))
+      val fieldOption =
+        this.params.find(v => (v.name == expectedName) || (FlowUtils.liftCamelCase(v.name) == expectedName))
 
       fieldOption match {
         case Some(field) =>
@@ -33,15 +34,14 @@ trait DynamicParamsMixin extends Params with Dynamic {
       }
 
       this
-    }
-    else throw new IllegalArgumentException(s"function $methodName doesn't exist")
+    } else throw new IllegalArgumentException(s"function $methodName doesn't exist")
   }
 
   protected def Param[T: ClassTag](
-                                    name: String = FlowUtils.callerMethodName(),
-                                    doc: String = "Pending ...",
-                                    default: T = null
-                                  ): Param[T] = {
+      name: String = FlowUtils.callerMethodName(),
+      doc: String = "Pending ...",
+      default: T = null
+  ): Param[T] = {
 
     val result = new Param[T](this, name, doc)
 
@@ -51,12 +51,12 @@ trait DynamicParamsMixin extends Params with Dynamic {
   }
 
   protected def GenericParam[T: Manifest](
-                                           name: String = FlowUtils.callerMethodName(),
-                                           doc: String = "Pending ...",
-                                           default: T = null
-                                         ): Param[T] = {
+      name: String = FlowUtils.callerMethodName(),
+      doc: String = "Pending ...",
+      default: T = null
+  ): Param[T] = {
 
-    val reader = new MessageReader[T](){
+    val reader = new MessageReader[T]() {
 
       override def formats = super.formats + FallbackJSONSerializer
     }

@@ -11,7 +11,7 @@ import org.apache.spark.storage.StorageLevel
 import scala.concurrent.duration.Duration.Infinite
 import scala.concurrent.duration._
 
-object SpookyConf extends Submodules.Builder[SpookyConf]{
+object SpookyConf extends Submodules.Builder[SpookyConf] {
 
   final val DEFAULT_WEBDRIVER_FACTORY = DriverFactories.PhantomJS().taskLocal
 
@@ -37,102 +37,78 @@ object SpookyConf extends Submodules.Builder[SpookyConf]{
   */
 //TODO: should be case class
 class SpookyConf(
-                  var shareMetrics: Boolean = false, //TODO: not necessary
+    var shareMetrics: Boolean = false, //TODO: not necessary
 
-                  var webDriverFactory: DriverFactory[CleanWebDriver] = SpookyConf.DEFAULT_WEBDRIVER_FACTORY,
-                  var webProxy: WebProxyFactory = WebProxyFactories.NoProxy,
-                  var httpHeadersFactory: () => Map[String, String] = () => SpookyConf.defaultHTTPHeaders,
-                  var oAuthKeysFactory: () => OAuthKeys = () => null,
-                  var browserResolution: (Int, Int) = (1920, 1080),
+    var webDriverFactory: DriverFactory[CleanWebDriver] = SpookyConf.DEFAULT_WEBDRIVER_FACTORY,
+    var webProxy: WebProxyFactory = WebProxyFactories.NoProxy,
+    var httpHeadersFactory: () => Map[String, String] = () => SpookyConf.defaultHTTPHeaders,
+    var oAuthKeysFactory: () => OAuthKeys = () => null,
+    var browserResolution: (Int, Int) = (1920, 1080),
+    var pythonDriverFactory: DriverFactory[PythonDriver] = SpookyConf.DEFAULT_PYTHONDRIVER_FACTORY,
+    var remote: Boolean = true, //if disabled won't use remote client at all
+    var autoSave: Boolean = true,
+    var cacheWrite: Boolean = true,
+    var cacheRead: Boolean = true, //TODO: this enable both in-memory and DFS cache, should allow more refined control
 
-                  var pythonDriverFactory: DriverFactory[PythonDriver] = SpookyConf.DEFAULT_PYTHONDRIVER_FACTORY,
+    var cachedDocsLifeSpan: Duration = 7.day,
+    var IgnoreCachedDocsBefore: Option[Date] = None,
+    var cacheFilePath: ByTrace[String] = FilePaths.Hierarchical,
+    var autoSaveFilePath: ByDoc[String] = FilePaths.UUIDName(FilePaths.Hierarchical),
+    var errorDump: Boolean = true,
+    var errorScreenshot: Boolean = true,
+    var errorDumpFilePath: ByDoc[String] = FilePaths.UUIDName(FilePaths.Hierarchical),
+    var remoteResourceTimeout: Duration = 60.seconds,
+    var DFSTimeout: Duration = 40.seconds,
+    var failOnDFSError: Boolean = false,
+    var defaultJoinType: JoinType = Inner,
+    var defaultFlattenSampler: Sampler[Any] = identity,
+    var defaultJoinSampler: Sampler[Any] = identity, //join takes remote actions and cost much more than flatten.
+    var defaultExploreRange: Range = 0 until Int.MaxValue,
+    var defaultGenPartitioner: GenPartitioner = GenPartitioners.Wide(),
+    var defaultExploreAlgorithm: ExploreAlgorithm = ExploreAlgorithms.BreadthFirst,
+    var epochSize: Int = 500,
+    var checkpointInterval: Int = 50, //disabled if <=0
 
-                  var remote: Boolean = true, //if disabled won't use remote client at all
-                  var autoSave: Boolean = true,
-                  var cacheWrite: Boolean = true,
-                  var cacheRead: Boolean = true, //TODO: this enable both in-memory and DFS cache, should allow more refined control
-
-                  var cachedDocsLifeSpan: Duration = 7.day,
-                  var IgnoreCachedDocsBefore: Option[Date] = None,
-
-                  var cacheFilePath: ByTrace[String] = FilePaths.Hierarchical,
-
-                  var autoSaveFilePath: ByDoc[String] = FilePaths.UUIDName(FilePaths.Hierarchical),
-
-                  var errorDump: Boolean = true,
-                  var errorScreenshot: Boolean = true,
-                  var errorDumpFilePath: ByDoc[String] = FilePaths.UUIDName(FilePaths.Hierarchical),
-
-                  var remoteResourceTimeout: Duration = 60.seconds,
-                  var DFSTimeout: Duration = 40.seconds,
-
-                  var failOnDFSError: Boolean = false,
-
-                  var defaultJoinType: JoinType = Inner,
-
-                  var defaultFlattenSampler: Sampler[Any] = identity,
-                  var defaultJoinSampler: Sampler[Any] = identity, //join takes remote actions and cost much more than flatten.
-                  var defaultExploreRange: Range = 0 until Int.MaxValue,
-
-                  var defaultGenPartitioner: GenPartitioner = GenPartitioners.Wide(),
-                  var defaultExploreAlgorithm: ExploreAlgorithm = ExploreAlgorithms.BreadthFirst,
-
-                  var epochSize: Int = 500,
-                  var checkpointInterval: Int = 50, //disabled if <=0
-
-                  //if encounter too many out of memory error, change to MEMORY_AND_DISK_SER
-                  var defaultStorageLevel: StorageLevel = StorageLevel.MEMORY_ONLY
-                ) extends AbstractConf with Serializable {
+    //if encounter too many out of memory error, change to MEMORY_AND_DISK_SER
+    var defaultStorageLevel: StorageLevel = StorageLevel.MEMORY_ONLY
+) extends AbstractConf
+    with Serializable {
 
   override def importFrom(sparkConf: SparkConf): this.type = {
 
     new SpookyConf(
       shareMetrics = this.shareMetrics,
-
       webDriverFactory = this.webDriverFactory,
       webProxy = this.webProxy,
       httpHeadersFactory = this.httpHeadersFactory,
       oAuthKeysFactory = this.oAuthKeysFactory,
       browserResolution = this.browserResolution,
-
       pythonDriverFactory = this.pythonDriverFactory,
-
       remote = this.remote,
       autoSave = this.autoSave,
       cacheWrite = this.cacheWrite,
       cacheRead = this.cacheRead,
       errorDump = this.errorDump,
       errorScreenshot = this.errorScreenshot,
-
       cachedDocsLifeSpan = this.cachedDocsLifeSpan,
       IgnoreCachedDocsBefore = this.IgnoreCachedDocsBefore,
-
       cacheFilePath = this.cacheFilePath,
       autoSaveFilePath = this.autoSaveFilePath,
       errorDumpFilePath = this.errorDumpFilePath,
-
       remoteResourceTimeout = this.remoteResourceTimeout,
       DFSTimeout = this.DFSTimeout,
-
       failOnDFSError = this.failOnDFSError,
-
       defaultJoinType = this.defaultJoinType,
-
       //default max number of elements scraped from a page, set to Int.MaxValue to allow unlimited fetch
       defaultFlattenSampler = this.defaultFlattenSampler,
       defaultJoinSampler = this.defaultJoinSampler,
-
       defaultExploreRange = this.defaultExploreRange,
-
       defaultGenPartitioner = this.defaultGenPartitioner,
       defaultExploreAlgorithm = this.defaultExploreAlgorithm,
-
       epochSize = this.epochSize,
       checkpointInterval = this.checkpointInterval,
-
       defaultStorageLevel = this.defaultStorageLevel
-    )
-      .asInstanceOf[this.type]
+    ).asInstanceOf[this.type]
   }
 
   def getEarliestDocCreationTime(nowMillis: Long = System.currentTimeMillis()): Long = {
@@ -154,8 +130,7 @@ class SpookyConf(
     Seq(
       webDriverFactory,
       pythonDriverFactory
-    )
-      .flatMap(v => Option(v))
+    ).flatMap(v => Option(v))
   }
 }
 

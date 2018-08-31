@@ -35,12 +35,11 @@ abstract class Export extends Named {
 
   final def doExe(session: Session): Seq[DocOption] = {
     val results = doExeNoName(session)
-    results.map{
+    results.map {
       case doc: Doc =>
         try {
           filter.apply(doc, session)
-        }
-        catch {
+        } catch {
           case e: Throwable =>
             val message = getSessionExceptionMessage(session, Some(doc))
             val wrapped = DocWithError(doc, message, e)
@@ -54,7 +53,6 @@ abstract class Export extends Named {
 
   def doExeNoName(session: Session): Seq[DocOption]
 }
-
 
 trait Wayback {
 
@@ -81,17 +79,16 @@ trait WaybackSupport extends Wayback {
 
   //has to be used after copy
   protected def injectWayback(
-                               wayback: Extractor[Long],
-                               pageRow: FetchedRow,
-                               schema: SpookySchema
-                             ): Option[this.type] = {
+      wayback: Extractor[Long],
+      pageRow: FetchedRow,
+      schema: SpookySchema
+  ): Option[this.type] = {
     if (wayback == null) Some(this)
     else {
       val valueOpt = wayback.resolve(schema).lift(pageRow)
-      valueOpt.map{
-        v =>
-          this.wayback = Lit.erased(v)
-          this
+      valueOpt.map { v =>
+        this.wayback = Lit.erased(v)
+        this
       }
     }
   }
@@ -104,21 +101,21 @@ trait WaybackSupport extends Wayback {
   * always export as UTF8 charset
   */
 case class Snapshot(
-                     override val filter: DocFilter = Const.defaultDocumentFilter
-                   ) extends Export with WaybackSupport{
+    override val filter: DocFilter = Const.defaultDocumentFilter
+) extends Export
+    with WaybackSupport {
 
   // all other fields are empty
   override def doExeNoName(session: Session): Seq[Doc] = {
 
-    val pageOpt = session.webDriverOpt.map {
-      webDriver =>
-        new Doc(
-          DocUID((session.backtrace :+ this).toList, this)(),
-          webDriver.getCurrentUrl,
-          webDriver.getPageSource.getBytes("UTF8"),
-          Some("text/html; charset=UTF-8")
-          //      serializableCookies
-        )
+    val pageOpt = session.webDriverOpt.map { webDriver =>
+      new Doc(
+        DocUID((session.backtrace :+ this).toList, this)(),
+        webDriver.getCurrentUrl,
+        webDriver.getPageSource.getBytes("UTF8"),
+        Some("text/html; charset=UTF-8")
+        //      serializableCookies
+      )
     }
     //    if (contentType != null) Seq(page.copy(declaredContentType = Some(contentType)))
     pageOpt.map(v => Seq(v)).getOrElse(Nil)
@@ -131,33 +128,34 @@ case class Snapshot(
 
 //this is used to save GC when invoked by anothor component
 object QuickSnapshot extends Snapshot(DocFilters.Bypass)
-object ErrorDump extends Snapshot(DocFilters.Bypass)
-  //  with MessageAPI
-{
+object ErrorDump
+    extends Snapshot(DocFilters.Bypass)
+    //  with MessageAPI
+    {
 
   //  override def proto = "ErrorDump"
 }
 
 case class Screenshot(
-                       override val filter: DocFilter = Const.defaultImageFilter
-                     ) extends Export with WaybackSupport {
+    override val filter: DocFilter = Const.defaultImageFilter
+) extends Export
+    with WaybackSupport {
 
   override def doExeNoName(session: Session): Seq[Doc] = {
 
-    val pageOpt = session.webDriverOpt.map {
-      webDriver =>
-        val content = webDriver.self match {
-          case ts: TakesScreenshot => ts.getScreenshotAs(OutputType.BYTES)
-          case _ => throw new UnsupportedOperationException("driver doesn't support screenshot")
-        }
+    val pageOpt = session.webDriverOpt.map { webDriver =>
+      val content = webDriver.self match {
+        case ts: TakesScreenshot => ts.getScreenshotAs(OutputType.BYTES)
+        case _                   => throw new UnsupportedOperationException("driver doesn't support screenshot")
+      }
 
-        val page = new Doc(
-          DocUID((session.backtrace :+ this).toList, this)(),
-          webDriver.getCurrentUrl,
-          content,
-          Some("image/png")
-        )
-        page
+      val page = new Doc(
+        DocUID((session.backtrace :+ this).toList, this)(),
+        webDriver.getCurrentUrl,
+        content,
+        Some("image/png")
+      )
+      page
     }
 
     pageOpt.map(v => Seq(v)).getOrElse(Nil)
@@ -169,9 +167,10 @@ case class Screenshot(
 }
 
 object QuickScreenshot extends Screenshot(DocFilters.Bypass)
-object ErrorScreenshot extends Screenshot(DocFilters.Bypass)
-  //  with MessageAPI
-{
+object ErrorScreenshot
+    extends Screenshot(DocFilters.Bypass)
+    //  with MessageAPI
+    {
 
   //  override def proto = "ErrorScreenshot"
 }
@@ -179,25 +178,30 @@ object ErrorScreenshot extends Screenshot(DocFilters.Bypass)
 //TODO: handle RedirectException for too many redirections.
 //@SerialVersionUID(7344992460754628988L)
 abstract class HttpMethod(
-                           uri: Col[String]
-                         ) extends Export with Driverless with Timed with WaybackSupport {
+    uri: Col[String]
+) extends Export
+    with Driverless
+    with Timed
+    with WaybackSupport {
 
   @transient lazy val uriOption: Option[URI] = {
     val uriStr = uri.value.trim()
-    if ( uriStr.isEmpty ) None
+    if (uriStr.isEmpty) None
     else Some(HttpUtils.uri(uriStr))
   }
 
   def resolveURI(pageRow: FetchedRow, schema: SpookySchema): Option[Lit[FR, String]] = {
-    val first = this.uri.resolve(schema).lift(pageRow)
+    val first = this.uri
+      .resolve(schema)
+      .lift(pageRow)
       .flatMap(SpookyUtils.asOption[Any])
     //TODO: no need to resolve array output?
 
     val uriStr: Option[String] = first.flatMap {
       case element: Unstructured => element.href
-      case str: String => Option(str)
-      case obj: Any => Option(obj.toString)
-      case _ => None
+      case str: String           => Option(str)
+      case obj: Any              => Option(obj.toString)
+      case _                     => None
     }
     val uriLit = uriStr.map(Lit.erased[String])
     uriLit
@@ -214,9 +218,9 @@ abstract class HttpMethod(
   */
 @SerialVersionUID(-8687280136721213696L)
 case class Wget(
-                 uri: Col[String],
-                 override val filter: DocFilter = Const.defaultDocumentFilter
-               ) extends HttpMethod(uri) {
+    uri: Col[String],
+    override val filter: DocFilter = Const.defaultDocumentFilter
+) extends HttpMethod(uri) {
 
   def getResolver(session: Session) = {
 
@@ -227,17 +231,15 @@ case class Wget(
     val resolver = new OmniResolver(
       hadoopConf,
       timeout,
-      proxy,
-      {
-        uri =>
-          val headers = session.spooky.spookyConf.httpHeadersFactory()
+      proxy, { uri =>
+        val headers = session.spooky.spookyConf.httpHeadersFactory()
 
-          val request = new HttpGet(uri)
-          for (pair <- headers) {
-            request.addHeader(pair._1, pair._2)
-          }
+        val request = new HttpGet(uri)
+        for (pair <- headers) {
+          request.addHeader(pair._1, pair._2)
+        }
 
-          request
+        request
       }
     )
     resolver
@@ -249,30 +251,28 @@ case class Wget(
     val _uri = uri.value
 
     val cacheLevel = DocCacheLevel.getDefault(uriOption)
-    val doc = resolver.input(_uri) {
-      in =>
-        if (in.isDirectory) {
-          val xmlStr = in.allMetadata.toXMLStr()
+    val doc = resolver.input(_uri) { in =>
+      if (in.isDirectory) {
+        val xmlStr = in.allMetadata.toXMLStr()
 
-          new Doc(
-            uid = DocUID(List(this), this)(),
-            uri = in.getURI,
-            raw = xmlStr.getBytes("utf-8"),
-            declaredContentType = Some("inode/directory; charset=UTF-8"),
-            cacheLevel = cacheLevel,
-            metadata = in.rootMetadata
-          )
-        }
-        else {
+        new Doc(
+          uid = DocUID(List(this), this)(),
+          uri = in.getURI,
+          raw = xmlStr.getBytes("utf-8"),
+          declaredContentType = Some("inode/directory; charset=UTF-8"),
+          cacheLevel = cacheLevel,
+          metadata = in.rootMetadata
+        )
+      } else {
 
-          new Doc(
-            uid = DocUID(List(this), this)(),
-            uri = in.getURI,
-            raw = IOUtils.toByteArray(in.stream),
-            cacheLevel = cacheLevel,
-            metadata = in.rootMetadata
-          )
-        }
+        new Doc(
+          uid = DocUID(List(this), this)(),
+          uri = in.getURI,
+          raw = IOUtils.toByteArray(in.stream),
+          cacheLevel = cacheLevel,
+          metadata = in.rootMetadata
+        )
+      }
     }
     Seq(doc)
   }
@@ -281,29 +281,28 @@ case class Wget(
     val uriLit: Option[Lit[FR, String]] = resolveURI(pageRow, schema)
 
     uriLit.flatMap(
-      lit =>
-        this.copy(uri = lit).asInstanceOf[this.type].injectWayback(this.wayback, pageRow, schema)
+      lit => this.copy(uri = lit).asInstanceOf[this.type].injectWayback(this.wayback, pageRow, schema)
     )
   }
 }
 
-object Wpost{
+object Wpost {
 
   def apply(
-             uri: Col[String],
-             filter: DocFilter = Const.defaultDocumentFilter,
-             entity: HttpEntity = new StringEntity("")
-           ): WpostImpl = WpostImpl(uri, filter)(entity)
+      uri: Col[String],
+      filter: DocFilter = Const.defaultDocumentFilter,
+      entity: HttpEntity = new StringEntity("")
+  ): WpostImpl = WpostImpl(uri, filter)(entity)
 
 }
 
 @SerialVersionUID(2416628905154681500L)
-case class WpostImpl private[actions](
-                                       uri: Col[String],
-                                       override val filter: DocFilter
-                                     )(
-                                       entity: HttpEntity // TODO: cannot be dumped or serialized, fix it!
-                                     ) extends HttpMethod(uri) {
+case class WpostImpl private[actions] (
+    uri: Col[String],
+    override val filter: DocFilter
+)(
+    entity: HttpEntity // TODO: cannot be dumped or serialized, fix it!
+) extends HttpMethod(uri) {
 
   override def detail: String = {
     val txt = entity match {
@@ -326,18 +325,16 @@ case class WpostImpl private[actions](
     val resolver = new OmniResolver(
       hadoopConf,
       timeout,
-      proxy,
-      {
-        uri: URI =>
-          val headers = session.spooky.spookyConf.httpHeadersFactory()
+      proxy, { uri: URI =>
+        val headers = session.spooky.spookyConf.httpHeadersFactory()
 
-          val post = new HttpPost(uri)
-          for (pair <- headers) {
-            post.addHeader(pair._1, pair._2)
-          }
-          post.setEntity(entity)
+        val post = new HttpPost(uri)
+        for (pair <- headers) {
+          post.addHeader(pair._1, pair._2)
+        }
+        post.setEntity(entity)
 
-          post
+        post
       }
     )
     resolver
@@ -352,31 +349,29 @@ case class WpostImpl private[actions](
 
     val doc = impl match {
       case v: HTTPResolver =>
-        v.input(uri){
-          in =>
-            val md = in.rootMetadata
-            val cacheLevel = DocCacheLevel.getDefault(uriOption)
+        v.input(uri) { in =>
+          val md = in.rootMetadata
+          val cacheLevel = DocCacheLevel.getDefault(uriOption)
 
-            new Doc(
-              uid = DocUID(List(this), this)(),
-              uri = in.getURI,
-              raw = IOUtils.toByteArray(in.stream),
-              cacheLevel = cacheLevel,
-              metadata = md
-            )
+          new Doc(
+            uid = DocUID(List(this), this)(),
+            uri = in.getURI,
+            raw = IOUtils.toByteArray(in.stream),
+            cacheLevel = cacheLevel,
+            metadata = md
+          )
 
         }
 
       case _ =>
-        impl.output(uri, overwrite = true){
-          out =>
-            val length = IOUtils.copy(entity.getContent, out.stream)
-            val md: ResourceMD = out.rootMetadata.map.updated("length", length)
-            NoDoc(
-              backtrace = List(this),
-              cacheLevel = DocCacheLevel.NoCache,
-              metadata = md
-            )
+        impl.output(uri, overwrite = true) { out =>
+          val length = IOUtils.copy(entity.getContent, out.stream)
+          val md: ResourceMD = out.rootMetadata.map.updated("length", length)
+          NoDoc(
+            backtrace = List(this),
+            cacheLevel = DocCacheLevel.NoCache,
+            metadata = md
+          )
         }
     }
     Seq(doc)
@@ -386,8 +381,7 @@ case class WpostImpl private[actions](
     val uriLit: Option[Lit[FR, String]] = resolveURI(pageRow, schema)
 
     uriLit.flatMap(
-      lit =>
-        this.copy(uri = lit)(entity).asInstanceOf[this.type].injectWayback(this.wayback, pageRow, schema)
+      lit => this.copy(uri = lit)(entity).asInstanceOf[this.type].injectWayback(this.wayback, pageRow, schema)
     )
   }
 }

@@ -24,26 +24,27 @@ class VRPSuite extends DummyUAVFixture with VRPFixture {
     NED(0, 20, -2)
   )
 
-  def waypoints(n: Int): Seq[List[Waypoint]] = pattern(n)
-    .waypoints
-    .map {v => List(v)}
+  def waypoints(n: Int): Seq[List[Waypoint]] =
+    pattern(n).waypoints
+      .map { v =>
+        List(v)
+      }
 
-  def lineScans(n: Int): Seq[List[Waypoint]] = pattern(n)
-    .lineScans
+  def lineScans(n: Int): Seq[List[Waypoint]] = pattern(n).lineScans
 
   def runTest(
-               traces: Seq[Trace]
-             ): Array[List[TraceView]] = {
+      traces: Seq[Trace]
+  ): Array[List[TraceView]] = {
 
     LinkUtils.unlockAll(sc)
 
-    val rdd = sc.parallelize(
-      traces
-    )
-      .map {
-        trace =>
-          val k = TraceView(trace)
-          k -> DataRow()
+    val rdd = sc
+      .parallelize(
+        traces
+      )
+      .map { trace =>
+        val k = TraceView(trace)
+        k -> DataRow()
       }
 
     spooky.rebroadcast()
@@ -52,10 +53,10 @@ class VRPSuite extends DummyUAVFixture with VRPFixture {
 
     val groupedRDD = gpInst.groupByKey(rdd)
 
-    val grouped = groupedRDD.keys.mapPartitions {
-      itr =>
+    val grouped = groupedRDD.keys
+      .mapPartitions { itr =>
         Iterator(itr.toList)
-    }
+      }
       .collect()
 
     defaultSchema.ec.scratchRDDs.clearAll()
@@ -67,27 +68,25 @@ class VRPSuite extends DummyUAVFixture with VRPFixture {
 
   def getCost(grouped: Array[List[TraceView]]) = {
 
-    val uav_lengths: Array[(UAV, Double)] = grouped.flatMap {
-      path =>
-        val actions = path.flatMap(_.children)
-        if (actions.isEmpty) None
-        else {
-          val statusSeq = actions.collect {
-            case PreferUAV(uav, _) => uav
-          }
-            .distinct
-          assert(statusSeq.size == 1)
-          val status = statusSeq.head
-          val first = Waypoint(status.currentLocation)
-          val others = actions.flatMap {
-            case PreferUAV(uav, _) => None
-            case v@_ => Some(v)
-          }
-
-          val _trace = List(first) ++ others
-          val cost = spooky.getConf[UAVConf].costEstimator.estimate(_trace, defaultSchema)
-          Some(status.uav -> cost)
+    val uav_lengths: Array[(UAV, Double)] = grouped.flatMap { path =>
+      val actions = path.flatMap(_.children)
+      if (actions.isEmpty) None
+      else {
+        val statusSeq = actions.collect {
+          case PreferUAV(uav, _) => uav
+        }.distinct
+        assert(statusSeq.size == 1)
+        val status = statusSeq.head
+        val first = Waypoint(status.currentLocation)
+        val others = actions.flatMap {
+          case PreferUAV(uav, _) => None
+          case v @ _             => Some(v)
         }
+
+        val _trace = List(first) ++ others
+        val cost = spooky.getConf[UAVConf].costEstimator.estimate(_trace, defaultSchema)
+        Some(status.uav -> cost)
+      }
     }
 
     uav_lengths.foreach(v => println(s"Length = ${v._2}m for ${v._1}"))
@@ -126,9 +125,8 @@ class VRPSuite extends DummyUAVFixture with VRPFixture {
   it("can optimize max cost of 2 takeoff + line scan per UAV") {
 
     val scans = lineScans(parallelism * 2)
-    val withTakeoff = scans.map {
-      scan =>
-        List(Takeoff(10, 100)) ++ scan
+    val withTakeoff = scans.map { scan =>
+      List(Takeoff(10, 100)) ++ scan
     }
 
     val grouped = runTest(withTakeoff)

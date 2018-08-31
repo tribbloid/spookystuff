@@ -46,8 +46,8 @@ class SelectIT extends IntegrationFixture {
     assert(rows.head.size === 5)
     assert(rows.head.getString(0) contains "spookystuff/test/Wikipedia.html")
     val parsedTime = rows.head.getTimestamp(1).getTime
-    assert(parsedTime < finishTime +2000) //due to round-off error
-    assert(parsedTime > finishTime-60000) //long enough even after the second time it is retrieved from the cache
+    assert(parsedTime < finishTime + 2000) //due to round-off error
+    assert(parsedTime > finishTime - 60000) //long enough even after the second time it is retrieved from the cache
     val title = rows.head.getString(2)
     assert(title === "The Free Encyclopedia")
     val langs = rows.head(3).asInstanceOf[Iterable[String]]
@@ -72,13 +72,12 @@ class SelectIT extends IntegrationFixture {
       .toDF(sort = true)
 
     df2.schema.treeString.shouldBe(
-
-    )
+      )
 
     val rows2 = df2.collect()
     val titles = rows2.head.getAs[Iterable[String]]("title")
     assert(titles === Seq("The Free Encyclopedia", "English"))
   }
 
-  override def numPages= 1
+  override def numPages = 1
 }

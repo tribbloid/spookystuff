@@ -6,7 +6,7 @@ import scala.util.Try
 
 class AssertSerializableSuite extends FunSpec {
 
-  it("IllegalArgumentException should be WeaklySerializable"){
+  it("IllegalArgumentException should be WeaklySerializable") {
 
     val trial = Try {
       require(

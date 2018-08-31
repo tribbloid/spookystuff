@@ -1,4 +1,3 @@
-
 package com.tribbloids.spookystuff.python.ref
 
 import com.tribbloids.spookystuff.SpookyContext
@@ -28,8 +27,7 @@ trait PyRef extends Cleanable {
           .slice(2, Int.MaxValue)
           .filter(_.nonEmpty)
           .mkString(".")
-      )
-      .split('.')
+    ).split('.')
   }
 
   @transient lazy val _driverToBindings: ConcurrentMap[PythonDriver, PyBinding] = {
@@ -56,20 +54,19 @@ trait PyRef extends Cleanable {
 
   // run on each driver
   // TODO: DO NOT override this, use __del__() in python implementation as much as you can so it will be called by python interpreter shutdown hook
-  def delOpt: Option[String] = if (createOpt.nonEmpty) {
-    referenceOpt.map(
-      v =>
-        s"""
+  def delOpt: Option[String] =
+    if (createOpt.nonEmpty) {
+      referenceOpt.map(
+        v => s"""
            |try:
            |  del($v)
            |except NameError:
            |  pass
            """.stripMargin
-    )
-  }
-  else {
-    None
-  }
+      )
+    } else {
+      None
+    }
 
   def dependencies: Seq[PyRef] = Nil // has to be initialized before calling the constructor
 
@@ -85,14 +82,15 @@ trait PyRef extends Cleanable {
   override def chainClean: Seq[Cleanable] = bindings
 
   def _Py(
-           driver: PythonDriver,
-           spookyOpt: Option[SpookyContext] = None
-         ): Binding = {
+      driver: PythonDriver,
+      spookyOpt: Option[SpookyContext] = None
+  ): Binding = {
 
-    driverToBindingsAlive.getOrElse(
-      driver,
-      newPy(driver, spookyOpt)
-    )
+    driverToBindingsAlive
+      .getOrElse(
+        driver,
+        newPy(driver, spookyOpt)
+      )
       .asInstanceOf[Binding]
   }
 
@@ -109,15 +107,13 @@ trait PyRef extends Cleanable {
 
 object PyRef {
 
-  object ROOT extends PyRef {
-  }
+  object ROOT extends PyRef {}
 
   def sanityCheck(): Unit = {
     val subs = Cleanable.getTyped[PyBinding]
     val refSubs = Cleanable.getTyped[PyRef].map(_.chainClean)
     assert(
-      subs.intersect(refSubs).size <= refSubs.size,
-      {
+      subs.intersect(refSubs).size <= refSubs.size, {
         "INTERNAL ERROR: dangling tree!"
       }
     )

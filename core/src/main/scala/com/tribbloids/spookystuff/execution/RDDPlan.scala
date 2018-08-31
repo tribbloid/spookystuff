@@ -11,15 +11,15 @@ import scala.collection.mutable.ArrayBuffer
   * Basic Plan with no children, isExecuted always= true
   */
 case class RDDPlan(
-                    sourceRDD: SquashedFetchedRDD,
-                    override val schema: SpookySchema,
-                    override val spooky: SpookyContext,
-                    beaconRDD: Option[BeaconRDD[TraceView]] = None,
-                    override val scratchRDDs: ScratchRDDs = ScratchRDDs()
-                  ) extends ExecutionPlan(
-  Seq(),
-  SpookyExecutionContext(spooky, scratchRDDs)
-) {
+    sourceRDD: SquashedFetchedRDD,
+    override val schema: SpookySchema,
+    override val spooky: SpookyContext,
+    beaconRDD: Option[BeaconRDD[TraceView]] = None,
+    override val scratchRDDs: ScratchRDDs = ScratchRDDs()
+) extends ExecutionPlan(
+      Seq(),
+      SpookyExecutionContext(spooky, scratchRDDs)
+    ) {
 
   override lazy val beaconRDDOpt = beaconRDD
 

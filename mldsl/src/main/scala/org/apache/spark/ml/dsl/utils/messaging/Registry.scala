@@ -64,9 +64,7 @@ object Registry {
   /**
     * the registry is empty at the beginning.
     */
-  object Default extends Registry {
-
-  }
+  object Default extends Registry {}
 
   /**
     * the registry is populated by every codec on object creation

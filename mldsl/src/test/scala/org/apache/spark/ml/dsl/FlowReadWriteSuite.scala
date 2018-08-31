@@ -45,7 +45,7 @@ class FlowReadWriteSuite extends AbstractFlowSuite {
         >-> stemming -> STEMMED
         >-> tf -> TF
         >- STEMMED <>- TF >>> UDFTransformer(zipping) -> TF_ZIPPED
-      ).buildModel()
+    ).buildModel()
 
     model.write.overwrite().save(pipelinePath)
     val model2 = PipelineModel.read.load(pipelinePath)
@@ -62,8 +62,7 @@ class FlowReadWriteSuite extends AbstractFlowSuite {
         >-> tf -> 'tf
         >-> new IDF() -> 'idf
         >- "stemmed" <>- "tf" >>> UDFTransformer(zipping) -> 'tf_zipped
-      )
-      .from(STEMMED) <>- IDF >>> UDFTransformer(zipping) -> 'idf_zipped
+    ).from(STEMMED) <>- IDF >>> UDFTransformer(zipping) -> 'idf_zipped
 
     val prettyJSON = flow.write.message.prettyJSON
 
@@ -73,9 +72,11 @@ class FlowReadWriteSuite extends AbstractFlowSuite {
 
     println(flow2.show(asciiArt = true))
 
-    flow.show().shouldBe(
-      flow2.show()
-    )
+    flow
+      .show()
+      .shouldBe(
+        flow2.show()
+      )
   }
 
   it("Flow can be serialized into XML and back") {
@@ -86,7 +87,7 @@ class FlowReadWriteSuite extends AbstractFlowSuite {
         >-> stemming -> 'stemmed
         >-> tf -> 'tf
         >- "stemmed" <>- "tf" >>> UDFTransformer(zipping) -> 'tf_zipped
-      )
+    )
 
     val jValue: JValue = JObject("root" -> flow.write.message.toJValue)
     val jValue2 = Xml.toJson(Xml.toXml(jValue))
@@ -101,8 +102,10 @@ class FlowReadWriteSuite extends AbstractFlowSuite {
 
     println(flow2.show(asciiArt = true))
 
-    flow.show().shouldBe(
-      flow2.show()
-    )
+    flow
+      .show()
+      .shouldBe(
+        flow2.show()
+      )
   }
 }

@@ -20,12 +20,11 @@ object NED extends CoordinateSystem {
     a match {
       case p: Location =>
         val opt: Option[LLA.Coordinate] = ic.getCoordinate(SearchAttempt(Anchors.Geodetic, LLA, p))
-        opt.map {
-          origin =>
-            val proj = new EquidistantAzimuthalProjection(Math.toRadians(origin.lat), Math.toRadians(origin.lon))
-            proj.setEllipsoid(Ellipsoid.WGS84)
-            proj.initialize()
-            proj
+        opt.map { origin =>
+          val proj = new EquidistantAzimuthalProjection(Math.toRadians(origin.lat), Math.toRadians(origin.lon))
+          proj.setEllipsoid(Ellipsoid.WGS84)
+          proj.initialize()
+          proj
         }
       case _ =>
         None
@@ -39,12 +38,11 @@ object NED extends CoordinateSystem {
   override def zeroOpt: Option[Coordinate] = Some(NED(0, 0, 0))
 
   type Repr = NED
-  override def toRepr(v: Coordinate): NED = NED(v.y, v.x, - v.z)
+  override def toRepr(v: Coordinate): NED = NED(v.y, v.x, -v.z)
 }
 
 case class NED(
-                north: Double,
-                east: Double,
-                down: Double
-              ) extends NED.CoordinateRepr(east, north, - down) {
-}
+    north: Double,
+    east: Double,
+    down: Double
+) extends NED.CoordinateRepr(east, north, -down) {}

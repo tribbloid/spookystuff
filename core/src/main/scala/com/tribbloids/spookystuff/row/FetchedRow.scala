@@ -30,9 +30,9 @@ object FetchedRow {
   * not the main data structure in execution plan, SquashedPageRow is
   */
 case class FetchedRow(
-                       dataRow: DataRow = DataRow(),
-                       fetched: Seq[DocOption] = Seq()
-                     ) extends AbstractSpookyRow {
+    dataRow: DataRow = DataRow(),
+    fetched: Seq[DocOption] = Seq()
+) extends AbstractSpookyRow {
 
   //TODO: trace implementation is not accurate: the last backtrace has all previous exports removed
   def squash(spooky: SpookyContext): SquashedFetchedRow = SquashedFetchedRow(
@@ -42,12 +42,12 @@ case class FetchedRow(
 
   def docs: Seq[Doc] = fetched.flatMap {
     case page: Doc => Some(page)
-    case _ => None
+    case _         => None
   }
 
   def noDocs: Seq[NoDoc] = fetched.flatMap {
     case noPage: NoDoc => Some(noPage)
-    case _ => None
+    case _             => None
   }
 
   def getOnlyDoc: Option[Doc] = {
@@ -72,7 +72,8 @@ case class FetchedRow(
     val page = getDoc(field.name)
     val value = dataRow.getTyped[Unstructured](field)
 
-    if (page.nonEmpty && value.nonEmpty) throw new UnsupportedOperationException("Ambiguous key referring to both pages and data")
+    if (page.nonEmpty && value.nonEmpty)
+      throw new UnsupportedOperationException("Ambiguous key referring to both pages and data")
     else page.map(_.root).orElse(value)
   }
 }

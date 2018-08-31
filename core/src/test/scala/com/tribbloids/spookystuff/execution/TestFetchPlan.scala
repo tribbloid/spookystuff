@@ -3,7 +3,7 @@ package com.tribbloids.spookystuff.execution
 import com.tribbloids.spookystuff.actions.Wget
 import com.tribbloids.spookystuff.extractors.impl.Lit
 import com.tribbloids.spookystuff.testutils.LocalPathDocsFixture
-import com.tribbloids.spookystuff.{SpookyEnvFixture, dsl}
+import com.tribbloids.spookystuff.{dsl, SpookyEnvFixture}
 import org.apache.spark.HashPartitioner
 
 /**
@@ -23,7 +23,7 @@ class TestFetchPlan extends SpookyEnvFixture with LocalPathDocsFixture {
     println(rdd1.plan.toString)
   }
 
-  it("FetchPlan is lazy and doesn't immediately do the fetch"){
+  it("FetchPlan is lazy and doesn't immediately do the fetch") {
 
     val rdd1 = spooky
       .fetch(
@@ -61,7 +61,7 @@ class TestFetchPlan extends SpookyEnvFixture with LocalPathDocsFixture {
     assert(rdd1.spooky.spookyMetrics.pagesFetched.value === 1)
   }
 
-  it("FetchPlan should create a new beaconRDD if its upstream doesn't have one"){
+  it("FetchPlan should create a new beaconRDD if its upstream doesn't have one") {
     val partitioner = new HashPartitioner(8)
 
     val src = spooky
@@ -77,7 +77,6 @@ class TestFetchPlan extends SpookyEnvFixture with LocalPathDocsFixture {
 
     assert(rdd1.plan.beaconRDDOpt.get.partitioner.get eq partitioner)
   }
-
 
   it("FetchPlan should inherit old beaconRDD from upstream if exists") {
     val partitioner = new HashPartitioner(8)

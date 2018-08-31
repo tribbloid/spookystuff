@@ -23,21 +23,21 @@ class FetchVisitIT extends IntegrationFixture {
     assert(pageRows(0).docs.head.name === Snapshot(DocFilters.MustHaveTitle).toString)
     val pageTime = pageRows(0).docs.head.timeMillis
     assert(pageTime < finishTime)
-    assert(pageTime > finishTime-60000) //long enough even after the second time it is retrieved from s3 cache
+    assert(pageTime > finishTime - 60000) //long enough even after the second time it is retrieved from s3 cache
 
     val RDD2 = RDD
       .fetch(
         Visit("http://www.wikipedia.org/") +> Snapshot() ~ 'b
       )
-
       .persist()
 
     val unionRDD = RDD.union(RDD2)
     val unionRows = unionRDD.unsquashedRDD.collect()
 
     assert(unionRows.length === 2)
-    assert(unionRows(0).docs.head.copy(timeMillis = 0, raw = null, saved = null)
-      === unionRows(1).docs.head.copy(timeMillis = 0, raw = null, saved = null))
+    assert(
+      unionRows(0).docs.head.copy(timeMillis = 0, raw = null, saved = null)
+        === unionRows(1).docs.head.copy(timeMillis = 0, raw = null, saved = null))
 
     assert(unionRows(0).docs.head.timeMillis === unionRows(1).docs.head.timeMillis)
     assert(unionRows(0).docs.head.raw === unionRows(1).docs.head.raw)
@@ -58,7 +58,7 @@ class FetchVisitIT extends IntegrationFixture {
     assert(fetchNoneRows(1).docs.length === 0)
   }
 
-  override def numPages= spooky.spookyConf.defaultGenPartitioner match {
+  override def numPages = spooky.spookyConf.defaultGenPartitioner match {
 //    case FetchOptimizers.WebCacheAware => 1
     case _ => 1
   }

@@ -21,14 +21,15 @@ object ScratchRDDs {
 }
 
 case class ScratchRDDs(
-                        tempTables: ArrayBuffer[(String, DataFrame)] = ArrayBuffer(),
-                        tempRDDs: ArrayBuffer[RDD[_]] = ArrayBuffer(),
-                        tempDFs: ArrayBuffer[DataFrame] = ArrayBuffer()
-                      ) extends LocalCleanable with ShippingMarks {
+    tempTables: ArrayBuffer[(String, DataFrame)] = ArrayBuffer(),
+    tempRDDs: ArrayBuffer[RDD[_]] = ArrayBuffer(),
+    tempDFs: ArrayBuffer[DataFrame] = ArrayBuffer()
+) extends LocalCleanable
+    with ShippingMarks {
 
   def register(
-                df: DataFrame
-              ): String = {
+      df: DataFrame
+  ): String = {
 
     val existing = tempTables.find(_._2 == df)
 
@@ -49,9 +50,9 @@ case class ScratchRDDs(
     tempDFs += df
   }
   def persist[T](
-                  rdd: RDD[T],
-                  storageLevel: StorageLevel = StorageLevel.MEMORY_ONLY
-                ): RDD[T] = {
+      rdd: RDD[T],
+      storageLevel: StorageLevel = StorageLevel.MEMORY_ONLY
+  ): RDD[T] = {
 
     if (rdd.getStorageLevel == StorageLevel.NONE) {
       tempRDDs += rdd.persist(storageLevel)
@@ -60,17 +61,17 @@ case class ScratchRDDs(
   }
 
   def unpersistDF(
-                   df: DataFrame,
-                   blocking: Boolean = false
-                 ): Unit = {
+      df: DataFrame,
+      blocking: Boolean = false
+  ): Unit = {
 
     df.unpersist(blocking)
     tempDFs -= df
   }
   def unpersist(
-                 rdd: RDD[_],
-                 blocking: Boolean = false
-               ): Unit = {
+      rdd: RDD[_],
+      blocking: Boolean = false
+  ): Unit = {
 
     rdd.unpersist(blocking)
     tempRDDs -= rdd
@@ -80,26 +81,23 @@ case class ScratchRDDs(
   //This manual GC is important for some memory intensive workflow.
 
   def clearTables(): Unit = {
-    tempTables.foreach {
-      tuple =>
-        tuple._2.sqlContext.dropTempTable(tuple._1)
+    tempTables.foreach { tuple =>
+      tuple._2.sqlContext.dropTempTable(tuple._1)
     }
     tempTables.clear()
   }
 
   def clearAll(
-                blocking: Boolean = false
-              ): Unit = {
+      blocking: Boolean = false
+  ): Unit = {
 
     clearTables()
-    tempDFs.foreach {
-      df =>
-        df.unpersist(blocking)
+    tempDFs.foreach { df =>
+      df.unpersist(blocking)
     }
     tempDFs.clear()
-    tempRDDs.foreach {
-      rdd =>
-        rdd.unpersist(blocking)
+    tempRDDs.foreach { rdd =>
+      rdd.unpersist(blocking)
     }
     tempRDDs.clear()
   }

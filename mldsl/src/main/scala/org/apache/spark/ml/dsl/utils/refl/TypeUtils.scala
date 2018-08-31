@@ -67,10 +67,11 @@ object TypeUtils extends ReflectionLock {
       case (Some(tt1), Some(tt2)) =>
         if (tt1.size != tt2.size) false
         else {
-          val fa: Boolean = tt1.zip(tt2).forall(
-            tuple =>
-              tuple._1 <:< tuple._2
-          )
+          val fa: Boolean = tt1
+            .zip(tt2)
+            .forall(
+              tuple => tuple._1 <:< tuple._2
+            )
           fa
         }
       case (None, None) =>
@@ -81,9 +82,9 @@ object TypeUtils extends ReflectionLock {
 
   //TODO: TypeCreator is not in Developer's API and usage is not recommended
   def createTypeTag[T](
-                        tpe: Type,
-                        mirror: reflect.api.Mirror[reflect.runtime.universe.type]
-                      ): TypeTag[T] = locked {
+      tpe: Type,
+      mirror: reflect.api.Mirror[reflect.runtime.universe.type]
+  ): TypeTag[T] = locked {
     TypeTag.apply(
       mirror,
       new reflect.api.TypeCreator {

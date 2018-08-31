@@ -2,7 +2,7 @@ package com.tribbloids.spookystuff.row
 
 import com.tribbloids.spookystuff.actions.Wget
 import com.tribbloids.spookystuff.testutils.LocalPathDocsFixture
-import com.tribbloids.spookystuff.{SpookyEnvFixture, dsl}
+import com.tribbloids.spookystuff.{dsl, SpookyEnvFixture}
 
 import scala.language.implicitConversions
 
@@ -16,7 +16,7 @@ class FetchedRowViewSuite extends SpookyEnvFixture with LocalPathDocsFixture {
   it("get page") {
     val pages = (
       Wget(HTML_URL) :: Nil
-      ).fetch(spooky)
+    ).fetch(spooky)
     val row = FetchedRow(fetched = pages)
 
     val page1 = row.getOnlyDoc
@@ -31,14 +31,15 @@ class FetchedRowViewSuite extends SpookyEnvFixture with LocalPathDocsFixture {
   it("get unstructured") {
     val pages = (
       (Wget(HTML_URL) as 'pp) :: Nil
-      ).fetch(spooky)
+    ).fetch(spooky)
     val row = FetchedRow(fetched = pages)
       .squash(spooky)
       .extract(
         S("h1.central-textlogo img").head withAlias 'e1,
         'pp.findAll("label") withAlias 'lang
       )
-      .unsquash.head
+      .unsquash
+      .head
 
     val page2 = row.getUnstructured('pp)
     assert(page2.get === pages.head.root)

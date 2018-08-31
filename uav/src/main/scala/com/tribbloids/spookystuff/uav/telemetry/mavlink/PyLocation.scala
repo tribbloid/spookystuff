@@ -67,22 +67,19 @@ trait PyLocation extends CaseInstanceRef
 object LocationGlobal extends MessageReader[LocationGlobal]
 
 case class LocationGlobal(
-                           lat: Double,
-                           lon: Double,
-                           alt: Double
-                         ) extends PyLocation {
-}
+    lat: Double,
+    lon: Double,
+    alt: Double
+) extends PyLocation {}
 
 case class LocationGlobalRelative(
-                                   lat: Double,
-                                   lon: Double,
-                                   altRelative: Double
-                                 ) extends PyLocation {
-}
+    lat: Double,
+    lon: Double,
+    altRelative: Double
+) extends PyLocation {}
 
 case class LocationLocal(
-                          north: Double,
-                          east: Double,
-                          down: Double
-                        ) extends PyLocation {
-}
+    north: Double,
+    east: Double,
+    down: Double
+) extends PyLocation {}

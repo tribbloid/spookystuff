@@ -15,9 +15,7 @@ import scala.language.implicitConversions
 /**
   * inbound -> engage -> outbound
   */
-trait UAVNavigation extends Interaction
-  with UAVAction
-  with HasCost {
+trait UAVNavigation extends Interaction with UAVAction with HasCost {
 
   //TODO: change to Option
   def getLocation(schema: SpookySchema): Location
@@ -51,8 +49,8 @@ trait UAVNavigation extends Interaction
   def getSessionView(session: Session) = new NavSessionView(session)
 
   case class WSchema(
-                      schema: SpookySchema
-                    ) {
+      schema: SpookySchema
+  ) {
 
     def outer = UAVNavigation.this
 

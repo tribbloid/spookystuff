@@ -16,16 +16,16 @@ trait Anchor extends Serializable {
   def name: String
 
   final def getCoordinate(
-                           system: CoordinateSystem = LLA,
-                           from: Anchor = Geodetic
-                         ): Option[system.Coordinate] = {
+      system: CoordinateSystem = LLA,
+      from: Anchor = Geodetic
+  ): Option[system.Coordinate] = {
     _getCoordinate(system, from, SearchHistory())
   }
 
   final def coordinate(
-                        system: CoordinateSystem = LLA,
-                        from: Anchor = Geodetic
-                      ): system.Coordinate = {
+      system: CoordinateSystem = LLA,
+      from: Anchor = Geodetic
+  ): system.Coordinate = {
 
     getCoordinate(system, from).getOrElse {
       throw new UnsupportedOperationException(
@@ -35,15 +35,12 @@ trait Anchor extends Serializable {
   }
 
   def _getCoordinate(
-                      system: CoordinateSystem,
-                      from: Anchor = Geodetic,
-                      ic: SearchHistory
-                    ): Option[system.Coordinate] = None
+      system: CoordinateSystem,
+      from: Anchor = Geodetic,
+      ic: SearchHistory
+  ): Option[system.Coordinate] = None
 }
 
-trait LocationLike extends Anchor {
-}
-trait EstimationLike extends Anchor {
-}
-trait UndeterminedLike extends Anchor {
-}
+trait LocationLike extends Anchor {}
+trait EstimationLike extends Anchor {}
+trait UndeterminedLike extends Anchor {}

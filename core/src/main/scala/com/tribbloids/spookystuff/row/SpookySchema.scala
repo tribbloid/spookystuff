@@ -11,9 +11,9 @@ import scala.language.implicitConversions
 //this is a special StructType that carries more metadata
 //TODO: override sqlType, serialize & deserialize to compress into InternalRow
 case class SpookySchema(
-                          ec: SpookyExecutionContext,
-                          fieldTypes: ListMap[Field, DataType] = ListMap.empty
-                        ) extends ScalaUDT[DataRow] {
+    ec: SpookyExecutionContext,
+    fieldTypes: ListMap[Field, DataType] = ListMap.empty
+) extends ScalaUDT[DataRow] {
 
   import org.apache.spark.ml.dsl.utils.refl.ScalaType._
 
@@ -38,14 +38,12 @@ case class SpookySchema(
     )
   }
 
-  lazy val structFields = fieldTypes
-    .toSeq
-    .map {
-      tuple =>
-        StructField(
-          tuple._1.name,
-          tuple._2.reified
-        )
+  lazy val structFields = fieldTypes.toSeq
+    .map { tuple =>
+      StructField(
+        tuple._1.name,
+        tuple._2.reified
+      )
     }
 
   lazy val structType: StructType = {
@@ -53,7 +51,7 @@ case class SpookySchema(
     StructType(structFields)
   }
 
-  def -- (field: Iterable[Field]): SpookySchema = this.copy(
+  def --(field: Iterable[Field]): SpookySchema = this.copy(
     fieldTypes = fieldTypes -- field
   )
 
@@ -70,45 +68,44 @@ case class SpookySchema(
     private def resolveField(field: Field): Field = {
 
       val existingOpt = buffer.keys.find(_ == field)
-      val crOpt = existingOpt.map {
-        existing =>
-          field.effectiveConflictResolving(existing)
+      val crOpt = existingOpt.map { existing =>
+        field.effectiveConflictResolving(existing)
       }
 
-      val revised = crOpt.map(
-        cr =>
-          field.copy(conflictResolving = cr)
-      )
+      val revised = crOpt
+        .map(
+          cr => field.copy(conflictResolving = cr)
+        )
         .getOrElse(field)
 
       revised
     }
 
     def includeTyped(typed: TypedField*) = {
-      typed.map{
-        t =>
-          val resolvedField = resolveField(t.self)
-          mergeType(resolvedField, t.dataType)
-          val result = TypedField(resolvedField, t.dataType)
-          buffer += result.self -> result.dataType
-          result
+      typed.map { t =>
+        val resolvedField = resolveField(t.self)
+        mergeType(resolvedField, t.dataType)
+        val result = TypedField(resolvedField, t.dataType)
+        buffer += result.self -> result.dataType
+        result
       }
     }
 
     private def _include[R](
-                             ex: Extractor[R]
-                           ): Resolved[R] = {
+        ex: Extractor[R]
+    ): Resolved[R] = {
 
       val alias = ex match {
-        case a: Alias[_,_] =>
+        case a: Alias[_, _] =>
           val resolvedField = resolveField(a.field)
           ex withAlias resolvedField
         case _ =>
           val names = buffer.keys.toSeq.map(_.name)
-          val i = (1 to Int.MaxValue).find(
-            i =>
-              !names.contains("_c" + i)
-          ).get
+          val i = (1 to Int.MaxValue)
+            .find(
+              i => !names.contains("_c" + i)
+            )
+            .get
           ex withAlias Field("_c" + i)
       }
       val resolved = alias.resolve(SpookySchema.this)
@@ -125,9 +122,8 @@ case class SpookySchema(
 
     def include[R](exs: Extractor[R]*): Seq[Resolved[R]] = {
 
-      exs.map {
-        ex =>
-          this._include(ex)
+      exs.map { ex =>
+        this._include(ex)
       }
     }
   }
@@ -140,14 +136,15 @@ case class SpookySchema(
       case (Some(existingType), Field.Overwrite) =>
         if (dataType == existingType) dataType
         else if (dataType.reified == existingType.reified) dataType.reified
-        else throw new IllegalArgumentException(
-          s"""
+        else
+          throw new IllegalArgumentException(
+            s"""
              |Overwriting field ${resolvedField.name} with inconsistent type:
              |old: $existingType
              |new: $dataType
              |set conflictResolving=Replace to fix it
              """.stripMargin
-        )
+          )
       case _ =>
         dataType
     }

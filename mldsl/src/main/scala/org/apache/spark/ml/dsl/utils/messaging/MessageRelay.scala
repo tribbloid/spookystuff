@@ -33,7 +33,7 @@ abstract class MessageRelay[Proto: ClassTag] extends Codec[Proto] {
 
   //TODO: it only works if impl of MessageRelay is an object
   // maybe switching to M.<get companion class>?
-  final lazy val intrinsicManifestTry: Try[Manifest[this.M]] = Try{
+  final lazy val intrinsicManifestTry: Try[Manifest[this.M]] = Try {
 
     val clazz = this.getClass
     val name = clazz.getName

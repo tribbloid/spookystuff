@@ -12,7 +12,9 @@ trait Verbose extends Product {
 
   def withDetail(str: String) = {
     val result = str + Option(detail)
-      .filter(_.nonEmpty).map("\n" + _).getOrElse("")
+      .filter(_.nonEmpty)
+      .map("\n" + _)
+      .getOrElse("")
     result
   }
 

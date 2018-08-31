@@ -19,12 +19,12 @@ import scala.util.Try
   *   threadLocal > prefer > others
   */
 case class Dispatcher(
-                       uavList: List[UAV],
-                       session: Session,
-                       lock: Lock = Lock.Transient(), // Lock.ctx is ignored, session.lifespan.ctx will be used instead
-                       prefer: List[Link] => Option[Link] = {_.headOption},
-                       recommissionWithNewProxy: Boolean = true
-                     ) {
+    uavList: List[UAV],
+    session: Session,
+    lock: Lock = Lock.Transient(), // Lock.ctx is ignored, session.lifespan.ctx will be used instead
+    prefer: List[Link] => Option[Link] = { _.headOption },
+    recommissionWithNewProxy: Boolean = true
+) {
 
   val spooky = session.spooky
   val ctx = session.lifespan.ctx
@@ -36,9 +36,8 @@ case class Dispatcher(
   def getOrCreate(uav: UAV): Link = {
 
     val link = Link.synchronized {
-      Link.registered.getOrElse (
-        uav,
-        {
+      Link.registered.getOrElse(
+        uav, {
           val factory = spooky.getConf[UAVConf].routing
           val link = factory.apply(uav)
           link.register(
@@ -62,14 +61,13 @@ case class Dispatcher(
   }
 
   def _getAvailableOpt: List[(UAV, Option[Link])] = {
-    val registered: List[(UAV, Option[Link])] = uavList.map {
-      uav =>
-        uav -> Link.registered.get(uav)
+    val registered: List[(UAV, Option[Link])] = uavList.map { uav =>
+      uav -> Link.registered.get(uav)
     }
 
     val available = registered.filter {
-      case v@ (_, None) => true
-      case v@ (_, Some(link)) =>
+      case v @ (_, None) => true
+      case v @ (_, Some(link)) =>
         link.isAvailable(Some(_lock))
     }
     available
@@ -101,10 +99,10 @@ case class Dispatcher(
     val chosenOpt = Link.synchronized {
       val available = getAvailable
 
-      val ranked = available.groupBy {
-        link =>
+      val ranked = available
+        .groupBy { link =>
           link.lock.getAvailability(Some(_lock))
-      }
+        }
         .toList
         .sortBy(_._1)
 
@@ -122,15 +120,13 @@ case class Dispatcher(
             )
 
             list.headOption
-          }
-          else if (strength >= 0) {
+          } else if (strength >= 0) {
             _logInfo :+= s"${ctx.toString}: ThreadLocal link not found ... choosing from others (strength=$strength)"
-            _logInfo :+= Link.statusStrs.mkString("[\n","\n","\n]")
+            _logInfo :+= Link.statusStrs.mkString("[\n", "\n", "\n]")
 
             val preferred = prefer(list)
             preferred
-          }
-          else None
+          } else None
       }
       preferred.foreach(_.lock = _lock)
       preferred
@@ -142,21 +138,18 @@ case class Dispatcher(
 
       val msg = if (Link.registered.isEmpty) {
         s"No Link for ${uavList.mkString("[", ", ", "]")}:"
-      }
-      else {
+      } else {
         s"All Links are not accessible (lock = ${_lock}):"
       }
-      val info = msg + "\n" + Link.statusStrs.mkString("[\n","\n","\n]")
-      throw new LinkDepletedException(ctx.toString + " " +info)
+      val info = msg + "\n" + Link.statusStrs.mkString("[\n", "\n", "\n]")
+      throw new LinkDepletedException(ctx.toString + " " + info)
     }
-
 
     val recommissioned = {
       val result = if (recommissionWithNewProxy) {
         val factory = spooky.getConf[UAVConf].routing
         chosen.recommission(factory)
-      }
-      else {
+      } else {
         chosen
       }
       result.connect()

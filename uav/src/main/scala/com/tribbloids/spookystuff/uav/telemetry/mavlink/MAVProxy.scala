@@ -25,14 +25,16 @@ object MAVProxy {
   */
 //TODO: MAVProxy supports multiple master for multiple telemetry backup
 case class MAVProxy(
-                     master: String,
-                     outs: Seq[String], //first member is always used by DK.
-                     baudRate: Int,
-                     ssid: Int = UAVConf.PROXY_SSID,
-                     name: String
-                   )(
-                     override val driverTemplate: PythonDriver
-                   ) extends CaseInstanceRef with BindedRef with ConflictDetection {
+    master: String,
+    outs: Seq[String], //first member is always used by DK.
+    baudRate: Int,
+    ssid: Int = UAVConf.PROXY_SSID,
+    name: String
+)(
+    override val driverTemplate: PythonDriver
+) extends CaseInstanceRef
+    with BindedRef
+    with ConflictDetection {
 
   assert(!outs.contains(master))
   override lazy val _resourceIDs = Map(
@@ -42,22 +44,20 @@ case class MAVProxy(
 
   @volatile var _started: FutureInterruptable[String] = _
   def startedOpt: Option[FutureInterruptable[String]] = {
-    Option(_started).flatMap {
-      v =>
-        if (v.isCompleted) {
-          _started = null
-          None
-        }
-        else Some(v)
+    Option(_started).flatMap { v =>
+      if (v.isCompleted) {
+        _started = null
+        None
+      } else Some(v)
     }
   }
 
   // should always restart?
-  def start(): Unit = this.synchronized{
+  def start(): Unit = this.synchronized {
     implicit val ctx = MAVProxy.executionContext
 
     startedOpt.getOrElse {
-      val attempt: FutureInterruptable[String] = FutureInterruptable{
+      val attempt: FutureInterruptable[String] = FutureInterruptable {
         val resultOpt = this.PY.startAndBlock().$STR
         resultOpt.getOrElse("NONE")
       }
@@ -82,11 +82,10 @@ case class MAVProxy(
     }
   }
 
-  override def stopDriver(): Unit = this.synchronized{
-    Option(_driver).foreach{
-      v =>
-        v.closeOrInterrupt()
-        v.clean(true)
+  override def stopDriver(): Unit = this.synchronized {
+    Option(_driver).foreach { v =>
+      v.closeOrInterrupt()
+      v.clean(true)
     }
     _driver = null
     for (future <- startedOpt) {

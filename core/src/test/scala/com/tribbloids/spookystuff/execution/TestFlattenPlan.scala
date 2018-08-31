@@ -20,8 +20,11 @@ class TestFlattenPlan extends SpookyEnvFixture {
       .flatten('_1 ~ 'B)
       .toMapRDD(true)
 
-    rdd1.collect().mkString("\n").shouldBe(
-      """
+    rdd1
+      .collect()
+      .mkString("\n")
+      .shouldBe(
+        """
         |Map(_1 -> WrappedArray(1, 2, 3), B -> 1)
         |Map(_1 -> WrappedArray(4, 5, 6), _2 -> WrappedArray(b, c, d), B -> 4)
         |Map(_1 -> WrappedArray(1, 2, 3), B -> 2)
@@ -29,8 +32,8 @@ class TestFlattenPlan extends SpookyEnvFixture {
         |Map(_1 -> WrappedArray(1, 2, 3), B -> 3)
         |Map(_1 -> WrappedArray(4, 5, 6), _2 -> WrappedArray(b, c, d), B -> 6)
       """.stripMargin,
-      sort = true
-    )
+        sort = true
+      )
   }
 
   it("FlattenPlan should work on collection if overwriting defaultJoinField") {
@@ -38,8 +41,11 @@ class TestFlattenPlan extends SpookyEnvFixture {
       .flatten('_1 ~ 'A)
       .toMapRDD(true)
 
-    rdd1.collect().mkString("\n").shouldBe(
-      """
+    rdd1
+      .collect()
+      .mkString("\n")
+      .shouldBe(
+        """
         |Map(_1 -> WrappedArray(1, 2, 3), A -> 1)
         |Map(_1 -> WrappedArray(4, 5, 6), _2 -> WrappedArray(b, c, d), A -> 4)
         |Map(_1 -> WrappedArray(1, 2, 3), A -> 2)
@@ -47,8 +53,8 @@ class TestFlattenPlan extends SpookyEnvFixture {
         |Map(_1 -> WrappedArray(1, 2, 3), A -> 3)
         |Map(_1 -> WrappedArray(4, 5, 6), _2 -> WrappedArray(b, c, d), A -> 6)
       """.stripMargin,
-      sort = true
-    )
+        sort = true
+      )
   }
 
   it("FlattenPlan should work on collection if not manually set alias") {
@@ -56,8 +62,11 @@ class TestFlattenPlan extends SpookyEnvFixture {
       .flatten('_1)
       .toMapRDD(true)
 
-    rdd1.collect().mkString("\n").shouldBe(
-      """
+    rdd1
+      .collect()
+      .mkString("\n")
+      .shouldBe(
+        """
         |Map(_1 -> 1)
         |Map(_2 -> WrappedArray(b, c, d), _1 -> 4)
         |Map(_1 -> 2)
@@ -65,8 +74,8 @@ class TestFlattenPlan extends SpookyEnvFixture {
         |Map(_1 -> 3)
         |Map(_2 -> WrappedArray(b, c, d), _1 -> 6)
       """.stripMargin,
-      sort = true
-    )
+        sort = true
+      )
   }
 
   it("FlattenPlan should work on partial collection") {
@@ -74,15 +83,18 @@ class TestFlattenPlan extends SpookyEnvFixture {
       .flatten('_2 ~ 'A)
       .toMapRDD(true)
 
-    rdd1.collect().mkString("\n").shouldBe(
-      """
+    rdd1
+      .collect()
+      .mkString("\n")
+      .shouldBe(
+        """
         |Map(_1 -> WrappedArray(1, 2, 3))
         |Map(_1 -> WrappedArray(4, 5, 6), _2 -> WrappedArray(b, c, d), A -> b)
         |Map(_1 -> WrappedArray(4, 5, 6), _2 -> WrappedArray(b, c, d), A -> c)
         |Map(_1 -> WrappedArray(4, 5, 6), _2 -> WrappedArray(b, c, d), A -> d)
       """.stripMargin,
-      sort = true
-    )
+        sort = true
+      )
   }
 
   def assertTypeEqual(t1: UnreifiedScalaType[_], t2: UnreifiedScalaType[_]) = {
@@ -92,11 +104,12 @@ class TestFlattenPlan extends SpookyEnvFixture {
   }
 
   it("FlattenPlan should work on extracted array") {
-    val extracted = src.wget(
-      HTML_URL
-    )
+    val extracted = src
+      .wget(
+        HTML_URL
+      )
       .extract(
-        Lit(Array("a"->1, "b"->2)) ~ 'Array
+        Lit(Array("a" -> 1, "b" -> 2)) ~ 'Array
       )
 
     val t1 = extracted.schema.typedFor('Array).get.dataType.asInstanceOf[UnreifiedScalaType[_]]
@@ -109,18 +122,21 @@ class TestFlattenPlan extends SpookyEnvFixture {
       )
 
     //    assert(flattened.schema.typedFor('Array).get.dataType == UnreifiedScalaType.apply[Tuple2[String, Int]])
-    assert(flattened.schema.typedFor('Array).get.dataType == StructType(Array(
-      StructField("_1",StringType,nullable = true),
-      StructField("_2",IntegerType,nullable = false)
-    )))
+    assert(
+      flattened.schema.typedFor('Array).get.dataType == StructType(
+        Array(
+          StructField("_1", StringType, nullable = true),
+          StructField("_2", IntegerType, nullable = false)
+        )))
   }
 
   it("FlattenPlan should work on extracted Seq") {
-    val extracted = src.wget(
-      HTML_URL
-    )
+    val extracted = src
+      .wget(
+        HTML_URL
+      )
       .extract(
-        Lit(Seq("a"->1, "b"->2)) ~ 'Array
+        Lit(Seq("a" -> 1, "b" -> 2)) ~ 'Array
       )
 
     val t1 = extracted.schema.typedFor('Array).get.dataType.asInstanceOf[UnreifiedScalaType[_]]
@@ -133,18 +149,21 @@ class TestFlattenPlan extends SpookyEnvFixture {
       )
 
     //    assert(flattened.schema.typedFor('Array).get.dataType == UnreifiedScalaType.apply[Tuple2[String, Int]])
-    assert(flattened.schema.typedFor('Array).get.dataType == StructType(Array(
-      StructField("_1",StringType,nullable = true),
-      StructField("_2",IntegerType,nullable = false)
-    )))
+    assert(
+      flattened.schema.typedFor('Array).get.dataType == StructType(
+        Array(
+          StructField("_1", StringType, nullable = true),
+          StructField("_2", IntegerType, nullable = false)
+        )))
   }
 
   it("FlattenPlan should work on extracted List") {
-    val extracted = src.wget(
-      HTML_URL
-    )
+    val extracted = src
+      .wget(
+        HTML_URL
+      )
       .extract(
-        Lit(List("a"->1, "b"->2)) ~ 'Array
+        Lit(List("a" -> 1, "b" -> 2)) ~ 'Array
       )
 
     val t1 = extracted.schema.typedFor('Array).get.dataType.asInstanceOf[UnreifiedScalaType[_]]
@@ -157,10 +176,12 @@ class TestFlattenPlan extends SpookyEnvFixture {
       )
 
     //    assert(flattened.schema.typedFor('Array).get.dataType == UnreifiedScalaType.apply[Tuple2[String, Int]])
-    assert(flattened.schema.typedFor('Array).get.dataType == StructType(Array(
-      StructField("_1",StringType,nullable = true),
-      StructField("_2",IntegerType,nullable = false)
-    )))
+    assert(
+      flattened.schema.typedFor('Array).get.dataType == StructType(
+        Array(
+          StructField("_1", StringType, nullable = true),
+          StructField("_2", IntegerType, nullable = false)
+        )))
   }
 
   it("flatExtract is equivalent to flatten + extract") {
@@ -175,12 +196,20 @@ class TestFlattenPlan extends SpookyEnvFixture {
         'A ~ 'dummy
       )
 
-    rdd1.toMapRDD(true).collect().mkString("\n").shouldBe(
-      rdd2.toMapRDD(true).collect().mkString("\n")
-    )
-    rdd1.toDF(sort = true).collect().mkString("\n").shouldBe(
-      rdd2.toDF(sort = true).collect().mkString("\n")
-    )
+    rdd1
+      .toMapRDD(true)
+      .collect()
+      .mkString("\n")
+      .shouldBe(
+        rdd2.toMapRDD(true).collect().mkString("\n")
+      )
+    rdd1
+      .toDF(sort = true)
+      .collect()
+      .mkString("\n")
+      .shouldBe(
+        rdd2.toDF(sort = true).collect().mkString("\n")
+      )
   }
 
   it("flatExtract is equivalent to flatten + extract if not manually set join key") {
@@ -195,12 +224,20 @@ class TestFlattenPlan extends SpookyEnvFixture {
         'A ~ 'dummy
       )
 
-    rdd1.toMapRDD(true).collect().mkString("\n").shouldBe(
-      rdd2.toMapRDD(true).collect().mkString("\n")
-    )
-    rdd1.toDF(sort = true).collect().mkString("\n").shouldBe(
-      rdd2.toDF(sort = true).collect().mkString("\n")
-    )
+    rdd1
+      .toMapRDD(true)
+      .collect()
+      .mkString("\n")
+      .shouldBe(
+        rdd2.toMapRDD(true).collect().mkString("\n")
+      )
+    rdd1
+      .toDF(sort = true)
+      .collect()
+      .mkString("\n")
+      .shouldBe(
+        rdd2.toDF(sort = true).collect().mkString("\n")
+      )
   }
 
   //  test("describe ACF") {

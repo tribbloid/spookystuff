@@ -8,41 +8,43 @@ import com.tribbloids.spookystuff.row.{DataRow, FetchedRow, Field, SquashedFetch
 import com.tribbloids.spookystuff.testutils.LocalPathDocsFixture
 
 /**
-*  Created by peng on 12/3/14.
-*/
+  *  Created by peng on 12/3/14.
+  */
 class TestDSL extends SpookyEnvFixture with LocalPathDocsFixture {
 
   lazy val pages = (
-    Wget(HTML_URL) ~ 'page  :: Nil
+    Wget(HTML_URL) ~ 'page :: Nil
   ).fetch(spooky)
 
-  lazy val row = SquashedFetchedRow.withDocs(dataRows = Array(DataRow()), docs = pages)
+  lazy val row = SquashedFetchedRow
+    .withDocs(dataRows = Array(DataRow()), docs = pages)
     .extract(
       S"title".head.text withAlias 'abc,
       S"title".head withAlias 'def
     )
-      .unsquash.head
+    .unsquash
+    .head
 
-  it("symbol as Expr"){
+  it("symbol as Expr") {
     assert('abc.resolve(emptySchema).apply(row) === "Wikipedia")
   }
 
   it("defaultAs should not rename an Alias") {
     val renamed = 'abc as 'name1
-    assert(renamed.asInstanceOf[Alias[_,_]].field.name == "name1")
+    assert(renamed.asInstanceOf[Alias[_, _]].field.name == "name1")
     val renamed2 = renamed as 'name2
-    assert(renamed2.asInstanceOf[Alias[_,_]].field.name  == "name2")
-    val notRenamed = renamed withAliasIfMissing  'name2
-    assert(notRenamed.field.name  == "name1")
+    assert(renamed2.asInstanceOf[Alias[_, _]].field.name == "name2")
+    val notRenamed = renamed withAliasIfMissing 'name2
+    assert(notRenamed.field.name == "name1")
   }
 
-  it("andFn"){
+  it("andFn") {
     val fun = 'abc.andFn(_.toString).resolve(emptySchema)
 //    assert(fun.toString === "<function1>")
     assert(fun(row) === "Wikipedia")
   }
 
-  it("andUnlift"){
+  it("andUnlift") {
     val fun = 'abc.andOptionFn(_.toString.headOption).resolve(emptySchema)
 //    assert(fun.toString === "<function1>")
     assert(fun(row) === 'W')
@@ -51,15 +53,17 @@ class TestDSL extends SpookyEnvFixture with LocalPathDocsFixture {
   it("double quotes in selector by attribute should work") {
     val pages = (
       Wget(HTML_URL) :: Nil
-      ).fetch(spooky).toArray
-    val row = SquashedFetchedRow.withDocs(Array(DataRow()), docs = pages)
+    ).fetch(spooky).toArray
+    val row = SquashedFetchedRow
+      .withDocs(Array(DataRow()), docs = pages)
       .extract(S"""a[href*="wikipedia"]""".href withAlias 'uri)
-      .unsquash.head
+      .unsquash
+      .head
 
     assert(row.dataRow.get(Field("uri")).nonEmpty)
   }
 
-  it("uri"){
+  it("uri") {
     assert(S.uri.apply(row) contains HTML_URL)
     assert('page.uri.apply(row) contains HTML_URL)
     assert('def.uri.apply(row) contains HTML_URL)
@@ -68,7 +72,7 @@ class TestDSL extends SpookyEnvFixture with LocalPathDocsFixture {
   it("string interpolation") {
     val expr = x"static ${'notexist}".resolve(emptySchema)
     assert(expr.lift.apply(row).isEmpty)
-    assert(expr.orElse[FetchedRow, String]{case _ => " "}.apply(row) == " ")
+    assert(expr.orElse[FetchedRow, String] { case _ => " " }.apply(row) == " ")
   }
 
   it("SpookyContext can be cast to a blank PageRowRDD with empty schema") {

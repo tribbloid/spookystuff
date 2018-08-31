@@ -36,18 +36,16 @@ trait SpookyException extends TreeException {
 }
 
 class ActionException(
-                       override val simpleMsg: String = "",
-                       override val cause: Throwable = null
-                     ) extends SpookyException {
-
-}
+    override val simpleMsg: String = "",
+    override val cause: Throwable = null
+) extends SpookyException {}
 
 class PyException(
-                   val code: String,
-                   val output: String,
-                   override val cause: Throwable = null,
-                   val historyCodeOpt: Option[String] = None
-                 ) extends SpookyException{
+    val code: String,
+    val output: String,
+    override val cause: Throwable = null,
+    val historyCodeOpt: Option[String] = None
+) extends SpookyException {
 
   override def simpleMsg: String =
     s"""
@@ -62,34 +60,36 @@ class PyException(
 }
 
 case class PyInterpretationException(
-                                      override val code: String,
-                                      override val output: String,
-                                      override val cause: Throwable = null,
-                                      override val historyCodeOpt: Option[String] = None
-                                    ) extends PyException(code, output, cause, historyCodeOpt)
+    override val code: String,
+    override val output: String,
+    override val cause: Throwable = null,
+    override val historyCodeOpt: Option[String] = None
+) extends PyException(code, output, cause, historyCodeOpt)
 
 class RetryingException(
-                         override val simpleMsg: String = "",
-                         override val cause: Throwable = null
-                       ) extends ActionException(simpleMsg, cause)
+    override val simpleMsg: String = "",
+    override val cause: Throwable = null
+) extends ActionException(simpleMsg, cause)
 
 class DFSReadException(
-                        override val simpleMsg: String = "",
-                        override val cause: Throwable = null
-                      ) extends IOException(simpleMsg, cause) with SpookyException
+    override val simpleMsg: String = "",
+    override val cause: Throwable = null
+) extends IOException(simpleMsg, cause)
+    with SpookyException
 
 class DFSWriteException(
-                         override val simpleMsg: String = "",
-                         override val cause: Throwable = null
-                       ) extends IOException(simpleMsg, cause) with SpookyException
+    override val simpleMsg: String = "",
+    override val cause: Throwable = null
+) extends IOException(simpleMsg, cause)
+    with SpookyException
 
 //TODO: cause confusion! replace with IllegalArgumentException or use mixin
 class QueryException(
-                      override val simpleMsg: String = "",
-                      override val cause: Throwable = null
-                    ) extends SpookyException
+    override val simpleMsg: String = "",
+    override val cause: Throwable = null
+) extends SpookyException
 
 class BrowserDeploymentException(
-                                  override val simpleMsg: String = "",
-                                  override val cause: Throwable = null
-                                ) extends SpookyException
+    override val simpleMsg: String = "",
+    override val cause: Throwable = null
+) extends SpookyException

@@ -7,7 +7,7 @@ import com.tribbloids.spookystuff.actions.Trace
 import com.tribbloids.spookystuff.doc.Doc
 import com.tribbloids.spookystuff.utils.{CommonUtils, SpookyUtils}
 
-object FilePaths{
+object FilePaths {
 
   case object Flat extends ByTrace[String] {
 
@@ -16,13 +16,12 @@ object FilePaths{
       val actionStrs = trace.map(v => v.memberStr)
 
       val actionConcat = if (actionStrs.size > 4) {
-        val oneTwoThree = actionStrs.slice(0,3)
+        val oneTwoThree = actionStrs.slice(0, 3)
         val last = actionStrs.last
-        val omitted = "..." + (trace.length-4) + "more"+"..."
+        val omitted = "..." + (trace.length - 4) + "more" + "..."
 
-        oneTwoThree.mkString("~")+omitted+last
-      }
-      else actionStrs.mkString("~")
+        oneTwoThree.mkString("~") + omitted + last
+      } else actionStrs.mkString("~")
 
       val hash = "" + trace.hashCode
 
@@ -38,15 +37,14 @@ object FilePaths{
       val actionStrs = trace.map(v => v.memberStr_\\\)
 
       val actionConcat = if (actionStrs.size > 4) {
-        val oneTwoThree = actionStrs.slice(0,3)
+        val oneTwoThree = actionStrs.slice(0, 3)
         val last = actionStrs.last
-        val omitted = File.separator + (trace.length - 4) + "more"+ File.separator
+        val omitted = File.separator + (trace.length - 4) + "more" + File.separator
 
         CommonUtils.\\\(oneTwoThree: _*) + omitted + last
-      }
-      else CommonUtils.\\\(actionStrs: _*)
+      } else CommonUtils.\\\(actionStrs: _*)
 
-      val hash = ""+trace.hashCode
+      val hash = "" + trace.hashCode
 
       SpookyUtils.canonizeUrn(CommonUtils.\\\(actionConcat, hash))
     }

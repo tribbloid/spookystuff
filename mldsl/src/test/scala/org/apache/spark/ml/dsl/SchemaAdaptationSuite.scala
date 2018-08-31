@@ -15,8 +15,10 @@ class SchemaAdaptationSuite extends AbstractFlowSuite {
     )
     val after = FlowUtils.cartesianProductList(before)
 
-    after.mkString("\n").shouldBe(
-      """
+    after
+      .mkString("\n")
+      .shouldBe(
+        """
         |List(a, 1, x)
         |List(a, 1, y)
         |List(a, 1, z)
@@ -45,18 +47,20 @@ class SchemaAdaptationSuite extends AbstractFlowSuite {
         |List(c, 3, y)
         |List(c, 3, z)
       """.stripMargin
-    )
+      )
   }
 
   it("cartesianProduct should work on empty list") {
     val before: List[Set[String]] = List()
     val after = FlowUtils.cartesianProductSet(before).toList.sortBy(_.toString())
 
-    after.mkString("\n").shouldBe(
-      """
+    after
+      .mkString("\n")
+      .shouldBe(
+        """
         |List()
       """.stripMargin
-    )
+      )
   }
 
   it("cartesianProduct should work on list of empty sets") {

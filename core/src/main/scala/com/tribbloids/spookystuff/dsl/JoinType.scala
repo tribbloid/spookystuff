@@ -1,9 +1,8 @@
 package com.tribbloids.spookystuff.dsl
 
 /**
- * Created by peng on 8/31/14.
- */
-
+  * Created by peng on 8/31/14.
+  */
 //TODO: use Spark JoinType
 sealed abstract class JoinType(val isLeft: Boolean) extends Serializable with Product
 

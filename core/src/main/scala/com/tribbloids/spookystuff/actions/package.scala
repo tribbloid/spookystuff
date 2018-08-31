@@ -5,8 +5,8 @@ import com.tribbloids.spookystuff.session.Session
 import com.tribbloids.spookystuff.utils.Lambda
 
 /**
- * Created by peng on 3/26/15.
- */
+  * Created by peng on 3/26/15.
+  */
 package object actions {
 
 //  type GenTrace = Seq[Action]

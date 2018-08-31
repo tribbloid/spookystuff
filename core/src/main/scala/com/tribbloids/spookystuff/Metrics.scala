@@ -32,7 +32,7 @@ object Metrics {
       override def apply(v1: T) = new Acc(new DoubleAccumulator()) {
         override def +=(v: Number): Unit = {
           val vv = v.doubleValue()
-          if (vv> 0)
+          if (vv > 0)
             self.add(v.doubleValue())
         }
       }
@@ -49,10 +49,10 @@ object Metrics {
 
   //TODO: is this efficient?
   abstract class Acc[IN](
-                          val self: AccumulatorV2[IN, IN]
-                        ) extends Serializable {
+      val self: AccumulatorV2[IN, IN]
+  ) extends Serializable {
 
-    def += (v: Number): Unit //adapter that does type cast
+    def +=(v: Number): Unit //adapter that does type cast
 
     def reset(): Unit = self.reset()
     def name = self.name
@@ -60,14 +60,14 @@ object Metrics {
   }
 
   def accumulator[T1, IN](
-                           value: T1,
-                           name: String = null
-                         )(
-                           implicit
-                           canBuildFrom: CanBuildFrom[T1, IN],
-                           cast: T1 => Number,
-                           sc: SparkContext = SparkContext.getOrCreate()
-                         ): Acc[IN] = {
+      value: T1,
+      name: String = null
+  )(
+      implicit
+      canBuildFrom: CanBuildFrom[T1, IN],
+      cast: T1 => Number,
+      sc: SparkContext = SparkContext.getOrCreate()
+  ): Acc[IN] = {
 
     val acc: Acc[IN] = canBuildFrom(value)
     acc.reset()
@@ -91,12 +91,11 @@ abstract class Metrics extends ProtoAPI with Product with Serializable {
   def toTuples: List[(String, Any)] = {
     this.productIterator.toList.flatMap {
       case acc: Acc[_] =>
-        acc.name.flatMap {
-          v =>
-            acc.value match {
-              case i: Any => Some(v -> i)
-              case _ => None
-            }
+        acc.name.flatMap { v =>
+          acc.value match {
+            case i: Any => Some(v -> i)
+            case _      => None
+          }
         }
       case _ =>
         None
@@ -134,37 +133,25 @@ object SpookyMetrics extends Submodules.Builder[SpookyMetrics] {
 //TODO: change to multi-level
 @SerialVersionUID(64065023841293L)
 case class SpookyMetrics(
-                          webDriverDispatched: Acc[lang.Long] = Metrics.accumulator(0L, "webDriverDispatched"),
-                          webDriverReleased: Acc[lang.Long] = Metrics.accumulator(0L, "webDriverReleased"),
-
-                          pythonDriverDispatched: Acc[lang.Long] = Metrics.accumulator(0L, "pythonDriverDispatched"),
-                          pythonDriverReleased: Acc[lang.Long] = Metrics.accumulator(0L, "pythonDriverReleased"),
-
-                          //TODO: cleanup? useless
-                          pythonInterpretationSuccess: Acc[lang.Long] = Metrics.accumulator(0L, "pythonInterpretationSuccess"),
-                          pythonInterpretationError: Acc[lang.Long] = Metrics.accumulator(0L, "pythonInterpretationSuccess"),
-
-                          sessionInitialized: Acc[lang.Long] = Metrics.accumulator(0L, "sessionInitialized"),
-                          sessionReclaimed: Acc[lang.Long] = Metrics.accumulator(0L, "sessionReclaimed"),
-
-                          DFSReadSuccess: Acc[lang.Long] = Metrics.accumulator(0L, "DFSReadSuccess"),
-                          DFSReadFailure: Acc[lang.Long] = Metrics.accumulator(0L, "DFSReadFail"),
-
-                          DFSWriteSuccess: Acc[lang.Long] = Metrics.accumulator(0L, "DFSWriteSuccess"),
-                          DFSWriteFailure: Acc[lang.Long] = Metrics.accumulator(0L, "DFSWriteFail"),
-
-                          pagesFetched: Acc[lang.Long] = Metrics.accumulator(0L, "pagesFetched"),
-
-                          pagesFetchedFromCache: Acc[lang.Long] = Metrics.accumulator(0L, "pagesFetchedFromCache"),
-                          pagesFetchedFromRemote: Acc[lang.Long] = Metrics.accumulator(0L, "pagesFetchedFromRemote"),
-
-                          fetchFromCacheSuccess: Acc[lang.Long] = Metrics.accumulator(0L, "fetchFromCacheSuccess"),
-                          fetchFromCacheFailure: Acc[lang.Long] = Metrics.accumulator(0L, "fetchFromCacheFailure"),
-
-                          fetchFromRemoteSuccess: Acc[lang.Long] = Metrics.accumulator(0L, "fetchFromRemoteSuccess"),
-                          fetchFromRemoteFailure: Acc[lang.Long] = Metrics.accumulator(0L, "fetchFromRemoteFailure"),
-
-                          pagesSaved: Acc[lang.Long] = Metrics.accumulator(0L, "pagesSaved")
-
-                        ) extends Metrics {
-}
+    webDriverDispatched: Acc[lang.Long] = Metrics.accumulator(0L, "webDriverDispatched"),
+    webDriverReleased: Acc[lang.Long] = Metrics.accumulator(0L, "webDriverReleased"),
+    pythonDriverDispatched: Acc[lang.Long] = Metrics.accumulator(0L, "pythonDriverDispatched"),
+    pythonDriverReleased: Acc[lang.Long] = Metrics.accumulator(0L, "pythonDriverReleased"),
+    //TODO: cleanup? useless
+    pythonInterpretationSuccess: Acc[lang.Long] = Metrics.accumulator(0L, "pythonInterpretationSuccess"),
+    pythonInterpretationError: Acc[lang.Long] = Metrics.accumulator(0L, "pythonInterpretationSuccess"),
+    sessionInitialized: Acc[lang.Long] = Metrics.accumulator(0L, "sessionInitialized"),
+    sessionReclaimed: Acc[lang.Long] = Metrics.accumulator(0L, "sessionReclaimed"),
+    DFSReadSuccess: Acc[lang.Long] = Metrics.accumulator(0L, "DFSReadSuccess"),
+    DFSReadFailure: Acc[lang.Long] = Metrics.accumulator(0L, "DFSReadFail"),
+    DFSWriteSuccess: Acc[lang.Long] = Metrics.accumulator(0L, "DFSWriteSuccess"),
+    DFSWriteFailure: Acc[lang.Long] = Metrics.accumulator(0L, "DFSWriteFail"),
+    pagesFetched: Acc[lang.Long] = Metrics.accumulator(0L, "pagesFetched"),
+    pagesFetchedFromCache: Acc[lang.Long] = Metrics.accumulator(0L, "pagesFetchedFromCache"),
+    pagesFetchedFromRemote: Acc[lang.Long] = Metrics.accumulator(0L, "pagesFetchedFromRemote"),
+    fetchFromCacheSuccess: Acc[lang.Long] = Metrics.accumulator(0L, "fetchFromCacheSuccess"),
+    fetchFromCacheFailure: Acc[lang.Long] = Metrics.accumulator(0L, "fetchFromCacheFailure"),
+    fetchFromRemoteSuccess: Acc[lang.Long] = Metrics.accumulator(0L, "fetchFromRemoteSuccess"),
+    fetchFromRemoteFailure: Acc[lang.Long] = Metrics.accumulator(0L, "fetchFromRemoteFailure"),
+    pagesSaved: Acc[lang.Long] = Metrics.accumulator(0L, "pagesSaved")
+) extends Metrics {}

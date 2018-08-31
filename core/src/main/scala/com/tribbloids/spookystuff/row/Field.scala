@@ -34,22 +34,21 @@ object Field {
   * DSL can implicitly convert symbol/SQL Column reference to this.
   */
 case class Field(
-                  name: String,
+    name: String,
+    isWeak: Boolean = false,
+    // weak field can be referred by common extractions, but has lower priority
+    // weak field is removed when conflict resolving with an identical field
+    isInvisible: Boolean = false,
+    // invisible field cannot be referred by common extractions
+    // declare it to ensure that its value won't interfere with downstream execution.
+    isReserved: Boolean = false,
+    conflictResolving: Field.ConflictResolving = Field.Error,
+    isOrdinal: Boolean = false, //represents ordinal index in flatten/explore
+    depthRangeOpt: Option[Range] = None, //represents depth in explore
 
-                  isWeak: Boolean = false,
-                  // weak field can be referred by common extractions, but has lower priority
-                  // weak field is removed when conflict resolving with an identical field
-                  isInvisible: Boolean = false,
-                  // invisible field cannot be referred by common extractions
-                  // declare it to ensure that its value won't interfere with downstream execution.
-                  isReserved: Boolean = false,
-
-                  conflictResolving: Field.ConflictResolving = Field.Error,
-                  isOrdinal: Boolean = false, //represents ordinal index in flatten/explore
-                  depthRangeOpt: Option[Range] = None, //represents depth in explore
-
-                  isSelectedOverride: Option[Boolean] = None
-                ) extends IDMixin with ProtoAPI {
+    isSelectedOverride: Option[Boolean] = None
+) extends IDMixin
+    with ProtoAPI {
 
   lazy val _id = (name, isWeak, isInvisible, isReserved)
 
@@ -95,10 +94,10 @@ case class Field(
 
 //used to convert SquashedFetchedRow to DF
 case class TypedField(
-                       self: Field,
-                       dataType: DataType,
-                       metaData: Metadata = Metadata.empty
-                     ) {
+    self: Field,
+    dataType: DataType,
+    metaData: Metadata = Metadata.empty
+) {
 
   def toStructField: StructField = StructField(
     self.name,

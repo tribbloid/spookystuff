@@ -19,10 +19,10 @@ class FetchClickNextPageIT extends IntegrationFixture {
       .fetch(
         Visit("http://localhost:10092/test-sites/e-commerce/static/computers/laptops")
           +> Snapshot().as('a)
-          +> Loop (
-          Click("ul.pagination a[rel=next]")
-            +> Snapshot().as('b)
-        )
+          +> Loop(
+            Click("ul.pagination a[rel=next]")
+              +> Snapshot().as('b)
+          )
       )
       .persist()
 
@@ -34,7 +34,7 @@ class FetchClickNextPageIT extends IntegrationFixture {
     assert(pageRows(1).docs.map(_.name) === Seq("b"))
     val pageTime = pageRows(0).docs.head.timeMillis
     assert(pageTime < finishTime)
-    assert(pageTime > finishTime-60000) //long enough even after the second time it is retrieved from DFS cache
+    assert(pageTime > finishTime - 60000) //long enough even after the second time it is retrieved from DFS cache
 
     Thread.sleep(10000) //this delay is necessary to circumvent eventual consistency of DFS cache
 
@@ -42,10 +42,10 @@ class FetchClickNextPageIT extends IntegrationFixture {
       .fetch(
         Visit("http://localhost:10092/test-sites/e-commerce/static/computers/laptops")
           +> Snapshot().as('c)
-          +> Loop (
-          Click("ul.pagination a[rel=next]")
-            +> Snapshot().as('d)
-        )
+          +> Loop(
+            Click("ul.pagination a[rel=next]")
+              +> Snapshot().as('d)
+          )
       )
 
     val pageRows2 = RDD2.unsquashedRDD.collect()
@@ -55,7 +55,7 @@ class FetchClickNextPageIT extends IntegrationFixture {
     assert(pageRows2(1).docs.map(_.name) === Seq("d"))
   }
 
-  override def numPages= spooky.spookyConf.defaultGenPartitioner match {
+  override def numPages = spooky.spookyConf.defaultGenPartitioner match {
 //    case FetchOptimizers.WebCacheAware => 3
     case _ => 3
   }

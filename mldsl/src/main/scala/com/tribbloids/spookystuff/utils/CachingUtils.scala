@@ -36,8 +36,7 @@ object CachingUtils {
 
   type ConcurrentMap[K, V] = scala.collection.concurrent.Map[K, V]
   def ConcurrentMap[K, V](): ConcurrentMap[K, V] = {
-    new java.util.concurrent.ConcurrentHashMap[K, V]()
-      .asScala
+    new java.util.concurrent.ConcurrentHashMap[K, V]().asScala
   }
 
   type ConcurrentSet[V] = mutable.Set[V]

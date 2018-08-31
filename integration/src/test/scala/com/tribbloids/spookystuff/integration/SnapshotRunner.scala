@@ -24,33 +24,30 @@ object SnapshotRunner extends SpookyEnv {
     import com.tribbloids.spookystuff.utils.CommonViews.StringView
 
     val pathEncoding = S.uri
-      .andFn {
-        uri =>
-          val base = uri.split(SPLITTER).last
-          CommonConst.TEMP_DIR \\ "test-sites" \\ base
+      .andFn { uri =>
+        val base = uri.split(SPLITTER).last
+        CommonConst.TEMP_DIR \\ "test-sites" \\ base
       }
 
     def save() = {
 
       fd.persist()
-      val originalVersion = fd.wget(S.uri.andFn(
-        {
-          uri =>
+      val originalVersion = fd.wget(
+        S.uri.andFn(
+          { uri =>
             try {
               val Array(first, last) = uri.split(SPLITTER)
               first + "id_" + SPLITTER_MIN + last
-            }
-            catch {
+            } catch {
               case e: Throwable =>
                 throw new UnsupportedOperationException(s"malformed URI: $uri", e)
             }
-        }
-      ),
-        cooldown = cooldown)
+          }
+        ),
+        cooldown = cooldown
+      )
       originalVersion
-        .savePages_!(
-          pathEncoding,
-          overwrite = true)
+        .savePages_!(pathEncoding, overwrite = true)
 
       fd
     }
@@ -60,23 +57,24 @@ object SnapshotRunner extends SpookyEnv {
 
     import com.tribbloids.spookystuff.dsl.DSL._
 
-
     val spooky = this.spooky
 
-    val keyBy: Trace => String = {
-      trace =>
-        val uri = trace.collectFirst {
+    val keyBy: Trace => String = { trace =>
+      val uri = trace
+        .collectFirst {
           case wget: Wget => wget.uri.value
-        }.getOrElse("")
+        }
+        .getOrElse("")
 
-        val base = uri.split(SPLITTER).last
-        base
+      val base = uri.split(SPLITTER).last
+      base
 
     }
 
-    spooky.wget(
-      "https://web.archive.org/web/20170707111752/http://webscraper.io:80/test-sites"
-    )
+    spooky
+      .wget(
+        "https://web.archive.org/web/20170707111752/http://webscraper.io:80/test-sites"
+      )
       .save()
       .wgetJoin(S"h2.site-heading a", cooldown = cooldown, keyBy = keyBy)
       .save()

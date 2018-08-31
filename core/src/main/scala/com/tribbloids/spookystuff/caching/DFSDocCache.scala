@@ -5,7 +5,7 @@ import java.util.UUID
 import com.tribbloids.spookystuff.SpookyContext
 import com.tribbloids.spookystuff.actions.Trace
 import com.tribbloids.spookystuff.conf.DirConf
-import com.tribbloids.spookystuff.doc.{DocUtils, DocOption}
+import com.tribbloids.spookystuff.doc.{DocOption, DocUtils}
 import com.tribbloids.spookystuff.utils.CommonUtils
 import org.apache.hadoop.fs.Path
 

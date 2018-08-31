@@ -2,7 +2,7 @@ package com.tribbloids.spookystuff.doc
 
 import com.tribbloids.spookystuff.actions.{Snapshot, Visit}
 import com.tribbloids.spookystuff.session.Session
-import com.tribbloids.spookystuff.{SpookyEnvFixture, dsl}
+import com.tribbloids.spookystuff.{dsl, SpookyEnvFixture}
 
 class TestPageFromBrowser extends SpookyEnvFixture {
 
@@ -16,9 +16,9 @@ class TestPageFromBrowser extends SpookyEnvFixture {
       Snapshot(DocFilters.AcceptStatusCode2XX).apply(session).toList.head.asInstanceOf[Doc]
     }
 
-    assert (emptyPage.findAll("div.dummy").attrs("href").isEmpty)
-    assert (emptyPage.findAll("div.dummy").codes.isEmpty)
-    assert (emptyPage.findAll("div.dummy").isEmpty)
+    assert(emptyPage.findAll("div.dummy").attrs("href").isEmpty)
+    assert(emptyPage.findAll("div.dummy").codes.isEmpty)
+    assert(emptyPage.findAll("div.dummy").isEmpty)
   }
 
   it("visit, save and load") {
@@ -26,7 +26,7 @@ class TestPageFromBrowser extends SpookyEnvFixture {
     val results = (
       Visit(HTML_URL) ::
         Snapshot().as('T) :: Nil
-      ).fetch(spooky)
+    ).fetch(spooky)
 
     val resultsList = results.toArray
     assert(resultsList.length === 1)

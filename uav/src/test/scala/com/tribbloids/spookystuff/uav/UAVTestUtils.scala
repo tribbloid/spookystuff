@@ -14,26 +14,24 @@ object UAVTestUtils {
 
     def coordinates: Seq[(Coordinate, Coordinate)]
 
-    val locations = coordinates.map {
-      tuple =>
-        val l1: Location = tuple._1
-        val l2: Location = tuple._2
-        l1.replaceAnchors{
-          case Anchors.Home =>
-            UAVConf.DEFAULT_HOME_LOCATION
-        } -> l2.replaceAnchors{
-          case Anchors.Home =>
-            UAVConf.DEFAULT_HOME_LOCATION
-        }
+    val locations = coordinates.map { tuple =>
+      val l1: Location = tuple._1
+      val l2: Location = tuple._2
+      l1.replaceAnchors {
+        case Anchors.Home =>
+          UAVConf.DEFAULT_HOME_LOCATION
+      } -> l2.replaceAnchors {
+        case Anchors.Home =>
+          UAVConf.DEFAULT_HOME_LOCATION
+      }
     }
 
     val lineScans: Seq[List[Waypoint]] = {
-      locations.map {
-        tuple =>
-          List(
-            Waypoint(Lit(tuple._1)),
-            Waypoint(Lit(tuple._2))
-          )
+      locations.map { tuple =>
+        List(
+          Waypoint(Lit(tuple._1)),
+          Waypoint(Lit(tuple._2))
+        )
       }
     }
 
@@ -43,30 +41,26 @@ object UAVTestUtils {
   }
 
   case class NEDPattern(
-                         coordinates: Seq[(NED.Coordinate, NED.Coordinate)]
-                       ) extends Pattern {
-
-  }
+      coordinates: Seq[(NED.Coordinate, NED.Coordinate)]
+  ) extends Pattern {}
 
   case class LawnMowerPattern(
-                               n: Int,
-                               origin: NED.Coordinate,
-                               dir: NED.Coordinate, // actual directions are always alternating
-                               stride: NED.Coordinate
-                             ) extends Pattern {
+      n: Int,
+      origin: NED.Coordinate,
+      dir: NED.Coordinate, // actual directions are always alternating
+      stride: NED.Coordinate
+  ) extends Pattern {
 
     def coordinates: Seq[(Coordinate, Coordinate)] = {
 
-      val result = (0 until n).map {
-        i =>
-          val p1: NED.Coordinate = NED.fromVec(origin.vector + (stride.vector *:* i.toDouble))
-          val p2: NED.Coordinate = NED.fromVec(p1.vector + dir.vector)
-          if (i % 2 == 0) {
-            p1 -> p2
-          }
-          else {
-            p2 -> p1
-          }
+      val result = (0 until n).map { i =>
+        val p1: NED.Coordinate = NED.fromVec(origin.vector + (stride.vector *:* i.toDouble))
+        val p2: NED.Coordinate = NED.fromVec(p1.vector + dir.vector)
+        if (i % 2 == 0) {
+          p1 -> p2
+        } else {
+          p2 -> p1
+        }
       }
       result.map {
         case (v1, v2) =>

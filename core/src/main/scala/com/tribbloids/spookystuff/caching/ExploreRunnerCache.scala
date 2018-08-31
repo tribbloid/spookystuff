@@ -35,12 +35,12 @@ object ExploreRunnerCache {
 
   // TODO relax synchronized check to accelerate?
   private def commit1(
-                       key: (NodeKey, ExeID),
-                       value: Iterable[DataRow],
-                       reducer: RowReducer
-                     ): Unit = {
+      key: (NodeKey, ExeID),
+      value: Iterable[DataRow],
+      reducer: RowReducer
+  ): Unit = {
 
-    committedVisited.synchronized{
+    committedVisited.synchronized {
       val oldVs = committedVisited.get(key)
       val newVs = (Seq(value) ++ oldVs).reduce(reducer)
       committedVisited.put(key, newVs)
@@ -48,13 +48,12 @@ object ExploreRunnerCache {
   }
 
   def commit(
-              kvs: Iterable[((NodeKey, ExeID), Iterable[DataRow])],
-              reducer: RowReducer
-            ): Unit = {
+      kvs: Iterable[((NodeKey, ExeID), Iterable[DataRow])],
+      reducer: RowReducer
+  ): Unit = {
 
-    kvs.foreach{
-      kv =>
-        commit1(kv._1, kv._2, reducer)
+    kvs.foreach { kv =>
+      commit1(kv._1, kv._2, reducer)
     }
   }
 
@@ -67,29 +66,28 @@ object ExploreRunnerCache {
   }
 
   def get(key: (NodeKey, ExeID)): Set[Iterable[DataRow]] = {
-    val onGoing = this.getOnGoingRunners(key._2)
+    val onGoing = this
+      .getOnGoingRunners(key._2)
       .toSet[ExploreRunner]
 
     val onGoingVisitedSet = onGoing
-      .flatMap {
-        v =>
-          v.visited.get(key._1)
+      .flatMap { v =>
+        v.visited.get(key._1)
       }
 
     onGoingVisitedSet ++ committedVisited.get(key)
   }
 
   def getAll(exeID: ExeID): Map[NodeKey, Iterable[DataRow]] = {
-    val onGoing: Map[NodeKey, Iterable[DataRow]] = this.getOnGoingRunners(exeID)
+    val onGoing: Map[NodeKey, Iterable[DataRow]] = this
+      .getOnGoingRunners(exeID)
       .map(_.visited.toMap)
-      .reduceOption {
-        (v1, v2) =>
-          v1 ++ v2
+      .reduceOption { (v1, v2) =>
+        v1 ++ v2
       }
       .getOrElse(Map.empty)
 
-    val commited: Map[NodeKey, Iterable[DataRow]] = committedVisited
-      .toMap
+    val commited: Map[NodeKey, Iterable[DataRow]] = committedVisited.toMap
       .filterKeys(_._2 == exeID)
       .map {
         case (k, v) =>

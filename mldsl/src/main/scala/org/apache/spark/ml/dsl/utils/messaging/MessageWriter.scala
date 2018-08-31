@@ -11,10 +11,10 @@ import org.json4s.{Extraction, Formats, JValue}
 import scala.xml.NodeSeq
 
 case class MessageWriter[M](
-                             message: M,
-                             formats: Formats = Xml.defaultFormats,
-                             rootTagOverride: Option[String] = None
-                           ) extends Serializable {
+    message: M,
+    formats: Formats = Xml.defaultFormats,
+    rootTagOverride: Option[String] = None
+) extends Serializable {
 
   def rootTag: String = rootTagOverride.getOrElse(
     Codec.getRootTag(message)
@@ -30,7 +30,7 @@ case class MessageWriter[M](
 
   def toXMLNode(implicit formats: Formats = formats): NodeSeq =
     Xml.toXml(JObject(rootTag -> toJValue))
-  def compactXML(implicit formats: Formats = formats): String = toXMLNode.toString().replaceAllLiterally("\n","")
+  def compactXML(implicit formats: Formats = formats): String = toXMLNode.toString().replaceAllLiterally("\n", "")
   def prettyXML(implicit formats: Formats = formats): String = Xml.defaultXMLPrinter.formatNodes(toXMLNode)
   def toXMLStr(pretty: Boolean = true)(implicit formats: Formats = formats): String = {
     if (pretty) prettyXML
@@ -39,36 +39,32 @@ case class MessageWriter[M](
 
   //TODO: delegate to Nested
   def getMemberStr(
-                    start: String = "(",
-                    sep: String = ",",
-                    end: String = ")",
-                    indentFn: Int => String = _ => "",
-                    recursion: Int = 0
-                  ): String = {
+      start: String = "(",
+      sep: String = ",",
+      end: String = ")",
+      indentFn: Int => String = _ => "",
+      recursion: Int = 0
+  ): String = {
 
     val indentStr = indentFn(recursion)
 
     def listRecursion(elems: Traversable[Any]): List[String] = {
       elems.toList
-        .map {
-          vv =>
-            MessageWriter(vv).getMemberStr(start, sep, end, indentFn, recursion + 1)
+        .map { vv =>
+          MessageWriter(vv).getMemberStr(start, sep, end, indentFn, recursion + 1)
         }
-        .map {
-          str =>
-            FlowUtils.indent(str, indentStr)
+        .map { str =>
+          FlowUtils.indent(str, indentStr)
         }
     }
 
     def mapRecursion[T](map: Map[T, Any]): Map[T, String] = {
       map
-        .mapValues {
-          vv =>
-            MessageWriter(vv).getMemberStr(start, sep, end, indentFn, recursion + 1)
+        .mapValues { vv =>
+          MessageWriter(vv).getMemberStr(start, sep, end, indentFn, recursion + 1)
         }
-        .mapValues {
-          str =>
-            FlowUtils.indent(str, indentStr)
+        .mapValues { str =>
+          FlowUtils.indent(str, indentStr)
         }
     }
 
@@ -78,8 +74,7 @@ case class MessageWriter[M](
 
       val concat = if (elems.isEmpty || runtimeType.asClass.getCanonicalName.endsWith("$")) {
         rootTag
-      }
-      else {
+      } else {
         val strs: List[String] = listRecursion(elems)
 
         strs.mkString(rootTag + start, sep, end)
@@ -93,18 +88,20 @@ case class MessageWriter[M](
 
       case is: Map[_, _] =>
         val strs = mapRecursion(is)
-        val concat = if (strs.nonEmpty)
-          strs.mkString(rootTag + start, sep, end)
-        else
-          rootTag + start + end
+        val concat =
+          if (strs.nonEmpty)
+            strs.mkString(rootTag + start, sep, end)
+          else
+            rootTag + start + end
         concat
 
       case is: Traversable[_] =>
         val strs = listRecursion(is)
-        val concat = if (strs.nonEmpty)
-          strs.mkString(rootTag + start, sep, end)
-        else
-          rootTag + start + end
+        val concat =
+          if (strs.nonEmpty)
+            strs.mkString(rootTag + start, sep, end)
+          else
+            rootTag + start + end
         concat
 
       case v: Product =>
@@ -119,7 +116,9 @@ case class MessageWriter[M](
   lazy val memberStr = this.getMemberStr()
   lazy val memberStr_\\\ = this.getMemberStr(File.separator, File.separator, File.separator)
   lazy val memberStr_/:/ = this.getMemberStr("/", "/", "/")
-  lazy val memberStrPretty = this.getMemberStr("(\n", ",\n", "\n)", { _ => "\t"})
+  lazy val memberStrPretty = this.getMemberStr("(\n", ",\n", "\n)", { _ =>
+    "\t"
+  })
 
   def cast[T: Codec](formats: Formats = formats) = {
     MessageReader._fromJValue[T](toJValue(formats))

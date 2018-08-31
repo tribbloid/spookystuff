@@ -24,7 +24,7 @@ object Link {
   // not all created Links are registered
   val registered: CachingUtils.ConcurrentMap[UAV, Link] = CachingUtils.ConcurrentMap()
 
-  def statusStrs: List[String] ={
+  def statusStrs: List[String] = {
     registered.values.toList.map(_.statusStr)
   }
 
@@ -32,7 +32,7 @@ object Link {
     val cLinks = Cleanable.getTyped[Link].toSet
     val rLinks = registered.values.toSet
     val residual = rLinks -- cLinks
-    assert (
+    assert(
       residual.isEmpty,
       s"the following link(s) are registered but not cleanable:\n" +
         residual.map(v => v.logPrefix + v.toString).mkString("\n")
@@ -50,8 +50,6 @@ trait Link extends LocalCleanable with ConflictDetection {
   override def _lifespan = new Lifespan.JVM(
     nameOpt = Some(this.getClass.getSimpleName)
   )
-
-
   @volatile protected var _spooky: SpookyContext = _
   def spookyOpt = Option(_spooky)
 
@@ -63,9 +61,9 @@ trait Link extends LocalCleanable with ConflictDetection {
   }
 
   def register(
-                spooky: SpookyContext = this._spooky,
-                factory: Routing = this._factory
-              ): this.type = Link.synchronized{
+      spooky: SpookyContext = this._spooky,
+      factory: Routing = this._factory
+  ): this.type = Link.synchronized {
 
     try {
       _spooky = spooky
@@ -75,15 +73,13 @@ trait Link extends LocalCleanable with ConflictDetection {
 
       val inserted = Link.registered.getOrElseUpdate(uav, this)
       assert(
-        inserted eq this,
-        {
+        inserted eq this, {
           s"Multiple Links created for UAV $uav"
         }
       )
 
       this
-    }
-    catch {
+    } catch {
       case e: Throwable =>
         this.clean()
         throw e
@@ -123,38 +119,35 @@ trait Link extends LocalCleanable with ConflictDetection {
   override protected def cleanImpl(): Unit = {
 
     val existingOpt = Link.registered.get(uav)
-    existingOpt.foreach {
-      v =>
-        if (v eq this)
-          Link.registered -= uav
-        else {
-          val registeredThis = Link.registered.toList.filter(_._2 eq this)
-          assert(
-            registeredThis.isEmpty,
-            {
-              s"""
+    existingOpt.foreach { v =>
+      if (v eq this)
+        Link.registered -= uav
+      else {
+        val registeredThis = Link.registered.toList.filter(_._2 eq this)
+        assert(
+          registeredThis.isEmpty, {
+            s"""
                  |this link's UAV is registered with a different link:
                  |$uav -> ${Link.registered(uav)}
                  |====================================================
                  |and this link is registered with a diffferent UAV:
-                 |${registeredThis.map{
-                tuple =>
-                  s"${tuple._1} -> ${tuple._2}"
-              }.mkString("\n")
-              }
+                 |${registeredThis
+                 .map { tuple =>
+                   s"${tuple._1} -> ${tuple._2}"
+                 }
+                 .mkString("\n")}
               """.stripMargin
-            }
-          )
-        }
+          }
+        )
+      }
     }
-    spookyOpt.foreach {
-      spooky =>
-        spooky.getMetrics[UAVMetrics].linkDestroyed += 1
+    spookyOpt.foreach { spooky =>
+      spooky.getMetrics[UAVMetrics].linkDestroyed += 1
     }
   }
 
   var isConnected: Boolean = false
-  final def connectIfNot(): Unit = this.synchronized{
+  final def connectIfNot(): Unit = this.synchronized {
     if (!isConnected) {
       _connect()
     }
@@ -162,28 +155,26 @@ trait Link extends LocalCleanable with ConflictDetection {
   }
   protected def _connect(): Unit
 
-  final def disconnect(): Unit = this.synchronized{
+  final def disconnect(): Unit = this.synchronized {
     _disconnect()
     isConnected = false
   }
   protected def _disconnect(): Unit
 
-  private def connectRetries: Int = spookyOpt
-    .map(
-      spooky =>
-        spooky.getConf[UAVConf].connectionRetries
-    )
-    .getOrElse(UAVConf.FAST_CONNECTION_RETRIES)
+  private def connectRetries: Int =
+    spookyOpt
+      .map(
+        spooky => spooky.getConf[UAVConf].connectionRetries
+      )
+      .getOrElse(UAVConf.FAST_CONNECTION_RETRIES)
 
   @volatile var lastFailureOpt: Option[(Throwable, Long)] = None
 
   protected def detectConflicts(): Unit = {
     val notMe: Seq[Link] = Link.registered.values.toList.filterNot(_ eq this)
 
-    for (
-      myURI <- this.resourceURIs;
-      notMe1 <- notMe
-    ) {
+    for (myURI <- this.resourceURIs;
+         notMe1 <- notMe) {
       val notMyURIs = notMe1.resourceURIs
       assert(!notMyURIs.contains(myURI), s"'$myURI' is already used by link ${notMe1.uav}")
     }
@@ -195,15 +186,14 @@ trait Link extends LocalCleanable with ConflictDetection {
     * after all retries are exhausted will try to detect URL conflict and give a report as informative as possible.
     */
   def withConn[T](n: Int = connectRetries, interval: Long = 0, silent: Boolean = false)(
-    fn: =>T
+      fn: => T
   ): T = {
     try {
       CommonUtils.retry(n, interval, silent) {
         try {
           connectIfNot()
           fn
-        }
-        catch {
+        } catch {
           case e: Throwable =>
             disconnect()
             val sanityTrials = Seq(Failure[Unit](e)) ++
@@ -213,8 +203,7 @@ trait Link extends LocalCleanable with ConflictDetection {
               try {
                 TreeException.&&&(sanityTrials)
                 e
-              }
-              catch {
+              } catch {
                 case ee: Throwable =>
                   ee
               }
@@ -223,8 +212,7 @@ trait Link extends LocalCleanable with ConflictDetection {
             throw afterDetection
         }
       }
-    }
-    catch {
+    } catch {
       case e: Throwable =>
         lastFailureOpt = Some(e -> System.currentTimeMillis())
         throw e
@@ -236,10 +224,8 @@ trait Link extends LocalCleanable with ConflictDetection {
     */
   @volatile var _lock: Lock = _
   def lock: Lock = Option(_lock).getOrElse(Lock.Open)
-  def lock_=(v: Lock): Unit = this.synchronized{
-    assert(lock.getAvailability(Some(v)) >= 0,
-      s"Cannot lock to $v until existing lock is opened:\n$statusStr"
-    )
+  def lock_=(v: Lock): Unit = this.synchronized {
+    assert(lock.getAvailability(Some(v)) >= 0, s"Cannot lock to $v until existing lock is opened:\n$statusStr")
     this._lock = v
   }
   def unlock(): Unit = {
@@ -250,17 +236,16 @@ trait Link extends LocalCleanable with ConflictDetection {
   //    lockOpt.map(_._id).contains(lockID)
   //  }
 
-  private def blacklistDuration: Long = spookyOpt
-    .map(
-      spooky =>
-        spooky.getConf[UAVConf].blacklistResetAfter
-    )
-    .getOrElse(UAVConf.BLACKLIST_RESET_AFTER)
-    .toMillis
+  private def blacklistDuration: Long =
+    spookyOpt
+      .map(
+        spooky => spooky.getConf[UAVConf].blacklistResetAfter
+      )
+      .getOrElse(UAVConf.BLACKLIST_RESET_AFTER)
+      .toMillis
 
-  def isReachable: Boolean = !lastFailureOpt.exists {
-    tt =>
-      System.currentTimeMillis() - tt._2 <= blacklistDuration
+  def isReachable: Boolean = !lastFailureOpt.exists { tt =>
+    System.currentTimeMillis() - tt._2 <= blacklistDuration
   }
 
   //  def isAvailable: Boolean = {
@@ -293,8 +278,8 @@ trait Link extends LocalCleanable with ConflictDetection {
 
   def sameFactoryWith(b: Link): Boolean
   def recommission(
-                    factory: Routing
-                  ): Link = Link.synchronized {
+      factory: Routing
+  ): Link = Link.synchronized {
 
     val neo: Link = factory.apply(uav)
     neo.lock = this._lock
@@ -304,8 +289,7 @@ trait Link extends LocalCleanable with ConflictDetection {
       }
       neo.clean()
       this
-    }
-    else {
+    } else {
       LoggerFactory.getLogger(this.getClass).info {
         s"recommissioning link for $uav with new factory ${factory.getClass.getSimpleName}"
       }
@@ -331,13 +315,13 @@ trait Link extends LocalCleanable with ConflictDetection {
   // Most telemetry support setting up multiple landing site.
   protected def _getHome: Location
   protected def home: Location = {
-    withConn(){
+    withConn() {
       _getHome
     }
   }
 
   protected def _getCurrentLocation: Location
-  protected object CurrentLocation extends Memoize[Unit, Location]{
+  protected object CurrentLocation extends Memoize[Unit, Location] {
     override def f(v: Unit): Location = {
       withConn() {
         _getCurrentLocation

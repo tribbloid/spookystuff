@@ -83,10 +83,10 @@ the closing parenthesis ),
 and the opening square bracket [,
 the opening curly brace {,
 These special characters are often called "metacharacters".
-  */
+   */
   def canonizeFileName(name: String): String = {
 
-    var result = name.replaceAll("[ ]","_").replaceAll("""[^0-9a-zA-Z!_.*'()-]+""","_")
+    var result = name.replaceAll("[ ]", "_").replaceAll("""[^0-9a-zA-Z!_.*'()-]+""", "_")
 
     if (result.length > 255) result = result.substring(0, 255)
 
@@ -95,14 +95,17 @@ These special characters are often called "metacharacters".
 
   def canonizeUrn(name: String): String = {
 
-    var result = name.replaceAll("[ ]","_").replaceAll("""[^0-9a-zA-Z!_.*'()-]+""","/")
+    var result = name.replaceAll("[ ]", "_").replaceAll("""[^0-9a-zA-Z!_.*'()-]+""", "/")
 
-    result = result.split("/").map{
-      part => {
-        if (part.length > 255) part.substring(0, 255)
-        else part
+    result = result
+      .split("/")
+      .map { part =>
+        {
+          if (part.length > 255) part.substring(0, 255)
+          else part
+        }
       }
-    }.mkString("/")
+      .mkString("/")
 
     result
   }
@@ -116,8 +119,7 @@ These special characters are often called "metacharacters".
   def typedOrNone[B: ClassTag](v: Any): Option[B] = {
     val array = try {
       Array[B](v.asInstanceOf[B])
-    }
-    catch {
+    } catch {
       case e: Throwable =>
         Array[B]()
     }
@@ -129,11 +131,11 @@ These special characters are often called "metacharacters".
 
     val canon: Array[_] = obj match {
       case v: TraversableOnce[Any] => v.toArray
-      case v: Array[_] => v
-      case _ => Array[Any](obj)
+      case v: Array[_]             => v
+      case _                       => Array[Any](obj)
     }
 
-    canon.collect{
+    canon.collect {
       case v: T => v
     }
   }
@@ -144,12 +146,12 @@ These special characters are often called "metacharacters".
 
     val canon: Iterable[Any] = obj match {
       case v: TraversableOnce[Any] => v.toIterable
-      case v: Array[_] => v.toIterable
+      case v: Array[_]             => v.toIterable
       case _ =>
         Iterable[Any](obj)
     }
 
-    canon.collect{
+    canon.collect {
       case v: T => v
     }
   }
@@ -173,7 +175,7 @@ These special characters are often called "metacharacters".
         n.doubleValue()
       case n: java.lang.Boolean =>
         n.booleanValue()
-      case o @_ =>
+      case o @ _ =>
         o
     }
   }
@@ -194,8 +196,8 @@ These special characters are often called "metacharacters".
     assert(ClassLoader.getSystemClassLoader.asInstanceOf[URLClassLoader].getURLs.contains(url))
   }
 
-  def resilientCopy(src: Path, dst: Path, options: Array[CopyOption]): Unit ={
-    CommonUtils.retry(5, 1000){
+  def resilientCopy(src: Path, dst: Path, options: Array[CopyOption]): Unit = {
+    CommonUtils.retry(5, 1000) {
 
       val pathsStr = src + " => " + dst
 
@@ -203,8 +205,7 @@ These special characters are often called "metacharacters".
         try {
           Files.copy(src, dst, options: _*)
           //TODO: how to flush dst?
-        }
-        catch {
+        } catch {
           case e: DirectoryNotEmptyException =>
         }
 
@@ -212,16 +213,14 @@ These special characters are often called "metacharacters".
         assert(dstFile.isDirectory)
 
         LoggerFactory.getLogger(this.getClass).debug(pathsStr + " no need to copy directory")
-      }
-      else {
+      } else {
         Files.copy(src, dst, options: _*) //this will either 1. copy file if src is a file. 2. create empty dir if src is a dir.
         //TODO: how to flush dst?
 
         //assert(Files.exists(dst))
         //NIO copy should use non-NIO for validation to eliminate stream caching
-        val dstContent = LocalResolver.input(dst.toString){
-          in =>
-            IOUtils.toByteArray(in.stream)
+        val dstContent = LocalResolver.input(dst.toString) { in =>
+          IOUtils.toByteArray(in.stream)
         }
         //      assert(srcContent.length == dstContent.length, pathsStr + " copy failed")
         LoggerFactory.getLogger(this.getClass).debug(pathsStr + s" ${dstContent.length} byte(s) copied")
@@ -231,19 +230,18 @@ These special characters are often called "metacharacters".
 
   def treeCopy(srcPath: Path, dstPath: Path): Any = {
 
-    Files.walkFileTree (
+    Files.walkFileTree(
       srcPath,
       java.util.EnumSet.of(FileVisitOption.FOLLOW_LINKS),
       Integer.MAX_VALUE,
       new CopyDirectoryFileVisitor(srcPath, dstPath)
     )
   }
-  def ifFileNotExist[T](dst: String)(f: =>T): Option[T] = this.synchronized {
-    val dstFile = new File (dst)
+  def ifFileNotExist[T](dst: String)(f: => T): Option[T] = this.synchronized {
+    val dstFile = new File(dst)
     if (!dstFile.exists()) {
       Some(f)
-    }
-    else {
+    } else {
       None
     }
   }
@@ -264,8 +262,7 @@ These special characters are often called "metacharacters".
           val srcPath = fs.getPath(innerPathStr)
 
           treeCopy(srcPath, new File(dst).toPath)
-        }
-        finally {
+        } finally {
           fs.close()
         }
       case _ =>
@@ -289,18 +286,18 @@ These special characters are often called "metacharacters".
     h
   }
 
-  def tryParseBoolean(str: =>String): Try[Boolean] = {
-    Try{str}.flatMap {
-      v =>
-        v.toLowerCase match {
-          case "true" | "1" | "" => Success(true)
-          case "false" | "0" | "-1" => Success(false)
-          case _ => Failure(
+  def tryParseBoolean(str: => String): Try[Boolean] = {
+    Try { str }.flatMap { v =>
+      v.toLowerCase match {
+        case "true" | "1" | ""    => Success(true)
+        case "false" | "0" | "-1" => Success(false)
+        case _ =>
+          Failure(
             new UnsupportedOperationException(
               s"$v is not a boolean value"
             )
           )
-        }
+      }
     }
   }
 
@@ -310,13 +307,13 @@ These special characters are often called "metacharacters".
   def reduceByKey[K, V](itr: Iterator[(K, V)], reducer: (V, V) => V): Map[K, V] = {
 
     val result = itr.foldLeft(mutable.Map[K, V]())(
-      op = {
-        (map, tt) =>
-          val nv = map.get(tt._1)
-            .map(v => reducer(v, tt._2))
-            .getOrElse(tt._2)
-          map.update(tt._1, nv)
-          map
+      op = { (map, tt) =>
+        val nv = map
+          .get(tt._1)
+          .map(v => reducer(v, tt._2))
+          .getOrElse(tt._2)
+        map.update(tt._1, nv)
+        map
       }
     )
     result.toMap
@@ -329,35 +326,30 @@ These special characters are often called "metacharacters".
       * genetic algorithm depends on it
       */
     def batchReduce[T](
-                        rdds: Seq[RDD[T]]
-                      )(
-                        reducer: (T, T) => T
-                      ): Seq[T] = {
+        rdds: Seq[RDD[T]]
+    )(
+        reducer: (T, T) => T
+    ): Seq[T] = {
 
-      val zippedRDD: RDD[(Int, T)] = rdds
-        .zipWithIndex
+      val zippedRDD: RDD[(Int, T)] = rdds.zipWithIndex
         .map {
           case (rdd, id) =>
             rdd.keyBy(_ => id)
         }
-        .reduce {
-          (rdd1, rdd2) =>
-            rdd1.zipPartitions(rdd2, preservesPartitioning = false) {
-              (itr1, itr2) =>
-                itr1 ++ itr2
-            }
+        .reduce { (rdd1, rdd2) =>
+          rdd1.zipPartitions(rdd2, preservesPartitioning = false) { (itr1, itr2) =>
+            itr1 ++ itr2
+          }
         }
 
       val reduced: Map[Int, T] = zippedRDD
-        .mapPartitions {
-          itr =>
-            val reduced = SpookyUtils.reduceByKey[Int, T](itr, reducer)
-            Iterator(reduced)
+        .mapPartitions { itr =>
+          val reduced = SpookyUtils.reduceByKey[Int, T](itr, reducer)
+          Iterator(reduced)
         }
-        .reduce {
-          (m1, m2) =>
-            val rr = (m1.iterator ++ m2.iterator).toSeq.groupBy(_._1).mapValues(_.map(_._2).reduce(reducer))
-            rr
+        .reduce { (m1, m2) =>
+          val rr = (m1.iterator ++ m2.iterator).toSeq.groupBy(_._1).mapValues(_.map(_._2).reduce(reducer))
+          rr
         }
       reduced.sortBy(_._1).values.toSeq
     }

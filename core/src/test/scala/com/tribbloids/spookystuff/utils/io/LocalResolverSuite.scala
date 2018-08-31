@@ -30,7 +30,7 @@ class LocalResolverSuite extends FunSpecx with LocalPathDocsFixture {
 
   it("can convert relative path of non-existing file") {
     val abs = resolver.toAbsolute(nonExistingRelative)
-    assert(abs == schemaPrefix + CommonConst.USER_DIR +"/"+ nonExistingRelative)
+    assert(abs == schemaPrefix + CommonConst.USER_DIR + "/" + nonExistingRelative)
   }
 
   it("can convert absolute path of non-existing file") {
@@ -103,12 +103,11 @@ class LocalResolverSuite extends FunSpecx with LocalPathDocsFixture {
 
     val resolver: URIResolver = this.resolver
     val HTML_URL = this.HTML_URL
-    val mdRDD = rdd.map {
-      i =>
-        val md = resolver.input(HTML_URL) {_.allMetadata}
-        md
+    val mdRDD = rdd.map { i =>
+      val md = resolver.input(HTML_URL) { _.allMetadata }
+      md
     }
-    val mds = mdRDD.collect().map{
+    val mds = mdRDD.collect().map {
       _.map.filterNot(_._1.contains("Space"))
     }
 
@@ -122,12 +121,11 @@ class LocalResolverSuite extends FunSpecx with LocalPathDocsFixture {
 
     val resolver: URIResolver = this.resolver
     val HTML_URL = this.HTML_URL
-    val mdRDD = rdd.map {
-      i =>
-        val md = resolver.output(HTML_URL, overwrite = false) {_.allMetadata}
-        md
+    val mdRDD = rdd.map { i =>
+      val md = resolver.output(HTML_URL, overwrite = false) { _.allMetadata }
+      md
     }
-    val mds = mdRDD.collect().map{
+    val mds = mdRDD.collect().map {
       _.map.filterNot(_._1.contains("Space"))
     }
 

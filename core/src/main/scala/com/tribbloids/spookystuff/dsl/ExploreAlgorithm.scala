@@ -9,9 +9,9 @@ import com.tribbloids.spookystuff.utils.CachingUtils.ConcurrentMap
 sealed trait ExploreAlgorithm {
 
   def getImpl(
-               params: Params,
-               schema: SpookySchema
-             ): ExploreAlgorithm.Impl
+      params: Params,
+      schema: SpookySchema
+  ): ExploreAlgorithm.Impl
 }
 
 object ExploreAlgorithm {
@@ -29,8 +29,8 @@ object ExploreAlgorithm {
     def openReducerBetweenEpochs: RowReducer = openReducer
 
     def nextOpenSelector(
-                          open: ConcurrentMap[NodeKey, Iterable[DataRow]]
-                        ): (NodeKey, Iterable[DataRow])
+        open: ConcurrentMap[NodeKey, Iterable[DataRow]]
+    ): (NodeKey, Iterable[DataRow])
 
     /**
       *
@@ -51,13 +51,13 @@ object ExploreAlgorithm {
       *
       */
     def eliminator(
-                    open: Iterable[DataRow],
-                    visited: Iterable[DataRow]
-                  ): Iterable[DataRow]
+        open: Iterable[DataRow],
+        visited: Iterable[DataRow]
+    ): Iterable[DataRow]
 
     override final def nextOpenSelector(
-                                         open: ConcurrentMap[NodeKey, Iterable[DataRow]]
-                                       ): (NodeKey, Iterable[DataRow]) = {
+        open: ConcurrentMap[NodeKey, Iterable[DataRow]]
+    ): (NodeKey, Iterable[DataRow]) = {
 
       //Should I use pre-sorted collection? Or is it overengineering?
       val bestOpenBeforeElimination: (NodeKey, Iterable[DataRow]) = open.min(ordering)
@@ -66,7 +66,8 @@ object ExploreAlgorithm {
       open -= bestOpenNodeID
 
       val existingVisitedOption: Option[Iterable[DataRow]] =
-        ExploreRunnerCache.get(bestOpenNodeID -> params.executionID)
+        ExploreRunnerCache
+          .get(bestOpenNodeID -> params.executionID)
           .reduceOption(visitedReducer)
 
       val bestOpen: (NodeKey, Iterable[DataRow]) = existingVisitedOption match {
@@ -88,55 +89,52 @@ object ExploreAlgorithms {
   case object BreadthFirst extends ExploreAlgorithm {
 
     override def getImpl(
-                          params: Params,
-                          schema: SpookySchema
-                        ) = Impl(params, schema)
+        params: Params,
+        schema: SpookySchema
+    ) = Impl(params, schema)
 
     case class Impl(
-                     override val params: Params,
-                     schema: SpookySchema
-                   ) extends EliminatingImpl {
+        override val params: Params,
+        schema: SpookySchema
+    ) extends EliminatingImpl {
 
       import params._
 
       import scala.Ordering.Implicits._
 
-      override val openReducer: RowReducer = {
-        (v1, v2) =>
-          (v1 ++ v2)
-            .groupBy(_.groupID)
-            .values
-            .minBy(_.head.sortIndex(Seq(depthField, ordinalField)))
+      override val openReducer: RowReducer = { (v1, v2) =>
+        (v1 ++ v2)
+          .groupBy(_.groupID)
+          .values
+          .minBy(_.head.sortIndex(Seq(depthField, ordinalField)))
       }
 
       override val visitedReducer: RowReducer = openReducer
 
-      override val ordering: RowOrdering = Ordering.by {
-        tuple: (NodeKey, Iterable[DataRow]) =>
-          val inProgress = ExploreRunnerCache
-            .getOnGoingRunners(params.executionID)
-            .flatMap(_.fetchingInProgressOpt)
+      override val ordering: RowOrdering = Ordering.by { tuple: (NodeKey, Iterable[DataRow]) =>
+        val inProgress = ExploreRunnerCache
+          .getOnGoingRunners(params.executionID)
+          .flatMap(_.fetchingInProgressOpt)
 
-          val result = if (inProgress contains tuple._1) {
-            Int.MaxValue
-          }
-          else {
-            val v = tuple._2
-            //          assert(v.size == 1)
-            v.head.getInt(depthField)
-              .getOrElse(Int.MaxValue)
-          }
-          result
+        val result = if (inProgress contains tuple._1) {
+          Int.MaxValue
+        } else {
+          val v = tuple._2
+          //          assert(v.size == 1)
+          v.head
+            .getInt(depthField)
+            .getOrElse(Int.MaxValue)
+        }
+        result
       }
 
       override def eliminator(
-                               open: Iterable[DataRow],
-                               visited: Iterable[DataRow]
-                             ): Iterable[DataRow] = {
+          open: Iterable[DataRow],
+          visited: Iterable[DataRow]
+      ): Iterable[DataRow] = {
         val visitedDepth = visited.head.getInt(depthField)
-        open.filter {
-          row =>
-            row.getInt(depthField) < visitedDepth
+        open.filter { row =>
+          row.getInt(depthField) < visitedDepth
         }
       }
     }
@@ -185,6 +183,7 @@ object ExploreAlgorithms {
       Impl(params, schema)
 
     case class Impl(params: Params, schema: SpookySchema) extends EliminatingImpl {
+
       /**
         *
         */
@@ -199,6 +198,7 @@ object ExploreAlgorithms {
         *
         */
       override val openReducer: RowReducer = ???
+
       /**
         *
         */

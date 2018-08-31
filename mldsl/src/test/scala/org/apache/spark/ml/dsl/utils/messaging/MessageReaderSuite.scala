@@ -12,16 +12,15 @@ case class UsersWrapper(a: String, users: Users)
 case class Users(user: Seq[User])
 
 case class User(
-                 name: String,
-                 roles: Option[Roles] = None
-               )
+    name: String,
+    roles: Option[Roles] = None
+)
 
 case class Roles(role: Seq[String])
 
 case class Multipart(a: String, b: String)(c: Int = 10)
 
-object Multipart extends MessageReader[Multipart] {
-}
+object Multipart extends MessageReader[Multipart] {}
 
 //case object ObjectExample1 extends AbstractObjectExample
 
@@ -29,7 +28,9 @@ class MessageReaderSuite extends AbstractFlowSuite {
 
   //TODO: disabled before FallbackSerializer is really put to use
   ignore("SerializingParam[Function1] should work") {
-    val fn = {k: Int => 2*k}
+    val fn = { k: Int =>
+      2 * k
+    }
     val reader = new MessageReader[Int => Int]()
     val param = reader.Param("id", "name", "")
 

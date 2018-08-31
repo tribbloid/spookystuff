@@ -5,9 +5,7 @@ import com.tribbloids.spookystuff.uav.spatial.Spatial
 import com.tribbloids.spookystuff.uav.spatial.point.NED
 import com.tribbloids.spookystuff.uav.spatial.util.UnknownTrellisGeometry
 
-trait VoxelSketch extends Spatial {
-
-}
+trait VoxelSketch extends Spatial {}
 
 /**
   * Ideally this sketch should have both properties of bloom filters and E2LSH:

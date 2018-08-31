@@ -8,14 +8,15 @@ trait PartialFunctionWrapper[-T, +R] extends PartialFunction[T, R] {
 
   override final def isDefinedAt(x: T): Boolean = partialFunction.isDefinedAt(x)
   override def apply(v1: T) = partialFunction.apply(v1)
-  override final def applyOrElse[A1 <: T, B1 >: R](x: A1, default: A1 => B1): B1 = partialFunction.applyOrElse(x, default)
+  override final def applyOrElse[A1 <: T, B1 >: R](x: A1, default: A1 => B1): B1 =
+    partialFunction.applyOrElse(x, default)
 
   override final def lift: Function1[T, Option[R]] = partialFunction match {
     case ul: Unlift[T, R] => ul.lift
-    case _ => this.Lift
+    case _                => this.Lift
   }
 
-  case object Lift extends Function1[T, Option[R]]{
+  case object Lift extends Function1[T, Option[R]] {
 
     def apply(v1: T): Option[R] = {
       val fO: scala.PartialFunction[T, Option[R]] = PartialFunctionWrapper.this.andThen[Option[R]](v => Some(v))
@@ -26,8 +27,8 @@ trait PartialFunctionWrapper[-T, +R] extends PartialFunction[T, R] {
 
 //Equivalent to Function.unlift, except being Serializable
 case class Unlift[-T, +R](
-                           liftFn: T => Option[R]
-                         ) extends AbstractPartialFunction[T, R]{
+    liftFn: T => Option[R]
+) extends AbstractPartialFunction[T, R] {
 
   override final def isDefinedAt(x: T): Boolean = liftFn(x).isDefined
 
@@ -40,8 +41,8 @@ case class Unlift[-T, +R](
 }
 
 case class Partial[-T, +R](
-                            fn: T => R
-                          ) extends PartialFunctionWrapper[T, R] {
+    fn: T => R
+) extends PartialFunctionWrapper[T, R] {
 
   val partialFunction: scala.PartialFunction[T, R] = fn match {
     case pf: scala.PartialFunction[T, R] =>

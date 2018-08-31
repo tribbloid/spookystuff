@@ -19,15 +19,13 @@ object InMemoryDocCache extends AbstractDocCache {
 
   def getImpl(k: Trace, spooky: SpookyContext): Option[Seq[DocOption]] = {
     val candidate = internal.get(k)
-    candidate.flatMap{
-      v =>
-        if (v.exists {
-          vv =>
+    candidate.flatMap { v =>
+      if (v.exists { vv =>
             !inTimeRange(k.last, vv, spooky)
-        })
-          None
-        else
-          Some(v)
+          })
+        None
+      else
+        Some(v)
     }
   }
 

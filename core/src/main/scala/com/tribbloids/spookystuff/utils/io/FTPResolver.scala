@@ -10,15 +10,14 @@ import scala.util.Try
 object FTPResolver {
 
   def apply(
-             timeoutMillis: Int
-           ): FTPResolver = {
+      timeoutMillis: Int
+  ): FTPResolver = {
 
-    val ftp = FTPResolver({
-      uri =>
-        val conn = uri.toURL.openConnection()
-        conn.setConnectTimeout(timeoutMillis)
-        conn.setReadTimeout(timeoutMillis)
-        conn
+    val ftp = FTPResolver({ uri =>
+      val conn = uri.toURL.openConnection()
+      conn.setConnectTimeout(timeoutMillis)
+      conn.setReadTimeout(timeoutMillis)
+      conn
     })
 
     ftp
@@ -26,8 +25,8 @@ object FTPResolver {
 }
 
 case class FTPResolver(
-                        input2Connection: URI => URLConnection
-                      ) extends URIResolver {
+    input2Connection: URI => URLConnection
+) extends URIResolver {
 
   import scala.collection.JavaConverters._
 
@@ -56,16 +55,16 @@ case class FTPResolver(
 
       override lazy val getLastModified: Long = conn.getLastModified
 
-      override def isAlreadyExisting: Boolean = Try{conn}.isSuccess
+      override def isAlreadyExisting: Boolean = Try { conn }.isSuccess
 
       override lazy val _metadata: ResourceMD = {
         val map = conn.getHeaderFields.asScala
-          .mapValues {
-            _list =>
-              val list = _list.asScala
-              val result = if (list.size == 1) list.head
+          .mapValues { _list =>
+            val list = _list.asScala
+            val result =
+              if (list.size == 1) list.head
               else list
-              result.asInstanceOf[Any]
+            result.asInstanceOf[Any]
           }
         ResourceMD.apply(map.toSeq: _*)
       }
@@ -81,8 +80,7 @@ case class FTPResolver(
       }
       try {
         f(in)
-      }
-      finally {
+      } finally {
         in.clean()
       }
     }
@@ -101,8 +99,7 @@ case class FTPResolver(
       }
       try {
         f(out)
-      }
-      finally {
+      } finally {
         out.clean()
       }
     }

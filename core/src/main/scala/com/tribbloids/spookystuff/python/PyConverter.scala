@@ -21,9 +21,8 @@ trait PyConverter {
 
   //won't take missing parameter
   def args2Ref(vs: Iterable[Any]): (Seq[PyRef], String) = {
-    val pys = vs.map {
-      v =>
-        scala2ref(v)
+    val pys = vs.map { v =>
+      scala2ref(v)
     }
     val deps = pys.map(_._1).reduceOption(_ ++ _).getOrElse(Nil)
     val code =
@@ -36,19 +35,17 @@ trait PyConverter {
   //takes optional parameter, treat as missing if value of the option is None
   def kwargs2Code(vs: Iterable[(String, Any)]): (Seq[PyRef], String) = {
     val pys: Iterable[(Seq[PyRef], String)] = vs
-        .flatMap {
-          tuple =>
-            tuple._2 match {
-              case opt: Option[Any] =>
-                opt.map(v => tuple._1 -> v)
-              case _ =>
-                Some(tuple)
-            }
+      .flatMap { tuple =>
+        tuple._2 match {
+          case opt: Option[Any] =>
+            opt.map(v => tuple._1 -> v)
+          case _ =>
+            Some(tuple)
         }
-      .map {
-        tuple =>
-          val py = scala2ref(tuple._2)
-          py._1 -> (tuple._1 + "=" + py._2)
+      }
+      .map { tuple =>
+        val py = scala2ref(tuple._2)
+        py._1 -> (tuple._1 + "=" + py._2)
       }
 
     val deps = pys.map(_._1).reduceOption(_ ++ _).getOrElse(Nil)

@@ -9,9 +9,9 @@ import org.apache.spark.storage.StorageLevel
   */
 //TODO: merge into DataRowSchema?
 case class SpookyExecutionContext(
-                                   spooky: SpookyContext,
-                                   @transient scratchRDDs: ScratchRDDs = new ScratchRDDs()
-                                 ) {
+    spooky: SpookyContext,
+    @transient scratchRDDs: ScratchRDDs = new ScratchRDDs()
+) {
 
   def :++(b: SpookyExecutionContext) = {
     //    assert(this.spooky == b.spooky,
@@ -29,9 +29,9 @@ case class SpookyExecutionContext(
   }
 
   def persist[T](
-                  rdd: RDD[T],
-                  storageLevel: StorageLevel = StorageLevel.MEMORY_ONLY
-                ): RDD[T] = {
+      rdd: RDD[T],
+      storageLevel: StorageLevel = StorageLevel.MEMORY_ONLY
+  ): RDD[T] = {
 
     scratchRDDs.persist(rdd, spooky.spookyConf.defaultStorageLevel)
   }

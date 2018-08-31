@@ -58,21 +58,18 @@ abstract class URIResolver extends Serializable {
     val path = lock.acquire()
     try {
       f(path)
-    }
-    finally {
+    } finally {
       lock.clean()
     }
   }
 
   def isAlreadyExisting(pathStr: String)(
-    condition: InputResource => Boolean = {
-      v =>
+      condition: InputResource => Boolean = { v =>
         v.getLenth > 0 //empty files are usually useless
-    }
+      }
   ): Boolean = {
-    val result = this.input(pathStr) {
-      v =>
-        v.isAlreadyExisting && condition(v)
+    val result = this.input(pathStr) { v =>
+      v.isAlreadyExisting && condition(v)
     }
     result
   }
@@ -97,9 +94,8 @@ abstract class URIResolver extends Serializable {
     final def remove(mustExist: Boolean = true): Unit = {
       _remove(mustExist)
       retry {
-        input {
-          in =>
-            assert(!in.isAlreadyExisting, s"$absolutePathStr cannot be deleted")
+        input { in =>
+          assert(!in.isAlreadyExisting, s"$absolutePathStr cannot be deleted")
         }
       }
     }

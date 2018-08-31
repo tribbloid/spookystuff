@@ -1,6 +1,6 @@
 package com.tribbloids.spookystuff.caching
 
-import com.tribbloids.spookystuff.{SpookyContext, dsl}
+import com.tribbloids.spookystuff.{dsl, SpookyContext}
 import com.tribbloids.spookystuff.actions._
 import com.tribbloids.spookystuff.doc.DocOption
 import com.tribbloids.spookystuff.extractors.FR
@@ -18,17 +18,17 @@ trait AbstractDocCache {
 
     val dryrun = k.dryrun
 
-    val result = pagesOpt.map {
-      pages =>
-        for (page <- pages) yield {
-          val pageBacktrace: Trace = page.uid.backtrace
-          val similarTrace = dryrun.find(_ == pageBacktrace).get
+    val result = pagesOpt.map { pages =>
+      for (page <- pages) yield {
+        val pageBacktrace: Trace = page.uid.backtrace
+        val similarTrace = dryrun.find(_ == pageBacktrace).get
 
-          pageBacktrace.injectFrom(similarTrace) //this is to allow actions in backtrace to have different name than those cached
-          page.updated(
-            uid = page.uid.copy()(name = Option(page.uid.output).map(_.name).orNull)
-          )
-        }
+        pageBacktrace
+          .injectFrom(similarTrace) //this is to allow actions in backtrace to have different name than those cached
+        page.updated(
+          uid = page.uid.copy()(name = Option(page.uid.output).map(_.name).orNull)
+        )
+      }
     }
     result
   }
@@ -61,15 +61,14 @@ trait AbstractDocCache {
   def getTimeRange(action: Action, spooky: SpookyContext): (Long, Long) = {
     val waybackOption = action match {
       case w: Wayback =>
-        Option(w.wayback).map {
-          expr =>
-            val result = expr.asInstanceOf[Lit[FR, Long]].value
-            spooky.spookyConf.IgnoreCachedDocsBefore match {
-              case Some(date) =>
-                assert(result > date.getTime, "SpookyConf.pageNotExpiredSince cannot be set to later than wayback date")
-              case None =>
-            }
-            result
+        Option(w.wayback).map { expr =>
+          val result = expr.asInstanceOf[Lit[FR, Long]].value
+          spooky.spookyConf.IgnoreCachedDocsBefore match {
+            case Some(date) =>
+              assert(result > date.getTime, "SpookyConf.pageNotExpiredSince cannot be set to later than wayback date")
+            case None =>
+          }
+          result
         }
       case _ =>
         None
@@ -77,7 +76,7 @@ trait AbstractDocCache {
 
     val nowMillis = waybackOption match {
       case Some(wayback) => wayback
-      case None => System.currentTimeMillis()
+      case None          => System.currentTimeMillis()
     }
 
     val earliestTime = spooky.spookyConf.getEarliestDocCreationTime(nowMillis)

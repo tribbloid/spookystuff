@@ -33,9 +33,9 @@ trait CompoundResolver extends URIResolver {
 }
 
 class FSResolver(
-                  hadoopConf: SerBox[Configuration],
-                  timeoutMillis: Int
-                ) extends CompoundResolver {
+    hadoopConf: SerBox[Configuration],
+    timeoutMillis: Int
+) extends CompoundResolver {
 
   lazy val hdfs = HDFSResolver(hadoopConf)
 
@@ -57,11 +57,12 @@ class FSResolver(
 }
 
 class OmniResolver(
-                    hadoopConf: SerBox[Configuration],
-                    timeoutMillis: Int,
-                    webProxy: WebProxySetting,
-                    input2Http: URI => HttpRequestBase
-                  )extends FSResolver(hadoopConf, timeoutMillis) with NOTSerializable {
+    hadoopConf: SerBox[Configuration],
+    timeoutMillis: Int,
+    webProxy: WebProxySetting,
+    input2Http: URI => HttpRequestBase
+) extends FSResolver(hadoopConf, timeoutMillis)
+    with NOTSerializable {
 
   override def getImpl(uri: String): URIResolver = {
 

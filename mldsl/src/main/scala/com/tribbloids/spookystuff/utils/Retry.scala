@@ -13,17 +13,16 @@ class BypassingRule {
   def apply(e: Throwable) = {
     e match {
       case ee: Exception => ee
-      case _ => new Exception(e)
+      case _             => new Exception(e)
     }
   }
 
   class Exception(cause: Throwable) extends RuntimeException("Bypassing: " + this.getClass.getSimpleName, cause)
 
-  def mapException[T](f: =>T): T ={
+  def mapException[T](f: => T): T = {
     try {
       f
-    }
-    catch {
+    } catch {
       case e: Throwable => throw apply(e)
     }
   }
@@ -35,41 +34,44 @@ case object Silent extends BypassingRule
 object RetryFixedInterval {
 
   def apply(
-             n: Int,
-             interval: Long = 0L,
-             silent: Boolean = false,
-             callerStr: String = null
-           ) = Retry(n, { _ => interval}, silent, callerStr)
+      n: Int,
+      interval: Long = 0L,
+      silent: Boolean = false,
+      callerStr: String = null
+  ) =
+    Retry(n, { _ =>
+      interval
+    }, silent, callerStr)
 }
 
 object RetryExponentialBackoff {
 
   def apply(
-             n: Int,
-             longestInterval: Long = 0L,
-             silent: Boolean = false,
-             callerStr: String = null
-           ) = Retry(n,
-    {
-      n =>
-        (longestInterval / Math.pow(2, n - 2)).asInstanceOf[Long]
-    },
-    silent, callerStr)
+      n: Int,
+      longestInterval: Long = 0L,
+      silent: Boolean = false,
+      callerStr: String = null
+  ) =
+    Retry(n, { n =>
+      (longestInterval / Math.pow(2, n - 2)).asInstanceOf[Long]
+    }, silent, callerStr)
 }
 
 case class Retry(
-                  n: Int = 3,
-                  intervalFactory: Int => Long = {_ => 0L},
-                  silent: Boolean = false,
-                  showStr: String = null
-                ) {
+    n: Int = 3,
+    intervalFactory: Int => Long = { _ =>
+      0L
+    },
+    silent: Boolean = false,
+    showStr: String = null
+) {
 
-  def apply[T](fn: =>T) = {
+  def apply[T](fn: => T) = {
 
     new RetryImpl[T](() => fn).get(this)
   }
 
-  def getImpl[T](fn: =>T) = {
+  def getImpl[T](fn: => T) = {
     new RetryImpl[T](() => fn, this)
   }
 }
@@ -77,16 +79,16 @@ case class Retry(
 object DefaultRetry extends Retry
 
 case class RetryImpl[T](
-                         fn: () => T,
-                         defaultRetry: Retry = DefaultRetry
-                       ) {
+    fn: () => T,
+    defaultRetry: Retry = DefaultRetry
+) {
 
   def get: T = get(defaultRetry)
 
   @annotation.tailrec
   final def get(
-                 retry: Retry
-               ): T = {
+      retry: Retry
+  ): T = {
 
     import retry._
 
@@ -108,7 +110,7 @@ case class RetryImpl[T](
         if (!(silent || e.isInstanceOf[Silent.Exception])) {
           val logger = LoggerFactory.getLogger(this.getClass)
           logger.warn(
-            s"Retrying locally on ${e.getClass.getSimpleName} in ${interval.toDouble/1000} second(s)... ${n-1} time(s) left" +
+            s"Retrying locally on ${e.getClass.getSimpleName} in ${interval.toDouble / 1000} second(s)... ${n - 1} time(s) left" +
               "\t@ " + _callerShowStr +
               "\n" + e.getMessage
           )
@@ -120,7 +122,6 @@ case class RetryImpl[T](
         throw e
     }
   }
-
 
   def map[T2](g: Try[T] => T2): RetryImpl[T2] = {
 
@@ -134,14 +135,14 @@ case class RetryImpl[T](
     }
 
     val result: RetryImpl[T2] = this.copy(
-      () => effectiveG(Try{fn()})
+      () => effectiveG(Try { fn() })
     )
     result
   }
 
   def mapSuccess[T2](g: T => T2): RetryImpl[T2] = {
     val effectiveG: Try[T] => T2 = {
-      case Success(v) => g(v)
+      case Success(v)  => g(v)
       case Failure(ee) => throw ee
     }
 

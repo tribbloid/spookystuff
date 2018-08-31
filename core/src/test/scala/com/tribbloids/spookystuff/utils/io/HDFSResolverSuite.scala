@@ -5,8 +5,8 @@ import org.apache.hadoop.conf.Configuration
 import org.apache.hadoop.security.UserGroupInformation
 
 /**
- * Created by peng on 07/10/15.
- */
+  * Created by peng on 07/10/15.
+  */
 class HDFSResolverSuite extends LocalResolverSuite {
 
   @transient override lazy val resolver = HDFSResolver(new Configuration())
@@ -31,9 +31,8 @@ class HDFSResolverSuite extends LocalResolverSuite {
   )
 
   it("can override login UGI") {
-    val user: String = resolverWithUser.input(HTML_URL) {
-      is =>
-        UserGroupInformation.getCurrentUser.getUserName
+    val user: String = resolverWithUser.input(HTML_URL) { is =>
+      UserGroupInformation.getCurrentUser.getUserName
     }
     user.shouldBe("dummy")
   }
@@ -41,14 +40,13 @@ class HDFSResolverSuite extends LocalResolverSuite {
   it("can override login GUI on executors") {
     val resolver = this.resolverWithUser
     val HTML_URL = this.HTML_URL
-    val users = sc.parallelize(1 to (sc.defaultParallelism * 2))
-      .mapPartitions {
-        itr =>
-          val str: String = resolver.input(HTML_URL) {
-            is =>
-              UserGroupInformation.getCurrentUser.getUserName
-          }
-          Iterator(str)
+    val users = sc
+      .parallelize(1 to (sc.defaultParallelism * 2))
+      .mapPartitions { itr =>
+        val str: String = resolver.input(HTML_URL) { is =>
+          UserGroupInformation.getCurrentUser.getUserName
+        }
+        Iterator(str)
       }
       .collect()
       .distinct

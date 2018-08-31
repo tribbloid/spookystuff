@@ -12,16 +12,15 @@ object TestSiteServer {
   class ExtHandler extends HandlerWrapper {
 
     override def handle(
-                         target: String,
-                         baseRequest: Request,
-                         request: HttpServletRequest,
-                         response: HttpServletResponse
-                       ): Unit = {
+        target: String,
+        baseRequest: Request,
+        request: HttpServletRequest,
+        response: HttpServletResponse
+    ): Unit = {
 
       val redirectURIOpt = rewrite(request.getRequestURI)
-      redirectURIOpt.foreach {
-        v =>
-          response.sendRedirect(v)
+      redirectURIOpt.foreach { v =>
+        response.sendRedirect(v)
       }
     }
 
@@ -32,8 +31,7 @@ object TestSiteServer {
         if (_target.nonEmpty) {
           _target += ".html"
           Some(_target)
-        }
-        else {
+        } else {
           None
         }
       }

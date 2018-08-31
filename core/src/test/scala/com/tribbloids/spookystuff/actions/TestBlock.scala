@@ -42,16 +42,14 @@ class TestBlock extends SpookyEnvFixture {
     assert(session.webDriverOpt.isEmpty)
   }
 
-  it("Try(Wget) can failsafe on malformed uri") {
-
-  }
+  it("Try(Wget) can failsafe on malformed uri") {}
 
   it("wayback time of loop should be identical to its last child supporting wayback") {
     val waybackDate = new Date()
 
     val loop = Loop(
       Delay(10.seconds) +> Wget("ftp://www.dummy.co").waybackTo(waybackDate)
-    +> Delay(20.seconds) +> Wget("ftp://www.dummy2.co").waybackToTimeMillis(waybackDate.getTime - 100000)
+        +> Delay(20.seconds) +> Wget("ftp://www.dummy2.co").waybackToTimeMillis(waybackDate.getTime - 100000)
     )
 
     assert(loop.wayback == Lit[Long](waybackDate.getTime - 100000))

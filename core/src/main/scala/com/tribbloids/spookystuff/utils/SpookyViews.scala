@@ -13,7 +13,7 @@ import org.slf4j.LoggerFactory
 
 import scala.collection.generic.CanBuildFrom
 import scala.collection.immutable.ListMap
-import scala.collection.{Map, TraversableLike, immutable}
+import scala.collection.{immutable, Map, TraversableLike}
 import scala.concurrent.duration.Duration
 import scala.concurrent.{Await, Future}
 import scala.language.{higherKinds, implicitConversions}
@@ -55,7 +55,7 @@ abstract class SpookyViews extends CommonViews {
       else self.setJobDescription(oldDescription + " > " + description)
 
       val result: T = fn
-      self.setJobGroup(null,oldDescription)
+      self.setJobGroup(null, oldDescription)
       result
     }
 
@@ -68,10 +68,10 @@ abstract class SpookyViews extends CommonViews {
       * this is not tested thoroughly in large scale, and may be nullified by Spark optimization.
       */
     def seed[T: ClassTag](
-                           seq: Seq[T],
-                           parallelismOpt: Option[Int] = None,
-                           mustHaveNonEmptyPartitions: Boolean = false
-                         ): RDD[(Int, T)] = {
+        seq: Seq[T],
+        parallelismOpt: Option[Int] = None,
+        mustHaveNonEmptyPartitions: Boolean = false
+    ): RDD[(Int, T)] = {
       val size = parallelismOpt.getOrElse(self.defaultParallelism)
       val kvs = seq.zipWithIndex.map(_.swap)
       val raw: RDD[(Int, T)] = self.parallelize(kvs, size)
@@ -86,14 +86,14 @@ abstract class SpookyViews extends CommonViews {
         s"seed doesn't have the right number of partitions: expected $size, actual ${sorted.partitions.length}"
       )
 
-      val result = if (!mustHaveNonEmptyPartitions) sorted
-      else {
-        sorted.mapPartitions {
-          itr =>
+      val result =
+        if (!mustHaveNonEmptyPartitions) sorted
+        else {
+          sorted.mapPartitions { itr =>
             assert(itr.hasNext)
             itr
+          }
         }
-      }
       result
     }
 
@@ -107,15 +107,16 @@ abstract class SpookyViews extends CommonViews {
     //    }
 
     def uuidSeed(
-                  parallelismOpt: Option[Int] = None,
-                  debuggingInfo: Option[String] = None
-                ): RDD[(Int, UUID)] = {
+        parallelismOpt: Option[Int] = None,
+        debuggingInfo: Option[String] = None
+    ): RDD[(Int, UUID)] = {
 
       val n = parallelismOpt.getOrElse(self.defaultParallelism)
       val uuids: immutable.Seq[UUID] = (1 to n).map(_ => UUID.randomUUID())
-      debuggingInfo.foreach {
-        info =>
-          LoggerFactory.getLogger(this.getClass).info(
+      debuggingInfo.foreach { info =>
+        LoggerFactory
+          .getLogger(this.getClass)
+          .info(
             s"""
                |$info
                |${uuids.mkString("\n")}
@@ -127,29 +128,28 @@ abstract class SpookyViews extends CommonViews {
     }
 
     def runEverywhere[T: ClassTag](alsoOnDriver: Boolean = true)(f: ((Int, UUID)) => T): Seq[T] = {
-      val localFuture: Option[Future[T]] = if (alsoOnDriver) Some(Future[T] {
-        f(-1 -> UUID.randomUUID())
-      })
-      else {
-        None
-      }
+      val localFuture: Option[Future[T]] =
+        if (alsoOnDriver) Some(Future[T] {
+          f(-1 -> UUID.randomUUID())
+        })
+        else {
+          None
+        }
 
       val n = self.defaultParallelism * REPLICATING_FACTOR
       val onExecutors = uuidSeed(Some(n))
-        .mapOncePerWorker {f}
-        .collect().toSeq
+        .mapOncePerWorker { f }
+        .collect()
+        .toSeq
 
-      localFuture.map {
-        future =>
-          Await.result(future, Duration.Inf)
-      }
-        .toSeq ++ onExecutors
+      localFuture.map { future =>
+        Await.result(future, Duration.Inf)
+      }.toSeq ++ onExecutors
     }
 
     def allTaskLocationStrs: Seq[String] = {
-      runEverywhere(alsoOnDriver = false) {
-        _ =>
-          SpookyUtils.taskLocationStrOpt.get
+      runEverywhere(alsoOnDriver = false) { _ =>
+        SpookyUtils.taskLocationStrOpt.get
       }
     }
 
@@ -165,11 +165,12 @@ abstract class SpookyViews extends CommonViews {
 
   implicit class RDDView[T](val self: RDD[T]) {
 
-    def collectPerPartition: Array[List[T]] = self.mapPartitions(
-      v =>
-        Iterator(v.toList)
-    )
-      .collect()
+    def collectPerPartition: Array[List[T]] =
+      self
+        .mapPartitions(
+          v => Iterator(v.toList)
+        )
+        .collect()
 
     def multiPassMap[U: ClassTag](f: T => Option[U]): RDD[U] = {
 
@@ -184,7 +185,7 @@ abstract class SpookyViews extends CommonViews {
       val counter = self.sparkContext.longAccumulator
       var halfDone: RDD[Either[T, TraversableOnce[U]]] = self.map(v => Left(v))
 
-      while(true) {
+      while (true) {
         counter.reset()
 
         val updated: RDD[Either[T, TraversableOnce[U]]] = halfDone.map {
@@ -292,50 +293,46 @@ abstract class SpookyViews extends CommonViews {
       */
     def mapOncePerCore[R: ClassTag](f: T => R): RDD[R] = {
 
-      self.mapPartitions {
-        itr =>
-          val stageID = TaskContext.get.stageId()
-          //          val executorID = SparkEnv.get.executorId //this is useless as perCoreMark is a local singleton
-          val threadID = Thread.currentThread().getId
-          val allIDs = stageID -> threadID
-          val alreadyRun = perCoreMark.synchronized {
-            val alreadyRun = perCoreMark.getOrElseUpdate(allIDs, false)
-            if (!alreadyRun) {
-              perCoreMark.put(allIDs, true)
-            }
-            alreadyRun
-          }
+      self.mapPartitions { itr =>
+        val stageID = TaskContext.get.stageId()
+        //          val executorID = SparkEnv.get.executorId //this is useless as perCoreMark is a local singleton
+        val threadID = Thread.currentThread().getId
+        val allIDs = stageID -> threadID
+        val alreadyRun = perCoreMark.synchronized {
+          val alreadyRun = perCoreMark.getOrElseUpdate(allIDs, false)
           if (!alreadyRun) {
-            val result = f(itr.next())
-            //            Thread.sleep(1000)
-            Iterator(result)
+            perCoreMark.put(allIDs, true)
           }
-          else {
-            Iterator.empty
-          }
+          alreadyRun
+        }
+        if (!alreadyRun) {
+          val result = f(itr.next())
+          //            Thread.sleep(1000)
+          Iterator(result)
+        } else {
+          Iterator.empty
+        }
       }
     }
 
     def mapOncePerWorker[R: ClassTag](f: T => R): RDD[R] = {
 
-      self.mapPartitions {
-        itr =>
-          val stageID = TaskContext.get.stageId()
-          val alreadyRun = perWorkerMark.synchronized {
-            val alreadyRun = perWorkerMark.getOrElseUpdate(stageID, false)
-            if (!alreadyRun) {
-              perWorkerMark.put(stageID, true)
-            }
-            alreadyRun
-          }
+      self.mapPartitions { itr =>
+        val stageID = TaskContext.get.stageId()
+        val alreadyRun = perWorkerMark.synchronized {
+          val alreadyRun = perWorkerMark.getOrElseUpdate(stageID, false)
           if (!alreadyRun) {
-            val result = f(itr.next())
-            //            Thread.sleep(1000)
-            Iterator(result)
+            perWorkerMark.put(stageID, true)
           }
-          else {
-            Iterator.empty
-          }
+          alreadyRun
+        }
+        if (!alreadyRun) {
+          val result = f(itr.next())
+          //            Thread.sleep(1000)
+          Iterator(result)
+        } else {
+          Iterator.empty
+        }
       }
     }
   }
@@ -343,12 +340,12 @@ abstract class SpookyViews extends CommonViews {
   implicit class StringRDDView(val self: RDD[String]) {
 
     //csv has to be headerless, there is no better solution as header will be shuffled to nowhere
-    def csvToMap(headerRow: String, splitter: String = ","): RDD[Map[String,String]] = {
+    def csvToMap(headerRow: String, splitter: String = ","): RDD[Map[String, String]] = {
       val headers = headerRow.split(splitter)
 
       //cannot handle when a row is identical to headerline, but whatever
-      self.map {
-        str => {
+      self.map { str =>
+        {
           val values = str.split(splitter)
 
           ListMap(headers.zip(values): _*)
@@ -356,7 +353,7 @@ abstract class SpookyViews extends CommonViews {
       }
     }
 
-    def tsvToMap(headerRow: String) = csvToMap(headerRow,"\t")
+    def tsvToMap(headerRow: String) = csvToMap(headerRow, "\t")
   }
 
   implicit class PairRDDView[K: ClassTag, V: ClassTag](val self: RDD[(K, V)]) {
@@ -396,37 +393,32 @@ abstract class SpookyViews extends CommonViews {
     //      (leftExclusive, Intersection, rightExclusive, stage)
     //    }
 
-    def unionByKey(
-                    other: RDD[(K, V)])(
-                    innerReducer: (V, V) => V
-                  ): RDD[(K, V)] = {
+    def unionByKey(other: RDD[(K, V)])(
+        innerReducer: (V, V) => V
+    ): RDD[(K, V)] = {
 
       val cogrouped = self.cogroup(other)
 
-      cogrouped.mapValues {
-        tuple =>
-          val reduced = (tuple._1 ++ tuple._2).reduce(innerReducer)
-          reduced
+      cogrouped.mapValues { tuple =>
+        val reduced = (tuple._1 ++ tuple._2).reduce(innerReducer)
+        reduced
       }
     }
 
-    def intersectionByKey(
-                           other: RDD[(K, V)])(
-                           innerReducer: (V, V) => V
-                         ): RDD[(K, V)] = {
+    def intersectionByKey(other: RDD[(K, V)])(
+        innerReducer: (V, V) => V
+    ): RDD[(K, V)] = {
 
       val cogrouped = self.cogroup(other)
 
-      cogrouped.flatMap {
-        triplet =>
-          val tuple = triplet._2
-          if (tuple._1.nonEmpty || tuple._2.nonEmpty) {
-            val reduced = (tuple._1 ++ tuple._2).reduce(innerReducer)
-            Some(triplet._1 -> reduced)
-          }
-          else {
-            None
-          }
+      cogrouped.flatMap { triplet =>
+        val tuple = triplet._2
+        if (tuple._1.nonEmpty || tuple._2.nonEmpty) {
+          val reduced = (tuple._1 ++ tuple._2).reduce(innerReducer)
+          Some(triplet._1 -> reduced)
+        } else {
+          None
+        }
       }
     }
 
@@ -457,24 +449,22 @@ abstract class SpookyViews extends CommonViews {
     //    }
   }
 
-
-
-  implicit class MapView[K, V](self: scala.collection.Map[K,V]) {
+  implicit class MapView[K, V](self: scala.collection.Map[K, V]) {
 
     def getTyped[T: ClassTag](key: K): Option[T] = self.get(key) match {
 
       case Some(res) =>
         res match {
           case r: T => Some(r)
-          case _ => None
+          case _    => None
         }
       case _ => None
     }
 
     def flattenByKey(
-                      key: K,
-                      sampler: Sampler[Any]
-                    ): Seq[(Map[K, Any], Int)] = {
+        key: K,
+        sampler: Sampler[Any]
+    ): Seq[(Map[K, Any], Int)] = {
 
       val valueOption: Option[V] = self.get(key)
 
@@ -483,15 +473,14 @@ abstract class SpookyViews extends CommonViews {
 
       val cleaned = self - key
       val result = sampled.toSeq.map(
-        tuple =>
-          (cleaned + (key -> tuple._1)) -> tuple._2
+        tuple => (cleaned + (key -> tuple._1)) -> tuple._2
       )
 
       result
     }
 
-    def canonizeKeysToColumnNames: scala.collection.Map[String,V] = self.map(
-      tuple =>{
+    def canonizeKeysToColumnNames: scala.collection.Map[String, V] = self.map(
+      tuple => {
         val keyName: String = tuple._1 match {
           case symbol: scala.Symbol =>
             symbol.name //TODO: remove, this feature should no longer work after dataframe integration
@@ -515,9 +504,8 @@ abstract class SpookyViews extends CommonViews {
     class FilterByType[B: ClassTag] {
 
       def get[That](implicit bf: CanBuildFrom[Repr, B, That]): That = {
-        self.flatMap{
-          v =>
-            SpookyUtils.typedOrNone[B](v)
+        self.flatMap { v =>
+          SpookyUtils.typedOrNone[B](v)
         }(bf)
 
         //        self.collect {case v: B => v} //TODO: switch to this after stop 2.10 support
@@ -525,7 +513,7 @@ abstract class SpookyViews extends CommonViews {
     }
 
     def mapToRDD[B: ClassTag](sc: SparkContext, local: Boolean = false, sliceOpt: Option[Int] = None)(
-      f: A => B
+        f: A => B
     ): RDD[B] = {
       if (local) {
         sc.parallelize(
@@ -534,12 +522,11 @@ abstract class SpookyViews extends CommonViews {
           ),
           sliceOpt.getOrElse(sc.defaultParallelism)
         )
-      }
-      else {
+      } else {
         sc.parallelize(
-          self.toSeq,
-          sliceOpt.getOrElse(sc.defaultParallelism)
-        )
+            self.toSeq,
+            sliceOpt.getOrElse(sc.defaultParallelism)
+          )
           .map(
             f
           )
@@ -550,29 +537,28 @@ abstract class SpookyViews extends CommonViews {
   implicit class ArrayView[A](self: Array[A]) {
 
     def filterByType[B <: A: ClassTag]: Array[B] = {
-      self.flatMap {
-        v =>
-          SpookyUtils.typedOrNone[B](v)
+      self.flatMap { v =>
+        SpookyUtils.typedOrNone[B](v)
       }
 
       //      self.collect {case v: B => v} //TODO: switch to this after stop 2.10 support
     }
 
     def flattenByIndex(
-                        i: Int,
-                        sampler: Sampler[Any]
-                      ): Seq[(Array[Any], Int)]  = {
+        i: Int,
+        sampler: Sampler[Any]
+    ): Seq[(Array[Any], Int)] = {
 
-      val valueOption: Option[A] = if (self.indices contains i) Some(self.apply(i))
-      else None
+      val valueOption: Option[A] =
+        if (self.indices contains i) Some(self.apply(i))
+        else None
 
       val values: Iterable[(Any, Int)] = valueOption.toIterable.flatMap(SpookyUtils.asIterable[Any]).zipWithIndex
       val sampled = sampler(values)
 
-      val result: Seq[(Array[Any], Int)] = sampled.toSeq.map{
-        tuple =>
-          val updated = self.updated(i, tuple._1)
-          updated -> tuple._2
+      val result: Seq[(Array[Any], Int)] = sampled.toSeq.map { tuple =>
+        val updated = self.updated(i, tuple._1)
+        updated -> tuple._2
       }
 
       result
@@ -581,18 +567,19 @@ abstract class SpookyViews extends CommonViews {
 
   implicit class DataFrameView(val self: DataFrame) {
 
-    def toMapRDD(keepNull: Boolean = false): RDD[Map[String,Any]] = {
+    def toMapRDD(keepNull: Boolean = false): RDD[Map[String, Any]] = {
       val headers = self.schema.fieldNames
 
-      val result: RDD[Map[String,Any]] = self.rdd.map{
-        row => ListMap(headers.zip(row.toSeq): _*)
+      val result: RDD[Map[String, Any]] = self.rdd.map { row =>
+        ListMap(headers.zip(row.toSeq): _*)
       }
 
-      val filtered = if (keepNull) result
-      else result.map {
-        map =>
-          map.filter(_._2 != null)
-      }
+      val filtered =
+        if (keepNull) result
+        else
+          result.map { map =>
+            map.filter(_._2 != null)
+          }
 
       filtered
     }
@@ -633,6 +620,4 @@ abstract class SpookyViews extends CommonViews {
   //  }
 }
 
-object SpookyViews extends SpookyViews {
-
-}
+object SpookyViews extends SpookyViews {}

@@ -43,9 +43,10 @@ abstract class Interaction extends Action {
   */
 @SerialVersionUID(-6784287573066896999L)
 abstract class WebInteraction(
-                               override val cooldown: Duration,
-                               val blocking: Boolean
-                             ) extends Interaction with Timed {
+    override val cooldown: Duration,
+    val blocking: Boolean
+) extends Interaction
+    with Timed {
 
   override def globalRewriters: Seq[RewriteRule[Trace]] = Seq(AutoSnapshotRule)
 
@@ -69,7 +70,7 @@ object DocumentReadyCondition extends ExpectedCondition[Boolean] {
 
     val result = input match {
       case d: JavascriptExecutor => d.executeScript(script)
-      case _ => throw new UnsupportedOperationException("this web browser driver is not supported")
+      case _                     => throw new UnsupportedOperationException("this web browser driver is not supported")
     }
 
     result == "complete"
@@ -82,10 +83,10 @@ object DocumentReadyCondition extends ExpectedCondition[Boolean] {
   * @param uri support cell interpolation
   */
 case class Visit(
-                  uri: Col[String],
-                  override val cooldown: Duration = Const.Interaction.delayMin,
-                  override val blocking: Boolean = Const.Interaction.blocking
-                ) extends WebInteraction(cooldown, blocking) {
+    uri: Col[String],
+    override val cooldown: Duration = Const.Interaction.delayMin,
+    override val blocking: Boolean = Const.Interaction.blocking
+) extends WebInteraction(cooldown, blocking) {
 
   override def exeNoOutput(session: Session) {
     session.webDriver.get(uri.value)
@@ -101,14 +102,13 @@ case class Visit(
 
     val uriStr: Option[String] = first.flatMap {
       case element: Unstructured => element.href
-      case str: String => Option(str)
-      case obj: Any => Option(obj.toString)
-      case other => None
+      case str: String           => Option(str)
+      case obj: Any              => Option(obj.toString)
+      case other                 => None
     }
 
     uriStr.map(
-      str =>
-        this.copy(uri = Lit.erased(str)).asInstanceOf[this.type]
+      str => this.copy(uri = Lit.erased(str)).asInstanceOf[this.type]
     )
   }
 }
@@ -120,8 +120,9 @@ case class Visit(
   */
 @SerialVersionUID(-4852391414869985193L)
 case class Delay(
-                  override val cooldown: Duration = Const.Interaction.delayMax
-                ) extends Interaction with Driverless {
+    override val cooldown: Duration = Const.Interaction.delayMax
+) extends Interaction
+    with Driverless {
 
   override def exeNoOutput(session: Session): Unit = {
     //do nothing
@@ -135,14 +136,15 @@ case class Delay(
   */
 @SerialVersionUID(2291926240766143181L)
 case class RandomDelay(
-                        override val cooldown: Duration = Const.Interaction.delayMin,
-                        maxDelay: Duration = Const.Interaction.delayMax
-                      ) extends Interaction with Driverless {
+    override val cooldown: Duration = Const.Interaction.delayMin,
+    maxDelay: Duration = Const.Interaction.delayMax
+) extends Interaction
+    with Driverless {
 
   assert(maxDelay >= cooldown)
 
   override def exeNoOutput(session: Session) {
-    Thread.sleep(Random.nextInt((maxDelay - cooldown).toMillis.toInt) )
+    Thread.sleep(Random.nextInt((maxDelay - cooldown).toMillis.toInt))
   }
 }
 
@@ -165,7 +167,6 @@ case object WaitForDocumentReady extends WebInteraction(null, true) {
     //do nothing
   }
 }
-
 
 //experimental
 //case class DelayForAjaxReady() extends Interaction {
@@ -201,10 +202,10 @@ case object WaitForDocumentReady extends WebInteraction(null, true) {
   * @param selector css selector of the element, only the first element will be affected
   */
 case class Click(
-                  selector: Selector,
-                  override val cooldown: Duration = Const.Interaction.delayMin,
-                  override val blocking: Boolean = Const.Interaction.blocking
-                ) extends WebInteraction(cooldown, blocking) {
+    selector: Selector,
+    override val cooldown: Duration = Const.Interaction.delayMin,
+    override val blocking: Boolean = Const.Interaction.blocking
+) extends WebInteraction(cooldown, blocking) {
   override def exeNoOutput(session: Session) {
     val element = this.getClickableElement(selector, session)
 
@@ -218,12 +219,12 @@ case class Click(
   * @param selector css selector of the element, only the first element will be affected
   */
 case class ClickNext(
-                      selector: Selector,
-                      exclude: Seq[String],
-                      //TODO: remove this, and supercede with Selector
-                      override val cooldown: Duration = Const.Interaction.delayMin,
-                      override val blocking: Boolean = Const.Interaction.blocking
-                    ) extends WebInteraction(cooldown, blocking) {
+    selector: Selector,
+    exclude: Seq[String],
+    //TODO: remove this, and supercede with Selector
+    override val cooldown: Duration = Const.Interaction.delayMin,
+    override val blocking: Boolean = Const.Interaction.blocking
+) extends WebInteraction(cooldown, blocking) {
 
   @transient lazy val clicked: mutable.HashSet[String] = mutable.HashSet(exclude: _*)
 
@@ -233,9 +234,9 @@ case class ClickNext(
 
     import scala.collection.JavaConversions._ //TODO: use JavaConverters
 
-    elements.foreach{
-      element => {
-        if (!clicked.contains(element.getText)){
+    elements.foreach { element =>
+      {
+        if (!clicked.contains(element.getText)) {
           webDriverWait(session).until(ExpectedConditions.elementToBeClickable(element))
           clicked += element.getText
           element.click()
@@ -279,10 +280,10 @@ case class ClickNext(
   * @param selector css selector of the element, only the first element will be affected
   */
 case class Submit(
-                   selector: Selector,
-                   override val cooldown: Duration = Const.Interaction.delayMin,
-                   override val blocking: Boolean = Const.Interaction.blocking
-                 ) extends WebInteraction(cooldown, blocking) {
+    selector: Selector,
+    override val cooldown: Duration = Const.Interaction.delayMin,
+    override val blocking: Boolean = Const.Interaction.blocking
+) extends WebInteraction(cooldown, blocking) {
   override def exeNoOutput(session: Session) {
 
     val element = this.getElement(selector, session)
@@ -298,11 +299,11 @@ case class Submit(
   * @param text support cell interpolation
   */
 case class TextInput(
-                      selector: Selector,
-                      text: Col[String],
-                      override val cooldown: Duration = Const.Interaction.delayMin,
-                      override val blocking: Boolean = Const.Interaction.blocking
-                    ) extends WebInteraction(cooldown, blocking) {
+    selector: Selector,
+    text: Col[String],
+    override val cooldown: Duration = Const.Interaction.delayMin,
+    override val blocking: Boolean = Const.Interaction.blocking
+) extends WebInteraction(cooldown, blocking) {
   override def exeNoOutput(session: Session) {
 
     val element = this.getElement(selector, session)
@@ -316,14 +317,13 @@ case class TextInput(
 
     val textStr: Option[String] = first.flatMap {
       case element: Unstructured => element.text
-      case str: String => Option(str)
-      case obj: Any => Option(obj.toString)
-      case other => None
+      case str: String           => Option(str)
+      case obj: Any              => Option(obj.toString)
+      case other                 => None
     }
 
     textStr.map(
-      str =>
-        this.copy(text = Lit.erased(str)).asInstanceOf[this.type]
+      str => this.copy(text = Lit.erased(str)).asInstanceOf[this.type]
     )
   }
 }
@@ -335,11 +335,11 @@ case class TextInput(
   * @param value support cell interpolation
   */
 case class DropDownSelect(
-                           selector: Selector,
-                           value: Col[String],
-                           override val cooldown: Duration = Const.Interaction.delayMin,
-                           override val blocking: Boolean = Const.Interaction.blocking
-                         ) extends WebInteraction(cooldown, blocking) {
+    selector: Selector,
+    value: Col[String],
+    override val cooldown: Duration = Const.Interaction.delayMin,
+    override val blocking: Boolean = Const.Interaction.blocking
+) extends WebInteraction(cooldown, blocking) {
   override def exeNoOutput(session: Session) {
 
     val element = this.getElement(selector, session)
@@ -353,14 +353,13 @@ case class DropDownSelect(
 
     val valueStr: Option[String] = first.flatMap {
       case element: Unstructured => element.attr("value")
-      case str: String => Option(str)
-      case obj: Any => Option(obj.toString)
-      case other => None
+      case str: String           => Option(str)
+      case obj: Any              => Option(obj.toString)
+      case other                 => None
     }
 
     valueStr.map(
-      str =>
-        this.copy(value = Lit.erased(str)).asInstanceOf[this.type]
+      str => this.copy(value = Lit.erased(str)).asInstanceOf[this.type]
     )
   }
 }
@@ -373,7 +372,7 @@ case class DropDownSelect(
   * @param selector css selector of the frame/iframe, only the first element will be affected
   */
 //TODO: not possible to switch back, need a better abstraction
-case class ToFrame(selector: Selector)extends WebInteraction(null, false) {
+case class ToFrame(selector: Selector) extends WebInteraction(null, false) {
   override def exeNoOutput(session: Session) {
 
     val element = this.getElement(selector, session)
@@ -389,23 +388,24 @@ case class ToFrame(selector: Selector)extends WebInteraction(null, false) {
   * @param selector selector of the element this script is executed against, if null, against the entire page
   */
 case class ExeScript(
-                      script: Col[String],
-                      selector: Selector = null,
-                      override val cooldown: Duration = Const.Interaction.delayMin,
-                      override val blocking: Boolean = Const.Interaction.blocking
-                    ) extends WebInteraction(cooldown, blocking) {
+    script: Col[String],
+    selector: Selector = null,
+    override val cooldown: Duration = Const.Interaction.delayMin,
+    override val blocking: Boolean = Const.Interaction.blocking
+) extends WebInteraction(cooldown, blocking) {
   override def exeNoOutput(session: Session) {
 
-    val element = if (selector == null) None
-    else {
-      val element = this.getElement(selector, session)
-      Some(element)
-    }
+    val element =
+      if (selector == null) None
+      else {
+        val element = this.getElement(selector, session)
+        Some(element)
+      }
 
     val scriptStr = script.value
     session.webDriver match {
       case d: JavascriptExecutor => d.executeScript(scriptStr, element.toArray: _*)
-      case _ => throw new UnsupportedOperationException("this web browser driver is not supported")
+      case _                     => throw new UnsupportedOperationException("this web browser driver is not supported")
     }
   }
 
@@ -414,14 +414,13 @@ case class ExeScript(
 
     val scriptStr: Option[String] = first.flatMap {
       case element: Unstructured => element.text
-      case str: String => Option(str)
-      case obj: Any => Option(obj.toString)
-      case other => None
+      case str: String           => Option(str)
+      case obj: Any              => Option(obj.toString)
+      case other                 => None
     }
 
     scriptStr.map(
-      str =>
-        this.copy(script = Lit.erased(str)).asInstanceOf[this.type]
+      str => this.copy(script = Lit.erased(str)).asInstanceOf[this.type]
     )
   }
 }
@@ -433,12 +432,12 @@ case class ExeScript(
   * @param handleSelector selector of the slider
   */
 case class DragSlider(
-                       selector: Selector,
-                       percentage: Double,
-                       handleSelector: Selector = "*",
-                       override val cooldown: Duration = Const.Interaction.delayMin,
-                       override val blocking: Boolean = Const.Interaction.blocking
-                     ) extends WebInteraction(cooldown, blocking) {
+    selector: Selector,
+    percentage: Double,
+    handleSelector: Selector = "*",
+    override val cooldown: Duration = Const.Interaction.delayMin,
+    override val blocking: Boolean = Const.Interaction.blocking
+) extends WebInteraction(cooldown, blocking) {
 
   override def exeNoOutput(session: Session): Unit = {
 
@@ -458,7 +457,8 @@ case class DragSlider(
 
     Thread.sleep(1000)
 
-    if (width > height) new SeleniumActions(session.webDriver).moveByOffset((width * percentage).asInstanceOf[Int], 0).perform()
+    if (width > height)
+      new SeleniumActions(session.webDriver).moveByOffset((width * percentage).asInstanceOf[Int], 0).perform()
     else new SeleniumActions(session.webDriver).moveByOffset(0, (height * percentage).asInstanceOf[Int]).perform()
 
     Thread.sleep(1000)

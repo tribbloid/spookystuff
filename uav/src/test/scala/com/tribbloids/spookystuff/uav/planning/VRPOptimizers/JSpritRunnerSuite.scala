@@ -24,15 +24,15 @@ class JSpritRunnerSuite extends VRPFixture {
       .getCostMatrix(defaultSchema, waypoints.zipWithIndex)
     //TODO: add assertion
 
-    val mat2 = for(
-      i <- mat.getMatrix.toList.zipWithIndex;
-      j <- i._1.toList.zipWithIndex
-    ) yield {
+    val mat2 = for (i <- mat.getMatrix.toList.zipWithIndex;
+                    j <- i._1.toList.zipWithIndex) yield {
       (i._2, j._2, j._1.toList.map(v => (v * 1000.0).toInt))
     }
 
-    mat2.mkString("\n").shouldBe(
-      """
+    mat2
+      .mkString("\n")
+      .shouldBe(
+        """
         |(0,0,List(0, 0))
         |(0,1,List(4000, 4000))
         |(0,2,List(3000, 3000))
@@ -43,7 +43,7 @@ class JSpritRunnerSuite extends VRPFixture {
         |(2,1,List(5000, 5000))
         |(2,2,List(0, 0))
       """.stripMargin
-    )
+      )
   }
 
   describe("objectiveFunction") {
@@ -70,9 +70,8 @@ class JSpritRunnerSuite extends VRPFixture {
 
     it("can evaluate 3 route") {
       val location = UAVConf.DEFAULT_HOME_LOCATION
-      val uavs = Array("A", "B", "C").map {
-        v =>
-          LinkStatus(UAV(Seq(s"$v@localhost")), Lock.Open, location, location)
+      val uavs = Array("A", "B", "C").map { v =>
+        LinkStatus(UAV(Seq(s"$v@localhost")), Lock.Open, location, location)
       }
 
       val runner = JSpritRunner(getVRP, defaultSchema, uavs, waypoints)
@@ -84,15 +83,13 @@ class JSpritRunnerSuite extends VRPFixture {
 
       val map = runner.getUAV2TraceMap
 
-      val traces = map.toSeq.map {
-        v =>
-          List(Waypoint(v._1.currentLocation)) ++
-            v._2.flatMap(_.children)
+      val traces = map.toSeq.map { v =>
+        List(Waypoint(v._1.currentLocation)) ++
+          v._2.flatMap(_.children)
       }
 
-      val costs2 = traces.map {
-        trace =>
-          spooky.getConf[UAVConf].costEstimator.estimate(trace, defaultSchema)
+      val costs2 = traces.map { trace =>
+        spooky.getConf[UAVConf].costEstimator.estimate(trace, defaultSchema)
       }
       val cost2 = costs2.max
       assert(cost == cost2)

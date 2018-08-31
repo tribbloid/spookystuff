@@ -26,22 +26,20 @@ trait LocalityImpl[K, V] extends Product with Serializable {
     * @return
     */
   def cogroupBase[V2: ClassTag](
-                                 rdd2: RDD[(K, V2)]
-                               ): RDD[(K, (V, Iterable[V2]))]
+      rdd2: RDD[(K, V2)]
+  ): RDD[(K, (V, Iterable[V2]))]
 
   def join[V2: ClassTag](
-                          rdd2: RDD[(K, V2)]
-                        )(
-                          implicit ev: ClassTag[K]
-                        ): RDD[(K, (V, V2))] = {
+      rdd2: RDD[(K, V2)]
+  )(
+      implicit ev: ClassTag[K]
+  ): RDD[(K, (V, V2))] = {
 
     val base: RDD[(K, (V, Iterable[V2]))] = cogroupBase(rdd2)
-    base.flatMapValues {
-      tuple =>
-        tuple._2.map {
-          v =>
-            tuple._1 -> v
-        }
+    base.flatMapValues { tuple =>
+      tuple._2.map { v =>
+        tuple._1 -> v
+      }
     }
   }
 }

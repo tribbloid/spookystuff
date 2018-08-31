@@ -9,20 +9,19 @@ import org.apache.spark.rdd.RDD
 /**
   * Created by peng on 31/10/16.
   */
-object LinkITFixture{
+object LinkITFixture {
 
   def testMove(
-                spooky: SpookyContext,
-                connStrs: List[String]
-              ): String = {
+      spooky: SpookyContext,
+      connStrs: List[String]
+  ): String = {
 
     val drones = connStrs.map(v => UAV(Seq(v)))
     val session = new Session(spooky)
     val link = Dispatcher(
       drones,
       session
-    )
-      .get
+    ).get
 
     val location = link.synchAPI.testMove
 
@@ -40,10 +39,10 @@ abstract class LinkITFixture extends SITLFixture {
   it("move 1 drone") {
     val spooky = this.spooky
 
-    val rdd = sc.parallelize(Seq(this.fleetURIs.head))
-      .map {
-        connStr =>
-          LinkITFixture.testMove(spooky, List(connStr))
+    val rdd = sc
+      .parallelize(Seq(this.fleetURIs.head))
+      .map { connStr =>
+        LinkITFixture.testMove(spooky, List(connStr))
       }
     val location = rdd.collect().head
 
@@ -55,10 +54,11 @@ abstract class LinkITFixture extends SITLFixture {
     val spooky = this.spooky
 
     val connStrs = this.fleetURIs
-    val rdd = sc.parallelize(fleetURIs).map {
-      _ =>
+    val rdd = sc
+      .parallelize(fleetURIs)
+      .map { _ =>
         LinkITFixture.testMove(spooky, connStrs)
-    }
+      }
       .persist()
     val locations = rdd.collect()
     assert(locations.distinct.length == locations.length)
@@ -75,9 +75,8 @@ abstract class LinkITFixture extends SITLFixture {
     val connStrs = this.fleetURIs
 
     for (_ <- 1 to 2) {
-      val rdd: RDD[String] = sc.parallelize(fleetURIs).map {
-        _ =>
-          LinkITFixture.testMove(spooky, connStrs)
+      val rdd: RDD[String] = sc.parallelize(fleetURIs).map { _ =>
+        LinkITFixture.testMove(spooky, connStrs)
       }
 
       locations = {

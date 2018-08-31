@@ -2,10 +2,10 @@ package com.tribbloids.spookystuff.uav.telemetry.mavlink
 
 import com.tribbloids.spookystuff.session.Session
 import com.tribbloids.spookystuff.testutils.TestHelper
-import com.tribbloids.spookystuff.uav.dsl.{Routings, Routing}
+import com.tribbloids.spookystuff.uav.dsl.{Routing, Routings}
 import com.tribbloids.spookystuff.uav.sim.{APMQuadFixture, APMSim}
 import com.tribbloids.spookystuff.uav.system.UAV
-import com.tribbloids.spookystuff.uav.telemetry.{LinkITFixture, Dispatcher}
+import com.tribbloids.spookystuff.uav.telemetry.{Dispatcher, LinkITFixture}
 import com.tribbloids.spookystuff.utils.CommonUtils
 import org.scalatest.Ignore
 
@@ -32,39 +32,36 @@ class MAVLinkIT extends LinkITFixture with APMQuadFixture {
 
     val spooky = this.spooky
 
-    val rdd = sc.parallelize(fleetURIs).map {
-      connStr =>
-        val drones = List(UAV(Seq(connStr)))
-        val session = new Session(spooky)
-        val link = Dispatcher( //refitting
-          drones,
-          session
-        )
-          .get
-          .asInstanceOf[MAVLink]
+    val rdd = sc.parallelize(fleetURIs).map { connStr =>
+      val drones = List(UAV(Seq(connStr)))
+      val session = new Session(spooky)
+      val link = Dispatcher( //refitting
+                            drones,
+                            session).get
+        .asInstanceOf[MAVLink]
 
-        val endpoint1 = link.Endpoints.primary
-        val endpoint2 = link.Endpoints.executors.last
-        endpoint1.PY.assureClearanceAlt(20)
-        endpoint2.PY.start()
+      val endpoint1 = link.Endpoints.primary
+      val endpoint2 = link.Endpoints.executors.last
+      endpoint1.PY.assureClearanceAlt(20)
+      endpoint2.PY.start()
 
-        val moved = Future {
-          endpoint1.PY.testMove()
-        }
-        Thread.sleep(5000 / APMSim.SPEEDUP)
+      val moved = Future {
+        endpoint1.PY.testMove()
+      }
+      Thread.sleep(5000 / APMSim.SPEEDUP)
 
-        def changeAndVerifyMode(endpoint: Endpoint, mode: String) = CommonUtils.withDeadline(20.seconds){
-          val py = endpoint.PY
-          py.setMode(mode)
-          TestHelper.assert(py.vehicle.mode.name.$STR.get == mode)
-        }
+      def changeAndVerifyMode(endpoint: Endpoint, mode: String) = CommonUtils.withDeadline(20.seconds) {
+        val py = endpoint.PY
+        py.setMode(mode)
+        TestHelper.assert(py.vehicle.mode.name.$STR.get == mode)
+      }
 
-        changeAndVerifyMode(endpoint2, "BRAKE")
-        //          changeMode(py2, "LOITER")
-        Thread.sleep(5000 / APMSim.SPEEDUP)
-        changeAndVerifyMode(endpoint2, "GUIDED")
-        val position = Await.result(moved, 60.seconds).$STR.get
-        println(position)
+      changeAndVerifyMode(endpoint2, "BRAKE")
+      //          changeMode(py2, "LOITER")
+      Thread.sleep(5000 / APMSim.SPEEDUP)
+      changeAndVerifyMode(endpoint2, "GUIDED")
+      val position = Await.result(moved, 60.seconds).$STR.get
+      println(position)
     }
     val location = rdd.collect().head
 

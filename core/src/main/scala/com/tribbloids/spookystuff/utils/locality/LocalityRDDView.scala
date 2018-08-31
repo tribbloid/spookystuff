@@ -6,10 +6,10 @@ import org.apache.spark.util.SizeEstimator
 import scala.reflect.ClassTag
 
 case class LocalityRDDView[K: ClassTag, V: ClassTag](
-                                                      rdd1: RDD[(K, V)],
-                                                      persistFn: RDD[_] => Unit = _.persist(),
-                                                      isOrdinal: Boolean = true
-                                                    ) extends LocalityImpl[K, V] {
+    rdd1: RDD[(K, V)],
+    persistFn: RDD[_] => Unit = _.persist(),
+    isOrdinal: Boolean = true
+) extends LocalityImpl[K, V] {
 
   final val BROADCAST_SIZE_CAP_BYTE = 10 * 1024 * 1024
 

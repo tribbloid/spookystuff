@@ -7,7 +7,7 @@ object ReflectionLock
 
 trait ReflectionLock {
 
-  def locked[T](fn: =>T) = ReflectionLock.synchronized {
+  def locked[T](fn: => T) = ReflectionLock.synchronized {
     fn
   }
 }

@@ -17,8 +17,9 @@ import org.apache.http.entity.ContentType
 //TODO: move to core module
 @SerialVersionUID(-6784287573066896999L)
 case class DummyPyAction(
-                          a: Col[Int] = 1
-                        ) extends Export with CaseInstanceRef {
+    a: Col[Int] = 1
+) extends Export
+    with CaseInstanceRef {
 
   override def doExeNoName(session: Session): Seq[DocOption] = {
     val repr1 = Py(session).dummy(2, 3).$STR
@@ -39,8 +40,7 @@ case class DummyPyAction(
       .lift
       .apply(pageRow)
       .map(
-        v =>
-          this.copy(a = Lit.erased(v)).asInstanceOf[this.type]
+        v => this.copy(a = Lit.erased(v)).asInstanceOf[this.type]
       )
   }
 }
@@ -50,15 +50,17 @@ class PythonActionSuite extends SpookyEnvFixture {
   def action = DummyPyAction()
 
   it("can be created on python") {
-    action.createOpt.get.replaceAll("\n","").shouldBe(
-      s"""
+    action.createOpt.get
+      .replaceAll("\n", "")
+      .shouldBe(
+        s"""
          |pyspookystuff.uav.actions.DummyPyAction(a=json.loads(
          |${PyConverter.QQQ}
          |1
          |${PyConverter.QQQ}
          |))
-      """.stripMargin.replaceAll("\n","")
-    )
+      """.stripMargin.replaceAll("\n", "")
+      )
   }
 
   it("can execute on driver") {
@@ -79,8 +81,9 @@ class PythonActionSuite extends SpookyEnvFixture {
 
   it("can execute on workers") {
     val df = sql
-      .createDataFrame((0 to 16)
-        .map(v => Tuple1(v)))
+      .createDataFrame(
+        (0 to 16)
+          .map(v => Tuple1(v)))
     val ds = spooky.create(
       df
     )

@@ -15,26 +15,26 @@ object UAVFixture {
 
   def cleanSweepLocally() = {
     Cleanable.cleanSweepAll {
-      case _: Link => true
+      case _: Link   => true
       case _: APMSim => true
-      case _ => false
+      case _         => false
     }
   }
 
-
   def cleanSweep(sc: SparkContext) = {
-    sc.runEverywhere() {
-      _ =>
-        // in production Links will be cleaned up by shutdown hook
+    sc.runEverywhere() { _ =>
+      // in production Links will be cleaned up by shutdown hook
 
-        cleanSweepLocally()
-        Predef.assert(
-          Link.registered.isEmpty,
-          Link.registered.keys.mkString("\n")
-        )
+      cleanSweepLocally()
+      Predef.assert(
+        Link.registered.isEmpty,
+        Link.registered.keys.mkString("\n")
+      )
     }
 
-    val isEmpty = sc.runEverywhere() {_ => APMSim.existing.isEmpty}
+    val isEmpty = sc.runEverywhere() { _ =>
+      APMSim.existing.isEmpty
+    }
     assert(!isEmpty.contains(false))
   }
 }
@@ -70,7 +70,6 @@ trait UAVFixture extends SpookyEnvFixture {
     UAVUtils.sanityCheck(sc)
   }
 
-
   override def beforeAll(): Unit = {
 
     UAVFixture.cleanSweep(sc)
@@ -90,10 +89,9 @@ trait UAVFixture extends SpookyEnvFixture {
 trait DummyUAVFixture extends UAVFixture {
   override def routing: Routing = Routings.Dummy
 
-  override  val fleetURIs: List[String] = (0 until parallelism).map {
-    v => s"dummy:localhost:$v"
-  }
-    .toList
+  override val fleetURIs: List[String] = (0 until parallelism).map { v =>
+    s"dummy:localhost:$v"
+  }.toList
 }
 
 trait SITLFixture extends UAVFixture {

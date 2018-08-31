@@ -49,17 +49,17 @@ object LocalResolver extends URIResolver {
       override lazy val children: Seq[ResourceMD] = {
         if (isDirectory) {
 
-          file.listFiles().toSeq
-            .map {
-              file =>
-                val childExecution = Execution(file)
-                val md = childExecution.input {
-                  _.rootMetadata
-                }
-                md
+          file
+            .listFiles()
+            .toSeq
+            .map { file =>
+              val childExecution = Execution(file)
+              val md = childExecution.input {
+                _.rootMetadata
+              }
+              md
             }
-        }
-        else Nil
+        } else Nil
       }
     }
 
@@ -87,8 +87,7 @@ object LocalResolver extends URIResolver {
 
       try {
         f(ir)
-      }
-      finally {
+      } finally {
         ir.clean()
       }
     }
@@ -120,8 +119,7 @@ object LocalResolver extends URIResolver {
       try {
         val result = f(or)
         result
-      }
-      finally {
+      } finally {
         or.clean()
       }
     }

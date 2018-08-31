@@ -2,7 +2,6 @@ package org.apache.spark.ml.dsl.utils.metadata
 
 import scala.collection.immutable.ListMap
 
-
 trait MetadataLike extends Serializable {
   def map: ListMap[String, Any]
 

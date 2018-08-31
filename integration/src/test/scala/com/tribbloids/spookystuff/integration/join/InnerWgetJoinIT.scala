@@ -4,8 +4,8 @@ import com.tribbloids.spookystuff.actions.Wget
 import com.tribbloids.spookystuff.extractors.Col
 
 /**
- * Created by peng on 25/10/15.
- */
+  * Created by peng on 25/10/15.
+  */
 class InnerWgetJoinIT extends InnerVisitJoinIT {
 
   override lazy val driverFactories = Seq(

@@ -7,8 +7,7 @@ object Constraints {
   object AltitudeOnly extends Constraint {
     override def rewrite(v: Vec, schema: SpookySchema): Vec = {
       val alt = v(2)
-      new DVec(Array(0,0,alt))
+      new DVec(Array(0, 0, alt))
     }
   }
 }
-

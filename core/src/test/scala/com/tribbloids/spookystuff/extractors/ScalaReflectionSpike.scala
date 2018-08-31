@@ -24,44 +24,52 @@ class ScalaReflectionSpike extends FunSpecx {
 
     val paramLists = dynamic.getMethodsByName(exType).map(_.paramLists)
 
-    paramLists.mkString("\n").shouldBe (
-      """
+    paramLists
+      .mkString("\n")
+      .shouldBe(
+        """
         |List(List(value i))
         |List()
       """.stripMargin
-    )
+      )
 
-    val returnTypes = dynamic.getMethodsByName(exType).map{
+    val returnTypes = dynamic.getMethodsByName(exType).map {
       TypeUtils.getParameter_ReturnTypes(_, exType.asTypeTag.tpe)
     }
-    returnTypes.mkString("\n").shouldBe (
-      """
+    returnTypes
+      .mkString("\n")
+      .shouldBe(
+        """
         |(List(List(Int)),String)
         |(List(),Int)
       """.stripMargin
-    )
+      )
   }
 
   it("getMethodsByName should work on case constructor parameter") {
 
-    val dynamic = ScalaDynamic (
+    val dynamic = ScalaDynamic(
       "a"
     )
 
     val paramLists = dynamic.getMethodsByName(exType).map(v => v.paramLists)
 
-    paramLists.mkString("\n").shouldBe(
-      "List()"
-    )
+    paramLists
+      .mkString("\n")
+      .shouldBe(
+        "List()"
+      )
 
-    val returnTypes = dynamic.getMethodsByName(exType).map{
+    val returnTypes = dynamic.getMethodsByName(exType).map {
       TypeUtils.getParameter_ReturnTypes(_, exType.asTypeTag.tpe)
     }
-    returnTypes.mkString("\n").shouldBe (
-      """
+    returnTypes
+      .mkString("\n")
+      .shouldBe(
+        """
         |(List(),String)
       """.stripMargin
-    )
+      )
   }
 
   it("getMethodsByName should work on lazy val property") {
@@ -72,18 +80,22 @@ class ScalaReflectionSpike extends FunSpecx {
 
     val paramLists = dynamic.getMethodsByName(exType).map(_.paramLists)
 
-    paramLists.mkString("\n").shouldBe(
-      "List()"
-    )
+    paramLists
+      .mkString("\n")
+      .shouldBe(
+        "List()"
+      )
 
-    val returnTypes = dynamic.getMethodsByName(exType).map{
+    val returnTypes = dynamic.getMethodsByName(exType).map {
       TypeUtils.getParameter_ReturnTypes(_, exType.asTypeTag.tpe)
     }
-    returnTypes.mkString("\n").shouldBe (
-      """
+    returnTypes
+      .mkString("\n")
+      .shouldBe(
+        """
         |(List(),String)
       """.stripMargin
-    )
+      )
   }
 
   it("getMethodsByName should work on function with default parameters") {
@@ -94,18 +106,22 @@ class ScalaReflectionSpike extends FunSpecx {
 
     val paramLists = dynamic.getMethodsByName(exType).map(_.paramLists)
 
-    paramLists.mkString("\n").shouldBe(
-      "List(List(value a, value b))"
-    )
+    paramLists
+      .mkString("\n")
+      .shouldBe(
+        "List(List(value a, value b))"
+      )
 
-    val returnTypes = dynamic.getMethodsByName(exType).map{
+    val returnTypes = dynamic.getMethodsByName(exType).map {
       TypeUtils.getParameter_ReturnTypes(_, exType.asTypeTag.tpe)
     }
-    returnTypes.mkString("\n").shouldBe (
-      """
+    returnTypes
+      .mkString("\n")
+      .shouldBe(
+        """
         |(List(List(Int, String)),String)
       """.stripMargin
-    )
+      )
   }
 
   it("getMethodsByName should work on operator") {
@@ -116,18 +132,22 @@ class ScalaReflectionSpike extends FunSpecx {
 
     val paramLists = dynamic.getMethodsByName(exType).map(_.paramLists)
 
-    paramLists.mkString("\n").shouldBe(
-      "List(List(value k))"
-    )
+    paramLists
+      .mkString("\n")
+      .shouldBe(
+        "List(List(value k))"
+      )
 
-    val returnTypes = dynamic.getMethodsByName(exType).map{
+    val returnTypes = dynamic.getMethodsByName(exType).map {
       TypeUtils.getParameter_ReturnTypes(_, exType.asTypeTag.tpe)
     }
-    returnTypes.mkString("\n").shouldBe (
-      """
+    returnTypes
+      .mkString("\n")
+      .shouldBe(
+        """
         |(List(List(Int)),String)
       """.stripMargin
-    )
+      )
   }
 
   it("getMethodByScala should work on overloaded function") {
@@ -147,7 +167,8 @@ class ScalaReflectionSpike extends FunSpecx {
       "fn"
     )
 
-    val paramLists = dynamic.getMethodByJava(exType, Some(List(IntegerType)))
+    val paramLists = dynamic
+      .getMethodByJava(exType, Some(List(IntegerType)))
       .getParameterTypes
       .mkString("|")
 
@@ -173,8 +194,7 @@ class ScalaReflectionSpike extends FunSpecx {
       "fnOpt"
     )
 
-    val paramLists = dynamic.getMethodByJava(exType, Some(List(IntegerType)))
-      .getParameterTypes.mkString("|")
+    val paramLists = dynamic.getMethodByJava(exType, Some(List(IntegerType))).getParameterTypes.mkString("|")
 
     paramLists.shouldBe(
       "class java.lang.Object"
@@ -198,8 +218,7 @@ class ScalaReflectionSpike extends FunSpecx {
       "fnOptOpt"
     )
 
-    val paramLists = dynamic.getMethodByJava(exType, Some(List(IntegerType)))
-      .getParameterTypes.mkString("|")
+    val paramLists = dynamic.getMethodByJava(exType, Some(List(IntegerType))).getParameterTypes.mkString("|")
 
     paramLists.shouldBe(
       "class scala.Option"
@@ -241,7 +260,7 @@ class ScalaReflectionSpike extends FunSpecx {
     )
 
     val returnType = TypeUtils.getParameter_ReturnTypes(method, exType.asTypeTag.tpe)
-    returnType.toString.shouldBe (
+    returnType.toString.shouldBe(
       """
         |(List(List(Int)),String)
       """.stripMargin

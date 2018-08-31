@@ -9,7 +9,7 @@ class MetadataSuite extends FunSpecx {
     "int" -> 1,
     "double" -> 2.5,
     "itr" -> Seq("a", "b"),
-    "map" -> Map("a" -> 1, "b" ->2)
+    "map" -> Map("a" -> 1, "b" -> 2)
   )
 
   val malformed = Metadata(

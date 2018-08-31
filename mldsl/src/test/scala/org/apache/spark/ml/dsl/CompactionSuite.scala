@@ -38,13 +38,13 @@ class CompactionSuite extends AbstractFlowSuite {
     assert(source.distinct.length == source.length)
 
     val lookup = compaction(source.toSet)
-    val compare = source.map{
-      v =>
-        v -> lookup(v)
+    val compare = source.map { v =>
+      v -> lookup(v)
     }
-    compare.mkString("\n").shouldBe(
-
-    )
+    compare
+      .mkString("\n")
+      .shouldBe(
+        )
     val compactedValues = compare.map(_._2).toList
     assert(compactedValues.distinct.size == compactedValues.size)
   }
@@ -53,16 +53,13 @@ class CompactionSuite extends AbstractFlowSuite {
     Compactions.DoNotCompact,
     Compactions.PruneDownPath,
     Compactions.PruneDownPathKeepRoot
-  ).foreach{
-    v =>
-      Seq(s1, s2).foreach{
-        s =>
+  ).foreach { v =>
+    Seq(s1, s2).foreach { s =>
+      it(s"${v.getClass.getSimpleName.stripSuffix("$")} should work on ${s.head} ...") {
 
-          it(s"${v.getClass.getSimpleName.stripSuffix("$")} should work on ${s.head} ...") {
-
-            testCompaction(v, s, null)
-          }
+        testCompaction(v, s, null)
       }
+    }
 
   }
 }

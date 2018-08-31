@@ -22,20 +22,18 @@ object GenExtractorSuite {
         counter += 1
         if (v == "abc") {
           v.length
-        }
-        else {
+        } else {
           default(v)
         }
       }
     }
 
-  val optionFn: String => Option[Int] = {
-    v: String => {
+  val optionFn: String => Option[Int] = { v: String =>
+    {
       counter += 1
       if (v == "abc") {
         Some(v.length)
-      }
-      else {
+      } else {
         None
       }
     }
@@ -62,56 +60,55 @@ class GenExtractorSuite extends SpookyEnvFixture {
     GenExtractor.fromOptionFn(optionFn) ~ 'B -> "Alias(fromOptionFn)"
   )
 
-  tuples.foreach {
-    tuple =>
-      val extractor = tuple._1
-      val str = tuple._2
-      it(s"$str and all its resolved functions are serializable") {
-        AssertSerializable[GenExtractor[String, Int]](extractor, condition = (_, _) => {})
-        AssertSerializable[PartialFunction[String, Int]](extractor.resolve(emptySchema), condition = (_, _) => {})
-        AssertSerializable[Function1[String, Option[Int]]](extractor.resolve(emptySchema).lift, condition = (_, _) => {})
+  tuples.foreach { tuple =>
+    val extractor = tuple._1
+    val str = tuple._2
+    it(s"$str and all its resolved functions are serializable") {
+      AssertSerializable[GenExtractor[String, Int]](extractor, condition = (_, _) => {})
+      AssertSerializable[PartialFunction[String, Int]](extractor.resolve(emptySchema), condition = (_, _) => {})
+      AssertSerializable[Function1[String, Option[Int]]](extractor.resolve(emptySchema).lift, condition = (_, _) => {})
+    }
+
+    it(s"$str.apply won't execute twice") {
+      counter = 0
+
+      println(extractor.apply("abc"))
+      assert(counter == 1)
+
+      intercept[MatchError] {
+        extractor.apply("d")
       }
+      assert(counter == 2)
+    }
 
-      it(s"$str.apply won't execute twice") {
-        counter = 0
+    it(s"$str.lift.apply won't execute twice") {
+      counter = 0
 
-        println(extractor.apply("abc"))
-        assert(counter == 1)
+      println(extractor.lift.apply("abc"))
+      assert(counter == 1)
 
-        intercept[MatchError] {
-          extractor.apply("d")
-        }
-        assert(counter == 2)
-      }
+      println(extractor.lift.apply("d"))
+      assert(counter == 2)
+    }
 
-      it(s"$str.lift.apply won't execute twice") {
-        counter = 0
+    it(s"$str.applyOrElse won't execute twice") {
+      counter = 0
 
-        println(extractor.lift.apply("abc"))
-        assert(counter == 1)
+      println(extractor.applyOrElse("abc", (_: String) => 0))
+      assert(counter == 1)
 
-        println(extractor.lift.apply("d"))
-        assert(counter == 2)
-      }
+      println(extractor.applyOrElse("d", (_: String) => 0))
+      assert(counter == 2)
+    }
 
-      it(s"$str.applyOrElse won't execute twice") {
-        counter = 0
+    it(s"$str.isDefined won't execute twice") {
+      counter = 0
 
-        println(extractor.applyOrElse("abc", (_: String) => 0))
-        assert(counter == 1)
+      println(extractor.isDefinedAt("abc"))
+      assert(counter == 1)
 
-        println(extractor.applyOrElse("d", (_: String)  => 0))
-        assert(counter == 2)
-      }
-
-      it(s"$str.isDefined won't execute twice") {
-        counter = 0
-
-        println(extractor.isDefinedAt("abc"))
-        assert(counter == 1)
-
-        println(extractor.isDefinedAt("d"))
-        assert(counter == 2)
-      }
+      println(extractor.isDefinedAt("d"))
+      assert(counter == 2)
+    }
   }
 }

@@ -6,7 +6,7 @@ class Default[+A](val default: A)
 
 trait LowerPriorityDefault {
   // Stop AnyRefs from clashing with AnyVals
-  implicit def defaultNull[A <: AnyRef]:Default[A] = new Default[A](null.asInstanceOf[A])
+  implicit def defaultNull[A <: AnyRef]: Default[A] = new Default[A](null.asInstanceOf[A])
 }
 
 object Default extends LowerPriorityDefault {

@@ -48,18 +48,17 @@ object TikaMetadataXMLElement {
 }
 
 class HtmlElement private (
-                            @transient val _parsed: Element,
-                            val html: String,
-                            val tag: Option[String],
-                            override val uri: String
-                          ) extends Unstructured {
+    @transient val _parsed: Element,
+    val html: String,
+    val tag: Option[String],
+    override val uri: String
+) extends Unstructured {
 
   import JavaConverters._
 
   //constructor for HtmlElement returned by .children()
   private def this(_parsed: Element) = this(
-    _parsed,
-    {
+    _parsed, {
       _parsed.ownerDocument().outputSettings().prettyPrint(false)
       _parsed.outerHtml()
     },
@@ -79,8 +78,9 @@ class HtmlElement private (
 
     tag match {
       case Some(_tag) =>
-        val container = if (_tag == "tr" || _tag == "td") Jsoup.parseBodyFragment(s"<table>$html</table>", uri)
-        else Jsoup.parseBodyFragment(html, uri)
+        val container =
+          if (_tag == "tr" || _tag == "td") Jsoup.parseBodyFragment(s"<table>$html</table>", uri)
+          else Jsoup.parseBodyFragment(html, uri)
 
         container.select(_tag).first()
       case _ =>
@@ -88,9 +88,13 @@ class HtmlElement private (
     }
   }
 
-  override def findAll(selector: String) = new Elements(parsed.select(selector)
-      .asScala
-    .map(new HtmlElement(_)).toList)
+  override def findAll(selector: String) =
+    new Elements(
+      parsed
+        .select(selector)
+        .asScala
+        .map(new HtmlElement(_))
+        .toList)
 
   override def findAllWithSiblings(selector: String, range: Range) = {
 
@@ -99,30 +103,32 @@ class HtmlElement private (
   }
 
   private def expand(found: Seq[Element], range: Range) = {
-    val colls = found.map{
-      self =>
-        val selfIndex = self.elementSiblingIndex()
-        //        val siblings = self.siblingElements()
-        val siblings = self.parent().children().asScala
+    val colls = found.map { self =>
+      val selfIndex = self.elementSiblingIndex()
+      //        val siblings = self.siblingElements()
+      val siblings = self.parent().children().asScala
 
-        val prevChildIndex = siblings.lastIndexWhere(ee => found.contains(ee), selfIndex - 1)
-        val head = if (prevChildIndex == -1) selfIndex + range.head
+      val prevChildIndex = siblings.lastIndexWhere(ee => found.contains(ee), selfIndex - 1)
+      val head =
+        if (prevChildIndex == -1) selfIndex + range.head
         else Math.max(selfIndex + range.head, prevChildIndex + 1)
 
-        val nextChildIndex = siblings.indexWhere(ee => found.contains(ee), selfIndex + 1)
-        val tail = if (nextChildIndex == -1) selfIndex + range.last
-        else Math.min(selfIndex + range.last, nextChildIndex -1)
+      val nextChildIndex = siblings.indexWhere(ee => found.contains(ee), selfIndex + 1)
+      val tail =
+        if (nextChildIndex == -1) selfIndex + range.last
+        else Math.min(selfIndex + range.last, nextChildIndex - 1)
 
-        val selected = siblings.slice(head,  tail + 1)
+      val selected = siblings.slice(head, tail + 1)
 
-        new Siblings(selected.map(new HtmlElement(_)).toList)
+      new Siblings(selected.map(new HtmlElement(_)).toList)
     }
     new Elements(colls.toList)
   }
 
   override def children(selector: CSSQuery) = {
 
-    val found: Seq[Element] = parsed.select(selector)
+    val found: Seq[Element] = parsed
+      .select(selector)
       .asScala
       .filter(elem => parsed.children().contains(elem)) //TODO: switch to more efficient NodeFilter
     new Elements(found.map(new HtmlElement(_)).toList)
@@ -130,7 +136,8 @@ class HtmlElement private (
 
   override def childrenWithSiblings(selector: CSSQuery, range: Range): Elements[Siblings[Unstructured]] = {
 
-    val found: Seq[Element] = parsed.select(selector)
+    val found: Seq[Element] = parsed
+      .select(selector)
       .asScala
       .filter(elem => parsed.children().contains(elem)) //TODO: ditto
     expand(found, range)
@@ -146,9 +153,8 @@ class HtmlElement private (
   }
 
   override def allAttr: Option[Map[String, String]] = {
-    val result = Map(parsed.attributes.asScala.toSeq.map{
-      attr =>
-        attr.getKey -> attr.getValue
+    val result = Map(parsed.attributes.asScala.toSeq.map { attr =>
+      attr.getKey -> attr.getValue
     }: _*)
     Some(result)
   }
@@ -161,7 +167,8 @@ class HtmlElement private (
     else Option(result)
   }
 
-  override def href = attr("abs:href") //TODO: if this is identical to the uri itself, it should be considered an inline/invalid link and have None output
+  override def href =
+    attr("abs:href") //TODO: if this is identical to the uri itself, it should be considered an inline/invalid link and have None output
 
   override def src = attr("abs:src")
 

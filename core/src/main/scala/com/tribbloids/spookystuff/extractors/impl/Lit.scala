@@ -20,13 +20,15 @@ case class Lit[T, +R](value: R, dataType: DataType) extends Static[T, R] with ID
   def valueOpt: Option[R] = Option(value)
 
   override lazy val toString = valueOpt
-    .map (_.toString)
+    .map(_.toString)
     .getOrElse("NULL")
 
-  override val partialFunction: PartialFunction[T, R] = Unlift({ _: T => valueOpt})
+  override val partialFunction: PartialFunction[T, R] = Unlift({ _: T =>
+    valueOpt
+  })
 }
 
-object Lit extends Relay_>>[Lit[_,_]] {
+object Lit extends Relay_>>[Lit[_, _]] {
 
   def apply[T: TypeTag](v: T): Lit[FR, T] = {
     apply[FR, T](v, UnreifiedScalaType.forType[T])

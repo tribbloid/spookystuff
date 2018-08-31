@@ -7,25 +7,23 @@ import org.slf4j.LoggerFactory
 
 import scala.reflect.ClassTag
 
-object FallbackSerializer {
-
-
-}
+object FallbackSerializer {}
 
 // fallback mechanism that works for any java object
 abstract class FallbackSerializer(
-                                   sparkSerializer: org.apache.spark.serializer.Serializer =
-                                   FlowUtils.defaultJavaSerializer
-                                 ) extends Serializer[Any] {
+    sparkSerializer: org.apache.spark.serializer.Serializer = FlowUtils.defaultJavaSerializer
+) extends Serializer[Any] {
 
   val VID = -47597349821L
 
   def deserialize(implicit format: Formats): PartialFunction[(TypeInfo, JValue), Any] = {
-    Function.unlift{
+    Function.unlift {
       case (ti, JString(str)) =>
-        LoggerFactory.getLogger(this.getClass).info(
-          s"JSON === [${this.getClass.getSimpleName}] ==> Object"
-        )
+        LoggerFactory
+          .getLogger(this.getClass)
+          .info(
+            s"JSON === [${this.getClass.getSimpleName}] ==> Object"
+          )
         try {
           val bytes = new Base64Wrapper(str.trim).blob
 
@@ -36,8 +34,7 @@ abstract class FallbackSerializer(
             ByteBuffer.wrap(bytes)
           )
           Some(de)
-        }
-        catch {
+        } catch {
           case e: Exception =>
             None
         }
@@ -49,9 +46,11 @@ abstract class FallbackSerializer(
   def serialize(implicit format: Formats): PartialFunction[Any, JValue] = {
     Function.unlift {
       case v: Serializable =>
-        LoggerFactory.getLogger(this.getClass).info(
-          s"Object === [${this.getClass.getSimpleName}] ==> JSON"
-        )
+        LoggerFactory
+          .getLogger(this.getClass)
+          .info(
+            s"Object === [${this.getClass.getSimpleName}] ==> JSON"
+          )
         //        try {
         //          val result = Extraction.decompose(v)(format)
         //          Some(result)
@@ -65,8 +64,7 @@ abstract class FallbackSerializer(
           val str = new Base64Wrapper(buffer.array()).asBase64Str
 
           Some(JString(str))
-        }
-        catch {
+        } catch {
           case e: Throwable =>
             None
         }

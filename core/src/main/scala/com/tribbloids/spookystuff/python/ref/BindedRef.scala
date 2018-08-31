@@ -10,12 +10,11 @@ trait BindedRef extends PyRef with LocalCleanable {
 
   @transient var _driver: PythonDriver = _
   def driver = this.synchronized {
-    Option(_driver).getOrElse{
+    Option(_driver).getOrElse {
       val v = new PythonDriver(
         driverTemplate.pythonExe,
         driverTemplate.autoImports,
-        _lifespan = new Lifespan.JVM(
-          nameOpt = Some(this.getClass.getSimpleName))
+        _lifespan = new Lifespan.JVM(nameOpt = Some(this.getClass.getSimpleName))
       )
       _driver = v
       v
@@ -26,9 +25,8 @@ trait BindedRef extends PyRef with LocalCleanable {
     require(driverToBindingsAlive.forall(_._1 == driver), "can only be bind to one driver")
     super._Py(driver)
   }
-  def PYOpt: Option[PyBinding] = Option(_driver).map {
-    driver =>
-      super._Py(driver)
+  def PYOpt: Option[PyBinding] = Option(_driver).map { driver =>
+    super._Py(driver)
   }
 
   def stopDriver(): Unit = {
@@ -37,9 +35,9 @@ trait BindedRef extends PyRef with LocalCleanable {
   }
 
   override def _Py(
-                    driver: PythonDriver,
-                    spookyOpt: Option[SpookyContext] = None
-                  ): Binding = {
+      driver: PythonDriver,
+      spookyOpt: Option[SpookyContext] = None
+  ): Binding = {
     throw new UnsupportedOperationException("NOT ALLOWED! use PY instead")
   }
 

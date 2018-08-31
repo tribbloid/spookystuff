@@ -95,7 +95,10 @@ object Xml {
     def isLeaf(node: Node) = {
       def descendant(n: Node): List[Node] = n match {
         case g: Group => g.nodes.toList.flatMap(x => x :: descendant(x))
-        case _ => n.child.toList.flatMap { x => x :: descendant(x) }
+        case _ =>
+          n.child.toList.flatMap { x =>
+            x :: descendant(x)
+          }
       }
 
       !descendant(node).find(_.isInstanceOf[Elem]).isDefined
@@ -117,28 +120,33 @@ object Xml {
 
     def toJValue(x: XElem): JValue = x match {
       case XValue(s) => JString(s.trim)
-      case XLeaf((name, value), attrs) => (value, attrs) match {
-        case (_, Nil) => toJValue(value)
-        case (XValue(""), xs) => JObject(mkAttributes(xs))
-        case (_, xs) => JObject((name, toJValue(value)) :: mkAttributes(xs))
-      }
+      case XLeaf((name, value), attrs) =>
+        (value, attrs) match {
+          case (_, Nil)         => toJValue(value)
+          case (XValue(""), xs) => JObject(mkAttributes(xs))
+          case (_, xs)          => JObject((name, toJValue(value)) :: mkAttributes(xs))
+        }
       case XNode(xs, attrs) => JObject(mkFields(xs) ++ mkAttributes(attrs))
-      case XArray(elems) => JArray(elems.map(toJValue))
+      case XArray(elems)    => JArray(elems.map(toJValue))
     }
 
-    def mkAttributes(xs: List[(String, XElem)]) = mkFields(xs.map{
-      v =>
+    def mkAttributes(xs: List[(String, XElem)]) =
+      mkFields(xs.map { v =>
         ("@" + v._1) -> v._2
-    })
+      })
 
     def mkFields(xs: List[(String, XElem)]) =
-      xs.flatMap { case (name, value) => (value, toJValue(value)) match {
-        // This special case is needed to flatten nested objects which resulted from
-        // XML attributes. Flattening keeps transformation more predictable.
-        // <a><foo id="1">x</foo></a> -> {"a":{"foo":{"foo":"x","id":"1"}}} vs
-        // <a><foo id="1">x</foo></a> -> {"a":{"foo":"x","id":"1"}}
-        case (XLeaf(v, x :: xs), o: JObject) => o.obj
-        case (_, json) => JField(name, json) :: Nil }}
+      xs.flatMap {
+        case (name, value) =>
+          (value, toJValue(value)) match {
+            // This special case is needed to flatten nested objects which resulted from
+            // XML attributes. Flattening keeps transformation more predictable.
+            // <a><foo id="1">x</foo></a> -> {"a":{"foo":{"foo":"x","id":"1"}}} vs
+            // <a><foo id="1">x</foo></a> -> {"a":{"foo":"x","id":"1"}}
+            case (XLeaf(v, x :: xs), o: JObject) => o.obj
+            case (_, json)                       => JField(name, json) :: Nil
+          }
+      }
 
     def buildNodes(xml: NodeSeq): List[XElem] = xml match {
       case n: Node =>
@@ -161,8 +169,8 @@ object Xml {
 
     buildNodes(xml) match {
       case List(x @ XLeaf(_, _ :: _)) => toJValue(x)
-      case List(x) => JObject(JField(nameOf(xml.head), toJValue(x)) :: Nil)
-      case x => JArray(x.map(toJValue))
+      case List(x)                    => JObject(JField(nameOf(xml.head), toJValue(x)) :: Nil)
+      case x                          => JArray(x.map(toJValue))
     }
   }
 
@@ -192,7 +200,7 @@ object Xml {
         // We need to build our attributes MetaData object, if we have any.
         var attributes: MetaData = xml.Null
 
-        for ( field <- fields ) {
+        for (field <- fields) {
           field match {
             case (n, v) if n.startsWith("@") => {
               // If our name (key) starts with "@", remove the "@" and create our attribute
@@ -203,32 +211,38 @@ object Xml {
           }
         }
 
-        new XmlNode(name, fields flatMap {
-          // Only "toXml" fields that don't start with an "@", since we already handled those as attributes above.
-          case (n, v) if !n.startsWith("@") => toXml(n, v)
-          case _ => Text("")
-        }, attributes)
-      case JArray(xs) => xs flatMap { v => toXml(name, v) }
-      case JInt(x) => new XmlElem(name, x.toString)
-      case JDouble(x) => new XmlElem(name, x.toString)
+        new XmlNode(
+          name,
+          fields flatMap {
+            // Only "toXml" fields that don't start with an "@", since we already handled those as attributes above.
+            case (n, v) if !n.startsWith("@") => toXml(n, v)
+            case _                            => Text("")
+          },
+          attributes
+        )
+      case JArray(xs) =>
+        xs flatMap { v =>
+          toXml(name, v)
+        }
+      case JInt(x)     => new XmlElem(name, x.toString)
+      case JDouble(x)  => new XmlElem(name, x.toString)
       case JDecimal(x) => new XmlElem(name, x.toString)
-      case JString(x) => new XmlElem(name, x)
-      case JBool(x) => new XmlElem(name, x.toString)
-      case JNull => new XmlElem(name, "null")
-      case JNothing => Text("")
+      case JString(x)  => new XmlElem(name, x)
+      case JBool(x)    => new XmlElem(name, x.toString)
+      case JNull       => new XmlElem(name, "null")
+      case JNothing    => Text("")
     }
 
     json match {
       case JObject(fields) => fields flatMap { case (n, v) => toXml(n, v) }
-      case x => toXml("root", x)
+      case x               => toXml("root", x)
     }
   }
 
   class XmlNode(name: String, children: Seq[Node], attributes: MetaData)
-    extends Elem(null, name, attributes, TopScope, false, children :_*)
+      extends Elem(null, name, attributes, TopScope, false, children: _*)
 
-  class XmlElem(name: String, value: String)
-    extends Elem(null, name, xml.Null, TopScope, false, Text(value))
+  class XmlElem(name: String, value: String) extends Elem(null, name, xml.Null, TopScope, false, Text(value))
 
   val baseDataFormatsFactory = new CommonUtils.ThreadLocal(
     Seq(
@@ -240,16 +254,16 @@ object Xml {
 
   val baseFormat = XMLDefaultFormats
 
-  def xmlFormats(base: Formats = baseFormat) = base +
-    StringToNumberDeserializer +
-    EmptyStringToEmptyObjectDeserializer +
-    ElementToArrayDeserializer +
-    DurationJSONSerializer
+  def xmlFormats(base: Formats = baseFormat) =
+    base +
+      StringToNumberDeserializer +
+      EmptyStringToEmptyObjectDeserializer +
+      ElementToArrayDeserializer +
+      DurationJSONSerializer
   //  +
   //    FallbackJSONSerializer
 
   lazy val defaultFormats = xmlFormats()
-
 
   val defaultXMLPrinter = new scala.xml.PrettyPrinter(80, 2)
 }
@@ -259,14 +273,12 @@ class CompoundDateFormat() extends SimpleDateFormat("abc")
 object XMLDefaultFormats extends DefaultFormats {
 
   override val dateFormat: DateFormat = new DateFormat {
-    def parse(s: String) = dateFormats.flatMap {
-      format =>
+    def parse(s: String) =
+      dateFormats.flatMap { format =>
         Try {
           Some(format.parse(s))
-        }
-          .toOption
-    }
-      .head
+        }.toOption
+      }.head
 
     def format(d: Date) = dateFormats.head.format(d)
   }

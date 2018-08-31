@@ -47,7 +47,7 @@ trait StepLike extends FlowComponent {
 
 object Step extends MessageRelay[Step] {
 
-  val paramMap: Option[JValue]  = None
+  val paramMap: Option[JValue] = None
 
   override def toMessage_>>(v: Step): M = {
     import org.json4s.JsonDSL._
@@ -75,16 +75,15 @@ object Step extends MessageRelay[Step] {
     )
   }
 
-
   case class M(
-                id: String,
-                name: String,
-                tag: Set[String],
-                forceOutput: Option[String],
-                implementation: String,
-                uid: Option[String] = None,
-                params: Option[JValue] = None
-              ) extends MessageAPI_<< {
+      id: String,
+      name: String,
+      tag: Set[String],
+      forceOutput: Option[String],
+      implementation: String,
+      uid: Option[String] = None,
+      params: Option[JValue] = None
+  ) extends MessageAPI_<< {
 
     override lazy val toProto_<< : Step = {
 
@@ -108,50 +107,59 @@ object Step extends MessageRelay[Step] {
 //      implicit val format = Xml.defaultFormats
       params match {
         case JObject(pairs) =>
-          pairs.foreach { case (paramName, jsonValue) =>
-            val param = instance.getParam(paramName)
-            val valueTry = Try {
-              param.jsonDecode(compact(render(jsonValue)))
-            }
-              .orElse{Try{
-                param.jsonDecode(compact(render(JArray(List(jsonValue)))))
-              }}
+          pairs.foreach {
+            case (paramName, jsonValue) =>
+              val param = instance.getParam(paramName)
+              val valueTry = Try {
+                param.jsonDecode(compact(render(jsonValue)))
+              }.orElse {
+                  Try {
+                    param.jsonDecode(compact(render(JArray(List(jsonValue)))))
+                  }
+                }
 
-            val value = jsonValue match {
-              case js: JString =>
-                valueTry
-                  .orElse{Try{
-                    param.jsonDecode(compact(render(JInt(js.values.toLong))))
-                  }}
-                  .orElse{Try{
-                    param.jsonDecode(compact(render(JDouble(js.values.toDouble))))
-                  }}
-                  .orElse{Try{
-                    param.jsonDecode(compact(render(JDecimal(js.values.toDouble))))
-                  }}
-                  .orElse{Try{
-                    param.jsonDecode(compact(render(JBool(js.values.toBoolean))))
-                  }}
-                  .get
-              case _ =>
-                valueTry.get
-            }
+              val value = jsonValue match {
+                case js: JString =>
+                  valueTry
+                    .orElse {
+                      Try {
+                        param.jsonDecode(compact(render(JInt(js.values.toLong))))
+                      }
+                    }
+                    .orElse {
+                      Try {
+                        param.jsonDecode(compact(render(JDouble(js.values.toDouble))))
+                      }
+                    }
+                    .orElse {
+                      Try {
+                        param.jsonDecode(compact(render(JDecimal(js.values.toDouble))))
+                      }
+                    }
+                    .orElse {
+                      Try {
+                        param.jsonDecode(compact(render(JBool(js.values.toBoolean))))
+                      }
+                    }
+                    .get
+                case _ =>
+                  valueTry.get
+              }
 
-            instance.set(param, value)
+              instance.set(param, value)
           }
         case _ =>
-          throw new IllegalArgumentException(
-            s"Cannot recognize JSON metadata:\n ${pretty(params)}.")
+          throw new IllegalArgumentException(s"Cannot recognize JSON metadata:\n ${pretty(params)}.")
       }
     }
   }
 }
 
 case class Step(
-                 stage: NamedStage,
-                 dependencyIDs: Seq[String] = Seq(),
-                 usageIDs: Set[String] = Set.empty
-               ) extends StepLike {
+    stage: NamedStage,
+    dependencyIDs: Seq[String] = Seq(),
+    usageIDs: Set[String] = Set.empty
+) extends StepLike {
 
   {
     assert(this.id != PASSTHROUGH.id)
@@ -201,10 +209,11 @@ case class SimpleStepWrapper(override val self: StepLike) extends StepWrapperLik
 trait Connector extends StepLike
 
 case class Source(
-                   name: String,
-                   dataTypes: Set[DataType] = Set.empty, //used to validate & fail early when stages for different data types are appended.
-                   usageIDs: Set[String] = Set.empty
-                 ) extends ColumnName(name) with Connector {
+    name: String,
+    dataTypes: Set[DataType] = Set.empty, //used to validate & fail early when stages for different data types are appended.
+    usageIDs: Set[String] = Set.empty
+) extends ColumnName(name)
+    with Connector {
 
   {
     assert(this.id != PASSTHROUGH.id)

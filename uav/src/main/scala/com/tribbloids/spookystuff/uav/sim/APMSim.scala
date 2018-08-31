@@ -16,13 +16,12 @@ object APMSim {
   final val SPEEDUP = 5
 
   def next(
-            extraArgs: Seq[String],
-            vType: String = "copter",
-            version: String = "3.3"
-          ): APMSim = this.synchronized {
-    val nextINumOpt = (0 to 254).find{
-      i =>
-        !existing.map(_.iNum).toSeq.contains(i)
+      extraArgs: Seq[String],
+      vType: String = "copter",
+      version: String = "3.3"
+  ): APMSim = this.synchronized {
+    val nextINumOpt = (0 to 254).find { i =>
+      !existing.map(_.iNum).toSeq.contains(i)
     }
     val nextINum = nextINumOpt
       .getOrElse(
@@ -33,13 +32,15 @@ object APMSim {
 }
 
 case class APMSim private (
-                            iNum: Int,
-                            extraArgs: Seq[String],
-                            rate: Int = APMSim.FRAMERATE,
-                            speedup: Int = APMSim.SPEEDUP,
-                            vType: String = "copter",
-                            version: String = "3.3"
-                          ) extends CaseInstanceRef with BindedRef with LocalCleanable {
+    iNum: Int,
+    extraArgs: Seq[String],
+    rate: Int = APMSim.FRAMERATE,
+    speedup: Int = APMSim.SPEEDUP,
+    vType: String = "copter",
+    version: String = "3.3"
+) extends CaseInstanceRef
+    with BindedRef
+    with LocalCleanable {
 
   APMSim.existing += this
 

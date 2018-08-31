@@ -8,11 +8,11 @@ import scala.collection.mutable
   * Created by peng on 26/02/17.
   */
 case class SearchHistory(
-                          stack: mutable.ArrayBuffer[SearchAttempt[_]] = mutable.ArrayBuffer.empty,
-                          failed: mutable.Set[SearchAttempt[_]] = mutable.Set.empty,
-                          var hops: Int = 0,
-                          var recursions: Int = 0
-                        ) {
+    stack: mutable.ArrayBuffer[SearchAttempt[_]] = mutable.ArrayBuffer.empty,
+    failed: mutable.Set[SearchAttempt[_]] = mutable.Set.empty,
+    var hops: Int = 0,
+    var recursions: Int = 0
+) {
 
   override def toString: String = {
     s"hops=$hops recursions=$recursions"
@@ -25,8 +25,8 @@ case class SearchHistory(
   def isAllowed(triplet: SearchAttempt[_]) = !isBlacklisted(triplet)
 
   def getCoordinate(
-                     attempt: SearchAttempt[CoordinateSystem]
-                   ): Option[attempt.system.Coordinate] = {
+      attempt: SearchAttempt[CoordinateSystem]
+  ): Option[attempt.system.Coordinate] = {
 
     recursions += 1
 
@@ -45,8 +45,7 @@ case class SearchHistory(
         case _ =>
       }
       result
-    }
-    finally {
+    } finally {
       assert(stack.last == attempt)
       assert(stack.count(_ == attempt) == 1)
       stack -= attempt

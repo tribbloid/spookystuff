@@ -15,10 +15,10 @@ class TestAPMQuad extends APMQuadFixture {
     * this test assumes that all test runs on a single machine, so all SITL instance number has to be different
     */
   it("can create many APM instances with different iNum") {
-    val iNums = sc.runEverywhere(alsoOnDriver = false) {
-      _ =>
+    val iNums = sc
+      .runEverywhere(alsoOnDriver = false) { _ =>
         APMSim.existing.map(_.iNum)
-    }
+      }
       .flatMap(_.toSeq)
 
     println(s"iNums: ${iNums.mkString(", ")}")
@@ -32,8 +32,7 @@ class TestAPMQuad extends APMQuadFixture {
 
     import scala.collection.JavaConverters._
 
-    val processes = JProcesses.getProcessList()
-      .asScala
+    val processes = JProcesses.getProcessList().asScala
 
     //ensure all apm processes are running
     val apmPs = processes.filter(_.getName == "apm")

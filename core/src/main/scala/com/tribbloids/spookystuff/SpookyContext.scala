@@ -18,19 +18,19 @@ import org.slf4j.LoggerFactory
 import scala.collection.immutable.ListMap
 import scala.language.implicitConversions
 
-case class SpookyContext (
-                           @transient sqlContext: SQLContext, //can't be used on executors, TODO: change to SparkSession
-                           // TODO: change to Option or SparkContext
-                           var _configurations: Submodules[AbstractConf] = Submodules(), //always broadcasted
-                           _metrics: Submodules[Metrics] = Submodules() //accumulators cannot be broadcasted,
-                         ) extends ShippingMarks {
+case class SpookyContext(
+    @transient sqlContext: SQLContext, //can't be used on executors, TODO: change to SparkSession
+    // TODO: change to Option or SparkContext
+    var _configurations: Submodules[AbstractConf] = Submodules(), //always broadcasted
+    _metrics: Submodules[Metrics] = Submodules() //accumulators cannot be broadcasted,
+) extends ShippingMarks {
 
   import sqlContext.sparkSession.implicits._
 
   def this(
-            sqlContext: SQLContext,
-            conf: SpookyConf
-          ) {
+      sqlContext: SQLContext,
+      conf: SpookyConf
+  ) {
     this(sqlContext, _configurations = Submodules(conf))
   }
 
@@ -56,8 +56,7 @@ case class SpookyContext (
 
     try {
       deployDrivers()
-    }
-    catch {
+    } catch {
       case e: Throwable =>
         LoggerFactory.getLogger(this.getClass).error("Driver deployment fail on SpookyContext initialization", e)
     }
@@ -70,13 +69,11 @@ case class SpookyContext (
   def configurations: Submodules[AbstractConf] = {
     if (isShipped) {
       broadcastedConfigurations.value
-    }
-    else {
+    } else {
       _configurations.buildAll[AbstractConf]()
 
-      _configurations = _configurations.transform {
-        conf =>
-          conf.importFrom(sparkContext.getConf)
+      _configurations = _configurations.transform { conf =>
+        conf.importFrom(sparkContext.getConf)
       }
       _configurations
     }
@@ -96,15 +93,15 @@ case class SpookyContext (
     requireNotShipped()
     implicit val ctg = ev.ctg
     _configurations.transform {
-      case _: T => v
-      case v@ _ => v
+      case _: T  => v
+      case v @ _ => v
     }
   }
 
   def spookyConf_=(v: SpookyConf): Unit = {
     setConf(v)
   }
-  def dirConf_= (v: DirConf): Unit = {
+  def dirConf_=(v: DirConf): Unit = {
     setConf(v)
   }
 
@@ -138,11 +135,10 @@ case class SpookyContext (
   // may take a long time then fail, only attempted once
   def deployDrivers(): Unit = {
     val trials = spookyConf.driverFactories
-      .map {
-        v =>
-          scala.util.Try {
-            v.deployGlobally(this)
-          }
+      .map { v =>
+        scala.util.Try {
+          v.deployGlobally(this)
+        }
       }
     TreeException.&&&(trials)
   }
@@ -156,7 +152,7 @@ case class SpookyContext (
 
   def spookyMetrics: SpookyMetrics = getMetrics[SpookyMetrics]
 
-  def zeroMetrics(): SpookyContext ={
+  def zeroMetrics(): SpookyContext = {
     metrics.foreach {
       _.zero()
     }
@@ -180,16 +176,16 @@ case class SpookyContext (
 
   //TODO: merge after 2.0.x
   def create[T: TypeTag](
-                          seq: TraversableOnce[T]
-                        ): FetchedDataset = {
+      seq: TraversableOnce[T]
+  ): FetchedDataset = {
 
     implicit val ctg = ScalaType.fromTypeTag[T].asClassTag
     this.dsl.rddToFetchedDataset(this.sqlContext.sparkContext.parallelize(seq.toSeq))
   }
   def create[T: TypeTag](
-                          seq: TraversableOnce[T],
-                          numSlices: Int
-                        ): FetchedDataset = {
+      seq: TraversableOnce[T],
+      numSlices: Int
+  ): FetchedDataset = {
 
     implicit val ctg = ScalaType.fromTypeTag[T].asClassTag
     this.dsl.rddToFetchedDataset(this.sqlContext.sparkContext.parallelize(seq.toSeq, numSlices))
@@ -201,8 +197,7 @@ case class SpookyContext (
 
     try {
       fn(session)
-    }
-    finally {
+    } finally {
       session.tryClean()
     }
   }
@@ -220,17 +215,15 @@ case class SpookyContext (
         .toMapRDD()
 
       val self: SquashedFetchedRDD = mapRDD
-        .map {
-          map =>
-            SquashedFetchedRow(
-              Option(ListMap(map.toSeq: _*))
-                .getOrElse(ListMap())
-                .map(tuple => (Field(tuple._1), tuple._2))
-            )
+        .map { map =>
+          SquashedFetchedRow(
+            Option(ListMap(map.toSeq: _*))
+              .getOrElse(ListMap())
+              .map(tuple => (Field(tuple._1), tuple._2))
+          )
         }
-      val fields = df.schema.fields.map {
-        sf =>
-          Field(sf.name) -> sf.dataType
+      val fields = df.schema.fields.map { sf =>
+        Field(sf.name) -> sf.dataType
       }
       new FetchedDataset(
         self,
@@ -246,16 +239,16 @@ case class SpookyContext (
 
       rdd match {
         // RDD[Map] => JSON => DF => ..
-        case _ if ttg.tpe <:< typeOf[Map[_,_]] =>
+        case _ if ttg.tpe <:< typeOf[Map[_, _]] =>
           //        classOf[Map[_,_]].isAssignableFrom(classTag[T].runtimeClass) => //use classOf everywhere?
           val canonRdd = rdd.map(
-            map => map.asInstanceOf[Map[_,_]].canonizeKeysToColumnNames
+            map => map.asInstanceOf[Map[_, _]].canonizeKeysToColumnNames
           )
 
-          val jsonDS = sqlContext.createDataset[String](canonRdd.map(
-            map =>
-              MessageWriter(map).compactJSON
-          ))
+          val jsonDS = sqlContext.createDataset[String](
+            canonRdd.map(
+              map => MessageWriter(map).compactJSON
+            ))
           val dataFrame = sqlContext.read.json(jsonDS)
           dataFrameToPageRowRDD(dataFrame)
 
@@ -272,12 +265,11 @@ case class SpookyContext (
 
         // RDD[T] => RDD('_ -> T) => ...
         case _ =>
-          val self = rdd.map{
-            str =>
-              var cells = ListMap[Field,Any]()
-              if (str!=null) cells = cells + (Field("_") -> str)
+          val self = rdd.map { str =>
+            var cells = ListMap[Field, Any]()
+            if (str != null) cells = cells + (Field("_") -> str)
 
-              SquashedFetchedRow(cells)
+            SquashedFetchedRow(cells)
           }
           new FetchedDataset(
             self,

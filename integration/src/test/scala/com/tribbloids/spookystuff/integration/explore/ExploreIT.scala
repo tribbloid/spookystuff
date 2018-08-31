@@ -30,8 +30,7 @@ class ExploreIT extends IntegrationFixture {
         S"notexist" ~ 'A.*
       )
       .flatSelect('A, ordinalField = 'notexist_key)( //this is added to ensure that temporary joinKey in KV store won't be used.
-        'A.attr("class") ~ 'notexist_class
-      )
+        'A.attr("class") ~ 'notexist_class)
       .toDF(sort = true)
 
     explored.schema.treeString.shouldBe(

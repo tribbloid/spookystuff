@@ -25,16 +25,13 @@ import org.mozilla.universalchardet.UniversalDetector
 //use to genterate a lookup key for each page so
 @SerialVersionUID(612503421395L)
 case class DocUID(
-                   backtrace: Trace,
-                   output: Export,
-                   //                    sessionStartTime: Long,
-                   blockIndex: Int = 0,
-                   blockSize: Int = 1
-                 )(//number of pages in a block output,
-                   val name: String = Option(output).map(_.name).orNull
-                 ) {
-
-}
+    backtrace: Trace,
+    output: Export,
+    //                    sessionStartTime: Long,
+    blockIndex: Int = 0,
+    blockSize: Int = 1
+)( //number of pages in a block output,
+  val name: String = Option(output).map(_.name).orNull) {}
 
 class DocOptionUDT extends ScalaUDT[DocOption]
 
@@ -45,9 +42,9 @@ trait DocOption extends Serializable {
 
   def uid: DocUID
   def updated(
-               uid: DocUID = this.uid,
-               cacheLevel: DocCacheLevel.Value = this.cacheLevel
-             ): this.type
+      uid: DocUID = this.uid,
+      cacheLevel: DocCacheLevel.Value = this.cacheLevel
+  ): this.type
 
   def cacheLevel: DocCacheLevel.Value
 
@@ -61,8 +58,9 @@ trait DocOption extends Serializable {
 
   def laterThan(v2: DocOption): Boolean = this.timeMillis > v2.timeMillis
 
-  def laterOf(v2: DocOption): DocOption = if (laterThan(v2)) this
-  else v2
+  def laterOf(v2: DocOption): DocOption =
+    if (laterThan(v2)) this
+    else v2
 
   type RootType
   def root: RootType
@@ -71,44 +69,46 @@ trait DocOption extends Serializable {
 
 //Merely a placeholder if a conditional block is not applicable
 case class NoDoc(
-                  backtrace: Trace,
-                  override val timeMillis: Long = System.currentTimeMillis(),
-                  override val cacheLevel: DocCacheLevel.Value = DocCacheLevel.All,
-                  override val metadata: ResourceMD = Map.empty[String, Any]
-                ) extends Serializable with DocOption {
+    backtrace: Trace,
+    override val timeMillis: Long = System.currentTimeMillis(),
+    override val cacheLevel: DocCacheLevel.Value = DocCacheLevel.All,
+    override val metadata: ResourceMD = Map.empty[String, Any]
+) extends Serializable
+    with DocOption {
 
   @transient override lazy val uid: DocUID = DocUID(backtrace, null, 0, 1)()
 
   override def updated(
-                        uid: DocUID = this.uid,
-                        cacheLevel: DocCacheLevel.Value = this.cacheLevel
-                      ) = this.copy(backtrace = uid.backtrace, cacheLevel = cacheLevel).asInstanceOf[this.type ]
+      uid: DocUID = this.uid,
+      cacheLevel: DocCacheLevel.Value = this.cacheLevel
+  ) = this.copy(backtrace = uid.backtrace, cacheLevel = cacheLevel).asInstanceOf[this.type]
 
   override type RootType = Unit
   override def root: Unit = {}
 }
 
 case class DocWithError(
-                         delegate: Doc,
-                         header: String = "",
-                         override val cause: Throwable = null
-                       ) extends ActionException(
-
-  header + delegate.root.formattedCode.map(
-    "\n" + _
-  )
-    .getOrElse(""),
-  cause
-) with  DocOption {
+    delegate: Doc,
+    header: String = "",
+    override val cause: Throwable = null
+) extends ActionException(
+      header + delegate.root.formattedCode
+        .map(
+          "\n" + _
+        )
+        .getOrElse(""),
+      cause
+    )
+    with DocOption {
 
   override def timeMillis: Long = delegate.timeMillis
 
   override def uid: DocUID = delegate.uid
 
   override def updated(
-                        uid: DocUID = this.uid,
-                        cacheLevel: DocCacheLevel.Value = this.cacheLevel
-                      ) = {
+      uid: DocUID = this.uid,
+      cacheLevel: DocCacheLevel.Value = this.cacheLevel
+  ) = {
     this.copy(delegate = delegate.updated(uid, cacheLevel)).asInstanceOf[this.type]
   }
 
@@ -127,30 +127,28 @@ object Doc {
 
   val defaultCSVFormat = CSVFormat.DEFAULT
 }
-
-
 @SerialVersionUID(94865098324L)
 @SQLUserDefinedType(udt = classOf[UnstructuredUDT])
 case class Doc(
-                override val uid: DocUID,
-
-                uri: String, //redirected
-                raw: Array[Byte],
-                declaredContentType: Option[String] = None,
-                //                 cookie: Seq[SerializableCookie] = Nil,
-                override val timeMillis: Long = System.currentTimeMillis(),
-                saved: scala.collection.mutable.Set[String] = scala.collection.mutable.Set(), //TODO: move out of constructor
-                override val cacheLevel: DocCacheLevel.Value = DocCacheLevel.All,
-                httpStatus: Option[StatusLine] = None,
-                override val metadata: ResourceMD = ResourceMD.empty //for customizing parsing TODO: remove, delegate to CSVElement.
-              ) extends DocOption with IDMixin {
+    override val uid: DocUID,
+    uri: String, //redirected
+    raw: Array[Byte],
+    declaredContentType: Option[String] = None,
+    //                 cookie: Seq[SerializableCookie] = Nil,
+    override val timeMillis: Long = System.currentTimeMillis(),
+    saved: scala.collection.mutable.Set[String] = scala.collection.mutable.Set(), //TODO: move out of constructor
+    override val cacheLevel: DocCacheLevel.Value = DocCacheLevel.All,
+    httpStatus: Option[StatusLine] = None,
+    override val metadata: ResourceMD = ResourceMD.empty //for customizing parsing TODO: remove, delegate to CSVElement.
+) extends DocOption
+    with IDMixin {
 
   lazy val _id = (uid, uri, declaredContentType, timeMillis, httpStatus.toString)
 
   override def updated(
-                        uid: DocUID = this.uid,
-                        cacheLevel: DocCacheLevel.Value = this.cacheLevel
-                      ): Doc.this.type = this.copy(uid = uid, cacheLevel = cacheLevel).asInstanceOf[this.type]
+      uid: DocUID = this.uid,
+      cacheLevel: DocCacheLevel.Value = this.cacheLevel
+  ): Doc.this.type = this.copy(uid = uid, cacheLevel = cacheLevel).asInstanceOf[this.type]
 
   private def detectCharset(contentType: ContentType): String = {
     val charsetD = new UniversalDetector(null)
@@ -169,8 +167,7 @@ case class Doc(
       if (contentType.getMimeType.contains("text")) Const.defaultTextCharset
       else if (contentType.getMimeType.contains("application")) Const.defaultApplicationCharset
       else Const.defaultApplicationCharset
-    }
-    else detected
+    } else detected
   }
 
   @transient lazy val parsedContentType: ContentType = {
@@ -185,8 +182,7 @@ case class Doc(
         if (ct.getCharset == null) {
 
           ct.withCharset(detectCharset(ct))
-        }
-        else ct
+        } else ct
       case None =>
         val metadata = new Metadata()
         val slash: Int = uri.lastIndexOf('/')
@@ -203,10 +199,8 @@ case class Doc(
           if (result.getCharset == null) {
 
             result.withCharset(detectCharset(result))
-          }
-          else result
-        }
-        finally {
+          } else result
+        } finally {
           stream.close()
         }
     }
@@ -220,23 +214,21 @@ case class Doc(
     val contentStr = new String(raw, effectiveCharset)
     if (mimeType.contains("html") || mimeType.contains("xml") || mimeType.contains("directory")) {
       HtmlElement(contentStr, uri) //not serialize, parsing is faster
-    }
-    else if (mimeType.contains("json")) {
+    } else if (mimeType.contains("json")) {
       JsonElement(contentStr, null, uri) //not serialize, parsing is faster
-    }
-    else if (mimeType.contains("csv")) {
-      val csvFormat: CSVFormat = this.metadata.map.get(Doc.CSV_FORMAT).map{
-        case v: CSVFormat => v
-        case v@ _ => CSVFormat.valueOf(v.toString)
-      }
+    } else if (mimeType.contains("csv")) {
+      val csvFormat: CSVFormat = this.metadata.map
+        .get(Doc.CSV_FORMAT)
+        .map {
+          case v: CSVFormat => v
+          case v @ _        => CSVFormat.valueOf(v.toString)
+        }
         .getOrElse(Doc.defaultCSVFormat)
 
       CSVBlock.apply(contentStr, uri, csvFormat) //not serialize, parsing is faster
-    }
-    else if (mimeType.contains("plain") || mimeType.contains("text")) {
+    } else if (mimeType.contains("plain") || mimeType.contains("text")) {
       PlainElement(contentStr, uri) //not serialize, parsing is faster
-    }
-    else {
+    } else {
       TikaMetadataXMLElement(raw, effectiveCharset, mimeType, uri)
     }
   }
@@ -246,10 +238,9 @@ case class Doc(
   def contentType = parsedContentType.toString
 
   def tikaMimeType = MimeTypes.getDefaultMimeTypes.forName(mimeType)
-  def fileExtensions: Array[String] = tikaMimeType.getExtensions.toArray(Array[String]()).map{
-    str =>
-      if (str.startsWith(".")) str.splitAt(1)._2
-      else str
+  def fileExtensions: Array[String] = tikaMimeType.getExtensions.toArray(Array[String]()).map { str =>
+    if (str.startsWith(".")) str.splitAt(1)._2
+    else str
   }
   def defaultFileExtension: Option[String] = fileExtensions.headOption
 
@@ -270,9 +261,9 @@ case class Doc(
   //---------------------------------------------------------------------------------------------------
 
   def save(
-            pathParts: Seq[String],
-            overwrite: Boolean = false
-          )(spooky: SpookyContext): Unit = {
+      pathParts: Seq[String],
+      overwrite: Boolean = false
+  )(spooky: SpookyContext): Unit = {
 
     val path = CommonUtils.\\\(pathParts: _*)
 
@@ -283,8 +274,7 @@ case class Doc(
       //      if (!overwrite && fs.exists(fullPath)) fullPath = new Path(path + "-" + UUID.randomUUID())
       val fos = try {
         fs.create(fullPath, overwrite)
-      }
-      catch {
+      } catch {
         case e: Throwable =>
           val altPath = new Path(path + "-" + UUID.randomUUID())
           fs.create(altPath, overwrite)
@@ -292,8 +282,7 @@ case class Doc(
 
       try {
         fos.write(raw) //       remember that apache IOUtils is defective for DFS!
-      }
-      finally {
+      } finally {
         fos.close()
       }
 
@@ -302,20 +291,21 @@ case class Doc(
   }
 
   def autoSave(
-                spooky: SpookyContext,
-                overwrite: Boolean = false
-              ): Unit = this.save(
-    spooky.dirConf.autoSave :: spooky.spookyConf.autoSaveFilePath(this).toString :: Nil
-  )(spooky)
+      spooky: SpookyContext,
+      overwrite: Boolean = false
+  ): Unit =
+    this.save(
+      spooky.dirConf.autoSave :: spooky.spookyConf.autoSaveFilePath(this).toString :: Nil
+    )(spooky)
 
   //TODO: merge into cascade retries
   def errorDump(
-                 spooky: SpookyContext,
-                 overwrite: Boolean = false
-               ): Unit = {
+      spooky: SpookyContext,
+      overwrite: Boolean = false
+  ): Unit = {
     val root = this.uid.output match {
       case ss: Screenshot => spooky.dirConf.errorScreenshot
-      case _ => spooky.dirConf.errorDump
+      case _              => spooky.dirConf.errorDump
     }
 
     this.save(
@@ -324,12 +314,12 @@ case class Doc(
   }
 
   def errorDumpLocally(
-                        spooky: SpookyContext,
-                        overwrite: Boolean = false
-                      ): Unit = {
+      spooky: SpookyContext,
+      overwrite: Boolean = false
+  ): Unit = {
     val root = this.uid.output match {
       case ss: Screenshot => spooky.dirConf.errorScreenshotLocal
-      case _ => spooky.dirConf.errorDumpLocal
+      case _              => spooky.dirConf.errorDumpLocal
     }
 
     this.save(

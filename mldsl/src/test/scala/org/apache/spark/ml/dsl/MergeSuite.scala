@@ -7,7 +7,7 @@ class MergeSuite extends AbstractFlowSuite {
   import FlowComponent._
 
   it("merge_> Source doesn't work") {
-    intercept[AssertionError]{
+    intercept[AssertionError] {
       'input >>> new Tokenizer() >>> 'dummy
     }
   }
@@ -21,17 +21,21 @@ class MergeSuite extends AbstractFlowSuite {
   it("merge_> PASSTHROUGH doesn't change the flow") {
     val flow = 'input >>> new Tokenizer() >>> PASSTHROUGH
     val flow2 = 'input >>> new Tokenizer()
-    flow.show(showID = false, compactionOpt = compactionOpt).treeNodeShouldBe(
-      flow2.show(showID = false, compactionOpt = compactionOpt)
-    )
+    flow
+      .show(showID = false, compactionOpt = compactionOpt)
+      .treeNodeShouldBe(
+        flow2.show(showID = false, compactionOpt = compactionOpt)
+      )
   }
 
   it("PASSTHROUGH merge_> Stage doesn't change the flow") {
     val flow1 = 'input >>> (PASSTHROUGH >>> new Tokenizer())
     val flow2 = 'input >>> new Tokenizer()
-    flow1.show(showID = false, compactionOpt = compactionOpt).treeNodeShouldBe(
-      flow2.show(showID = false, compactionOpt = compactionOpt)
-    )
+    flow1
+      .show(showID = false, compactionOpt = compactionOpt)
+      .treeNodeShouldBe(
+        flow2.show(showID = false, compactionOpt = compactionOpt)
+      )
   }
 
   it("merge_> (PASSTHROUGH || Stage) generates 2 heads") {
@@ -39,13 +43,15 @@ class MergeSuite extends AbstractFlowSuite {
       'input
         >-> new Tokenizer()
         >>> (
-        PASSTHROUGH U
-          new StopWordsRemover()
+          PASSTHROUGH U
+            new StopWordsRemover()
         )
         >=> new HashingTF()
-      )
-    flow.show(showID = false, compactionOpt = compactionOpt).treeNodeShouldBe(
-      """
+    )
+    flow
+      .show(showID = false, compactionOpt = compactionOpt)
+      .treeNodeShouldBe(
+        """
         |\ left >
         |> ForwardNode (TAIL>) [input]
         |+- > ForwardNode  [input] > Tokenizer > [input$Tokenizer]
@@ -55,20 +61,20 @@ class MergeSuite extends AbstractFlowSuite {
         |/ right <
         |> ForwardNode (HEAD)(<TAIL) [input$Tokenizer$StopWordsRemover] > HashingTF > [input$Tokenizer$StopWordsRemover$HashingTF]
       """.stripMargin
-    )
+      )
   }
 
   it("declare API is equally effective") {
     val flow1 = (
       new VectorAssembler()
         <<< (new HashingTF()
-        <=< (
-        PASSTHROUGH
-          U new StopWordsRemover()
-        )
-        <<< new Tokenizer()
-        <<< 'input)
-      )
+          <=< (
+            PASSTHROUGH
+              U new StopWordsRemover()
+          )
+          <<< new Tokenizer()
+          <<< 'input)
+    )
     val part1 = declare(
       new Tokenizer() < 'input
     )
@@ -85,18 +91,22 @@ class MergeSuite extends AbstractFlowSuite {
     //      part3 < part2.replicate("_2") < new StopWordsRemover() < part1
     //    )
 
-    flow1.show(showID = false, compactionOpt = compactionOpt).treeNodeShouldBe(
-      flow2.show(showID = false, compactionOpt = compactionOpt)
-    )
+    flow1
+      .show(showID = false, compactionOpt = compactionOpt)
+      .treeNodeShouldBe(
+        flow2.show(showID = false, compactionOpt = compactionOpt)
+      )
   }
 
   it("result of merge_> can be the first operand of merge_<") {
     val flow = new VectorAssembler() <<< (
       'input >>> new Tokenizer() >>> new HashingTF()
-      )
+    )
 
-    flow.show(showID = false, compactionOpt = compactionOpt).treeNodeShouldBe(
-      """
+    flow
+      .show(showID = false, compactionOpt = compactionOpt)
+      .treeNodeShouldBe(
+        """
         |\ left >
         |> ForwardNode (HEAD)(TAIL>) [input$Tokenizer$HashingTF] > VectorAssembler > [input$Tokenizer$HashingTF$VectorAssembler]
         |> ForwardNode (TAIL>) [input]
@@ -114,10 +124,12 @@ class MergeSuite extends AbstractFlowSuite {
     val flow = (
       new HashingTF() <<< new Tokenizer() <<< 'input
         >>> new VectorAssembler()
-      )
+    )
 
-    flow.show(showID = false, compactionOpt = compactionOpt).treeNodeShouldBe(
-      """
+    flow
+      .show(showID = false, compactionOpt = compactionOpt)
+      .treeNodeShouldBe(
+        """
         |\ left >
         |> ForwardNode (TAIL>) [input$Tokenizer] > HashingTF > [input$Tokenizer$HashingTF]
         |+- > ForwardNode (HEAD)(<TAIL) [input$Tokenizer$HashingTF] > VectorAssembler > [input$Tokenizer$HashingTF$VectorAssembler]
@@ -128,7 +140,7 @@ class MergeSuite extends AbstractFlowSuite {
         |   +- > ForwardNode (TAIL>) [input$Tokenizer] > HashingTF > [input$Tokenizer$HashingTF]
         |      +- > ForwardNode (HEAD)(<TAIL) [input$Tokenizer$HashingTF] > VectorAssembler > [input$Tokenizer$HashingTF$VectorAssembler]
       """.stripMargin
-    )
+      )
     flow.show(showID = false, compactionOpt = compactionOpt, asciiArt = true).treeNodeShouldBe()
   }
 
@@ -136,33 +148,37 @@ class MergeSuite extends AbstractFlowSuite {
     val flow1 = (
       new Tokenizer()
         >>> (
-        PASSTHROUGH U
-          new StopWordsRemover()
+          PASSTHROUGH U
+            new StopWordsRemover()
         )
         >=> new HashingTF()
-      )
+    )
     val flow2 = (
       new Tokenizer()
         >>> ((
-        PASSTHROUGH U
-          new StopWordsRemover()
+          PASSTHROUGH U
+            new StopWordsRemover()
         )
-        >=> new HashingTF())
-      )
-
-    flow1.show(showID = false, compactionOpt = compactionOpt).treeNodeShouldBe(
-      flow2.show(showID = false, compactionOpt = compactionOpt)
+          >=> new HashingTF())
     )
+
+    flow1
+      .show(showID = false, compactionOpt = compactionOpt)
+      .treeNodeShouldBe(
+        flow2.show(showID = false, compactionOpt = compactionOpt)
+      )
   }
 
   it("merge_> can append a stage to 2 heads") {
     val flow = (
       ('input1 U 'input2)
         >>> new VectorAssembler()
-      )
+    )
 
-    flow.show(showID = false).treeNodeShouldBe(
-      """
+    flow
+      .show(showID = false)
+      .treeNodeShouldBe(
+        """
         |\ left >
         |> ForwardNode (TAIL>) [input1]
         |+- > ForwardNode (HEAD)(<TAIL) [input1,input2] > VectorAssembler > [VectorAssembler]
@@ -171,7 +187,7 @@ class MergeSuite extends AbstractFlowSuite {
         |/ right <
         |> ForwardNode (HEAD)(<TAIL) [input1,input2] > VectorAssembler > [VectorAssembler]
       """.stripMargin
-    )
+      )
   }
 
   it("merge_< can append a stage to 2 heads") {
@@ -179,10 +195,12 @@ class MergeSuite extends AbstractFlowSuite {
     val flow = (
       new VectorAssembler()
         <<< ('input1 U 'input2)
-      )
+    )
 
-    flow.show(showID = false).treeNodeShouldBe(
-      """
+    flow
+      .show(showID = false)
+      .treeNodeShouldBe(
+        """
         |\ left >
         |> ForwardNode (HEAD)(TAIL>) [input1,input2] > VectorAssembler > [VectorAssembler]
         |/ right <
@@ -191,7 +209,7 @@ class MergeSuite extends AbstractFlowSuite {
         |> ForwardNode (<TAIL) [input2]
         |+- > ForwardNode (HEAD)(TAIL>) [input1,input2] > VectorAssembler > [VectorAssembler]
       """.stripMargin
-    )
+      )
   }
 
   it("merge_> can append a stage to 2 heads from 1 tail") {
@@ -200,15 +218,17 @@ class MergeSuite extends AbstractFlowSuite {
       'input
         >-> new Tokenizer()
         >=> (
-        PASSTHROUGH
-          U new StopWordsRemover()
+          PASSTHROUGH
+            U new StopWordsRemover()
         )
         >=> new HashingTF()
         >>> new VectorAssembler()
-      )
+    )
 
-    flow.show(showID = false, compactionOpt = compactionOpt).treeNodeShouldBe(
-      """
+    flow
+      .show(showID = false, compactionOpt = compactionOpt)
+      .treeNodeShouldBe(
+        """
         |\ left >
         |> ForwardNode (TAIL>) [input]
         |+- > ForwardNode  [input] > Tokenizer > [input$Tokenizer]
@@ -220,7 +240,7 @@ class MergeSuite extends AbstractFlowSuite {
         |/ right <
         |> ForwardNode (HEAD)(<TAIL) [input$Tokenizer$HashingTF,input$Tokenizer$StopWordsRemover$HashingTF] > VectorAssembler > [input$Tokenizer$HashingTF$VectorAssembler]
       """.stripMargin
-    )
+      )
   }
 
   it("merge_< can append a stage to 2 heads from 1 tail") {
@@ -229,15 +249,17 @@ class MergeSuite extends AbstractFlowSuite {
       new VectorAssembler()
         <<< new HashingTF()
         <=< (
-        PASSTHROUGH
-          U new StopWordsRemover()
+          PASSTHROUGH
+            U new StopWordsRemover()
         )
         <=< new Tokenizer()
         <-< 'input
-      )
+    )
 
-    flow.show(showID = false, compactionOpt = compactionOpt).treeNodeShouldBe(
-      """
+    flow
+      .show(showID = false, compactionOpt = compactionOpt)
+      .treeNodeShouldBe(
+        """
         |\ left >
         |> ForwardNode (HEAD)(TAIL>) [input$Tokenizer$StopWordsRemover$HashingTF] > VectorAssembler > [input$Tokenizer$StopWordsRemover$HashingTF$VectorAssembler]
         |/ right <
@@ -249,7 +271,7 @@ class MergeSuite extends AbstractFlowSuite {
         |      +- > ForwardNode  [input$Tokenizer$StopWordsRemover] > HashingTF > [input$Tokenizer$StopWordsRemover$HashingTF]
         |         +- > ForwardNode (HEAD)(TAIL>) [input$Tokenizer$StopWordsRemover$HashingTF] > VectorAssembler > [input$Tokenizer$StopWordsRemover$HashingTF$VectorAssembler]
       """.stripMargin
-    )
+      )
   }
 
   it("merge_> can append a stage to merged heads") {
@@ -257,10 +279,12 @@ class MergeSuite extends AbstractFlowSuite {
       ('input1 U 'input2)
         >>> new VectorAssembler()
         >>> new IndexToString()
-      )
+    )
 
-    flow.show(showID = false, compactionOpt = compactionOpt).treeNodeShouldBe(
-      """
+    flow
+      .show(showID = false, compactionOpt = compactionOpt)
+      .treeNodeShouldBe(
+        """
         |\ left >
         |> ForwardNode (TAIL>) [input1]
         |+- > ForwardNode  [input1,input2] > VectorAssembler > [VectorAssembler]
@@ -271,7 +295,7 @@ class MergeSuite extends AbstractFlowSuite {
         |/ right <
         |> ForwardNode (HEAD)(<TAIL) [VectorAssembler] > IndexToString > [VectorAssembler$IndexToString]
       """.stripMargin
-    )
+      )
   }
 
   it("merge_< can append a stage to merged heads") {
@@ -280,10 +304,12 @@ class MergeSuite extends AbstractFlowSuite {
       new IndexToString()
         <<< new VectorAssembler()
         <<< ('input1 U 'input2)
-      )
+    )
 
-    flow.show(showID = false, compactionOpt = compactionOpt).treeNodeShouldBe(
-      """
+    flow
+      .show(showID = false, compactionOpt = compactionOpt)
+      .treeNodeShouldBe(
+        """
         |\ left >
         |> ForwardNode (HEAD)(TAIL>) [VectorAssembler] > IndexToString > [VectorAssembler$IndexToString]
         |/ right <
@@ -294,45 +320,49 @@ class MergeSuite extends AbstractFlowSuite {
         |+- > ForwardNode  [input1,input2] > VectorAssembler > [VectorAssembler]
         |   +- > ForwardNode (HEAD)(TAIL>) [VectorAssembler] > IndexToString > [VectorAssembler$IndexToString]
       """.stripMargin
-    )
+      )
   }
 
   it("merge_> can bypass Source of downstream") {
     val flow = (
       'input
         >>> (
-        'dummy >>>
-          new Tokenizer()
+          'dummy >>>
+            new Tokenizer()
         )
-      )
+    )
 
-    flow.show(showID = false, compactionOpt = compactionOpt).treeNodeShouldBe(
-      """
+    flow
+      .show(showID = false, compactionOpt = compactionOpt)
+      .treeNodeShouldBe(
+        """
         |\ left >
         |> ForwardNode (TAIL>) [input]
         |+- > ForwardNode (HEAD)(<TAIL) [input] > Tokenizer > [input$Tokenizer]
         |/ right <
         |> ForwardNode (HEAD)(<TAIL) [input] > Tokenizer > [input$Tokenizer]
       """.stripMargin
-    )
+      )
   }
 
   it("merge_< can bypass Source of downstream") {
     val flow = (
       new Tokenizer() <<<
         'dummy
-      ) <<<
+    ) <<<
       'input
 
-    flow.show(showID = false, compactionOpt = compactionOpt).treeNodeShouldBe(
-      """
+    flow
+      .show(showID = false, compactionOpt = compactionOpt)
+      .treeNodeShouldBe(
+        """
         |\ left >
         |> ForwardNode (HEAD)(TAIL>) [input] > Tokenizer > [input$Tokenizer]
         |/ right <
         |> ForwardNode (<TAIL) [input]
         |+- > ForwardNode (HEAD)(TAIL>) [input] > Tokenizer > [input$Tokenizer]
       """.stripMargin
-    )
+      )
   }
 
   //  test("from can select by name") {
@@ -352,36 +382,35 @@ class MergeSuite extends AbstractFlowSuite {
   //
   //  }
 
-
   it("Merge works when operand2 is type consistent") {
 
     val flow = (
       'input.string
         >>> new Tokenizer()
         >>> new StopWordsRemover()
-      )
+    )
 
     flow.show(showID = false, compactionOpt = compactionOpt).treeNodeShouldBe()
   }
 
   it("Merge throws an exception when operand2 is type inconsistent with output of operand1 as a Source") {
 
-    intercept[IllegalArgumentException]{
+    intercept[IllegalArgumentException] {
       (
         'input.string
           >>> new VectorAssembler()
-        )
+      )
     }
   }
 
   it("Merge throws an exception when operand2 is type inconsistent with output of operand1 as a Flow") {
 
-    intercept[IllegalArgumentException]{
+    intercept[IllegalArgumentException] {
       (
         'input.string
           >>> new Tokenizer()
           >>> new VectorAssembler()
-        )
+      )
     }
   }
 

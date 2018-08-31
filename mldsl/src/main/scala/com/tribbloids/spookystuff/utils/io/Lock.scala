@@ -8,8 +8,8 @@ import org.slf4j.LoggerFactory
 import scala.annotation.tailrec
 
 class Lock(
-            execution: URIResolver#Execution
-          ) extends LocalCleanable {
+    execution: URIResolver#Execution
+) extends LocalCleanable {
 
   import Lock._
   val resolver = execution.outer
@@ -26,7 +26,7 @@ class Lock(
   }
 
   def assertUnlocked(acquire: Boolean = false): Unit = {
-    retry{
+    retry {
       //TODO: fail early for non LockError
       assertUnlockedOnce(acquire)
     }
@@ -34,8 +34,8 @@ class Lock(
 
   @tailrec
   protected final def assertUnlockedOnce(
-                                          acquire: Boolean = false
-                                        ): Unit = {
+      acquire: Boolean = false
+  ): Unit = {
     var lockExpired = false
 
     def processLocked(out: Resource[_], e: FileAlreadyExistsException) = {
@@ -48,32 +48,27 @@ class Lock(
       if (lockedDuration >= lockExpireAfter.toMillis) {
         LoggerFactory.getLogger(this.getClass).error(errorInfo + " and has expired")
         lockExpired = true
-      }
-      else {
+      } else {
         throw new ResourceLockError(errorInfo, e)
       }
     }
 
     if (acquire) {
-      lockExecution.output(overwrite = false){
-        out =>
-          try {
-            out.stream
-          }
-          catch {
-            case e: FileAlreadyExistsException =>
-              processLocked(out, e)
-          }
+      lockExecution.output(overwrite = false) { out =>
+        try {
+          out.stream
+        } catch {
+          case e: FileAlreadyExistsException =>
+            processLocked(out, e)
+        }
       }
-    }
-    else {
-      lockExecution.input {
-        in =>
-          if (in.isAlreadyExisting) processLocked(in, null)
+    } else {
+      lockExecution.input { in =>
+        if (in.isAlreadyExisting) processLocked(in, null)
       }
     }
 
-    if(lockExpired) {
+    if (lockExpired) {
       release()
       assertUnlockedOnce(acquire)
     }

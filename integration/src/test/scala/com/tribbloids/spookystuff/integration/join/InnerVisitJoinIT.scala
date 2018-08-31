@@ -36,8 +36,7 @@ class InnerVisitJoinIT extends IntegrationFixture {
       )
       .extract(S"h1".text ~ 'header)
       .flatSelect(S"notexist", ordinalField = 'notexist_key)( //this is added to ensure that temporary joinKey in KV store won't be used.
-        'A.attr("class") ~ 'notexist_class
-      )
+        'A.attr("class") ~ 'notexist_class)
 
     val df = joined
       .toDF(sort = true)
@@ -75,4 +74,3 @@ class InnerVisitJoinIT extends IntegrationFixture {
     case _ => 6
   }
 }
-

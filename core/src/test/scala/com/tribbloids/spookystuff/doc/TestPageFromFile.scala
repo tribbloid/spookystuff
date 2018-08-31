@@ -11,7 +11,7 @@ class TestPageFromFile extends TestPageFromHttp with LocalPathDocsFixture {
   it("wget dir, save and load") {
     val results = (
       Wget(DIR_URL) :: Nil
-      ).fetch(spooky)
+    ).fetch(spooky)
 
     val resultsList = results.toArray
     assert(resultsList.length === 1)
@@ -23,7 +23,7 @@ class TestPageFromFile extends TestPageFromHttp with LocalPathDocsFixture {
     assert(page.charset.map(_.toLowerCase).get == "utf-8")
     assert(page.findAll("title").texts.isEmpty)
 
-    page.autoSave(spooky,overwrite = true)
+    page.autoSave(spooky, overwrite = true)
 
     val loadedContent = DocUtils.load(page.saved.head)(spooky)
 

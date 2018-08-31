@@ -8,57 +8,66 @@ import com.tribbloids.spookystuff.testutils.LocalPathDocsFixture
 import com.tribbloids.spookystuff.utils.AssertSerializable
 
 /**
- * Created by peng on 11/30/14.
- */
+  * Created by peng on 11/30/14.
+  */
 class TestUnstructured extends SpookyEnvFixture with LocalPathDocsFixture {
 
   import dsl._
 
-  lazy val page = (Wget(HTML_URL).as('old)::Nil).fetch(spooky).head.asInstanceOf[Doc]
+  lazy val page = (Wget(HTML_URL).as('old) :: Nil).fetch(spooky).head.asInstanceOf[Doc]
 
   it("Unstructured is serializable for div") {
     val elements = page.findAll("div.central-featured-lang")
 
     assert(elements.size === 10)
 
-    elements.foreach{
-      element =>
-        AssertSerializable[Unstructured](
-          element,
-          condition = {
-            (element, element2) =>
-              assert (element === element2)
-              assert(element.asInstanceOf[HtmlElement].formattedCode.get.split("\n").map(_.trim) === element2.asInstanceOf[HtmlElement].formattedCode.get.split("\n").map(_.trim))
-              assert(element.findAll("a").size === element2.findAll("a").size)
-              assert(element.attr("class") === element2.attr("class"))
-              assert(element.code === element2.code)
-              assert(element.ownText === element2.ownText)
-              assert(element.boilerPipe === element2.boilerPipe)
-          }
-        )
+    elements.foreach { element =>
+      AssertSerializable[Unstructured](
+        element,
+        condition = { (element, element2) =>
+          assert(element === element2)
+          assert(
+            element.asInstanceOf[HtmlElement].formattedCode.get.split("\n").map(_.trim) === element2
+              .asInstanceOf[HtmlElement]
+              .formattedCode
+              .get
+              .split("\n")
+              .map(_.trim))
+          assert(element.findAll("a").size === element2.findAll("a").size)
+          assert(element.attr("class") === element2.attr("class"))
+          assert(element.code === element2.code)
+          assert(element.ownText === element2.ownText)
+          assert(element.boilerPipe === element2.boilerPipe)
+        }
+      )
 
     }
   }
 
-  lazy val tablePage = (Wget(HTML_URL).as('old)::Nil).fetch(spooky).head.asInstanceOf[Doc]
+  lazy val tablePage = (Wget(HTML_URL).as('old) :: Nil).fetch(spooky).head.asInstanceOf[Doc]
 
   ignore("Unstructured is serializable for tr") {
     val elements = tablePage.findAll("table#mp-topbanner > tbody > tr")
 
     assert(elements.size === 1)
 
-    elements.foreach{
-      element =>
-        val ser = SparkEnv.get.serializer.newInstance()
-        val serElement = ser.serialize(element)
-        val element2 = ser.deserialize[Unstructured](serElement)
-        assert (element === element2)
-        assert(element.asInstanceOf[HtmlElement].formattedCode.get.split("\n").map(_.trim) === element2.asInstanceOf[HtmlElement].formattedCode.get.split("\n").map(_.trim))
-        assert(element.findAll("a").size === element2.findAll("a").size)
-        assert(element.attr("class") === element2.attr("class"))
-        assert(element.code === element2.code)
-        assert(element.ownText === element2.ownText)
-        assert(element.boilerPipe === element2.boilerPipe)
+    elements.foreach { element =>
+      val ser = SparkEnv.get.serializer.newInstance()
+      val serElement = ser.serialize(element)
+      val element2 = ser.deserialize[Unstructured](serElement)
+      assert(element === element2)
+      assert(
+        element.asInstanceOf[HtmlElement].formattedCode.get.split("\n").map(_.trim) === element2
+          .asInstanceOf[HtmlElement]
+          .formattedCode
+          .get
+          .split("\n")
+          .map(_.trim))
+      assert(element.findAll("a").size === element2.findAll("a").size)
+      assert(element.attr("class") === element2.attr("class"))
+      assert(element.code === element2.code)
+      assert(element.ownText === element2.ownText)
+      assert(element.boilerPipe === element2.boilerPipe)
     }
   }
 
@@ -67,18 +76,23 @@ class TestUnstructured extends SpookyEnvFixture with LocalPathDocsFixture {
 
     assert(elements.size === 4)
 
-    elements.foreach{
-      element =>
-        val ser = SparkEnv.get.serializer.newInstance()
-        val serElement = ser.serialize(element)
-        val element2 = ser.deserialize[Unstructured](serElement)
-        assert (element === element2)
-        assert(element.asInstanceOf[HtmlElement].formattedCode.get.split("\n").map(_.trim) === element2.asInstanceOf[HtmlElement].formattedCode.get.split("\n").map(_.trim))
-        assert(element.findAll("a").size === element2.findAll("a").size)
-        assert(element.attr("class") === element2.attr("class"))
-        assert(element.code === element2.code)
-        assert(element.ownText === element2.ownText)
-        assert(element.boilerPipe === element2.boilerPipe)
+    elements.foreach { element =>
+      val ser = SparkEnv.get.serializer.newInstance()
+      val serElement = ser.serialize(element)
+      val element2 = ser.deserialize[Unstructured](serElement)
+      assert(element === element2)
+      assert(
+        element.asInstanceOf[HtmlElement].formattedCode.get.split("\n").map(_.trim) === element2
+          .asInstanceOf[HtmlElement]
+          .formattedCode
+          .get
+          .split("\n")
+          .map(_.trim))
+      assert(element.findAll("a").size === element2.findAll("a").size)
+      assert(element.attr("class") === element2.attr("class"))
+      assert(element.code === element2.code)
+      assert(element.ownText === element2.ownText)
+      assert(element.boilerPipe === element2.boilerPipe)
     }
   }
 

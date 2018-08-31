@@ -15,9 +15,9 @@ object SquashedFetchedRow {
   )
 
   def withDocs(
-                dataRows: Array[DataRow] = Array(DataRow()),
-                docs: Seq[DocOption] = null
-              ): SquashedFetchedRow = SquashedFetchedRow(
+      dataRows: Array[DataRow] = Array(DataRow()),
+      docs: Seq[DocOption] = null
+  ): SquashedFetchedRow = SquashedFetchedRow(
     dataRows = dataRows,
     traceView = TraceView.withDocs(docs = docs)
   )
@@ -33,20 +33,20 @@ object SquashedFetchedRow {
   * this is due to the fact that 90% of time is spent on fetching. < 5% on parsing & extraction.
   */
 case class SquashedFetchedRow(
-                               dataRows: Array[DataRow] = Array(),
-                               traceView: TraceView = TraceView()
-                             ) {
+    dataRows: Array[DataRow] = Array(),
+    traceView: TraceView = TraceView()
+) {
 
-  def ++ (another: SquashedFetchedRow) = {
+  def ++(another: SquashedFetchedRow) = {
     this.copy(dataRows = this.dataRows ++ another.dataRows)
   }
 
   def flattenData(
-                   field: Field,
-                   ordinalKey: Field,
-                   left: Boolean,
-                   sampler: Sampler[Any]
-                 ): SquashedFetchedRow = {
+      field: Field,
+      ordinalKey: Field,
+      left: Boolean,
+      sampler: Sampler[Any]
+  ): SquashedFetchedRow = {
 
     this.copy(
       dataRows = this.dataRows.flatMap(_.flatten(field, ordinalKey, left, sampler))
@@ -70,13 +70,12 @@ case class SquashedFetchedRow(
     @transient lazy val defaultGroupedFetched: Array[Seq[DocOption]] = {
       val grandBuffer: ArrayBuffer[Seq[DocOption]] = ArrayBuffer()
       val buffer: ArrayBuffer[DocOption] = ArrayBuffer()
-      withSpooky.getDoc.foreach {
-        page =>
-          if (buffer.exists(_.name == page.name)) {
-            grandBuffer += buffer.toList
-            buffer.clear()
-          }
-          buffer += page
+      withSpooky.getDoc.foreach { page =>
+        if (buffer.exists(_.name == page.name)) {
+          grandBuffer += buffer.toList
+          buffer.clear()
+        }
+        buffer += page
       }
       grandBuffer += buffer.toList //always left, have at least 1 member
       buffer.clear()
@@ -84,17 +83,15 @@ case class SquashedFetchedRow(
     }
 
     //outer: dataRows, inner: grouped pages
-    def semiUnsquash: Array[Array[FetchedRow]] = dataRows.map{
-      dataRow =>
-        val groupID = UUID.randomUUID()
-        groupedDocs.zipWithIndex.map {
-          tuple =>
-            val withGroupID = dataRow.copy(
-              groupID = Some(groupID),
-              groupIndex = tuple._2
-            )
-            FetchedRow(withGroupID, tuple._1: Seq[DocOption])
-        }
+    def semiUnsquash: Array[Array[FetchedRow]] = dataRows.map { dataRow =>
+      val groupID = UUID.randomUUID()
+      groupedDocs.zipWithIndex.map { tuple =>
+        val withGroupID = dataRow.copy(
+          groupID = Some(groupID),
+          groupIndex = tuple._2
+        )
+        FetchedRow(withGroupID, tuple._1: Seq[DocOption])
+      }
     }
 
     // cartisian product
@@ -110,56 +107,54 @@ case class SquashedFetchedRow(
       */
     //TODO: special optimization for Expression that only use pages
     private def _extract(
-                          exs: Seq[Resolved[Any]],
-                          filterEmpty: Boolean = true,
-                          distinct: Boolean = true
-                        ): SquashedFetchedRow = {
+        exs: Seq[Resolved[Any]],
+        filterEmpty: Boolean = true,
+        distinct: Boolean = true
+    ): SquashedFetchedRow = {
 
-      val allUpdatedDataRows: Array[DataRow] = semiUnsquash.flatMap {
-        PageRows => //each element contains a different page group, CAUTION: not all of them are used: page group that yield no new datum will be removed, if all groups yield no new datum at least 1 row is preserved
-          val dataRow_KVOpts = PageRows.map {
-            pageRow =>
-              val dataRow = pageRow.dataRow
-              val KVOpts: Seq[(Field, Option[Any])] = exs.flatMap {
-                expr =>
-                  val resolving = expr.field.conflictResolving
-                  val k = expr.field
-                  val vOpt = expr.lift.apply(pageRow)
-                  resolving match {
-                    case Field.Replace => Some(k -> vOpt)
-                    case _ => vOpt.map(v => k -> Some(v))
-                  }
-              }
-              dataRow -> KVOpts
+      val allUpdatedDataRows: Array[DataRow] = semiUnsquash.flatMap { PageRows => //each element contains a different page group, CAUTION: not all of them are used: page group that yield no new datum will be removed, if all groups yield no new datum at least 1 row is preserved
+        val dataRow_KVOpts = PageRows.map { pageRow =>
+          val dataRow = pageRow.dataRow
+          val KVOpts: Seq[(Field, Option[Any])] = exs.flatMap { expr =>
+            val resolving = expr.field.conflictResolving
+            val k = expr.field
+            val vOpt = expr.lift.apply(pageRow)
+            resolving match {
+              case Field.Replace => Some(k -> vOpt)
+              case _             => vOpt.map(v => k -> Some(v))
+            }
           }
+          dataRow -> KVOpts
+        }
 
-          val filteredDataRow_KVOpts = if (!filterEmpty) dataRow_KVOpts
+        val filteredDataRow_KVOpts =
+          if (!filterEmpty) dataRow_KVOpts
           else {
             val filtered = dataRow_KVOpts.filter(_._2.exists(_._2.nonEmpty))
             if (filtered.isEmpty) dataRow_KVOpts.headOption.toArray
             else filtered
           }
-          val distinctDataRow_KVOpts = if (!distinct) filteredDataRow_KVOpts
+        val distinctDataRow_KVOpts =
+          if (!distinct) filteredDataRow_KVOpts
           else {
             filteredDataRow_KVOpts.groupBy(_._2).map(_._2.head).toArray
           }
 
-          val updatedDataRows: Array[DataRow] = distinctDataRow_KVOpts.map {
-            tuple =>
-              val K_VOrRemoves = tuple._2
-              val dataRow = tuple._1
-              val newKVs = K_VOrRemoves.collect{
-                case (field, Some(v)) => field -> v
-              }
-              val removeKs = K_VOrRemoves.collect{
-                case (field, None) => field
-              }
-              val updatedDataRow = dataRow ++ newKVs -- removeKs
-
-              updatedDataRow
+        val updatedDataRows: Array[DataRow] = distinctDataRow_KVOpts.map { tuple =>
+          val K_VOrRemoves = tuple._2
+          val dataRow = tuple._1
+          val newKVs = K_VOrRemoves.collect {
+            case (field, Some(v)) => field -> v
           }
+          val removeKs = K_VOrRemoves.collect {
+            case (field, None) => field
+          }
+          val updatedDataRow = dataRow ++ newKVs -- removeKs
 
-          updatedDataRows
+          updatedDataRow
+        }
+
+        updatedDataRows
       }
       SquashedFetchedRow.this.copy(dataRows = allUpdatedDataRows)
     }
@@ -174,39 +169,37 @@ case class SquashedFetchedRow(
      * if 2 groupedFetched yield identical traces only the first is preserved?
      */
     def interpolateAndRewriteLocally(
-                                      traces: Set[Trace],
-                                      filterEmpty: Boolean = true,
-                                      distinct: Boolean = true
-                                    ): Array[(TraceView, DataRow)] = {
+        traces: Set[Trace],
+        filterEmpty: Boolean = true,
+        distinct: Boolean = true
+    ): Array[(TraceView, DataRow)] = {
 
-      val dataRows_traceOpts = semiUnsquash.flatMap {
-        rows => //each element contains a different page group, CAUTION: not all of them are used: page group that yield no new datum will be removed, if all groups yield no new datum at least 1 row is preserved
-          val dataRows_traceOpts = rows.flatMap {
-            row =>
-              traces.map {
-                trace =>
-                  val rewritten: Option[Trace] = TraceView(trace).interpolateAndRewriteLocally(row, schema)
-                  row.dataRow -> rewritten
-                //always discard old pages & temporary data before repartition, unlike flatten
-              }
+      val dataRows_traceOpts = semiUnsquash.flatMap { rows => //each element contains a different page group, CAUTION: not all of them are used: page group that yield no new datum will be removed, if all groups yield no new datum at least 1 row is preserved
+        val dataRows_traceOpts = rows.flatMap { row =>
+          traces.map { trace =>
+            val rewritten: Option[Trace] = TraceView(trace).interpolateAndRewriteLocally(row, schema)
+            row.dataRow -> rewritten
+          //always discard old pages & temporary data before repartition, unlike flatten
           }
+        }
 
-          val filteredDataRows_traceOpts = if (!filterEmpty) dataRows_traceOpts
+        val filteredDataRows_traceOpts =
+          if (!filterEmpty) dataRows_traceOpts
           else {
             val result = dataRows_traceOpts.filter(_._2.nonEmpty)
             if (result.isEmpty) dataRows_traceOpts.headOption.toArray
             else result
           }
 
-          val mergedDataRows_traceOpts = if (!distinct) filteredDataRows_traceOpts
+        val mergedDataRows_traceOpts =
+          if (!distinct) filteredDataRows_traceOpts
           else filteredDataRows_traceOpts.groupBy(_._2).map(_._2.head).toArray
 
-          mergedDataRows_traceOpts
+        mergedDataRows_traceOpts
       }
 
-      dataRows_traceOpts.map {
-        v =>
-          TraceView(v._2.getOrElse(Actions.empty)) -> v._1
+      dataRows_traceOpts.map { v =>
+        TraceView(v._2.getOrElse(Actions.empty)) -> v._1
       }
     }
   }

@@ -5,7 +5,7 @@ import com.tribbloids.spookystuff.doc.{Doc, DocOption}
 import com.tribbloids.spookystuff.row.{FetchedRow, SpookySchema}
 import com.tribbloids.spookystuff.session.Session
 import com.tribbloids.spookystuff.utils.IDMixin
-import com.tribbloids.spookystuff.{SpookyContext, dsl}
+import com.tribbloids.spookystuff.{dsl, SpookyContext}
 
 import scala.collection.mutable.ArrayBuffer
 import scala.language.implicitConversions
@@ -16,10 +16,10 @@ object TraceView {
   implicit def fromTrace(trace: Trace): TraceView = TraceView(trace)
 
   def withDocs(
-                children: Trace = Nil,
-                keyBy: Trace => Any = identity,
-                docs: Seq[DocOption] = Nil
-              ): TraceView = {
+      children: Trace = Nil,
+      keyBy: Trace => Any = identity,
+      docs: Seq[DocOption] = Nil
+  ): TraceView = {
     val result = apply(children, keyBy)
     result.docs = docs
     result
@@ -27,13 +27,14 @@ object TraceView {
 }
 
 case class TraceView(
-                      override val children: Trace = Nil,
-                      keyBy: Trace => Any = identity //used by custom keyBy arg in fetch and explore.
-                    ) extends Actions(children) with IDMixin { //remember trace is not a block! its the super container that cannot be wrapped
+    override val children: Trace = Nil,
+    keyBy: Trace => Any = identity //used by custom keyBy arg in fetch and explore.
+) extends Actions(children)
+    with IDMixin { //remember trace is not a block! its the super container that cannot be wrapped
 
   val _id: Any = keyBy(children)
 
-  override def toString = children.mkString("{ "," -> ", " }")
+  override def toString = children.mkString("{ ", " -> ", " }")
 
   @volatile @transient private var docs: Seq[DocOption] = _ //override, cannot be shipped, lazy evaluated TODO: not volatile?
   def docsOpt = Option(docs)
@@ -45,34 +46,33 @@ case class TraceView(
 
   protected[actions] def _apply(session: Session, lazyStream: Boolean = false): Seq[DocOption] = {
 
-    val _children: Seq[Action] = if (lazyStream) children.toStream
-    // this is a good pattern as long as anticipated result doesn't grow too long
-    else children
+    val _children: Seq[Action] =
+      if (lazyStream) children.toStream
+      // this is a good pattern as long as anticipated result doesn't grow too long
+      else children
 
-    val results = _children.flatMap {
-      action =>
-        val actionResult = action.apply(session)
-        session.backtrace ++= action.skeleton
+    val results = _children.flatMap { action =>
+      val actionResult = action.apply(session)
+      session.backtrace ++= action.skeleton
 
-        if (action.hasOutput) {
+      if (action.hasOutput) {
 
-          val spooky = session.spooky
+        val spooky = session.spooky
 
-          if (spooky.spookyConf.autoSave) actionResult.foreach{
-            case page: Doc => page.autoSave(spooky)
-            case _ =>
-          }
-          if (spooky.spookyConf.cacheWrite) {
-            val effectiveBacktrace = actionResult.head.uid.backtrace
-            InMemoryDocCache.put(effectiveBacktrace, actionResult, spooky)
-            DFSDocCache.put(effectiveBacktrace ,actionResult, spooky)
-          }
-          actionResult
+        if (spooky.spookyConf.autoSave) actionResult.foreach {
+          case page: Doc => page.autoSave(spooky)
+          case _         =>
         }
-        else {
-          assert(actionResult.isEmpty)
-          Nil
+        if (spooky.spookyConf.cacheWrite) {
+          val effectiveBacktrace = actionResult.head.uid.backtrace
+          InMemoryDocCache.put(effectiveBacktrace, actionResult, spooky)
+          DFSDocCache.put(effectiveBacktrace, actionResult, spooky)
         }
+        actionResult
+      } else {
+        assert(actionResult.isEmpty)
+        Nil
+      }
     }
 
     this.docs = results
@@ -85,10 +85,10 @@ case class TraceView(
 
     for (i <- children.indices) {
       val child = children(i)
-      if (child.hasOutput){
+      if (child.hasOutput) {
         val backtrace: Trace = child match {
           case dl: Driverless => child :: Nil
-          case _ => children.slice(0, i).flatMap(_.skeleton) :+ child
+          case _              => children.slice(0, i).flatMap(_.skeleton) :+ child
         }
         result += backtrace
       }
@@ -107,9 +107,8 @@ case class TraceView(
   override lazy val globalRewriters = children.flatMap(_.globalRewriters).distinct
 
   def rewriteGlobally(schema: SpookySchema): Trace = {
-    globalRewriters.foldLeft(children){
-      (trace, rewriter) =>
-        rewriter.rewrite(trace, schema)
+    globalRewriters.foldLeft(children) { (trace, rewriter) =>
+      rewriter.rewrite(trace, schema)
     }
   }
 
@@ -117,20 +116,17 @@ case class TraceView(
     //TODO: isolate interploation into an independent rewriter?
     val interpolatedOpt: Option[Trace] = interpolate(row, schema)
       .map(_.children)
-    interpolatedOpt.flatMap {
-      v =>
-        TraceView(v).rewriteLocally(schema)
+    interpolatedOpt.flatMap { v =>
+      TraceView(v).rewriteLocally(schema)
     }
   }
 
   def rewriteLocally(schema: SpookySchema): Option[Trace] = {
     val interpolatedOpt: Option[Trace] = Some(this.children)
-    val result = localRewriters.foldLeft(interpolatedOpt){
-      (opt, rewriter) =>
-        opt.flatMap {
-          trace =>
-            rewriter.rewrite(trace, schema)
-        }
+    val result = localRewriters.foldLeft(interpolatedOpt) { (opt, rewriter) =>
+      opt.flatMap { trace =>
+        rewriter.rewrite(trace, schema)
+      }
     }
     result
   }
@@ -142,8 +138,8 @@ case class TraceView(
 
     //fetched may yield very large documents and should only be
     // loaded lazily and not shuffled or persisted (unless in-memory)
-    def getDoc: Seq[DocOption] = TraceView.this.synchronized{
-      docsOpt.getOrElse{
+    def getDoc: Seq[DocOption] = TraceView.this.synchronized {
+      docsOpt.getOrElse {
         fetch
       }
     }
@@ -195,11 +191,13 @@ final case class TraceSetView(self: Set[Trace]) {
   //one-to-many
 
   def *>[T: ClassTag](others: TraversableOnce[T]): Set[Trace] = self.flatMap(
-    trace => others.map {
-      case otherAction: Action => trace :+ otherAction
-      case otherList: List[_] => trace ++ otherList.collect {
-        case v: Action => v
-      }
+    trace =>
+      others.map {
+        case otherAction: Action => trace :+ otherAction
+        case otherList: List[_] =>
+          trace ++ otherList.collect {
+            case v: Action => v
+          }
     }
   )
 

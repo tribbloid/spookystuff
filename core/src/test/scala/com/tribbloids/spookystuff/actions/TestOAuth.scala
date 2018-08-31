@@ -1,11 +1,11 @@
 package com.tribbloids.spookystuff.actions
 
-import com.tribbloids.spookystuff.session.{Session, OAuthKeys}
+import com.tribbloids.spookystuff.session.{OAuthKeys, Session}
 import org.scalatest.tags.Retryable
 
 /**
- * Adding OAuth parameters should not affect results of other queries
- */
+  * Adding OAuth parameters should not affect results of other queries
+  */
 @Retryable
 class TestOAuth extends TestWget {
 
@@ -21,11 +21,12 @@ class TestOAuth extends TestWget {
 
   override def setUp() = {
     super.setUp()
-    spooky.spookyConf.oAuthKeysFactory = () => OAuthKeys(
-      "consumerKey",
-      "consumerSecret",
-      "token",
-      "tokenSecret"
+    spooky.spookyConf.oAuthKeysFactory = () =>
+      OAuthKeys(
+        "consumerKey",
+        "consumerSecret",
+        "token",
+        "tokenSecret"
     )
   }
 }

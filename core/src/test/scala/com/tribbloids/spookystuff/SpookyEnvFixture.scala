@@ -30,9 +30,9 @@ object SpookyEnvFixture {
   @volatile var firstRun: Boolean = true
 
   def shouldBeClean(
-                     spooky: SpookyContext,
-                     pNames: Seq[String]
-                   ): Unit = {
+      spooky: SpookyContext,
+      pNames: Seq[String]
+  ): Unit = {
 
     instancesShouldBeClean(spooky)
     processShouldBeClean(pNames)
@@ -40,19 +40,16 @@ object SpookyEnvFixture {
 
   def instancesShouldBeClean(spooky: SpookyContext): Unit = {
 
-    Cleanable
-      .uncleaned
-      .foreach {
-        tuple =>
-          val nonLocalDrivers = tuple._2.values
-            .filter {
-              v =>
-                v.lifespan.tpe == Lifespan.Task
-            }
-          assert(
-            nonLocalDrivers.isEmpty,
-            s": ${tuple._1} is unclean! ${nonLocalDrivers.size} left:\n" + nonLocalDrivers.mkString("\n")
-          )
+    Cleanable.uncleaned
+      .foreach { tuple =>
+        val nonLocalDrivers = tuple._2.values
+          .filter { v =>
+            v.lifespan.tpe == Lifespan.Task
+          }
+        assert(
+          nonLocalDrivers.isEmpty,
+          s": ${tuple._1} is unclean! ${nonLocalDrivers.size} left:\n" + nonLocalDrivers.mkString("\n")
+        )
       }
   }
 
@@ -60,45 +57,41 @@ object SpookyEnvFixture {
     * slow
     */
   def processShouldBeClean(
-                            names: Seq[String] = Nil,
-                            keywords: Seq[String] = Nil,
-                            cleanSweepNotInTask: Boolean = true
-                          ): Unit = {
+      names: Seq[String] = Nil,
+      keywords: Seq[String] = Nil,
+      cleanSweepNotInTask: Boolean = true
+  ): Unit = {
 
     if (cleanSweepNotInTask) {
       //this is necessary as each suite won't automatically cleanup drivers NOT in task when finished
-      Cleanable.cleanSweepAll (
+      Cleanable.cleanSweepAll(
         condition = {
           case v if !v.lifespan.isTask => true
-          case _ => false
+          case _                       => false
         }
       )
     }
 
-
     import scala.collection.JavaConverters._
 
     val processes: Seq[ProcessInfo] = RetryFixedInterval(5, 1000) {
-      JProcesses.getProcessList()
-        .asScala
+      JProcesses.getProcessList().asScala
     }
 
-    names.foreach {
-      name =>
-        val matchedProcess = processes.filter(v => v.getName == name)
-        assert(
-          matchedProcess.isEmpty,
-          s"${matchedProcess.size} $name process(es) left:\n" + matchedProcess.mkString("\n")
-        )
+    names.foreach { name =>
+      val matchedProcess = processes.filter(v => v.getName == name)
+      assert(
+        matchedProcess.isEmpty,
+        s"${matchedProcess.size} $name process(es) left:\n" + matchedProcess.mkString("\n")
+      )
     }
 
-    keywords.foreach {
-      keyword =>
-        val matchedProcess = processes.filter(v => v.getCommand.contains(keyword))
-        assert(
-          matchedProcess.isEmpty,
-          s"${matchedProcess.size} $keyword process(es) left:\n" + matchedProcess.mkString("\n")
-        )
+    keywords.foreach { keyword =>
+      val matchedProcess = processes.filter(v => v.getCommand.contains(keyword))
+      assert(
+        matchedProcess.isEmpty,
+        s"${matchedProcess.size} $keyword process(es) left:\n" + matchedProcess.mkString("\n")
+      )
     }
   }
 }
@@ -131,7 +124,7 @@ trait SpookyEnv {
 }
 
 abstract class SpookyEnvFixture
-  extends FunSpecx
+    extends FunSpecx
     with SpookyEnv
     with RemoteDocsFixture
     with BeforeAndAfter
@@ -155,13 +148,13 @@ abstract class SpookyEnvFixture
       extractor.resolveType(emptySchema)
     )
   )
-  implicit def extractor2Function[T, R](extractor: GenExtractor[T, R]): PartialFunction[T, R] = extractor.resolve(emptySchema)
+  implicit def extractor2Function[T, R](extractor: GenExtractor[T, R]): PartialFunction[T, R] =
+    extractor.resolve(emptySchema)
   implicit def doc2Root(doc: Doc): Unstructured = doc.root
 
   override def withFixture(test: NoArgTest) = {
     if (isRetryable(test))
-      CommonUtils.retry(4) { super.withFixture(test) }
-    else
+      CommonUtils.retry(4) { super.withFixture(test) } else
       super.withFixture(test)
   }
 
@@ -170,14 +163,13 @@ abstract class SpookyEnvFixture
   def _processNames = Seq("phantomjs", "python")
   final lazy val processNames = _processNames
 
-  override def beforeAll(): Unit = if (SpookyEnvFixture.firstRun){
+  override def beforeAll(): Unit = if (SpookyEnvFixture.firstRun) {
 
     val spooky = this.spooky
     val processNames = this.processNames
     super.beforeAll()
-    sc.runEverywhere() {
-      _ =>
-        SpookyEnvFixture.shouldBeClean(spooky, processNames)
+    sc.runEverywhere() { _ =>
+      SpookyEnvFixture.shouldBeClean(spooky, processNames)
     }
     SpookyEnvFixture.firstRun = false
   }
@@ -193,14 +185,13 @@ abstract class SpookyEnvFixture
     //      _.unpersist()
     //    }
 
-    sc.runEverywhere() {
-      _ =>
-        SpookyEnvFixture.shouldBeClean(spooky, processNames)
+    sc.runEverywhere() { _ =>
+      SpookyEnvFixture.shouldBeClean(spooky, processNames)
     }
     super.afterAll()
   }
 
-  before{
+  before {
     // bypass java.lang.NullPointerException at org.apache.spark.broadcast.TorrentBroadcast$.unpersist(TorrentBroadcast.scala:228)
     // TODO: clean up after fix
     CommonUtils.retry(3, 1000) {
@@ -208,7 +199,7 @@ abstract class SpookyEnvFixture
     }
   }
 
-  after{
+  after {
     tearDown()
   }
 
@@ -234,9 +225,8 @@ abstract class SpookyEnvFixture
 
   def tearDown(): Unit = {
     val spooky = this.spooky
-    sc.runEverywhere() {
-      _ =>
-        SpookyEnvFixture.instancesShouldBeClean(spooky)
+    sc.runEverywhere() { _ =>
+      SpookyEnvFixture.instancesShouldBeClean(spooky)
     }
   }
 }

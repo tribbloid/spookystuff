@@ -4,7 +4,7 @@ import com.tribbloids.spookystuff.actions._
 import com.tribbloids.spookystuff.extractors.impl.Lit
 import com.tribbloids.spookystuff.testutils.LocalPathDocsFixture
 import com.tribbloids.spookystuff.testutils.beans.Composite
-import com.tribbloids.spookystuff.{Metrics, SpookyEnvFixture, dsl}
+import com.tribbloids.spookystuff.{dsl, Metrics, SpookyEnvFixture}
 
 /**
   * Created by peng on 5/10/15.
@@ -41,10 +41,9 @@ class FetchedDatasetSuite extends SpookyEnvFixture with LocalPathDocsFixture {
       .fetch(
         Wget(HTML_URL)
       )
-      .map{
-        v =>
-          acc += 1
-          v
+      .map { v =>
+        acc += 1
+        v
       }
     assert(acc.value == 0)
 
@@ -63,10 +62,9 @@ class FetchedDatasetSuite extends SpookyEnvFixture with LocalPathDocsFixture {
         Wget(HTML_URL)
       )
       .extract(
-        S.andOptionFn{
-          page =>
-            acc += 1
-            page.saved.headOption
+        S.andOptionFn { page =>
+          acc += 1
+          page.saved.headOption
         } ~ 'path
       )
     assert(acc.value == 0)
@@ -90,10 +88,9 @@ class FetchedDatasetSuite extends SpookyEnvFixture with LocalPathDocsFixture {
           Wget(HTML_URL)
         )
         .extract(
-          S.andOptionFn{
-            page =>
-              acc += 1
-              page.saved.headOption
+          S.andOptionFn { page =>
+            acc += 1
+            page.saved.headOption
           } ~ 'path
         )
       assert(acc.value == 0)
@@ -113,10 +110,9 @@ class FetchedDatasetSuite extends SpookyEnvFixture with LocalPathDocsFixture {
           Wget(HTML_URL)
         )
         .extract(
-          S.andOptionFn{
-            page =>
-              acc += 1
-              page.saved.headOption
+          S.andOptionFn { page =>
+            acc += 1
+            page.saved.headOption
           } ~ 'path
         )
       assert(acc.value == 0)
@@ -136,10 +132,9 @@ class FetchedDatasetSuite extends SpookyEnvFixture with LocalPathDocsFixture {
           Wget(HTML_URL)
         )
         .select(
-          S.andOptionFn{
-            page =>
-              acc += 1
-              page.saved.headOption
+          S.andOptionFn { page =>
+            acc += 1
+            page.saved.headOption
           } ~ 'path
         )
       assert(acc.value == 0)
@@ -162,9 +157,8 @@ class FetchedDatasetSuite extends SpookyEnvFixture with LocalPathDocsFixture {
         S.uri ~ 'uri,
         S.children("h1").size ~ 'size,
         S.timestamp ~ 'timestamp,
-        S.andOptionFn{
-          page =>
-            page.saved.headOption
+        S.andOptionFn { page =>
+          page.saved.headOption
         } ~ 'saved
       )
     val df = set.toDF()
@@ -216,9 +210,8 @@ class FetchedDatasetSuite extends SpookyEnvFixture with LocalPathDocsFixture {
         S.uri ~ 'uri.*,
         S.children("h1").size ~ 'size.*,
         S.timestamp ~ 'timestamp,
-        S.andOptionFn{
-          page =>
-            page.saved.headOption
+        S.andOptionFn { page =>
+          page.saved.headOption
         } ~ 'saved
       )
     val df = set.toDF()
@@ -245,8 +238,7 @@ class FetchedDatasetSuite extends SpookyEnvFixture with LocalPathDocsFixture {
     assert(ds.spooky.spookyMetrics.pagesFetched.value == 1)
     ds.spooky.spookyMetrics.zero()
 
-    ds
-      .wget(
+    ds.wget(
         JSON_URL
       )
       .count()
@@ -266,8 +258,7 @@ class FetchedDatasetSuite extends SpookyEnvFixture with LocalPathDocsFixture {
     assert(ds.spooky.spookyMetrics.pagesFetched.value == 1)
     ds.spooky.spookyMetrics.zero()
 
-    ds
-      .wget(
+    ds.wget(
         JSON_URL
       )
       .count()
@@ -281,7 +272,7 @@ class FetchedDatasetSuite extends SpookyEnvFixture with LocalPathDocsFixture {
         HTML_URL
       )
       .flatten(
-        Lit(Array("a"->1, "b"->2)) ~ 'Array
+        Lit(Array("a" -> 1, "b" -> 2)) ~ 'Array
       )
       .persist()
     ds.count()
@@ -289,8 +280,7 @@ class FetchedDatasetSuite extends SpookyEnvFixture with LocalPathDocsFixture {
     assert(ds.spooky.spookyMetrics.pagesFetched.value == 1)
     ds.spooky.spookyMetrics.zero()
 
-    ds
-      .wget(
+    ds.wget(
         JSON_URL
       )
       .count()
@@ -300,7 +290,7 @@ class FetchedDatasetSuite extends SpookyEnvFixture with LocalPathDocsFixture {
 
   it("explore plan can be persisted") {
     val first = spooky
-      .wget{
+      .wget {
         DEEP_DIR_URL
       }
     val ds = first
@@ -312,8 +302,7 @@ class FetchedDatasetSuite extends SpookyEnvFixture with LocalPathDocsFixture {
 
     ds.spooky.spookyMetrics.zero()
 
-    ds
-      .wget(
+    ds.wget(
         JSON_URL
       )
       .count()

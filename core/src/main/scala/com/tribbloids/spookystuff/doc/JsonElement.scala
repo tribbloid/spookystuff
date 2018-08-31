@@ -8,16 +8,16 @@ import org.json4s._
 object JsonElement {
 
   def apply(jsonStr: String, tag: String, uri: String): Unstructured = {
-    val parsed: JValue = if (jsonStr.trim.isEmpty)
-      JNull
-    else {
-      JsonMethods.parse(jsonStr)
-    }
+    val parsed: JValue =
+      if (jsonStr.trim.isEmpty)
+        JNull
+      else {
+        JsonMethods.parse(jsonStr)
+      }
     parsed match {
       case array: JArray =>
-        val res = array.arr.map {
-          field =>
-            new JsonElement(tag -> field, uri)
+        val res = array.arr.map { field =>
+          new JsonElement(tag -> field, uri)
         }
         new Siblings(res)
       case _ =>
@@ -27,9 +27,9 @@ object JsonElement {
 }
 
 class JsonElement private (
-                            val field: JField,
-                            override val uri: String
-                            ) extends Unstructured {
+    val field: JField,
+    override val uri: String
+) extends Unstructured {
 
   override def equals(obj: Any): Boolean = obj match {
     case other: JsonElement =>
@@ -55,28 +55,24 @@ class JsonElement private (
   private def jValueToElements(defaultFieldName: String, selected: JValue): Elements[JsonElement] = {
     selected match {
       case obj: JObject =>
-
         if (obj.obj.map(_._1).distinct.size <= 1) { //if the JObject contains many fields with identical names they are combined from many different places
-        val jsonElements = obj.obj.map {
-            field =>
-              new JsonElement(field, this.uri)
+          val jsonElements = obj.obj.map { field =>
+            new JsonElement(field, this.uri)
           }
           new Elements(jsonElements)
-        }
-        else { //otherwise its a single object from the beginning
+        } else { //otherwise its a single object from the beginning
           new Elements(
             List(new JsonElement(defaultFieldName -> selected, this.uri))
           )
         }
 
       case array: JArray =>
-        val res = array.arr.map {
-          field =>
-            new JsonElement(defaultFieldName -> field, this.uri)
+        val res = array.arr.map { field =>
+          new JsonElement(defaultFieldName -> field, this.uri)
         }
         new Siblings(res)
       case JNothing => new Elements(Nil)
-      case JNull => new Elements(Nil)
+      case JNull    => new Elements(Nil)
       case _ =>
         new Elements(
           List(new JsonElement(defaultFieldName -> selected, this.uri))
@@ -100,9 +96,8 @@ class JsonElement private (
   override def formattedCode: Option[String] = Some(JsonMethods.pretty(field._2))
 
   override def allAttr: Option[Map[String, String]] = {
-    val filtered = field._2.filterField{
-      field =>
-        field._1.startsWith("@")
+    val filtered = field._2.filterField { field =>
+      field._1.startsWith("@")
     }
     val result = Map(filtered.map(v => v._1.stripPrefix("@") -> JsonMethods.compact(v._2)): _*)
     Some(result)
@@ -110,9 +105,8 @@ class JsonElement private (
 
   override def attr(attr: String, noEmpty: Boolean = true): Option[String] = {
 
-    val foundOption = field._2.findField{
-      field =>
-        field._1 == "@"+attr
+    val foundOption = field._2.findField { field =>
+      field._1 == "@" + attr
     }
 
     val result = foundOption.map(found => JsonMethods.compact(found._2))
@@ -132,9 +126,9 @@ class JsonElement private (
   override def text: Option[String] = Some(field._2.values.toString)
 
   override def ownText: Option[String] = field._2 match {
-    case obj: JObject => None
+    case obj: JObject  => None
     case array: JArray => None
-    case _ => Some(field._2.values.toString)
+    case _             => Some(field._2.values.toString)
   }
 
   override def boilerPipe: Option[String] = None //TODO: unsupported, does it make sense

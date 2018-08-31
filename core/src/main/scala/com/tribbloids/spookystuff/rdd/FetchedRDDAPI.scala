@@ -8,11 +8,11 @@ import org.apache.spark.storage.StorageLevel
 import scala.language.implicitConversions
 
 case class CoalescePlan(
-                         override val child: ExecutionPlan,
-                         numPartitions: RDD[_] => Int,
-                         shuffle: Boolean = false,
-                         ord: Ordering[SquashedFetchedRow] = null
-                       ) extends UnaryPlan(child) {
+    override val child: ExecutionPlan,
+    numPartitions: RDD[_] => Int,
+    shuffle: Boolean = false,
+    ord: Ordering[SquashedFetchedRow] = null
+) extends UnaryPlan(child) {
 
   def doExecute(): SquashedFetchedRDD = {
     val childRDD = child.rdd()
@@ -22,8 +22,8 @@ case class CoalescePlan(
 }
 
 case class UnionPlan(
-                      override val children: Seq[ExecutionPlan]
-                    ) extends ExecutionPlan(children) {
+    override val children: Seq[ExecutionPlan]
+) extends ExecutionPlan(children) {
 
   //TODO: also use PartitionerAwareUnionRDD
   def doExecute(): SquashedFetchedRDD = {
@@ -48,29 +48,33 @@ trait FetchedRDDAPI {
   //    selfRDD.distinct(numPartitions)(ord)
 
   protected def _coalesce(
-                 numPartitions: RDD[_] => Int = {v => v.partitions.length},
-                 shuffle: Boolean = false
-               )(
-                 implicit ord: Ordering[SquashedFetchedRow] = null
-               ): FetchedDataset = this.copy(
+      numPartitions: RDD[_] => Int = { v =>
+        v.partitions.length
+      },
+      shuffle: Boolean = false
+  )(
+      implicit ord: Ordering[SquashedFetchedRow] = null
+  ): FetchedDataset = this.copy(
     CoalescePlan(plan, numPartitions, shuffle, ord)
   )
 
   def coalesce(
-                numPartitions: Int,
-                shuffle: Boolean = false
-              )(
-                implicit ord: Ordering[SquashedFetchedRow] = null
-              ): FetchedDataset = {
+      numPartitions: Int,
+      shuffle: Boolean = false
+  )(
+      implicit ord: Ordering[SquashedFetchedRow] = null
+  ): FetchedDataset = {
 
-    _coalesce({v => numPartitions}, shuffle)(ord)
+    _coalesce({ v =>
+      numPartitions
+    }, shuffle)(ord)
   }
 
   def repartition(
-                   numPartitions: Int
-                 )(
-                   implicit ord: Ordering[SquashedFetchedRow] = null
-                 ): FetchedDataset = {
+      numPartitions: Int
+  )(
+      implicit ord: Ordering[SquashedFetchedRow] = null
+  ): FetchedDataset = {
 
     coalesce(numPartitions, shuffle = true)(ord)
   }

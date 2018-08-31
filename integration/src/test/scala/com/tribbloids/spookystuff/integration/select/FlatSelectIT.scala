@@ -49,5 +49,5 @@ class FlatSelectIT extends IntegrationFixture {
     assert(rows.head.getString(3) contains "spookystuff/test/Wikipedia.html")
   }
 
-  override def numPages= 1
+  override def numPages = 1
 }

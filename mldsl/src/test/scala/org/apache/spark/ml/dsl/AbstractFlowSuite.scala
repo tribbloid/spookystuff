@@ -14,14 +14,13 @@ import scala.util.matching.Regex
   */
 abstract class AbstractFlowSuite extends FunSpecx with BeforeAndAfterAll {
 
-  implicit class StringView(str: String) extends super.TestStringView(str){
+  implicit class StringView(str: String) extends super.TestStringView(str) {
 
     def treeNodeShouldBe(groundTruth: String = null): Unit = {
       val compactedGT = Option(groundTruth).map(compactGroundTruth).orNull
       Try {
         this.shouldBe(compactedGT)
-      }
-        .recover {
+      }.recover {
           case (_: TestFailedException | _: AssertionError) =>
             val correctedGT = compactedGT
               .replaceAll("+- ", " ")
@@ -44,12 +43,10 @@ abstract class AbstractFlowSuite extends FunSpecx with BeforeAndAfterAll {
     val lookup = compaction(cols)
 
     val replaced = regex.replaceAllIn(
-      str,
-      {
-        m =>
-          val original: String = m.matched
-          val multiPart = original.split('$').toSeq
-          lookup(multiPart).mkString("\\$")
+      str, { m =>
+        val original: String = m.matched
+        val multiPart = original.split('$').toSeq
+        lookup(multiPart).mkString("\\$")
       }
     )
 
@@ -57,21 +54,20 @@ abstract class AbstractFlowSuite extends FunSpecx with BeforeAndAfterAll {
   }
 
   def getInputsOutputs(stages: Seq[PipelineStage]): Seq[(String, String, String)] = {
-    val input_output = stages.map {
-      v =>
-        val className = v.getClass.getSimpleName
-        val input: Array[String] = v match {
-          case v: HasInputCol => Array(v.getInputCol)
-          case v: HasInputCols => v.getInputCols
-          case _ => Array[String]()
-        }
+    val input_output = stages.map { v =>
+      val className = v.getClass.getSimpleName
+      val input: Array[String] = v match {
+        case v: HasInputCol  => Array(v.getInputCol)
+        case v: HasInputCols => v.getInputCols
+        case _               => Array[String]()
+      }
 
-        val output = v match {
-          case v: HasOutputCol => Array(v.getOutputCol)
-          case _ => Array[String]()
-        }
+      val output = v match {
+        case v: HasOutputCol => Array(v.getOutputCol)
+        case _               => Array[String]()
+      }
 
-        (className, input.toSeq.mkString("|"), output.toSeq.mkString("|"))
+      (className, input.toSeq.mkString("|"), output.toSeq.mkString("|"))
     }
     input_output
   }

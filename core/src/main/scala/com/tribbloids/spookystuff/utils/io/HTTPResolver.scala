@@ -32,16 +32,17 @@ object HTTPResolver {
   }
 
   def apply(
-             timeoutMillis: Int,
-             webProxy: WebProxySetting,
-             input2Http: URI => HttpRequestBase
-           ): HTTPResolver = {
+      timeoutMillis: Int,
+      webProxy: WebProxySetting,
+      input2Http: URI => HttpRequestBase
+  ): HTTPResolver = {
 
     val (httpClient: CloseableHttpClient, httpClientContext: HttpClientContext) = {
 
       val requestConfig = {
 
-        var builder = RequestConfig.custom()
+        var builder = RequestConfig
+          .custom()
           .setConnectTimeout(timeoutMillis)
           .setConnectionRequestTimeout(timeoutMillis)
           .setSocketTimeout(timeoutMillis)
@@ -51,7 +52,8 @@ object HTTPResolver {
           .setAuthenticationEnabled(false)
         //        .setCookieSpec(CookieSpecs.BEST_MATCH)
 
-        if (webProxy != null && !webProxy.protocol.startsWith("socks")) builder = builder.setProxy(new HttpHost(webProxy.addr, webProxy.port, webProxy.protocol))
+        if (webProxy != null && !webProxy.protocol.startsWith("socks"))
+          builder = builder.setProxy(new HttpHost(webProxy.addr, webProxy.port, webProxy.protocol))
 
         val result = builder.build()
         result
@@ -62,7 +64,8 @@ object HTTPResolver {
       val hostVerifier = new InsecureHostnameVerifier()
 
       val httpClient = if (webProxy != null && webProxy.protocol.startsWith("socks")) {
-        val reg = RegistryBuilder.create[ConnectionSocketFactory]
+        val reg = RegistryBuilder
+          .create[ConnectionSocketFactory]
           .register("http", new SocksProxyConnectionSocketFactory())
           .register("https", new SocksProxySSLConnectionSocketFactory(sslContext))
           .build()
@@ -77,8 +80,7 @@ object HTTPResolver {
           .build
 
         httpClient
-      }
-      else {
+      } else {
         val httpClient = HttpClients.custom
           .setDefaultRequestConfig(requestConfig)
           .setRedirectStrategy(new ResilientRedirectStrategy())
@@ -98,18 +100,17 @@ object HTTPResolver {
 }
 
 case class HTTPResolver(
-                         client: HttpClient,
-                         context: HttpClientContext,
-                         //                         headers: Map[String, String] = Map.empty,
-                         input2Request: URI => HttpRequestBase = {
-                           v =>
-                             new HttpGet(v)
-                         }
-                         //                         output2Request: URI => HttpEntityEnclosingRequestBase = { //TODO: need test
-                         //                           v =>
-                         //                             new HttpPost(v)
-                         //                         }
-                       ) extends URIResolver {
+    client: HttpClient,
+    context: HttpClientContext,
+    //                         headers: Map[String, String] = Map.empty,
+    input2Request: URI => HttpRequestBase = { v =>
+      new HttpGet(v)
+    }
+    //                         output2Request: URI => HttpEntityEnclosingRequestBase = { //TODO: need test
+    //                           v =>
+    //                             new HttpPost(v)
+    //                         }
+) extends URIResolver {
 
 //  val currentReq = context.getAttribute(HttpCoreContext.HTTP_REQUEST).asInstanceOf[HttpUriRequest]
 //  val currentHost = context.getAttribute(HttpCoreContext.HTTP_TARGET_HOST).asInstanceOf[HttpHost]
@@ -139,8 +140,7 @@ case class HTTPResolver(
       }
       try {
         f(ir)
-      }
-      finally {
+      } finally {
         ir.clean()
       }
       //    catch {
@@ -187,11 +187,9 @@ case class HTTPResolver(
     override lazy val getLastModified: Long = -1
 
     override lazy val _metadata: ResourceMD = {
-      val map = response.getAllHeaders.map {
-        header =>
-          header.getName -> header.getValue
-      }
-        .toSeq
+      val map = response.getAllHeaders.map { header =>
+        header.getName -> header.getValue
+      }.toSeq
       ResourceMD.apply(map: _*)
     }
 
@@ -199,7 +197,7 @@ case class HTTPResolver(
       super.cleanImpl()
       Option(existingResponse).foreach {
         case v: Closeable => v.close()
-        case _ =>
+        case _            =>
       }
     }
   }

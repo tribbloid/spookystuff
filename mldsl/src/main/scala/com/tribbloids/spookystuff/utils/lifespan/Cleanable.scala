@@ -12,28 +12,26 @@ object Cleanable {
   val uncleaned: ConcurrentMap[Any, ConcurrentMap[Long, Cleanable]] = ConcurrentMap()
 
   def getByLifespan(
-                     id: Any,
-                     condition: Cleanable => Boolean
-                   ): (ConcurrentMap[Long, Cleanable], List[Cleanable]) = {
+      id: Any,
+      condition: Cleanable => Boolean
+  ): (ConcurrentMap[Long, Cleanable], List[Cleanable]) = {
     val batch = uncleaned.getOrElse(id, ConcurrentMap())
     val filtered = batch.values.toList //create deep copy to avoid in-place deletion
       .filter(condition)
     (batch, filtered)
   }
   def getAll(
-              condition: Cleanable => Boolean = _ => true
-            ): Seq[Cleanable] = {
-    uncleaned.values.toList
-      .flatten
+      condition: Cleanable => Boolean = _ => true
+  ): Seq[Cleanable] = {
+    uncleaned.values.toList.flatten
       .map(_._2)
       .filter(condition)
   }
   def getTyped[T <: Cleanable: ClassTag]: Seq[T] = {
     val result = getAll {
       case _: T => true
-      case _ => false
-    }
-      .map { v =>
+      case _    => false
+    }.map { v =>
         v.asInstanceOf[T]
       }
     result
@@ -41,29 +39,26 @@ object Cleanable {
 
   // cannot execute concurrent
   def cleanSweep(
-                  id: Any,
-                  condition: Cleanable => Boolean = _ => true
-                ) = {
+      id: Any,
+      condition: Cleanable => Boolean = _ => true
+  ) = {
 
     val (map, filtered) = getByLifespan(id, condition)
     filtered
-      .foreach {
-        instance =>
-          instance.tryClean()
+      .foreach { instance =>
+        instance.tryClean()
       }
     map --= filtered.map(_.trackingNumber)
     if (map.isEmpty) uncleaned.remove(id)
   }
 
   def cleanSweepAll(
-                     condition: Cleanable => Boolean = _ => true
-                   ) = {
+      condition: Cleanable => Boolean = _ => true
+  ) = {
 
-    uncleaned
-      .keys.toList
-      .foreach {
-        tt =>
-          cleanSweep(tt, condition)
+    uncleaned.keys.toList
+      .foreach { tt =>
+        cleanSweep(tt, condition)
       }
   }
 }
@@ -94,9 +89,8 @@ trait Cleanable {
     // 2 empty collections being inserted simultaneously
     Cleanable.uncleaned
       .getOrElse(
-        lifespan._id,
-        {
-          Cleanable.synchronized{
+        lifespan._id, {
+          Cleanable.synchronized {
             Cleanable.uncleaned
               .getOrElseUpdate(
                 lifespan._id,
@@ -135,21 +129,19 @@ trait Cleanable {
   def chainClean: Seq[Cleanable] = Nil
 
   def clean(silent: Boolean = false): Unit = {
-    val chained: Seq[Try[Unit]] = chainClean.map {
-      v =>
-        Try {
-          v.clean(silent)
-        }
+    val chained: Seq[Try[Unit]] = chainClean.map { v =>
+      Try {
+        v.clean(silent)
+      }
     }
-    val self = Try{
-      if (!isCleaned){
+    val self = Try {
+      if (!isCleaned) {
         isCleaned = true
         stacktraceAtCleaning = Some(Thread.currentThread().getStackTrace)
         try {
           cleanImpl()
           if (!silent) logPrefixed("Cleaned")
-        }
-        catch {
+        } catch {
           case e: Throwable =>
             isCleaned = false
             stacktraceAtCleaning = None
@@ -167,15 +159,17 @@ trait Cleanable {
   def tryClean(silent: Boolean = false): Unit = {
     try {
       clean(silent)
-    }
-    catch {
+    } catch {
       case e: Throwable =>
         val ee = e
-        if (!isSilent(ee)) LoggerFactory.getLogger(this.getClass).warn(
-          s"$logPrefix !!! FAIL TO CLEAN UP !!!\n", ee
-        )
-    }
-    finally {
+        if (!isSilent(ee))
+          LoggerFactory
+            .getLogger(this.getClass)
+            .warn(
+              s"$logPrefix !!! FAIL TO CLEAN UP !!!\n",
+              ee
+            )
+    } finally {
       super.finalize()
     }
   }

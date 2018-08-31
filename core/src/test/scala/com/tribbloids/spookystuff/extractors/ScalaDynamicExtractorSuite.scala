@@ -22,7 +22,7 @@ class ScalaDynamicExtractorSuite extends SpookyEnvFixture with LocalPathDocsFixt
 
     val result = doc.timestamp
 
-    def dynamic = ScalaDynamicExtractor (
+    def dynamic = ScalaDynamicExtractor(
       Lit(doc),
       "timestamp",
       None
@@ -37,7 +37,7 @@ class ScalaDynamicExtractorSuite extends SpookyEnvFixture with LocalPathDocsFixt
 
     val result = doc.asInstanceOf[Doc].uri
 
-    def dynamic = ScalaDynamicExtractor (
+    def dynamic = ScalaDynamicExtractor(
       Lit(doc.asInstanceOf[Doc]),
       "uri",
       None
@@ -52,7 +52,7 @@ class ScalaDynamicExtractorSuite extends SpookyEnvFixture with LocalPathDocsFixt
 
     val result = doc.root.asInstanceOf[Unstructured].code.get
 
-    def dynamic = ScalaDynamicExtractor (
+    def dynamic = ScalaDynamicExtractor(
       Lit(doc.root.asInstanceOf[Unstructured]),
       "code",
       None
@@ -71,7 +71,7 @@ class ScalaDynamicExtractorSuite extends SpookyEnvFixture with LocalPathDocsFixt
 
     val result = action.dryrun
 
-    def dynamic = ScalaDynamicExtractor (
+    def dynamic = ScalaDynamicExtractor(
       Lit[Action](action),
       "dryrun",
       None
@@ -146,20 +146,18 @@ class ScalaDynamicExtractorSuite extends SpookyEnvFixture with LocalPathDocsFixt
     val dynamicFn: (FR) => Option[Any] = dynamic.resolve(emptySchema).lift
 
     {
-      rows.foreach {
-        row =>
-          val dd = dynamicFn.apply(row)
-          val ss = staticFn.apply(row)
-          Predef.assert(dd == ss, s"$dd != $ss")
+      rows.foreach { row =>
+        val dd = dynamicFn.apply(row)
+        val ss = staticFn.apply(row)
+        Predef.assert(dd == ss, s"$dd != $ss")
       }
     }
 
     {
-      rdd.foreach {
-        row =>
-          val dd = dynamicFn.apply(row)
-          val ss = staticFn.apply(row)
-          Predef.assert(dd == ss, s"$dd != $ss")
+      rdd.foreach { row =>
+        val dd = dynamicFn.apply(row)
+        val ss = staticFn.apply(row)
+        Predef.assert(dd == ss, s"$dd != $ss")
       }
     }
   }
@@ -171,16 +169,13 @@ class ScalaDynamicExtractorSuite extends SpookyEnvFixture with LocalPathDocsFixt
       "fn",
       Some(List[Get]('B))
     )
-    val staticFn: (FR) => Option[Any] = {
-      fr =>
-        val dr = fr.dataRow
-        val result = for (
-          a <- dr.get('A);
-          b <- dr.get('B)
-        ) yield {
-          a.asInstanceOf[Example].fn(b.asInstanceOf[Int])
-        }
-        result
+    val staticFn: (FR) => Option[Any] = { fr =>
+      val dr = fr.dataRow
+      val result = for (a <- dr.get('A);
+                        b <- dr.get('B)) yield {
+        a.asInstanceOf[Example].fn(b.asInstanceOf[Int])
+      }
+      result
     }
 
     dynamic.resolveType(emptySchema) should_=~= StringType
@@ -194,16 +189,13 @@ class ScalaDynamicExtractorSuite extends SpookyEnvFixture with LocalPathDocsFixt
       "fnOpt",
       Some(List[Get]('B))
     )
-    val staticFn: (FR) => Option[Any] = {
-      fr =>
-        val dr = fr.dataRow
-        val result = for (
-          a <- dr.get('A);
-          b <- dr.get('B)
-        ) yield {
-          a.asInstanceOf[Example].fnOpt(b.asInstanceOf[Int])
-        }
-        result.flatten
+    val staticFn: (FR) => Option[Any] = { fr =>
+      val dr = fr.dataRow
+      val result = for (a <- dr.get('A);
+                        b <- dr.get('B)) yield {
+        a.asInstanceOf[Example].fnOpt(b.asInstanceOf[Int])
+      }
+      result.flatten
     }
 
     dynamic.resolveType(emptySchema) should_=~= IntegerType
@@ -216,15 +208,12 @@ class ScalaDynamicExtractorSuite extends SpookyEnvFixture with LocalPathDocsFixt
       "concat",
       Some(List[Get]('C))
     )
-    val staticFn: (FR) => Option[Any] = {
-      fr =>
-        val dr = fr.dataRow
-        val result = for (
-          c <- dr.get('C)
-        ) yield {
-          "abcde" concat c.asInstanceOf[String]
-        }
-        result
+    val staticFn: (FR) => Option[Any] = { fr =>
+      val dr = fr.dataRow
+      val result = for (c <- dr.get('C)) yield {
+        "abcde" concat c.asInstanceOf[String]
+      }
+      result
     }
 
     dynamic.resolveType(emptySchema) should_=~= StringType
@@ -256,7 +245,7 @@ class ScalaDynamicExtractorSuite extends SpookyEnvFixture with LocalPathDocsFixt
   }
 
   it("can resolve type of Seq[String].head") {
-    def dynamic = ScalaDynamicExtractor (
+    def dynamic = ScalaDynamicExtractor(
       Lit("a b c d e".split(" ").toSeq),
       "head",
       None
@@ -359,7 +348,6 @@ class ScalaDynamicExtractorSuite extends SpookyEnvFixture with LocalPathDocsFixt
   //    assert(result.isEmpty)
   //  }
 
-
   it("can resolve function of String.startsWith(String) using Java") {
     {
       def dynamic = ScalaDynamicExtractor(
@@ -389,9 +377,13 @@ class ScalaDynamicExtractorSuite extends SpookyEnvFixture with LocalPathDocsFixt
 
   //TODO: remove or optimize Java implementation
   ignore("Performance test: Java reflection should be faster than ScalaReflection") {
-    val int2Str: GenExtractor[Int, String] = { i: Int => "" + i }
+    val int2Str: GenExtractor[Int, String] = { i: Int =>
+      "" + i
+    }
 
-    val int2_10: GenExtractor[Int, String] = { i: Int => "10" }
+    val int2_10: GenExtractor[Int, String] = { i: Int =>
+      "10"
+    }
     def dynamic = ScalaDynamicExtractor[Int](
       int2Str,
       "startsWith",
@@ -403,25 +395,22 @@ class ScalaDynamicExtractorSuite extends SpookyEnvFixture with LocalPathDocsFixt
     val pfScala = dynamic.resolveUsingScala(IntegerType)
     val (scalaRes, scalaTime) = CommonUtils.timer(
       ints.map(
-        i =>
-          pfScala.apply(i).get.asInstanceOf[Boolean]
+        i => pfScala.apply(i).get.asInstanceOf[Boolean]
       )
     )
     println(scalaTime)
 
-    val pfJava= dynamic.resolveUsingScala(IntegerType)
+    val pfJava = dynamic.resolveUsingScala(IntegerType)
     val (javaRes, javaTime) = CommonUtils.timer(
       ints.map(
-        i =>
-          pfJava.apply(i).get.asInstanceOf[Boolean]
+        i => pfJava.apply(i).get.asInstanceOf[Boolean]
       )
     )
     println(javaTime)
 
-    val (nativeRes, nativeTime) = CommonUtils.timer (
+    val (nativeRes, nativeTime) = CommonUtils.timer(
       ints.map(
-        i =>
-          int2Str(i).startsWith(int2_10(i))
+        i => int2Str(i).startsWith(int2_10(i))
       )
     )
     println(nativeTime)

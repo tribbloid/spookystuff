@@ -6,7 +6,7 @@ import com.tribbloids.spookystuff.doc.{Doc, DocOption, NoDoc}
 import com.tribbloids.spookystuff.extractors.Extractor
 import com.tribbloids.spookystuff.extractors.impl.Lit
 import com.tribbloids.spookystuff.utils.http.HttpUtils
-import com.tribbloids.spookystuff.row.{SpookySchema, FetchedRow}
+import com.tribbloids.spookystuff.row.{FetchedRow, SpookySchema}
 import com.tribbloids.spookystuff.session.Session
 import com.tribbloids.spookystuff.utils.CommonUtils
 import org.slf4j.LoggerFactory
@@ -23,12 +23,17 @@ abstract class Block(override val children: Trace) extends Actions(children) wit
 
   //  assert(self.nonEmpty)
 
-  override def wayback: Extractor[Long] = children.flatMap {
-    case w: Wayback => Some(w)
-    case _ => None
-  }.lastOption.map {
-    _.wayback
-  }.orNull
+  override def wayback: Extractor[Long] =
+    children
+      .flatMap {
+        case w: Wayback => Some(w)
+        case _          => None
+      }
+      .lastOption
+      .map {
+        _.wayback
+      }
+      .orNull
 
   //  override def as(name: Symbol) = {
   //    super.as(name)
@@ -48,8 +53,8 @@ abstract class Block(override val children: Trace) extends Actions(children) wit
     val doc = this.doExeNoUID(session)
 
     val backtrace = (session.backtrace :+ this).toList
-    val result = doc.zipWithIndex.map {
-      tuple => {
+    val result = doc.zipWithIndex.map { tuple =>
+      {
         val fetched = tuple._1
 
         val updatedName = this.nameOpt.getOrElse {
@@ -62,11 +67,9 @@ abstract class Block(override val children: Trace) extends Actions(children) wit
     }
     if (result.isEmpty && this.hasOutput) {
       Seq(NoDoc(backtrace, cacheLevel = this.cacheEmptyOutput))
-    }
-    else if (result.count(_.isInstanceOf[DocOption]) == 0 && this.hasOutput) {
+    } else if (result.count(_.isInstanceOf[DocOption]) == 0 && this.hasOutput) {
       result.map(_.updated(cacheLevel = this.cacheEmptyOutput))
-    }
-    else {
+    } else {
       result
     }
   }
@@ -77,10 +80,10 @@ abstract class Block(override val children: Trace) extends Actions(children) wit
 object ClusterRetry {
 
   def apply(
-             trace: Set[Trace],
-             retries: Int = Const.clusterRetries,
-             cacheEmptyOutput: DocCacheLevel.Value = DocCacheLevel.NoCache
-           ): ClusterRetry = {
+      trace: Set[Trace],
+      retries: Int = Const.clusterRetries,
+      cacheEmptyOutput: DocCacheLevel.Value = DocCacheLevel.NoCache
+  ): ClusterRetry = {
 
     assert(trace.size <= 1)
 
@@ -89,11 +92,11 @@ object ClusterRetry {
 }
 
 final case class ClusterRetry(
-                               override val children: Trace
-                             )(
-                               retries: Int,
-                               override val cacheEmptyOutput: DocCacheLevel.Value
-                             ) extends Block(children) {
+    override val children: Trace
+)(
+    retries: Int,
+    override val cacheEmptyOutput: DocCacheLevel.Value
+) extends Block(children) {
 
   override def skeleton = Some(ClusterRetry(this.trunkSeq)(retries, cacheEmptyOutput).asInstanceOf[this.type])
 
@@ -105,8 +108,7 @@ final case class ClusterRetry(
       for (action <- children) {
         pages ++= action.exe(session)
       }
-    }
-    catch {
+    } catch {
       case e: Throwable =>
         val logger = LoggerFactory.getLogger(this.getClass)
         //avoid endless retry if tcOpt is missing
@@ -118,15 +120,14 @@ final case class ClusterRetry(
               this.getSessionExceptionMessage(session),
             e
           )
-        }
-        else logger.warn(s"Failover on ${e.getClass.getSimpleName}: Cluster-wise retries has depleted")
+        } else logger.warn(s"Failover on ${e.getClass.getSimpleName}: Cluster-wise retries has depleted")
         logger.info("\t\\-->", e)
     }
 
     pages
   }
 
-  override def doInterpolate(pageRow: FetchedRow, schema: SpookySchema): Option[this.type] ={
+  override def doInterpolate(pageRow: FetchedRow, schema: SpookySchema): Option[this.type] = {
     val seq = this.doInterpolateSeq(pageRow, schema)
     if (seq.isEmpty) None
     else Some(this.copy(children = seq)(this.retries, this.cacheEmptyOutput).asInstanceOf[this.type])
@@ -136,10 +137,10 @@ final case class ClusterRetry(
 object LocalRetry {
 
   def apply(
-             trace: Set[Trace],
-             retries: Int = Const.clusterRetries,
-             cacheEmptyOutput: DocCacheLevel.Value
-           ): LocalRetry = {
+      trace: Set[Trace],
+      retries: Int = Const.clusterRetries,
+      cacheEmptyOutput: DocCacheLevel.Value
+  ): LocalRetry = {
 
     assert(trace.size <= 1)
 
@@ -148,11 +149,11 @@ object LocalRetry {
 }
 
 final case class LocalRetry(
-                             override val children: Trace
-                           )(
-                             retries: Int,
-                             override val cacheEmptyOutput: DocCacheLevel.Value
-                           ) extends Block(children) {
+    override val children: Trace
+)(
+    retries: Int,
+    override val cacheEmptyOutput: DocCacheLevel.Value
+) extends Block(children) {
 
   override def skeleton = Some(LocalRetry(this.trunkSeq)(retries, cacheEmptyOutput).asInstanceOf[this.type])
 
@@ -164,8 +165,7 @@ final case class LocalRetry(
       for (action <- children) {
         pages ++= action.exe(session)
       }
-    }
-    catch {
+    } catch {
       case e: Throwable =>
         CommonUtils.retry(retries)({
           val retriedPages = new ArrayBuffer[DocOption]()
@@ -180,20 +180,19 @@ final case class LocalRetry(
     pages
   }
 
-  override def doInterpolate(pageRow: FetchedRow, schema: SpookySchema): Option[this.type] ={
+  override def doInterpolate(pageRow: FetchedRow, schema: SpookySchema): Option[this.type] = {
     val seq = this.doInterpolateSeq(pageRow, schema)
     if (seq.isEmpty) None
     else Some(this.copy(children = seq)(this.retries, this.cacheEmptyOutput).asInstanceOf[this.type])
   }
 }
 
-
 object Loop {
 
   def apply(
-             trace: Set[Trace],
-             limit: Int = Const.maxLoop
-           ): Loop = {
+      trace: Set[Trace],
+      limit: Int = Const.maxLoop
+  ): Loop = {
     assert(trace.size == 1)
 
     Loop(trace.head, limit) //TODO: should persist rule of Cartesian join & yield Set[Loop]
@@ -208,11 +207,11 @@ object Loop {
   * @param children a list of actions being iterated through
   */
 final case class Loop(
-                       override val children: Trace,
-                       limit: Int
-                     ) extends Block(children) {
+    override val children: Trace,
+    limit: Int
+) extends Block(children) {
 
-  assert(limit>0)
+  assert(limit > 0)
 
   override def skeleton = Some(this.copy(children = this.trunkSeq).asInstanceOf[this.type])
 
@@ -226,8 +225,7 @@ final case class Loop(
           pages ++= action.exe(session)
         }
       }
-    }
-    catch {
+    } catch {
       case e: Throwable =>
         LoggerFactory.getLogger(this.getClass).info("Aborted on exception: " + e)
     }
@@ -235,7 +233,7 @@ final case class Loop(
     pages
   }
 
-  override def doInterpolate(pageRow: FetchedRow, schema: SpookySchema): Option[this.type] ={
+  override def doInterpolate(pageRow: FetchedRow, schema: SpookySchema): Option[this.type] = {
     val seq = this.doInterpolateSeq(pageRow, schema)
     if (seq.isEmpty) None
     else Some(this.copy(children = seq).asInstanceOf[this.type])
@@ -249,10 +247,10 @@ object LoadMore {
   import dsl._
 
   def apply(
-             selector: String,
-             limit: Int = Const.maxLoop,
-             delay: Duration = Const.Interaction.delayMin
-           ): Loop =
+      selector: String,
+      limit: Int = Const.maxLoop,
+      delay: Duration = Const.Interaction.delayMin
+  ): Loop =
     Loop(
       Click(selector, cooldown = delay),
       limit
@@ -264,10 +262,10 @@ object Paginate {
   import dsl._
 
   def apply(
-             selector: String,
-             limit: Int = Const.maxLoop,
-             delay: Duration = Const.Interaction.delayMin
-           ): Loop = {
+      selector: String,
+      limit: Int = Const.maxLoop,
+      delay: Duration = Const.Interaction.delayMin
+  ): Loop = {
     Loop(
       Snapshot()
         +> Click(selector, cooldown = delay),
@@ -279,10 +277,10 @@ object Paginate {
 object If {
 
   def apply(
-             condition: DocCondition,
-             ifTrue: Set[Trace] = Set(),
-             ifFalse: Set[Trace] = Set()
-           ): If = {
+      condition: DocCondition,
+      ifTrue: Set[Trace] = Set(),
+      ifFalse: Set[Trace] = Set()
+  ): If = {
 
     assert(ifTrue.size <= 1)
     assert(ifFalse.size <= 1)
@@ -296,12 +294,13 @@ object If {
 }
 
 final case class If(
-                     condition: DocCondition, //TODO: merge with Extraction[Boolean]
-                     ifTrue: Trace,
-                     ifFalse: Trace
-                   ) extends Block(ifTrue ++ ifFalse) {
+    condition: DocCondition, //TODO: merge with Extraction[Boolean]
+    ifTrue: Trace,
+    ifFalse: Trace
+) extends Block(ifTrue ++ ifFalse) {
 
-  override def skeleton = Some(this.copy(ifTrue = ifTrue.flatMap(_.skeleton), ifFalse = ifFalse.flatMap(_.skeleton)).asInstanceOf[this.type])
+  override def skeleton =
+    Some(this.copy(ifTrue = ifTrue.flatMap(_.skeleton), ifFalse = ifFalse.flatMap(_.skeleton)).asInstanceOf[this.type])
 
   override def doExeNoUID(session: Session): Seq[DocOption] = {
 
@@ -312,8 +311,7 @@ final case class If(
       for (action <- ifTrue) {
         pages ++= action.exe(session)
       }
-    }
-    else {
+    } else {
       for (action <- ifFalse) {
         pages ++= action.exe(session)
       }
@@ -322,7 +320,7 @@ final case class If(
     pages
   }
 
-  override def doInterpolate(pageRow: FetchedRow, schema: SpookySchema): Option[this.type] ={
+  override def doInterpolate(pageRow: FetchedRow, schema: SpookySchema): Option[this.type] = {
     val ifTrueInterpolated = Actions.doInterppolateSeq(ifTrue, pageRow, schema)
     val ifFalseInterpolated = Actions.doInterppolateSeq(ifFalse, pageRow, schema)
     val result = this.copy(ifTrue = ifTrueInterpolated, ifFalse = ifFalseInterpolated).asInstanceOf[this.type]
@@ -341,7 +339,8 @@ case class OAuthV2(self: Wget) extends Block(List(self)) with Driverless {
     }
     val effectiveWget: Wget = self.uriOption match {
       case Some(uri) =>
-        val signed = HttpUtils.OauthV2(uri.toString, keys.consumerKey, keys.consumerSecret, keys.token, keys.tokenSecret)
+        val signed =
+          HttpUtils.OauthV2(uri.toString, keys.consumerKey, keys.consumerSecret, keys.token, keys.tokenSecret)
         self.copy(uri = Lit.erased(signed))
       case None =>
         self
@@ -361,8 +360,8 @@ case class OAuthV2(self: Wget) extends Block(List(self)) with Driverless {
   override def skeleton = Some(this)
 
   override def doInterpolate(pageRow: FetchedRow, schema: SpookySchema): Option[this.type] =
-    self.interpolate(pageRow, schema).map {
-      v => this.copy(self = v.asInstanceOf[Wget]).asInstanceOf[this.type]
+    self.interpolate(pageRow, schema).map { v =>
+      this.copy(self = v.asInstanceOf[Wget]).asInstanceOf[this.type]
     }
 
   override def doExeNoUID(session: Session): Seq[DocOption] = {

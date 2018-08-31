@@ -1,6 +1,5 @@
 package com.tribbloids.spookystuff.uav.spatial.point
 
-
 import com.tribbloids.spookystuff.uav.spatial.util.{SearchAttempt, SearchHistory}
 import com.tribbloids.spookystuff.uav.spatial._
 import org.apache.spark.ml.uav.Vec
@@ -21,15 +20,15 @@ trait PointViewBase {
     * implement this to bypass proj4
     */
   def fastProject(
-                   ref1: Anchor,
-                   ref2: Anchor,
-                   system2: CoordinateSystem,
-                   ic: SearchHistory
-                 ): Option[system2.Coordinate] = {
+      ref1: Anchor,
+      ref2: Anchor,
+      system2: CoordinateSystem,
+      ic: SearchHistory
+  ): Option[system2.Coordinate] = {
 
     system2 match {
-      case NED if ref1 == ref2 => Some(NED(0,0,0).asInstanceOf[system2.Coordinate])
-      case _ => None
+      case NED if ref1 == ref2 => Some(NED(0, 0, 0).asInstanceOf[system2.Coordinate])
+      case _                   => None
     }
   }
 
@@ -43,13 +42,12 @@ trait PointViewBase {
         .map(_.alt)
         .orElse {
           ic.getCoordinate(attemptReverse)
-            .map(v => - v.alt)
+            .map(v => -v.alt)
         }
     }
 
-    delta2_1_Opt.map {
-      delta =>
-        delta + z
+    delta2_1_Opt.map { delta =>
+      delta + z
     }
   }
 
@@ -59,21 +57,19 @@ trait PointViewBase {
     * @return new coordinate
     */
   def project(
-               ref1: Anchor,
-               ref2: Anchor,
-               system2: CoordinateSystem,
-               ic: SearchHistory
-             ): Option[system2.Coordinate] = {
+      ref1: Anchor,
+      ref2: Anchor,
+      system2: CoordinateSystem,
+      ic: SearchHistory
+  ): Option[system2.Coordinate] = {
 
     val customResult: Option[system2.Coordinate] = fastProject(ref1, ref2, system2, ic)
     //        .map(_.asInstanceOf[system2.Coordinate]) // redundant! IDE error?
     customResult.orElse {
       val zOpt = projectZ(ref1, ref2, system2, ic)
-      for (
-        proj1 <- system.get2DProj(ref1, ic);
-        proj2 <- system2.get2DProj(ref2, ic);
-        dstZ <- zOpt
-      ) yield {
+      for (proj1 <- system.get2DProj(ref1, ic);
+           proj2 <- system2.get2DProj(ref2, ic);
+           dstZ <- zOpt) yield {
         val src = new ProjCoordinate(x, y, z)
         val intermediateWGS84 = new ProjCoordinate
         val dst = new ProjCoordinate

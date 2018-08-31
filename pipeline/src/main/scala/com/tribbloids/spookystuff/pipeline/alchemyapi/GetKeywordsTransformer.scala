@@ -4,7 +4,7 @@ import java.util.UUID
 
 import com.tribbloids.spookystuff.pipeline.RemoteTransformer
 import com.tribbloids.spookystuff.rdd.FetchedDataset
-import com.tribbloids.spookystuff.{SpookyContext, dsl}
+import com.tribbloids.spookystuff.{dsl, SpookyContext}
 
 import scala.language.postfixOps
 
@@ -12,19 +12,21 @@ import scala.language.postfixOps
   * Created by peng on 15/11/15.
   */
 class GetKeywordsTransformer(
-                              override val uid: String =
-                              classOf[GetKeywordsTransformer].getCanonicalName + "_" + UUID.randomUUID().toString
-                            ) extends RemoteTransformer {
+    override val uid: String =
+      classOf[GetKeywordsTransformer].getCanonicalName + "_" + UUID.randomUUID().toString
+) extends RemoteTransformer {
 
   import dsl._
   import org.apache.spark.ml.param._
 
   final val APIKey: Param[String] = new Param(this, "APIKey", "Alchemi API Key")
   final val InputCol: Param[Symbol] = new Param(this, "InputCol", "Text being analyzed")
-  final val StrictExtractionOnly: Param[Boolean] = new Param(this, "StrictExtractionOnly", "if set to true, only extract strict keywords")
+  final val StrictExtractionOnly: Param[Boolean] =
+    new Param(this, "StrictExtractionOnly", "if set to true, only extract strict keywords")
   final val KeywordCol: Param[Symbol] = new Param(this, "KeywordCol", "detected keywords")
   final val RelevanceCol: Param[Symbol] = new Param(this, "RelevanceCol", "relevance of detected keywords")
-  final val Sentiment: Param[Boolean] = new Param(this, "Sentiment", "set to true to enable sentimental analysis of each keyword")
+  final val Sentiment: Param[Boolean] =
+    new Param(this, "Sentiment", "set to true to enable sentimental analysis of each keyword")
   final val SentimentCol: Param[Symbol] = new Param(this, "SentimentCol", "sentiment of detected keywords")
 
   //  final val KnowledgeGraph: Param[Boolean] = new Param(this, "KnowledgeGraph", "set to true to enable knowledge graph") TODO: enable it!
@@ -39,16 +41,20 @@ class GetKeywordsTransformer(
     SentimentCol -> 'sentiment
   )
 
-  override def exampleInput(spooky: SpookyContext): FetchedDataset = spooky.create(Seq(
-    Map("_" -> "AlchemyAPI has raised $2 million to extend the capabilities of its deep learning technology that applies artificial intelligence to read and understand web pages, text documents, emails, tweets, and other forms of content. Access Venture Partners led the Series A round, which the company will use to ramp up its sales and marketing, make hires and launch new services.")
-  ))
+  override def exampleInput(spooky: SpookyContext): FetchedDataset =
+    spooky.create(
+      Seq(
+        Map("_" -> "AlchemyAPI has raised $2 million to extend the capabilities of its deep learning technology that applies artificial intelligence to read and understand web pages, text documents, emails, tweets, and other forms of content. Access Venture Partners led the Series A round, which the company will use to ramp up its sales and marketing, make hires and launch new services.")
+      ))
 
   override def transform(dataset: FetchedDataset): FetchedDataset = {
-    val mode: String = if (getOrDefault(StrictExtractionOnly)) "strict"
-    else "normal"
+    val mode: String =
+      if (getOrDefault(StrictExtractionOnly)) "strict"
+      else "normal"
 
-    val sentiment: Int = if (getOrDefault(Sentiment)) 1
-    else 0
+    val sentiment: Int =
+      if (getOrDefault(Sentiment)) 1
+      else 0
 
     dataset
       .wget(

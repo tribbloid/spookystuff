@@ -22,7 +22,7 @@ trait SpookyRunnable extends SpookyEnv {
       case df: Dataset[_] =>
         val array = df.rdd.persist().takeSample(withReplacement = false, num = 100)
         df.printSchema()
-        println(df.schema.fieldNames.mkString("[","\t","]"))
+        println(df.schema.fieldNames.mkString("[", "\t", "]"))
         array
       case pageRowRDD: FetchedDataset =>
         val array = pageRowRDD.rdd.persist().takeSample(withReplacement = false, num = 100)
@@ -34,8 +34,9 @@ trait SpookyRunnable extends SpookyEnv {
     }
 
     array.foreach(row => println(row))
-    println("-------------------returned "+array.length+" rows------------------")
+    println("-------------------returned " + array.length + " rows------------------")
     println(s"------------------fetched ${spooky.spookyMetrics.pagesFetched.value} pages-----------------")
-    println(s"------------------${spooky.spookyMetrics.pagesFetchedFromCache.value} pages from web cache-----------------")
+    println(
+      s"------------------${spooky.spookyMetrics.pagesFetchedFromCache.value} pages from web cache-----------------")
   }
 }

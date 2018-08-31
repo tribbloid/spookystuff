@@ -21,45 +21,42 @@ object GenPartitioners {
     }
 
     case class Inst[K](
-                        implicit val ctg: ClassTag[K]
-                      ) extends Instance[K] {
+        implicit val ctg: ClassTag[K]
+    ) extends Instance[K] {
 
       override def reduceByKey[V: ClassTag](
-                                             rdd: RDD[(K, V)],
-                                             reducer: (V, V) => V,
-                                             beaconRDDOpt: Option[BeaconRDD[K]] = None
-                                           ): RDD[(K, V)] = {
-        rdd.mapPartitions{
-          itr =>
-            itr
-              .toTraversable
-              .groupBy(_._1) //TODO: is it memory efficient? Write a test case for it
-              .map(v => v._1 -> v._2.map(_._2).reduce(reducer))
-              .iterator
+          rdd: RDD[(K, V)],
+          reducer: (V, V) => V,
+          beaconRDDOpt: Option[BeaconRDD[K]] = None
+      ): RDD[(K, V)] = {
+        rdd.mapPartitions { itr =>
+          itr.toTraversable
+            .groupBy(_._1) //TODO: is it memory efficient? Write a test case for it
+            .map(v => v._1 -> v._2.map(_._2).reduce(reducer))
+            .iterator
         }
       }
     }
   }
 
-  case class Wide(
-                   partitionerFactory: RDD[_] => Partitioner = {
-                     PartitionerFactories.SamePartitioner
-                   }) extends AnyGenPartitioner {
+  case class Wide(partitionerFactory: RDD[_] => Partitioner = {
+    PartitionerFactories.SamePartitioner
+  }) extends AnyGenPartitioner {
 
     def getInstance[K: ClassTag](schema: SpookySchema): Instance[K] = {
       Inst[K]()
     }
 
     case class Inst[K](
-                        implicit val ctg: ClassTag[K]
-                      ) extends Instance[K] {
+        implicit val ctg: ClassTag[K]
+    ) extends Instance[K] {
 
       //this is faster and saves more memory
       override def reduceByKey[V: ClassTag](
-                                             rdd: RDD[(K, V)],
-                                             reducer: (V, V) => V,
-                                             beaconRDDOpt: Option[BeaconRDD[K]] = None
-                                           ): RDD[(K, V)] = {
+          rdd: RDD[(K, V)],
+          reducer: (V, V) => V,
+          beaconRDDOpt: Option[BeaconRDD[K]] = None
+      ): RDD[(K, V)] = {
         val partitioner = partitionerFactory(rdd)
         rdd.reduceByKey(partitioner, reducer)
       }
@@ -69,22 +66,22 @@ object GenPartitioners {
   //group identical ActionPlans, execute in parallel, and duplicate result pages to match their original contexts
   //reduce workload by avoiding repeated access to the same url caused by duplicated context or diamond links (A->B,A->C,B->D,C->D)
   case class DocCacheAware(
-                            partitionerFactory: RDD[_] => Partitioner = {
-                              PartitionerFactories.SamePartitioner
-                            }
-                          ) extends AnyGenPartitioner {
+      partitionerFactory: RDD[_] => Partitioner = {
+        PartitionerFactories.SamePartitioner
+      }
+  ) extends AnyGenPartitioner {
 
     def getInstance[K: ClassTag](schema: SpookySchema): Instance[K] = {
       Inst[K]()
     }
 
     case class Inst[K](
-                        implicit val ctg: ClassTag[K]
-                      ) extends Instance[K] {
+        implicit val ctg: ClassTag[K]
+    ) extends Instance[K] {
 
       override def _createBeaconRDD(
-                                     ref: RDD[_]
-                                   ): Option[BeaconRDD[K]] = {
+          ref: RDD[_]
+      ): Option[BeaconRDD[K]] = {
 
         val partitioner = partitionerFactory(ref)
         val result = ref.sparkContext
@@ -96,19 +93,18 @@ object GenPartitioners {
       }
 
       override def reduceByKey[V: ClassTag](
-                                             rdd: RDD[(K, V)],
-                                             reducer: (V, V) => V,
-                                             beaconRDDOpt: Option[BeaconRDD[K]] = None
-                                           ): RDD[(K, V)] = {
+          rdd: RDD[(K, V)],
+          reducer: (V, V) => V,
+          beaconRDDOpt: Option[BeaconRDD[K]] = None
+      ): RDD[(K, V)] = {
 
         val beaconRDD = beaconRDDOpt.get
 
         val partitioner = partitionerFactory(rdd)
         val cogrouped = rdd
           .cogroup(beaconRDD, beaconRDD.partitioner.getOrElse(partitioner))
-        cogrouped.mapValues {
-          tuple =>
-            tuple._1.reduce(reducer)
+        cogrouped.mapValues { tuple =>
+          tuple._1.reduce(reducer)
         }
       }
     }

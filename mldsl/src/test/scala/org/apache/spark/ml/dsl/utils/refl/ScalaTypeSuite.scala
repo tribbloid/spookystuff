@@ -31,11 +31,10 @@ class ScalaTypeSuite extends FunSpecx {
     val arr: Seq[String] = Seq("abc", "def")
     val cls = arr.head.getClass
     val ttg: TypeTag[Seq[String]] = TypeUtils.getTypeTag(arr)
-    val fns = ttg.tpe
-      .members
+    val fns = ttg.tpe.members
     val fn = fns
       .filter(_.name.toString == "head")
-      .head                           // Unsafely access it for now, use Option and map under normal conditions
+      .head // Unsafely access it for now, use Option and map under normal conditions
 
     val fnTp: Type = fn.typeSignatureIn(ttg.tpe)
 
@@ -53,7 +52,8 @@ class ScalaTypeSuite extends FunSpecx {
   //    TypeUtils.atomicTypePairs.foreach(println)
   //  }
 
-  val tupleSchema = StructType(Array(StructField("_1", IntegerType, nullable = false), StructField("_2", StringType, nullable = true)))
+  val tupleSchema = StructType(
+    Array(StructField("_1", IntegerType, nullable = false), StructField("_2", StringType, nullable = true)))
 
   describe("CatalystType <=> TypeTag") {
     val catalystType_scalaType: Seq[(DataType, TypeTag[_])] = Seq(
@@ -70,52 +70,54 @@ class ScalaTypeSuite extends FunSpecx {
       new ExampleUDT -> typeTag[Example]
     )
 
-    catalystType_scalaType.foreach {
-      pair =>
-        it(s"scalaType (${pair._2.tpe}) => catalystType (${pair._1})") {
-          val converted = pair._2.tryReify.toOption
-          println(converted)
-          assert(converted == Some(pair._1))
-        }
+    catalystType_scalaType.foreach { pair =>
+      it(s"scalaType (${pair._2.tpe}) => catalystType (${pair._1})") {
+        val converted = pair._2.tryReify.toOption
+        println(converted)
+        assert(converted == Some(pair._1))
+      }
 
-        it(s"catalystType (${pair._1}) => scalaType (${pair._2.tpe})") {
-          val converted = pair._1.scalaTypeOpt
-          println(converted)
-          assert(converted.map(_.asClass) == Some(pair._2.asClass))
-        }
+      it(s"catalystType (${pair._1}) => scalaType (${pair._2.tpe})") {
+        val converted = pair._1.scalaTypeOpt
+        println(converted)
+        assert(converted.map(_.asClass) == Some(pair._2.asClass))
+      }
 
-        //TODO: this failed on CI for UDT with unknown reason, why?
-        ignore(s"CodeGenerator.javaType(${pair._1})") {
-          val genCtx = new CodegenContext
-          pair._1 match {
-            case v: UserDefinedType[_] =>
-              println(s"UDT: ${pair._1.getClass.getCanonicalName}")
-              assert(v.sqlType == BinaryType)
-            case _ =>
-          }
-          val tt = genCtx.javaType(pair._1)
-          assert(tt.toLowerCase() != "object")
+      //TODO: this failed on CI for UDT with unknown reason, why?
+      ignore(s"CodeGenerator.javaType(${pair._1})") {
+        val genCtx = new CodegenContext
+        pair._1 match {
+          case v: UserDefinedType[_] =>
+            println(s"UDT: ${pair._1.getClass.getCanonicalName}")
+            assert(v.sqlType == BinaryType)
+          case _ =>
         }
+        val tt = genCtx.javaType(pair._1)
+        assert(tt.toLowerCase() != "object")
+      }
 
-      //TODO: add 1 test to ensure that ScalaUDT can be used in DataFrame with codegen.
+    //TODO: add 1 test to ensure that ScalaUDT can be used in DataFrame with codegen.
     }
   }
 
   describe("CatalystType => TypeTag") {
     val oneWayPairs: Seq[(TypeTag[_], DataType)] = Seq(
-      typeTag[Array[(String, Int)]] -> ArrayType(StructType(Seq(StructField("_1", StringType), StructField("_2", IntegerType, nullable = false))), containsNull = true),
-      typeTag[Seq[(String, Int)]] -> ArrayType(StructType(Seq(StructField("_1", StringType), StructField("_2", IntegerType, nullable = false))), containsNull = true)
+      typeTag[Array[(String, Int)]] -> ArrayType(
+        StructType(Seq(StructField("_1", StringType), StructField("_2", IntegerType, nullable = false))),
+        containsNull = true),
+      typeTag[Seq[(String, Int)]] -> ArrayType(
+        StructType(Seq(StructField("_1", StringType), StructField("_2", IntegerType, nullable = false))),
+        containsNull = true)
       //    typeTag[Set[(String, Int)]] -> ArrayType(StructType(Seq(StructField("_1", StringType), StructField("_2", IntegerType, nullable = false))), containsNull = true),
       //    typeTag[Iterable[(String, Int)]] -> ArrayType(StructType(Seq(StructField("_1", StringType), StructField("_2", IntegerType, nullable = false))), containsNull = true)
     )
 
-    oneWayPairs.foreach {
-      pair =>
-        it(s"scalaType (${pair._1.tpe}) => catalystType (${pair._2})") {
-          val converted = pair._1.tryReify.toOption
-          println(converted)
-          assert(converted == Some(pair._2))
-        }
+    oneWayPairs.foreach { pair =>
+      it(s"scalaType (${pair._1.tpe}) => catalystType (${pair._2})") {
+        val converted = pair._1.tryReify.toOption
+        println(converted)
+        assert(converted == Some(pair._2))
+      }
     }
 
     it("ScalaUDT will not interfere with catalyst CodeGen") {
@@ -142,25 +144,24 @@ class ScalaTypeSuite extends FunSpecx {
       //      typeTag[List[_]]
     )
 
-    ttgs.foreach {
-      ttg =>
-        it(s"${ttg.tpe}: TypeTag => mirror") {
-          val mirror = (ttg: ScalaType[_]).mirror
-          assert(mirror != null)
-        }
+    ttgs.foreach { ttg =>
+      it(s"${ttg.tpe}: TypeTag => mirror") {
+        val mirror = (ttg: ScalaType[_]).mirror
+        assert(mirror != null)
+      }
 
-        it(s"${ttg.tpe}: TypeTag => ClassTag => TypeTag") {
+      it(s"${ttg.tpe}: TypeTag => ClassTag => TypeTag") {
 
-          val ctg = (ttg: ScalaType[_]).asClassTag
-          val ttg2 = (ctg: ScalaType[_]).asTypeTag
-          assert(ttg.tpe =:= ttg2.tpe)
-        }
+        val ctg = (ttg: ScalaType[_]).asClassTag
+        val ttg2 = (ctg: ScalaType[_]).asTypeTag
+        assert(ttg.tpe =:= ttg2.tpe)
+      }
 
-        it(s"${ttg.tpe}: TypeTag => Class => TypeTag") {
-          val clz = (ttg: ScalaType[_]).asClass
-          val ttg2 = (clz: ScalaType[_]).asTypeTag
-          assert(ttg.tpe =:= ttg2.tpe)
-        }
+      it(s"${ttg.tpe}: TypeTag => Class => TypeTag") {
+        val clz = (ttg: ScalaType[_]).asClass
+        val ttg2 = (clz: ScalaType[_]).asTypeTag
+        assert(ttg.tpe =:= ttg2.tpe)
+      }
     }
   }
 }

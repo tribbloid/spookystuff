@@ -43,8 +43,7 @@ class WebDriverSuite extends SpookyEnvFixture with LocalPathDocsFixture {
 
         docs.collect().foreach(println)
       }
-    }
-    finally {
+    } finally {
       this.spookyConf.webDriverFactory = DriverFactories.PhantomJS()
       reloadSpooky
     }

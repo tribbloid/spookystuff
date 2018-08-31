@@ -4,41 +4,41 @@ import org.apache.spark.ml.dsl.AbstractFlowSuite
 
 object XMLWeakDeserializerSuite {
   case class StrStr(
-                     a: String,
-                     b: String
-                   )
+      a: String,
+      b: String
+  )
 
   case class StrInt(
-                     a: String = "A",
-                     b: Int = 2
-                   )
+      a: String = "A",
+      b: Int = 2
+  )
 
   case class StrDbl(
-                     a: String,
-                     b: Double
-                   )
+      a: String,
+      b: Double
+  )
 
   case class StrIntArray(
-                          a: String,
-                          b: Array[Int]
-                        )
+      a: String,
+      b: Array[Int]
+  )
 
   case class StrIntSeq(
-                        a: String,
-                        b: Seq[Int]
-                      )
+      a: String,
+      b: Seq[Int]
+  )
 
   case class StrIntSet(
-                        a: String,
-                        b: Set[Int]
-                      )
+      a: String,
+      b: Set[Int]
+  )
 
   case class OptInt(
-                     a: Option[Int]
-                   )
+      a: Option[Int]
+  )
 }
 
-class XMLWeakDeserializerSuite extends AbstractFlowSuite{
+class XMLWeakDeserializerSuite extends AbstractFlowSuite {
 
   implicit val formats = Xml.defaultFormats
 

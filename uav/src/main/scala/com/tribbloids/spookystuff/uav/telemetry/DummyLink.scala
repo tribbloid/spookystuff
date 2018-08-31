@@ -11,10 +11,10 @@ import com.tribbloids.spookystuff.uav.system.UAV
   * despite similarity, all Links are subjected to resource control and automatic resource cleanup
   */
 case class DummyLink(
-                      uav: UAV,
-                      override val home: Location = UAVConf.DEFAULT_HOME_LOCATION,
-                      currentLocation: Location = UAVConf.DEFAULT_HOME_LOCATION
-                    ) extends Link {
+    uav: UAV,
+    override val home: Location = UAVConf.DEFAULT_HOME_LOCATION,
+    currentLocation: Location = UAVConf.DEFAULT_HOME_LOCATION
+) extends Link {
 
   override val resourceURIs: Set[String] = uav.uris.toSet
 
@@ -27,7 +27,7 @@ case class DummyLink(
   override def sameFactoryWith(v: Link): Boolean = {
     v match {
       case DummyLink(u2, _, _) => u2 == this.uav
-      case _ => false
+      case _                   => false
     }
   }
   //  override def coFactory(v: Link): Boolean = false

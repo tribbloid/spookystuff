@@ -18,19 +18,16 @@ class TestWayback extends SpookyEnvFixture {
     spooky.spookyConf.cacheWrite = true
     spooky.spookyConf.IgnoreCachedDocsBefore = Some(new Date())
 
-    val dates: Seq[Long] = (0 to 2).map {
-      i =>
-        val pages = (Delay(10.seconds) +> Wget("http://www.wikipedia.org")
-          ).head.fetch(spooky) //5s is long enough
-        assert(pages.size == 1)
-        pages.head.timeMillis
+    val dates: Seq[Long] = (0 to 2).map { i =>
+      val pages = (Delay(10.seconds) +> Wget("http://www.wikipedia.org")).head.fetch(spooky) //5s is long enough
+      assert(pages.size == 1)
+      pages.head.timeMillis
     }
 
     spooky.spookyConf.cacheRead = true
 
     val cachedPages = (Delay(10.seconds)
-      +> Wget("http://www.wikipedia.org").waybackToTimeMillis(dates(1) + 2000)
-      ).head.fetch(spooky)
+      +> Wget("http://www.wikipedia.org").waybackToTimeMillis(dates(1) + 2000)).head.fetch(spooky)
     assert(cachedPages.size == 1)
     assert(cachedPages.head.timeMillis == dates(1))
 
@@ -38,8 +35,7 @@ class TestWayback extends SpookyEnvFixture {
 
     intercept[QueryException] {
       (Delay(10.seconds)
-        +> Wget("http://www.wikipedia.org").waybackToTimeMillis(dates.head - 2000)
-        ).head.fetch(spooky)
+        +> Wget("http://www.wikipedia.org").waybackToTimeMillis(dates.head - 2000)).head.fetch(spooky)
     }
   }
 
@@ -47,21 +43,18 @@ class TestWayback extends SpookyEnvFixture {
     spooky.spookyConf.cacheWrite = true
     spooky.spookyConf.IgnoreCachedDocsBefore = Some(new Date())
 
-    val dates: Seq[Long] = (0 to 2).map {
-      i =>
-        val pages = (Delay(10.seconds)
-          +> Visit("http://www.wikipedia.org")
-          ).rewriteGlobally(defaultSchema).head.fetch(spooky) //5s is long enough
-        assert(pages.size == 1)
-        pages.head.timeMillis
+    val dates: Seq[Long] = (0 to 2).map { i =>
+      val pages = (Delay(10.seconds)
+        +> Visit("http://www.wikipedia.org")).rewriteGlobally(defaultSchema).head.fetch(spooky) //5s is long enough
+      assert(pages.size == 1)
+      pages.head.timeMillis
     }
 
     spooky.spookyConf.cacheRead = true
 
     val cachedPages = (Delay(10.seconds)
       +> Visit("http://www.wikipedia.org")
-      +> Snapshot().waybackToTimeMillis(dates(1) + 2000)
-      ).head.fetch(spooky)
+      +> Snapshot().waybackToTimeMillis(dates(1) + 2000)).head.fetch(spooky)
     assert(cachedPages.size == 1)
     assert(cachedPages.head.timeMillis == dates(1))
 
@@ -70,8 +63,7 @@ class TestWayback extends SpookyEnvFixture {
     intercept[QueryException] {
       (Delay(10.seconds)
         +> Visit("http://www.wikipedia.org")
-        +> Snapshot().waybackToTimeMillis(dates.head - 2000)
-        ).head.fetch(spooky)
+        +> Snapshot().waybackToTimeMillis(dates.head - 2000)).head.fetch(spooky)
     }
   }
 
@@ -79,21 +71,19 @@ class TestWayback extends SpookyEnvFixture {
     spooky.spookyConf.cacheWrite = true
     spooky.spookyConf.IgnoreCachedDocsBefore = Some(new Date())
 
-    val dates: Seq[Long] = (0 to 2).map {
-      i =>
-        val pages = (Delay(10.seconds)
-          +> Visit("http://www.wikipedia.org")
-          +> Screenshot()).head.fetch(spooky) //5s is long enough
-        assert(pages.size == 1)
-        pages.head.timeMillis
+    val dates: Seq[Long] = (0 to 2).map { i =>
+      val pages = (Delay(10.seconds)
+        +> Visit("http://www.wikipedia.org")
+        +> Screenshot()).head.fetch(spooky) //5s is long enough
+      assert(pages.size == 1)
+      pages.head.timeMillis
     }
 
     spooky.spookyConf.cacheRead = true
 
     val cachedPages = (Delay(10.seconds)
       +> Visit("http://www.wikipedia.org")
-      +> Screenshot().waybackToTimeMillis(dates(1) + 2000)
-      ).head.fetch(spooky)
+      +> Screenshot().waybackToTimeMillis(dates(1) + 2000)).head.fetch(spooky)
     assert(cachedPages.size == 1)
     assert(cachedPages.head.timeMillis == dates(1))
 
@@ -102,8 +92,7 @@ class TestWayback extends SpookyEnvFixture {
     intercept[QueryException] {
       (Delay(10.seconds)
         +> Visit("http://www.wikipedia.org")
-        +> Screenshot().waybackToTimeMillis(dates.head - 2000)
-        ).head.fetch(spooky)
+        +> Screenshot().waybackToTimeMillis(dates.head - 2000)).head.fetch(spooky)
     }
   }
 }

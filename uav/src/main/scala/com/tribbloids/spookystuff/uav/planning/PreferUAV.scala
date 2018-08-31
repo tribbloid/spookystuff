@@ -18,10 +18,10 @@ import scala.concurrent.duration.Duration
   * does NOT fail when the Link is unreachable (hence prefer), will try any available alternative instead.
   */
 private[uav] case class PreferUAV(
-                                   uavStatus: LinkStatus,
-                                   lockIDOpt: Option[UUID] = None
-                                 ) extends UAVNavigation
-  with ShippingMarks {
+    uavStatus: LinkStatus,
+    lockIDOpt: Option[UUID] = None
+) extends UAVNavigation
+    with ShippingMarks {
 
   override val cooldown: Duration = Duration.Zero
 

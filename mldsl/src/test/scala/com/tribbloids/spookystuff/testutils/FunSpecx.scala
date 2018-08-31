@@ -21,11 +21,10 @@ trait Suitex extends OptionConversion {
   )
 
   {
-    val resolvedInfos = classpathFiles.map {
-      v =>
-        val resolved = CommonUtils.getCPResource(v).map(_.toString).getOrElse("[MISSING]")
-        val info = s"$v -> $resolved"
-        info
+    val resolvedInfos = classpathFiles.map { v =>
+      val resolved = CommonUtils.getCPResource(v).map(_.toString).getOrElse("[MISSING]")
+      val info = s"$v -> $resolved"
+      info
     }
     LoggerFactory.getLogger(this.getClass).info("resolving files in classpath ...\n" + resolvedInfos.mkString("\n"))
   }
@@ -34,13 +33,16 @@ trait Suitex extends OptionConversion {
 
     //TODO: use reflection to figure out test name and annotate
     def shouldBe(
-                  gd: String = null,
-                  sort: Boolean = false,
-                  ignoreCase: Boolean = false,
-                  superSet: Boolean = false
-                ): Unit = {
+        gd: String = null,
+        sort: Boolean = false,
+        ignoreCase: Boolean = false,
+        superSet: Boolean = false
+    ): Unit = {
 
-      var a: List[String] = str.split("\n").toList.filterNot(_.replaceAllLiterally(" ","").isEmpty)
+      var a: List[String] = str
+        .split("\n")
+        .toList
+        .filterNot(_.replaceAllLiterally(" ", "").isEmpty)
         .map(v => ("|" + v).trim.stripPrefix("|"))
       if (sort) a = a.sorted
       if (ignoreCase) a = a.map(_.toLowerCase)
@@ -49,7 +51,10 @@ trait Suitex extends OptionConversion {
         case None =>
           println(AssertionErrorObject(a, null).actualInfo)
         case Some(_gd) =>
-          var b = _gd.split("\n").toList.filterNot(_.replaceAllLiterally(" ","").isEmpty)
+          var b = _gd
+            .split("\n")
+            .toList
+            .filterNot(_.replaceAllLiterally(" ", "").isEmpty)
             .map(v => ("|" + v).trim.stripPrefix("|"))
           if (sort) b = b.sorted
           if (ignoreCase) b = b.map(_.toLowerCase)
@@ -58,8 +63,7 @@ trait Suitex extends OptionConversion {
               a.intersect(b).nonEmpty,
               AssertionErrorObject(a, b)
             )
-          }
-          else {
+          } else {
             TestHelper.assert(
               a == b,
               AssertionErrorObject(a, b)
@@ -69,40 +73,45 @@ trait Suitex extends OptionConversion {
     }
 
     def rowsShouldBe(
-                      gd: String = null
-                    ) = shouldBe(gd, sort = true)
+        gd: String = null
+    ) = shouldBe(gd, sort = true)
 
     def shouldBeLike(
-                      gd: String = null,
-                      sort: Boolean = false,
-                      ignoreCase: Boolean = false
-                    ): Unit = {
-      val aRaw: List[String] = str.split("\n").toList.filterNot(_.replaceAllLiterally(" ","").isEmpty)
+        gd: String = null,
+        sort: Boolean = false,
+        ignoreCase: Boolean = false
+    ): Unit = {
+      val aRaw: List[String] = str
+        .split("\n")
+        .toList
+        .filterNot(_.replaceAllLiterally(" ", "").isEmpty)
         .map(v => ("|" + v).trim.stripPrefix("|"))
-      val a = if (sort) aRaw.sorted
-      else aRaw
+      val a =
+        if (sort) aRaw.sorted
+        else aRaw
 
       Option(gd) match {
         case None =>
           println(AssertionErrorObject(a, null).actualInfo)
         case Some(_gd) =>
-          var b = _gd.split("\n").toList.filterNot(_.replaceAllLiterally(" ","").isEmpty)
+          var b = _gd
+            .split("\n")
+            .toList
+            .filterNot(_.replaceAllLiterally(" ", "").isEmpty)
             .map(v => ("|" + v).trim.stripPrefix("|"))
           if (sort) b = b.sorted
           if (ignoreCase) b = b.map(_.toLowerCase)
           try {
-            a.zipAll(b, null, null).foreach {
-              tuple =>
-                val fixes = tuple._2.split("[\\.]{6,}", 2)
-                TestHelper.assert(
-                  tuple._1.startsWith(fixes.head)
-                )
-                TestHelper.assert(
-                  tuple._1.endsWith(fixes.last)
-                )
+            a.zipAll(b, null, null).foreach { tuple =>
+              val fixes = tuple._2.split("[\\.]{6,}", 2)
+              TestHelper.assert(
+                tuple._1.startsWith(fixes.head)
+              )
+              TestHelper.assert(
+                tuple._1.endsWith(fixes.last)
+              )
             }
-          }
-          catch {
+          } catch {
             case e: Throwable =>
               throw new AssertionError("" + AssertionErrorObject(a, b), e)
           }
@@ -153,16 +162,15 @@ trait Suitex extends OptionConversion {
 
     def shouldBe(expected: scala.collection.Map[K, V]): Unit = {
 
-      val messages = expected.toSeq.flatMap {
-        tuple =>
-          val messageOpt = map.get(tuple._1) match {
-            case None =>
-              Some(s"${tuple._1} doesn't exist in map")
-            case Some(v) =>
-              if (v == tuple._2) None
-              else Some(s"${tuple._1} mismatch: expected ${tuple._2} =/= actual $v")
-          }
-          messageOpt
+      val messages = expected.toSeq.flatMap { tuple =>
+        val messageOpt = map.get(tuple._1) match {
+          case None =>
+            Some(s"${tuple._1} doesn't exist in map")
+          case Some(v) =>
+            if (v == tuple._2) None
+            else Some(s"${tuple._1} mismatch: expected ${tuple._2} =/= actual $v")
+        }
+        messageOpt
       }
 
       if (messages.nonEmpty)
@@ -177,7 +185,6 @@ trait Suitex extends OptionConversion {
   def printSplitter(name: String) = {
     println(s"======================================= $name ===================================")
   }
-
 
   def bypass(f: => Unit) = {}
 
@@ -194,5 +201,4 @@ trait Suitex extends OptionConversion {
   //  }
 }
 
-trait FunSpecx extends FunSpec with Suitex {
-}
+trait FunSpecx extends FunSpec with Suitex {}

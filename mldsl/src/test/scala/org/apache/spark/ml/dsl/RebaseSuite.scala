@@ -10,7 +10,7 @@ class RebaseSuite extends AbstractFlowSuite {
   import FlowComponent._
 
   it("rebase_> Source doesn't work") {
-    intercept[AssertionError]{
+    intercept[AssertionError] {
       'input >=> new Tokenizer() >=> 'dummy
     }
   }
@@ -25,10 +25,12 @@ class RebaseSuite extends AbstractFlowSuite {
     val flow = (
       ('input1 U 'input2)
         >=> new VectorAssembler()
-      )
+    )
 
-    flow.show(showID = false, compactionOpt = compactionOpt).treeNodeShouldBe(
-      """
+    flow
+      .show(showID = false, compactionOpt = compactionOpt)
+      .treeNodeShouldBe(
+        """
         |\ left >
         |> ForwardNode (TAIL>) [input1]
         |+- > ForwardNode (HEAD) [input1] > VectorAssembler > [input1$VectorAssembler]
@@ -37,7 +39,7 @@ class RebaseSuite extends AbstractFlowSuite {
         |/ right <
         |> ForwardNode (HEAD)(<TAIL) [input2] > VectorAssembler > [input2$VectorAssembler]
       """.stripMargin
-    )
+      )
   }
 
   it("rebase_< can append to 2 heads") {
@@ -45,10 +47,12 @@ class RebaseSuite extends AbstractFlowSuite {
     val flow = (
       new VectorAssembler()
         <=< ('input1 U 'input2)
-      )
+    )
 
-    flow.show(showID = false, compactionOpt = compactionOpt).treeNodeShouldBe(
-      """
+    flow
+      .show(showID = false, compactionOpt = compactionOpt)
+      .treeNodeShouldBe(
+        """
         |\ left >
         |> ForwardNode (HEAD)(TAIL>) [input2] > VectorAssembler > [input2$VectorAssembler]
         |/ right <
@@ -57,7 +61,7 @@ class RebaseSuite extends AbstractFlowSuite {
         |> ForwardNode (<TAIL) [input2]
         |+- > ForwardNode (HEAD)(TAIL>) [input2] > VectorAssembler > [input2$VectorAssembler]
       """.stripMargin
-    )
+      )
   }
 
   it("rebase_> can generate 2 stage replicas and append to 2 selected") {
@@ -67,13 +71,15 @@ class RebaseSuite extends AbstractFlowSuite {
         'input
           >>> new Tokenizer()
           >>> new StopWordsRemover()
-        )
-        .from("Tokenizer").and("StopWordsRemover")
+      ).from("Tokenizer")
+        .and("StopWordsRemover")
         >=> new NGram()
-      )
+    )
 
-    flow.show(showID = false, compactionOpt = compactionOpt).treeNodeShouldBe(
-      """
+    flow
+      .show(showID = false, compactionOpt = compactionOpt)
+      .treeNodeShouldBe(
+        """
         |\ left >
         |> ForwardNode (TAIL>) [input]
         |+- > ForwardNode  [input] > Tokenizer > [input$Tokenizer]
@@ -83,7 +89,7 @@ class RebaseSuite extends AbstractFlowSuite {
         |/ right <
         |> ForwardNode (HEAD)(<TAIL) [input$Tokenizer$StopWordsRemover] > NGram > [input$Tokenizer$StopWordsRemover$NGram]
       """.stripMargin
-    )
+      )
   }
 
   it("rebase_< can generate 2 stage replicas and append to 2 selected") {
@@ -91,15 +97,17 @@ class RebaseSuite extends AbstractFlowSuite {
     val flow = (
       new NGram()
         <=< (
-        new StopWordsRemover()
-          <<< new Tokenizer()
-          <<< 'input
-        )
-        .from("Tokenizer").and("StopWordsRemover")
-      )
+          new StopWordsRemover()
+            <<< new Tokenizer()
+            <<< 'input
+        ).from("Tokenizer")
+          .and("StopWordsRemover")
+    )
 
-    flow.show(showID = false, compactionOpt = compactionOpt).treeNodeShouldBe(
-      """
+    flow
+      .show(showID = false, compactionOpt = compactionOpt)
+      .treeNodeShouldBe(
+        """
         |\ left >
         |> ForwardNode (HEAD)(TAIL>) [input$Tokenizer$StopWordsRemover] > NGram > [input$Tokenizer$StopWordsRemover$NGram]
         |/ right <
@@ -109,7 +117,7 @@ class RebaseSuite extends AbstractFlowSuite {
         |   +- > ForwardNode  [input$Tokenizer] > StopWordsRemover > [input$Tokenizer$StopWordsRemover]
         |      +- > ForwardNode (HEAD)(TAIL>) [input$Tokenizer$StopWordsRemover] > NGram > [input$Tokenizer$StopWordsRemover$NGram]
       """.stripMargin
-    )
+      )
   }
 
   it("rebase_> can generate 2 stage replicas and append to 2 heads") {
@@ -119,14 +127,16 @@ class RebaseSuite extends AbstractFlowSuite {
         'input
           >>> new Tokenizer()
           >>> new StopWordsRemover()
-        )
-        .from("Tokenizer").and("StopWordsRemover")
+      ).from("Tokenizer")
+        .and("StopWordsRemover")
         >=> new NGram()
         >=> new HashingTF()
-      )
+    )
 
-    flow.show(showID = false, compactionOpt = compactionOpt).treeNodeShouldBe(
-      """
+    flow
+      .show(showID = false, compactionOpt = compactionOpt)
+      .treeNodeShouldBe(
+        """
         |\ left >
         |> ForwardNode (TAIL>) [input]
         |+- > ForwardNode  [input] > Tokenizer > [input$Tokenizer]
@@ -138,9 +148,8 @@ class RebaseSuite extends AbstractFlowSuite {
         |/ right <
         |> ForwardNode (HEAD)(<TAIL) [input$Tokenizer$StopWordsRemover$NGram] > HashingTF > [input$Tokenizer$StopWordsRemover$NGram$HashingTF]
       """.stripMargin
-    )
+      )
   }
-
 
   it("rebase_< can generate 2 stage replicas and append to 2 heads") {
 
@@ -148,15 +157,17 @@ class RebaseSuite extends AbstractFlowSuite {
       new HashingTF()
         <=< new NGram()
         <=< (
-        new StopWordsRemover()
-          <<< new Tokenizer()
-          <<< 'input
-        )
-        .from("Tokenizer").and("StopWordsRemover")
-      )
+          new StopWordsRemover()
+            <<< new Tokenizer()
+            <<< 'input
+        ).from("Tokenizer")
+          .and("StopWordsRemover")
+    )
 
-    flow.show(showID = false, compactionOpt = compactionOpt).treeNodeShouldBe(
-      """
+    flow
+      .show(showID = false, compactionOpt = compactionOpt)
+      .treeNodeShouldBe(
+        """
         |\ left >
         |> ForwardNode (HEAD)(TAIL>) [input$Tokenizer$StopWordsRemover$NGram] > HashingTF > [input$Tokenizer$StopWordsRemover$NGram$HashingTF]
         |/ right <
@@ -168,7 +179,7 @@ class RebaseSuite extends AbstractFlowSuite {
         |      +- > ForwardNode  [input$Tokenizer$StopWordsRemover] > NGram > [input$Tokenizer$StopWordsRemover$NGram]
         |         +- > ForwardNode (HEAD)(TAIL>) [input$Tokenizer$StopWordsRemover$NGram] > HashingTF > [input$Tokenizer$StopWordsRemover$NGram$HashingTF]
       """.stripMargin
-    )
+      )
   }
 
   it("rebase_> won't remove Source of downstream if it's in tails of both side") {
@@ -179,16 +190,18 @@ class RebaseSuite extends AbstractFlowSuite {
     val flow = (
       'input
         >=> down
-      )
+    )
 
-    flow.show(showID = false, compactionOpt = compactionOpt, forward = false).treeNodeShouldBe(
-      """
+    flow
+      .show(showID = false, compactionOpt = compactionOpt, forward = false)
+      .treeNodeShouldBe(
+        """
         |< BackwardNode (HEAD) [dummy,dummy,input] > VectorAssembler > [VectorAssembler]
         |:- < BackwardNode (<TAIL) [dummy]
         |:- < BackwardNode (<TAIL) [dummy]
         |+- < BackwardNode (TAIL>) [input]
       """.stripMargin
-    )
+      )
   }
 
   it("rebase_< won't remove Source of downstream if it's in tails of both side") {
@@ -200,14 +213,16 @@ class RebaseSuite extends AbstractFlowSuite {
       down <=<
         'input
 
-    flow.show(showID = false, compactionOpt = compactionOpt, forward = false).treeNodeShouldBe(
-      """
+    flow
+      .show(showID = false, compactionOpt = compactionOpt, forward = false)
+      .treeNodeShouldBe(
+        """
         |< BackwardNode (HEAD) [dummy,dummy,input] > VectorAssembler > [VectorAssembler]
         |:- < BackwardNode (TAIL>) [dummy]
         |:- < BackwardNode (TAIL>) [dummy]
         |+- < BackwardNode (<TAIL) [input]
       """.stripMargin
-    )
+      )
   }
 }
 

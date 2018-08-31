@@ -5,13 +5,13 @@ import com.tribbloids.spookystuff.row.Field
 import org.apache.spark.ml.dsl.utils.refl.{ScalaType, UnreifiedScalaType}
 import com.tribbloids.spookystuff.utils.SpookyUtils
 import org.apache.spark.ml.dsl.utils.messaging.AutomaticRelay
-import org.apache.spark.sql.catalyst.ScalaReflection.universe.{TypeTag, typeTag}
+import org.apache.spark.sql.catalyst.ScalaReflection.universe.{typeTag, TypeTag}
 import org.apache.spark.sql.catalyst.trees.TreeNode
 
 import scala.language.implicitConversions
 import scala.language.existentials
 
-object GenExtractor extends AutomaticRelay[GenExtractor[_,_]] {
+object GenExtractor extends AutomaticRelay[GenExtractor[_, _]] {
 
   import org.apache.spark.ml.dsl.utils.refl.ScalaType._
 
@@ -34,18 +34,18 @@ object GenExtractor extends AutomaticRelay[GenExtractor[_,_]] {
   }
   trait Unary[T, +R] extends GenExtractor[T, R] {
     override def _args = Seq(child)
-    def child: GenExtractor[_,_]
+    def child: GenExtractor[_, _]
   }
 
   //TODO: possibility to merge into Spark Resolved expression?
-  trait StaticType[T, +R] extends GenExtractor[T,R] {
+  trait StaticType[T, +R] extends GenExtractor[T, R] {
     val dataType: DataType
     final def resolveType(tt: DataType) = dataType
   }
-  trait StaticPartialFunction[T, +R] extends GenExtractor[T,R] with PartialFunctionWrapper[T, R] {
+  trait StaticPartialFunction[T, +R] extends GenExtractor[T, R] with PartialFunctionWrapper[T, R] {
     final def resolve(tt: DataType) = partialFunction
   }
-  trait Static[T, +R] extends StaticType[T,R] with StaticPartialFunction[T, R] with Leaf[T, R]
+  trait Static[T, +R] extends StaticType[T, R] with StaticPartialFunction[T, R] with Leaf[T, R]
 
   trait Wrapper[T, +R] extends Unary[T, R] {
 
@@ -56,10 +56,10 @@ object GenExtractor extends AutomaticRelay[GenExtractor[_,_]] {
   }
 
   case class Elem[T, +R](
-                          _resolve: DataType => PartialFunction[T, R],
-                          _resolveType: DataType => DataType,
-                          name: Option[String] = None
-                        ) extends Leaf[T, R]{
+      _resolve: DataType => PartialFunction[T, R],
+      _resolveType: DataType => DataType,
+      name: Option[String] = None
+  ) extends Leaf[T, R] {
     //resolve to a Spark SQL DataType according to an exeuction plan
     override def resolveType(tt: DataType) = _resolveType(tt)
 
@@ -69,10 +69,10 @@ object GenExtractor extends AutomaticRelay[GenExtractor[_,_]] {
   }
 
   case class AndThen[A, B, +C](
-                                a: GenExtractor[A, B],
-                                b: GenExtractor[B, C],
-                                meta: Option[Any] = None
-                              ) extends GenExtractor[A, C] {
+      a: GenExtractor[A, B],
+      b: GenExtractor[B, C],
+      meta: Option[Any] = None
+  ) extends GenExtractor[A, C] {
 
     //resolve to a Spark SQL DataType according to an exeuction plan
     override def resolveType(tt: DataType) = b.resolveType(a.resolveType(tt))
@@ -88,9 +88,9 @@ object GenExtractor extends AutomaticRelay[GenExtractor[_,_]] {
   }
 
   case class And_->[T, +R1, +R2](
-                                  arg1: GenExtractor[T, R1],
-                                  arg2: GenExtractor[T, R2]
-                                ) extends GenExtractor[T, (R1, R2)] {
+      arg1: GenExtractor[T, R1],
+      arg2: GenExtractor[T, R2]
+  ) extends GenExtractor[T, (R1, R2)] {
     //resolve to a Spark SQL DataType according to an exeuction plan
     override def resolveType(tt: DataType): DataType = locked {
       val t1 = arg1.resolveType(tt)
@@ -109,13 +109,13 @@ object GenExtractor extends AutomaticRelay[GenExtractor[_,_]] {
     override def resolve(tt: DataType): PartialFunction[T, (R1, R2)] = {
       val r1 = arg1.resolve(tt).lift
       val r2 = arg2.resolve(tt).lift
-      Unlift({
-        t =>
-          r1.apply(t).flatMap(
+      Unlift({ t =>
+        r1.apply(t)
+          .flatMap(
             v =>
-              r2.apply(t).map(
-                vv =>
-                  v -> vv
+              r2.apply(t)
+                .map(
+                  vv => v -> vv
               )
           )
       })
@@ -124,7 +124,7 @@ object GenExtractor extends AutomaticRelay[GenExtractor[_,_]] {
     override def _args: Seq[GenExtractor[_, _]] = Seq(arg1, arg2)
   }
 
-  case class TreeNodeView(self: GenExtractor[_,_]) extends TreeNode[TreeNodeView] {
+  case class TreeNodeView(self: GenExtractor[_, _]) extends TreeNode[TreeNodeView] {
     override def children: Seq[TreeNodeView] = self._args.map(TreeNodeView)
 
     override def verboseString: String = simpleString
@@ -162,13 +162,13 @@ trait GenExtractor[T, +R] extends Product with Serializable with ScalaDynamicMix
   def withAlias(field: Field): AliasImpl[T, R] = {
     this match {
       case v: Wrapper[T, R] => new AliasImpl[T, R](v.child, field)
-      case _ => new AliasImpl[T, R](this, field)
+      case _                => new AliasImpl[T, R](this, field)
     }
   }
   def withoutAlias: GenExtractor[T, R] = {
     this match {
       case v: Wrapper[T, R] => v.child
-      case _ => this
+      case _                => this
     }
   }
 
@@ -176,7 +176,7 @@ trait GenExtractor[T, +R] extends Product with Serializable with ScalaDynamicMix
 
     fieldOpt match {
       case Some(field) => withAlias(field)
-      case None => withoutAlias
+      case None        => withoutAlias
     }
   }
 
@@ -194,13 +194,14 @@ trait GenExtractor[T, +R] extends Product with Serializable with ScalaDynamicMix
   def withAliasIfMissing(field: Field): Alias[T, R] = {
     this match {
       case alias: Alias[T, R] => alias
-      case _ => this.withAlias(field)
+      case _                  => this.withAlias(field)
     }
   }
 
   def withJoinFieldIfMissing = withAliasIfMissing(Const.defaultJoinField)
 
-  def andEx[R2>: R, A](g: GenExtractor[R2, A], meta: Option[Any] = None): GenExtractor[T, A] = AndThen[T, R2, A](this, g, meta)
+  def andEx[R2 >: R, A](g: GenExtractor[R2, A], meta: Option[Any] = None): GenExtractor[T, A] =
+    AndThen[T, R2, A](this, g, meta)
 
   def andFn[A: TypeTag](g: R => A, meta: Option[Any] = None): GenExtractor[T, A] = {
     andEx(g, meta)
@@ -211,25 +212,25 @@ trait GenExtractor[T, +R] extends Product with Serializable with ScalaDynamicMix
   }
 
   def andTyped[R2 >: R, A](
-                            g: R2 => A,
-                            resolveType: DataType => DataType,
-                            meta: Option[Any] = None
-                          ) = andEx (
+      g: R2 => A,
+      resolveType: DataType => DataType,
+      meta: Option[Any] = None
+  ) = andEx(
     Elem[R2, A](_ => Partial(g), resolveType),
     meta
   )
 
   def andOptionTyped[R2 >: R, A](
-                                  g: R2 => Option[A],
-                                  resolveType: DataType => DataType,
-                                  meta: Option[Any] = None
-                                ) = andTyped(Unlift(g), resolveType, meta)
+      g: R2 => Option[A],
+      resolveType: DataType => DataType,
+      meta: Option[Any] = None
+  ) = andTyped(Unlift(g), resolveType, meta)
 
   //TODO: extract subroutine and use it to avoid obj creation overhead
   def typed[A: TypeTag]: GenExtractor[T, A] = {
     implicit val ctg = ScalaType.fromTypeTag[A].asClassTag
 
-    andOptionFn[A]{
+    andOptionFn[A] {
       SpookyUtils.typedOrNone[A]
     }
   }
@@ -243,8 +244,7 @@ trait Alias[T, +R] extends GenExtractor[T, R] {
 }
 
 case class AliasImpl[T, +R](
-                             child: GenExtractor[T, R],
-                             field: Field
-                           ) extends Alias[T, R] with GenExtractor.Wrapper[T, R] {
-}
-
+    child: GenExtractor[T, R],
+    field: Field
+) extends Alias[T, R]
+    with GenExtractor.Wrapper[T, R] {}

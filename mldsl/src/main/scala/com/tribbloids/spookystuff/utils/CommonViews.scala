@@ -13,7 +13,7 @@ abstract class CommonViews {
     def \\(other: String): String = CommonUtils.\\\(str, other)
 
     def interpolate(delimiter: String)(
-      replace: String => String
+        replace: String => String
     ): String = {
 
       if (str == null || str.isEmpty) return str
@@ -22,15 +22,13 @@ abstract class CommonViews {
       val escaped = delimiter.replaceAll(specialChars, "\\\\")
       val regex = ("(?<!" + escaped + ")" + escaped + "\\{[^\\{\\}\r\n]*\\}").r
 
-      val result = regex.replaceAllIn(
-        str,
-        m => {
-          val original = m.group(0)
-          val key = original.substring(2, original.length - 1)
+      val result = regex.replaceAllIn(str, m => {
+        val original = m.group(0)
+        val key = original.substring(2, original.length - 1)
 
-          val replacement = replace(key)
-          replacement
-        })
+        val replacement = replace(key)
+        replacement
+      })
       result
     }
   }
@@ -40,7 +38,6 @@ abstract class CommonViews {
       f
     }
   }
-
 
   implicit class GenTraversableOnceView[A](self: GenTraversableOnce[A])(implicit ctg: ClassTag[A]) {
 

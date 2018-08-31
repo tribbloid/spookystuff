@@ -17,11 +17,12 @@ import scala.reflect.ClassTag
 //TODO: also carry PageUID & property type (Vertex/Edge) for GraphX or GraphFrame
 @SerialVersionUID(6534469387269426194L)
 case class DataRow(
-                    data: Data = Data.empty,
-                    groupID: Option[UUID] = None,
-                    groupIndex: Int = 0, //set to 0...n for each page group after SquashedPageRow.semiUnsquash/unsquash
-                    freeze: Boolean = false //if set to true PageRow.extract won't insert anything into it, used in merge/replace join
-                  ) extends AbstractSpookyRow with ProtoAPI {
+    data: Data = Data.empty,
+    groupID: Option[UUID] = None,
+    groupIndex: Int = 0, //set to 0...n for each page group after SquashedPageRow.semiUnsquash/unsquash
+    freeze: Boolean = false //if set to true PageRow.extract won't insert anything into it, used in merge/replace join
+) extends AbstractSpookyRow
+    with ProtoAPI {
 
   {
     assert(data.isInstanceOf[Serializable]) //fail early
@@ -41,7 +42,8 @@ case class DataRow(
   def --(m: Iterable[Field]): DataRow = this.copy(data = data -- m)
 
   def nameToField(name: String): Option[Field] = {
-    Some(Field(name, isWeak = true)).filter(data.contains)
+    Some(Field(name, isWeak = true))
+      .filter(data.contains)
       .orElse {
         Some(Field(name)).filter(data.contains)
       }
@@ -78,33 +80,33 @@ case class DataRow(
   //always left
   //TODO: add test to ensure that ordinalField is added BEFORE sampling
   def flatten(
-               field: Field,
-               ordinalField: Field,
-               left: Boolean,
-               sampler: Sampler[Any]
-             ): Seq[DataRow] = {
+      field: Field,
+      ordinalField: Field,
+      left: Boolean,
+      sampler: Sampler[Any]
+  ): Seq[DataRow] = {
 
     val newValues_Indices = data.flattenByKey(field, sampler)
 
     if (left && newValues_Indices.isEmpty) {
       Seq(this.copy(data = data - field)) //you don't lose the remainder of a row because an element is empty
-    }
-    else {
+    } else {
       val result: Seq[(DataRow, Int)] = newValues_Indices.map(tuple => this.copy(data = tuple._1.toMap) -> tuple._2)
 
       Option(ordinalField) match {
         case None => result.map(_._1)
         case Some(_field) =>
-          val newValues: Seq[DataRow] = result.map {
-            tuple =>
-              val existingOpt: Option[Iterable[Any]] = tuple._1.get(_field).map{v => SpookyUtils.asIterable[Any](v)}
-              val values = existingOpt match {
-                case None =>
-                  tuple._1.data.updated(_field, Array(tuple._2))
-                case Some(existing) =>
-                  tuple._1.data.updated(_field, (existing ++ Iterable(tuple._2)).toArray)
-              }
-              tuple._1.copy(data = values)
+          val newValues: Seq[DataRow] = result.map { tuple =>
+            val existingOpt: Option[Iterable[Any]] = tuple._1.get(_field).map { v =>
+              SpookyUtils.asIterable[Any](v)
+            }
+            val values = existingOpt match {
+              case None =>
+                tuple._1.data.updated(_field, Array(tuple._2))
+              case Some(existing) =>
+                tuple._1.data.updated(_field, (existing ++ Iterable(tuple._2)).toArray)
+            }
+            tuple._1.copy(data = values)
           }
           newValues
       }
@@ -119,8 +121,8 @@ case class DataRow(
   //T cannot <: AnyVal otherwise will run into https://issues.scala-lang.org/browse/SI-6967
   //getIntIterable cannot use it for the same reason
   def getTypedArray[T <: Any: ClassTag](field: Field): Option[Array[T]] = {
-    val result = data.get(field).map {
-      v => SpookyUtils.asArray[T](v)
+    val result = data.get(field).map { v =>
+      SpookyUtils.asArray[T](v)
     }
     result
   }
@@ -130,8 +132,8 @@ case class DataRow(
   def getIntArray(field: Field): Option[Array[Int]] = getTypedArray[Int](field)
 
   def getTypedIterable[T <: Any: ClassTag](field: Field): Option[Iterable[T]] = {
-    val res = data.get(field).map {
-      v => SpookyUtils.asIterable[T](v)
+    val res = data.get(field).map { v =>
+      SpookyUtils.asIterable[T](v)
     }
     res
   }
@@ -140,20 +142,18 @@ case class DataRow(
 
   //replace each '{key} in a string with their respective value in cells
   def replaceInto(
-                   str: String,
-                   delimiter: String = Const.keyDelimiter
-                 ): Option[String] = {
+      str: String,
+      delimiter: String = Const.keyDelimiter
+  ): Option[String] = {
 
     try {
       Option(
-        str.interpolate(delimiter){
-          key =>
-            val field = Field(key)
-            "" + this.get(field).get
+        str.interpolate(delimiter) { key =>
+          val field = Field(key)
+          "" + this.get(field).get
         }
       )
-    }
-    catch {
+    } catch {
       case e: NoSuchElementException => None
     }
   }

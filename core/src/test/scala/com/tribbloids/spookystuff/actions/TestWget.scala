@@ -32,45 +32,42 @@ class TestWget extends SpookyEnvFixture {
   Seq(
     "http" -> HTTP_IP_URL,
     "https" -> HTTPS_IP_URL
-  )
-    .foreach {
-      tuple =>
-        it(s"use TOR socks5 proxy for ${tuple._1} wget", Tag(classOf[LocalOnly].getCanonicalName)) {
+  ).foreach { tuple =>
+      it(s"use TOR socks5 proxy for ${tuple._1} wget", Tag(classOf[LocalOnly].getCanonicalName)) {
 
-          val newIP = {
-            spooky.spookyConf.webProxy = WebProxyFactories.Tor
+        val newIP = {
+          spooky.spookyConf.webProxy = WebProxyFactories.Tor
 
-            getIP(tuple._2)
-          }
-
-          assert(newIP !== null)
-          assert(newIP !== "")
-          assert(newIP !== noProxyIP)
+          getIP(tuple._2)
         }
 
-        it(s"revert from TOR socks5 proxy for ${tuple._1} wget", Tag(classOf[LocalOnly].getCanonicalName)) {
+        assert(newIP !== null)
+        assert(newIP !== "")
+        assert(newIP !== noProxyIP)
+      }
 
-          val newIP = {
-            spooky.spookyConf.webProxy = WebProxyFactories.Tor
+      it(s"revert from TOR socks5 proxy for ${tuple._1} wget", Tag(classOf[LocalOnly].getCanonicalName)) {
 
-            getIP(tuple._2)
-          }
+        val newIP = {
+          spooky.spookyConf.webProxy = WebProxyFactories.Tor
 
-          val noProxyIP2 = {
-            spooky.spookyConf.webProxy = WebProxyFactories.NoProxy
-
-            getIP(tuple._2)
-          }
-
-          assert(newIP !== noProxyIP2)
+          getIP(tuple._2)
         }
+
+        val noProxyIP2 = {
+          spooky.spookyConf.webProxy = WebProxyFactories.NoProxy
+
+          getIP(tuple._2)
+        }
+
+        assert(newIP !== noProxyIP2)
+      }
     }
 
   def getIP(url: String = HTTP_IP_URL): String = {
     val results = (
       wget(HTTPS_IP_URL) :: Nil
-      )
-      .fetch(spooky)
+    ).fetch(spooky)
 
     results.head.asInstanceOf[Doc].code.get
   }
@@ -81,11 +78,11 @@ class TestWget extends SpookyEnvFixture {
 
     val results = (
       wget("https://www.google.com/?q=giant robot") :: Nil
-      ).fetch(spooky)
+    ).fetch(spooky)
 
     assert(results.size === 1)
     val doc = results.head.asInstanceOf[Doc]
-    assert(doc.uri.contains("?q=giant+robot") || doc.uri.contains("?q=giant%20robot" ))
+    assert(doc.uri.contains("?q=giant+robot") || doc.uri.contains("?q=giant%20robot"))
   }
 
   //TODO: find a new way to test it!
@@ -139,7 +136,7 @@ class TestWget extends SpookyEnvFixture {
       RandomDelay(1.seconds, 2.seconds)
         :: wget("http://www.wikipedia.org")
         :: Nil
-      ).fetch(spooky)
+    ).fetch(spooky)
 
     assert(results.size === 1)
     assert(results.head.uid.backtrace.children.last == wget("http://www.wikipedia.org"))
@@ -159,9 +156,8 @@ class TestWget extends SpookyEnvFixture {
       'A
     ) waybackTo 'B.typed[Timestamp]
 
-    val rows = 1 to 5 map {
-      i =>
-        TestWget.Sample("http://dummy.com" + i, new Timestamp(i * 100000))
+    val rows = 1 to 5 map { i =>
+      TestWget.Sample("http://dummy.com" + i, new Timestamp(i * 100000))
     }
     require(rows.map(_.B.getTime).distinct.size == rows.size)
 
@@ -171,9 +167,8 @@ class TestWget extends SpookyEnvFixture {
     require(set.toObjectRDD('B).collect().toSeq.map(_.asInstanceOf[Timestamp].getTime).distinct.size == rows.size)
     val fetchedRows = set.unsquashedRDD.collect()
 
-    val interpolated = fetchedRows.map{
-      fr =>
-        wget.interpolate(fr, set.schema).get
+    val interpolated = fetchedRows.map { fr =>
+      wget.interpolate(fr, set.schema).get
     }
 
     assert(interpolated.distinct.length == rows.size)

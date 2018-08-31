@@ -12,9 +12,7 @@ import org.scalatest.BeforeAndAfterAll
 import scala.concurrent.duration
 import scala.util.Random
 
-abstract class IntegrationFixture
-  extends SpookyEnvFixture with BeforeAndAfterAll
-  with RemoteDocsFixture {
+abstract class IntegrationFixture extends SpookyEnvFixture with BeforeAndAfterAll with RemoteDocsFixture {
 
   val phantomJS = DriverFactories.PhantomJS()
   val htmlUnit = DriverFactories.HtmlUnit()
@@ -54,7 +52,7 @@ abstract class IntegrationFixture
                 shareMetrics = true,
                 remoteResourceTimeout = 10.seconds
               )
-            case v@ _ => v
+            case v @ _ => v
           }
 
           _spooky = SpookyContext(
@@ -154,7 +152,7 @@ abstract class IntegrationFixture
 
 abstract class UncacheableIntegrationFixture extends IntegrationFixture {
 
-  override protected def doTest(): Unit ={
+  override protected def doTest(): Unit = {
 
     doTestBeforeCache()
   }

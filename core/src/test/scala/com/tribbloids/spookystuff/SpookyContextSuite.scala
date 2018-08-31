@@ -7,7 +7,7 @@ import com.tribbloids.spookystuff.row.Field
 import com.tribbloids.spookystuff.testutils.LocalPathDocsFixture
 import com.tribbloids.spookystuff.utils.AssertWeaklySerializable
 
-class SpookyContextSuite extends SpookyEnvFixture with LocalPathDocsFixture{
+class SpookyContextSuite extends SpookyEnvFixture with LocalPathDocsFixture {
 
   it("SpookyContext should be Serializable") {
 
@@ -143,7 +143,16 @@ class SpookyContextSuite extends SpookyEnvFixture with LocalPathDocsFixture{
     println(json)
 
     import dirs._
-    assert(!Seq(root, localRoot, autoSave, cache, errorDump, errorScreenshot, checkpoint, errorDumpLocal, errorScreenshotLocal).contains(null))
+    assert(
+      !Seq(root,
+           localRoot,
+           autoSave,
+           cache,
+           errorDump,
+           errorScreenshot,
+           checkpoint,
+           errorDumpLocal,
+           errorScreenshotLocal).contains(null))
   }
 
   it("when sharedMetrics=false, new SpookyContext created from default SpookyConf should have default dir configs") {
@@ -156,7 +165,16 @@ class SpookyContextSuite extends SpookyEnvFixture with LocalPathDocsFixture{
     println(json)
 
     import dirs._
-    assert(!Seq(root, localRoot, autoSave, cache, errorDump, errorScreenshot, checkpoint, errorDumpLocal, errorScreenshotLocal).contains(null))
+    assert(
+      !Seq(root,
+           localRoot,
+           autoSave,
+           cache,
+           errorDump,
+           errorScreenshot,
+           checkpoint,
+           errorDumpLocal,
+           errorScreenshotLocal).contains(null))
   }
 
   it("when sharedMetrics=true, new SpookyContext created from default SpookyConf should have default dir configs") {
@@ -169,6 +187,15 @@ class SpookyContextSuite extends SpookyEnvFixture with LocalPathDocsFixture{
     println(json)
 
     import dirs._
-    assert(!Seq(root, localRoot, autoSave, cache, errorDump, errorScreenshot, checkpoint, errorDumpLocal, errorScreenshotLocal).contains(null))
+    assert(
+      !Seq(root,
+           localRoot,
+           autoSave,
+           cache,
+           errorDump,
+           errorScreenshot,
+           checkpoint,
+           errorDumpLocal,
+           errorScreenshotLocal).contains(null))
   }
 }
