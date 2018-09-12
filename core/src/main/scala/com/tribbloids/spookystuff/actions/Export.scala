@@ -366,7 +366,7 @@ case class WpostImpl private[actions] (
       case _ =>
         impl.output(uri, overwrite = true) { out =>
           val length = IOUtils.copy(entity.getContent, out.stream)
-          val md: ResourceMD = out.rootMetadata.map.updated("length", length)
+          val md: ResourceMD = out.rootMetadata.self.updated("length", length)
           NoDoc(
             backtrace = List(this),
             cacheLevel = DocCacheLevel.NoCache,

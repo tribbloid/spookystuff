@@ -3,16 +3,23 @@ package org.apache.spark.ml.dsl.utils.metadata
 import scala.collection.immutable.ListMap
 
 trait MetadataLike extends Serializable {
-  def map: ListMap[String, Any]
+  def self: ListMap[String, Any]
 
   //  def +(tuple: (Param[_], Any)) = this.copy(this.map + (tuple._1.key -> tuple._2))
-  def ++(v2: MetadataLike) = Metadata(this.map ++ v2.map)
+  def ++(v2: MetadataLike) = new Metadata(this.self ++ v2.self)
 
   //TODO: support mixing param and map definition? While still being serializable?
-  trait Param[T] extends ParamLike {
+  abstract class Param[T] {
 
-    lazy val get: Option[T] = map.get(name).map(_.asInstanceOf[T])
+    final val name: String = this.getClass.getSimpleName
+
+    lazy val get: Option[T] = self.get(name).map(_.asInstanceOf[T])
     def apply(): T = get.get
+  }
+
+  abstract class ParamWithDefault[T](val default: T) extends Param[T] {
+
+    def getOrDefault: T = get.getOrElse(default)
   }
 
   //WARNING: DO NOT add implicit conversion to inner class' companion object! will trigger "java.lang.AssertionError: assertion failed: mkAttributedQualifier(_xxx ..." compiler error!

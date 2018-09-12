@@ -217,7 +217,7 @@ case class Doc(
     } else if (mimeType.contains("json")) {
       JsonElement(contentStr, null, uri) //not serialize, parsing is faster
     } else if (mimeType.contains("csv")) {
-      val csvFormat: CSVFormat = this.metadata.map
+      val csvFormat: CSVFormat = this.metadata.self
         .get(Doc.CSV_FORMAT)
         .map {
           case v: CSVFormat => v
@@ -328,6 +328,6 @@ case class Doc(
   }
 
   def setMetadata(tuples: (String, Any)*): Doc = this.copy(
-    metadata = this.metadata.map ++ Map(tuples: _*)
+    metadata = this.metadata.self ++ Map(tuples: _*)
   )
 }

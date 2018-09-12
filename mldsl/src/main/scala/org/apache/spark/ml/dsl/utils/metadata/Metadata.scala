@@ -14,7 +14,7 @@ import scala.language.implicitConversions
 import scala.reflect.ClassTag
 
 case class Metadata(
-    override val map: ListMap[String, Any] = ListMap.empty
+    override val self: ListMap[String, Any] = ListMap.empty
 ) extends MetadataLike {}
 
 object Metadata extends MessageRelay[Metadata] {
@@ -35,7 +35,7 @@ object Metadata extends MessageRelay[Metadata] {
   override def messageMF = implicitly[Manifest[M]]
 
   override def toMessage_>>(md: Metadata): M = {
-    val result: Seq[(String, json4s.JValue)] = md.map.toSeq
+    val result: Seq[(String, json4s.JValue)] = md.self.toSeq
       .map {
         case (k, v) =>
           val mapped = Nested[Any](v).map[JValue] { elem: Any =>
@@ -79,7 +79,8 @@ object Metadata extends MessageRelay[Metadata] {
 
   implicit def MapParser(map: Map[String, Any]) = apply(map.toSeq: _*)
 
-  def ParamsParser(vs: Tuple2[ParamLike, Any]*) = Metadata(ListMap(vs.map { case (k, v) => k.name -> v }: _*))
+  def ParamsParser(vs: Tuple2[MetadataLike#Param[_], Any]*) =
+    Metadata(ListMap(vs.map { case (k, v) => k.name -> v }: _*))
 
   case class ReflectionParser[T: ClassTag]() {
 

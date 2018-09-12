@@ -63,10 +63,10 @@ abstract class Resource[T] extends LocalCleanable {
 
   lazy val allMetadata: ResourceMD = {
 
-    val grouped = children.groupBy(_.map("Type").toString)
+    val grouped = children.groupBy(_.self("Type").toString)
     val childMaps: Map[String, Seq[ListMap[String, Any]]] = grouped.mapValues {
       _.map { md =>
-        md.map
+        md.self
       }
     }
     val result = rootMetadata ++ ResourceMD.MapParser(childMaps)
