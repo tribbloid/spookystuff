@@ -13,6 +13,8 @@ trait MetadataLike extends Serializable {
 
     final val name: String = this.getClass.getSimpleName
 
+    def alternativeNames: List[String] = Nil
+
     lazy val get: Option[T] = self.get(name).map(_.asInstanceOf[T])
     def apply(): T = get.get
   }
@@ -20,6 +22,10 @@ trait MetadataLike extends Serializable {
   abstract class ParamWithDefault[T](val default: T) extends Param[T] {
 
     def getOrDefault: T = get.getOrElse(default)
+  }
+
+  abstract class StringParam(override val default: String = "") extends ParamWithDefault[String](default) {
+    //TODO: add shortcut to cast into boolean etc
   }
 
   //WARNING: DO NOT add implicit conversion to inner class' companion object! will trigger "java.lang.AssertionError: assertion failed: mkAttributedQualifier(_xxx ..." compiler error!

@@ -79,8 +79,8 @@ object Metadata extends MessageRelay[Metadata] {
 
   implicit def MapParser(map: Map[String, Any]) = apply(map.toSeq: _*)
 
-  def ParamsParser(vs: Tuple2[MetadataLike#Param[_], Any]*) =
-    Metadata(ListMap(vs.map { case (k, v) => k.name -> v }: _*))
+//  def ParamsParser(vs: Tuple2[MetadataLike#Param[_], Any]*) =
+//    Metadata(ListMap(vs.map { case (k, v) => k.name -> v }: _*))
 
   case class ReflectionParser[T: ClassTag]() {
 
