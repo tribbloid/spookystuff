@@ -102,7 +102,7 @@ class PythonDriver(
                     """.trim.stripMargin,
     override val _lifespan: Lifespan = new Lifespan.Auto()
 ) extends PythonProcess(pythonExe)
-    with LocalCleanable {
+    with Driver {
 
   import scala.concurrent.duration._
 
@@ -170,8 +170,8 @@ class PythonDriver(
         }
       }
     }.getOrElse(
-        closeOrInterrupt()
-      )
+      closeOrInterrupt()
+    )
   }
 
   def closeOrInterrupt() = {

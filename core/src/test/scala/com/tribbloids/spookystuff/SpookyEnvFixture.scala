@@ -6,7 +6,7 @@ import com.tribbloids.spookystuff.dsl.DriverFactory
 import com.tribbloids.spookystuff.execution.SpookyExecutionContext
 import com.tribbloids.spookystuff.extractors.{Alias, GenExtractor, GenResolved}
 import com.tribbloids.spookystuff.row.{SpookySchema, SquashedFetchedRow, TypedField}
-import com.tribbloids.spookystuff.session.CleanWebDriver
+import com.tribbloids.spookystuff.session.{CleanWebDriver, Driver}
 import com.tribbloids.spookystuff.testutils.{FunSpecx, RemoteDocsFixture, TestHelper}
 import com.tribbloids.spookystuff.utils.lifespan.{Cleanable, Lifespan}
 import com.tribbloids.spookystuff.utils.{CommonConst, CommonUtils, RetryFixedInterval}
@@ -59,15 +59,15 @@ object SpookyEnvFixture {
   def processShouldBeClean(
       names: Seq[String] = Nil,
       keywords: Seq[String] = Nil,
-      cleanSweepNotInTask: Boolean = true
+      cleanSweepDrivers: Boolean = true
   ): Unit = {
 
-    if (cleanSweepNotInTask) {
+    if (cleanSweepDrivers) {
       //this is necessary as each suite won't automatically cleanup drivers NOT in task when finished
       Cleanable.cleanSweepAll(
         condition = {
-          case v if !v.lifespan.isTask => true
-          case _                       => false
+          case v: Driver => true
+          case _         => false
         }
       )
     }

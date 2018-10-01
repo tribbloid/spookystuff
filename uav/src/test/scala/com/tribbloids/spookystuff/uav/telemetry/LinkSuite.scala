@@ -268,7 +268,7 @@ abstract class SimLinkSuite extends SITLFixture with LinkSuite {
       //wait for zombie process to be deregistered
       CommonUtils.retry(5, 2000) {
         sc.runEverywhere() { _ =>
-          SpookyEnvFixture.processShouldBeClean(Seq("mavproxy"), Seq("mavproxy"), cleanSweepNotInTask = false)
+          SpookyEnvFixture.processShouldBeClean(Seq("mavproxy"), Seq("mavproxy"), cleanSweepDrivers = false)
 
           Link.registered.foreach { v =>
             v._2.disconnect()
