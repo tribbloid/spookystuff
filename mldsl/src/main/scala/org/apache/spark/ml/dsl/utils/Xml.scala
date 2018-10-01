@@ -19,7 +19,7 @@ package org.apache.spark.ml.dsl.utils
 import java.text.SimpleDateFormat
 import java.util.Date
 
-import com.tribbloids.spookystuff.utils.CommonUtils
+import com.tribbloids.spookystuff.utils.ThreadLocal
 import org.apache.spark.ml.dsl.utils.Xml.baseDataFormatsFactory
 import org.json4s._
 
@@ -143,8 +143,8 @@ object Xml {
             // XML attributes. Flattening keeps transformation more predictable.
             // <a><foo id="1">x</foo></a> -> {"a":{"foo":{"foo":"x","id":"1"}}} vs
             // <a><foo id="1">x</foo></a> -> {"a":{"foo":"x","id":"1"}}
-            case (XLeaf(v, x :: xs), o: JObject) => o.obj
-            case (_, json)                       => JField(name, json) :: Nil
+            case (XLeaf(v, x :: `xs`), o: JObject) => o.obj
+            case (_, json)                         => JField(name, json) :: Nil
           }
       }
 
@@ -163,7 +163,7 @@ object Xml {
             if (isLeaf(n) && n.attributes.length == 0) XValue(n.text) :: Nil
             else buildNodes(n)
           })
-          XLeaf((allLabels(0), arr), Nil) :: Nil
+          XLeaf((allLabels.head, arr), Nil) :: Nil
         } else nodes.toList.flatMap(buildNodes)
     }
 
@@ -202,11 +202,10 @@ object Xml {
 
         for (field <- fields) {
           field match {
-            case (n, v) if n.startsWith("@") => {
+            case (n, v) if n.startsWith("@") =>
               // If our name (key) starts with "@", remove the "@" and create our attribute
               val name = n.substring(1)
               attributes = new UnprefixedAttribute(name, v.extract[String], attributes)
-            }
             case _ => None
           }
         }
@@ -244,13 +243,13 @@ object Xml {
 
   class XmlElem(name: String, value: String) extends Elem(null, name, xml.Null, TopScope, false, Text(value))
 
-  val baseDataFormatsFactory = new CommonUtils.ThreadLocal(
+  val baseDataFormatsFactory = ThreadLocal { _ =>
     Seq(
       new java.text.SimpleDateFormat("yyyy-MM-dd'T'HH:mm:ss.SSS"),
       new java.text.SimpleDateFormat("yyyy-MM-dd'T'HH:mm:ss"),
       new java.text.SimpleDateFormat("yyyy-MM-dd'T'HH:mm")
     )
-  )
+  }
 
   val baseFormat = XMLDefaultFormats
 

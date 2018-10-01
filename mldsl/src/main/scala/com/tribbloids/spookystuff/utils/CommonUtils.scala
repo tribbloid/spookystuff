@@ -119,11 +119,6 @@ abstract class CommonUtils {
     Random.nextString(len)
   }
 
-  class ThreadLocal[A](init: => A) extends java.lang.ThreadLocal[A] with (() => A) {
-    override def initialValue = init
-    def apply = get
-  }
-
   def blockManagerIDOpt: Option[BlockManagerId] = {
     Option(SparkEnv.get).map(v => v.blockManager.blockManagerId)
   }
