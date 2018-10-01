@@ -4,37 +4,44 @@ import java.io.File
 import java.net.URL
 import java.nio.file.{Path, Paths}
 
+import com.tribbloids.spookystuff.utils.lifespan.Cleanable
 import com.tribbloids.spookystuff.utils.{CommonConst, CommonUtils, SpookyUtils}
 
 /**
   * Created by peng on 20/09/16.
   */
-case class ResourceJARResolver(rootPath: String) {
+case class ResourceJARResolver(
+    root: String,
+    unpackedParent: String = CommonConst.UNPACK_RESOURCE_DIR
+) extends Cleanable {
 
   //TODO: this should be within TEMP_PATH, however current temp directory cleanup is broken and may results in resources extracted in new suite being deleted by previous suite
-  final val UNPACK_RESOURCE_PATH = CommonUtils.:\(
+  final val unpackedRoot = CommonUtils.:\(
     CommonUtils.\\\(
-      CommonConst.UNPACK_RESOURCE_PATH,
-      "generated-resources",
-      rootPath
+      unpackedParent,
+      root
     ))
-  final val RESOURCE_NAME = rootPath + File.separator
+  final val RESOURCE_NAME = root + File.separator
 
   // run once and for all TODO: or clean up at shutdown hook
-  val testResources: Unit = {
+  lazy val unpackOnce: Unit = {
     val resourceOpt = SpookyUtils.getCPResource(RESOURCE_NAME)
     resourceOpt.foreach { resource =>
       SpookyUtils.extractResource(
         resource,
-        UNPACK_RESOURCE_PATH
+        unpackedRoot
       )
     }
     Thread.sleep(5000) //for eventual consistency
   }
 
-  def unpacked(resource: String): String = {
+  def deleteUnpackedRoot(): Unit = {
+    TestHelper.clearTempDirs(Seq(unpackedRoot))
+  }
 
-    UNPACK_RESOURCE_PATH + resource.stripPrefix(RESOURCE_NAME)
+  def unpacked(resource: String): String = {
+    unpackOnce
+    unpackedRoot + resource.stripPrefix(RESOURCE_NAME)
   }
 
   def unpackedPath(resource: String): Path = {
@@ -44,4 +51,6 @@ case class ResourceJARResolver(rootPath: String) {
   def unpackedURL(resource: String): URL = {
     new URL("file://" + unpacked(resource)) //TODO: change to File(..).getURL?
   }
+
+  override protected def cleanImpl(): Unit = deleteUnpackedRoot()
 }
