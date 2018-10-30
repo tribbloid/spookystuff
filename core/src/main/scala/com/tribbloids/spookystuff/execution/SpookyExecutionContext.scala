@@ -10,7 +10,7 @@ import org.apache.spark.storage.StorageLevel
 //TODO: merge into DataRowSchema?
 case class SpookyExecutionContext(
     spooky: SpookyContext,
-    @transient scratchRDDs: ScratchRDDs = new ScratchRDDs()
+    @transient scratchRDDs: ScratchRDDs = ScratchRDDs()
 ) {
 
   def :++(b: SpookyExecutionContext) = {
@@ -20,7 +20,7 @@ case class SpookyExecutionContext(
     import scratchRDDs._
     val bb = b.scratchRDDs
     this.copy(
-      scratchRDDs = new ScratchRDDs(
+      scratchRDDs = ScratchRDDs(
         tempTables = <+>(bb, _.tempTables),
         tempRDDs = <+>(bb, _.tempRDDs),
         tempDFs = <+>(bb, _.tempDFs)

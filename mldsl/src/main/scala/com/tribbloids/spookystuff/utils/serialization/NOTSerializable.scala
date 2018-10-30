@@ -11,9 +11,9 @@ trait NOTSerializable extends KryoSerializable {
 
   lazy val error = new NotSerializableException(s"${this.getClass.getCanonicalName} is NOT serializable")
 
-  private val hooks = SerDeHooks({ () =>
+  private val hooks = SerDeHook({ _ =>
     throw error
-  }, { () =>
+  }, { _ =>
     throw error
   })
 

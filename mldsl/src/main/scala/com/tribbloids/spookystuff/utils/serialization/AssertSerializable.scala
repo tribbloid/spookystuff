@@ -1,5 +1,7 @@
 package com.tribbloids.spookystuff.utils.serialization
 
+import java.nio.ByteBuffer
+
 import org.apache.spark.serializer.Serializer
 
 import scala.reflect.ClassTag
@@ -31,8 +33,9 @@ case class AssertWeaklySerializable[T <: AnyRef: ClassTag](
 
   serializers.foreach { ser =>
     val serInstance = ser.newInstance()
-    val serElement = serInstance.serialize(element)
-    val element2 = serInstance.deserialize[T](serElement)
+    val binary: ByteBuffer = serInstance.serialize(element)
+    assert(binary.array().toSeq.exists(_.toInt > 8)) //min object overhead length
+    val element2 = serInstance.deserialize[T](binary)
     //      assert(!element.eq(element2))
     condition(element, element2)
   }
