@@ -3,7 +3,8 @@ package com.tribbloids.spookystuff.utils.io
 import java.io._
 import java.util.concurrent.TimeUnit
 
-import com.tribbloids.spookystuff.utils.{CommonUtils, NOTSerializable, Retry, RetryExponentialBackoff}
+import com.tribbloids.spookystuff.utils.serialization.NOTSerializable
+import com.tribbloids.spookystuff.utils.{CommonUtils, Retry, RetryExponentialBackoff}
 
 import scala.concurrent.duration.Duration
 

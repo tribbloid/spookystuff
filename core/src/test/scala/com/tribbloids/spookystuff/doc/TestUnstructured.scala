@@ -1,11 +1,10 @@
 package com.tribbloids.spookystuff.doc
 
-import org.apache.spark.SparkEnv
-import com.tribbloids.spookystuff.SpookyEnvFixture
 import com.tribbloids.spookystuff.actions._
-import com.tribbloids.spookystuff.dsl
+import com.tribbloids.spookystuff.{dsl, SpookyEnvFixture}
 import com.tribbloids.spookystuff.testutils.LocalPathDocsFixture
-import com.tribbloids.spookystuff.utils.AssertSerializable
+import com.tribbloids.spookystuff.utils.serialization.AssertSerializable
+import org.apache.spark.SparkEnv
 
 /**
   * Created by peng on 11/30/14.

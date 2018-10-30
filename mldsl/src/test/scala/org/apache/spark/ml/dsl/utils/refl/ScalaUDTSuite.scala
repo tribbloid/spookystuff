@@ -1,7 +1,7 @@
 package org.apache.spark.ml.dsl.utils.refl
 
 import com.tribbloids.spookystuff.testutils.{FunSpecx, TestHelper}
-import com.tribbloids.spookystuff.utils.AssertSerializable
+import com.tribbloids.spookystuff.utils.serialization.AssertSerializable
 import org.apache.spark.sql.types.DataType
 
 /**

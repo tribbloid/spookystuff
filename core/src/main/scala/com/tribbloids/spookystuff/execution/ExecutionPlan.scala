@@ -2,7 +2,7 @@ package com.tribbloids.spookystuff.execution
 
 import com.tribbloids.spookystuff.actions.TraceView
 import com.tribbloids.spookystuff.row._
-import com.tribbloids.spookystuff.utils.NOTSerializable
+import com.tribbloids.spookystuff.utils.serialization.NOTSerializable
 import org.apache.spark.rdd.RDD
 import org.apache.spark.sql.catalyst.trees.TreeNode
 import org.apache.spark.sql.types.DataType

@@ -3,7 +3,8 @@ package com.tribbloids.spookystuff.testutils
 import java.io.File
 import java.util.Properties
 
-import com.tribbloids.spookystuff.utils.{CommonConst, CommonUtils, ConfUtils, NOTSerializable}
+import com.tribbloids.spookystuff.utils.serialization.NOTSerializable
+import com.tribbloids.spookystuff.utils.{CommonConst, CommonUtils, ConfUtils}
 import org.apache.commons.io.FileUtils
 import org.apache.spark.serializer.KryoSerializer
 import org.apache.spark.sql.SparkSession

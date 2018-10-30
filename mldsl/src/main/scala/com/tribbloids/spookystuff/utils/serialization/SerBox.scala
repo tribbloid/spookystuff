@@ -1,8 +1,8 @@
-package com.tribbloids.spookystuff.utils
+package com.tribbloids.spookystuff.utils.serialization
 
-import java.io.Serializable
 import java.nio.ByteBuffer
 
+import com.tribbloids.spookystuff.utils.IDMixin
 import org.apache.hadoop.io.Writable
 import org.apache.spark.ml.dsl.utils.refl.{ScalaType, TypeUtils}
 import org.apache.spark.serializer.{JavaSerializer, KryoSerializer, SerializerInstance}
@@ -53,9 +53,9 @@ case class SerBox[T: ClassTag](
 
   @transient lazy val serObj: Serializable = obj match {
     case ss: Serializable =>
-      ss
+      ss: Serializable
     case ww: Writable =>
-      new SerializableWritable(ww)
+      new SerializableWritable(ww) with Serializable
     case _ =>
       throw new UnsupportedOperationException(s"$obj is not Serializable or Writable")
   }

@@ -1,8 +1,8 @@
 package com.tribbloids.spookystuff.dsl
 
 import com.tribbloids.spookystuff.SpookyEnvFixture
-import com.tribbloids.spookystuff.utils.NOTSerializable
 import com.tribbloids.spookystuff.utils.locality.PartitionIdPassthrough
+import com.tribbloids.spookystuff.utils.serialization.NOTSerializable
 import org.apache.spark.{HashPartitioner, TaskContext}
 import org.apache.spark.rdd.RDD
 

@@ -3,7 +3,7 @@ package org.apache.spark.ml.dsl.utils.refl
 import java.nio.ByteBuffer
 import java.sql.{Date, Timestamp}
 
-import com.tribbloids.spookystuff.utils._
+import com.tribbloids.spookystuff.utils.serialization.WritableTypeTag
 import org.apache.spark.SparkConf
 import org.apache.spark.serializer.JavaSerializer
 import org.apache.spark.sql.catalyst.ScalaReflection
@@ -11,8 +11,7 @@ import org.apache.spark.sql.catalyst.ScalaReflection.universe._
 import org.apache.spark.sql.types._
 
 import scala.collection.Map
-import scala.language.implicitConversions
-import scala.language.existentials
+import scala.language.{existentials, implicitConversions}
 import scala.reflect.ClassTag
 
 /**

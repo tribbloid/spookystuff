@@ -5,7 +5,7 @@ import com.tribbloids.spookystuff.conf.SpookyConf
 import com.tribbloids.spookystuff.dsl._
 import com.tribbloids.spookystuff.row.Field
 import com.tribbloids.spookystuff.testutils.LocalPathDocsFixture
-import com.tribbloids.spookystuff.utils.AssertWeaklySerializable
+import com.tribbloids.spookystuff.utils.serialization.AssertWeaklySerializable
 
 class SpookyContextSuite extends SpookyEnvFixture with LocalPathDocsFixture {
 

@@ -2,7 +2,8 @@ package com.tribbloids.spookystuff.conf
 
 import com.tribbloids.spookystuff.SpookyEnvFixture
 import com.tribbloids.spookystuff.caching.DFSDocCache
-import com.tribbloids.spookystuff.utils.{AssertSerializable, ConfUtils}
+import com.tribbloids.spookystuff.utils.ConfUtils
+import com.tribbloids.spookystuff.utils.serialization.AssertSerializable
 import org.apache.spark.SparkConf
 
 import scala.util.Random

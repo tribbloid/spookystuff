@@ -23,7 +23,8 @@ object ScratchRDDs {
 case class ScratchRDDs(
     tempTables: ArrayBuffer[(String, DataFrame)] = ArrayBuffer(),
     tempRDDs: ArrayBuffer[RDD[_]] = ArrayBuffer(),
-    tempDFs: ArrayBuffer[DataFrame] = ArrayBuffer()
+    tempDFs: ArrayBuffer[DataFrame] = ArrayBuffer(),
+    defaultStorageLevel: StorageLevel = StorageLevel.MEMORY_ONLY
 ) extends LocalCleanable
     with ShippingMarks {
 
@@ -51,7 +52,7 @@ case class ScratchRDDs(
   }
   def persist[T](
       rdd: RDD[T],
-      storageLevel: StorageLevel = StorageLevel.MEMORY_ONLY
+      storageLevel: StorageLevel = defaultStorageLevel
   ): RDD[T] = {
 
     if (rdd.getStorageLevel == StorageLevel.NONE) {

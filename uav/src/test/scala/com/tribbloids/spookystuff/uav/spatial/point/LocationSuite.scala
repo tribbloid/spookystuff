@@ -4,7 +4,7 @@ import breeze.linalg.{Vector => Vec}
 import com.tribbloids.spookystuff.SpookyEnvFixture
 import com.tribbloids.spookystuff.uav.UAVConf
 import com.tribbloids.spookystuff.uav.spatial.Anchors
-import com.tribbloids.spookystuff.utils.AssertSerializable
+import com.tribbloids.spookystuff.utils.serialization.AssertSerializable
 
 /**
   * Created by peng on 14/02/17.

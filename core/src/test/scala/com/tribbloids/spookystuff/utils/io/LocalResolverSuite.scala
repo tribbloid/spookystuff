@@ -3,7 +3,8 @@ package com.tribbloids.spookystuff.utils.io
 import java.beans.Transient
 
 import com.tribbloids.spookystuff.testutils.{FunSpecx, LocalPathDocsFixture, TestHelper}
-import com.tribbloids.spookystuff.utils.{AssertSerializable, CommonConst}
+import com.tribbloids.spookystuff.utils.CommonConst
+import com.tribbloids.spookystuff.utils.serialization.AssertSerializable
 import org.apache.spark.SparkConf
 import org.apache.spark.serializer.KryoSerializer
 

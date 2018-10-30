@@ -1,4 +1,4 @@
-package com.tribbloids.spookystuff.utils
+package com.tribbloids.spookystuff.utils.serialization
 
 import org.scalatest.FunSpec
 

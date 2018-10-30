@@ -7,7 +7,7 @@ import com.tribbloids.spookystuff.execution.ExplorePlan.Open_Visited
 import com.tribbloids.spookystuff.extractors.Resolved
 import com.tribbloids.spookystuff.row._
 import com.tribbloids.spookystuff.utils.CachingUtils.ConcurrentMap
-import com.tribbloids.spookystuff.utils.NOTSerializable
+import com.tribbloids.spookystuff.utils.serialization.NOTSerializable
 import com.tribbloids.spookystuff.{dsl, SpookyContext}
 
 import scala.language.implicitConversions

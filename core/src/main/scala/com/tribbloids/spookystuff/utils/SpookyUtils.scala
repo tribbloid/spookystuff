@@ -358,4 +358,4 @@ These special characters are often called "metacharacters".
 
 object SpookyUtils extends SpookyUtils
 
-object JavaSpookyUtils extends SpookyUtils
+object JavaSpookyUtils extends SpookyUtils // Java cannot read companion class

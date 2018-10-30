@@ -3,7 +3,8 @@ package com.tribbloids.spookystuff.utils.io
 import java.io.{InputStream, OutputStream}
 import java.security.{PrivilegedAction, PrivilegedActionException}
 
-import com.tribbloids.spookystuff.utils.{CommonUtils, SerBox}
+import com.tribbloids.spookystuff.utils.CommonUtils
+import com.tribbloids.spookystuff.utils.serialization.SerBox
 import org.apache.hadoop.conf.Configuration
 import org.apache.hadoop.fs._
 import org.apache.hadoop.security.UserGroupInformation
