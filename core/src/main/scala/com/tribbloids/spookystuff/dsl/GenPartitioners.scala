@@ -1,6 +1,7 @@
 package com.tribbloids.spookystuff.dsl
 
 import com.tribbloids.spookystuff.dsl.GenPartitionerLike.Instance
+import com.tribbloids.spookystuff.execution.SpookyExecutionContext
 import com.tribbloids.spookystuff.row.{BeaconRDD, SpookySchema}
 import org.apache.spark.Partitioner
 import org.apache.spark.rdd.RDD
@@ -72,10 +73,12 @@ object GenPartitioners {
   ) extends AnyGenPartitioner {
 
     def getInstance[K: ClassTag](schema: SpookySchema): Instance[K] = {
-      Inst[K]()
+      Inst[K](schema.ec)
     }
 
     case class Inst[K](
+        ec: SpookyExecutionContext
+    )(
         implicit val ctg: ClassTag[K]
     ) extends Instance[K] {
 
@@ -87,7 +90,7 @@ object GenPartitioners {
         val result = ref.sparkContext
           .emptyRDD[(K, Unit)]
           .partitionBy(partitioner)
-          .persist(StorageLevel.MEMORY_AND_DISK)
+        ec.scratchRDDs.persist(result, StorageLevel.MEMORY_AND_DISK)
         result.count()
         Some(result)
       }
