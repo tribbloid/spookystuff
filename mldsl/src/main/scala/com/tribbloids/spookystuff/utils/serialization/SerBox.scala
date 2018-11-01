@@ -1,5 +1,6 @@
 package com.tribbloids.spookystuff.utils.serialization
 
+import java.io
 import java.nio.ByteBuffer
 
 import com.tribbloids.spookystuff.utils.IDMixin
@@ -39,9 +40,6 @@ object SerBox {
   * automatically wrap with SerializableWritable when being serialized
   * discard original value
   * wrapping & unwrapping is lazy
-  * @param obj
-  * @param serOverride
-  * @tparam T
   */
 case class SerBox[T: ClassTag](
     @transient obj: T,
@@ -51,16 +49,16 @@ case class SerBox[T: ClassTag](
 
   @transient lazy val serOpt: Option[SerializerInstance] = Option(serOverride).map(_.apply)
 
-  @transient lazy val serObj: Serializable = obj match {
+  @transient lazy val serObj: io.Serializable = obj match {
     case ss: Serializable =>
       ss: Serializable
     case ww: Writable =>
-      new SerializableWritable(ww) with Serializable
+      new SerializableWritable(ww)
     case _ =>
       throw new UnsupportedOperationException(s"$obj is not Serializable or Writable")
   }
 
-  val delegate: Either[Serializable, Array[Byte]] = {
+  val delegate: Either[io.Serializable, Array[Byte]] = {
 
     serOpt match {
       case None =>

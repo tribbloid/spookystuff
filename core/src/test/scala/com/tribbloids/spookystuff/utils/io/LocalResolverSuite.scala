@@ -61,6 +61,7 @@ class LocalResolverSuite extends FunSpecx with LocalPathDocsFixture {
   //    assert(abs == "file:"+CommonConst.USER_DIR +"/"+ nonExistingPath)
   //  }
 
+  //TODO: use AssertSerializable
   it("resolver is Kryo serializable") {
     //    val resolver: HDFSResolver = HDFSResolver(new Configuration())
 

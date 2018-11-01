@@ -3,6 +3,7 @@ package com.tribbloids.spookystuff.execution
 import com.tribbloids.spookystuff.actions.Wget
 import com.tribbloids.spookystuff.extractors.impl.Lit
 import com.tribbloids.spookystuff.testutils.LocalPathDocsFixture
+import com.tribbloids.spookystuff.utils.serialization.AssertWeaklySerializable
 import com.tribbloids.spookystuff.{dsl, SpookyEnvFixture}
 import org.apache.spark.HashPartitioner
 
@@ -12,6 +13,16 @@ import org.apache.spark.HashPartitioner
 class TestFetchPlan extends SpookyEnvFixture with LocalPathDocsFixture {
 
   import dsl._
+
+  it("FetchPlan should be serializable") {
+
+    val rdd1 = spooky
+      .fetch(
+        Wget(HTML_URL)
+      )
+
+    AssertWeaklySerializable(rdd1.plan)
+  }
 
   it("FetchPlan.toString should work") {
 

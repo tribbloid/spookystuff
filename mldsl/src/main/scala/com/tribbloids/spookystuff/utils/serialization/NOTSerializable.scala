@@ -7,11 +7,11 @@ import com.esotericsoftware.kryo.{Kryo, KryoSerializable}
 /**
   * Any subclass in the closure cleaned by Spark ClosureCleaner will trigger a runtime error.
   */
-trait NOTSerializable extends KryoSerializable {
+trait NOTSerializable extends KryoSerializable with Serializable {
 
   lazy val error = new NotSerializableException(s"${this.getClass.getCanonicalName} is NOT serializable")
 
-  private val hooks = SerDeHook({ _ =>
+  private val _serDeHook = SerDeHook({ _ =>
     throw error
   }, { _ =>
     throw error

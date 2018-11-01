@@ -12,8 +12,8 @@ object AssertSerializable {
       element: T,
       serializers: Seq[Serializer] = SerBox.serializers,
       condition: (T, T) => Any = { (v1: T, v2: T) =>
-        assert((v1: T) == (v2: T))
-        assert(v1.toString == v2.toString)
+        assert((v1: T) == (v2: T), s"value after deserialization is different: $v1 != $v2")
+        assert(v1.toString == v2.toString, s"value.toString after deserialization is different: $v1 != $v2")
         if (!v1.getClass.getCanonicalName.endsWith("$"))
           assert(!(v1 eq v2))
       }
@@ -34,7 +34,7 @@ case class AssertWeaklySerializable[T <: AnyRef: ClassTag](
   serializers.foreach { ser =>
     val serInstance = ser.newInstance()
     val binary: ByteBuffer = serInstance.serialize(element)
-    assert(binary.array().toSeq.exists(_.toInt > 8)) //min object overhead length
+    assert(binary.array().length > 8) //min object overhead length
     val element2 = serInstance.deserialize[T](binary)
     //      assert(!element.eq(element2))
     condition(element, element2)

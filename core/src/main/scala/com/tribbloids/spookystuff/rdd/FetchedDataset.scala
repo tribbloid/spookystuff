@@ -52,8 +52,8 @@ case class FetchedDataset(
 
     this(
       RDDPlan(
-        sourceRDD,
         SpookySchema(SpookyExecutionContext(spooky), fieldMap),
+        sourceRDD,
         beaconRDDOpt
       )
     )
