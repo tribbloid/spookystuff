@@ -13,12 +13,10 @@ import scala.collection.mutable.ArrayBuffer
 case class RDDPlan(
     sourceRDD: SquashedFetchedRDD,
     override val schema: SpookySchema,
-    override val spooky: SpookyContext,
-    beaconRDD: Option[BeaconRDD[TraceView]] = None,
-    @transient override val scratchRDDs: ScratchRDDs = ScratchRDDs()
+    beaconRDD: Option[BeaconRDD[TraceView]] = None
 ) extends ExecutionPlan(
       Seq(),
-      SpookyExecutionContext(spooky, scratchRDDs)
+      schema.ec
     ) {
 
   override lazy val beaconRDDOpt = beaconRDD

@@ -54,7 +54,6 @@ case class FetchedDataset(
       RDDPlan(
         sourceRDD,
         SpookySchema(SpookyExecutionContext(spooky), fieldMap),
-        spooky,
         beaconRDDOpt
       )
     )
@@ -243,19 +242,8 @@ case class FetchedDataset(
     unsquashedRDD.map(v => _ex.applyOrElse[FetchedRow, T](v, _ => default))
   }
 
-  //  def toPairRDD[T1: ClassTag, T2: ClassTag](
-  //                                             first: Extractor[T1],
-  //                                             second: Extractor[T2]
-  //                                           ): RDD[(T1,T2)] = unsquashedRDD
-  //    .map {
-  //      row =>
-  //        val t1 = first.orNull.apply(row)
-  //        val t2 = second.orNull.apply(row)
-  //        t1 -> t2
-  //    }
-
   // IMPORTANT: DO NOT discard type parameter! otherwise arguments' type will be coerced into Any!
-  def extract[T](exs: (Extractor[T])*): FetchedDataset = {
+  def extract[T](exs: Extractor[T]*): FetchedDataset = {
     OptimizedMapPlan(plan, MapPlan.Extract(exs))
   }
 
@@ -349,8 +337,8 @@ case class FetchedDataset(
   )(exprs: Extractor[Any]*) = flatExtract(on, isLeft, ordinalField, sampler)(exprs: _*)
 
   //TODO: test
-  def agg(exprs: Seq[(FetchedRow => Any)], reducer: RowReducer): FetchedDataset = AggPlan(plan, exprs, reducer)
-  def distinctBy(exprs: (FetchedRow => Any)*): FetchedDataset = agg(exprs, (v1, v2) => v1)
+  def agg(exprs: Seq[FetchedRow => Any], reducer: RowReducer): FetchedDataset = AggPlan(plan, exprs, reducer)
+  def distinctBy(exprs: FetchedRow => Any*): FetchedDataset = agg(exprs, (v1, v2) => v1)
 
   protected def _defaultCooldown(v: Option[Duration]) = {
     val _delay: Trace = v.map { dd =>
