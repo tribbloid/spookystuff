@@ -178,7 +178,7 @@ abstract class SpookyEnvFixture
 
     val spooky = this.spooky
     val processNames = this.processNames
-    TestHelper.clearTempDirs()
+    TestHelper.cleanTempDirs()
 
     //unpersist all RDDs, disabled to better detect memory leak
     //    sc.getPersistentRDDs.values.toList.foreach {

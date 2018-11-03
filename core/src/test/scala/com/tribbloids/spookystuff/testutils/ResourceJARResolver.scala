@@ -36,7 +36,7 @@ case class ResourceJARResolver(
   }
 
   def deleteUnpackedRoot(): Unit = {
-    TestHelper.clearTempDirs(Seq(unpackedRoot))
+    TestHelper.cleanTempDirs(Seq(unpackedRoot))
   }
 
   def unpacked(resource: String): String = {

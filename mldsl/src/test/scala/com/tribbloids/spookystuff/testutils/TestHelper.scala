@@ -5,10 +5,11 @@ import java.util.Properties
 
 import com.tribbloids.spookystuff.utils.serialization.NOTSerializable
 import com.tribbloids.spookystuff.utils.{CommonConst, CommonUtils, ConfUtils}
-import org.apache.commons.io.FileUtils
+import org.apache.hadoop.fs.FileUtil
 import org.apache.spark.serializer.KryoSerializer
 import org.apache.spark.sql.SparkSession
 import org.apache.spark.{SparkConf, SparkContext, SparkEnv, SparkException}
+import org.slf4j.LoggerFactory
 
 import scala.reflect.ClassTag
 import scala.util.{Failure, Success, Try}
@@ -255,13 +256,16 @@ class TestHelper() extends NOTSerializable {
   }
 
   //TODO: clean up S3 as well
-  def clearTempDirs(paths: Seq[String] = Seq(CommonConst.TEMP_DIR)): Unit = {
+  def cleanTempDirs(paths: Seq[String] = Seq(CommonConst.TEMP_DIR)): Unit = {
     paths.foreach { path =>
-      Try {
+      try {
         val file = new File(path)
         CommonUtils.retry(3) {
-          FileUtils.deleteDirectory(file)
+          if (file.exists()) FileUtil.fullyDelete(file, true)
         }
+      } catch {
+        case e: Throwable =>
+          LoggerFactory.getLogger(this.getClass).warn("cannot clean tempDirs", e)
       }
     }
   }

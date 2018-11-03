@@ -21,14 +21,14 @@ abstract class AbstractFlowSuite extends FunSpecx with BeforeAndAfterAll {
       Try {
         this.shouldBe(compactedGT)
       }.recover {
-          case (_: TestFailedException | _: AssertionError) =>
-            val correctedGT = compactedGT
-              .replaceAll("+- ", " ")
-              .replaceAll(":- ", " ")
-              .replaceAll(":  ", " ")
-            //this is for Spark 1.5
-            this.shouldBe(correctedGT)
-        }
+        case (_: TestFailedException | _: AssertionError) =>
+          val correctedGT = compactedGT
+            .replaceAll("+- ", " ")
+            .replaceAll(":- ", " ")
+            .replaceAll(":  ", " ")
+          //this is for Spark 1.5
+          this.shouldBe(correctedGT)
+      }
     }
   }
 
@@ -74,7 +74,7 @@ abstract class AbstractFlowSuite extends FunSpecx with BeforeAndAfterAll {
 
   override def afterAll() {
 
-    TestHelper.clearTempDirs()
+    TestHelper.cleanTempDirs()
     super.afterAll()
   }
 }
