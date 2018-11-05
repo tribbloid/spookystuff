@@ -261,7 +261,9 @@ class TestHelper() extends NOTSerializable {
       try {
         val file = new File(path)
         CommonUtils.retry(3) {
-          if (file.exists()) FileUtil.fullyDelete(file, true)
+          val absoluteFile = file.getAbsoluteFile
+          if (absoluteFile != null && absoluteFile.exists())
+            FileUtil.fullyDelete(absoluteFile, true)
         }
       } catch {
         case e: Throwable =>
