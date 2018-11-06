@@ -257,7 +257,7 @@ class TestHelper() extends NOTSerializable {
 
   //TODO: clean up S3 as well
   def cleanTempDirs(paths: Seq[String] = Seq(CommonConst.TEMP_DIR)): Unit = {
-    paths.foreach { path =>
+    paths.filter(_ != null).foreach { path =>
       try {
         val file = new File(path)
         CommonUtils.retry(3) {
