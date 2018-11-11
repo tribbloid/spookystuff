@@ -319,32 +319,6 @@
     <!--<outputDirectory>target/classes</outputDirectory>-->
     <!--<testOutputDirectory>target/test-classes</testOutputDirectory>-->
 
-    <!--add python into fat jar that are shipped to all workers TODO: merge with build-helper-maven-plugin?-->
-    <resources>
-      <resource>
-        <directory>src/main/resources</directory>
-      </resource>
-
-      <resource>
-        <directory>src/main/python</directory>
-        <targetPath>python</targetPath>
-      </resource>
-      <resource>
-        <directory>target/generated-sources/python</directory>
-        <targetPath>python</targetPath>
-      </resource>
-    </resources>
-
-    <testResources>
-      <testResource>
-        <directory>src/test/resources</directory>
-      </testResource>
-      <!--<testResource>-->
-        <!--<directory>${basedir}/target/generated-test-sources</directory>-->
-        <!--<filtering>false</filtering>-->
-      <!--</testResource>-->
-    </testResources>
-
     <extensions>
       <extension>
         <groupId>kr.motd.maven</groupId>
@@ -555,8 +529,9 @@
         <artifactId>build-helper-maven-plugin</artifactId>
         <version>1.12</version>
         <executions>
+
           <execution>
-            <id>add-extra-source</id>
+            <id>add-source</id>
             <phase>generate-sources</phase>
             <goals>
               <goal>add-source</goal>
@@ -568,8 +543,9 @@
               </sources>
             </configuration>
           </execution>
+
           <execution>
-            <id>add-scala-test-sources</id>
+            <id>add-test-source</id>
             <phase>generate-test-sources</phase>
             <goals>
               <goal>add-test-source</goal>
@@ -579,6 +555,45 @@
                 <source>src/test/python</source>
                 <source>${project.basedir}/shims/${spark.classifier}-shim/test/scala</source>
               </sources>
+            </configuration>
+          </execution>
+
+
+          <!--add python into fat jar that are shipped to all workers-->
+          <!--original:-->
+          <!--<resources>-->
+            <!--<resource>-->
+              <!--<directory>src/main/resources</directory>-->
+            <!--</resource>-->
+
+            <!--<resource>-->
+              <!--<directory>src/main/python</directory>-->
+              <!--<targetPath>python</targetPath>-->
+            <!--</resource>-->
+            <!--<resource>-->
+              <!--<directory>target/generated-sources/python</directory>-->
+              <!--<targetPath>python</targetPath>-->
+            <!--</resource>-->
+          <!--</resources>-->
+
+          <execution>
+            <id>add-resource</id>
+            <phase>generate-resources</phase>
+            <goals>
+              <goal>add-resource</goal>
+            </goals>
+            <configuration>
+              <resources>
+                <resource>
+                  <directory>src/main/python</directory>
+                  <targetPath>python</targetPath>
+                </resource>
+
+                <resource>
+                  <directory>target/generated-sources/python</directory>
+                  <targetPath>python</targetPath>
+                </resource>
+              </resources>
             </configuration>
           </execution>
         </executions>
