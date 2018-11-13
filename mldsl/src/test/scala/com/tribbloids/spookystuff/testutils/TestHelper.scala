@@ -172,7 +172,10 @@ class TestHelper() extends NOTSerializable {
 
   lazy val TestSparkSession = {
 
-    val session = SparkSession.builder.config(TestSparkConf).getOrCreate()
+    val session = SparkSession.builder
+      .config(TestSparkConf)
+      .enableHiveSupport()
+      .getOrCreate()
     val sc = session.sparkContext
 
     CommonUtils.retry(20, 5000, silent = true) {
