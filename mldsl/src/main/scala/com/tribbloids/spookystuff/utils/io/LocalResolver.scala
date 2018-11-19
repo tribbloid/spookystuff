@@ -3,6 +3,8 @@ package com.tribbloids.spookystuff.utils.io
 import java.io._
 import java.nio.file.{FileAlreadyExistsException, Files, Paths}
 
+import org.apache.hadoop.fs.FileUtil
+
 object LocalResolver extends URIResolver {
 
   val file2MD = ResourceMD.ReflectionParser[File]()
@@ -92,8 +94,8 @@ object LocalResolver extends URIResolver {
       }
     }
 
-    override def _remove(mustExist: Boolean): Unit = { //TODO: validate mustExist
-      file.delete()
+    override def _remove(mustExist: Boolean): Unit = {
+      FileUtil.fullyDelete(file, true)
     }
 
     override def output[T](overwrite: Boolean)(f: OutputResource => T): T = {
