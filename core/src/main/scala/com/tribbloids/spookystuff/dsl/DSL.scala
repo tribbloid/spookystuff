@@ -264,13 +264,13 @@ sealed trait Level1 extends Level2 {
 
     def x(parts: Col[String]*) = Interpolate(strC.parts, parts.map(_.ex))
 
-    def CSS(parts: Col[String]*) = GetOnlyDocExpr.andFn(_.root).findAll(strC.s(parts))
+    def CSS(parts: Col[String]*) = GetOnlyDocExpr.andFn(_.root).findAll(strC.s(parts: _*))
     def S(parts: Col[String]*) = CSS(parts: _*)
 
-    def CSS_*(parts: Col[String]*) = GetAllDocsExpr.findAll(strC.s(parts))
+    def CSS_*(parts: Col[String]*) = GetAllDocsExpr.findAll(strC.s(parts: _*))
     def S_*(parts: Col[String]*) = CSS_*(parts: _*)
 
-    def A(parts: Col[String]*) = 'A.findAll(strC.s(parts))
+    def A(parts: Col[String]*) = 'A.findAll(strC.s(parts: _*))
   }
 
   implicit def FDToRDD(self: FetchedDataset): RDD[FetchedRow] = self.rdd
