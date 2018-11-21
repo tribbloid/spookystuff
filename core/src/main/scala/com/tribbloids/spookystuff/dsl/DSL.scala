@@ -193,7 +193,7 @@ sealed trait Level2 {
     def zipWithValues(values: Extractor[Any]): Zipped[T, Any] =
       new Zipped[T, Any](self, values.typed[Iterable[_]])
 
-    protected def groupByImpl[K](f: T => K): (Iterable[T]) => Map[K, Seq[T]] =
+    protected def groupByImpl[K](f: T => K): Iterable[T] => Map[K, Seq[T]] =
       (v: Iterable[T]) => v.groupBy(f).mapValues(_.toSeq)
 
     def groupBy[K: TypeTag](f: T => K): Extractor[Map[K, Seq[T]]] = {
@@ -262,15 +262,15 @@ sealed trait Level1 extends Level2 {
 
   implicit class StrContextHelper(val strC: StringContext) extends Serializable {
 
-    def x(fs: (Col[String])*) = Interpolate(strC.parts, fs.map(_.ex))
+    def x(parts: Col[String]*) = Interpolate(strC.parts, parts.map(_.ex))
 
-    def CSS() = GetOnlyDocExpr.andFn(_.root).findAll(strC.s())
-    def S() = CSS()
+    def CSS(parts: Col[String]*) = GetOnlyDocExpr.andFn(_.root).findAll(strC.s(parts))
+    def S(parts: Col[String]*) = CSS(parts: _*)
 
-    def CSS_*() = GetAllDocsExpr.findAll(strC.s())
-    def S_*() = CSS_*()
+    def CSS_*(parts: Col[String]*) = GetAllDocsExpr.findAll(strC.s(parts))
+    def S_*(parts: Col[String]*) = CSS_*(parts: _*)
 
-    def A() = 'A.findAll(strC.s())
+    def A(parts: Col[String]*) = 'A.findAll(strC.s(parts))
   }
 
   implicit def FDToRDD(self: FetchedDataset): RDD[FetchedRow] = self.rdd
