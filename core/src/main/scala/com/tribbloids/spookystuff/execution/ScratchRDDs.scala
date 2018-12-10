@@ -81,7 +81,7 @@ case class ScratchRDDs(
   //TODO: add a utility function to make RDD to be uncached automatically once a number of downstream RDDs (can be filtered) are caculated.
   //This manual GC is important for some memory intensive workflow.
 
-  def clearTables(): Unit = {
+  def dropTempTables(): Unit = {
     tempTables.foreach { tuple =>
       tuple._2.sqlContext.dropTempTable(tuple._1)
     }
@@ -92,7 +92,7 @@ case class ScratchRDDs(
       blocking: Boolean = false
   ): Unit = {
 
-    clearTables()
+    dropTempTables()
     tempDFs.foreach { df =>
       df.unpersist(blocking)
     }
