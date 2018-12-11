@@ -16,6 +16,8 @@ import scala.util.{Failure, Success, Try}
 
 class TestHelper() extends NOTSerializable {
 
+  CommonUtils.debugCPResource()
+
   val properties = new Properties()
   Try {
     properties.load(ClassLoader.getSystemResourceAsStream(".rootkey.csv"))

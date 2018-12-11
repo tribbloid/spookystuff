@@ -14,20 +14,7 @@ trait Suitex extends OptionConversion {
   final val ACTUAL = "[ACTUAL  /  LEFT]"
   final val EXPECTED = "[EXPECTED / RIGHT]"
 
-  // will validate their true paths to avoid
-  val classpathFiles = List(
-    "log4j.properties",
-    "rootkey.csv"
-  )
-
-  {
-    val resolvedInfos = classpathFiles.map { v =>
-      val resolved = CommonUtils.getCPResource(v).map(_.toString).getOrElse("[MISSING]")
-      val info = s"$v -> $resolved"
-      info
-    }
-    LoggerFactory.getLogger(this.getClass).info("resolving files in classpath ...\n" + resolvedInfos.mkString("\n"))
-  }
+  CommonUtils.debugCPResource()
 
   @transient implicit class TestStringView(str: String) {
 
