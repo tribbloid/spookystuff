@@ -10,7 +10,7 @@ class SpookyExceptionSuite extends FunSpecx {
 
       val ee = new DFSReadException(
         "ee",
-        TreeException.wrap(
+        TreeException.combine(
           Seq(
             new AssertionError("2"),
             new AssertionError("1")

@@ -1,6 +1,6 @@
 package com.tribbloids.spookystuff.utils
 
-import com.tribbloids.spookystuff.utils.TreeException.Wrap
+import com.tribbloids.spookystuff.utils.TreeException._combine
 import org.apache.spark.ml.dsl.utils.FlowUtils
 import org.apache.spark.sql.catalyst.trees.TreeNode
 
@@ -37,6 +37,10 @@ object TreeException {
         FlowUtils.stackTracesShowStr(self.getStackTrace)
   }
 
+  trait MonadicUndefined extends Throwable
+
+  object Undefined extends MonadicUndefined
+
   //  def aggregate(
   //                 fn: Seq[Throwable] => Throwable,
   //                 extra: Seq[Throwable] = Nil
@@ -53,9 +57,7 @@ object TreeException {
 
   def &&&[T](
       trials: Seq[Try[T]],
-      agg: Seq[Throwable] => Throwable = { es =>
-        wrap(es)
-      },
+      agg: Seq[Throwable] => Throwable = combine(_),
       extra: Seq[Throwable] = Nil
   ): Seq[T] = {
 
@@ -71,9 +73,7 @@ object TreeException {
 
   def |||[T](
       trials: Seq[Try[T]],
-      agg: Seq[Throwable] => Throwable = { es =>
-        wrap(es)
-      },
+      agg: Seq[Throwable] => Throwable = combine(_),
       extra: Seq[Throwable] = Nil
   ): Seq[T] = {
 
@@ -95,18 +95,10 @@ object TreeException {
 
   /**
     * early exit
-    *
-    * @param trials
-    * @param agg
-    * @param extra
-    * @tparam T
-    * @return
     */
   def |||^[T](
       trials: Seq[() => T],
-      agg: Seq[Throwable] => Throwable = { es =>
-        wrap(es)
-      },
+      agg: Seq[Throwable] => Throwable = combine(_),
       extra: Seq[Throwable] = Nil
   ): Option[T] = {
 
@@ -135,22 +127,28 @@ object TreeException {
   }
 
   /**
-    * @param causes
     * @param upliftUnary not recommended to set to false, should use Wrapper() directly for type safety
     * @return
     */
-  def wrap(causes: Seq[Throwable], upliftUnary: Boolean = true): Throwable = {
+  def combine(causes: Seq[Throwable], upliftUnary: Boolean = true): Throwable = {
     val _causes = causes.distinct
     require(_causes.nonEmpty, "No exception")
 
     if (_causes.size == 1 && upliftUnary) {
       _causes.head
     } else {
-      Wrap(causes = _causes)
+      _combine(causes = _causes)
     }
   }
 
-  protected case class Wrap(
+  def monadicCombine(causes: Seq[Throwable], upliftUnary: Boolean = true): Throwable = {
+    val undefined = causes.find(_.isInstanceOf[MonadicUndefined])
+    undefined.getOrElse(
+      combine(causes, upliftUnary)
+    )
+  }
+
+  protected case class _combine(
       override val causes: Seq[Throwable] = Nil
   ) extends TreeException {
 
@@ -167,7 +165,7 @@ trait TreeException extends Throwable {
   def causes: Seq[Throwable] = {
     val cause = getCause
     cause match {
-      case Wrap(causes) => causes
+      case _combine(causes) => causes
       case _ =>
         Option(cause).toSeq
     }
