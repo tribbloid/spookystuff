@@ -37,7 +37,7 @@ object TreeException {
         FlowUtils.stackTracesShowStr(self.getStackTrace)
   }
 
-  trait MonadicUndefined extends Throwable
+  sealed trait MonadicUndefined extends Throwable
 
   object Undefined extends MonadicUndefined
 
@@ -132,7 +132,7 @@ object TreeException {
     */
   def combine(causes: Seq[Throwable], upliftUnary: Boolean = true): Throwable = {
     val _causes = causes.distinct
-    require(_causes.nonEmpty, "No exception")
+    if (_causes.isEmpty) Undefined
 
     if (_causes.size == 1 && upliftUnary) {
       _causes.head

@@ -14,7 +14,7 @@ trait Suitex extends OptionConversion {
   final val ACTUAL = "[ACTUAL  /  LEFT]"
   final val EXPECTED = "[EXPECTED / RIGHT]"
 
-  CommonUtils.debugCPResource()
+//  CommonUtils.debugCPResource()
 
   @transient implicit class TestStringView(str: String) {
 
