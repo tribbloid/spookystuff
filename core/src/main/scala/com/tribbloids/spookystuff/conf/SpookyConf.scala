@@ -70,7 +70,7 @@ class SpookyConf(
     var checkpointInterval: Int = 50, //disabled if <=0
 
     //if encounter too many out of memory error, change to MEMORY_AND_DISK_SER
-    var defaultStorageLevel: StorageLevel = StorageLevel.MEMORY_ONLY
+    var defaultStorageLevel: StorageLevel = StorageLevel.MEMORY_AND_DISK
 ) extends AbstractConf
     with Serializable {
 

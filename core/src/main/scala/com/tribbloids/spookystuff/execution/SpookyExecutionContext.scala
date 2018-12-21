@@ -30,9 +30,9 @@ case class SpookyExecutionContext(
 
   def persist[T](
       rdd: RDD[T],
-      storageLevel: StorageLevel = StorageLevel.MEMORY_ONLY
+      storageLevel: StorageLevel = spooky.spookyConf.defaultStorageLevel
   ): RDD[T] = {
 
-    scratchRDDs.persist(rdd, spooky.spookyConf.defaultStorageLevel)
+    scratchRDDs.persist(rdd, storageLevel)
   }
 }

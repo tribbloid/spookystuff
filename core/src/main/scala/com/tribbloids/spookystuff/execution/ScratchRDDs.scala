@@ -24,7 +24,7 @@ case class ScratchRDDs(
     tempTables: ArrayBuffer[(String, DataFrame)] = ArrayBuffer(),
     tempRDDs: ArrayBuffer[RDD[_]] = ArrayBuffer(),
     tempDFs: ArrayBuffer[DataFrame] = ArrayBuffer(),
-    defaultStorageLevel: StorageLevel = StorageLevel.MEMORY_ONLY
+    defaultStorageLevel: StorageLevel = StorageLevel.MEMORY_AND_DISK
 ) extends LocalCleanable
     with ShippingMarks {
 

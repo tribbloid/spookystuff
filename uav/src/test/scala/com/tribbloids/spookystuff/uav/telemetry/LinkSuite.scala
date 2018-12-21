@@ -80,7 +80,6 @@ trait LinkSuite extends UAVFixture {
 
   /**
     * can only use once per test: before existing registered links are unlocked in setUp()
-    * @param spooky
     * @return
     */
   def getLinkRDD(spooky: SpookyContext) = {
@@ -178,6 +177,7 @@ trait LinkSuite extends UAVFixture {
 
     for (routing2 <- routings) {
 
+      //TODO Recurring error in DispatcherSuite! need inspection
       it(
         s"~> ${routing2.getClass.getSimpleName}:" +
           s" available Link can be recommissioned in another Task"
