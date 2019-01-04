@@ -6,6 +6,8 @@ import javax.xml.bind.DatatypeConverter
 import com.tribbloids.spookystuff.utils.IDMixin
 import javax.crypto.spec.SecretKeySpec
 
+import scala.language.implicitConversions
+
 /**
   * Created by peng on 31/10/16.
   */
