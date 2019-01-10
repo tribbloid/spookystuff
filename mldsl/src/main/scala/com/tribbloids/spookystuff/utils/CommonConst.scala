@@ -30,8 +30,11 @@ class CommonConst {
   val hardTerminateOverhead: Duration = 20.seconds
 
   val USER_DIR = System.getProperty("user.dir")
-  val TEMP_DIR = CommonUtils.\\\(USER_DIR, "temp")
+  val USER_TEMP_DIR = CommonUtils.\\\(USER_DIR, "temp")
   val ROOT_TEMP_DIR = System.getProperty("java.io.tmpdir")
+
+  val HADOOP_TEMP_DIR = "temp"
+
   val UNPACK_RESOURCE_DIR = CommonUtils.\\\(ROOT_TEMP_DIR, "spookystuff", "resources")
 }
 

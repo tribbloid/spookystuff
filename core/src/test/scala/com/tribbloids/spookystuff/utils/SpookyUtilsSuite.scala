@@ -39,7 +39,7 @@ class SpookyUtilsSuite extends FunSpecx {
 
   it("copyResourceToDirectory can extract a dependency's package in a jar") {
     val src = SpookyUtils.getCPResource("org/apache/log4j/xml").get
-    val dst = CommonUtils.\\\(CommonConst.TEMP_DIR, "log4j")
+    val dst = CommonUtils.\\\(CommonConst.USER_TEMP_DIR, "log4j")
     SpookyUtils.extractResource(src, dst)
     val dir = new File(dst)
     assert(dir.list().nonEmpty)

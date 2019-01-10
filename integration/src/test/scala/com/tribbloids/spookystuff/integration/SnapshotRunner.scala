@@ -26,7 +26,7 @@ object SnapshotRunner extends SpookyEnv {
     val pathEncoding = S.uri
       .andFn { uri =>
         val base = uri.split(SPLITTER).last
-        CommonConst.TEMP_DIR \\ "test-sites" \\ base
+        CommonConst.USER_TEMP_DIR \\ "test-sites" \\ base
       }
 
     def save() = {

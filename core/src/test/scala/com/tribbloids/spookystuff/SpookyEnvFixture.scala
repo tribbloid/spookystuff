@@ -218,7 +218,7 @@ abstract class SpookyEnvFixture
         cacheRead = false
       ),
       DirConf(
-        root = CommonUtils.\\\(CommonConst.TEMP_DIR, "spooky-unit")
+        root = CommonUtils.\\\(CommonConst.USER_TEMP_DIR, "spooky-unit")
       )
     )
   }

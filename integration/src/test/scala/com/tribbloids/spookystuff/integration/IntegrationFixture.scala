@@ -19,7 +19,7 @@ abstract class IntegrationFixture extends SpookyEnvFixture with BeforeAndAfterAl
 
   lazy val roots: Seq[String] = {
 
-    val local = Seq(CommonUtils.\\\(CommonConst.TEMP_DIR, "spooky-integration"))
+    val local = Seq(CommonUtils.\\\(CommonConst.USER_TEMP_DIR, "spooky-integration"))
 
     local ++ TestHelper.S3Path
   }
