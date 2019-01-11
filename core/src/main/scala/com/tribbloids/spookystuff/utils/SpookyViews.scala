@@ -448,8 +448,9 @@ abstract class SpookyViews extends CommonViews {
     //      }
     //    }
   }
-
   implicit class MapView[K, V](self: scala.collection.Map[K, V]) {
+
+    assert(self != null)
 
     def getTyped[T: ClassTag](key: K): Option[T] = self.get(key) match {
 

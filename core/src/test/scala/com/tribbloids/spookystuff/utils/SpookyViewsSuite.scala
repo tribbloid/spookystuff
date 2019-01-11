@@ -4,7 +4,8 @@ import com.tribbloids.spookystuff.testbeans._
 import com.tribbloids.spookystuff.testutils.TestHelper
 import com.tribbloids.spookystuff.utils.lifespan.LifespanContext
 import com.tribbloids.spookystuff.utils.locality.PartitionIdPassthrough
-import com.tribbloids.spookystuff.{Metrics, SpookyEnvFixture}
+import com.tribbloids.spookystuff.SpookyEnvFixture
+import com.tribbloids.spookystuff.metrics.Metrics
 import org.apache.spark.rdd.RDD
 
 import scala.util.Random

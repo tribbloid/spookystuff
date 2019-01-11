@@ -2,9 +2,10 @@ package com.tribbloids.spookystuff.rdd
 
 import com.tribbloids.spookystuff.actions._
 import com.tribbloids.spookystuff.extractors.impl.Lit
+import com.tribbloids.spookystuff.metrics.Metrics
 import com.tribbloids.spookystuff.testutils.LocalPathDocsFixture
 import com.tribbloids.spookystuff.testutils.beans.Composite
-import com.tribbloids.spookystuff.{dsl, Metrics, SpookyEnvFixture}
+import com.tribbloids.spookystuff.{dsl, SpookyEnvFixture}
 
 /**
   * Created by peng on 5/10/15.

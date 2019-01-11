@@ -281,13 +281,6 @@ class TestHelper() extends NOTSerializable {
     }
   }
 
-  def timer[T](fn: => T): (T, Long) = {
-    val startTime = System.currentTimeMillis()
-    val result = fn
-    val endTime = System.currentTimeMillis()
-    (result, endTime - startTime)
-  }
-
   def assert(fn: => Boolean) = Predef.assert(fn)
   def assert(fn: => Boolean, message: => Any) = {
     if (!fn)

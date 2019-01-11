@@ -7,6 +7,7 @@ import com.esotericsoftware.kryo.Kryo
 import com.tribbloids.spookystuff.conf.{DirConf, SpookyConf}
 import com.tribbloids.spookystuff.dsl._
 import com.tribbloids.spookystuff.doc._
+import com.tribbloids.spookystuff.metrics.SpookyMetrics
 import com.tribbloids.spookystuff.row.FetchedRow
 import org.apache.spark.SerializableWritable
 import org.apache.spark.serializer.KryoRegistrator

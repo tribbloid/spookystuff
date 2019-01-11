@@ -7,9 +7,8 @@ import scala.reflect.ClassTag
 
 /**
   * the ClassTag is an enforcement on all recursive members of v
-  * @param self
-  * @tparam T
   */
+//TODO: this API should be merged into NestedMap
 case class Nested[T: ClassTag](
     self: Any,
     errorTreeOpt: Option[Throwable] = None

@@ -100,6 +100,7 @@ case class RetryImpl[T](
         )
       }
     }
+
     lazy val interval = intervalFactory(n)
     Try { fn() } match {
       case Success(x) =>

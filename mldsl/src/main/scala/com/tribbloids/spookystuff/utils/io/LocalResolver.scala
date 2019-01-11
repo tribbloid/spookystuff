@@ -7,7 +7,7 @@ import org.apache.hadoop.fs.FileUtil
 
 object LocalResolver extends URIResolver {
 
-  val file2MD = ResourceMD.ReflectionParser[File]()
+  @transient lazy val mdParser: ResourceMD.ReflectionParser[File] = ResourceMD.ReflectionParser[File]()
 
   override lazy val unlockForInput: Boolean = true
 
@@ -42,8 +42,8 @@ object LocalResolver extends URIResolver {
 
       override lazy val getLastModified: Long = file.lastModified()
 
-      override lazy val _metadata: ResourceMD = {
-        file2MD(file)
+      override lazy val _md: ResourceMD = {
+        mdParser(file)
       }
 
       override lazy val isAlreadyExisting: Boolean = file.exists()

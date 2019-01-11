@@ -171,7 +171,6 @@ case class Doc(
   }
 
   @transient lazy val parsedContentType: ContentType = {
-    import com.tribbloids.spookystuff.utils.io.Resource._
 
     val strOpt = metadata.`content-type`.get
       .map("" + _)

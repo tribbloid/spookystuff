@@ -186,7 +186,7 @@ case class HTTPResolver(
 
     override lazy val getLastModified: Long = -1
 
-    override lazy val _metadata: ResourceMD = {
+    override lazy val _md: ResourceMD = {
       val map = response.getAllHeaders.map { header =>
         header.getName -> header.getValue
       }.toSeq

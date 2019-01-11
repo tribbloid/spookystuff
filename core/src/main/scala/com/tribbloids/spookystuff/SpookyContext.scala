@@ -1,6 +1,7 @@
 package com.tribbloids.spookystuff
 
 import com.tribbloids.spookystuff.conf.{AbstractConf, DirConf, SpookyConf, Submodules}
+import com.tribbloids.spookystuff.metrics.{Metrics, SpookyMetrics}
 import com.tribbloids.spookystuff.rdd.FetchedDataset
 import com.tribbloids.spookystuff.row._
 import com.tribbloids.spookystuff.session.Session
