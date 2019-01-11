@@ -12,19 +12,19 @@ class MetadataSuite extends FunSpecx {
     "map" -> Map("a" -> 1, "b" -> 2)
   )
 
-  val malformed = Metadata(
+  val malformed = new Metadata(
     wellformed.self ++ Map(
       "path" -> new Path("file://home/dir/")
     )
   )
-  val malformedFixed = malformed.copy(self = malformed.self.updated("path", "file://home/dir/"))
+  val malformedFixed = new Metadata(self = malformed.self.updated("path", "file://home/dir/"))
 
-  val nested = Metadata(
+  val nested = new Metadata(
     malformed.self ++ Map(
       "children" -> malformed.self
     )
   )
-  val nestedFixed = Metadata(
+  val nestedFixed = new Metadata(
     malformedFixed.self ++ Map(
       "children" -> malformedFixed.self
     )

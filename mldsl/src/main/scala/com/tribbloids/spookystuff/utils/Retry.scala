@@ -93,13 +93,14 @@ case class RetryImpl[T](
     import retry._
 
     //TODO: merge with CommonUtils
-    val _callerShowStr = {
+    lazy val _callerShowStr = {
       Option(showStr).getOrElse {
         FlowUtils.callerShowStr(
           exclude = Seq(classOf[Retry], classOf[RetryImpl[_]], classOf[CommonUtils])
         )
       }
     }
+
     lazy val interval = intervalFactory(n)
     Try { fn() } match {
       case Success(x) =>

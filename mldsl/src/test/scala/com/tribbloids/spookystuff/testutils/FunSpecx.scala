@@ -1,9 +1,8 @@
 package com.tribbloids.spookystuff.testutils
 
-import com.tribbloids.spookystuff.utils.CommonUtils
 import org.apache.spark.ml.dsl.utils.OptionConversion
 import org.scalatest.{FunSpec, Suite}
-import org.slf4j.LoggerFactory
+import org.skyscreamer.jsonassert.{JSONAssert, JSONCompareMode}
 
 /**
   * Created by peng on 17/05/16.
@@ -57,6 +56,15 @@ trait Suitex extends OptionConversion {
             )
           }
       }
+    }
+
+    //ignore sequence
+    def jsonShouldBe(
+        gd: String = null,
+        mode: JSONCompareMode = JSONCompareMode.LENIENT
+    ): Unit = {
+
+      JSONAssert.assertEquals(str, gd, mode)
     }
 
     def rowsShouldBe(

@@ -259,6 +259,7 @@
       </exclusions>
     </dependency>
 
+
     <!--<dependency>-->
     <!--<groupId>org.scalacheck</groupId>-->
     <!--<artifactId>scalacheck_${scala.binaryexclusions.version}</artifactId>-->

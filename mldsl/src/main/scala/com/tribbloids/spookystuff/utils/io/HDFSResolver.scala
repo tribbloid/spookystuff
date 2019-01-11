@@ -95,7 +95,7 @@ case class HDFSResolver(
 
       override lazy val isAlreadyExisting: Boolean = fs.exists(path)
 
-      override lazy val _metadata = HDFSResolver.mdParser.apply(status)
+      override lazy val _md = HDFSResolver.mdParser.apply(status)
 
       override lazy val children: Seq[ResourceMD] = {
         if (isDirectory) {
@@ -196,7 +196,7 @@ object HDFSResolver {
 
   def noUGIFactory: () => None.type = () => None
 
-  val mdParser = ResourceMD.ReflectionParser[FileStatus]()
+  val mdParser: ResourceMD.ReflectionParser[FileStatus] = ResourceMD.ReflectionParser[FileStatus]()
 
   //  def serviceUGIFactory = () => Some(SparkHelper.serviceUGI)
   //

@@ -5,6 +5,7 @@ import java.util.Date
 import com.tribbloids.spookystuff._
 import com.tribbloids.spookystuff.conf.SpookyConf
 import com.tribbloids.spookystuff.dsl._
+import com.tribbloids.spookystuff.metrics.SpookyMetrics
 import com.tribbloids.spookystuff.testutils.{RemoteDocsFixture, TestHelper}
 import com.tribbloids.spookystuff.utils.{CommonConst, CommonUtils}
 import org.scalatest.BeforeAndAfterAll

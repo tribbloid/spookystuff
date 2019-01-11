@@ -57,8 +57,8 @@ case class FTPResolver(
 
       override def isAlreadyExisting: Boolean = Try { conn }.isSuccess
 
-      override lazy val _metadata: ResourceMD = {
-        val map = conn.getHeaderFields.asScala
+      override lazy val _md: ResourceMD = {
+        val map = conn.getHeaderFields.asScala.toMap
           .mapValues { _list =>
             val list = _list.asScala
             val result =
@@ -66,7 +66,7 @@ case class FTPResolver(
               else list
             result.asInstanceOf[Any]
           }
-        ResourceMD.apply(map.toSeq: _*)
+        ResourceMD.fromMap(map)
       }
     }
 

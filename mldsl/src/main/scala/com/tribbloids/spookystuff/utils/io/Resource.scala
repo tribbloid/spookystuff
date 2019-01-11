@@ -8,23 +8,6 @@ import org.apache.spark.ml.dsl.utils.metadata.Metadata
 import scala.collection.immutable.ListMap
 import scala.language.implicitConversions
 
-@deprecated
-sealed class ResourceMDView(
-    val self: ResourceMD
-) {
-
-  import self._
-
-  object `uri` extends Param[String]
-  object `name` extends Param[String]
-  object `type` extends Param[String]
-  object `content-type` extends Param[String]
-  object `length` extends Param[Long]
-  object `status-code` extends Param[Int]
-
-  object `isDir` extends Param[Boolean]
-}
-
 abstract class Resource[T] extends LocalCleanable {
 
   import Resource._
@@ -52,11 +35,11 @@ abstract class Resource[T] extends LocalCleanable {
 
   def isAlreadyExisting: Boolean
 
-  protected def _metadata: ResourceMD
+  protected def _md: ResourceMD
 
   lazy val rootMetadata: ResourceMD = {
     val reflective = Resource.resourceParser(this)
-    reflective ++ _metadata
+    new ResourceMD(reflective ++ _md)
   }
 
   def children: Seq[ResourceMD] = Nil
@@ -69,7 +52,7 @@ abstract class Resource[T] extends LocalCleanable {
         md.self
       }
     }
-    val result = rootMetadata ++ ResourceMD.MapParser(childMaps)
+    val result = new ResourceMD(rootMetadata ++ Metadata.fromMap(childMaps))
     result
   }
 
@@ -113,5 +96,5 @@ object Resource extends {
   final val DIR_MIME = "inode/directory; charset=UTF-8"
   final val UNKNOWN = "unknown"
 
-  implicit def view(self: ResourceMD) = new ResourceMDView(self)
+//  implicit def view(self: ResourceMD) = new ResourceMDView(self)
 }
