@@ -95,7 +95,7 @@ class SpookyContextSuite extends SpookyEnvFixture with LocalPathDocsFixture {
       )
     rdd2.count()
 
-    assert(rdd1.spooky.spookyMetrics.toJSON() === rdd2.spooky.spookyMetrics.toJSON())
+    assert(rdd1.spooky.spookyMetrics.TreeFormat.toJSON() === rdd2.spooky.spookyMetrics.TreeFormat.toJSON())
   }
 
   it("can create PageRow from String") {

@@ -15,7 +15,7 @@ case class NestedMap[V](
     )
     extends NestedMapLike[V, NestedMap[V]] {
 
-  def flattenLeaves: Map[String, V] = {
+  def leafMap: Map[String, V] = {
     val current: Map[String, V] = this.flatMap {
       case (k, Left(v)) =>
         Some(k -> v)
@@ -25,7 +25,7 @@ case class NestedMap[V](
 
     val nested: Map[String, V] = this.flatMap {
       case (k, Right(nn)) =>
-        nn.flattenLeaves.map {
+        nn.leafMap.map {
           case (kk, v) =>
             CommonUtils./:/(k, kk) -> v
         }

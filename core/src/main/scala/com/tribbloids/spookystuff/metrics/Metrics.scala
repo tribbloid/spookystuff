@@ -64,6 +64,10 @@ object Metrics {
   }
 
   //TODO: is this efficient?
+  /**
+    *
+    * @param self: AccumulatorV2
+    */
   abstract class Acc[T <: AccumulatorV2[_, _]](
       val self: T
   ) extends Serializable {
@@ -71,7 +75,7 @@ object Metrics {
     def +=(v: Number): Unit //adapter that does type cast
 
     def reset(): Unit = self.reset()
-    def name = self.name
+    def name: Option[String] = self.name
 
     def normalized: Any = self.value
   }
@@ -103,9 +107,13 @@ object Metrics {
     implicit def toAccumV2[T <: AccumulatorV2[_, _]](v: Acc[T]): T = v.self
   }
 
+  /**
+    * @param displayName: if undefined,
+    *                           use member variable name obtained through [[ReflectionUtils.getCaseAccessorMap]]
+    */
   def accumulator[T1, SS <: AccumulatorV2[_, _]](
       value: T1,
-      name: String = null
+      displayName: String = null
   )(
       implicit
       canBuildFrom: CanBuildFrom[T1, SS],
@@ -117,21 +125,45 @@ object Metrics {
     acc.reset()
     acc += value
 
-    Option(name) match {
+    Option(displayName) match {
       case Some(nn) =>
         sc.register(acc.self, nn)
       case None =>
         sc.register(acc.self)
     }
-
     acc
   }
 }
 
 @SerialVersionUID(-32509237409L)
-abstract class Metrics extends ProtoAPI with Product with Serializable {
+abstract class Metrics extends Product with Serializable {
 
-  def name: Option[String] = None
+//  def sparkContext: SparkContext = SparkContext.getOrCreate()
+
+  @transient lazy val caseAccessorMapProto: List[(String, Any)] = ReflectionUtils.getCaseAccessorMap(this)
+
+  /**
+    * slow, should not be used too often
+    */
+  def getCaseAccessorMap(useDisplayName: Boolean = true): List[(String, Any)] = {
+
+    if (!useDisplayName) caseAccessorMapProto
+    else {
+      caseAccessorMapProto.map {
+        case (k, v: Acc[_]) =>
+          val name = v.self.name.getOrElse(k)
+          name -> v
+
+        case (k, v: Metrics) =>
+          val name = v.displayNameOverride.getOrElse(k)
+          name -> v
+
+        case others @ _ => others
+      }
+    }
+  }
+
+  def displayNameOverride: Option[String] = None
 
   //Only allowed on Master
   def zero(): Unit = {
@@ -145,17 +177,18 @@ abstract class Metrics extends ProtoAPI with Product with Serializable {
 
   //this is necessary as direct JSON serialization on accumulator only yields meaningless string
   def toTuples[T](
-      fn: Metrics.Acc[_ <: AccumulatorV2[_, _]] => Option[T]
+      fn: Metrics.Acc[_ <: AccumulatorV2[_, _]] => Option[T],
+      useDisplayName: Boolean = true
   ): NestedMap[T] = {
     val result = NestedMap[T]()
-    val caseAccessors = ReflectionUtils.getCaseAccessorMap(this)
+    val caseAccessors = getCaseAccessorMap(useDisplayName)
     caseAccessors.foreach {
       case (_name: String, acc: Acc[_]) =>
         val name = acc.name.getOrElse(_name)
         fn(acc).foreach(v => result += name -> Left(v))
 
       case (_name: String, coll: Metrics) =>
-        val name = coll.name.getOrElse(_name)
+        val name = coll.displayNameOverride.getOrElse(_name)
         result += name -> Right(coll.toTuples[T](fn))
 
       case _ =>
@@ -164,18 +197,29 @@ abstract class Metrics extends ProtoAPI with Product with Serializable {
     result
   }
 
-  def toNestedMap: NestedMap[Any] = {
+  def toNestedMap(useDisplayName: Boolean = true): NestedMap[Any] = {
 
     val result: NestedMap[Any] = toTuples(acc => Some(acc.value))
     result
   }
 
-  def toMap: Map[String, Any] = toNestedMap.flattenLeaves
+  def toMap(useDisplayName: Boolean = true): Map[String, Any] = toNestedMap(useDisplayName).leafMap
 
-  //DO NOT change to val! metrics is very mutable
-  override def toMessage_>> : NestedMap[Any] = toNestedMap
+  case class TreeFormat(
+      useDisplayName: Boolean
+  ) extends ProtoAPI {
 
-  object flattenLeaves extends ProtoAPI {
-    override def toMessage_>> : Map[String, Any] = toMap
+    //DO NOT change to val! metrics is very mutable
+    override def toMessage_>> : NestedMap[Any] = toNestedMap(useDisplayName)
   }
+  object TreeFormat extends TreeFormat(true)
+
+  case class LeafFormat(
+      useDisplayName: Boolean
+  ) extends ProtoAPI {
+
+    //DO NOT change to val! metrics is very mutable
+    override def toMessage_>> : Map[String, Any] = toMap(useDisplayName)
+  }
+  object LeafFormat extends LeafFormat(true)
 }

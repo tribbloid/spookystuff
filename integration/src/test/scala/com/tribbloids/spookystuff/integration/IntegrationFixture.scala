@@ -70,7 +70,7 @@ abstract class IntegrationFixture extends SpookyEnvFixture with BeforeAndAfterAl
   //TODO: for local-cluster mode, some of these metrics may have higher than expected results because.
   def assertBeforeCache(): Unit = {
     val metrics: SpookyMetrics = spooky.spookyMetrics
-    val metricsJSON: String = metrics.toJSON() //TODO: this will trigger a compiler bug in scala 2.10.6, need to fix it!
+    val metricsJSON: String = metrics.TreeFormat.toJSON() //TODO: this will trigger a compiler bug in scala 2.10.6, need to fix it!
     println(metricsJSON)
 
     val pagesFetched = metrics.pagesFetched.value
@@ -87,7 +87,7 @@ abstract class IntegrationFixture extends SpookyEnvFixture with BeforeAndAfterAl
 
   def assertAfterCache(): Unit = {
     val metrics: SpookyMetrics = spooky.spookyMetrics
-    val metricsJSON: String = metrics.toJSON()
+    val metricsJSON: String = metrics.TreeFormat.toJSON()
     println(metricsJSON)
 
     val pagesFetched = metrics.pagesFetched.value
