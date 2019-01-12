@@ -12,7 +12,7 @@ import scala.util.Random
 
 object LocalResolverSuite {
 
-  val nonExisting = s"test.txt"
+  val nonExisting = s"not-a-file.txt"
   val nonExistingRelative = "non-existing/not-a-file.txt"
   val nonExistingAbsolute = "/non-existing/not-a-file.txt"
 }
