@@ -33,7 +33,7 @@ class CommonConst {
   val USER_TEMP_DIR = CommonUtils.\\\(USER_DIR, "temp")
   val ROOT_TEMP_DIR = System.getProperty("java.io.tmpdir")
 
-  val HADOOP_TEMP_DIR = "temp"
+  val HADOOP_TEMP_DIR = "/tmp"
 
   val UNPACK_RESOURCE_DIR = CommonUtils.\\\(ROOT_TEMP_DIR, "spookystuff", "resources")
 }
