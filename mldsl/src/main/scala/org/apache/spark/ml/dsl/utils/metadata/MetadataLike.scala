@@ -8,7 +8,6 @@ trait MetadataLike extends Serializable with IDMixin {
   def self: ListMap[String, Any]
 
   override def _id: Any = self
-  override def toString: String = self.toString
 
   //  def +(tuple: (Param[_], Any)) = this.copy(this.map + (tuple._1.key -> tuple._2))
   def ++(v2: MetadataLike) = new Metadata(this.self ++ v2.self)

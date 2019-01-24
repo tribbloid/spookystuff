@@ -1,6 +1,7 @@
 package org.apache.spark.ml.dsl.utils
 
 import com.tribbloids.spookystuff.utils.CommonUtils
+import org.apache.spark.ml.dsl.utils.messaging.ProtoAPI
 
 import scala.collection.mutable
 
@@ -11,9 +12,7 @@ trait NestedMapLike[V, Self <: NestedMapLike[V, Self]] extends mutable.ListMap[S
 //  def self: mutable.ListMap[String, Either[T, Self]]
 }
 
-case class NestedMap[V](
-    )
-    extends NestedMapLike[V, NestedMap[V]] {
+case class NestedMap[V]() extends NestedMapLike[V, NestedMap[V]] with ProtoAPI {
 
   def leafMap: Map[String, V] = {
     val current: Map[String, V] = this.flatMap {
@@ -37,4 +36,5 @@ case class NestedMap[V](
   }
 
 //  override def size = self.size
+  override def toMessage_>> : Any = this
 }

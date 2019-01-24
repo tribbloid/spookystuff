@@ -5,7 +5,6 @@ import java.lang
 import com.tribbloids.spookystuff.metrics.Metrics.Acc
 import org.apache.spark.SparkContext
 import org.apache.spark.ml.dsl.utils.NestedMap
-import org.apache.spark.ml.dsl.utils.messaging.ProtoAPI
 import org.apache.spark.ml.dsl.utils.refl.ReflectionUtils
 import org.apache.spark.sql.execution.streaming.EventTimeStatsAccum
 import org.apache.spark.util.{AccumulatorV2, DoubleAccumulator, LongAccumulator}
@@ -175,51 +174,35 @@ abstract class Metrics extends Product with Serializable {
     }
   }
 
-  //this is necessary as direct JSON serialization on accumulator only yields meaningless string
-  def toTuples[T](
+  case class View[T](
       fn: Metrics.Acc[_ <: AccumulatorV2[_, _]] => Option[T],
       useDisplayName: Boolean = true
-  ): NestedMap[T] = {
-    val result = NestedMap[T]()
-    val caseAccessors = getCaseAccessorMap(useDisplayName)
-    caseAccessors.foreach {
-      case (_name: String, acc: Acc[_]) =>
-        val name = acc.name.getOrElse(_name)
-        fn(acc).foreach(v => result += name -> Left(v))
+  ) {
 
-      case (_name: String, coll: Metrics) =>
-        val name = coll.displayNameOverride.getOrElse(_name)
-        result += name -> Right(coll.toTuples[T](fn))
+    lazy val toNestedMap: NestedMap[T] = {
+      val result = NestedMap[T]()
+      val caseAccessors = getCaseAccessorMap(useDisplayName)
+      caseAccessors.foreach {
+        case (_name: String, acc: Acc[_]) =>
+          val name = acc.name.getOrElse(_name)
+          fn(acc).foreach(v => result += name -> Left(v))
 
-      case _ =>
-        None
+        case (_name: String, nested: Metrics) =>
+          val name = nested.displayNameOverride.getOrElse(_name)
+          val nestedView = nested.View(fn, useDisplayName)
+          result += name -> Right(nestedView.toNestedMap)
+
+        case _ =>
+          None
+      }
+      result
     }
-    result
+
+    lazy val toMap: Map[String, T] = toNestedMap.leafMap
   }
 
-  def toNestedMap(useDisplayName: Boolean = true): NestedMap[Any] = {
+  object View extends View[Any](v => Some(v), true)
 
-    val result: NestedMap[Any] = toTuples(acc => Some(acc.value))
-    result
-  }
-
-  def toMap(useDisplayName: Boolean = true): Map[String, Any] = toNestedMap(useDisplayName).leafMap
-
-  case class TreeFormat(
-      useDisplayName: Boolean
-  ) extends ProtoAPI {
-
-    //DO NOT change to val! metrics is very mutable
-    override def toMessage_>> : NestedMap[Any] = toNestedMap(useDisplayName)
-  }
-  object TreeFormat extends TreeFormat(true)
-
-  case class LeafFormat(
-      useDisplayName: Boolean
-  ) extends ProtoAPI {
-
-    //DO NOT change to val! metrics is very mutable
-    override def toMessage_>> : Map[String, Any] = toMap(useDisplayName)
-  }
-  object LeafFormat extends LeafFormat(true)
+  def toNestedMap: NestedMap[Any] = View.toNestedMap
+  def toMap: Map[String, Any] = View.toMap
 }

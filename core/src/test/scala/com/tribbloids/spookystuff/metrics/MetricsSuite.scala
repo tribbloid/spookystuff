@@ -26,7 +26,7 @@ class MetricsSuite extends FunSpecx {
 
   it("can be converted to JSON") {
     val m = DummyMetrics()
-    m.TreeFormat
+    m.toNestedMap
       .toJSON()
       .shouldBe(
         """
@@ -40,7 +40,7 @@ class MetricsSuite extends FunSpecx {
 
   it("tree can be converted to JSON") {
     val m = DummyTreeMetrics()
-    m.TreeFormat
+    m.toNestedMap
       .toJSON()
       .shouldBe(
         """
@@ -59,7 +59,7 @@ class MetricsSuite extends FunSpecx {
         """.stripMargin
       )
 
-    m.LeafFormat
+    m.toNestedMap
       .toJSON()
       .shouldBe(
         """

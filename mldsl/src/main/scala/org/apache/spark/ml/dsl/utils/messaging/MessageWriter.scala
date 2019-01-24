@@ -8,6 +8,7 @@ import org.json4s.JsonAST.JObject
 import org.json4s.jackson.JsonMethods.{pretty, _}
 import org.json4s.{Extraction, Formats, JValue}
 
+import scala.language.implicitConversions
 import scala.xml.NodeSeq
 
 case class MessageWriter[M](
@@ -124,3 +125,8 @@ case class MessageWriter[M](
     MessageReader._fromJValue[T](toJValue(formats))
   }
 }
+
+//object MessageWriter {
+//
+//  implicit def unbox[M](v: MessageWriter[M]): M = v.message
+//}
