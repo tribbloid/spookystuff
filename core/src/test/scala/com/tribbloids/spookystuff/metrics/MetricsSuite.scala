@@ -59,7 +59,7 @@ class MetricsSuite extends FunSpecx {
         """.stripMargin
       )
 
-    m.toNestedMap
+    MessageWriter(m.toMap)
       .toJSON()
       .shouldBe(
         """

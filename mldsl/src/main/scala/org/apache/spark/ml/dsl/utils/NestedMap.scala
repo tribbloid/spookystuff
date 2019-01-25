@@ -36,5 +36,5 @@ case class NestedMap[V]() extends NestedMapLike[V, NestedMap[V]] with ProtoAPI {
   }
 
 //  override def size = self.size
-  override def toMessage_>> : Any = this
+  override def toMessage_>> : this.type = this
 }

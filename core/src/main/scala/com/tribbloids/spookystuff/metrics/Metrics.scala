@@ -40,8 +40,6 @@ object Metrics {
         val vv = v.longValue()
         self.add(vv)
       }
-
-      override def normalized: Any = self.value.count
     }
   }
   abstract class CanBuildFromLevel1 {
@@ -75,8 +73,6 @@ object Metrics {
 
     def reset(): Unit = self.reset()
     def name: Option[String] = self.name
-
-    def normalized: Any = self.value
   }
 
   object Acc {
@@ -179,7 +175,7 @@ abstract class Metrics extends Product with Serializable {
       useDisplayName: Boolean = true
   ) {
 
-    lazy val toNestedMap: NestedMap[T] = {
+    def toNestedMap: NestedMap[T] = {
       val result = NestedMap[T]()
       val caseAccessors = getCaseAccessorMap(useDisplayName)
       caseAccessors.foreach {
@@ -198,10 +194,10 @@ abstract class Metrics extends Product with Serializable {
       result
     }
 
-    lazy val toMap: Map[String, T] = toNestedMap.leafMap
+    def toMap: Map[String, T] = toNestedMap.leafMap
   }
 
-  object View extends View[Any](v => Some(v), true)
+  object View extends View[Any](v => Some(v.value), true)
 
   def toNestedMap: NestedMap[Any] = View.toNestedMap
   def toMap: Map[String, Any] = View.toMap
