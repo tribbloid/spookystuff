@@ -3,6 +3,7 @@ package org.apache.spark.ml.dsl.utils.metadata
 import scala.collection.immutable.ListMap
 import scala.language.implicitConversions
 
+//TODO: superceded to Spark SQL metadata?
 class Metadata(
     override val self: ListMap[String, Any] = ListMap.empty
 ) extends MetadataLike {

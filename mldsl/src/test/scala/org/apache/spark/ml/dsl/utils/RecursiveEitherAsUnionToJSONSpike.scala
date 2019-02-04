@@ -1,6 +1,6 @@
 package org.apache.spark.ml.dsl.utils
 
-import RecursiveEitherAsUnionToJSONSpike.{Inclusive, Test1, Test2, Union}
+import RecursiveEitherAsUnionToJSONSpike.{InclusiveOpt, _}
 import org.apache.spark.ml.dsl.utils.messaging.{MessageReader, MessageWriter}
 import org.scalatest.FunSpec
 import org.slf4j.LoggerFactory
@@ -21,6 +21,7 @@ object RecursiveEitherAsUnionToJSONSpike {
   )
 
   case class Inclusive(v: Union, x: String)
+  case class InclusiveOpt(v: Option[Union], x: String)
 }
 
 class RecursiveEitherAsUnionToJSONSpike extends FunSpec {
@@ -41,12 +42,29 @@ class RecursiveEitherAsUnionToJSONSpike extends FunSpec {
 
   it("JSON <=> case class with Union of arity 3") {
 
-    Seq(u1, u2, u3).foreach { i =>
-      val u = Inclusive(i, "xyz")
-      val json = MessageWriter(u).prettyJSON
+    Seq(u1, u2, u3).foreach { u =>
+      val inclusie = Inclusive(u, "xyz")
+      val json = MessageWriter(inclusie).prettyJSON
       LoggerFactory.getLogger(this.getClass).info(json)
       val back = new MessageReader[Inclusive].fromJSON(json)
-      assert(back == u)
+      assert(back == inclusie)
     }
+  }
+
+  it("JSON <=> case class with Option[Union] of arity 3") {
+
+    val proto = Seq(u1, u2, u3).map { u =>
+      InclusiveOpt(Some(u), "xyz")
+    } :+ InclusiveOpt(None, "z")
+
+    proto
+      .foreach { opt =>
+        val json = MessageWriter(opt).prettyJSON
+        LoggerFactory.getLogger(this.getClass).info(json)
+        val back = new MessageReader[InclusiveOpt].fromJSON(json)
+        assert(back == opt)
+      }
+
+    val exclusive = InclusiveOpt(None, "xyz")
   }
 }
