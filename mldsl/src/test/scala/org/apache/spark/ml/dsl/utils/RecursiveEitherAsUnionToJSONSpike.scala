@@ -7,7 +7,9 @@ import org.slf4j.LoggerFactory
 
 object RecursiveEitherAsUnionToJSONSpike {
 
-  type Union = Either[String, Either[Test2, Test1]]
+  type ||[A, B] = Either[A, B]
+
+  type Union = String || Test2 || Test1
 
   case class Test1(
       str: String,
@@ -23,9 +25,9 @@ object RecursiveEitherAsUnionToJSONSpike {
 
 class RecursiveEitherAsUnionToJSONSpike extends FunSpec {
 
-  val u1: Union = Right(Right(Test1("abc", 2)))
-  val u2: Union = Right(Left(Test2(3.2)))
-  val u3: Union = Left("def")
+  val u1: Union = Right(Test1("abc", 2))
+  val u2: Union = Left(Right(Test2(3.2)))
+  val u3: Union = Left(Left("def"))
 
   it("JSON <=> Union of arity 3") {
 
