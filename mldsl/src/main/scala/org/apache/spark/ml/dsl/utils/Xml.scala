@@ -101,7 +101,7 @@ object Xml {
           }
       }
 
-      !descendant(node).find(_.isInstanceOf[Elem]).isDefined
+      !descendant(node).exists(_.isInstanceOf[Elem])
     }
 
     def isArray(nodeNames: Seq[String]) = nodeNames.size != 1 && nodeNames.toList.distinct.size == 1
@@ -272,15 +272,17 @@ class CompoundDateFormat() extends SimpleDateFormat("abc")
 object XMLDefaultFormats extends DefaultFormats {
 
   override val dateFormat: DateFormat = new DateFormat {
-    def parse(s: String) =
+    def parse(s: String): Some[Date] =
       dateFormats.flatMap { format =>
         Try {
           Some(format.parse(s))
         }.toOption
       }.head
 
-    def format(d: Date) = dateFormats.head.format(d)
+    def format(d: Date): String = dateFormats.head.format(d)
   }
 
-  def dateFormats = baseDataFormatsFactory()
+  def dateFormats: Seq[SimpleDateFormat] = baseDataFormatsFactory()
+
+  override val wantsBigDecimal = true
 }
