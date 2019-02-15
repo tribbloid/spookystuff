@@ -15,6 +15,7 @@ import scala.util.Random
 object ScratchRDDs {
   val prefix = "temp_"
 
+  //TODO: this name should be validated against current DB to ensure that such name doesn't exist
   def tempTableName(): String = {
     prefix + Math.abs(Random.nextInt())
   }
@@ -28,7 +29,7 @@ case class ScratchRDDs(
 ) extends LocalCleanable
     with ShippingMarks {
 
-  def register(
+  def registerTempView(
       df: DataFrame
   ): String = {
 
@@ -45,11 +46,15 @@ case class ScratchRDDs(
     }
   }
 
-  def persist(df: DataFrame): Unit = {
+  def persistDF(
+      df: DataFrame,
+      storageLevel: StorageLevel = defaultStorageLevel
+  ): Unit = {
 
-    df.persist()
+    df.persist(storageLevel)
     tempDFs += df
   }
+
   def persist[T](
       rdd: RDD[T],
       storageLevel: StorageLevel = defaultStorageLevel
@@ -69,6 +74,7 @@ case class ScratchRDDs(
     df.unpersist(blocking)
     tempDFs -= df
   }
+
   def unpersist(
       rdd: RDD[_],
       blocking: Boolean = false
@@ -81,7 +87,7 @@ case class ScratchRDDs(
   //TODO: add a utility function to make RDD to be uncached automatically once a number of downstream RDDs (can be filtered) are caculated.
   //This manual GC is important for some memory intensive workflow.
 
-  def dropTempTables(): Unit = {
+  def dropTempViews(): Unit = {
     tempTables.foreach { tuple =>
       tuple._2.sqlContext.dropTempTable(tuple._1)
     }
@@ -92,7 +98,7 @@ case class ScratchRDDs(
       blocking: Boolean = false
   ): Unit = {
 
-    dropTempTables()
+    dropTempViews()
     tempDFs.foreach { df =>
       df.unpersist(blocking)
     }
