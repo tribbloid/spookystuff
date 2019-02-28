@@ -78,7 +78,7 @@ class TestHelper() extends NOTSerializable {
         case (Some(v1), None) =>
           Some(v1 -> Math.max(numCores / v1, 1))
         case (None, Some(v2)) =>
-          Some(Math.max(numCores / v2, 1), v2)
+          Some(Math.max(numCores / v2, 1) -> v2)
       }
     }
   }

@@ -81,9 +81,9 @@ trait MetadataRelay[T <: Metadata] extends MessageRelay[T] {
   //  def ParamsParser(vs: Tuple2[MetadataLike#Param[_], Any]*) =
   //    Metadata(ListMap(vs.map { case (k, v) => k.name -> v }: _*))
 
-  case class ReflectionParser[T: ClassTag]() {
+  case class ReflectionParser[TT: ClassTag]() {
 
-    @transient lazy val clazz: Class[_] = implicitly[ClassTag[T]].runtimeClass
+    @transient lazy val clazz: Class[_] = implicitly[ClassTag[TT]].runtimeClass
 
     @transient lazy val validGetters: Array[(String, Method)] = {
 
@@ -106,7 +106,7 @@ trait MetadataRelay[T <: Metadata] extends MessageRelay[T] {
       (commonGetters ++ booleanGetters).sortBy(_._1)
     }
 
-    def apply(obj: T) = {
+    def apply(obj: TT) = {
       val kvs = validGetters.flatMap { tuple =>
         try {
           tuple._2.setAccessible(true)
@@ -120,13 +120,13 @@ trait MetadataRelay[T <: Metadata] extends MessageRelay[T] {
     }
   }
 
-  @deprecated //use ReflectionParser
+  @Deprecated //use ReflectionParser
   object RuntimeReflectionParser {
-    def apply[T](obj: T) = {
-      val scalaType = ScalaType.fromClass[T](obj.getClass.asInstanceOf[Class[T]])
-      implicit val classTag: ClassTag[T] = scalaType.asClassTag
+    def apply[TT](obj: TT) = {
+      val scalaType = ScalaType.fromClass[TT](obj.getClass.asInstanceOf[Class[TT]])
+      implicit val classTag: ClassTag[TT] = scalaType.asClassTag
 
-      ReflectionParser[T]().apply(obj)
+      ReflectionParser[TT]().apply(obj)
     }
   }
 }

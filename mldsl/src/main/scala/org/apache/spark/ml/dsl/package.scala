@@ -22,9 +22,4 @@ package object dsl {
 
   type PathCompaction = MultiPartCompaction[String]
 
-  trait HasInputColShim extends HasInputCol
-
-  trait HasInputColsShim extends HasInputCols
-
-  trait HasOutputColShim extends HasOutputCol
 }

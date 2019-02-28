@@ -135,12 +135,20 @@ trait MayHaveTails extends StepGraph {
   final lazy val leftConnectors: Seq[Connector] = leftTails.collect {
     case v: Connector => v
   }
+
+  //root: has no src itself & is not a right tail
   final lazy val leftRoots: Seq[StepLike] = leftTails.collect {
     case v if v.dependencyIDs.isEmpty && (!rightTails.contains(v)) => v
   }
+
+  //detached: a source that has no target, it is a tail but already end of the lineage
+  //always a source
   final lazy val leftDetached: Seq[Source] = leftTails.collect {
     case v: Source if v.usageIDs.isEmpty => v
   }
+
+  //intake: if tail is a source (rather than a step) go 1 step ahead to reach the real step
+  //always a step
   final lazy val leftIntakes: Seq[Step] = leftTails.flatMap {
     case tail: Step =>
       Seq(tail)
@@ -353,7 +361,8 @@ trait FlowComponent extends MayHaveHeads with MayHaveTails {
     val toIDs = left.rightIntakes.map(_.id)
 
     // detached port should not have any tail removed
-    val newLeftTailIDs = if (left.headExists) {
+
+    val newLeftTailIDs: Seq[String] = if (left.headExists) {
       (
         left.leftTails.flatMap {
           case PASSTHROUGH => this.leftTailIDs
@@ -800,7 +809,7 @@ trait FlowComponent extends MayHaveHeads with MayHaveTails {
       .setParent(pipeline)
   }
 
-  // preemptive uildStage with type safety check, always fail fast
+  // preemptive buildStage with type safety check, always fail fast
   // use to validate in FlowComponent Constructor and fail early.
   // stateless, replicate self before applying propagateCols, stateful changes are discarded.
   protected def validateOnSchema(fieldsEvidence: Array[StructField]): Unit = {
@@ -818,11 +827,11 @@ trait FlowComponent extends MayHaveHeads with MayHaveTails {
       .filter(_._2.dataTypes.nonEmpty)
       .values
       .map { source =>
-        source.dataTypes.map(t => new StructField(source.name, t))
+        source.dataTypes.map(t => StructField(source.name, t))
       }
       .toList
 
-    val cartesian = FlowUtils.cartesianProductSet(fields)
+    val cartesian: Set[List[StructField]] = FlowUtils.cartesianProductSet(fields)
     val schemas = cartesian.map(v => new StructType(v.toArray))
     schemas.foreach { schema =>
       if (schema.fields.nonEmpty) validateOnSchema(schema.fields)

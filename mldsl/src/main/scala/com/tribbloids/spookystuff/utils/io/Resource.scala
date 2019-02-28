@@ -14,7 +14,7 @@ abstract class Resource[T] extends LocalCleanable {
 
   @volatile protected var existingStream: T = _
   protected def _stream: T
-  final lazy val stream = Option(existingStream).getOrElse {
+  final lazy val stream: T = Option(existingStream).getOrElse {
     existingStream = _stream
     existingStream
   }

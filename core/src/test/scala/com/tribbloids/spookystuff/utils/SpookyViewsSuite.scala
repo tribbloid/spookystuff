@@ -1,11 +1,11 @@
 package com.tribbloids.spookystuff.utils
 
+import com.tribbloids.spookystuff.SpookyEnvFixture
+import com.tribbloids.spookystuff.metrics.Metrics
 import com.tribbloids.spookystuff.testbeans._
 import com.tribbloids.spookystuff.testutils.TestHelper
 import com.tribbloids.spookystuff.utils.lifespan.LifespanContext
 import com.tribbloids.spookystuff.utils.locality.PartitionIdPassthrough
-import com.tribbloids.spookystuff.SpookyEnvFixture
-import com.tribbloids.spookystuff.metrics.Metrics
 import org.apache.spark.rdd.RDD
 
 import scala.util.Random
@@ -34,7 +34,6 @@ import scala.util.Random
 class SpookyViewsSuite extends SpookyEnvFixture {
 
   import SpookyViews._
-  import org.scalatest.Matchers._
 
   it("multiPassFlatMap should yield same result as flatMap") {
 
@@ -227,22 +226,48 @@ class SpookyViewsSuite extends SpookyEnvFixture {
     assert(interpolated == "ORAReplaced")
   }
 
+  val special = Seq(
+    "$",
+    "\\$",
+    "\\\\$"
+  )
+
   it("interpolate should ignore string that contains delimiter without bracket") {
 
-    val original = "ORA$TEST"
-    val interpolated = original.interpolate("$") { v =>
-      "Replaced"
+    special.foreach { ss =>
+      val original = s"ORA${ss}TEST"
+      val interpolated = original.interpolate("$") { v =>
+        "Replaced"
+      }
+      assert(interpolated == original)
     }
-    assert(interpolated == original)
+
+    special.foreach { ss =>
+      val original = s"ORA$ss"
+      val interpolated = original.interpolate("$") { v =>
+        "Replaced"
+      }
+      assert(interpolated == original)
+    }
   }
 
   it("interpolate should allow delimiter to be escaped") {
 
-    val original = "ORA$${TEST}"
-    val interpolated = original.interpolate("$") { v =>
-      "Replaced"
+    special.foreach { ss =>
+      val original = "ORA" + ss + "${TEST}"
+      val interpolated = original.interpolate("$") { v =>
+        "Replaced"
+      }
+      assert(interpolated == original)
     }
-    assert(interpolated == original)
+
+    special.foreach { ss =>
+      val original = s"ORA" + ss + "${}"
+      val interpolated = original.interpolate("$") { v =>
+        "Replaced"
+      }
+      assert(interpolated == original)
+    }
   }
 
   //  test("1") {

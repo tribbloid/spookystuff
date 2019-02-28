@@ -26,11 +26,34 @@
     </dependency>
 
     <!-- https://mvnrepository.com/artifact/org.skyscreamer/jsonassert -->
-    <dependency>
-      <groupId>org.skyscreamer</groupId>
-      <artifactId>jsonassert</artifactId>
-      <version>1.5.0</version>
-    </dependency>
+    <!--<dependency>-->
+      <!--<groupId>org.skyscreamer</groupId>-->
+      <!--<artifactId>jsonassert</artifactId>-->
+      <!--<version>1.5.0</version>-->
+    <!--</dependency>-->
+
+    <!-- https://mvnrepository.com/artifact/com.lihaoyi/fastparse -->
+    <!--<dependency>-->
+      <!--<groupId>com.lihaoyi</groupId>-->
+      <!--<artifactId>fastparse_${scala.binary.version}</artifactId>-->
+      <!--<version>2.1.0</version>-->
+    <!--</dependency>-->
+
+    <!--&lt;!&ndash; https://mvnrepository.com/artifact/io.circe/circe-parser &ndash;&gt;-->
+    <!--<dependency>-->
+      <!--<groupId>io.circe</groupId>-->
+      <!--<artifactId>circe-parser_${scala.binary.version}</artifactId>-->
+      <!--<version>0.11.1</version>-->
+    <!--</dependency>-->
+
+    <!-- https://mvnrepository.com/artifact/org.scala-graph/graph-core -->
+    <!--<dependency>-->
+      <!--<groupId>org.scala-graph</groupId>-->
+      <!--<artifactId>graph-core_2.11</artifactId>-->
+      <!--<version>1.12.5</version>-->
+    <!--</dependency>-->
+
+
   </dependencies>
 
   <build>
