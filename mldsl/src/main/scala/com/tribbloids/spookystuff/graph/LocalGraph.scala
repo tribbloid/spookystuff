@@ -7,8 +7,9 @@ import scala.collection.mutable
 
 //optimised for speed rather than memory usage
 //NOT thread safe!
+//
 //TODO: also need SparkGraphImpl, use GraphX or GraphFrame depending on their maturity
-case class LocalGraph[T <: GraphSystem](
+case class LocalGraph[T <: GraphSystem] private (
     nodeMap: mutable.Map[T#ID, LinkedNode[T]],
     edgeMap: OrderedMultiMapView.Mutable[(T#ID, T#ID), Edge[T]]
 )(
@@ -59,12 +60,25 @@ object LocalGraph {
 
     type _LocalGraph = LocalGraph[T]
 
-    def fromSeq(
+    override def fromSeq(
         nodes: Seq[_NodeLike],
         edges: Seq[_Edge]
     ): _LocalGraph = {
 
-      val linkedNodes: Seq[_LinkedNode] = nodes.map {
+      val existingIDs = nodes.map(_._id).toSet
+
+      val missingIDs: Seq[T#ID] = edges
+        .flatMap { v =>
+          Seq(v.ids._1, v.ids._2)
+        }
+        .distinct
+        .filter(v => existingIDs.contains(v))
+
+      val _nodes = nodes ++ missingIDs.map { id =>
+        systemBuilder.NodeLike(_id = id)
+      }
+
+      val linkedNodes: Seq[_LinkedNode] = _nodes.map {
         case nn: _LinkedNode =>
           nn
         case nn: _NodeLike =>
@@ -93,16 +107,13 @@ object LocalGraph {
     protected def linkedNodeReducer(
         v1: _LinkedNode,
         v2: _LinkedNode,
-        nodeReducer: CommonTypes.Binary[NodeData]
+        nodeReducer: CommonTypes.Binary[Option[NodeData]]
     ): _LinkedNode = {
 
-      val node = (v1.node, v2.node) match {
-        case (systemBuilder.Dangling, systemBuilder.Dangling) =>
-          systemBuilder.Dangling
-        case (n1: systemBuilder.Node, n2: systemBuilder.Node) =>
-          require(n1._id == n2._id, s"ID mismatch, ${n1._id} ~= ${n2._id}")
-          systemBuilder.Node(nodeReducer(n1.info, n2.info), n1._id)
-      }
+      require(v1._id == v2._id, s"ID mismatch, ${v1._id} ~= ${v2._id}")
+
+      val node = systemBuilder.NodeLike(nodeReducer(v1.info, v2.info), v1._id)
+
       val inbound = v1.inbound ++ v2.inbound
       val outbound = v1.outbound ++ v2.outbound
       new _LinkedNode(node, inbound, outbound)
@@ -111,7 +122,7 @@ object LocalGraph {
     def _union(
         v1: _LocalGraph,
         v2: _LocalGraph,
-        nodeReducer: CommonTypes.Binary[NodeData]
+        nodeReducer: CommonTypes.Binary[Option[NodeData]]
     ): _LocalGraph = {
 
       val v2Reduced: mutable.Map[T#ID, _LinkedNode] = v2.nodeMap.map {

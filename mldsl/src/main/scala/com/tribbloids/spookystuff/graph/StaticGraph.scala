@@ -17,14 +17,19 @@ object StaticGraph {
       implicit val systemBuilder: GraphSystem.Builder[T]
   ) extends GraphSystem.Sugars[T] {
 
+    def fromSeq(
+        nodes: Seq[_NodeLike],
+        edges: Seq[_Edge]
+    ): G
+
     def convert(v: _GraphComponent): G
 
-    def _union(v1: G, v2: G, nodeReducer: CommonTypes.Binary[NodeData]): G
+    def _union(v1: G, v2: G, nodeReducer: CommonTypes.Binary[Option[NodeData]]): G
 
     def union(
         v1: _GraphComponent,
         v2: _GraphComponent,
-        nodeReducer: CommonTypes.Binary[NodeData] = nodeAlgebra.combine
+        nodeReducer: CommonTypes.Binary[Option[NodeData]] = nodeAlgebra.combineMonads
     ): G = {
 
       _union(convert(v1), convert(v2), nodeReducer)
@@ -34,18 +39,18 @@ object StaticGraph {
     def merge(
         base: (_GraphComponent, _Heads),
         top: (_GraphComponent, _Tails),
-        nodeReducer: CommonTypes.Binary[NodeData] = nodeAlgebra.combine,
-        edgeReducer: CommonTypes.Binary[EdgeData] = edgeAlgebra.combine
+        nodeReducer: CommonTypes.Binary[Option[NodeData]] = nodeAlgebra.combineMonads,
+        edgeReducer: CommonTypes.Binary[Option[EdgeData]] = edgeAlgebra.combineMonads
     ): G = {
 
       val uu: G = union(base._1, top._1, nodeReducer)
-      val toBeRemoved: Seq[Edge[T]] = base._2.vs ++ top._2.vs
+      val toBeRemoved: Seq[Edge[T]] = base._2.seq ++ top._2.seq
       toBeRemoved.foreach { v: Edge[T] =>
         uu.evict_!(v)
       }
 
-      for (src <- base._2.vs;
-           tgt <- top._2.vs) {
+      for (src <- base._2.seq;
+           tgt <- top._2.seq) {
 
         val reduced = Edge[T](
           edgeReducer(src.info, tgt.info),

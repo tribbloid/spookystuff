@@ -2,7 +2,7 @@ package com.tribbloids.spookystuff.graph
 import com.tribbloids.spookystuff.graph.GraphComponent.{Heads, Tails}
 import com.tribbloids.spookystuff.graph.IDAlgebra.Rotator
 
-trait BiDirDSL[T <: GraphSystem, G <: StaticGraph[T]] extends DSL[T, G] {
+trait BidirectionalDSL[T <: GraphSystem, G <: StaticGraph[T]] extends DSL[T, G] {
 
   object LL extends Facet
   object RR extends Facet
@@ -21,23 +21,29 @@ trait BiDirDSL[T <: GraphSystem, G <: StaticGraph[T]] extends DSL[T, G] {
       )
     }
 
+    def canConnectFrom(v: Facet): Boolean = {
+      tails(v).seq.nonEmpty
+    }
+
     case class Ops(
-        src: Facet,
-        tgt: Facet
+        topFacet: Facet,
+        baseFacet: Facet
     ) {
 
       def base: DSLView = DSLView.this
 
+//      def checkConnectivity(top: DSLView, topTails: _Tails): DSLView = {}
+
       def _mergeImpl(top: DSLView, topTails: _Tails): DSLView = {
 
-        val result: G = graphBuilder.merge(
+        val result: G = impl.merge(
           base.self -> base.heads,
           top.self -> topTails
         )
 
         val newTails = Map(
-          src -> base.tails(src),
-          tgt -> top.tails(tgt)
+          topFacet -> base.tails(topFacet),
+          baseFacet -> top.tails(baseFacet)
         )
         val newHeads = top.heads
 
@@ -50,21 +56,21 @@ trait BiDirDSL[T <: GraphSystem, G <: StaticGraph[T]] extends DSL[T, G] {
 
       def merge(top: DSLView): DSLView = {
 
-        _mergeImpl(top, top.tails(src))
+        _mergeImpl(top, top.tails(topFacet))
       }
 
       def rebase(top: DSLView): DSLView = {
 
-        val topTails = top.tails(tgt).vs
+        val topTails = top.tails(baseFacet).seq
 
         topTails.foldLeft(DSLView.this) { (self, edge) =>
           val tail = Tails(Seq(edge))
-          self.Ops(src, tgt)._mergeImpl(top.replicate(Mutator.noop[T]), tail)
+          self.Ops(topFacet, baseFacet)._mergeImpl(top.replicate(Mutator.noop[T]), tail)
         }
       }
     }
 
-    object `:>` extends Ops(LL, RR)
-    object `<:` extends Ops(RR, LL)
+    object `>>` extends Ops(LL, RR)
+    object `<<` extends Ops(RR, LL)
   }
 }

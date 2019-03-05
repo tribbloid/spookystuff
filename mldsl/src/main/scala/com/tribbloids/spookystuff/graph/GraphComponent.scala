@@ -12,24 +12,24 @@ trait GraphComponent[T <: GraphSystem] extends GraphSystem.Sugars[T] {
 
 object GraphComponent {
 
-  case class Heads[T <: GraphSystem](vs: Seq[Edge[T]] = Nil) extends GraphSystem.TypeSugers[T] {
+  case class Heads[T <: GraphSystem](seq: Seq[Edge[T]] = Nil) extends GraphSystem.TypeSugers[T] {
 
-    vs.foreach(_.isHead)
+    seq.foreach(_.isHead)
 
     def replicate(m: _Mutator)(implicit idRotator: Rotator[ID]) = {
       this.copy(
-        vs.map(_.replicate(m))
+        seq.map(_.replicate(m))
       )
     }
   }
 
-  case class Tails[T <: GraphSystem](vs: Seq[Edge[T]] = Nil) extends GraphSystem.TypeSugers[T] {
+  case class Tails[T <: GraphSystem](seq: Seq[Edge[T]] = Nil) extends GraphSystem.TypeSugers[T] {
 
-    vs.foreach(_.isTail)
+    seq.foreach(_.isTail)
 
     def replicate(m: _Mutator)(implicit idRotator: Rotator[ID]) = {
       this.copy(
-        vs.map(_.replicate(m))
+        seq.map(_.replicate(m))
       )
     }
   }

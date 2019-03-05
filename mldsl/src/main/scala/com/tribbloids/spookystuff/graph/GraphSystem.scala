@@ -55,14 +55,17 @@ object GraphSystem {
 
       def _replicate(m: _Mutator)(implicit idRotator: Rotator[ID] = idAlgebra.createRotator()): this.type = this
 
+      override def info: Option[T#NodeData] = None
       override def _id: ID = idAlgebra.DANGLING
     }
 
-    case class Node(
-        info: T#NodeData,
-        _id: T#ID = Builder.this.idAlgebra.create()
+    class Node(
+        val info: Option[T#NodeData] = None,
+        val _id: T#ID = Builder.this.idAlgebra.create()
     ) extends _NodeLike
         with HasBuilder {
+
+      assert(_id != idAlgebra.DANGLING)
 
       //  def replicate: this.type
 
@@ -71,15 +74,22 @@ object GraphSystem {
       //  override def headEdges(v: Head): Edge[T] =
 
       override def _replicate(m: _Mutator)(implicit idRotator: Rotator[ID] = idAlgebra.createRotator()) = {
-        this
-          .copy(
-            m.nodeFn(this.info),
-            idRotator(this._id)
-          )
+        new Node(
+          m.nodeFn(this.info),
+          idRotator(this._id)
+        )
       }
 
 //      def asHead(info: EdgeData = edgeAlgebra.eye) = Edge(info, this._id -> Dangling._id)
 //      def asTail(info: EdgeData = edgeAlgebra.eye) = Edge(info, Dangling._id -> this._id)
+    }
+
+    def NodeLike(
+        info: Option[T#NodeData] = None,
+        _id: T#ID = Builder.this.idAlgebra.create()
+    ): _NodeLike = {
+      if (_id == idAlgebra.DANGLING) Dangling
+      else new Node(info, _id)
     }
   }
 }

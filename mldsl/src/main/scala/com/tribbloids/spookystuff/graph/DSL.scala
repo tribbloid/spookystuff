@@ -4,9 +4,9 @@ import scala.language.higherKinds
 
 trait DSL[T <: GraphSystem, G <: StaticGraph[T]] extends GraphSystem.Sugars[T] {
 
-  def graphBuilder: StaticGraph.Builder[T, G]
+  def impl: StaticGraph.Builder[T, G]
 
-  override implicit val systemBuilder: GraphSystem.Builder[T] = graphBuilder.systemBuilder
+  override implicit val systemBuilder: GraphSystem.Builder[T] = impl.systemBuilder
 
   trait Facet
 }

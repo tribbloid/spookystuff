@@ -199,7 +199,7 @@ trait MayHaveHeads extends StepGraph {
   heads.foreach(v => assert(v.canBeHead))
 
   protected def checkConnectivity_>(fromIDs: Seq[String], right: MayHaveTails): Unit = {
-    val froms = fromIDs.map(coll)
+    val froms: Seq[StepLike] = fromIDs.map(coll)
     assert(froms.nonEmpty, "has no from")
     assert(right.canConnectFromLeft, "has no left intake")
   }

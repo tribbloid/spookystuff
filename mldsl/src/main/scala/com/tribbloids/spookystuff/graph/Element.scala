@@ -10,11 +10,12 @@ object Element {
 
   trait NodeLike[T <: GraphSystem] extends Element[T] with IDMixin {
 
+    def info: Option[T#NodeData]
     def _id: ID
   }
 
   case class Edge[T <: GraphSystem](
-      info: T#EdgeData,
+      info: Option[T#EdgeData],
       ids: (T#ID, T#ID)
       //      tt: EdgeType = EdgeType.`->`,
   )(
@@ -54,6 +55,8 @@ object Element {
         outbound.map(idRotator)
       )
     }
+
+    override def info: Option[T#NodeData] = node.info
 
     override def _id: ID = node._id
   }
