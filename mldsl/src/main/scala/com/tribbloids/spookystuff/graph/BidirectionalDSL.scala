@@ -9,9 +9,12 @@ trait BidirectionalDSL[T <: GraphSystem, G <: StaticGraph[T]] extends DSL[T, G] 
 
   case class DSLView(
       self: _GraphComponent,
+      //tails or heads that doesn't belong to edges in self is tolerable
       tails: Map[Facet, _Tails] = Map.empty.withDefaultValue(Tails()),
       heads: _Heads = Heads()
   ) {
+
+    lazy val _self = impl.fromComponent(self)
 
     def replicate(m: _Mutator)(implicit idRotator: Rotator[ID] = idAlgebra.createRotator()): DSLView = {
       this.copy(
@@ -37,8 +40,8 @@ trait BidirectionalDSL[T <: GraphSystem, G <: StaticGraph[T]] extends DSL[T, G] 
       def _mergeImpl(top: DSLView, topTails: _Tails): DSLView = {
 
         val result: G = impl.merge(
-          base.self -> base.heads,
-          top.self -> topTails
+          base._self -> base.heads,
+          top._self -> topTails
         )
 
         val newTails = Map(

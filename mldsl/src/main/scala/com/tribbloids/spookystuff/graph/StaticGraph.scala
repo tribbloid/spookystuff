@@ -22,23 +22,14 @@ object StaticGraph {
         edges: Seq[_Edge]
     ): G
 
-    def convert(v: _GraphComponent): G
+    def fromComponent(v: _GraphComponent): G
 
-    def _union(v1: G, v2: G, nodeReducer: CommonTypes.Binary[Option[NodeData]]): G
-
-    def union(
-        v1: _GraphComponent,
-        v2: _GraphComponent,
-        nodeReducer: CommonTypes.Binary[Option[NodeData]] = nodeAlgebra.combineMonads
-    ): G = {
-
-      _union(convert(v1), convert(v2), nodeReducer)
-    }
+    def union(v1: G, v2: G, nodeReducer: CommonTypes.Binary[Option[NodeData]]): G
 
     //TODO: this API need to change to facilitate big Heads and Tails in the format of RDD
     def merge(
-        base: (_GraphComponent, _Heads),
-        top: (_GraphComponent, _Tails),
+        base: (G, _Heads),
+        top: (G, _Tails),
         nodeReducer: CommonTypes.Binary[Option[NodeData]] = nodeAlgebra.combineMonads,
         edgeReducer: CommonTypes.Binary[Option[EdgeData]] = edgeAlgebra.combineMonads
     ): G = {

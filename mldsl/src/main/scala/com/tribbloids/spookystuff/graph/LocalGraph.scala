@@ -8,6 +8,7 @@ import scala.collection.mutable
 //optimised for speed rather than memory usage
 //NOT thread safe!
 //
+//TODO: this may leverage an existing java/scala graph library
 //TODO: also need SparkGraphImpl, use GraphX or GraphFrame depending on their maturity
 case class LocalGraph[T <: GraphSystem] private (
     nodeMap: mutable.Map[T#ID, LinkedNode[T]],
@@ -98,7 +99,7 @@ object LocalGraph {
       )
     }
 
-    override def convert(graph: _GraphComponent): _LocalGraph = graph match {
+    override def fromComponent(graph: _GraphComponent): _LocalGraph = graph match {
       case v: _NodeLike   => this.fromSeq(Seq(v), Nil)
       case v: _Edge       => this.fromSeq(Nil, Seq(v))
       case v: _LocalGraph => v
@@ -119,7 +120,7 @@ object LocalGraph {
       new _LinkedNode(node, inbound, outbound)
     }
 
-    def _union(
+    def union(
         v1: _LocalGraph,
         v2: _LocalGraph,
         nodeReducer: CommonTypes.Binary[Option[NodeData]]

@@ -12,6 +12,14 @@ object Element {
 
     def info: Option[T#NodeData]
     def _id: ID
+
+    def asHeads(info: Option[EdgeData]): GraphComponent.Heads[T] =
+      GraphComponent.Heads(Seq(Edge[T](info, this._id -> systemBuilder.Dangling._id)))
+    lazy val asHeads: GraphComponent.Heads[T] = asHeads(None)
+
+    def asTails(info: Option[EdgeData]): GraphComponent.Tails[T] =
+      GraphComponent.Tails(Seq(Edge[T](info, systemBuilder.Dangling._id -> this._id)))
+    lazy val asTails: GraphComponent.Tails[T] = asTails(None)
   }
 
   case class Edge[T <: GraphSystem](

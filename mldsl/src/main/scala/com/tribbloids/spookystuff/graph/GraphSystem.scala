@@ -79,9 +79,6 @@ object GraphSystem {
           idRotator(this._id)
         )
       }
-
-//      def asHead(info: EdgeData = edgeAlgebra.eye) = Edge(info, this._id -> Dangling._id)
-//      def asTail(info: EdgeData = edgeAlgebra.eye) = Edge(info, Dangling._id -> this._id)
     }
 
     def NodeLike(
