@@ -9,16 +9,16 @@ import scala.collection.mutable
 
 case class Visualisation[I <: Impl](
     core: DSL[I]#Core,
-    format: Format[I#T] = Format[I#T]()
+    format: Format[I#DD] = Format[I#DD]()
 ) extends Impl.Sugars[I] {
 
-  override implicit val algebra: Algebra[T] = core.algebra
+  final override def algebra: Algebra[DD] = core.algebra
 
   object Tree {
 
     //todo: merge following 2
     def showForward(
-        startingFrom: Seq[Element[T]]
+        startingFrom: Seq[Element[DD]]
     ): String = {
       startingFrom
         .map { ee =>
@@ -30,7 +30,7 @@ case class Visualisation[I <: Impl](
     }
 
     def showBackward(
-        endWith: Seq[Element[T]]
+        endWith: Seq[Element[DD]]
     ): String = {
       endWith
         .map { ee =>
@@ -47,7 +47,7 @@ case class Visualisation[I <: Impl](
     protected final val layoutPrefs = LayoutPrefsImpl(unicode = true, explicitAsciiBends = false)
 
     def compile(
-        endWith: Seq[Element[T]]
+        endWith: Seq[Element[DD]]
     ): Graph[_ElementView] = {
 
       val buffer = mutable.HashSet.empty[_ElementView]

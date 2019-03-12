@@ -5,13 +5,12 @@ import com.tribbloids.spookystuff.graph.IDAlgebra.Rotator
 import com.tribbloids.spookystuff.graph.Module.{Heads, Tails}
 
 import scala.collection.mutable.ArrayBuffer
-import scala.language.{higherKinds, implicitConversions}
+import scala.language.implicitConversions
 
 trait DSL[I <: Impl] extends Impl.Sugars[I] {
 
-  def impl: StaticGraph.Builder[T, G]
-
-  override implicit val algebra: Algebra[T] = impl.algebra
+  val impl: StaticGraph.Builder[I#DD, I#GProto]
+  final override val algebra: Algebra[I#DD] = impl.algebra
 
   def facets: List[Facet]
 
@@ -25,25 +24,25 @@ trait DSL[I <: Impl] extends Impl.Sugars[I] {
       )
     }
 
-    implicit def fromData(v: NodeData): Core = {
+    implicit def fromNodeData(v: NodeData): Core = {
       val node = algebra.createNode(v)
       fromElement(node)
     }
 
-    implicit def fromData(v: EdgeData): Core = {
+    implicit def fromEdgeData(v: EdgeData): Core = {
       val node = algebra.createEdge(v)
       fromElement(node)
     }
 
-    implicit def toGraph(v: Core): G = v._graph
+    implicit def toGraph(v: Core) = v._graph
   }
 
   case class Core(
       self: _Module,
       //tails or heads that doesn't belong to edges in self is tolerable
       tails: Map[Facet, _Tails] = Map.empty,
-      defaultTails: _Tails = Tails[T](), // withDefaultValue is not type safe, thus extra wards
-      heads: _Heads = Heads[T](),
+      defaultTails: _Tails = Tails[DD](), // withDefaultValue is not type safe, thus extra wards
+      heads: _Heads = Heads[DD](),
       fromOverride: Option[_Heads] = None
   ) extends algebra._Sugars {
 
@@ -52,7 +51,7 @@ trait DSL[I <: Impl] extends Impl.Sugars[I] {
 
     lazy val from: _Heads = fromOverride.getOrElse(heads)
 
-    lazy val _graph: G = impl.fromModule(self)
+    lazy val _graph = impl.fromModule(self)
     lazy val _tails: Map[Facet, _Tails] = tails.withDefaultValue(defaultTails)
 
     def replicate(m: _Mutator)(implicit idRotator: Rotator[ID]): Core = {
@@ -72,7 +71,7 @@ trait DSL[I <: Impl] extends Impl.Sugars[I] {
     def base: Core = this
 
     def union(peer: Core): Core = {
-      val result = impl.union(_graph, peer._graph)
+      val result = impl.union(_graph: I#GProto[I#DD], peer._graph: I#GProto[I#DD])
 
       val tails = {
         val facets = (base._tails.keys.toSeq ++ peer._tails.keys.toSeq).distinct
@@ -99,7 +98,7 @@ trait DSL[I <: Impl] extends Impl.Sugars[I] {
 
       def _mergeImpl(top: Core, topTails: _Tails): Core = {
 
-        val result: G = impl.merge(
+        val result = impl.merge(
           base._graph -> base.from,
           top._graph -> topTails
         )
@@ -111,7 +110,7 @@ trait DSL[I <: Impl] extends Impl.Sugars[I] {
         val newHeads = top.heads
 
         Core(
-          result,
+          result: StaticGraph[I#DD],
           newTails,
           heads = newHeads
         )
@@ -131,7 +130,7 @@ trait DSL[I <: Impl] extends Impl.Sugars[I] {
         topTails.foldLeft(Core.this) { (self, edge) =>
           val tail = Tails(Seq(edge))
           val rotator = rotatorFactory()
-          self.Ops(topFacet, baseFacet)._mergeImpl(top.replicate(Mutator.replicate[T])(rotator), tail)
+          self.Ops(topFacet, baseFacet)._mergeImpl(top.replicate(Mutator.replicate[DD])(rotator), tail)
         }
       }
 
@@ -156,7 +155,7 @@ trait DSL[I <: Impl] extends Impl.Sugars[I] {
       def fromElement(
           element: _Element,
 //          neighbourID: Option[ID] = None,
-          format: _ShowFormat = _ShowFormat[T]()
+          format: _ShowFormat = _ShowFormat[DD]()
       ): _ElementView = {
 
         element match {
@@ -174,9 +173,8 @@ trait DSL[I <: Impl] extends Impl.Sugars[I] {
     case class NodeView(
         linkedNode: _LinkedNode,
 //        neighbourEdges: Seq[Edge[T]] = Nil,
-        override val format: _ShowFormat = _ShowFormat[T]()
-    ) extends _ElementView
-        with algebra._Sugars {
+        override val format: _ShowFormat = _ShowFormat[DD]()
+    ) extends _ElementView {
 
       import format._
 
@@ -201,9 +199,8 @@ trait DSL[I <: Impl] extends Impl.Sugars[I] {
 
     case class EdgeView(
         edge: _Edge,
-        override val format: _ShowFormat = _ShowFormat[T]()
-    ) extends _ElementView
-        with algebra._Sugars {
+        override val format: _ShowFormat = _ShowFormat[DD]()
+    ) extends _ElementView {
 
       import format._
 

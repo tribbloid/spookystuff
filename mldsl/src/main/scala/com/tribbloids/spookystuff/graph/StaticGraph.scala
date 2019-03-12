@@ -3,9 +3,7 @@ package com.tribbloids.spookystuff.graph
 import com.tribbloids.spookystuff.graph.Element.Edge
 import com.tribbloids.spookystuff.utils.{CommonTypes, MultiMapView}
 
-import scala.language.higherKinds
-
-trait StaticGraph[+T <: Domain] extends Module[T] {
+trait StaticGraph[T <: Domain] extends Module[T] {
 
   def evict_!(edge: _Edge): Unit
   def connect_!(edge: _Edge): Unit
@@ -16,38 +14,40 @@ trait StaticGraph[+T <: Domain] extends Module[T] {
 
 object StaticGraph {
 
-  trait Builder[T <: Domain, G <: StaticGraph[T]] extends Algebra.Sugars[T] {
+  trait Builder[D <: Domain, GProto[T <: Domain] <: StaticGraph[T]] extends Algebra.Sugars[D] {
 
-    implicit val algebra: Algebra[T]
+    type GG = GProto[D]
+
+    implicit val algebra: Algebra[D]
 
     def fromSeq(
         nodes: Seq[_NodeLike],
         edges: Seq[_Edge]
-    ): G
+    ): GG
 
-    def fromModule(v: _Module): G
+    def fromModule(v: _Module): GG
 
-    def union(v1: G, v2: G, nodeReducer: CommonTypes.Binary[NodeData] = nodeAlgebra.combine): G
+    def union(v1: GG, v2: GG, node_+ : CommonTypes.Binary[NodeData] = nodeAlgebra.plus): GG
 
     //TODO: this API need to change to facilitate big Heads and Tails in the format of RDD
     def merge(
-        base: (G, _Heads),
-        top: (G, _Tails),
-        nodeReducer: CommonTypes.Binary[NodeData] = nodeAlgebra.combine,
-        edgeReducer: CommonTypes.Binary[EdgeData] = edgeAlgebra.combine
-    ): G = {
+        base: (GG, _Heads),
+        top: (GG, _Tails),
+        node_+ : CommonTypes.Binary[NodeData] = nodeAlgebra.plus,
+        edge_+ : CommonTypes.Binary[EdgeData] = edgeAlgebra.plus
+    ): GG = {
 
-      val uu: G = union(base._1, top._1, nodeReducer)
-      val toBeRemoved: Seq[Edge[T]] = base._2.seq ++ top._2.seq
-      toBeRemoved.foreach { v: Edge[T] =>
+      val uu: GG = union(base._1, top._1, node_+)
+      val toBeRemoved: Seq[Edge[D]] = base._2.seq ++ top._2.seq
+      toBeRemoved.foreach { v: Edge[D] =>
         uu.evict_!(v)
       }
 
       for (src <- base._2.seq;
            tgt <- top._2.seq) {
 
-        val reduced = Edge[T](
-          edgeReducer(src.data, tgt.data),
+        val reduced = Edge[D](
+          edge_+(src.data, tgt.data),
           src.from -> tgt.to
         )
         uu.connect_!(reduced)

@@ -6,9 +6,10 @@ import scala.language.implicitConversions
 trait ElementView[I <: Impl] extends Impl.Sugars[I] with IDMixin {
 
   val core: DSL[I]#Core
+  override final def algebra: Algebra[I#DD] = core.algebra
 
   def element: _Element
-  def format: _ShowFormat = _ShowFormat[T]()
+  def format: _ShowFormat = _ShowFormat[DD]()
 
   def inbound: Seq[ElementView[I]]
   def outbound: Seq[ElementView[I]]

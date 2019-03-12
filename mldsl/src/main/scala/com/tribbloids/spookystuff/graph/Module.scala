@@ -4,7 +4,7 @@ import com.tribbloids.spookystuff.graph.Element.Edge
 
 import scala.language.implicitConversions
 
-trait Module[+T <: Domain] extends Algebra.Sugars[T] {
+trait Module[T <: Domain] extends Algebra.Sugars[T] {
 
   protected def _replicate(m: _Mutator)(implicit idRotator: _Rotator): _Module
 

@@ -67,14 +67,12 @@ object LocalGraph {
 
   case class BuilderImpl[T <: Domain](
       implicit override val algebra: Algebra[T]
-  ) extends StaticGraph.Builder[T, LocalGraph[T]] {
-
-    type G = LocalGraph[T]
+  ) extends StaticGraph.Builder[T, LocalGraph] {
 
     override def fromSeq(
         nodes: Seq[_NodeLike],
         edges: Seq[_Edge]
-    ): G = {
+    ): GG = {
 
       val existingIDs = nodes.map(_._id).toSet
 
@@ -103,16 +101,16 @@ object LocalGraph {
         edgeMap.put1(ee.ids, ee)
       }
 
-      new G(
+      new GG(
         mutable.Map(linkedNodes.map(v => v._id -> v): _*),
         edgeMap
       )
     }
 
-    override def fromModule(graph: _Module): G = graph match {
+    override def fromModule(graph: _Module): GG = graph match {
       case v: _NodeLike => this.fromSeq(Seq(v), Nil)
       case v: _Edge     => this.fromSeq(Nil, Seq(v))
-      case v: G         => v
+      case v: GG        => v
     }
 
     protected def linkedNodeReducer(
@@ -131,10 +129,10 @@ object LocalGraph {
     }
 
     def union(
-        v1: G,
-        v2: G,
+        v1: GG,
+        v2: GG,
         nodeReducer: CommonTypes.Binary[NodeData]
-    ): G = {
+    ): GG = {
 
       val v2Reduced: mutable.Map[T#ID, _LinkedNode] = v2.nodeMap.map {
         case (k, vv2) =>
@@ -150,7 +148,7 @@ object LocalGraph {
       val uNodeMap: mutable.Map[ID, _LinkedNode] = v1.nodeMap ++ v2Reduced
       val uEdgeMap: MultiMapView.Mutable[(ID, ID), _Edge] = v1.edgeMap +:+ v2.edgeMap
 
-      new G(
+      new GG(
         uNodeMap,
         uEdgeMap
       )

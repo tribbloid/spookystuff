@@ -2,7 +2,7 @@ package com.tribbloids.spookystuff.graph
 
 import org.apache.spark.sql.catalyst.trees.TreeNode
 
-import scala.language.{higherKinds, implicitConversions}
+import scala.language.implicitConversions
 
 // technically only StaticGraph is required, DSL is optional, but whatever
 //TODO: not optimized, children are repeatedly created when calling .path
@@ -10,8 +10,9 @@ import scala.language.{higherKinds, implicitConversions}
 trait ElementTreeNode[I <: Impl] extends TreeNode[ElementTreeNode[I]] with Impl.Sugars[I] {
 
   val view: ElementView[I]
+  final override def algebra: Algebra[I#DD] = view.core.algebra
 
-  val visited: Set[_Element]
+  def visited: Set[_Element]
 
   val prefix: String
   val _children: Seq[ElementView[I]]
@@ -84,7 +85,6 @@ object ElementTreeNode {
   case class Cyclic[I <: Impl](delegate: ElementTreeNode[I]) extends ElementTreeNode[I] {
 
     override val view: ElementView[I] = delegate.view
-    override implicit val algebra: Algebra[I#T] = view.algebra
 
     override val visited = delegate.visited
     override val prefix: String = "(cyclic)" + delegate.prefix

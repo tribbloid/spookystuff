@@ -17,24 +17,24 @@ trait FlowDSL[I <: Impl] extends DSL[I] {
 
     // select from
 
-    def from(filter: EdgeFilter[T]): Self = {
-      val newFrom = Heads[T](filter(core))
+    def from(filter: EdgeFilter[DD]): Self = {
+      val newFrom = Heads[DD](filter(core._graph))
       core.copy(
         fromOverride = Some(newFrom)
       )
     }
 
     //TODO: these symbols are lame
-    def >-(filter: EdgeFilter[T]): Self = from(filter)
+    def >-(filter: EdgeFilter[DD]): Self = from(filter)
 
-    def and(filter: EdgeFilter[T]) = {
-      val newFrom = Heads[T](filter(core))
-      val mergedFrom = Heads[T](core.from.seq ++ newFrom.seq)
+    def and(filter: EdgeFilter[DD]) = {
+      val newFrom = Heads[DD](filter(core._graph))
+      val mergedFrom = Heads[DD](core.from.seq ++ newFrom.seq)
       core.copy(
         fromOverride = Some(mergedFrom)
       )
     }
-    def <>-(filter: EdgeFilter[T]): Self = and(filter)
+    def <>-(filter: EdgeFilter[DD]): Self = and(filter)
 
     // undirected
 
