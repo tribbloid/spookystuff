@@ -1,11 +1,11 @@
 package com.tribbloids.spookystuff.graph
 
-case class Mutator[T <: GraphSystem](
-    nodeFn: Option[T#NodeData] => Option[T#NodeData],
-    edgeFn: Option[T#EdgeData] => Option[T#EdgeData]
+case class Mutator[T <: Domain](
+    nodeFn: T#NodeData => T#NodeData,
+    edgeFn: T#EdgeData => T#EdgeData
 ) {}
 
 object Mutator {
 
-  def noop[T <: GraphSystem] = Mutator[T](identity, identity)
+  def replicate[T <: Domain] = Mutator[T](identity, identity)
 }
