@@ -9,12 +9,17 @@ import scala.language.implicitConversions
 //TODO: use mapChildren to recursively get TreeNode[(Seq[String] -> Tree)] efficiently
 trait ElementTreeNode[I <: Impl] extends TreeNode[ElementTreeNode[I]] with Impl.Sugars[I] {
 
-  val view: ElementView[I]
+  def view: ElementView[I]
   final override def algebra: Algebra[I#DD] = view.core.algebra
 
   def visited: Set[_Element]
 
-  val prefix: String
+  def dirSymbol: String = ""
+  lazy val prefix: String = view.element match {
+    case _: _NodeLike => ""
+    case _: _Edge     => dirSymbol
+  }
+
   val _children: Seq[ElementView[I]]
 
   implicit def copyImplicitly(v: ElementView[I]): ElementTreeNode[I]
@@ -27,8 +32,10 @@ trait ElementTreeNode[I <: Impl] extends TreeNode[ElementTreeNode[I]] with Impl.
     else result
   }
 
+  final override lazy val simpleString: String = prefix + view.toString
+
   override def verboseString: String =
-    this.simpleString + "\n========= PATHS =========\n" + mergedPath.mkString("\n")
+    this.simpleString + "\n=== TRACES ===\n" + mergedPath.mkString("\n")
 
   lazy val paths: Seq[Seq[String]] = {
     val rootPath = Seq(view.format.shortNameOf(view.element))
@@ -68,8 +75,6 @@ trait ElementTreeNode[I <: Impl] extends TreeNode[ElementTreeNode[I]] with Impl.
     result
   }
 
-  override def nodeName: String = prefix + super.nodeName
-
   override lazy val children: Seq[ElementTreeNode[I]] = {
 
     _children.toList
@@ -84,10 +89,10 @@ object ElementTreeNode {
 
   case class Cyclic[I <: Impl](delegate: ElementTreeNode[I]) extends ElementTreeNode[I] {
 
-    override val view: ElementView[I] = delegate.view
+    override def view: ElementView[I] = delegate.view
 
-    override val visited = delegate.visited
-    override val prefix: String = "(cyclic)" + delegate.prefix
+    override def visited = delegate.visited
+    override lazy val prefix: String = delegate.prefix + "(cyclic)"
     override val _children: Seq[ElementView[I]] = Nil
 
     override implicit def copyImplicitly(v: ElementView[I]): ElementTreeNode[I] = delegate.copyImplicitly(v)

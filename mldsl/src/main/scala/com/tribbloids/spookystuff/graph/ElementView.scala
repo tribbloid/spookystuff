@@ -16,11 +16,6 @@ trait ElementView[I <: Impl] extends Impl.Sugars[I] with IDMixin {
 
   override final def _id = element
 
-  def edgeOnlyPrefix(v: String): String = element match {
-    case vv: _Edge => v
-    case _         => ""
-  }
-
   case class ForwardTreeNode(
       /**
         * VERY IMPORTANT for cycle elimination
@@ -29,7 +24,9 @@ trait ElementView[I <: Impl] extends Impl.Sugars[I] with IDMixin {
   ) extends ElementTreeNode[I] {
 
     override val view = ElementView.this
-    override val prefix: String = edgeOnlyPrefix(":>>>")
+
+    override def dirSymbol = "v "
+
     override val _children: Seq[ElementView[I]] = ElementView.this.outbound
 
     override implicit def copyImplicitly(v: ElementView[I]): ElementTreeNode[I] = v.ForwardTreeNode(visited + element)
@@ -43,7 +40,9 @@ trait ElementView[I <: Impl] extends Impl.Sugars[I] with IDMixin {
   ) extends ElementTreeNode[I] {
 
     override val view = ElementView.this
-    override val prefix: String = edgeOnlyPrefix("<<<:")
+
+    override def dirSymbol = "^ "
+
     override val _children: Seq[ElementView[I]] = ElementView.this.inbound
 
     override implicit def copyImplicitly(v: ElementView[I]): ElementTreeNode[I] = v.BackwardTreeNode(visited + element)

@@ -7,7 +7,7 @@ trait Impl {
   type DD <: Domain
   type GProto[T <: Domain] <: StaticGraph[T]
 
-  type GG = GProto[DD]
+  final type GG = GProto[DD]
 }
 
 object Impl {

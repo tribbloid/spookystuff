@@ -9,13 +9,14 @@ import scala.language.implicitConversions
 
 trait DSL[I <: Impl] extends Impl.Sugars[I] {
 
-  val impl: StaticGraph.Builder[I#DD, I#GProto]
+  def impl: StaticGraph.Builder[I#DD, I#GProto]
   final override val algebra: Algebra[I#DD] = impl.algebra
 
   def facets: List[Facet]
 
-  object Core {
-    implicit def fromElement(element: _Element): Core = {
+  trait CoreLowLevelImplicits {
+
+    def fromElement(element: _Element): Core = {
       Core(
         element,
         Map.empty,
@@ -24,23 +25,26 @@ trait DSL[I <: Impl] extends Impl.Sugars[I] {
       )
     }
 
+    implicit def fromEdgeData(v: EdgeData): Core = {
+      val node = algebra.createEdge(v)
+      fromElement(node)
+    }
+  }
+
+  object Core extends CoreLowLevelImplicits {
+
     implicit def fromNodeData(v: NodeData): Core = {
       val node = algebra.createNode(v)
       fromElement(node)
     }
 
-    implicit def fromEdgeData(v: EdgeData): Core = {
-      val node = algebra.createEdge(v)
-      fromElement(node)
-    }
-
-    implicit def toGraph(v: Core) = v._graph
+    def toGraph(v: Core) = v._graph
   }
 
   case class Core(
       self: _Module,
       //tails or heads that doesn't belong to edges in self is tolerable
-      tails: Map[Facet, _Tails] = Map.empty,
+      private val _tails: Map[Facet, _Tails] = Map.empty,
       defaultTails: _Tails = Tails[DD](), // withDefaultValue is not type safe, thus extra wards
       heads: _Heads = Heads[DD](),
       fromOverride: Option[_Heads] = None
@@ -52,20 +56,20 @@ trait DSL[I <: Impl] extends Impl.Sugars[I] {
     lazy val from: _Heads = fromOverride.getOrElse(heads)
 
     lazy val _graph = impl.fromModule(self)
-    lazy val _tails: Map[Facet, _Tails] = tails.withDefaultValue(defaultTails)
+    lazy val tails: Map[Facet, _Tails] = _tails.withDefaultValue(defaultTails)
 
     def replicate(m: _Mutator)(implicit idRotator: Rotator[ID]): Core = {
 
       this.copy(
         self.replicate(m),
-        tails.mapValues(_.replicate(m)),
+        _tails.mapValues(_.replicate(m)),
         defaultTails.replicate(m),
         heads.replicate(m)
       )
     }
 
     def canConnectFrom(v: Facet): Boolean = {
-      _tails(v).seq.nonEmpty
+      tails(v).seq.nonEmpty
     }
 
     def base: Core = this
@@ -74,10 +78,10 @@ trait DSL[I <: Impl] extends Impl.Sugars[I] {
       val result = impl.union(_graph: I#GProto[I#DD], peer._graph: I#GProto[I#DD])
 
       val tails = {
-        val facets = (base._tails.keys.toSeq ++ peer._tails.keys.toSeq).distinct
+        val facets = (base.tails.keys.toSeq ++ peer.tails.keys.toSeq).distinct
         Map(
           facets.map { facet =>
-            val tails = base._tails(facet) ++ peer._tails(facet)
+            val tails = base.tails(facet) ++ peer.tails(facet)
             facet -> tails
           }: _*
         )
@@ -104,8 +108,8 @@ trait DSL[I <: Impl] extends Impl.Sugars[I] {
         )
 
         val newTails = Map(
-          topFacet -> base._tails(topFacet),
-          baseFacet -> top._tails(baseFacet)
+          topFacet -> base.tails(topFacet),
+          baseFacet -> top.tails(baseFacet)
         )
         val newHeads = top.heads
 
@@ -118,12 +122,12 @@ trait DSL[I <: Impl] extends Impl.Sugars[I] {
 
       def merge(top: Core): Core = {
 
-        _mergeImpl(top, top._tails(topFacet))
+        _mergeImpl(top, top.tails(topFacet))
       }
 
       def rebase(top: Core): Core = {
 
-        val topTails = top._tails(baseFacet).seq
+        val topTails = top.tails(baseFacet).seq
 
         val rotatorFactory = idAlgebra.rotatorFactory()
 
@@ -172,7 +176,6 @@ trait DSL[I <: Impl] extends Impl.Sugars[I] {
 
     case class NodeView(
         linkedNode: _LinkedNode,
-//        neighbourEdges: Seq[Edge[T]] = Nil,
         override val format: _ShowFormat = _ShowFormat[DD]()
     ) extends _ElementView {
 
@@ -228,12 +231,12 @@ trait DSL[I <: Impl] extends Impl.Sugars[I] {
           val facets: Seq[Facet] = dsl.facets
 
           val tailSuffix = facets
-            .map { facet =>
+            .flatMap { facet =>
               val ff = facet
               if (core.tails(facet).seq contains edge) Some(facet.symbol)
               else None
             }
-            .mkString("")
+            .mkString(" ")
 
           val tailStr =
             if (tailSuffix.isEmpty) ""
@@ -244,10 +247,12 @@ trait DSL[I <: Impl] extends Impl.Sugars[I] {
           buffer
         } else Nil
 
-      override lazy val toString: String = prefixes.map("(" + _ + ")").mkString("") + " " + {
-        showEdge(edge)
-      }
+      override lazy val toString: String = prefixes.map("(" + _ + ")").mkString("") + " [ " +
+        showEdge(edge) + " ]"
     }
+
+    def visualise(format: Visualisation.Format[DD] = defaultFormat): Visualisation[I] =
+      Visualisation[I](this, format)
   }
 
   trait Interface[Self <: Interface[Self]] {
@@ -259,6 +264,23 @@ trait DSL[I <: Impl] extends Impl.Sugars[I] {
 
     object Show extends Show
   }
+
+  object Formats {
+
+    object Default extends Visualisation.Format[DD]()
+
+    object ShowData
+        extends Visualisation.Format[DD](
+          showNode = { v =>
+            "" + v.data
+          },
+          showEdge = { v =>
+            "" + v.data
+          }
+        )
+  }
+
+  lazy val defaultFormat: Visualisation.Format[DD] = Formats.Default
 }
 
 object DSL {

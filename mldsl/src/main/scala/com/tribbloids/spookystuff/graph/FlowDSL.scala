@@ -5,8 +5,8 @@ import com.tribbloids.spookystuff.graph.Module.Heads
 
 trait FlowDSL[I <: Impl] extends DSL[I] {
 
-  object FromLeft extends Facet("|>")
-  object FromRight extends Facet("<|")
+  object FromLeft extends Facet("->>")
+  object FromRight extends Facet("<<-")
 
   lazy val facets = List(FromLeft, FromRight)
 

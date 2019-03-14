@@ -12,6 +12,8 @@ trait Element[T <: Domain] extends Module[T] {
 
   def toTails(info: EdgeData): Module.Tails[T]
   lazy val asTails: Module.Tails[T] = toTails(algebra.edgeAlgebra.eye)
+
+  def idStr: String
 }
 
 object Element {
@@ -27,7 +29,9 @@ object Element {
     def from: ID = ids._1
     def to: ID = ids._2
 
-    override def toString = s"$from -> $to: $data"
+    def idStr: String = idAlgebra.ids2Str(ids)
+
+    override lazy val toString = s"${idAlgebra.ids2Str(ids)}: $data"
 
     override protected def _replicate(m: _Mutator)(implicit idRotator: _Rotator) = {
       val newIDs = idRotator(from) -> idRotator(to)
@@ -58,7 +62,9 @@ object Element {
     def data: NodeData
     def _id: ID
 
-    override def toString = s"${_id}: $data"
+    def idStr: String = idAlgebra.id2Str(_id)
+
+    override def toString = s"$idStr: $data"
 
     def toLinked(graphOpt: Option[StaticGraph[T]]): _LinkedNode = {
       this match {

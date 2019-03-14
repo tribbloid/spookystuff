@@ -1,12 +1,12 @@
 package com.tribbloids.spookystuff.graph
 
-trait Algebra[T <: Domain] extends Algebra.Sugars[T] {
+trait Algebra[T <: Domain] extends Algebra.TypeSugars[T] {
 
-  override implicit val algebra = this
+  implicit def algebra: Algebra[T] = this
 
-  override def idAlgebra: IDAlgebra[ID, NodeData]
-  override def nodeAlgebra: DataAlgebra[NodeData]
-  override def edgeAlgebra: DataAlgebra[EdgeData]
+  def idAlgebra: IDAlgebra[ID, NodeData]
+  def nodeAlgebra: DataAlgebra[NodeData]
+  def edgeAlgebra: DataAlgebra[EdgeData]
 
   trait _Sugars extends Algebra.Sugars[T] {
     override implicit val algebra = Algebra.this

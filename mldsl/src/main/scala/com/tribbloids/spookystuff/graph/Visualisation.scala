@@ -24,7 +24,7 @@ case class Visualisation[I <: Impl](
         .map { ee =>
           val view = core._ElementView.fromElement(ee, format)
           val treeNode = view.ForwardTreeNode()
-          treeNode.treeString
+          treeNode.treeString(format.verbose)
         }
         .mkString("")
     }
@@ -36,7 +36,7 @@ case class Visualisation[I <: Impl](
         .map { ee =>
           val stepView = core._ElementView.fromElement(ee, format)
           val treeNode = stepView.BackwardTreeNode()
-          treeNode.treeString
+          treeNode.treeString(format.verbose)
         }
         .mkString("")
     }
@@ -131,25 +131,21 @@ object Visualisation {
   }
 
   case class Format[T <: Domain](
-      showNode: Element.Node[T] => String = toStrFn,
+      showNode: Element.NodeLike[T] => String = toStrFn,
       showEdge: Element.Edge[T] => String = toStrFn,
-      nodeShortName: Element.Node[T] => String = { v: Element.Node[T] =>
-        "" + v._id
+      nodeShortName: Element.NodeLike[T] => String = { v: Element.NodeLike[T] =>
+        v.idStr
       },
       edgeShortName: Element.Edge[T] => String = { v: Element.Edge[T] =>
-        v.ids.productIterator.mkString(" -> ")
+        v.idStr
       },
-      showPrefix: Boolean = true
+      showPrefix: Boolean = true,
+      verbose: Boolean = false
   ) {
 
-    def showElement(v: Element[T]): String = v match {
-      case nn: Element.Node[T] => showNode(nn)
-      case ee: Element.Edge[T] => showEdge(ee)
-    }
-
     def shortNameOf(v: Element[T]): String = v match {
-      case nn: Element.Node[T] => nodeShortName(nn)
-      case ee: Element.Edge[T] => edgeShortName(ee)
+      case nn: Element.NodeLike[T] => nodeShortName(nn)
+      case ee: Element.Edge[T]     => edgeShortName(ee)
     }
   }
 }

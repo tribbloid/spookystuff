@@ -6,9 +6,9 @@ import com.tribbloids.spookystuff.graph.IDAlgebra.Rotator
 
 trait IDAlgebra[ID, -NodeData] {
 
-  val DANGLING: ID
+  def DANGLING: ID
 
-  val reserved = Set(DANGLING) // will be excluded from rotation
+  lazy val reserved = Set(DANGLING) // will be excluded from rotation
 
   final def retryUntilNotReserved(fn: => ID): ID = {
 
@@ -26,6 +26,17 @@ trait IDAlgebra[ID, -NodeData] {
 
   def rotatorFactory(): () => Rotator[ID]
 
+  def id2Str(v: ID): String =
+    if (v == DANGLING) "??"
+    else "" + v
+
+  def ids2Str(vs: (ID, ID)): String = {
+    vs.productIterator
+      .map { id =>
+        id2Str(id.asInstanceOf[ID])
+      }
+      .mkString(" ~> ")
+  }
 }
 
 object IDAlgebra {
@@ -44,7 +55,7 @@ object IDAlgebra {
 
   case object UUIDAlgebra extends IDAlgebra[UUID, Any] {
 
-    override val DANGLING: UUID = UUID.fromString("dangling")
+    override lazy val DANGLING: UUID = UUID.nameUUIDFromBytes(Array.empty)
 
     override def _random(): UUID = UUID.randomUUID()
 
