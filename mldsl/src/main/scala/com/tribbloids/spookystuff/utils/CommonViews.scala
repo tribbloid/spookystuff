@@ -50,6 +50,8 @@ abstract class CommonViews {
       previousEnd = m.end
     }
 
+    buffer.append(target.subSequence(previousEnd, target.length()))
+
     buffer.toString()
   }
 
