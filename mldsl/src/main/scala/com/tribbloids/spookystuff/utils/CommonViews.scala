@@ -39,14 +39,18 @@ abstract class CommonViews {
 
     val matches = regex.findAllMatchIn(target).toList
 
-    val buffer = new StringBuffer(target)
+    val buffer = new StringBuilder()
+
+    var previousEnd: Int = 0
 
     for (m <- matches) {
       val replacement = replacer(m)
-      buffer.replace(m.start, m.end, replacement)
+      buffer.append(target.subSequence(previousEnd, m.start))
+      buffer.append(replacement)
+      previousEnd = m.end
     }
 
-    buffer.toString
+    buffer.toString()
   }
 
   implicit class Function2PrivilegedAction[T](f: => T) extends PrivilegedAction[T] {

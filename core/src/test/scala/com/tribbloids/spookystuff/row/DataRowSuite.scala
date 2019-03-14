@@ -27,7 +27,7 @@ class DataRowSuite extends SpookyEnvFixture {
   }
 
   it("formatEmptyString") {
-    assert(DataRow(Map()).replaceInto("").exists(_ == ""))
+    assert(DataRow(Map()).replaceInto("").contains(""))
   }
 
   it("getInt can extract scala Int type") {
