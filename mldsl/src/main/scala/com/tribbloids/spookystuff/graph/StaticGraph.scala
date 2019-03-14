@@ -3,6 +3,8 @@ package com.tribbloids.spookystuff.graph
 import com.tribbloids.spookystuff.graph.Element.Edge
 import com.tribbloids.spookystuff.utils.{CommonTypes, MultiMapView}
 
+import scala.language.higherKinds
+
 trait StaticGraph[T <: Domain] extends Module[T] {
 
   def evict_!(edge: _Edge): Unit

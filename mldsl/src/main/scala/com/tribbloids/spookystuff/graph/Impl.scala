@@ -1,6 +1,6 @@
 package com.tribbloids.spookystuff.graph
 
-import scala.language.implicitConversions
+import scala.language.{higherKinds, implicitConversions}
 
 trait Impl {
 
