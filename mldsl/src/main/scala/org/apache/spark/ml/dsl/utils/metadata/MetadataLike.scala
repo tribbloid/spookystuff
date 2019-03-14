@@ -25,6 +25,8 @@ trait MetadataLike extends Serializable with IDMixin {
 
   abstract class ParamWithDefault[T](val default: T) extends Param[T] {
 
+    require(default != null, s"default value of parameter `$name` cannot be null")
+
     def getOrDefault: T = get.getOrElse(default)
   }
 

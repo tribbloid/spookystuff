@@ -29,10 +29,4 @@ object Simple extends Algebra[Simple] {
     override type GProto[T <: Domain] = LocalGraph[T]
   }
 
-  object SimpleDSL extends FlowDSL[SimpleImpl.type] {
-
-    override lazy val impl: StaticGraph.Builder[Simple, LocalGraph] = LocalGraph.BuilderImpl()
-
-    override lazy val defaultFormat = Formats.ShowData
-  }
 }

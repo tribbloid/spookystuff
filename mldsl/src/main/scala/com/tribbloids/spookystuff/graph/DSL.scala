@@ -38,7 +38,6 @@ trait DSL[I <: Impl] extends Impl.Sugars[I] {
       fromElement(node)
     }
 
-    def toGraph(v: Core) = v._graph
   }
 
   case class Core(

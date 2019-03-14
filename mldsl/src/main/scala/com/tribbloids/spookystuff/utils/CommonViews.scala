@@ -4,6 +4,8 @@ import java.security.PrivilegedAction
 
 import scala.collection.GenTraversableOnce
 import scala.reflect.ClassTag
+import scala.util.matching.Regex
+import scala.util.matching.Regex.Match
 
 abstract class CommonViews {
 
@@ -22,7 +24,7 @@ abstract class CommonViews {
       val escaped = delimiter.replaceAll(specialChars, "\\\\")
       val regex = ("(?<!" + escaped + ")" + escaped + "\\{[^\\{\\}\r\n]*\\}").r
 
-      val result = regex.replaceAllIn(str, m => {
+      val result = replaceAllNonRecursively(regex, str, m => {
         val original = m.group(0)
         val key = original.substring(2, original.length - 1)
 
@@ -31,6 +33,20 @@ abstract class CommonViews {
       })
       result
     }
+  }
+
+  def replaceAllNonRecursively(regex: Regex, target: CharSequence, replacer: Match => String): String = {
+
+    val matches = regex.findAllMatchIn(target).toList
+
+    val buffer = new StringBuffer(target)
+
+    for (m <- matches) {
+      val replacement = replacer(m)
+      buffer.replace(m.start, m.end, replacement)
+    }
+
+    buffer.toString
   }
 
   implicit class Function2PrivilegedAction[T](f: => T) extends PrivilegedAction[T] {

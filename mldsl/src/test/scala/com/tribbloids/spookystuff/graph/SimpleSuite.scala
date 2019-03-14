@@ -1,6 +1,6 @@
 package com.tribbloids.spookystuff.graph
 
-import com.tribbloids.spookystuff.graph.example.Simple.SimpleDSL
+import com.tribbloids.spookystuff.graph.example.SimpleDSL
 import com.tribbloids.spookystuff.testutils.FunSpecx
 
 class SimpleSuite extends FunSpecx {
