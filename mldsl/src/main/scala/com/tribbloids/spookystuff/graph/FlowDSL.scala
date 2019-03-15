@@ -10,7 +10,7 @@ trait FlowDSL[I <: Impl] extends DSL[I] {
 
   lazy val facets = List(FromLeft, FromRight)
 
-  trait Interface[Self <: Interface[Self]] extends super.Interface[Self] {
+  trait Interface extends super.Interface {
 
     lazy val `:>>` = core.Ops(FromLeft, FromRight)
     lazy val `<<:` = core.Ops(FromRight, FromLeft)
@@ -38,42 +38,42 @@ trait FlowDSL[I <: Impl] extends DSL[I] {
 
     // undirected
 
-    def union(another: Interface[Self]): Self = {
+    def union(another: Interface): Self = {
       core.union(another.core)
     }
-    def U(another: Interface[Self]) = union(another)
+    def U(another: Interface) = union(another)
 
     // left > right
 
-    def merge_>(right: Interface[Self]): Self = core.`:>>`.merge(right.core)
-    def merge(right: Interface[Self]): Self = merge_>(right)
-    def >>>(right: Interface[Self]): Self = merge_>(right)
-    def >(right: Interface[Self]): Self = merge_>(right)
+    def merge_>(right: Interface): Self = `:>>`.merge(right.core)
+    def merge(right: Interface): Self = merge_>(right)
+    def >>>(right: Interface): Self = merge_>(right)
+    def >(right: Interface): Self = merge_>(right)
 
     //TODO: fast-forward handling: if right is reused for many times, ensure that only the part that doesn't overlap with this got duplicated (conditional duplicate)
-    def rebase_>(right: Interface[Self]): Self = core.`:>>`.rebase(right.core)
-    def rebase(right: Interface[Self]): Self = rebase_>(right)
-    def >=>(right: Interface[Self]): Self = rebase_>(right)
+    def rebase_>(right: Interface): Self = `:>>`.rebase(right.core)
+    def rebase(right: Interface): Self = rebase_>(right)
+    def >=>(right: Interface): Self = rebase_>(right)
 
     //this is really kind of ambiguous
-    def commit_>(right: Interface[Self]): Self = core.`:>>`.commit(right.core)
-    def commit(right: Interface[Self]): Self = commit_>(right)
-    def >->(right: Interface[Self]): Self = commit_>(right)
+    def commit_>(right: Interface): Self = `:>>`.commit(right.core)
+    def commit(right: Interface): Self = commit_>(right)
+    def >->(right: Interface): Self = commit_>(right)
 
     // left < right
     //TODO: follow :>> & <<: convention
 
-    def merge_<(left: Interface[Self]): Self = core.`<<:`.merge(left.core)
-    def egrem(prev: Interface[Self]): Self = prev.merge_<(this)
-    def <<<(prev: Interface[Self]): Self = prev.merge_<(this)
-    def <(prev: Interface[Self]): Self = prev.merge_<(this)
+    def merge_<(left: Interface): Self = `<<:`.merge(left.core)
+    def egrem(prev: Interface) = prev.merge_<(this)
+    def <<<(prev: Interface) = prev.merge_<(this)
+    def <(prev: Interface) = prev.merge_<(this)
 
-    def rebase_<(left: Interface[Self]): Self = core.`<<:`.rebase(left.core)
-    def esaber(prev: Interface[Self]): Self = prev.rebase_<(this)
-    def <=<(prev: Interface[Self]): Self = prev.rebase_<(this)
+    def rebase_<(left: Interface): Self = `<<:`.rebase(left.core)
+    def esaber(prev: Interface) = prev.rebase_<(this)
+    def <=<(prev: Interface) = prev.rebase_<(this)
 
-    def commit_<(left: Interface[Self]): Self = core.`<<:`.commit(left.core)
-    def timmoc(left: Interface[Self]): Self = left.commit_<(this)
-    def <-<(left: Interface[Self]): Self = left.commit_<(this)
+    def commit_<(left: Interface): Self = `<<:`.commit(left.core)
+    def timmoc(left: Interface) = left.commit_<(this)
+    def <-<(left: Interface) = left.commit_<(this)
   }
 }

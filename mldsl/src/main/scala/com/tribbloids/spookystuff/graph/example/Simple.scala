@@ -29,4 +29,25 @@ object Simple extends Algebra[Simple] {
     override type GProto[T <: Domain] = LocalGraph[T]
   }
 
+  object SimpleDSL extends FlowDSL[SimpleImpl.type] {
+
+    override lazy val impl: LocalGraph.BuilderImpl[Simple] = LocalGraph.BuilderImpl()
+
+    override lazy val defaultFormat = Formats.ShowData
+
+  }
+
+  import SimpleDSL._
+
+  case class Face(
+      core: Core
+  ) extends Interface {
+
+    override type Self = Face
+
+    override def copyImplicitly(core: SimpleDSL.Core): Face = this.copy(core)
+  }
+
+  object Face extends Face(Core.empty)
+
 }

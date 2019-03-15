@@ -14,7 +14,7 @@ trait DSL[I <: Impl] extends Impl.Sugars[I] {
 
   def facets: List[Facet]
 
-  trait CoreLowLevelImplicits {
+  object Core {
 
     def fromElement(element: _Element): Core = {
       Core(
@@ -25,19 +25,17 @@ trait DSL[I <: Impl] extends Impl.Sugars[I] {
       )
     }
 
-    implicit def fromEdgeData(v: EdgeData): Core = {
+    def fromEdgeData(v: EdgeData): Core = {
       val node = algebra.createEdge(v)
       fromElement(node)
     }
-  }
 
-  object Core extends CoreLowLevelImplicits {
-
-    implicit def fromNodeData(v: NodeData): Core = {
+    def fromNodeData(v: NodeData): Core = {
       val node = algebra.createNode(v)
       fromElement(node)
     }
 
+    lazy val empty = Core(impl.fromSeq(Nil, Nil))
   }
 
   case class Core(
@@ -249,19 +247,28 @@ trait DSL[I <: Impl] extends Impl.Sugars[I] {
       override lazy val toString: String = prefixes.map("(" + _ + ")").mkString("") + " [ " +
         showEdge(edge) + " ]"
     }
-
-    def visualise(format: Visualisation.Format[DD] = defaultFormat): Visualisation[I] =
-      Visualisation[I](this, format)
   }
 
-  trait Interface[Self <: Interface[Self]] {
+  trait InterfaceImplicits_Level1 {
 
-    def core: Core
+    type Self <: Interface
+
     implicit def copyImplicitly(core: Core): Self
 
-    trait Show {}
+    implicit def fromEdgeData(v: EdgeData): Self = Core.fromEdgeData(v)
 
-    object Show extends Show
+  }
+
+  trait InterfaceImplicits extends InterfaceImplicits_Level1 {
+    implicit def fromNodeData(v: NodeData): Self = Core.fromNodeData(v)
+  }
+
+  trait Interface extends InterfaceImplicits {
+
+    def core: Core
+
+    def visualise(format: Visualisation.Format[DD] = defaultFormat): Visualisation[I] =
+      Visualisation[I](core, format)
   }
 
   object Formats {
