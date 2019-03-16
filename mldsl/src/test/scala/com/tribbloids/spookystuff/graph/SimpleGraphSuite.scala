@@ -3,7 +3,7 @@ package com.tribbloids.spookystuff.graph
 import com.tribbloids.spookystuff.graph.example.Simple
 import com.tribbloids.spookystuff.testutils.FunSpecx
 
-class SimpleAlgebraSuite extends FunSpecx {
+class SimpleGraphSuite extends FunSpecx {
 
   it("create DSL core from NodeData") {
 
