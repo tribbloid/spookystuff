@@ -61,7 +61,7 @@ class SimpleGraphSuite extends FunSpecx {
       |>>- -->
       |v (TAIL>>-) [ None ]
       |+- Some(ABC)
-      |   +- v  [ None ]
+      |   +- v (TAIL-<<) [ None ]
       |      +- Some(DEF)
       |         +- v (HEAD) [ None ]
       |<-- -<<
