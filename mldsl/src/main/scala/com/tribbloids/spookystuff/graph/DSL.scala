@@ -99,19 +99,19 @@ trait DSL[I <: Impl] extends Impl.Sugars[I] {
 
       def _mergeImpl(top: Core, topTails: _Tails): Core = {
 
-        val result = impl.merge(
+        val (newGraph, conversion) = impl.merge(
           base._graph -> base.from,
           top._graph -> topTails
         )
 
         val newTails = Map(
-          topFacet -> base.tails(topFacet),
-          baseFacet -> top.tails(baseFacet)
+          topFacet -> base.tails(topFacet).convert(conversion),
+          baseFacet -> top.tails(baseFacet).convert(conversion)
         )
-        val newHeads = top.heads
+        val newHeads = top.heads.convert(conversion)
 
         Core(
-          result: StaticGraph[I#DD],
+          newGraph: StaticGraph[I#DD],
           newTails,
           heads = newHeads
         )
@@ -180,18 +180,26 @@ trait DSL[I <: Impl] extends Impl.Sugars[I] {
 
       override def element: _LinkedNode = linkedNode
 
+      def getEdgeViews(idParis: Seq[(ID, ID)]): Seq[EdgeView] = {
+
+        _graph
+          .getEdges(idParis)
+          .values
+          .flatten
+          .toSeq
+          .map { v =>
+            EdgeView(v, format)
+          }
+      }
+
       override def inbound: Seq[EdgeView] = {
 
-        _graph.getEdges(linkedNode.inboundIDPairs).values.flatten.toSeq.map { v =>
-          EdgeView(v, format)
-        }
+        getEdgeViews(linkedNode.inboundIDPairs)
       }
 
       override def outbound: Seq[EdgeView] = {
 
-        _graph.getEdges(linkedNode.outboundIDPairs).values.flatten.toSeq.map { v =>
-          EdgeView(v, format)
-        }
+        getEdgeViews(linkedNode.outboundIDPairs)
       }
 
       override lazy val toString: String = showNode(linkedNode.node)
@@ -206,18 +214,25 @@ trait DSL[I <: Impl] extends Impl.Sugars[I] {
 
       override def element: _Edge = edge
 
+      def getNodeViews(ids: Seq[ID]) = {
+        _graph
+          .getLinkedNodes(ids)
+          .values
+          .filterNot(_.isDangling)
+          .toSeq
+          .map { v =>
+            NodeView(v, format)
+          }
+      }
+
       override def inbound: Seq[NodeView] = {
 
-        _graph.getLinkedNodes(Seq(edge.ids._1)).values.toSeq.map { v =>
-          NodeView(v, format)
-        }
+        getNodeViews(Seq(edge.from))
       }
 
       override def outbound: Seq[NodeView] = {
 
-        _graph.getLinkedNodes(Seq(edge.ids._2)).values.toSeq.map { v =>
-          NodeView(v, format)
-        }
+        getNodeViews(Seq(edge.to))
       }
 
       lazy val prefixes: Seq[String] =
@@ -230,22 +245,22 @@ trait DSL[I <: Impl] extends Impl.Sugars[I] {
           val tailSuffix = facets
             .flatMap { facet =>
               val ff = facet
-              if (core.tails(facet).seq contains edge) Some(facet.symbol)
+              if (core.tails(facet).seq contains edge) Some(facet.feather)
               else None
             }
             .mkString(" ")
 
-          val tailStr =
-            if (tailSuffix.isEmpty) ""
-            else "TAIL" + tailSuffix
+          val tailOpt =
+            if (tailSuffix.isEmpty) Nil
+            else Seq("TAIL" + tailSuffix)
 
-          buffer += tailStr
+          buffer ++= tailOpt
 
           buffer
         } else Nil
 
       override lazy val toString: String = prefixes.map("(" + _ + ")").mkString("") + " [ " +
-        showEdge(edge) + " ]"
+        _showEdge(edge) + " ]"
     }
   }
 
@@ -277,10 +292,10 @@ trait DSL[I <: Impl] extends Impl.Sugars[I] {
 
     object ShowData
         extends Visualisation.Format[DD](
-          showNode = { v =>
+          _showNode = { v =>
             "" + v.data
           },
-          showEdge = { v =>
+          _showEdge = { v =>
             "" + v.data
           }
         )
@@ -291,5 +306,8 @@ trait DSL[I <: Impl] extends Impl.Sugars[I] {
 
 object DSL {
 
-  abstract class Facet(val symbol: String)
+  abstract class Facet(
+      val feather: String,
+      val arrow: String
+  ) {}
 }

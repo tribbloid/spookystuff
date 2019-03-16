@@ -10,20 +10,38 @@ import scala.collection.mutable
 //
 //TODO: this may leverage an existing java/scala graph library
 //TODO: also need SparkGraphImpl, use GraphX or GraphFrame depending on their maturity
-case class LocalGraph[T <: Domain] private (
-    nodeMap: mutable.Map[T#ID, LinkedNode[T]],
-    edgeMap: MultiMapView.Mutable[(T#ID, T#ID), Edge[T]]
+case class LocalGraph[D <: Domain] private (
+    nodeMap: mutable.Map[D#ID, LinkedNode[D]],
+    edgeMap: MultiMapView.Mutable[(D#ID, D#ID), Edge[D]]
 )(
-    override implicit val algebra: Algebra[T]
-) extends StaticGraph[T] {
+    override implicit val algebra: Algebra[D]
+) extends StaticGraph[D] {
+
+//  {
+//    insertDangling()
+//  }
+//
+//  def insertDangling(): Unit = {
+//
+//    val id = algebra.DANGLING._id
+//    if (!nodeMap.contains(id))
+//      nodeMap.put(id, new _LinkedNode(algebra.DANGLING))
+//  }
 
   override def _replicate(m: _Mutator)(implicit idRotator: Rotator[ID]) = {
+
     LocalGraph
-      .BuilderImpl[T]()
+      .BuilderImpl[D]()
       .fromSeq(
         nodeMap.values.toSeq.map(_.replicate(m)),
         edgeMap.values.toSeq.flatMap(_.map(_.replicate(m)))
       )
+  }
+
+  def removeIfExists[T](set: mutable.Set[T], v: T): Unit = {
+
+    if (set.contains(v))
+      set.remove(v)
   }
 
   def evict_!(edge: _Edge): Unit = {
@@ -35,8 +53,13 @@ case class LocalGraph[T <: Domain] private (
       .getOrElse(Nil)
 
     if (filtered.isEmpty) {
-      nodeMap(edge.from).outbound.remove(edge.to)
-      nodeMap(edge.to).inbound.remove(edge.from)
+      nodeMap.get(edge.from).foreach { node =>
+        removeIfExists(node.outbound, edge.to)
+      }
+
+      nodeMap.get(edge.to).foreach { node =>
+        removeIfExists(node.inbound, edge.from)
+      }
     }
   }
 
@@ -81,7 +104,7 @@ object LocalGraph {
           Seq(v.ids._1, v.ids._2)
         }
         .distinct
-        .filter(v => existingIDs.contains(v))
+        .filterNot(v => existingIDs.contains(v))
 
       val _nodes = nodes ++ missingIDs.map { id =>
         algebra.createNode(id = Some(id))
@@ -92,7 +115,7 @@ object LocalGraph {
           nn
         case nn: _Node =>
           val inbound = mutable.LinkedHashSet(edges.filter(_.to == nn._id).map(_.from): _*)
-          val outbound = mutable.LinkedHashSet(edges.filter(_.from == nn._id).map(_.from): _*)
+          val outbound = mutable.LinkedHashSet(edges.filter(_.from == nn._id).map(_.to): _*)
           new _LinkedNode(nn, inbound, outbound): _LinkedNode
       }
 
@@ -108,7 +131,7 @@ object LocalGraph {
     }
 
     override def fromModule(graph: _Module): GG = graph match {
-      case v: _NodeLike => this.fromSeq(Seq(v), Nil)
+      case v: _NodeLike => this.fromSeq(Seq(v), v.asTails.seq ++ v.asHeads.seq)
       case v: _Edge     => this.fromSeq(Nil, Seq(v))
       case v: GG        => v
     }

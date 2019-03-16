@@ -25,18 +25,24 @@ object Module {
     }
 
     def ++(another: Self): Self = this.seq ++ another.seq
+
+    def convert(map: Map[_Edge, _Edge]): Self = {
+      seq.map { edge =>
+        map.getOrElse(edge, edge)
+      }
+    }
   }
 
   case class Heads[T <: Domain](seq: Seq[Edge[T]] = Nil) extends Edges[T, Heads[T]] {
 
-    seq.foreach(_.isHead)
+    seq.foreach(_.canBeHead)
 
     override implicit def copyImplicitly(v: Seq[Edge[T]]): Heads[T] = copy(v)
   }
 
   case class Tails[T <: Domain](seq: Seq[Edge[T]] = Nil) extends Edges[T, Tails[T]] {
 
-    seq.foreach(_.isTail)
+    seq.foreach(_.canBeTail)
 
     override implicit def copyImplicitly(v: Seq[Edge[T]]): Tails[T] = copy(v)
   }

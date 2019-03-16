@@ -33,7 +33,7 @@ object Element {
 
     override lazy val toString = s"${idAlgebra.ids2Str(ids)}: $data"
 
-    override protected def _replicate(m: _Mutator)(implicit idRotator: _Rotator) = {
+    override protected def _replicate(m: _Mutator)(implicit idRotator: _Rotator): Edge[T] = {
       val newIDs = idRotator(from) -> idRotator(to)
       if (newIDs == ids) this
       else
@@ -43,21 +43,25 @@ object Element {
         )
     }
 
-    lazy val isHead = to == algebra.DANGLING._id
-    lazy val isTail = from == algebra.DANGLING._id
-    lazy val isPassthrough = isHead && isTail
+    lazy val canBeHead = to == algebra.DANGLING._id
+    lazy val canBeTail = from == algebra.DANGLING._id
+    lazy val isDetached = canBeHead && canBeTail
 
     override def toHeads(info: EdgeData): Module.Heads[T] =
-      if (isHead) Heads[T](Seq(this))
+      if (canBeHead) Heads[T](Seq(this))
       else Heads[T](Nil)
     override def toTails(info: EdgeData): Module.Tails[T] =
-      if (isTail) Tails[T](Seq(this))
+      if (canBeTail) Tails[T](Seq(this))
       else Tails[T](Nil)
   }
 
   /////////////////////////////////////
 
   trait NodeLike[T <: Domain] extends Element[T] with IDMixin {
+
+    def isDangling: Boolean = {
+      _id == algebra.idAlgebra.DANGLING
+    }
 
     def data: NodeData
     def _id: ID

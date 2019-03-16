@@ -29,7 +29,8 @@ trait ElementView[I <: Impl] extends Impl.Sugars[I] with IDMixin {
 
     override val _children: Seq[ElementView[I]] = ElementView.this.outbound
 
-    override implicit def copyImplicitly(v: ElementView[I]): ElementTreeNode[I] = v.ForwardTreeNode(visited + element)
+    override implicit def copyImplicitly(v: ElementView[I]): ElementTreeNode[I] =
+      v.ForwardTreeNode(visited + element)
   }
 
   case class BackwardTreeNode(

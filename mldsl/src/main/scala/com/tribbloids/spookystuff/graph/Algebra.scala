@@ -14,7 +14,12 @@ trait Algebra[T <: Domain] extends Algebra.TypeSugars[T] {
   object _Sugars extends _Sugars
 
   //  case class Dangling(info: Option[NodeInfo] = None) extends NodeLike
-  object DANGLING extends Element.Node[T](nodeAlgebra.eye, idAlgebra.DANGLING) with _Sugars {}
+  object DANGLING extends Element.Node[T](nodeAlgebra.eye, idAlgebra.DANGLING) with _Sugars {
+
+    assert(isDangling)
+
+    override def toString = s"$idStr"
+  }
 
   def createNode(
       info: NodeData = nodeAlgebra.eye,
@@ -24,8 +29,10 @@ trait Algebra[T <: Domain] extends Algebra.TypeSugars[T] {
       Algebra.this.idAlgebra.init(info)
     }
 
-    assert(_id != idAlgebra.DANGLING)
-    Element.Node[T](info, _id)
+    if (_id != idAlgebra.DANGLING)
+      Element.Node[T](info, _id)
+    else
+      DANGLING
   }
 
   def createEdge(

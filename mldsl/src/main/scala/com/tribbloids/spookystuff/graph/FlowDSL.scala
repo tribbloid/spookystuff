@@ -5,8 +5,8 @@ import com.tribbloids.spookystuff.graph.Module.Heads
 
 trait FlowDSL[I <: Impl] extends DSL[I] {
 
-  object FromLeft extends Facet("->>")
-  object FromRight extends Facet("<<-")
+  object FromLeft extends Facet(">>-", ">>- -->")
+  object FromRight extends Facet("-<<", "<-- -<<")
 
   lazy val facets = List(FromLeft, FromRight)
 
@@ -46,19 +46,19 @@ trait FlowDSL[I <: Impl] extends DSL[I] {
     // left > right
 
     def merge_>(right: Interface): Self = `:>>`.merge(right.core)
-    def merge(right: Interface): Self = merge_>(right)
-    def >>>(right: Interface): Self = merge_>(right)
-    def >(right: Interface): Self = merge_>(right)
+//    def merge(right: Interface) = merge_>(right)
+    def >>>(right: Interface) = merge_>(right)
+    def >(right: Interface) = merge_>(right)
 
     //TODO: fast-forward handling: if right is reused for many times, ensure that only the part that doesn't overlap with this got duplicated (conditional duplicate)
     def rebase_>(right: Interface): Self = `:>>`.rebase(right.core)
-    def rebase(right: Interface): Self = rebase_>(right)
-    def >=>(right: Interface): Self = rebase_>(right)
+    def rebase(right: Interface) = rebase_>(right)
+    def >=>(right: Interface) = rebase_>(right)
 
     //this is really kind of ambiguous
     def commit_>(right: Interface): Self = `:>>`.commit(right.core)
-    def commit(right: Interface): Self = commit_>(right)
-    def >->(right: Interface): Self = commit_>(right)
+    def commit(right: Interface) = commit_>(right)
+    def >->(right: Interface) = commit_>(right)
 
     // left < right
     //TODO: follow :>> & <<: convention

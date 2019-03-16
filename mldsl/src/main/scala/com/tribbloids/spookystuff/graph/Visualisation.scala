@@ -96,7 +96,7 @@ case class Visualisation[I <: Impl](
 
         val facets = core.dsl.facets
         val strs = facets.map { facet =>
-          facet.symbol + "\n" + Tree.showForward(core.tails(facet).seq)
+          facet.arrow + "\n" + Tree.showForward(core.tails(facet).seq)
         }
 
         strs.mkString("")
@@ -131,8 +131,8 @@ object Visualisation {
   }
 
   case class Format[T <: Domain](
-      showNode: Element.NodeLike[T] => String = toStrFn,
-      showEdge: Element.Edge[T] => String = toStrFn,
+      _showNode: Element.NodeLike[T] => String = toStrFn,
+      _showEdge: Element.Edge[T] => String = toStrFn,
       nodeShortName: Element.NodeLike[T] => String = { v: Element.NodeLike[T] =>
         v.idStr
       },
@@ -142,6 +142,10 @@ object Visualisation {
       showPrefix: Boolean = true,
       verbose: Boolean = false
   ) {
+
+    def showNode(v: Element.NodeLike[T]) =
+      if (v.isDangling) "??"
+      else _showNode(v)
 
     def shortNameOf(v: Element[T]): String = v match {
       case nn: Element.NodeLike[T] => nodeShortName(nn)
