@@ -39,7 +39,7 @@ trait FlowDSL[I <: Impl] extends DSL[I] {
     // undirected
 
     def union(another: Interface): Self = {
-      core.union(another.core)
+      `:>>`.union(another.core)
     }
     def U(another: Interface) = union(another)
 
@@ -50,7 +50,8 @@ trait FlowDSL[I <: Impl] extends DSL[I] {
     def >>>(right: Interface) = merge_>(right)
     def >(right: Interface) = merge_>(right)
 
-    //TODO: fast-forward handling: if right is reused for many times, ensure that only the part that doesn't overlap with this got duplicated (conditional duplicate)
+    //TODO: fast-forward handling: if right is reused for many times,
+    // ensure that only the part that doesn't overlap with this got duplicated (conditional duplicate)
     def rebase_>(right: Interface): Self = `:>>`.rebase(right.core)
     def rebase(right: Interface) = rebase_>(right)
     def >=>(right: Interface) = rebase_>(right)

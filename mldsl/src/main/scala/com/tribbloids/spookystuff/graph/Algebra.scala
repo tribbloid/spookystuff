@@ -4,7 +4,7 @@ trait Algebra[T <: Domain] extends Algebra.TypeSugars[T] {
 
   implicit def algebra: Algebra[T] = this
 
-  def idAlgebra: IDAlgebra[ID, NodeData]
+  def idAlgebra: IDAlgebra[ID, NodeData, EdgeData]
   def nodeAlgebra: DataAlgebra[NodeData]
   def edgeAlgebra: DataAlgebra[EdgeData]
 
@@ -26,7 +26,7 @@ trait Algebra[T <: Domain] extends Algebra.TypeSugars[T] {
       id: Option[ID] = None
   ): _Node = {
     val _id = id.getOrElse {
-      Algebra.this.idAlgebra.init(info)
+      Algebra.this.idAlgebra.fromNodeData(info)
     }
 
     if (_id != idAlgebra.DANGLING)
@@ -37,21 +37,16 @@ trait Algebra[T <: Domain] extends Algebra.TypeSugars[T] {
 
   def createEdge(
       info: EdgeData = edgeAlgebra.eye,
-      ids: Option[(ID, ID)] = None
+      qualifier: Seq[Any] = Nil,
+      from_to: Option[(ID, ID)] = None
   ): _Edge = {
 
-    val _ids = ids.getOrElse {
+    val _from_to = from_to.getOrElse {
       idAlgebra.DANGLING -> idAlgebra.DANGLING
     }
 
-    Element.Edge[T](info, _ids)
+    Element.Edge[T](info, qualifier, _from_to)
   }
-
-  object PASSTHROUGH
-      extends Element.Edge[T](
-        edgeAlgebra.eye,
-        DANGLING._id -> DANGLING._id
-      )
 }
 
 object Algebra {
@@ -85,7 +80,7 @@ object Algebra {
 
     implicit def algebra: Algebra[T]
 
-    def idAlgebra: IDAlgebra[ID, NodeData] = algebra.idAlgebra
+    def idAlgebra: IDAlgebra[ID, NodeData, EdgeData] = algebra.idAlgebra
     def nodeAlgebra: DataAlgebra[NodeData] = algebra.nodeAlgebra
     def edgeAlgebra: DataAlgebra[EdgeData] = algebra.edgeAlgebra
   }

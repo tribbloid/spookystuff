@@ -10,15 +10,15 @@ class SimpleGraphSuite extends FunSpecx {
     val face = Face.fromNodeData(Some("ABC"))
     val str = face.visualise().show()
     str shouldBe """
-        |>>- -->
-        |v (TAIL>>- -<<) [ None ]
-        |+- Some(ABC)
-        |   +- v (HEAD) [ None ]
-        |<-- -<<
-        |v (TAIL>>- -<<) [ None ]
-        |+- Some(ABC)
-        |   +- v (HEAD) [ None ]
-      """.stripMargin
+                   |>>- -->
+                   |v (TAIL>>-) [ None ]
+                   |+- Some(ABC)
+                   |   +- v (HEAD) [ None ]
+                   |<-- -<<
+                   |v (TAIL-<<) [ None ]
+                   |+- Some(ABC)
+                   |   +- v (HEAD) [ None ]
+                 """.stripMargin
   }
 
   it("... implicitly") {
@@ -26,15 +26,15 @@ class SimpleGraphSuite extends FunSpecx {
     val face: Face = Some("ABC")
     val str = face.visualise().show()
     str shouldBe """
-        |>>- -->
-        |v (TAIL>>- -<<) [ None ]
-        |+- Some(ABC)
-        |   +- v (HEAD) [ None ]
-        |<-- -<<
-        |v (TAIL>>- -<<) [ None ]
-        |+- Some(ABC)
-        |   +- v (HEAD) [ None ]
-      """.stripMargin
+                   |>>- -->
+                   |v (TAIL>>-) [ None ]
+                   |+- Some(ABC)
+                   |   +- v (HEAD) [ None ]
+                   |<-- -<<
+                   |v (TAIL-<<) [ None ]
+                   |+- Some(ABC)
+                   |   +- v (HEAD) [ None ]
+                 """.stripMargin
 
   }
 
@@ -43,11 +43,11 @@ class SimpleGraphSuite extends FunSpecx {
     val face = Face.fromEdgeData(Some("ABC"))
     val str = face.visualise().show()
     str shouldBe """
-        |>>- -->
-        |v (HEAD)(TAIL>>- -<<) [ Some(ABC) ]
-        |<-- -<<
-        |v (HEAD)(TAIL>>- -<<) [ Some(ABC) ]
-      """.stripMargin
+                   |>>- -->
+                   |v (HEAD)(TAIL>>- -<<) [ Some(ABC) ]
+                   |<-- -<<
+                   |v (HEAD)(TAIL>>- -<<) [ Some(ABC) ]
+                 """.stripMargin
 
   }
 
@@ -57,18 +57,54 @@ class SimpleGraphSuite extends FunSpecx {
     val f2: Face = Some("DEF")
 
     val linked = f1 >>> f2
-    linked.visualise().show() shouldBe """
-      |>>- -->
-      |v (TAIL>>-) [ None ]
-      |+- Some(ABC)
-      |   +- v (TAIL-<<) [ None ]
-      |      +- Some(DEF)
-      |         +- v (HEAD) [ None ]
-      |<-- -<<
-      |v (TAIL-<<) [ None ]
-      |+- Some(DEF)
-      |   +- v (HEAD) [ None ]
-    """.stripMargin
+    linked.visualise().show() shouldBe
+      """
+        |>>- -->
+        |v (TAIL>>-) [ None ]
+        |+- Some(ABC)
+        |   +- v  [ None ]
+        |      +- Some(DEF)
+        |         +- v (HEAD) [ None ]
+        |<-- -<<
+        |v (TAIL-<<) [ None ]
+        |+- Some(DEF)
+        |   +- v (HEAD) [ None ]
+      """.stripMargin
+
+    linked
+      .visualise()
+      .show(asciiArt = true)
+      .shouldBe(
+        """
+        |      ┌──────────────────┐
+        |      │(TAIL>>-) [ None ]│
+        |      └─────────┬────────┘
+        |                │
+        |                v
+        |           ┌─────────┐
+        |           │Some(ABC)│
+        |           └────┬────┘
+        |                │
+        |      ┌─────────┘
+        |      │
+        |      v
+        | ┌─────────┐ ┌──────────────────┐
+        | │ [ None ]│ │(TAIL-<<) [ None ]│
+        | └────┬────┘ └────┬─────────────┘
+        |      │           │
+        |      └────────┐  │
+        |               │  │
+        |               v  v
+        |           ┌─────────┐
+        |           │Some(DEF)│
+        |           └────┬────┘
+        |                │
+        |                v
+        |        ┌───────────────┐
+        |        │(HEAD) [ None ]│
+        |        └───────────────┘
+      """.stripMargin
+      )
   }
 
   it("merge 2 detached edges") {
@@ -78,11 +114,30 @@ class SimpleGraphSuite extends FunSpecx {
 
     val linked = f1 >>> f2
     linked.visualise().show() shouldBe """
-      |>>- -->
-      |v (HEAD)(TAIL>>- -<<) [ Some(ABCDEF) ]
-      |<-- -<<
-      |v (HEAD)(TAIL>>- -<<) [ Some(ABCDEF) ]
-    """.stripMargin
+                                         |>>- -->
+                                         |v (HEAD)(TAIL>>- -<<) [ Some(ABCDEF) ]
+                                         |<-- -<<
+                                         |v (HEAD)(TAIL>>- -<<) [ Some(ABCDEF) ]
+                                       """.stripMargin
   }
 
+  it("1 node merge with itself, forming a loop") {
+
+    val node: Face = Some("ABC")
+    val edge: Face = Face.fromEdgeData(Some("loop"))
+
+    val n1 = node >>> edge
+    n1.visualise().show() shouldBe """
+                                     |>>- -->
+                                     |v (TAIL>>-) [ None ]
+                                     |+- Some(ABC)
+                                     |   +- v (HEAD) [ Some(loop) ]
+                                     |<-- -<<
+                                   """.stripMargin
+
+    val loop = node >>> edge >>> node
+    loop.visualise().show() shouldBe ()
+  }
+
+  //  it("1 node merge with itself")
 }

@@ -16,7 +16,13 @@ object Module {
 
   trait Edges[T <: Domain, Self <: Edges[T, Self]] extends Algebra.TypeSugars[T] {
 
+    {
+      sanityCheck()
+    }
+
     def seq: Seq[Edge[T]]
+
+    def sanityCheck(): Unit = {}
 
     implicit def copyImplicitly(v: Seq[Edge[T]]): Self
 
@@ -27,23 +33,33 @@ object Module {
     def ++(another: Self): Self = this.seq ++ another.seq
 
     def convert(map: Map[_Edge, _Edge]): Self = {
-      seq.map { edge =>
+      val result = seq.map { edge =>
         map.getOrElse(edge, edge)
       }
+      result
     }
   }
 
   case class Heads[T <: Domain](seq: Seq[Edge[T]] = Nil) extends Edges[T, Heads[T]] {
 
-    seq.foreach(_.canBeHead)
+    override def sanityCheck(): Unit = {
+      seq.foreach { v =>
+        require(v.canBeHead, s"$v cannot be a head")
+      }
+    }
 
-    override implicit def copyImplicitly(v: Seq[Edge[T]]): Heads[T] = copy(v)
+    override implicit def copyImplicitly(v: Seq[Edge[T]]): Heads[T] = copy(v.filter(_.canBeHead))
   }
 
   case class Tails[T <: Domain](seq: Seq[Edge[T]] = Nil) extends Edges[T, Tails[T]] {
 
-    seq.foreach(_.canBeTail)
+    override def sanityCheck(): Unit = {
 
-    override implicit def copyImplicitly(v: Seq[Edge[T]]): Tails[T] = copy(v)
+      seq.foreach { v =>
+        require(v.canBeTail, s"$v cannot be a tail")
+      }
+    }
+
+    override implicit def copyImplicitly(v: Seq[Edge[T]]): Tails[T] = copy(v.filter(_.canBeTail))
   }
 }

@@ -16,9 +16,9 @@ trait MultiMapView[K, +V] {
     val operands: Seq[collection.Map[K, Seq[V2]]] = Seq(this.self, other.self)
 
     for (map <- operands;
-         (k, v) <- map) {
+         (k, vs) <- map) {
 
-      buffer.putN(k, v)
+      buffer.putN(k, vs)
     }
 
     buffer
@@ -54,6 +54,20 @@ object MultiMapView {
 
       val existing = self.getOrElse(k, Nil)
       self += (k -> (existing ++ vs))
+    }
+
+    def distinctValues(k: K): Unit = {
+      val existingOpt = self.get(k)
+      existingOpt.foreach { existing =>
+        self += (k -> existing.distinct)
+      }
+    }
+
+    def distinctAllValues(): Unit = {
+
+      self.keys.foreach { k =>
+        distinctValues(k)
+      }
     }
 
     def filterValue(k: K)(condition: V => Boolean): Option[Seq[V]] = {

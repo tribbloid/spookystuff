@@ -47,7 +47,7 @@ case class LocalGraph[D <: Domain] private (
   def evict_!(edge: _Edge): Unit = {
 
     val filtered = edgeMap
-      .filterValue(edge.ids) { v =>
+      .filterValue(edge.from_to) { v =>
         v != edge
       }
       .getOrElse(Nil)
@@ -72,7 +72,7 @@ case class LocalGraph[D <: Domain] private (
     val toNode = nodeMap(edge.to)
     toNode.inbound += edge.from
 
-    edgeMap.put1(edge.ids, edge)
+    edgeMap.put1(edge.from_to, edge)
   }
 
   override def getLinkedNodes(ids: Seq[ID]): Map[ID, _LinkedNode] =
@@ -101,7 +101,7 @@ object LocalGraph {
 
       val missingIDs: Seq[T#ID] = edges
         .flatMap { v =>
-          Seq(v.ids._1, v.ids._2)
+          Seq(v.from_to._1, v.from_to._2)
         }
         .distinct
         .filterNot(v => existingIDs.contains(v))
@@ -121,7 +121,7 @@ object LocalGraph {
 
       val edgeMap = MultiMapView.Mutable.empty[(ID, ID), _Edge]
       for (ee <- edges) {
-        edgeMap.put1(ee.ids, ee)
+        edgeMap.put1(ee.from_to, ee)
       }
 
       new GG(
@@ -131,7 +131,7 @@ object LocalGraph {
     }
 
     override def fromModule(graph: _Module): GG = graph match {
-      case v: _NodeLike => this.fromSeq(Seq(v), v.asTails.seq ++ v.asHeads.seq)
+      case v: _NodeLike => this.fromSeq(Seq(v), Nil)
       case v: _Edge     => this.fromSeq(Nil, Seq(v))
       case v: GG        => v
     }
@@ -169,7 +169,11 @@ object LocalGraph {
       }
 
       val uNodeMap: mutable.Map[ID, _LinkedNode] = v1.nodeMap ++ v2Reduced
-      val uEdgeMap: MultiMapView.Mutable[(ID, ID), _Edge] = v1.edgeMap +:+ v2.edgeMap
+      val uEdgeMap: MultiMapView.Mutable[(ID, ID), _Edge] = {
+        val result = v1.edgeMap +:+ v2.edgeMap
+        result.distinctAllValues()
+        result
+      }
 
       new GG(
         uNodeMap,

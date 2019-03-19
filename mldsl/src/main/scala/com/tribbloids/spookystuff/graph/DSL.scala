@@ -17,12 +17,44 @@ trait DSL[I <: Impl] extends Impl.Sugars[I] {
   object Core {
 
     def fromElement(element: _Element): Core = {
-      Core(
-        element,
-        Map.empty,
-        element.asTails,
-        element.asHeads
-      )
+      element match {
+        case v: _NodeLike =>
+          val tails = v.asTails
+
+          val tailsMap = Map(
+            facets.map { facet =>
+              facet ->
+                tails.copy(
+                  tails.seq.map(_.copy(qualifier = Seq(facet))(algebra))
+                )
+            }: _*
+          )
+
+          val heads = v.asHeads
+
+          Core(
+            element,
+            tailsMap,
+            heads
+          )
+
+        case v: _Edge =>
+          val tails = v.asTails
+          val tailsMap = Map(
+            facets.map { facet =>
+              facet -> tails
+            }: _*
+          )
+
+          val heads = v.asHeads
+
+          Core(
+            element,
+            tailsMap,
+            heads
+          )
+      }
+
     }
 
     def fromEdgeData(v: EdgeData): Core = {
@@ -41,26 +73,47 @@ trait DSL[I <: Impl] extends Impl.Sugars[I] {
   case class Core(
       self: _Module,
       //tails or heads that doesn't belong to edges in self is tolerable
-      private val _tails: Map[Facet, _Tails] = Map.empty,
-      defaultTails: _Tails = Tails[DD](), // withDefaultValue is not type safe, thus extra wards
+      tails: Map[Facet, _Tails] = Map.empty,
       heads: _Heads = Heads[DD](),
       fromOverride: Option[_Heads] = None
   ) extends algebra._Sugars {
 
     val dsl: DSL.this.type = DSL.this
-    def facets = DSL.this.facets
+
+    /**
+      * kind of a sanity check
+      */
+    val _graph = impl.fromModule(self)
+
+    val _graph_WHeadsAndTails = {
+
+      val latentTails = tails.values.toList.flatMap(_.seq).distinct
+      val latentHeads = heads.seq
+
+      val latentIDs = (latentTails.map(_.to) ++ latentHeads.map(_.from)).distinct
+        .filterNot(_ == algebra.DANGLING._id)
+
+      val existingIDs = _graph.getLinkedNodes(latentIDs).keys.toList
+
+      require(
+        existingIDs.size == latentIDs.size,
+        s"some of the node ID(s) in heads or tails doesn't exist. " +
+          s"Required: ${latentIDs.mkString(", ")}, " +
+          s"Existing: ${existingIDs.mkString(", ")}"
+      )
+
+      val latentGraph: I#GProto[I#DD] = impl.fromSeq(Seq(algebra.DANGLING), (latentTails ++ latentHeads).distinct)
+
+      impl.union(_graph, latentGraph)
+    }
 
     lazy val from: _Heads = fromOverride.getOrElse(heads)
-
-    lazy val _graph = impl.fromModule(self)
-    lazy val tails: Map[Facet, _Tails] = _tails.withDefaultValue(defaultTails)
 
     def replicate(m: _Mutator)(implicit idRotator: Rotator[ID]): Core = {
 
       this.copy(
         self.replicate(m),
-        _tails.mapValues(_.replicate(m)),
-        defaultTails.replicate(m),
+        tails.mapValues(_.replicate(m)),
         heads.replicate(m)
       )
     }
@@ -71,29 +124,28 @@ trait DSL[I <: Impl] extends Impl.Sugars[I] {
 
     def base: Core = this
 
-    def union(peer: Core): Core = {
-      val result = impl.union(_graph: I#GProto[I#DD], peer._graph: I#GProto[I#DD])
-
-      val tails = {
-        val facets = (base.tails.keys.toSeq ++ peer.tails.keys.toSeq).distinct
-        Map(
-          facets.map { facet =>
-            val tails = base.tails(facet) ++ peer.tails(facet)
-            facet -> tails
-          }: _*
-        )
-      }
-
-      val defaultTails = base.defaultTails ++ peer.defaultTails
-      val heads = base.heads ++ peer.heads
-
-      Core(result, tails, defaultTails, heads)
-    }
-
     case class Ops(
         topFacet: Facet,
         baseFacet: Facet
     ) {
+
+      def union(peer: Core): Core = {
+        val result = impl.union(_graph: I#GProto[I#DD], peer._graph: I#GProto[I#DD])
+
+        val tails = {
+          val facets = (base.tails.keys.toSeq ++ peer.tails.keys.toSeq).distinct
+          Map(
+            facets.map { facet =>
+              val tails = base.tails(facet) ++ peer.tails(facet)
+              facet -> tails
+            }: _*
+          )
+        }
+
+        val heads = base.heads ++ peer.heads
+
+        Core(result, tails, heads)
+      }
 
       //      def checkConnectivity(top: DSLView, topTails: _Tails): DSLView = {}
 
@@ -144,7 +196,7 @@ trait DSL[I <: Impl] extends Impl.Sugars[I] {
           case Some(intake) =>
             this.rebase(top)
           case _ =>
-            Core.this.union(top)
+            this.union(top)
         }
       }
     }
@@ -160,7 +212,7 @@ trait DSL[I <: Impl] extends Impl.Sugars[I] {
       ): _ElementView = {
 
         element match {
-          case nn: _NodeLike => NodeView(nn.toLinked(Some(Core.this._graph)), format)
+          case nn: _NodeLike => NodeView(nn.toLinked(Some(Core.this._graph_WHeadsAndTails)), format)
           case ee: _Edge     => EdgeView(ee, format)
         }
       }
@@ -182,7 +234,7 @@ trait DSL[I <: Impl] extends Impl.Sugars[I] {
 
       def getEdgeViews(idParis: Seq[(ID, ID)]): Seq[EdgeView] = {
 
-        _graph
+        _graph_WHeadsAndTails
           .getEdges(idParis)
           .values
           .flatten
@@ -215,7 +267,7 @@ trait DSL[I <: Impl] extends Impl.Sugars[I] {
       override def element: _Edge = edge
 
       def getNodeViews(ids: Seq[ID]) = {
-        _graph
+        _graph_WHeadsAndTails
           .getLinkedNodes(ids)
           .values
           .filterNot(_.isDangling)

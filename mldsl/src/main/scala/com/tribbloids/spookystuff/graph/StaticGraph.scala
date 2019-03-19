@@ -34,6 +34,7 @@ object StaticGraph {
 
     //TODO: this API need to change to facilitate big Heads and Tails in the format of RDD
     /**
+      * should only remove head of base! tails are retained because GG usually have >=2 tails
       * @param node_+ binary operation to combine data from 2 nodes
       * @param edge_+ binary operation to combine data from 2 edges
       * @return merged graph -> mappings that converts evicted edges to created edges
@@ -58,6 +59,7 @@ object StaticGraph {
 
         val reduced = Edge[D](
           edge_+(src.data, tgt.data),
+          (src.qualifier ++ tgt.qualifier).distinct,
           src.from -> tgt.to
         )
 

@@ -4,7 +4,7 @@ import java.util.UUID
 
 import com.tribbloids.spookystuff.graph.IDAlgebra.Rotator
 
-trait IDAlgebra[ID, -NodeData] {
+trait IDAlgebra[ID, -NodeData, -EdgeData] {
 
   def DANGLING: ID
 
@@ -20,7 +20,10 @@ trait IDAlgebra[ID, -NodeData] {
   }
 
   protected def _random(): ID
-  def init(v: NodeData): ID = retryUntilNotReserved {
+  def fromNodeData(v: NodeData): ID = retryUntilNotReserved {
+    _random()
+  }
+  def fromEdgeData(v: EdgeData): ID = retryUntilNotReserved {
     _random()
   }
 
@@ -53,7 +56,7 @@ object IDAlgebra {
     protected def _doApply(v: ID): ID
   }
 
-  case object UUIDAlgebra extends IDAlgebra[UUID, Any] {
+  case object UUIDAlgebra extends IDAlgebra[UUID, Any, Any] {
 
     override lazy val DANGLING: UUID = UUID.nameUUIDFromBytes(Array.empty)
 

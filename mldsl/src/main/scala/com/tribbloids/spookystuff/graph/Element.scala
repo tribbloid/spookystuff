@@ -20,25 +20,29 @@ object Element {
 
   case class Edge[T <: Domain](
       data: T#EdgeData,
-      ids: (T#ID, T#ID)
+      // required or there is no way to delete
+      // 1 of many edges that has identical data & from_to in a multigraph
+      qualifier: Seq[Any],
+      from_to: (T#ID, T#ID)
       //      tt: EdgeType = EdgeType.`->`,
   )(
       implicit val algebra: Algebra[T]
   ) extends Element[T] {
 
-    def from: ID = ids._1
-    def to: ID = ids._2
+    def from: ID = from_to._1
+    def to: ID = from_to._2
 
-    def idStr: String = idAlgebra.ids2Str(ids)
+    def idStr: String = idAlgebra.ids2Str(from_to)
 
-    override lazy val toString = s"${idAlgebra.ids2Str(ids)}: $data"
+    override lazy val toString = s"${idAlgebra.ids2Str(from_to)}: $data"
 
     override protected def _replicate(m: _Mutator)(implicit idRotator: _Rotator): Edge[T] = {
       val newIDs = idRotator(from) -> idRotator(to)
-      if (newIDs == ids) this
+      if (newIDs == from_to) this
       else
         Edge[T](
           m.edgeFn(data),
+          qualifier,
           idRotator(from) -> idRotator(to)
         )
     }
@@ -87,10 +91,10 @@ object Element {
     lazy val asLinked = toLinked(None)
 
     def toHeads(info: EdgeData): Module.Heads[T] =
-      Module.Heads(Seq(Edge[T](info, this._id -> algebra.DANGLING._id)))
+      Module.Heads(Seq(Edge[T](info, Nil, this._id -> algebra.DANGLING._id)))
 
     def toTails(info: EdgeData): Module.Tails[T] =
-      Module.Tails(Seq(Edge[T](info, algebra.DANGLING._id -> this._id)))
+      Module.Tails(Seq(Edge[T](info, Nil, algebra.DANGLING._id -> this._id)))
   }
 
   case class Node[T <: Domain](
