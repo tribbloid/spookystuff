@@ -143,7 +143,7 @@ object Visualisation {
       verbose: Boolean = false
   ) {
 
-    def showNode(v: Element.NodeLike[T]) =
+    def showNode(v: Element.NodeLike[T]): String =
       if (v.isDangling) "??"
       else _showNode(v)
 

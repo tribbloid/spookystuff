@@ -20,7 +20,7 @@ object SimpleGraph extends Algebra[SimpleGraph] {
     override def plus(v1: String, v2: String): String = v1 + v2
   }
 
-  override def nodeAlgebra = DataAlgebraProto.Monadic
+  override def nodeAlgebra = DataAlgebra.ErrorOnConflict().Monadic
   override def edgeAlgebra = DataAlgebraProto.Monadic
 
   object SimpleImpl extends Impl {

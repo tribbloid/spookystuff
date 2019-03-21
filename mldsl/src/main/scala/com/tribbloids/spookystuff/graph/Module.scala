@@ -33,10 +33,12 @@ object Module {
     def ++(another: Self): Self = this.seq ++ another.seq
 
     def convert(map: Map[_Edge, _Edge]): Self = {
-      val result = seq.map { edge =>
+      val result: Self = seq.map { edge =>
         map.getOrElse(edge, edge)
       }
-      result
+
+      if (result.seq.isEmpty) this.asInstanceOf[Self]
+      else result
     }
   }
 

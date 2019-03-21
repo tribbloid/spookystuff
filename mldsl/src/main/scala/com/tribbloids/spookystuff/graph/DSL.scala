@@ -78,14 +78,14 @@ trait DSL[I <: Impl] extends Impl.Sugars[I] {
       fromOverride: Option[_Heads] = None
   ) extends algebra._Sugars {
 
-    val dsl: DSL.this.type = DSL.this
+    def dsl: DSL.this.type = DSL.this
+
+    lazy val _graph = impl.fromModule(self)
 
     /**
       * kind of a sanity check
       */
-    val _graph = impl.fromModule(self)
-
-    val _graph_WHeadsAndTails = {
+    lazy val _graph_WHeadsAndTails = {
 
       val latentTails = tails.values.toList.flatMap(_.seq).distinct
       val latentHeads = heads.seq
@@ -361,5 +361,8 @@ object DSL {
   abstract class Facet(
       val feather: String,
       val arrow: String
-  ) {}
+  ) {
+
+    override def toString: String = arrow
+  }
 }

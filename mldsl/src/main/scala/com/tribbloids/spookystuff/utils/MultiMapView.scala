@@ -74,6 +74,9 @@ object MultiMapView {
       self.get(k).map { seq =>
         val filtered = seq.filter(condition)
         self += k -> filtered
+        if (filtered.isEmpty)
+          self -= k
+
         filtered
       }
     }

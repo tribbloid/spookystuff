@@ -6,7 +6,7 @@ trait DataAlgebra[T] {
 
   def plus(v1: T, v2: T): T
 
-  object Monadic extends MonadicAlgebra[T] {
+  object Monadic extends DataAlgebra.MonadicAlgebra[T] {
 
     override def plus(v1: Option[T], v2: Option[T]): Option[T] = {
       (v1, v2) match {
@@ -19,7 +19,17 @@ trait DataAlgebra[T] {
   }
 }
 
-trait MonadicAlgebra[T] extends DataAlgebra[Option[T]] {
+object DataAlgebra {
 
-  override val eye = None
+  trait MonadicAlgebra[T] extends DataAlgebra[Option[T]] {
+
+    override val eye = None
+  }
+
+  case class ErrorOnConflict[T]() extends DataAlgebra[T] {
+    override def plus(v1: T, v2: T): T = {
+      if (v1 == v2) v1
+      else throw new UnsupportedOperationException(s"conflict between data '$v1' and '$v2' which has identical IDs")
+    }
+  }
 }

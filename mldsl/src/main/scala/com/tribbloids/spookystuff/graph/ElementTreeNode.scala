@@ -77,11 +77,13 @@ trait ElementTreeNode[I <: Impl] extends TreeNode[ElementTreeNode[I]] with Impl.
 
   override lazy val children: Seq[ElementTreeNode[I]] = {
 
-    _children.toList
-      .sortBy(v => v.format.shortNameOf(v.element))
+    val result = _children.toList
+      .sortBy(v => v.toString)
       .map {
         copyCutOffCyclic
       }
+
+    result
   }
 }
 
