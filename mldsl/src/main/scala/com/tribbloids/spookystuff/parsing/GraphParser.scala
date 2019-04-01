@@ -1,18 +1,18 @@
-package com.tribbloids.spookystuff.graph.example
+package com.tribbloids.spookystuff.parsing
 
 import java.util.UUID
 
 import com.tribbloids.spookystuff.graph._
 
 // decoupling, decoupling ...
-trait SimpleGraph extends Domain {
+trait GraphParser extends Domain {
 
   override type ID = UUID
   override type NodeData = Option[String]
   override type EdgeData = Option[String]
 }
 
-object SimpleGraph extends Algebra[GraphParser] {
+object GraphParser extends Algebra[GraphParser] {
 
   override def idAlgebra = IDAlgebra.UUIDAlgebra
 

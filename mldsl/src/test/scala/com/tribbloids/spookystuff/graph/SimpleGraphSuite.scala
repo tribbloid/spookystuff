@@ -1,6 +1,6 @@
 package com.tribbloids.spookystuff.graph
 
-import com.tribbloids.spookystuff.graph.example.SimpleGraph.Face
+import com.tribbloids.spookystuff.graph.example.GraphParser.Face
 import com.tribbloids.spookystuff.testutils.FunSpecx
 
 class SimpleGraphSuite extends FunSpecx {
@@ -108,6 +108,28 @@ class SimpleGraphSuite extends FunSpecx {
       """.stripMargin
   }
 
+  it("node >>> edge >>> node") {
+
+    val f1: Face = Some("ABC")
+    val e1: Face = Face.fromEdgeData(Some("edge"))
+    val f2: Face = Some("DEF")
+
+    val linked = f1 >>> e1 >>> f2
+    linked.visualise().show() shouldBe
+      """
+        |>>- -->
+        |v (TAIL>>-) [ None ]
+        |+- Some(ABC)
+        |   +- v  [ Some(edge) ]
+        |      +- Some(DEF)
+        |         +- v (HEAD) [ None ]
+        |<-- -<<
+        |v (TAIL-<<) [ None ]
+        |+- Some(DEF)
+        |   +- v (HEAD) [ None ]
+      """.stripMargin
+  }
+
   it("detached edge >>> detached edge") {
 
     val f1: Face = Face.fromEdgeData(Some("ABC"))
@@ -202,4 +224,5 @@ class SimpleGraphSuite extends FunSpecx {
         |         +- v (HEAD) [ None ]
       """.stripMargin
   }
+
 }
