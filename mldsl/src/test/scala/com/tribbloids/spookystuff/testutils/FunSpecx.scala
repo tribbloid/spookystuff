@@ -9,8 +9,10 @@ import org.scalatest.{FunSpec, Suite}
 trait Suitex extends OptionConversion {
   self: Suite =>
 
-  final val ACTUAL = "[ACTUAL  /  LEFT]"
-  final val EXPECTED = "[EXPECTED / RIGHT]"
+  final val ACTUAL =
+    "[ACTUAL   /  LEFT]"
+  final val EXPECTED =
+    "[EXPECTED / RIGHT]"
 
 //  CommonUtils.debugCPResource()
 
@@ -133,7 +135,7 @@ trait Suitex extends OptionConversion {
   //TODO: update to be on par with scalatest supported by IDE
   case class AssertionErrorObject(actual: List[String], expected: List[String]) {
 
-    lazy val actualInfo = s"================================ $ACTUAL =================================\n" +
+    lazy val actualInfo = s"=============================== $ACTUAL ================================\n" +
       actual.mkString("\n") + "\n"
 
     override def toString = {
