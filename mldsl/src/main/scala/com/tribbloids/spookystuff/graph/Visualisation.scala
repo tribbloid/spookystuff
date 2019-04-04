@@ -7,18 +7,18 @@ import com.tribbloids.spookystuff.graph.Visualisation.Format
 
 import scala.collection.mutable
 
-case class Visualisation[I <: Impl](
-    core: DSL[I]#Core,
-    format: Format[I#DD] = Format[I#DD]()
-) extends Impl.Sugars[I] {
+case class Visualisation[D <: Domain](
+    core: DSL[D]#Core,
+    format: Format[D] = Format[D]()
+) extends Algebra.Sugars[D] {
 
-  final override def algebra: Algebra[DD] = core.algebra
+  final override def algebra: Algebra[D] = core.algebra
 
   object Tree {
 
     //todo: merge following 2
     def showForward(
-        startingFrom: Seq[Element[DD]]
+        startingFrom: Seq[Element[D]]
     ): String = {
       startingFrom
         .map { ee =>
@@ -30,7 +30,7 @@ case class Visualisation[I <: Impl](
     }
 
     def showBackward(
-        endWith: Seq[Element[DD]]
+        endWith: Seq[Element[D]]
     ): String = {
       endWith
         .map { ee =>
@@ -47,11 +47,11 @@ case class Visualisation[I <: Impl](
     protected final val layoutPrefs = LayoutPrefsImpl(unicode = true, explicitAsciiBends = false)
 
     def compile(
-        endWith: Seq[Element[DD]]
-    ): Graph[_ElementView] = {
+        endWith: Seq[Element[D]]
+    ): Graph[ElementView[D]] = {
 
-      val buffer = mutable.HashSet.empty[_ElementView]
-      val relationBuffer = mutable.HashSet.empty[(_ElementView, _ElementView)]
+      val buffer = mutable.HashSet.empty[ElementView[D]]
+      val relationBuffer = mutable.HashSet.empty[(ElementView[D], ElementView[D])]
 
       for (ee <- endWith) {
         val stepView = core._ElementView.fromElement(ee, format)
@@ -64,7 +64,7 @@ case class Visualisation[I <: Impl](
         }
       }
 
-      val graph = Graph[_ElementView](buffer.toSet, relationBuffer.toList)
+      val graph = Graph[ElementView[D]](buffer.toSet, relationBuffer.toList)
       graph
     }
 

@@ -88,9 +88,11 @@ case class LocalGraph[D <: Domain] private (
 
 object LocalGraph {
 
-  case class BuilderImpl[T <: Domain](
-      implicit override val algebra: Algebra[T]
-  ) extends StaticGraph.Builder[T, LocalGraph] {
+  case class BuilderImpl[D <: Domain](
+      implicit override val algebra: Algebra[D]
+  ) extends StaticGraph.Builder[D] {
+
+    type GG = LocalGraph[D]
 
     override def fromSeq(
         nodes: Seq[_NodeLike],
@@ -99,7 +101,7 @@ object LocalGraph {
 
       val existingIDs = nodes.map(_._id).toSet
 
-      val missingIDs: Seq[T#ID] = edges
+      val missingIDs: Seq[D#ID] = edges
         .flatMap { v =>
           Seq(v.from_to._1, v.from_to._2)
         }
@@ -116,7 +118,8 @@ object LocalGraph {
         case nn: _Node =>
           val inbound = mutable.LinkedHashSet(edges.filter(_.to == nn._id).map(_.from): _*)
           val outbound = mutable.LinkedHashSet(edges.filter(_.from == nn._id).map(_.to): _*)
-          new _LinkedNode(nn, inbound, outbound): _LinkedNode
+          val result = new _LinkedNode(nn, inbound, outbound)(algebra)
+          result
       }
 
       val edgeMap = MultiMapView.Mutable.empty[(ID, ID), _Edge]
@@ -127,7 +130,7 @@ object LocalGraph {
       new GG(
         mutable.Map(linkedNodes.map(v => v._id -> v): _*),
         edgeMap
-      )
+      )(algebra)
     }
 
     override def fromModule(graph: _Module): GG = graph match {
@@ -148,7 +151,7 @@ object LocalGraph {
 
       val inbound = v1.inbound ++ v2.inbound
       val outbound = v1.outbound ++ v2.outbound
-      new _LinkedNode(node, inbound, outbound)
+      new _LinkedNode(node, inbound, outbound)(algebra)
     }
 
     def union(
@@ -157,7 +160,7 @@ object LocalGraph {
         nodeReducer: CommonTypes.Binary[NodeData]
     ): GG = {
 
-      val v2Reduced: mutable.Map[T#ID, _LinkedNode] = v2.nodeMap.map {
+      val v2Reduced: mutable.Map[D#ID, _LinkedNode] = v2.nodeMap.map {
         case (k, vv2) =>
           val reducedV = v1.nodeMap
             .get(k)
@@ -178,7 +181,7 @@ object LocalGraph {
       new GG(
         uNodeMap,
         uEdgeMap
-      )
+      )(algebra)
     }
   }
 }

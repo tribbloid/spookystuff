@@ -51,34 +51,36 @@ trait Algebra[T <: Domain] extends Algebra.TypeSugars[T] {
 
 object Algebra {
 
-  trait TypeSugars[T <: Domain] {
+  trait TypeSugars[D <: Domain] {
 
-    final type ID = T#ID
-    final type NodeData = T#NodeData
-    final type EdgeData = T#EdgeData
+    final type ID = D#ID
+    final type NodeData = D#NodeData
+    final type EdgeData = D#EdgeData
 
-    final type _Mutator = Mutator[T]
+    final type _Mutator = Mutator[D]
     final type _Rotator = IDAlgebra.Rotator[ID]
 
-    final type _Module = Module[T]
-    final type _Heads = Module.Heads[T]
-    final type _Tails = Module.Tails[T]
+    final type _Module = Module[D]
+    final type _Heads = Module.Heads[D]
+    final type _Tails = Module.Tails[D]
 
-    final type _Element = Element[T]
+    final type _Element = Element[D]
 
-    final type _NodeLike = Element.NodeLike[T]
-    final type _Node = Element.Node[T]
-    final type _LinkedNode = Element.LinkedNode[T]
+    final type _NodeLike = Element.NodeLike[D]
+    final type _Node = Element.Node[D]
+    final type _LinkedNode = Element.LinkedNode[D]
 
-    final type _Edge = Element.Edge[T]
+    final type _Edge = Element.Edge[D]
 
-    final type _ShowFormat = Visualisation.Format[T]
+    final type _ShowFormat = Visualisation.Format[D]
     final def _ShowFormat = Visualisation.Format
+
+//    final type _ElementView = ElementView[D]
   }
 
-  trait Sugars[T <: Domain] extends TypeSugars[T] {
+  trait Sugars[D <: Domain] extends TypeSugars[D] {
 
-    implicit def algebra: Algebra[T]
+    implicit def algebra: Algebra[D]
 
     def idAlgebra: IDAlgebra[ID, NodeData, EdgeData] = algebra.idAlgebra
     def nodeAlgebra: DataAlgebra[NodeData] = algebra.nodeAlgebra

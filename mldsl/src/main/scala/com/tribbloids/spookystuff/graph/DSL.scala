@@ -7,10 +7,12 @@ import com.tribbloids.spookystuff.graph.Module.{Heads, Tails}
 import scala.collection.mutable.ArrayBuffer
 import scala.language.implicitConversions
 
-trait DSL[I <: Impl] extends Impl.Sugars[I] {
+trait DSL[D <: Domain] extends Algebra.Sugars[D] {
 
-  def impl: StaticGraph.Builder[I#DD, I#GProto]
-  final override val algebra: Algebra[I#DD] = impl.algebra
+  val defaultGraphBuilder: StaticGraph.Builder[D]
+  final override val algebra: Algebra[D] = defaultGraphBuilder.algebra
+
+  type GG = defaultGraphBuilder.GG
 
   def facets: List[Facet]
 
@@ -67,20 +69,20 @@ trait DSL[I <: Impl] extends Impl.Sugars[I] {
       fromElement(node)
     }
 
-    lazy val empty = Core(impl.fromSeq(Nil, Nil))
+    lazy val empty = Core(defaultGraphBuilder.fromSeq(Nil, Nil))
   }
 
   case class Core(
       self: _Module,
       //tails or heads that doesn't belong to edges in self is tolerable
       tails: Map[Facet, _Tails] = Map.empty,
-      heads: _Heads = Heads[DD](),
+      heads: _Heads = Heads[D](),
       fromOverride: Option[_Heads] = None
   ) extends algebra._Sugars {
 
     def dsl: DSL.this.type = DSL.this
 
-    lazy val _graph = impl.fromModule(self)
+    lazy val _graph: GG = defaultGraphBuilder.fromModule(self)
 
     /**
       * kind of a sanity check
@@ -102,9 +104,10 @@ trait DSL[I <: Impl] extends Impl.Sugars[I] {
           s"Existing: ${existingIDs.mkString(", ")}"
       )
 
-      val latentGraph: I#GProto[I#DD] = impl.fromSeq(Seq(algebra.DANGLING), (latentTails ++ latentHeads).distinct)
+      val latentGraph =
+        defaultGraphBuilder.fromSeq(Seq(algebra.DANGLING), (latentTails ++ latentHeads).distinct)
 
-      impl.union(_graph, latentGraph)
+      defaultGraphBuilder.union(_graph, latentGraph)
     }
 
     lazy val from: _Heads = fromOverride.getOrElse(heads)
@@ -130,7 +133,7 @@ trait DSL[I <: Impl] extends Impl.Sugars[I] {
     ) {
 
       def union(peer: Core): Core = {
-        val result = impl.union(_graph: I#GProto[I#DD], peer._graph: I#GProto[I#DD])
+        val result = defaultGraphBuilder.union(_graph: GG, peer._graph: GG)
 
         val tails = {
           val facets = (base.tails.keys.toSeq ++ peer.tails.keys.toSeq).distinct
@@ -151,7 +154,7 @@ trait DSL[I <: Impl] extends Impl.Sugars[I] {
 
       def _mergeImpl(top: Core, topTails: _Tails): Core = {
 
-        val (newGraph, conversion) = impl.merge(
+        val (newGraph, conversion) = defaultGraphBuilder.merge(
           base._graph -> base.from,
           top._graph -> topTails
         )
@@ -163,7 +166,7 @@ trait DSL[I <: Impl] extends Impl.Sugars[I] {
         val newHeads = top.heads.convert(conversion)
 
         Core(
-          newGraph: StaticGraph[I#DD],
+          newGraph: StaticGraph[D],
           newTails,
           heads = newHeads
         )
@@ -183,7 +186,7 @@ trait DSL[I <: Impl] extends Impl.Sugars[I] {
         topTails.foldLeft(Core.this) { (self, edge) =>
           val tail = Tails(Seq(edge))
           val rotator = rotatorFactory()
-          self.Ops(topFacet, baseFacet)._mergeImpl(top.replicate(Mutator.replicate[DD])(rotator), tail)
+          self.Ops(topFacet, baseFacet)._mergeImpl(top.replicate(Mutator.replicate[D])(rotator), tail)
         }
       }
 
@@ -208,7 +211,7 @@ trait DSL[I <: Impl] extends Impl.Sugars[I] {
       def fromElement(
           element: _Element,
 //          neighbourID: Option[ID] = None,
-          format: _ShowFormat = _ShowFormat[DD]()
+          format: _ShowFormat = _ShowFormat[D]()
       ): _ElementView = {
 
         element match {
@@ -218,14 +221,14 @@ trait DSL[I <: Impl] extends Impl.Sugars[I] {
       }
     }
 
-    trait _ElementView extends ElementView[I] {
+    trait _ElementView extends ElementView[D] {
 
       override val core: Core = Core.this
     }
 
     case class NodeView(
         linkedNode: _LinkedNode,
-        override val format: _ShowFormat = _ShowFormat[DD]()
+        override val format: _ShowFormat = _ShowFormat[D]()
     ) extends _ElementView {
 
       import format._
@@ -259,7 +262,7 @@ trait DSL[I <: Impl] extends Impl.Sugars[I] {
 
     case class EdgeView(
         edge: _Edge,
-        override val format: _ShowFormat = _ShowFormat[DD]()
+        override val format: _ShowFormat = _ShowFormat[D]()
     ) extends _ElementView {
 
       import format._
@@ -334,16 +337,16 @@ trait DSL[I <: Impl] extends Impl.Sugars[I] {
 
     def core: Core
 
-    def visualise(format: Visualisation.Format[DD] = defaultFormat): Visualisation[I] =
-      Visualisation[I](core, format)
+    def visualise(format: Visualisation.Format[D] = defaultFormat): Visualisation[D] =
+      Visualisation[D](core, format)
   }
 
   object Formats {
 
-    object Default extends Visualisation.Format[DD]()
+    object Default extends Visualisation.Format[D]()
 
     object ShowData
-        extends Visualisation.Format[DD](
+        extends Visualisation.Format[D](
           _showNode = { v =>
             "" + v.data
           },
@@ -353,7 +356,7 @@ trait DSL[I <: Impl] extends Impl.Sugars[I] {
         )
   }
 
-  lazy val defaultFormat: Visualisation.Format[DD] = Formats.Default
+  lazy val defaultFormat: Visualisation.Format[D] = Formats.Default
 }
 
 object DSL {

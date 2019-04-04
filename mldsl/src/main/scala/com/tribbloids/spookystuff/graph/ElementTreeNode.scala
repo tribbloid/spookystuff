@@ -7,10 +7,10 @@ import scala.language.implicitConversions
 // technically only StaticGraph is required, DSL is optional, but whatever
 //TODO: not optimized, children are repeatedly created when calling .path
 //TODO: use mapChildren to recursively get TreeNode[(Seq[String] -> Tree)] efficiently
-trait ElementTreeNode[I <: Impl] extends TreeNode[ElementTreeNode[I]] with Impl.Sugars[I] {
+trait ElementTreeNode[D <: Domain] extends TreeNode[ElementTreeNode[D]] with Algebra.Sugars[D] {
 
-  def view: ElementView[I]
-  final override def algebra: Algebra[I#DD] = view.core.algebra
+  def view: ElementView[D]
+  final override def algebra: Algebra[D] = view.core.algebra
 
   def visited: Set[_Element]
 
@@ -20,11 +20,11 @@ trait ElementTreeNode[I <: Impl] extends TreeNode[ElementTreeNode[I]] with Impl.
     case _: _Edge     => dirSymbol
   }
 
-  val _children: Seq[ElementView[I]]
+  val _children: Seq[ElementView[D]]
 
-  implicit def copyImplicitly(v: ElementView[I]): ElementTreeNode[I]
+  implicit def copyImplicitly(v: ElementView[D]): ElementTreeNode[D]
 
-  def copyCutOffCyclic(v: ElementView[I]): ElementTreeNode[I] = {
+  def copyCutOffCyclic(v: ElementView[D]): ElementTreeNode[D] = {
 
     val result = copyImplicitly(v)
     val resultElement = result.view.element
@@ -75,7 +75,7 @@ trait ElementTreeNode[I <: Impl] extends TreeNode[ElementTreeNode[I]] with Impl.
     result
   }
 
-  override lazy val children: Seq[ElementTreeNode[I]] = {
+  override lazy val children: Seq[ElementTreeNode[D]] = {
 
     val result = _children.toList
       .sortBy(v => v.toString)
@@ -89,14 +89,14 @@ trait ElementTreeNode[I <: Impl] extends TreeNode[ElementTreeNode[I]] with Impl.
 
 object ElementTreeNode {
 
-  case class Cyclic[I <: Impl](delegate: ElementTreeNode[I]) extends ElementTreeNode[I] {
+  case class Cyclic[D <: Domain](delegate: ElementTreeNode[D]) extends ElementTreeNode[D] {
 
-    override def view: ElementView[I] = delegate.view
+    override def view: ElementView[D] = delegate.view
 
     override def visited = delegate.visited
     override lazy val prefix: String = delegate.prefix + "(cyclic)"
-    override val _children: Seq[ElementView[I]] = Nil
+    override val _children: Seq[ElementView[D]] = Nil
 
-    override implicit def copyImplicitly(v: ElementView[I]): ElementTreeNode[I] = delegate.copyImplicitly(v)
+    override implicit def copyImplicitly(v: ElementView[D]): ElementTreeNode[D] = delegate.copyImplicitly(v)
   }
 }

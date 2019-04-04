@@ -3,7 +3,7 @@ package com.tribbloids.spookystuff.graph
 import com.tribbloids.spookystuff.graph.DSL.Facet
 import com.tribbloids.spookystuff.graph.Module.Heads
 
-trait FlowDSL[I <: Impl] extends DSL[I] {
+trait FlowDSL[D <: Domain] extends DSL[D] {
 
   object FromLeft extends Facet(">>-", ">>- -->")
   object FromRight extends Facet("-<<", "<-- -<<")
@@ -17,24 +17,24 @@ trait FlowDSL[I <: Impl] extends DSL[I] {
 
     // select from
 
-    def from(filter: EdgeFilter[DD]): Self = {
-      val newFrom = Heads[DD](filter(core._graph))
+    def from(filter: EdgeFilter[D]): Self = {
+      val newFrom = Heads[D](filter(core._graph))
       core.copy(
         fromOverride = Some(newFrom)
       )
     }
 
     //TODO: these symbols are lame
-    def >-(filter: EdgeFilter[DD]): Self = from(filter)
+    def >-(filter: EdgeFilter[D]): Self = from(filter)
 
-    def and(filter: EdgeFilter[DD]) = {
-      val newFrom = Heads[DD](filter(core._graph))
-      val mergedFrom = Heads[DD](core.from.seq ++ newFrom.seq)
+    def and(filter: EdgeFilter[D]) = {
+      val newFrom = Heads[D](filter(core._graph))
+      val mergedFrom = Heads[D](core.from.seq ++ newFrom.seq)
       core.copy(
         fromOverride = Some(mergedFrom)
       )
     }
-    def <>-(filter: EdgeFilter[DD]): Self = and(filter)
+    def <>-(filter: EdgeFilter[D]): Self = and(filter)
 
     // undirected
 

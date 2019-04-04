@@ -17,9 +17,9 @@ trait StaticGraph[T <: Domain] extends Module[T] {
 
 object StaticGraph {
 
-  trait Builder[D <: Domain, GProto[T <: Domain] <: StaticGraph[T]] extends Algebra.Sugars[D] {
+  trait Builder[D <: Domain] extends Algebra.Sugars[D] {
 
-    type GG = GProto[D]
+    type GG <: StaticGraph[D]
 
     implicit val algebra: Algebra[D]
 

@@ -3,16 +3,16 @@ import com.tribbloids.spookystuff.utils.IDMixin
 
 import scala.language.implicitConversions
 
-trait ElementView[I <: Impl] extends Impl.Sugars[I] with IDMixin {
+trait ElementView[D <: Domain] extends Algebra.Sugars[D] with IDMixin {
 
-  val core: DSL[I]#Core
-  override final def algebra: Algebra[I#DD] = core.algebra
+  val core: DSL[D]#Core
+  override final def algebra: Algebra[D] = core.algebra
 
   def element: _Element
-  def format: _ShowFormat = _ShowFormat[DD]()
+  def format: _ShowFormat = _ShowFormat[D]()
 
-  def inbound: Seq[ElementView[I]]
-  def outbound: Seq[ElementView[I]]
+  def inbound: Seq[ElementView[D]]
+  def outbound: Seq[ElementView[D]]
 
   override final def _id = element
 
@@ -21,15 +21,15 @@ trait ElementView[I <: Impl] extends Impl.Sugars[I] with IDMixin {
         * VERY IMPORTANT for cycle elimination
         */
       visited: Set[_Element] = Set.empty
-  ) extends ElementTreeNode[I] {
+  ) extends ElementTreeNode[D] {
 
     override val view = ElementView.this
 
     override def dirSymbol = "v "
 
-    override val _children: Seq[ElementView[I]] = ElementView.this.outbound
+    override val _children: Seq[ElementView[D]] = ElementView.this.outbound
 
-    override implicit def copyImplicitly(v: ElementView[I]): ElementTreeNode[I] =
+    override implicit def copyImplicitly(v: ElementView[D]): ElementTreeNode[D] =
       v.ForwardTreeNode(visited + element)
   }
 
@@ -38,14 +38,14 @@ trait ElementView[I <: Impl] extends Impl.Sugars[I] with IDMixin {
         * VERY IMPORTANT for cycle elimination
         */
       visited: Set[_Element] = Set.empty
-  ) extends ElementTreeNode[I] {
+  ) extends ElementTreeNode[D] {
 
     override val view = ElementView.this
 
     override def dirSymbol = "^ "
 
-    override val _children: Seq[ElementView[I]] = ElementView.this.inbound
+    override val _children: Seq[ElementView[D]] = ElementView.this.inbound
 
-    override implicit def copyImplicitly(v: ElementView[I]): ElementTreeNode[I] = v.BackwardTreeNode(visited + element)
+    override implicit def copyImplicitly(v: ElementView[D]): ElementTreeNode[D] = v.BackwardTreeNode(visited + element)
   }
 }

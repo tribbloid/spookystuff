@@ -4,7 +4,6 @@ import java.util.UUID
 
 import com.tribbloids.spookystuff.graph._
 
-// decoupling, decoupling ...
 trait SimpleGraph extends Domain {
 
   override type ID = UUID
@@ -12,7 +11,7 @@ trait SimpleGraph extends Domain {
   override type EdgeData = Option[String]
 }
 
-object SimpleGraph extends Algebra[GraphParser] {
+object SimpleGraph extends Algebra[SimpleGraph] {
 
   override def idAlgebra = IDAlgebra.UUIDAlgebra
 
@@ -21,18 +20,12 @@ object SimpleGraph extends Algebra[GraphParser] {
     override def plus(v1: String, v2: String): String = v1 + v2
   }
 
-  override def nodeAlgebra = DataAlgebra.ErrorOnConflict().Monadic
+  override def nodeAlgebra = DataAlgebra.NoAmbiguity().Monadic
   override def edgeAlgebra = DataAlgebraProto.Monadic
 
-  object SimpleImpl extends Impl {
+  object SimpleDSL extends FlowDSL[SimpleGraph] {
 
-    override type DD = GraphParser
-    override type GProto[T <: Domain] = LocalGraph[T]
-  }
-
-  object SimpleDSL extends FlowDSL[SimpleImpl.type] {
-
-    override lazy val impl: LocalGraph.BuilderImpl[GraphParser] = LocalGraph.BuilderImpl()
+    override lazy val defaultGraphBuilder: LocalGraph.BuilderImpl[SimpleGraph] = LocalGraph.BuilderImpl()
 
     override lazy val defaultFormat = Formats.ShowData
   }

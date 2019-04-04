@@ -26,7 +26,7 @@ object DataAlgebra {
     override val eye = None
   }
 
-  case class ErrorOnConflict[T]() extends DataAlgebra[T] {
+  case class NoAmbiguity[T]() extends DataAlgebra[T] {
     override def plus(v1: T, v2: T): T = {
       if (v1 == v2) v1
       else throw new UnsupportedOperationException(s"conflict between data '$v1' and '$v2' which has identical IDs")

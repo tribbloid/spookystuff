@@ -1,6 +1,6 @@
 package com.tribbloids.spookystuff.graph
 
-import com.tribbloids.spookystuff.graph.example.GraphParser.Face
+import com.tribbloids.spookystuff.graph.example.SimpleGraph.Face
 import com.tribbloids.spookystuff.testutils.FunSpecx
 
 class SimpleGraphSuite extends FunSpecx {
@@ -224,5 +224,4 @@ class SimpleGraphSuite extends FunSpecx {
         |         +- v (HEAD) [ None ]
       """.stripMargin
   }
-
 }
