@@ -14,6 +14,7 @@ trait Element[T <: Domain] extends Module[T] {
   lazy val asTails: Module.Tails[T] = toTails(algebra.edgeAlgebra.eye)
 
   def idStr: String
+  def dataStr: String
 }
 
 object Element {
@@ -33,6 +34,7 @@ object Element {
     def to: ID = from_to._2
 
     def idStr: String = idAlgebra.ids2Str(from_to)
+    def dataStr: String = "" + data
 
     override lazy val toString = s"${idAlgebra.ids2Str(from_to)}: $data"
 
@@ -71,6 +73,7 @@ object Element {
     def _id: ID
 
     def idStr: String = idAlgebra.id2Str(_id)
+    def dataStr: String = "" + data
 
     override def toString = s"$idStr: $data"
 
@@ -116,25 +119,27 @@ object Element {
     }
   }
 
-  class LinkedNode[T <: Domain](
-      val node: Node[T],
-      val inbound: mutable.LinkedHashSet[T#ID] = mutable.LinkedHashSet.empty[T#ID],
-      val outbound: mutable.LinkedHashSet[T#ID] = mutable.LinkedHashSet.empty[T#ID]
-  )(
-      override implicit val algebra: Algebra[T]
-  ) extends NodeLike[T] {
+  class LinkedNode[D <: Domain](
+      val node: Node[D],
+      val inbound: mutable.LinkedHashSet[D#ID] = mutable.LinkedHashSet.empty[D#ID],
+      val outbound: mutable.LinkedHashSet[D#ID] = mutable.LinkedHashSet.empty[D#ID]
+  ) extends NodeLike[D] {
+
+    override def algebra: Algebra[D] = node.algebra
 
     override protected def _replicate(m: _Mutator)(
         implicit idRotator: _Rotator
     ): _LinkedNode = {
-      new LinkedNode[T](
+      new LinkedNode[D](
         node.replicate(m),
         inbound.map(idRotator),
         outbound.map(idRotator)
       )
     }
 
-    override def data: T#NodeData = node.data
+    lazy val edgeIDs: mutable.LinkedHashSet[D#ID] = inbound ++ outbound
+
+    override def data: D#NodeData = node.data
 
     override def _id: ID = node._id
 

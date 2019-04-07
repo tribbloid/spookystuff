@@ -21,8 +21,8 @@ case class Visualisation[D <: Domain](
         startingFrom: Seq[Element[D]]
     ): String = {
       startingFrom
-        .map { ee =>
-          val view = core._ElementView.fromElement(ee, format)
+        .map { elem =>
+          val view = core._ElementView.fromElement(elem).WFormat(format)
           val treeNode = view.ForwardTreeNode()
           treeNode.treeString(format.verbose)
         }
@@ -33,8 +33,8 @@ case class Visualisation[D <: Domain](
         endWith: Seq[Element[D]]
     ): String = {
       endWith
-        .map { ee =>
-          val stepView = core._ElementView.fromElement(ee, format)
+        .map { elem =>
+          val stepView = core._ElementView.fromElement(elem).WFormat(format)
           val treeNode = stepView.BackwardTreeNode()
           treeNode.treeString(format.verbose)
         }
@@ -48,23 +48,23 @@ case class Visualisation[D <: Domain](
 
     def compile(
         endWith: Seq[Element[D]]
-    ): Graph[ElementView[D]] = {
+    ): Graph[ElementView[D]#WFormat] = {
 
-      val buffer = mutable.HashSet.empty[ElementView[D]]
-      val relationBuffer = mutable.HashSet.empty[(ElementView[D], ElementView[D])]
+      val buffer = mutable.HashSet.empty[ElementView[D]#WFormat]
+      val relationBuffer = mutable.HashSet.empty[(ElementView[D]#WFormat, ElementView[D]#WFormat)]
 
-      for (ee <- endWith) {
-        val stepView = core._ElementView.fromElement(ee, format)
+      for (elem <- endWith) {
+        val stepView = core._ElementView.fromElement(elem).WFormat(format)
         val treeNode = stepView.BackwardTreeNode()
         treeNode.foreach { v =>
-          buffer += v.view
-          v._children.foreach { child =>
-            relationBuffer += child -> v.view
+          buffer += v.viewWFormat
+          v.children.foreach { child =>
+            relationBuffer += child.viewWFormat -> v.viewWFormat
           }
         }
       }
 
-      val graph = Graph[ElementView[D]](buffer.toSet, relationBuffer.toList)
+      val graph = Graph[ElementView[D]#WFormat](buffer.toSet, relationBuffer.toList)
       graph
     }
 
@@ -130,6 +130,7 @@ object Visualisation {
     "" + v
   }
 
+  //TODO: merge into algebra?
   case class Format[T <: Domain](
       _showNode: Element.NodeLike[T] => String = toStrFn,
       _showEdge: Element.Edge[T] => String = toStrFn,
@@ -150,6 +151,11 @@ object Visualisation {
     def shortNameOf(v: Element[T]): String = v match {
       case nn: Element.NodeLike[T] => nodeShortName(nn)
       case ee: Element.Edge[T]     => edgeShortName(ee)
+    }
+
+    def showElement(v: Element[T]): String = v match {
+      case nn: Element.NodeLike[T] => showNode(nn)
+      case ee: Element.Edge[T]     => _showEdge(ee)
     }
   }
 }

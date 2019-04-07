@@ -3,8 +3,8 @@ package com.tribbloids.spookystuff.graph
 import com.tribbloids.spookystuff.graph.DSL.Facet
 import com.tribbloids.spookystuff.graph.IDAlgebra.Rotator
 import com.tribbloids.spookystuff.graph.Module.{Heads, Tails}
+import com.tribbloids.spookystuff.utils.CachingUtils.ConcurrentMap
 
-import scala.collection.mutable.ArrayBuffer
 import scala.language.implicitConversions
 
 trait DSL[D <: Domain] extends Algebra.Sugars[D] {
@@ -204,118 +204,151 @@ trait DSL[D <: Domain] extends Algebra.Sugars[D] {
       }
     }
 
-    object _ElementView {
-
-      // add constructor from id
-
-      def fromElement(
-          element: _Element,
-//          neighbourID: Option[ID] = None,
-          format: _ShowFormat = _ShowFormat[D]()
-      ): _ElementView = {
-
-        element match {
-          case nn: _NodeLike => NodeView(nn.toLinked(Some(Core.this._graph_WHeadsAndTails)), format)
-          case ee: _Edge     => EdgeView(ee, format)
-        }
-      }
-    }
-
     trait _ElementView extends ElementView[D] {
 
       override val core: Core = Core.this
     }
 
-    case class NodeView(
-        linkedNode: _LinkedNode,
-        override val format: _ShowFormat = _ShowFormat[D]()
-    ) extends _ElementView {
+    object _ElementView {
 
-      import format._
+      object Cache {
+        // compiled once and used all the time
+        // may obsolete as underlying Core._graph is mutable, but any attempt to fix this is overengineering
+        @transient lazy val nodeViews: ConcurrentMap[ID, Option[NodeView]] = ConcurrentMap()
+        @transient lazy val edgeViews: ConcurrentMap[(ID, ID), Seq[EdgeView]] = ConcurrentMap()
+      }
+
+      // add constructor from id
+      def fromNodeID(id: ID): Option[NodeView] = {
+        Cache.nodeViews.getOrElse(
+          id,
+          Core.this.synchronized {
+            val nodeOpt = Core.this._graph_WHeadsAndTails.getLinkedNodes(Seq(id)).values.headOption
+
+            val result = nodeOpt.map { node =>
+              NodeView(node)
+            }
+
+            if (result.nonEmpty) Cache.nodeViews += id -> result
+
+            result
+          }
+        )
+      }
+
+      def fromEdgeIDs(ids: (ID, ID)): Seq[EdgeView] = {
+        Cache.edgeViews.getOrElse(
+          ids,
+          Core.this.synchronized {
+            val edgeSeq = Core.this._graph_WHeadsAndTails.getEdges(Seq(ids)).values.toSeq.flatten
+
+            val result: Seq[EdgeView] = edgeSeq.map { edge =>
+              EdgeView(edge)
+            }
+
+            if (result.nonEmpty) Cache.edgeViews += ids -> result
+
+            result
+          }
+        )
+      }
+
+      def fromElement(element: _Element): _ElementView = {
+
+        element match {
+          case nn: _NodeLike =>
+            val existingOpt = fromNodeID(nn._id)
+            existingOpt match {
+              case Some(existing) =>
+                assert(
+                  existing.element.data == nn.data,
+                  s"Node has the same ID ${nn.idStr} but different data ${nn.dataStr}/${existing.element.dataStr}"
+                )
+                existing
+              case None =>
+                NodeView(nn.toLinked(Some(Core.this._graph_WHeadsAndTails)))
+            }
+
+          case ee: _Edge =>
+            val existingSeq = fromEdgeIDs(ee.from_to)
+
+            existingSeq
+              .find(_.element == ee)
+              .getOrElse(EdgeView(ee))
+        }
+      }
+    }
+
+    case class NodeView(
+        linkedNode: _LinkedNode
+    ) extends _ElementView {
 
       override def element: _LinkedNode = linkedNode
 
-      def getEdgeViews(idParis: Seq[(ID, ID)]): Seq[EdgeView] = {
+      def getEdgeViews(idPairs: Seq[(ID, ID)]): Seq[EdgeView] = {
 
-        _graph_WHeadsAndTails
-          .getEdges(idParis)
-          .values
-          .flatten
-          .toSeq
-          .map { v =>
-            EdgeView(v, format)
-          }
+        idPairs.flatMap { ids =>
+          _ElementView.fromEdgeIDs(ids)
+        }
       }
 
-      override def inbound: Seq[EdgeView] = {
+      override lazy val inbound: Seq[EdgeView] = {
 
         getEdgeViews(linkedNode.inboundIDPairs)
       }
 
-      override def outbound: Seq[EdgeView] = {
+      override lazy val outbound: Seq[EdgeView] = {
 
         getEdgeViews(linkedNode.outboundIDPairs)
       }
 
-      override lazy val toString: String = showNode(linkedNode.node)
+      lazy val inbound2x: Seq[(EdgeView, NodeView)] = {
+        inbound.flatMap { edgeV =>
+          val upstreamNodes = edgeV.inbound
+
+          upstreamNodes.map { node =>
+            edgeV -> node
+          }
+        }
+      }
+
+      lazy val outbound2x: Seq[(EdgeView, NodeView)] = {
+        outbound.flatMap { edgeV =>
+          val downstreamNodes = edgeV.outbound
+
+          downstreamNodes.map { node =>
+            edgeV -> node
+          }
+        }
+      }
+
+      //TODO: add operation to render all lazy val eagerly
     }
 
     case class EdgeView(
-        edge: _Edge,
-        override val format: _ShowFormat = _ShowFormat[D]()
+        edge: _Edge
     ) extends _ElementView {
-
-      import format._
 
       override def element: _Edge = edge
 
       def getNodeViews(ids: Seq[ID]) = {
-        _graph_WHeadsAndTails
-          .getLinkedNodes(ids)
-          .values
-          .filterNot(_.isDangling)
-          .toSeq
-          .map { v =>
-            NodeView(v, format)
+        ids
+          .filter(_ != algebra.idAlgebra.DANGLING)
+          .flatMap { id =>
+            _ElementView.fromNodeID(id)
           }
       }
 
-      override def inbound: Seq[NodeView] = {
+      override lazy val inbound: Seq[NodeView] = {
 
         getNodeViews(Seq(edge.from))
       }
 
-      override def outbound: Seq[NodeView] = {
+      override lazy val outbound: Seq[NodeView] = {
 
         getNodeViews(Seq(edge.to))
       }
 
-      lazy val prefixes: Seq[String] =
-        if (showPrefix) {
-          val buffer = ArrayBuffer[String]()
-          if (core.heads.seq contains edge) buffer += "HEAD"
-
-          val facets: Seq[Facet] = dsl.facets
-
-          val tailSuffix = facets
-            .flatMap { facet =>
-              val ff = facet
-              if (core.tails(facet).seq contains edge) Some(facet.feather)
-              else None
-            }
-            .mkString(" ")
-
-          val tailOpt =
-            if (tailSuffix.isEmpty) Nil
-            else Seq("TAIL" + tailSuffix)
-
-          buffer ++= tailOpt
-
-          buffer
-        } else Nil
-
-      override lazy val toString: String = prefixes.map("(" + _ + ")").mkString("") + " [ " +
-        _showEdge(edge) + " ]"
     }
   }
 

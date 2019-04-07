@@ -190,15 +190,15 @@ class SimpleGraphSuite extends FunSpecx {
         |>>- -->
         |v (TAIL>>-) [ None ]
         |+- Some(ABC)
-        |   :- v  [ Some(loop) ]
-        |   :  +- (cyclic)Some(ABC)
-        |   +- v (HEAD) [ None ]
+        |   :- v (HEAD) [ None ]
+        |   +- v  [ Some(loop) ]
+        |      +- (cyclic)Some(ABC)
         |<-- -<<
         |v (TAIL-<<) [ None ]
         |+- Some(ABC)
-        |   :- v  [ Some(loop) ]
-        |   :  +- (cyclic)Some(ABC)
-        |   +- v (HEAD) [ None ]
+        |   :- v (HEAD) [ None ]
+        |   +- v  [ Some(loop) ]
+        |      +- (cyclic)Some(ABC)
       """.stripMargin
   }
 

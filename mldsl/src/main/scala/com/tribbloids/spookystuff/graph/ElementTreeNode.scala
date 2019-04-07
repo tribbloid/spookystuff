@@ -9,7 +9,8 @@ import scala.language.implicitConversions
 //TODO: use mapChildren to recursively get TreeNode[(Seq[String] -> Tree)] efficiently
 trait ElementTreeNode[D <: Domain] extends TreeNode[ElementTreeNode[D]] with Algebra.Sugars[D] {
 
-  def view: ElementView[D]
+  def viewWFormat: ElementView[D]#WFormat
+  final def view: ElementView[D] = viewWFormat.outer
   final override def algebra: Algebra[D] = view.core.algebra
 
   def visited: Set[_Element]
@@ -32,13 +33,13 @@ trait ElementTreeNode[D <: Domain] extends TreeNode[ElementTreeNode[D]] with Alg
     else result
   }
 
-  final override lazy val simpleString: String = prefix + view.toString
+  final override lazy val simpleString: String = prefix + viewWFormat.toString
 
   override def verboseString: String =
     this.simpleString + "\n=== TRACES ===\n" + mergedPath.mkString("\n")
 
   lazy val paths: Seq[Seq[String]] = {
-    val rootPath = Seq(view.format.shortNameOf(view.element))
+    val rootPath = Seq(viewWFormat.format.shortNameOf(view.element))
     if (children.nonEmpty) {
       children.flatMap { child =>
         child.paths.map(_ ++ rootPath)
@@ -78,7 +79,7 @@ trait ElementTreeNode[D <: Domain] extends TreeNode[ElementTreeNode[D]] with Alg
   override lazy val children: Seq[ElementTreeNode[D]] = {
 
     val result = _children.toList
-      .sortBy(v => v.toString)
+      .sortBy(v => v.element.dataStr)
       .map {
         copyCutOffCyclic
       }
@@ -91,7 +92,7 @@ object ElementTreeNode {
 
   case class Cyclic[D <: Domain](delegate: ElementTreeNode[D]) extends ElementTreeNode[D] {
 
-    override def view: ElementView[D] = delegate.view
+    override def viewWFormat = delegate.viewWFormat
 
     override def visited = delegate.visited
     override lazy val prefix: String = delegate.prefix + "(cyclic)"

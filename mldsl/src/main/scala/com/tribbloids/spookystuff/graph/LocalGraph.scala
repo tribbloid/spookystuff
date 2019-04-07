@@ -118,7 +118,7 @@ object LocalGraph {
         case nn: _Node =>
           val inbound = mutable.LinkedHashSet(edges.filter(_.to == nn._id).map(_.from): _*)
           val outbound = mutable.LinkedHashSet(edges.filter(_.from == nn._id).map(_.to): _*)
-          val result = new _LinkedNode(nn, inbound, outbound)(algebra)
+          val result = new _LinkedNode(nn, inbound, outbound)
           result
       }
 
@@ -151,7 +151,7 @@ object LocalGraph {
 
       val inbound = v1.inbound ++ v2.inbound
       val outbound = v1.outbound ++ v2.outbound
-      new _LinkedNode(node, inbound, outbound)(algebra)
+      new _LinkedNode(node, inbound, outbound)
     }
 
     def union(
