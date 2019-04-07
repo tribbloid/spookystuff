@@ -41,6 +41,12 @@ object MultiMapView {
   type Self[K, V] = collection.Map[K, Seq[V]]
   type MSelf[K, V] = mutable.Map[K, Seq[V]]
 
+  implicit def fromSelf[K, V](self: Self[K, V]): Immutable[K, V] = new Immutable(self)
+  implicit def toSelf[K, V](v: MultiMapView[K, V]): Self[K, V] = v.self
+
+  implicit def fromMSelf[K, V](self: MSelf[K, V]): Mutable[K, V] = new Mutable(self)
+  implicit def toMSelf[K, V](v: Mutable[K, V]): MSelf[K, V] = v.self
+
   class Immutable[K, V](override val self: Self[K, V]) extends MultiMapView[K, V] {}
 
   class Mutable[K, V](override val self: MSelf[K, V]) extends Immutable[K, V](self) {
@@ -82,14 +88,7 @@ object MultiMapView {
     }
   }
 
-  trait Implicits {
-
-    implicit def fromSelf[K, V](self: Self[K, V]): Immutable[K, V] = new Immutable(self)
-
-    implicit def toSelf[K, V](v: MultiMapView[K, V]): Self[K, V] = v.self
-  }
-
-  object Immutable extends Implicits {
+  object Immutable {
     def apply[K, V](kvs: (K, V)*): Immutable[K, V] = {
       val buffer: Mutable[K, V] = Mutable(kvs: _*)
 
@@ -101,11 +100,7 @@ object MultiMapView {
     def empty[K, V]: Immutable[K, V] = emptyProto.asInstanceOf[Immutable[K, V]]
   }
 
-  object Mutable extends Implicits {
-
-    implicit def fromMSelf[K, V](self: MSelf[K, V]): Mutable[K, V] = new Mutable(self)
-
-    implicit def toMSelf[K, V](v: Mutable[K, V]): MSelf[K, V] = v.self
+  object Mutable {
 
     def apply[K, V](kvs: (K, V)*): Mutable[K, V] = {
       val buffer: Mutable[K, V] = mutable.HashMap.empty[K, Seq[V]]
