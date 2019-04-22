@@ -23,23 +23,23 @@ object SimpleGraph extends Algebra[SimpleGraph] {
   override def nodeAlgebra = DataAlgebra.NoAmbiguity().Monadic
   override def edgeAlgebra = DataAlgebraProto.Monadic
 
-  object SimpleDSL extends FlowDSL[SimpleGraph] {
+  object Layout extends FlowLayout[SimpleGraph] {
 
     override lazy val defaultGraphBuilder: LocalGraph.BuilderImpl[SimpleGraph] = LocalGraph.BuilderImpl()
 
-    override lazy val defaultFormat = Formats.ShowData
+    override lazy val defaultFormat = Formats.ShowOption
   }
 
-  import SimpleDSL._
+  import Layout._
 
-  case class Face(
+  case class DSL(
       core: Core
-  ) extends Interface {
+  ) extends DSLLike {
 
-    override type Self = Face
+    override type Self = DSL
 
-    override def copyImplicitly(core: SimpleDSL.Core): Face = this.copy(core)
+    override def create(core: Layout.Core): DSL = this.copy(core)
   }
 
-  object Face extends Face(Core.empty)
+  object DSL extends DSL(Core.empty) {}
 }

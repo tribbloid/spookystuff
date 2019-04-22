@@ -1,5 +1,5 @@
 package com.tribbloids.spookystuff.graph
-import com.tribbloids.spookystuff.graph.DSL.Facet
+import com.tribbloids.spookystuff.graph.Layout.Facet
 import com.tribbloids.spookystuff.utils.IDMixin
 
 import scala.collection.mutable.ArrayBuffer
@@ -7,7 +7,7 @@ import scala.language.implicitConversions
 
 trait ElementView[D <: Domain] extends Algebra.Sugars[D] with IDMixin {
 
-  val core: DSL[D]#Core
+  val core: Layout[D]#Core
   override final def algebra: Algebra[D] = core.algebra
 
   def element: _Element
@@ -18,7 +18,7 @@ trait ElementView[D <: Domain] extends Algebra.Sugars[D] with IDMixin {
   override final def _id = element
 
   case class WFormat(
-      format: _ShowFormat = _ShowFormat[D]()
+      format: _ShowFormat
   ) {
 
     def outer: ElementView[D] = ElementView.this
@@ -30,7 +30,7 @@ trait ElementView[D <: Domain] extends Algebra.Sugars[D] with IDMixin {
             val buffer = ArrayBuffer[String]()
             if (core.heads.seq contains edge) buffer += "HEAD"
 
-            val facets: Seq[Facet] = core.dsl.facets
+            val facets: Seq[Facet] = core.layout.facets
 
             val tailSuffix = facets
               .flatMap { facet =>

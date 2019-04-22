@@ -3,7 +3,7 @@ package com.tribbloids.spookystuff.row
 import java.util.UUID
 
 import com.tribbloids.spookystuff.Const
-import com.tribbloids.spookystuff.utils.{SpookyUtils, SpookyViews}
+import com.tribbloids.spookystuff.utils.{Interpolation, SpookyUtils, SpookyViews}
 import org.apache.spark.ml.dsl.utils.messaging.ProtoAPI
 
 import scala.reflect.ClassTag
@@ -143,15 +143,17 @@ case class DataRow(
   //replace each '{key} in a string with their respective value in cells
   def replaceInto(
       str: String,
-      delimiter: String = Const.keyDelimiter
+      interpolation: Interpolation = Interpolation.`$`
   ): Option[String] = {
 
     try {
       Option(
-        str.interpolate(delimiter) { key =>
-          val field = Field(key)
-          "" + this.get(field).get
-        }
+        interpolation
+          .Compile(str) { key =>
+            val field = Field(key)
+            "" + this.get(field).get
+          }
+          .run()
       )
     } catch {
       case e: NoSuchElementException => None

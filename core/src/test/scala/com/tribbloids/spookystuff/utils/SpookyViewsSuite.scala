@@ -211,7 +211,7 @@ class SpookyViewsSuite extends SpookyEnvFixture {
   it("interpolate can use common character as delimiter") {
 
     val original = "ORA'{TEST}"
-    val interpolated = original.interpolate("'") { v =>
+    val interpolated = Interpolation.`'`(original) { v =>
       "Replaced"
     }
     assert(interpolated == "ORAReplaced")
@@ -220,7 +220,7 @@ class SpookyViewsSuite extends SpookyEnvFixture {
   it("interpolate can use special regex character as delimiter") {
 
     val original = "ORA${TEST}"
-    val interpolated = original.interpolate("$") { v =>
+    val interpolated = Interpolation.`$`(original) { v =>
       "Replaced"
     }
     assert(interpolated == "ORAReplaced")
@@ -236,7 +236,7 @@ class SpookyViewsSuite extends SpookyEnvFixture {
 
     special.foreach { ss =>
       val original = s"ORA${ss}TEST"
-      val interpolated = original.interpolate("$") { v =>
+      val interpolated = Interpolation.`$`(original) { v =>
         "Replaced"
       }
       assert(interpolated == original)
@@ -244,7 +244,7 @@ class SpookyViewsSuite extends SpookyEnvFixture {
 
     special.foreach { ss =>
       val original = s"ORA$ss"
-      val interpolated = original.interpolate("$") { v =>
+      val interpolated = Interpolation.`$`(original) { v =>
         "Replaced"
       }
       assert(interpolated == original)
@@ -255,7 +255,7 @@ class SpookyViewsSuite extends SpookyEnvFixture {
 
     special.foreach { ss =>
       val original = "ORA" + ss + "${TEST}"
-      val interpolated = original.interpolate("$") { v =>
+      val interpolated = Interpolation.`$`(original) { v =>
         "Replaced"
       }
       assert(interpolated == original)
@@ -263,7 +263,7 @@ class SpookyViewsSuite extends SpookyEnvFixture {
 
     special.foreach { ss =>
       val original = s"ORA" + ss + "${}"
-      val interpolated = original.interpolate("$") { v =>
+      val interpolated = Interpolation.`$`(original) { v =>
         "Replaced"
       }
       assert(interpolated == original)

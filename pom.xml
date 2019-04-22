@@ -54,6 +54,8 @@
 
     <protobuf.version>2.5.0</protobuf.version>
 
+    <jmh.version>1.21</jmh.version>
+
     <!--<failsafe.version>2.18</failsafe.version>-->
   </properties>
 

@@ -50,7 +50,7 @@ abstract class CommonUtils {
   }
 
   // TODO: remove, use object API everywhere.
-  def retry = RetryFixedInterval
+  def retry: RetryFixedInterval.type = RetryFixedInterval
 
   protected def _callerShowStr = {
     val result = FlowUtils.callerShowStr(
@@ -131,7 +131,7 @@ abstract class CommonUtils {
     }
   }
 
-  def timer[T](fn: => T): (T, Long) = {
+  def timed[T](fn: => T): (T, Long) = {
     val startTime = System.currentTimeMillis()
     val result = fn
     val endTime = System.currentTimeMillis()
@@ -179,6 +179,8 @@ abstract class CommonUtils {
       }
     }
   }
+
+  def toStrNullSafe(v: Any): String = "" + v
 }
 
 object CommonUtils extends CommonUtils

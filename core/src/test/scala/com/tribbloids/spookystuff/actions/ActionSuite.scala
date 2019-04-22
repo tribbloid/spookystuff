@@ -225,7 +225,7 @@ class ActionSuite extends SpookyEnvFixture {
     a in 10.seconds
     assert(a.hardTerminateTimeout(session) == 10.seconds + Const.hardTerminateOverhead)
 
-    val (result, time) = CommonUtils.timer {
+    val (result, time) = CommonUtils.timed {
       try {
         a.fetch(spooky)
         sys.error("impossible")

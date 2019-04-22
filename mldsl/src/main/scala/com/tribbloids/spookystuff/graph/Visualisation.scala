@@ -8,8 +8,8 @@ import com.tribbloids.spookystuff.graph.Visualisation.Format
 import scala.collection.mutable
 
 case class Visualisation[D <: Domain](
-    core: DSL[D]#Core,
-    format: Format[D] = Format[D]()
+    core: Layout[D]#Core,
+    format: Format[D]
 ) extends Algebra.Sugars[D] {
 
   final override def algebra: Algebra[D] = core.algebra
@@ -46,7 +46,7 @@ case class Visualisation[D <: Domain](
 
     protected final val layoutPrefs = LayoutPrefsImpl(unicode = true, explicitAsciiBends = false)
 
-    def compile(
+    def compileASCII(
         endWith: Seq[Element[D]]
     ): Graph[ElementView[D]#WFormat] = {
 
@@ -72,7 +72,7 @@ case class Visualisation[D <: Domain](
         forward: Boolean
     ): String = {
 
-      val graph = compile(core.heads.seq)
+      val graph = compileASCII(core.heads.seq)
 
       val forwardStr = GraphLayout.renderGraph(graph, layoutPrefs = layoutPrefs)
       if (forward) forwardStr
@@ -94,7 +94,7 @@ case class Visualisation[D <: Domain](
     if (!asciiArt) {
       if (forward) {
 
-        val facets = core.dsl.facets
+        val facets = core.layout.facets
         val strs = facets.map { facet =>
           facet.arrow + "\n" + Tree.showForward(core.tails(facet).seq)
         }
@@ -126,14 +126,10 @@ object Visualisation {
     }
   }
 
-  val toStrFn = { v: Any =>
-    "" + v
-  }
-
   //TODO: merge into algebra?
   case class Format[T <: Domain](
-      _showNode: Element.NodeLike[T] => String = toStrFn,
-      _showEdge: Element.Edge[T] => String = toStrFn,
+      _showNode: Element.NodeLike[T] => String,
+      _showEdge: Element.Edge[T] => String,
       nodeShortName: Element.NodeLike[T] => String = { v: Element.NodeLike[T] =>
         v.idStr
       },

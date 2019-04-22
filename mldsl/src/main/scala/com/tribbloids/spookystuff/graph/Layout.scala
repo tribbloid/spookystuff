@@ -1,13 +1,14 @@
 package com.tribbloids.spookystuff.graph
 
-import com.tribbloids.spookystuff.graph.DSL.Facet
+import com.tribbloids.spookystuff.graph.Layout.Facet
 import com.tribbloids.spookystuff.graph.IDAlgebra.Rotator
 import com.tribbloids.spookystuff.graph.Module.{Heads, Tails}
 import com.tribbloids.spookystuff.utils.CachingUtils.ConcurrentMap
+import com.tribbloids.spookystuff.utils.CommonUtils
 
 import scala.language.implicitConversions
 
-trait DSL[D <: Domain] extends Algebra.Sugars[D] {
+trait Layout[D <: Domain] extends Algebra.Sugars[D] {
 
   val defaultGraphBuilder: StaticGraph.Builder[D]
   final override val algebra: Algebra[D] = defaultGraphBuilder.algebra
@@ -80,7 +81,7 @@ trait DSL[D <: Domain] extends Algebra.Sugars[D] {
       fromOverride: Option[_Heads] = None
   ) extends algebra._Sugars {
 
-    def dsl: DSL.this.type = DSL.this
+    def layout: Layout.this.type = Layout.this
 
     lazy val _graph: GG = defaultGraphBuilder.fromModule(self)
 
@@ -352,21 +353,20 @@ trait DSL[D <: Domain] extends Algebra.Sugars[D] {
     }
   }
 
-  trait InterfaceImplicits_Level1 {
+  trait Factory_Implicits_Level1 {
 
-    type Self <: Interface
+    type Self <: DSLLike
 
-    implicit def copyImplicitly(core: Core): Self
+    implicit def create(core: Core): Self
 
-    implicit def fromEdgeData(v: EdgeData): Self = Core.fromEdgeData(v)
-
+    implicit def Edge(v: EdgeData): Self = Core.fromEdgeData(v)
   }
 
-  trait InterfaceImplicits extends InterfaceImplicits_Level1 {
-    implicit def fromNodeData(v: NodeData): Self = Core.fromNodeData(v)
+  trait Factory_Implicits extends Factory_Implicits_Level1 {
+    implicit def Node(v: NodeData): Self = Core.fromNodeData(v)
   }
 
-  trait Interface extends InterfaceImplicits {
+  trait DSLLike extends Factory_Implicits {
 
     def core: Core
 
@@ -376,7 +376,11 @@ trait DSL[D <: Domain] extends Algebra.Sugars[D] {
 
   object Formats {
 
-    object Default extends Visualisation.Format[D]()
+    object Default
+        extends Visualisation.Format[D](
+          _showNode = CommonUtils.toStrNullSafe,
+          _showEdge = CommonUtils.toStrNullSafe
+        )
 
     object ShowData
         extends Visualisation.Format[D](
@@ -387,12 +391,30 @@ trait DSL[D <: Domain] extends Algebra.Sugars[D] {
             "" + v.data
           }
         )
+
+    private def monad2Str(v: Any) = {
+      v match {
+        case Some(vv) => "" + vv
+        case None     => "∅"
+        case _        => "" + v
+      }
+    }
+
+    object ShowOption
+        extends Visualisation.Format[D](
+          _showNode = { v =>
+            monad2Str(v.data)
+          },
+          _showEdge = { v =>
+            monad2Str(v.data)
+          }
+        )
   }
 
   lazy val defaultFormat: Visualisation.Format[D] = Formats.Default
 }
 
-object DSL {
+object Layout {
 
   abstract class Facet(
       val feather: String,

@@ -176,7 +176,7 @@ class Python2DriverSuite extends SpookyEnvFixture {
 
     runIterable(1 to 3) { (i, proc) =>
       proc.batchImport(Seq("import time"))
-      val (_, time) = CommonUtils.timer {
+      val (_, time) = CommonUtils.timed {
         Try {
           CommonUtils.withDeadline(5.seconds) {
             proc.interpret(s"""

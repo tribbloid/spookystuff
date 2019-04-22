@@ -55,7 +55,7 @@ class SpookyUtilsSuite extends FunSpecx {
 
   it("withDeadline can write heartbeat info into log by default") {
 
-    val (_, time) = CommonUtils.timer {
+    val (_, time) = CommonUtils.timed {
       TestHelper.intercept[TimeoutException] {
         CommonUtils.withDeadline(10.seconds, Some(1.second))(
           {
@@ -66,7 +66,7 @@ class SpookyUtilsSuite extends FunSpecx {
     }
     TestHelper.assert(time < 12000)
 
-    val (_, time2) = CommonUtils.timer {
+    val (_, time2) = CommonUtils.timed {
       CommonUtils.withDeadline(10.seconds, Some(1.second))(
         {
           Thread.sleep(5000)
@@ -80,7 +80,7 @@ class SpookyUtilsSuite extends FunSpecx {
 
     var log = ArrayBuffer[String]()
 
-    val (_, time) = CommonUtils.timer {
+    val (_, time) = CommonUtils.timed {
       TestHelper.intercept[TimeoutException] {
         CommonUtils.withDeadline(10.seconds, Some(1.second))(
           {
@@ -113,7 +113,7 @@ class SpookyUtilsSuite extends FunSpecx {
       )
 
     log.clear()
-    val (_, time2) = CommonUtils.timer {
+    val (_, time2) = CommonUtils.timed {
       CommonUtils.withDeadline(10.seconds, Some(1.second))(
         {
           Thread.sleep(5000)
@@ -143,7 +143,7 @@ class SpookyUtilsSuite extends FunSpecx {
 
     TestHelper.TestSC.uuidSeed().mapOncePerCore { _ =>
       println("partition-" + TaskContext.get().partitionId())
-      val (_, time) = CommonUtils.timer {
+      val (_, time) = CommonUtils.timed {
         TestHelper.intercept[TimeoutException] {
           CommonUtils.withDeadline(10.seconds, Some(1.second)) {
             Thread.sleep(20000)
@@ -153,7 +153,7 @@ class SpookyUtilsSuite extends FunSpecx {
       }
       TestHelper.assert(time < 11000, s"$time vs 11000")
 
-      val (_, time2) = CommonUtils.timer {
+      val (_, time2) = CommonUtils.timed {
         CommonUtils.withDeadline(10.seconds, Some(1.second)) {
           Thread.sleep(3000)
           println("result 2")

@@ -393,7 +393,7 @@ class ScalaDynamicExtractorSuite extends SpookyEnvFixture with LocalPathDocsFixt
     val ints = 1 to 1000000
 
     val pfScala = dynamic.resolveUsingScala(IntegerType)
-    val (scalaRes, scalaTime) = CommonUtils.timer(
+    val (scalaRes, scalaTime) = CommonUtils.timed(
       ints.map(
         i => pfScala.apply(i).get.asInstanceOf[Boolean]
       )
@@ -401,14 +401,14 @@ class ScalaDynamicExtractorSuite extends SpookyEnvFixture with LocalPathDocsFixt
     println(scalaTime)
 
     val pfJava = dynamic.resolveUsingScala(IntegerType)
-    val (javaRes, javaTime) = CommonUtils.timer(
+    val (javaRes, javaTime) = CommonUtils.timed(
       ints.map(
         i => pfJava.apply(i).get.asInstanceOf[Boolean]
       )
     )
     println(javaTime)
 
-    val (nativeRes, nativeTime) = CommonUtils.timer(
+    val (nativeRes, nativeTime) = CommonUtils.timed(
       ints.map(
         i => int2Str(i).startsWith(int2_10(i))
       )

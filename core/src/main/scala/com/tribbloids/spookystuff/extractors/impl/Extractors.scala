@@ -7,12 +7,12 @@ import com.tribbloids.spookystuff.row._
 
 object Extractors {
 
-  val GroupIndexExpr = GenExtractor.fromFn { (v1: FR) =>
+  val GroupIndexExpr = GenExtractor.fromFn { v1: FR =>
     v1.dataRow.groupIndex
   }
 
   //
-  def GetUnstructuredExpr(field: Field): GenExtractor[FR, Unstructured] = GenExtractor.fromOptionFn { (v1: FR) =>
+  def GetUnstructuredExpr(field: Field): GenExtractor[FR, Unstructured] = GenExtractor.fromOptionFn { v1: FR =>
     v1.getUnstructured(field)
       .orElse {
         v1.getUnstructured(field.copy(isWeak = true))
@@ -22,13 +22,13 @@ object Extractors {
       }
   }
 
-  def GetDocExpr(field: Field) = GenExtractor.fromOptionFn { (v1: FR) =>
+  def GetDocExpr(field: Field) = GenExtractor.fromOptionFn { v1: FR =>
     v1.getDoc(field.name)
   }
-  val GetOnlyDocExpr = GenExtractor.fromOptionFn { (v1: FR) =>
+  val GetOnlyDocExpr = GenExtractor.fromOptionFn { v1: FR =>
     v1.getOnlyDoc
   }
-  val GetAllDocsExpr = GenExtractor.fromFn { (v1: FR) =>
+  val GetAllDocsExpr = GenExtractor.fromFn { v1: FR =>
     new Elements(v1.docs.map(_.root).toList)
   }
 
@@ -59,7 +59,7 @@ object Extractors {
     }
   }
 
-  def ReplaceKeyExpr(str: String) = GenExtractor.fromOptionFn { (v1: FR) =>
+  def ReplaceKeyExpr(str: String) = GenExtractor.fromOptionFn { v1: FR =>
     v1.dataRow.replaceInto(str)
   }
 }
