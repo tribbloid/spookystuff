@@ -353,25 +353,34 @@ trait Layout[D <: Domain] extends Algebra.Sugars[D] {
     }
   }
 
-  trait Factory_Implicits_Level1 {
+  trait DSL {
 
-    type Self <: DSLLike
+    type Operand <: OperandLike
 
-    implicit def create(core: Core): Self
+    trait OperandLike {
 
-    implicit def Edge(v: EdgeData): Self = Core.fromEdgeData(v)
-  }
+      final def outer: DSL = DSL.this
 
-  trait Factory_Implicits extends Factory_Implicits_Level1 {
-    implicit def Node(v: NodeData): Self = Core.fromNodeData(v)
-  }
+      def core: Core
 
-  trait DSLLike extends Factory_Implicits {
+      def visualise(format: Visualisation.Format[D] = defaultFormat): Visualisation[D] =
+        Visualisation[D](core, format)
+    }
 
-    def core: Core
+    def create(core: Core): Operand
 
-    def visualise(format: Visualisation.Format[D] = defaultFormat): Visualisation[D] =
-      Visualisation[D](core, format)
+    def Edge(v: EdgeData): Operand = create(Core.fromEdgeData(v))
+    def Node(v: NodeData): Operand = create(Core.fromNodeData(v))
+
+    sealed trait Implicits_Level1 {
+
+      implicit def Edge(v: EdgeData): Operand = DSL.this.Edge(v)
+    }
+
+    object Implicits extends Implicits_Level1 {
+
+      implicit def Node(v: NodeData): Operand = DSL.this.Node(v)
+    }
   }
 
   object Formats {
@@ -392,21 +401,13 @@ trait Layout[D <: Domain] extends Algebra.Sugars[D] {
           }
         )
 
-    private def monad2Str(v: Any) = {
-      v match {
-        case Some(vv) => "" + vv
-        case None     => "∅"
-        case _        => "" + v
-      }
-    }
-
     object ShowOption
         extends Visualisation.Format[D](
           _showNode = { v =>
-            monad2Str(v.data)
+            Layout.monad2Str(v.data)
           },
           _showEdge = { v =>
-            monad2Str(v.data)
+            Layout.monad2Str(v.data)
           }
         )
   }
@@ -422,5 +423,13 @@ object Layout {
   ) {
 
     override def toString: String = arrow
+  }
+
+  private def monad2Str(v: Any) = {
+    v match {
+      case Some(vv) => "" + vv
+      case None     => "∅"
+      case _        => "" + v
+    }
   }
 }

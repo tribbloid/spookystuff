@@ -1,10 +1,11 @@
 package com.tribbloids.spookystuff.graph
 
-import com.tribbloids.spookystuff.graph.example.SimpleGraph.DSL
 import com.tribbloids.spookystuff.graph.example.SimpleGraph.DSL._
 import com.tribbloids.spookystuff.testutils.FunSpecx
 
 class SimpleGraphSuite extends FunSpecx {
+
+  import Implicits._
 
   it("DSL interface from NodeData") {
 
@@ -57,8 +58,8 @@ class SimpleGraphSuite extends FunSpecx {
 
   it("node >>> node") {
 
-    val f1: DSL = Some("ABC")
-    val f2: DSL = Some("DEF")
+    val f1: Operand = Some("ABC")
+    val f2: Operand = Some("DEF")
 
     val linked = f1 >>> f2
     linked.visualise().show() shouldBe
@@ -111,9 +112,9 @@ class SimpleGraphSuite extends FunSpecx {
 
   it("node >>> edge >>> node") {
 
-    val f1: DSL = Some("ABC")
-    val e1: DSL = Edge(Some("edge"))
-    val f2: DSL = Some("DEF")
+    val f1: Operand = Some("ABC")
+    val e1: Operand = Edge(Some("edge"))
+    val f2: Operand = Some("DEF")
 
     val linked = f1 >>> e1 >>> f2
     linked.visualise().show() shouldBe
@@ -133,8 +134,8 @@ class SimpleGraphSuite extends FunSpecx {
 
   it("detached edge >>> detached edge") {
 
-    val f1: DSL = Edge(Some("ABC"))
-    val f2: DSL = Edge(Some("DEF"))
+    val f1: Operand = Edge(Some("ABC"))
+    val f2: Operand = Edge(Some("DEF"))
 
     val linked = f1 >>> f2
     linked.visualise().show() shouldBe
@@ -150,7 +151,7 @@ class SimpleGraphSuite extends FunSpecx {
 
     it("node >>> itself") {
 
-      val node: DSL = Some("ABC")
+      val node: Operand = Some("ABC")
 
       val linked = node >>> node
       linked.visualise().show() shouldBe
@@ -193,8 +194,8 @@ class SimpleGraphSuite extends FunSpecx {
 
     it("node >>> edge >>> same node") {
 
-      val node: DSL = Some("ABC")
-      val edge: DSL = Edge(Some("loop"))
+      val node: Operand = Some("ABC")
+      val edge: Operand = Edge(Some("loop"))
 
       val n1 = node >>> edge
       n1.visualise().show() shouldBe
@@ -248,7 +249,7 @@ class SimpleGraphSuite extends FunSpecx {
 
     it("edge-node >>> itself") {
 
-      val edge_node: DSL = Edge(Some("loop")) >>> Node(Some("ABC"))
+      val edge_node: Operand = Edge(Some("loop")) >>> Node(Some("ABC"))
 
       val linked = edge_node >>> edge_node
       linked.visualise().show(asciiArt = true) shouldBe
@@ -303,9 +304,9 @@ class SimpleGraphSuite extends FunSpecx {
 
   it("node >>> node <<< node") {
 
-    val n1: DSL = Some("A")
-    val n2: DSL = Some("B")
-    val n3: DSL = Some("C")
+    val n1: Operand = Some("A")
+    val n2: Operand = Some("B")
+    val n3: Operand = Some("C")
 
     (n1 >>> n2 <<< n3).visualise().show() shouldBe
       """

@@ -4,14 +4,9 @@ import FSMParserGraph.Layout._
 
 import scala.language.implicitConversions
 
-case class FSMParserDSL(core: Core) extends DSLLike {
+object FSMParserDSL extends FSMParserGraph.Layout.DSL {
 
-  override type Self = FSMParserDSL
+  case class Operand(core: Core) extends OperandLike {}
 
-  override implicit def create(core: Core): FSMParserDSL = {
-
-    FSMParserDSL(core)
-  }
+  override def create(core: Core): Operand = Operand(core)
 }
-
-object FSMParserDSL extends FSMParserDSL(Core.empty)

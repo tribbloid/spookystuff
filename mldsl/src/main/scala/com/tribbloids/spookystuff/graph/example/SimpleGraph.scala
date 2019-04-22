@@ -30,16 +30,10 @@ object SimpleGraph extends Algebra[SimpleGraph] {
     override lazy val defaultFormat = Formats.ShowOption
   }
 
-  import Layout._
+  object DSL extends Layout.DSL {
 
-  case class DSL(
-      core: Core
-  ) extends DSLLike {
+    case class Operand(core: Layout.Core) extends OperandLike {}
 
-    override type Self = DSL
-
-    override def create(core: Layout.Core): DSL = this.copy(core)
+    override def create(core: Layout.Core): Operand = Operand(core)
   }
-
-  object DSL extends DSL(Core.empty) {}
 }
