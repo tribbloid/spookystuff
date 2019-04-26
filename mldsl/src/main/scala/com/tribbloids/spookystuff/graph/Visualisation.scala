@@ -68,8 +68,8 @@ case class Visualisation[D <: Domain](
       graph
     }
 
-    def showASCIIArt(
-        forward: Boolean
+    def show(
+        forward: Boolean = true
     ): String = {
 
       val graph = compileASCII(core.heads.seq)
@@ -104,7 +104,7 @@ case class Visualisation[D <: Domain](
         Tree.showBackward(core.heads.seq)
       }
     } else {
-      ASCIIArt.showASCIIArt(forward)
+      ASCIIArt.show(forward)
     }
   }
 }

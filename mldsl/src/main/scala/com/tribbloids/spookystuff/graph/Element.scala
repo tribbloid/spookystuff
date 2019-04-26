@@ -119,7 +119,7 @@ object Element {
     }
   }
 
-  class LinkedNode[D <: Domain](
+  class NodeTriplet[D <: Domain](
       val node: Node[D],
       val inbound: mutable.LinkedHashSet[D#ID] = mutable.LinkedHashSet.empty[D#ID],
       val outbound: mutable.LinkedHashSet[D#ID] = mutable.LinkedHashSet.empty[D#ID]
@@ -130,7 +130,7 @@ object Element {
     override protected def _replicate(m: _Mutator)(
         implicit idRotator: _Rotator
     ): _LinkedNode = {
-      new LinkedNode[D](
+      new NodeTriplet[D](
         node.replicate(m),
         inbound.map(idRotator),
         outbound.map(idRotator)

@@ -34,7 +34,7 @@ case class ParsingRun(
     backtrackingMgr.untilTheEnd()
 
     backtrackingMgr.stack.toSeq.map { ls =>
-      val captured = ls.precedingString :+ ls.token
+      val captured = ls.spanString :+ ls.token
       val transition = ls.current
       captured -> transition
     }

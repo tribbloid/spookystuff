@@ -2,15 +2,17 @@ package com.tribbloids.spookystuff.graph
 
 trait DataAlgebra[T] {
 
-  def eye: T = throw new UnsupportedOperationException(s"${this.getClass.getName} has no identity")
+  def eye: T = throw new UnsupportedOperationException(s"${this.getClass.getName} has no identity defined")
 
-  def plus(v1: T, v2: T): T
+  def +(v1: T, v2: T): T
 
-  object Monadic extends DataAlgebra.MonadicAlgebra[T] {
+  object Monadic extends DataAlgebra[Option[T]] {
 
-    override def plus(v1: Option[T], v2: Option[T]): Option[T] = {
+    override val eye = None
+
+    override def +(v1: Option[T], v2: Option[T]): Option[T] = {
       (v1, v2) match {
-        case (Some(x), Some(y)) => Some(DataAlgebra.this.plus(x, y))
+        case (Some(x), Some(y)) => Some(DataAlgebra.this.+(x, y))
         case (Some(x), None)    => Some(x)
         case (None, Some(y))    => Some(y)
         case _                  => None
@@ -21,13 +23,11 @@ trait DataAlgebra[T] {
 
 object DataAlgebra {
 
-  trait MonadicAlgebra[T] extends DataAlgebra[Option[T]] {
+  case class NoAmbiguity[T](eyeOpt: Option[T] = None) extends DataAlgebra[T] {
 
-    override val eye = None
-  }
+    override def eye: T = eyeOpt.getOrElse(super.eye)
 
-  case class NoAmbiguity[T]() extends DataAlgebra[T] {
-    override def plus(v1: T, v2: T): T = {
+    override def +(v1: T, v2: T): T = {
       if (v1 == v2) v1
       else throw new UnsupportedOperationException(s"conflict between data '$v1' and '$v2' which has identical IDs")
     }

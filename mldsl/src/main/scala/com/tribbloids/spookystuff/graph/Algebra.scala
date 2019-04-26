@@ -68,7 +68,7 @@ object Algebra {
 
     final type _NodeLike = Element.NodeLike[D]
     final type _Node = Element.Node[D]
-    final type _LinkedNode = Element.LinkedNode[D]
+    final type _LinkedNode = Element.NodeTriplet[D]
 
     final type _Edge = Element.Edge[D]
 

@@ -1,5 +1,5 @@
 package com.tribbloids.spookystuff.graph
-import com.tribbloids.spookystuff.graph.Element.{Edge, LinkedNode}
+import com.tribbloids.spookystuff.graph.Element.{Edge, NodeTriplet}
 import com.tribbloids.spookystuff.graph.IDAlgebra.Rotator
 import com.tribbloids.spookystuff.utils.{CommonTypes, MultiMapView}
 
@@ -11,7 +11,7 @@ import scala.collection.mutable
 //TODO: this may leverage an existing java/scala graph library
 //TODO: also need SparkGraphImpl, use GraphX or GraphFrame depending on their maturity
 case class LocalGraph[D <: Domain] private (
-    nodeMap: mutable.Map[D#ID, LinkedNode[D]],
+    nodeMap: mutable.Map[D#ID, NodeTriplet[D]],
     edgeMap: MultiMapView.Mutable[(D#ID, D#ID), Edge[D]]
 )(
     override implicit val algebra: Algebra[D]
@@ -142,12 +142,12 @@ object LocalGraph {
     protected def linkedNodeReducer(
         v1: _LinkedNode,
         v2: _LinkedNode,
-        nodeReducer: CommonTypes.Binary[NodeData]
+        node_+ : CommonTypes.Binary[NodeData]
     ): _LinkedNode = {
 
       require(v1._id == v2._id, s"ID mismatch, ${v1._id} ~= ${v2._id}")
 
-      val node = algebra.createNode(nodeReducer(v1.data, v2.data), Some(v1._id))
+      val node = algebra.createNode(node_+(v1.data, v2.data), Some(v1._id))
 
       val inbound = v1.inbound ++ v2.inbound
       val outbound = v1.outbound ++ v2.outbound
@@ -157,15 +157,15 @@ object LocalGraph {
     def union(
         v1: GG,
         v2: GG,
-        nodeReducer: CommonTypes.Binary[NodeData]
+        node_+ : CommonTypes.Binary[NodeData]
     ): GG = {
 
       val v2Reduced: mutable.Map[D#ID, _LinkedNode] = v2.nodeMap.map {
         case (k, vv2) =>
-          val reducedV = v1.nodeMap
+          val reducedV: _LinkedNode = v1.nodeMap
             .get(k)
             .map { vv1 =>
-              linkedNodeReducer(vv1, vv2, nodeReducer)
+              linkedNodeReducer(vv1, vv2, node_+)
             }
             .getOrElse(vv2)
           k -> reducedV

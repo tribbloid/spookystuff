@@ -46,7 +46,7 @@ case class BacktrackingManager(
     }
 
     var transitionQueue: Seq[Transition] = Nil
-    val precedingString: mutable.ArrayBuffer[Token] = mutable.ArrayBuffer.empty
+    val spanString: mutable.ArrayBuffer[Token] = mutable.ArrayBuffer.empty
 
     //update every state that depends on length
     def length_++(): Unit = {
@@ -56,8 +56,9 @@ case class BacktrackingManager(
       if (end >= input.length) throw BacktrackingException(s"reaching EOS at length $length")
 
       val subRules = getSubRules
+      val token = this.token
       transitionQueue = subRules.transitionsMap.getOrElse(token, Nil)
-      precedingString += input(end)
+      spanString += token
     }
 
     var transitionQueueII: Int = 0
@@ -84,7 +85,7 @@ case class BacktrackingManager(
 
       do {
         transition = nextTransition()
-        opt = transition._1.forward(precedingString, token, previousState._2)
+        opt = transition._1.forward(spanString, previousState._2)
       } while (opt.isEmpty)
 
       current = transition._1 -> (transition._2, opt.get)
@@ -102,7 +103,7 @@ case class BacktrackingManager(
       val nextState = ls.nextState()
 
       nextState._1.nodeView.element.data match {
-        case FState.Type.Normal =>
+        case FState.Ordinary =>
           val nextLS = LinearSearch(
             nextState,
             ls.length + 1
@@ -110,7 +111,7 @@ case class BacktrackingManager(
 
           stack.push(nextLS)
           true
-        case FState.Type.End =>
+        case FState.EndOfParsing =>
           false
       }
 

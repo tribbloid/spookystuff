@@ -6,15 +6,12 @@ import com.tribbloids.spookystuff.utils.MultiMapView
 
 object FState {
 
-  trait Type extends Product
+  sealed trait Type extends Product
 
-  object Type {
+  case object Ordinary extends Type
 
-    case object Normal extends Type
-
-//    case object Start extends Type
-    case object End extends Type
-  }
+  //    case object Start extends Type
+  case object EndOfParsing extends Type
 
   def isEnclosing(supr: Range, sub: Range): Boolean = {
     supr.end >= sub.end

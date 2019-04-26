@@ -2,7 +2,9 @@ package com.tribbloids.spookystuff.parsing
 
 import org.scalatest.FunSpec
 
-class RuleStateSuite extends FunSpec {
+import FSMParserDSL._
+
+class RuleSuite extends FunSpec {
 
   /**
     * TODO:
@@ -14,7 +16,8 @@ class RuleStateSuite extends FunSpec {
   describe("add Start & End state automatically") {
 
     it("for 1 rule") {
-//      val rule = Rule()
+      val r1 = P('$')
+
     }
 
     it("for 3 rules in 1 state") {}

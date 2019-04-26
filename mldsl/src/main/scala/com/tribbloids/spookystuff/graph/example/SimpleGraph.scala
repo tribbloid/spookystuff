@@ -17,7 +17,7 @@ object SimpleGraph extends Algebra[SimpleGraph] {
 
   object DataAlgebraProto extends DataAlgebra[String] {
 
-    override def plus(v1: String, v2: String): String = v1 + v2
+    override def +(v1: String, v2: String): String = v1 + v2
   }
 
   override def nodeAlgebra = DataAlgebra.NoAmbiguity().Monadic

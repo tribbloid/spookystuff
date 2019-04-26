@@ -30,7 +30,7 @@ object StaticGraph {
 
     def fromModule(v: _Module): GG
 
-    def union(v1: GG, v2: GG, node_+ : CommonTypes.Binary[NodeData] = nodeAlgebra.plus): GG
+    def union(v1: GG, v2: GG, node_+ : CommonTypes.Binary[NodeData] = nodeAlgebra.+): GG
 
     //TODO: this API need to change to facilitate big Heads and Tails in the format of RDD
     /**
@@ -39,11 +39,11 @@ object StaticGraph {
       * @param edge_+ binary operation to combine data from 2 edges
       * @return merged graph -> mappings that converts evicted edges to created edges
       */
-    def merge(
+    def serial(
         base: (GG, _Heads),
         top: (GG, _Tails),
-        node_+ : CommonTypes.Binary[NodeData] = nodeAlgebra.plus,
-        edge_+ : CommonTypes.Binary[EdgeData] = edgeAlgebra.plus
+        node_+ : CommonTypes.Binary[NodeData] = nodeAlgebra.+,
+        edge_+ : CommonTypes.Binary[EdgeData] = edgeAlgebra.+
     ): (GG, Map[_Edge, _Edge]) = {
 
       val uu: GG = union(base._1, top._1, node_+)

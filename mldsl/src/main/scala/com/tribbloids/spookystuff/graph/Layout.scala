@@ -155,7 +155,7 @@ trait Layout[D <: Domain] extends Algebra.Sugars[D] {
 
       def _mergeImpl(top: Core, topTails: _Tails): Core = {
 
-        val (newGraph, conversion) = defaultGraphBuilder.merge(
+        val (newGraph, conversion) = defaultGraphBuilder.serial(
           base._graph -> base.from,
           top._graph -> topTails
         )
