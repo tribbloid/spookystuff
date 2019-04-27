@@ -50,10 +50,10 @@ trait ElementView[D <: Domain] extends Algebra.Sugars[D] with IDMixin {
           } else Nil
 
         prefixes.map("(" + _ + ")").mkString("") + " [ " +
-          format._showEdge(edge) + " ]"
+          format.showEdge(edge) + " ]"
 
       case node: Element.NodeLike[D] =>
-        format._showNode(node)
+        format.showNode(node)
       case v @ _ =>
         "" + v
     }

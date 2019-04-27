@@ -394,26 +394,26 @@ trait Layout[D <: Domain] extends Algebra.Sugars[D] {
 
     object Default
         extends Visualisation.Format[D](
-          _showNode = CommonUtils.toStrNullSafe,
-          _showEdge = CommonUtils.toStrNullSafe
+          showNode = CommonUtils.toStrNullSafe,
+          showEdge = CommonUtils.toStrNullSafe
         )
 
     object ShowData
         extends Visualisation.Format[D](
-          _showNode = { v =>
+          showNode = { v =>
             "" + v.data
           },
-          _showEdge = { v =>
+          showEdge = { v =>
             "" + v.data
           }
         )
 
     object ShowOption
         extends Visualisation.Format[D](
-          _showNode = { v =>
+          showNode = { v =>
             Layout.monad2Str(v.data)
           },
-          _showEdge = { v =>
+          showEdge = { v =>
             Layout.monad2Str(v.data)
           }
         )

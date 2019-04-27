@@ -135,16 +135,13 @@ object Visualisation {
 
   lazy val defaultASCIILayout = LayoutPrefsImpl(
     unicode = true,
-//    compactify = false,
-//    elevateEdges = false,
-    doubleVertices = true,
     explicitAsciiBends = true
   )
 
   //TODO: merge into algebra?
   case class Format[T <: Domain](
-      _showNode: Element.NodeLike[T] => String,
-      _showEdge: Element.Edge[T] => String,
+      showNode: Element.NodeLike[T] => String,
+      showEdge: Element.Edge[T] => String,
       nodeShortName: Element.NodeLike[T] => String = { v: Element.NodeLike[T] =>
         v.idStr
       },
@@ -157,9 +154,9 @@ object Visualisation {
       asciiLayout: LayoutPrefsImpl = defaultASCIILayout
   ) {
 
-    def showNode(v: Element.NodeLike[T]): String =
+    def _showNode(v: Element.NodeLike[T]): String =
       if (v.isDangling) "??"
-      else _showNode(v)
+      else showNode(v)
 
     def shortNameOf(v: Element[T]): String = v match {
       case nn: Element.NodeLike[T] => nodeShortName(nn)
@@ -167,8 +164,8 @@ object Visualisation {
     }
 
     def showElement(v: Element[T]): String = v match {
-      case nn: Element.NodeLike[T] => showNode(nn)
-      case ee: Element.Edge[T]     => _showEdge(ee)
+      case nn: Element.NodeLike[T] => _showNode(nn)
+      case ee: Element.Edge[T]     => showEdge(ee)
     }
   }
 }

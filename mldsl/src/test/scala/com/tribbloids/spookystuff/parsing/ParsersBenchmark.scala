@@ -151,9 +151,9 @@ object ParsersBenchmark {
 
     val closure: Int => Unit = { i: Int =>
       System.gc()
-      print(name + " start profiling ...")
+//      print(name + " start profiling ...")
       val result = converted.foreach(_ => UnitRunner)
-      print(" Done\n")
+//      print(" Done\n")
       result
     }
   }

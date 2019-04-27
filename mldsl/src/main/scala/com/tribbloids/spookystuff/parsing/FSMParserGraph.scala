@@ -2,6 +2,7 @@ package com.tribbloids.spookystuff.parsing
 
 import java.util.UUID
 
+import com.github.mdr.ascii.layout.prefs.LayoutPrefsImpl
 import com.tribbloids.spookystuff.graph._
 
 /**
@@ -34,6 +35,15 @@ object FSMParserGraph extends Algebra[FSMParserGraph] {
 
     override lazy val defaultGraphBuilder: LocalGraph.BuilderImpl[FSMParserGraph] = LocalGraph.BuilderImpl()
 
-    override lazy val defaultFormat: Layout.Formats.ShowOption.type = Formats.ShowOption
+    override lazy val defaultFormat = Formats.ShowOption.copy(
+      asciiLayout = LayoutPrefsImpl(
+        unicode = true,
+        //    compactify = false,
+        //    elevateEdges = false,
+        doubleVertices = true,
+        explicitAsciiBends = true
+      )
+    )
+
   }
 }
