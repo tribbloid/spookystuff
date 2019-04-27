@@ -60,12 +60,12 @@ trait Layout[D <: Domain] extends Algebra.Sugars[D] {
 
     }
 
-    def fromEdgeData(v: EdgeData): Core = {
+    def Edge(v: EdgeData): Core = {
       val node = algebra.createEdge(v)
       fromElement(node)
     }
 
-    def fromNodeData(v: NodeData): Core = {
+    def Node(v: NodeData): Core = {
       val node = algebra.createNode(v)
       fromElement(node)
     }
@@ -108,7 +108,9 @@ trait Layout[D <: Domain] extends Algebra.Sugars[D] {
       val latentGraph =
         defaultGraphBuilder.fromSeq(Seq(algebra.DANGLING), (latentTails ++ latentHeads).distinct)
 
-      defaultGraphBuilder.union(_graph, latentGraph)
+      defaultGraphBuilder.union(_graph, latentGraph, { (v1, v2) =>
+        v1 // nodes in latentGraph should have incorrect data
+      })
     }
 
     lazy val from: _Heads = fromOverride.getOrElse(heads)
@@ -363,14 +365,17 @@ trait Layout[D <: Domain] extends Algebra.Sugars[D] {
 
       def core: Core
 
+      def output: Core = core
+
       def visualise(format: Visualisation.Format[D] = defaultFormat): Visualisation[D] =
-        Visualisation[D](core, format)
+        Visualisation[D](output, format)
     }
 
     def create(core: Core): Operand
+    final def create(element: Element[D]): Operand = create(Core.fromElement(element))
 
-    def Edge(v: EdgeData): Operand = create(Core.fromEdgeData(v))
-    def Node(v: NodeData): Operand = create(Core.fromNodeData(v))
+    def Edge(v: EdgeData): Operand = create(Core.Edge(v))
+    def Node(v: NodeData): Operand = create(Core.Node(v))
 
     sealed trait Implicits_Level1 {
 
@@ -381,6 +386,8 @@ trait Layout[D <: Domain] extends Algebra.Sugars[D] {
 
       implicit def Node(v: NodeData): Operand = DSL.this.Node(v)
     }
+
+    def formats = Layout.this.Formats
   }
 
   object Formats {

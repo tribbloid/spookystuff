@@ -1,19 +1,26 @@
 package com.tribbloids.spookystuff.parsing
 
-import com.tribbloids.spookystuff.parsing.Rule.Token
 import com.tribbloids.spookystuff.parsing.FState.SubRules
-import com.tribbloids.spookystuff.utils.MultiMapView
+import com.tribbloids.spookystuff.parsing.Rule.Token
+import com.tribbloids.spookystuff.utils.{MultiMapView, RangeArg}
+
+import scala.collection.immutable.NumericRange
 
 object FState {
 
   sealed trait Type extends Product
 
-  case object Ordinary extends Type
+  case object Ordinary extends Type {
 
-  //    case object Start extends Type
-  case object EndOfParsing extends Type
+    override def toString: String = "---"
+  }
 
-  def isEnclosing(supr: Range, sub: Range): Boolean = {
+  case object START extends Type
+
+  case object FINISH extends Type
+
+  def isEnclosing(supr: RangeArg, sub: RangeArg): Boolean = {
+    supr.start <= sub.start &&
     supr.end >= sub.end
   }
 
@@ -46,22 +53,22 @@ case class FState(
       }
   }
 
-  lazy val markers: List[Int] = {
+  lazy val markers: List[Long] = {
 
     var proto = transitions.flatMap {
       case (rule, _) =>
         val window = rule.range
         Seq(window.start, window.end + 1)
     }
-    proto :+= 0
+    proto = proto :+ 0L
 
     proto.toList.distinct.sorted
   }
 
-  lazy val subRuleCache: Seq[(Range, SubRules)] = {
+  lazy val subRuleCache: Seq[(RangeArg, SubRules)] = {
     for (i <- 1 until markers.size) yield {
-
-      val range = markers(i - 1) until markers(i)
+      val _range: NumericRange[Long] = markers(i - 1) until markers(i)
+      val range: RangeArg = RangeArg.fromNumericRange(_range)
 
       val inRange = transitions.filter(v => FState.isEnclosing(v._1.range, range))
       range -> SubRules(inRange)

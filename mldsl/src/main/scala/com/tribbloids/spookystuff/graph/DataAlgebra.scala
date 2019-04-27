@@ -32,4 +32,14 @@ object DataAlgebra {
       else throw new UnsupportedOperationException(s"conflict between data '$v1' and '$v2' which has identical IDs")
     }
   }
+
+  case class MaxBy[T](fn: T => Long, eyeOpt: Option[T] = None) extends DataAlgebra[T] {
+
+    override def eye: T = eyeOpt.getOrElse(super.eye)
+
+    override def +(v1: T, v2: T): T = {
+
+      Seq(v1, v2).maxBy(fn)
+    }
+  }
 }

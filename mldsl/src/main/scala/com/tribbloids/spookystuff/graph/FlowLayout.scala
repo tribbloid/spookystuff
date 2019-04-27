@@ -17,8 +17,8 @@ trait FlowLayout[D <: Domain] extends Layout[D] {
 
     trait OperandLike extends super.OperandLike {
 
-      lazy val `:>>` = core.Ops(FromLeft, FromRight)
-      lazy val `<<:` = core.Ops(FromRight, FromLeft)
+      lazy val `>>` = core.Ops(FromLeft, FromRight)
+      lazy val `<<` = core.Ops(FromRight, FromLeft)
 
       // select from
 
@@ -32,6 +32,7 @@ trait FlowLayout[D <: Domain] extends Layout[D] {
       //TODO: these symbols are lame
       def >-(filter: EdgeFilter[D]): Operand = from(filter)
 
+      //TODO: should be part of EdgeFilter
       def and(filter: EdgeFilter[D]) = {
         val newFrom = Heads[D](filter(core._graph))
         val mergedFrom = Heads[D](core.from.seq ++ newFrom.seq)
@@ -45,7 +46,7 @@ trait FlowLayout[D <: Domain] extends Layout[D] {
       // undirected
 
       def union(another: OperandLike): Operand = {
-        `:>>`.union(another.core)
+        `>>`.union(another.core)
       }
 
       def U(another: OperandLike) = union(another)
@@ -54,7 +55,7 @@ trait FlowLayout[D <: Domain] extends Layout[D] {
 
       // left > right
 
-      def merge_>(right: OperandLike): Operand = `:>>`.merge(right.core)
+      def merge_>(right: OperandLike): Operand = `>>`.merge(right.core)
 
       //    def merge(right: Interface) = merge_>(right)
       def >>>(right: OperandLike) = merge_>(right)
@@ -63,14 +64,14 @@ trait FlowLayout[D <: Domain] extends Layout[D] {
 
       //TODO: fast-forward handling: if right is reused for many times,
       // ensure that only the part that doesn't overlap with this got duplicated (conditional duplicate)
-      def rebase_>(right: OperandLike): Operand = `:>>`.rebase(right.core)
+      def rebase_>(right: OperandLike): Operand = `>>`.rebase(right.core)
 
       def rebase(right: OperandLike) = rebase_>(right)
 
       def >=>(right: OperandLike) = rebase_>(right)
 
       //this is really kind of ambiguous
-      def commit_>(right: OperandLike): Operand = `:>>`.commit(right.core)
+      def commit_>(right: OperandLike): Operand = `>>`.commit(right.core)
 
       def commit(right: OperandLike) = commit_>(right)
 
@@ -79,7 +80,7 @@ trait FlowLayout[D <: Domain] extends Layout[D] {
       // left < right
       //TODO: follow :>> & <<: convention
 
-      def merge_<(left: OperandLike): Operand = `<<:`.merge(left.core)
+      def merge_<(left: OperandLike): Operand = `<<`.merge(left.core)
 
       def egrem(prev: OperandLike) = prev.merge_<(this)
 
@@ -87,13 +88,13 @@ trait FlowLayout[D <: Domain] extends Layout[D] {
 
       def <(prev: OperandLike) = prev.merge_<(this)
 
-      def rebase_<(left: OperandLike): Operand = `<<:`.rebase(left.core)
+      def rebase_<(left: OperandLike): Operand = `<<`.rebase(left.core)
 
       def esaber(prev: OperandLike) = prev.rebase_<(this)
 
       def <=<(prev: OperandLike) = prev.rebase_<(this)
 
-      def commit_<(left: OperandLike): Operand = `<<:`.commit(left.core)
+      def commit_<(left: OperandLike): Operand = `<<`.commit(left.core)
 
       def timmoc(left: OperandLike) = left.commit_<(this)
 

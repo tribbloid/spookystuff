@@ -1,10 +1,11 @@
 package com.tribbloids.spookystuff.parsing
 
 import com.tribbloids.spookystuff.parsing.Rule.Token
+import com.tribbloids.spookystuff.utils.RangeArg
 
 case class Rule(
     token: Token,
-    range: Range = Rule.Range.next,
+    range: RangeArg = Rule.RangeArgs.next,
     /**
       * mutate meta
       * @return has 4 outcomes:
@@ -15,6 +16,8 @@ case class Rule(
       */
     forward: Rule.MetaStateMap = (_, v) => Some(v)
 ) {
+
+  override def toString = s"'$token' $range"
 
   //this assumes that OutputSink is immutable, and object creation overhead won't hit us hard
 }
@@ -28,8 +31,12 @@ object Rule {
 
   trait Token extends Any
 
-  case class CharToken(v: Char) extends AnyVal with Token // inlining is subjective
-  case object EOS extends Token //end of stream
+  case class CharToken(v: Char) extends AnyVal with Token {
+    override def toString: String = v.toString
+  } // inlining is subjective
+  case object EndOfStream extends Token {
+    override def toString: String = "[EOS]"
+  } //end of stream
 //  case object BeginningOfStream extends AnyVal with Token
 
   // TODO: how to enable chaining of functions to define resolving as a parser combinator ??
@@ -38,9 +45,9 @@ object Rule {
 //      override val range: Range = 0 to 0
 //  ) extends Rule {}
 
-  object Range {
+  object RangeArgs {
 
-    val next = 0 to 0
-    val maxLength = 0 until Int.MaxValue
+    val next: RangeArg = 0L to 0L
+    val maxLength: RangeArg = 0L to Long.MaxValue
   }
 }

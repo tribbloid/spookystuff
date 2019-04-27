@@ -1,6 +1,6 @@
 package com.tribbloids.spookystuff.parsing
 
-import FSMParserGraph.Layout._
+import com.tribbloids.spookystuff.parsing.FSMParserGraph.Layout._
 
 import scala.language.implicitConversions
 
@@ -12,49 +12,92 @@ import scala.language.implicitConversions
   * - state change represented by a function (FStateMeta => FStateMeta): P("{").change(meta => ...)
   * - strip
   * - escape: go to same state with skip +1 P_*("$").escape
-  * -
   */
 object FSMParserDSL extends DSL {
 
-  trait Operand extends OperandLike {
+  class Operand(val core: Core, val entryNodeOpt: Option[algebra._Node] = None) extends OperandLike {
 
-    lazy val fromLeftNode: Operand = Node(FState.Ordinary)
-    lazy val fromRightNode: Operand = Node(FState.Ordinary)
+    lazy val entryNode: algebra._Node = entryNodeOpt.getOrElse(algebra.createNode(FState.Ordinary))
 
-    def ~>(top: Operand): Operand = {
+    lazy val entry: Operand = create(entryNode)
 
-      this >>> top.fromLeftNode >>> top
+    lazy val initialFState: Operand = {
+
+      val node: algebra._Node = algebra.createNode(FState.START, Some(entryNode._id))
+      create(node)
     }
 
-    def <~(base: Operand): Operand = {
+    def :~>(top: Operand): Operand = {
 
-      this <<< this.fromRightNode <<< base
+      val base = this
+
+      val topWithEntry = top match {
+        case FINISH => FINISH
+        case _      => top.entry >>> top
+      }
+
+      val core = (base >>> topWithEntry).core
+      new Operand(core, Some(base.entryNode))
     }
 
-//    lazy val compile: Combined = {
-//
-//      // add
-//    }
+    def <~:(top: Operand): Operand = {
+
+      val base = this
+
+      val topWithEntry = top match {
+        case FINISH => FINISH
+        case _      => top <<< top.entry
+      }
+
+      val core = (topWithEntry <<< base).core
+      new Operand(core, Some(base.entryNode))
+    }
+
+    def :&(op: Operand) = Loop(op)
+    def &:(op: Operand) = Loop(op)
+
+    case class Loop(op: Operand) {
+
+      def :~>(top: Operand): Operand = {
+
+        val base = Operand.this
+        val _top = new Operand(top.core, Some(op.entryNode))
+
+        base :~> _top
+      }
+
+      def <~:(top: Operand): Operand = {
+
+        val base = Operand.this
+        val _top = new Operand(top.core, Some(op.entryNode))
+
+        _top <~: base
+      }
+    }
+
+    override lazy val output: Core = {
+
+      val prunedTails = this.core.tails.mapValues { tails =>
+        val seq = tails.seq.filter(_.data.nonEmpty)
+        tails.copyImplicitly(seq)
+      }
+
+      val pruned = this.core.copy(tails = prunedTails)
+
+      (initialFState >>> create(pruned) <<< initialFState).core
+    }
   }
 
-  case class Raw(core: Core) extends Operand {}
+  override def create(core: Core): Operand = new Operand(core)
 
-  override def create(core: Core): Operand = Raw(core)
+  object EOS extends Operand(Core.Edge(Some(Rule(Rule.EndOfStream, Rule.RangeArgs.maxLength))))
 
-  object EndOfParsing extends Operand {
-
-    override lazy val core: Core = {
-      val edge = Core.fromEdgeData(Some(Rule(Rule.EOS, Rule.Range.maxLength)))
-      Core.fromNodeData(FState.EndOfParsing)
-    }
-  }
+  object FINISH extends Operand(Core.Node(FState.FINISH))
 
   class PatternLike(
       rule: Rule,
       loops: Seq[Pattern]
-  ) extends Operand {
-
-    override lazy val core: Core = Core.fromEdgeData(Some(rule))
+  ) extends Operand(Core.Edge(Some(rule))) {
 
     def ^^[T](fn: => T): T = ???
 
@@ -67,6 +110,6 @@ object FSMParserDSL extends DSL {
       rule: Rule
   ) extends PatternLike(rule, Nil) {}
 
-  def P(v: Char) = Pattern(Rule(Rule.CharToken(v), Rule.Range.next))
-  def P_*(v: Char) = Pattern(Rule(Rule.CharToken(v), Rule.Range.maxLength))
+  def P(v: Char) = Pattern(Rule(Rule.CharToken(v), Rule.RangeArgs.next))
+  def P_*(v: Char) = Pattern(Rule(Rule.CharToken(v), Rule.RangeArgs.maxLength))
 }

@@ -1,7 +1,7 @@
 package com.tribbloids.spookystuff.parsing
 
 import com.tribbloids.spookystuff.parsing.FState.SubRules
-import com.tribbloids.spookystuff.parsing.Rule.{CharToken, EOS, Token}
+import com.tribbloids.spookystuff.parsing.Rule.{CharToken, EndOfStream, Token}
 import com.tribbloids.spookystuff.utils.BacktrackingIterator
 
 import scala.annotation.tailrec
@@ -25,7 +25,7 @@ case class ParsingRun(
 
     stream.map { cc =>
       CharToken(cc)
-    } ++ Seq(EOS)
+    } ++ Seq(EndOfStream)
   }
 
   val backtrackingMgr = BacktrackingManager(input, initialFState -> FStateMeta())

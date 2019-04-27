@@ -14,7 +14,14 @@ case class Visualisation[D <: Domain](
 
   final override def algebra: Algebra[D] = core.algebra
 
-  object Tree {
+  trait Impl {
+
+    def show: String
+
+    def apply(): String = show
+  }
+
+  object Tree extends Impl {
 
     //todo: merge following 2
     def showForward(
@@ -40,11 +47,24 @@ case class Visualisation[D <: Domain](
         }
         .mkString("")
     }
+
+    override lazy val show: String = {
+
+      if (format.forward) {
+
+        val facets = core.layout.facets
+        val strs = facets.map { facet =>
+          facet.arrow + "\n" + Tree.showForward(core.tails(facet).seq)
+        }
+
+        strs.mkString("")
+      } else {
+        Tree.showBackward(core.heads.seq)
+      }
+    }
   }
 
-  object ASCIIArt {
-
-    protected final val layoutPrefs = LayoutPrefsImpl(unicode = true, explicitAsciiBends = false)
+  object ASCIIArt extends Impl {
 
     def compileASCII(
         endWith: Seq[Element[D]]
@@ -68,14 +88,12 @@ case class Visualisation[D <: Domain](
       graph
     }
 
-    def show(
-        forward: Boolean = true
-    ): String = {
+    override lazy val show: String = {
 
       val graph = compileASCII(core.heads.seq)
 
-      val forwardStr = GraphLayout.renderGraph(graph, layoutPrefs = layoutPrefs)
-      if (forward) forwardStr
+      val forwardStr = GraphLayout.renderGraph(graph, layoutPrefs = format.asciiLayout)
+      if (format.forward) forwardStr
       else {
         forwardStr
           .split('\n')
@@ -87,24 +105,13 @@ case class Visualisation[D <: Domain](
   }
 
   def show(
-      forward: Boolean = true,
       asciiArt: Boolean = false
   ): String = {
 
     if (!asciiArt) {
-      if (forward) {
-
-        val facets = core.layout.facets
-        val strs = facets.map { facet =>
-          facet.arrow + "\n" + Tree.showForward(core.tails(facet).seq)
-        }
-
-        strs.mkString("")
-      } else {
-        Tree.showBackward(core.heads.seq)
-      }
+      Tree.show
     } else {
-      ASCIIArt.show(forward)
+      ASCIIArt.show
     }
   }
 }
@@ -126,6 +133,14 @@ object Visualisation {
     }
   }
 
+  lazy val defaultASCIILayout = LayoutPrefsImpl(
+    unicode = true,
+//    compactify = false,
+//    elevateEdges = false,
+    doubleVertices = true,
+    explicitAsciiBends = true
+  )
+
   //TODO: merge into algebra?
   case class Format[T <: Domain](
       _showNode: Element.NodeLike[T] => String,
@@ -137,7 +152,9 @@ object Visualisation {
         v.idStr
       },
       showPrefix: Boolean = true,
-      verbose: Boolean = false
+      verbose: Boolean = false,
+      forward: Boolean = true,
+      asciiLayout: LayoutPrefsImpl = defaultASCIILayout
   ) {
 
     def showNode(v: Element.NodeLike[T]): String =

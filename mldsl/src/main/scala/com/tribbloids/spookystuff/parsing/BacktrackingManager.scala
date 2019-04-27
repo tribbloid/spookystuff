@@ -2,6 +2,7 @@ package com.tribbloids.spookystuff.parsing
 
 import com.tribbloids.spookystuff.parsing.FState.SubRules
 import com.tribbloids.spookystuff.parsing.Rule.Token
+import com.tribbloids.spookystuff.utils.RangeArg
 
 import scala.collection.mutable
 
@@ -16,19 +17,19 @@ case class BacktrackingManager(
   // heavily stateful, backtracking only retreat to previous LinearSearch without recreating it.
   case class LinearSearch(
       previousState: StateWithMeta,
-      start: Int = 0
+      start: Long = 0L
       //      spanRange: Range, // refer to the buffer in BacktrackingIterator, the last Tokenacter is the matching token
       //      subRuleSearchStartFrom: Int = 0,
       //      gotos: Seq[Transition]
   ) {
 
-    lazy val subRuleCache: Seq[(Range, FState.SubRules)] = previousState._1.subRuleCache
+    lazy val subRuleCache: Seq[(RangeArg, FState.SubRules)] = previousState._1.subRuleCache
 
-    var length: Int = 0 // strictly incremental
+    var length: Long = 0L // strictly incremental
     var subRuleCacheII: Int = 0 // strictly incremental
 
-    def end: Int = start + length
-    def token: Token = input(end)
+    def end: Long = start + length
+    def token: Token = input(end.toInt)
 
     // beforeFState == (length) ==> SubRules
     //        == (char) ==> Seq[Transition]
@@ -38,7 +39,7 @@ case class BacktrackingManager(
       while (subRuleCacheII < subRuleCache.length) {
 
         val hit = subRuleCache(subRuleCacheII)
-        if (hit._1.contains(length)) return hit._2
+        if (hit._1.delegate.containsLong(length)) return hit._2
         subRuleCacheII += 1
       }
 
@@ -106,12 +107,12 @@ case class BacktrackingManager(
         case FState.Ordinary =>
           val nextLS = LinearSearch(
             nextState,
-            ls.length + 1
+            ls.length + 1L
           )
 
           stack.push(nextLS)
           true
-        case FState.EndOfParsing =>
+        case FState.FINISH =>
           false
       }
 

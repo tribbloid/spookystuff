@@ -147,7 +147,11 @@ trait Suitex extends OptionConversion {
       println(toBePrinted)
 
       s"""
-         |"${actual.mkString("\n")}" did not equal "${expected.mkString("\n")}"
+         |"
+         |${actual.mkString("\n")}
+         |" did not equal "
+         |${expected.mkString("\n")}
+         |"
       """.trim.stripMargin
     }
   }

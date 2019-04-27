@@ -19,7 +19,15 @@ object FSMParserGraph extends Algebra[FSMParserGraph] {
 
   override def idAlgebra = IDAlgebra.UUIDAlgebra
 
-  override def nodeAlgebra = DataAlgebra.NoAmbiguity(Some(FState.Ordinary))
+  override def nodeAlgebra =
+    DataAlgebra.MaxBy(
+      {
+        case FState.Ordinary => 0
+        case FState.START    => 1
+        case FState.FINISH   => 2
+      },
+      Some(FState.Ordinary)
+    )
   override def edgeAlgebra = DataAlgebra.NoAmbiguity().Monadic
 
   object Layout extends FlowLayout[FSMParserGraph] {
