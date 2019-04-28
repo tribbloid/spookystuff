@@ -6,7 +6,7 @@ import com.tribbloids.spookystuff.graph.Module.{Heads, Tails}
 import com.tribbloids.spookystuff.utils.CachingUtils.ConcurrentMap
 import com.tribbloids.spookystuff.utils.CommonUtils
 
-import scala.language.implicitConversions
+import scala.language.{higherKinds, implicitConversions}
 
 trait Layout[D <: Domain] extends Algebra.Sugars[D] {
 
@@ -19,7 +19,7 @@ trait Layout[D <: Domain] extends Algebra.Sugars[D] {
 
   object Core {
 
-    def fromElement(element: _Element): Core = {
+    def fromElement[T <: _Element](element: T): Core[T] = {
       element match {
         case v: _NodeLike =>
           val tails = v.asTails
@@ -60,12 +60,12 @@ trait Layout[D <: Domain] extends Algebra.Sugars[D] {
 
     }
 
-    def Edge(v: EdgeData): Core = {
-      val node = algebra.createEdge(v)
-      fromElement(node)
+    def Edge(v: EdgeData): Core[_Edge] = {
+      val edge = algebra.createEdge(v)
+      fromElement(edge)
     }
 
-    def Node(v: NodeData): Core = {
+    def Node(v: NodeData): Core[_Node] = {
       val node = algebra.createNode(v)
       fromElement(node)
     }
@@ -73,8 +73,8 @@ trait Layout[D <: Domain] extends Algebra.Sugars[D] {
     lazy val empty = Core(defaultGraphBuilder.fromSeq(Nil, Nil))
   }
 
-  case class Core(
-      self: _Module,
+  case class Core[+M <: _Module](
+      self: M,
       //tails or heads that doesn't belong to edges in self is tolerable
       tails: Map[Facet, _Tails] = Map.empty,
       heads: _Heads = Heads[D](),
@@ -115,7 +115,7 @@ trait Layout[D <: Domain] extends Algebra.Sugars[D] {
 
     lazy val from: _Heads = fromOverride.getOrElse(heads)
 
-    def replicate(m: _Mutator)(implicit idRotator: Rotator[ID]): Core = {
+    def replicate(m: _Mutator)(implicit idRotator: Rotator[ID]): Core[M] = {
 
       this.copy(
         self.replicate(m),
@@ -128,65 +128,64 @@ trait Layout[D <: Domain] extends Algebra.Sugars[D] {
       tails(v).seq.nonEmpty
     }
 
-    def base: Core = this
+    private def baseM = this
 
     case class Ops(
         topFacet: Facet,
         baseFacet: Facet
     ) {
 
-      def union(peer: Core): Core = {
+      def union(peer: Core[_]): Core[GG] = {
         val result = defaultGraphBuilder.union(_graph: GG, peer._graph: GG)
 
         val tails = {
-          val facets = (base.tails.keys.toSeq ++ peer.tails.keys.toSeq).distinct
+          val facets = (baseM.tails.keys.toSeq ++ peer.tails.keys.toSeq).distinct
           Map(
             facets.map { facet =>
-              val tails = base.tails(facet) ++ peer.tails(facet)
+              val tails = baseM.tails(facet) ++ peer.tails(facet)
               facet -> tails
             }: _*
           )
         }
 
-        val heads = base.heads ++ peer.heads
+        val heads = baseM.heads ++ peer.heads
 
         Core(result, tails, heads)
       }
 
       //      def checkConnectivity(top: DSLView, topTails: _Tails): DSLView = {}
 
-      def _mergeImpl(top: Core, topTails: _Tails): Core = {
+      def _mergeImpl(top: Core[_], topTails: _Tails): Core[GG] = {
 
         val (newGraph, conversion) = defaultGraphBuilder.serial(
-          base._graph -> base.from,
+          baseM._graph -> baseM.from,
           top._graph -> topTails
         )
 
         val newTails = Map(
-          topFacet -> base.tails(topFacet).convert(conversion),
+          topFacet -> baseM.tails(topFacet).convert(conversion),
           baseFacet -> top.tails(baseFacet).convert(conversion)
         )
         val newHeads = top.heads.convert(conversion)
 
         Core(
-          newGraph: StaticGraph[D],
+          newGraph: GG,
           newTails,
           heads = newHeads
         )
       }
 
-      def merge(top: Core): Core = {
+      def merge(top: Core[_]): Core[GG] = {
 
         _mergeImpl(top, top.tails(topFacet))
       }
 
-      def rebase(top: Core): Core = {
+      def rebase(top: Core[_]): Core[_Module] = {
 
-        val topTails = top.tails(baseFacet).seq
-
+        val topTails: Seq[Element.Edge[D]] = top.tails(baseFacet).seq
         val rotatorFactory = idAlgebra.rotatorFactory()
 
-        topTails.foldLeft(Core.this) { (self, edge) =>
+        topTails.foldLeft(baseM: Core[_Module]) { (self, edge) =>
           val tail = Tails(Seq(edge))
           val rotator = rotatorFactory()
           self.Ops(topFacet, baseFacet)._mergeImpl(top.replicate(Mutator.replicate[D])(rotator), tail)
@@ -194,7 +193,7 @@ trait Layout[D <: Domain] extends Algebra.Sugars[D] {
       }
 
       //this is really kind of ambiguous, remove it?
-      def commit(top: Core): Core = {
+      def commit(top: Core[_]): Core[_Module] = {
 
         val intakes = top.tails
         assert(intakes.size <= 1, "non-linear right operand, please use merge, rebase or union instead")
@@ -209,7 +208,7 @@ trait Layout[D <: Domain] extends Algebra.Sugars[D] {
 
     trait _ElementView extends ElementView[D] {
 
-      override val core: Core = Core.this
+      override val core: Core[M] = Core.this
     }
 
     object _ElementView {
@@ -357,37 +356,40 @@ trait Layout[D <: Domain] extends Algebra.Sugars[D] {
 
   trait DSL {
 
-    type Operand <: OperandLike
+    def formats: Formats.type = Layout.this.Formats
 
-    trait OperandLike {
+    type Operand[+M <: _Module] <: OperandLike[M]
 
-      final def outer: DSL = DSL.this
+    type Op = Operand[_Module]
 
-      def core: Core
+    trait OperandLike[+M <: _Module] {
 
-      def output: Core = core
+      final def outerDSL: DSL = DSL.this
+
+      def core: Core[M]
+      final def self: M = core.self
+
+      def output: Core[_Module] = core
 
       def visualise(format: Visualisation.Format[D] = defaultFormat): Visualisation[D] =
         Visualisation[D](output, format)
     }
 
-    def create(core: Core): Operand
-    final def create(element: Element[D]): Operand = create(Core.fromElement(element))
+    def create[M <: _Module](core: Core[M]): Operand[M]
+    final def create[M <: _Element](element: M): Operand[M] = create(Core.fromElement(element))
 
-    def Edge(v: EdgeData): Operand = create(Core.Edge(v))
-    def Node(v: NodeData): Operand = create(Core.Node(v))
+    def Edge(v: EdgeData): Operand[_Edge] = create(Core.Edge(v))
+    def Node(v: NodeData): Operand[_Node] = create(Core.Node(v))
 
     sealed trait Implicits_Level1 {
 
-      implicit def Edge(v: EdgeData): Operand = DSL.this.Edge(v)
+      implicit def Edge(v: EdgeData): Operand[_Edge] = DSL.this.Edge(v)
     }
 
     object Implicits extends Implicits_Level1 {
 
-      implicit def Node(v: NodeData): Operand = DSL.this.Node(v)
+      implicit def Node(v: NodeData): Operand[_Node] = DSL.this.Node(v)
     }
-
-    def formats = Layout.this.Formats
   }
 
   object Formats {

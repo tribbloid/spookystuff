@@ -1,5 +1,6 @@
 package com.tribbloids.spookystuff.parsing
 
+import com.tribbloids.spookystuff.graph.Module
 import com.tribbloids.spookystuff.parsing.FState.SubRules
 import com.tribbloids.spookystuff.parsing.Rule.Token
 import com.tribbloids.spookystuff.utils.{MultiMapView, RangeArg}
@@ -42,7 +43,7 @@ object FState {
 // may contain multiple rules that are sequentially matched against a stream
 // first match will be served
 case class FState(
-    nodeView: FSMParserGraph.Layout.Core#NodeView
+    nodeView: FSMParserGraph.Layout.Core[Module[FSMParserGraph]]#NodeView
 ) {
 
   lazy val transitions: Seq[Transition] = nodeView.outbound2x.flatMap {

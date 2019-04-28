@@ -32,8 +32,8 @@ object SimpleGraph extends Algebra[SimpleGraph] {
 
   object DSL extends Layout.DSL {
 
-    case class Operand(core: Layout.Core) extends OperandLike {}
+    case class Operand[+M <: _Module](core: Layout.Core[M]) extends OperandLike[M] {}
 
-    override def create(core: Layout.Core): Operand = Operand(core)
+    override def create[M <: _Module](core: Layout.Core[M]): Operand[M] = Operand(core)
   }
 }

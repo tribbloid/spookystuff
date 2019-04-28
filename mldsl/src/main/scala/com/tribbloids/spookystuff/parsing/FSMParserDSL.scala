@@ -15,19 +15,21 @@ import scala.language.implicitConversions
   */
 object FSMParserDSL extends DSL {
 
-  class Operand(val core: Core, val entryNodeOpt: Option[algebra._Node] = None) extends OperandLike {
+  class Operand[+M <: _Module](val core: Core[M], val entryNodeOpt: Option[algebra._Node] = None)
+      extends OperandLike[M] {
 
-    lazy val entryNode: algebra._Node = entryNodeOpt.getOrElse(algebra.createNode(FState.Ordinary))
+    lazy val entry: Operand[_Node] = {
+      val entryNode: _Node = entryNodeOpt.getOrElse(algebra.createNode(FState.Ordinary))
+      create(entryNode)
+    }
 
-    lazy val entry: Operand = create(entryNode)
+    lazy val initial: Operand[_Node] = {
 
-    lazy val initialFState: Operand = {
-
-      val node: algebra._Node = algebra.createNode(FState.START, Some(entryNode._id))
+      val node: algebra._Node = algebra.createNode(FState.START, Some(entry.self._id))
       create(node)
     }
 
-    def :~>(top: Operand): Operand = {
+    def :~>(top: Operand[_]): Operand[GG] = {
 
       val base = this
 
@@ -37,10 +39,10 @@ object FSMParserDSL extends DSL {
       }
 
       val core = (base >>> topWithEntry).core
-      new Operand(core, Some(base.entryNode))
+      new Operand(core, Some(base.entry.self))
     }
 
-    def <~:(top: Operand): Operand = {
+    def <~:(top: Operand[_]): Operand[GG] = {
 
       val base = this
 
@@ -50,32 +52,32 @@ object FSMParserDSL extends DSL {
       }
 
       val core = (topWithEntry <<< base).core
-      new Operand(core, Some(base.entryNode))
+      new Operand(core, Some(base.entry.self))
     }
 
-    def :&(op: Operand) = Loop(op)
-    def &:(op: Operand) = Loop(op)
+    def :&(op: Operand[_Module]) = Loop(op)
+    def &:(op: Operand[_Module]) = Loop(op)
 
-    case class Loop(op: Operand) {
+    case class Loop(op: Operand[_Module]) {
 
-      def :~>(top: Operand): Operand = {
+      def :~>(top: Operand[_Module]): Operand[GG] = {
 
         val base = Operand.this
-        val _top = new Operand(top.core, Some(op.entryNode))
+        val _top = new Operand(top.core, Some(op.entry.self))
 
         base :~> _top
       }
 
-      def <~:(top: Operand): Operand = {
+      def <~:(top: Operand[_Module]): Operand[GG] = {
 
         val base = Operand.this
-        val _top = new Operand(top.core, Some(op.entryNode))
+        val _top = new Operand(top.core, Some(op.entry.self))
 
         _top <~: base
       }
     }
 
-    override lazy val output: Core = {
+    override lazy val output: Core[GG] = {
 
       val prunedTails = this.core.tails.mapValues { tails =>
         val seq = tails.seq.filter(_.data.nonEmpty)
@@ -84,11 +86,13 @@ object FSMParserDSL extends DSL {
 
       val pruned = this.core.copy(tails = prunedTails)
 
-      (initialFState >>> create(pruned) <<< initialFState).core
+      (initial >>> create(pruned) <<< initial).core
     }
+
+//    lazy val compiled = FState(core.NodeView.)
   }
 
-  override def create(core: Core): Operand = new Operand(core)
+  override def create[M <: _Module](core: Core[M]): Operand[M] = new Operand(core)
 
   object EOS extends Operand(Core.Edge(Some(Rule(Rule.EndOfStream, Rule.RangeArgs.maxLength))))
 

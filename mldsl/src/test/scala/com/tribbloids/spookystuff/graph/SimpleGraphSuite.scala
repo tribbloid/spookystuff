@@ -58,8 +58,8 @@ class SimpleGraphSuite extends FunSpecx {
 
   it("node >>> node") {
 
-    val f1: Operand = Some("ABC")
-    val f2: Operand = Some("DEF")
+    val f1: Op = Some("ABC")
+    val f2: Op = Some("DEF")
 
     val linked = f1 >>> f2
     linked.visualise().show() shouldBe
@@ -112,9 +112,9 @@ class SimpleGraphSuite extends FunSpecx {
 
   it("node >>> edge >>> node") {
 
-    val f1: Operand = Some("ABC")
-    val e1: Operand = Edge(Some("edge"))
-    val f2: Operand = Some("DEF")
+    val f1: Op = Some("ABC")
+    val e1: Op = Edge(Some("edge"))
+    val f2: Op = Some("DEF")
 
     val linked = f1 >>> e1 >>> f2
     linked.visualise().show() shouldBe
@@ -134,8 +134,8 @@ class SimpleGraphSuite extends FunSpecx {
 
   it("detached edge >>> detached edge") {
 
-    val f1: Operand = Edge(Some("ABC"))
-    val f2: Operand = Edge(Some("DEF"))
+    val f1: Op = Edge(Some("ABC"))
+    val f2: Op = Edge(Some("DEF"))
 
     val linked = f1 >>> f2
     linked.visualise().show() shouldBe
@@ -151,7 +151,7 @@ class SimpleGraphSuite extends FunSpecx {
 
     it("node >>> itself") {
 
-      val node: Operand = Some("ABC")
+      val node: Op = Some("ABC")
 
       val linked = node >>> node
       linked.visualise().show() shouldBe
@@ -194,8 +194,8 @@ class SimpleGraphSuite extends FunSpecx {
 
     it("node >>> edge >>> same node") {
 
-      val node: Operand = Some("ABC")
-      val edge: Operand = Edge(Some("loop"))
+      val node: Op = Some("ABC")
+      val edge: Op = Edge(Some("loop"))
 
       val n1 = node >>> edge
       n1.visualise().show() shouldBe
@@ -249,7 +249,7 @@ class SimpleGraphSuite extends FunSpecx {
 
     it("edge-node >>> itself") {
 
-      val edge_node: Operand = Edge(Some("loop")) >>> Node(Some("ABC"))
+      val edge_node: Op = Edge(Some("loop")) >>> Node(Some("ABC"))
 
       val linked = edge_node >>> edge_node
       linked.visualise().show(asciiArt = true) shouldBe
@@ -304,9 +304,9 @@ class SimpleGraphSuite extends FunSpecx {
 
   it("node >>> node <<< node") {
 
-    val n1: Operand = Some("A")
-    val n2: Operand = Some("B")
-    val n3: Operand = Some("C")
+    val n1: Op = Node(Some("A"))
+    val n2: Op = Some("B")
+    val n3: Op = Some("C")
 
     (n1 >>> n2 <<< n3).visualise().show() shouldBe
       """

@@ -38,8 +38,8 @@ object FSMParserGraph extends Algebra[FSMParserGraph] {
     override lazy val defaultFormat = Formats.ShowOption.copy(
       asciiLayout = LayoutPrefsImpl(
         unicode = true,
-        //    compactify = false,
-        //    elevateEdges = false,
+//        compactify = false,
+//        elevateEdges = false,
         doubleVertices = true,
         explicitAsciiBends = true
       )

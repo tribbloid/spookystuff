@@ -7,7 +7,7 @@ import scala.language.implicitConversions
 
 trait ElementView[D <: Domain] extends Algebra.Sugars[D] with IDMixin {
 
-  val core: Layout[D]#Core
+  val core: Layout[D]#Core[_]
   override final def algebra: Algebra[D] = core.algebra
 
   def element: _Element
