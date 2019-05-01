@@ -93,9 +93,7 @@ class ParsingRunSuite extends FunSpecx {
 
     it("escape by \\") {
 
-      val escape = P_*('\\').--.% { _ =>
-        PhaseVec.NoOp(1)
-      }
+      val escape = P_*('\\').escape
 
       val _p = escape :& escape :~> P_*('$').!- :~> EOS_* :~> FINISH
       val p = _p U (EOS_* :~> FINISH)
@@ -111,6 +109,13 @@ class ParsingRunSuite extends FunSpecx {
         .strRepr
         .shouldBe("""
                     |abc\$xyz
+                  """.stripMargin)
+
+      p.parse("abc\\q$xyz")
+        .strRepr
+        .shouldBe("""
+                    |abc\q
+                    |xyz
                   """.stripMargin)
     }
 
@@ -132,9 +137,37 @@ class ParsingRunSuite extends FunSpecx {
             |st
           """.stripMargin
         )
+
+      p.parse("abc{def}ghi{}jk")
+        .strRepr
+        .shouldBe(
+          """
+            |abc
+            |def
+            |ghi
+            |
+            |jk
+          """.stripMargin
+        )
     }
   }
 
-  describe("backtracking") {}
+  describe("backtracking") {
 
+    it("unclosed bracket") {
+
+      val `{` = P_*('{').!-
+      val p = `{` :~> P_*('}').!- :& `{` :~> EOS :~> FINISH
+
+      p.parse("abc{def}ghi{jk")
+        .strRepr
+        .shouldBe(
+          """
+            |abc
+            |def
+            |ghi{jk
+          """.stripMargin
+        )
+    }
+  }
 }

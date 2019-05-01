@@ -122,48 +122,52 @@ object FSMParserDSL extends DSL {
   protected def rule2Edge(p: Rule): FSMParserGraph.Layout.Core[FSMParserGraph.Layout._Edge] =
     Core.Edge(Some(p))
 
-  case class RuleOp[T](rule: Pattern#Rule[T]) extends Operand[_Edge](rule2Edge(rule)) {
+  case class Parser[+T](rule: Pattern#Rule[T]) extends Operand[_Edge](rule2Edge(rule)) {
 
     def andThen[T2](
         fn: T => Option[T2],
         vecFn: PhaseVec => PhaseVec.Like = { v =>
           v
         }
-    ): RuleOp[T2] = RuleOp(
+    ): Parser[T2] = Parser(
       rule.copy { (v1, v2) =>
         val base = rule.resultFn(v1, v2)
         Outcome.AndThen(base, fn, vecFn)
       }
     )
 
-    def ^^[T2](fn: T => Option[T2]): RuleOp[T2] = andThen(fn)
-    def ^^^(fn: T => Unit): RuleOp[Nothing] = ^^ { v =>
+    def ^^[T2](fn: T => Option[T2]): Parser[T2] = andThen(fn)
+    def ^^^(fn: T => Unit): Parser[Nothing] = ^^ { v =>
       fn(v)
       None
     }
 
-    def %(vecFn: PhaseVec => PhaseVec.Like): RuleOp[T] = andThen(v => Some(v), vecFn)
+    def %(vecFn: PhaseVec => PhaseVec.Like): Parser[T] = andThen(v => Some(v), vecFn)
   }
 
-  object RuleOp {
+  object Parser {
 
-    implicit def toRule[T](v: RuleOp[T]): Pattern#Rule[T] = v.rule
+    implicit def toRule[T](v: Parser[T]): Pattern#Rule[T] = v.rule
   }
 
   case class P(v: Pattern) {
 
-    object !! extends RuleOp[String](v.!!)
+    object !! extends Parser[String](v.!!)
 
-    lazy val !- : RuleOp[String] = `!!`.^^ { vv =>
+    lazy val !- : Parser[String] = `!!`.^^ { vv =>
       Some(vv.dropRight(1))
     }
 
-    lazy val -! : RuleOp[Char] = `!!`.^^ { vv =>
+    lazy val -! : Parser[Char] = `!!`.^^ { vv =>
       Some(vv.last)
     }
 
-    lazy val -- : RuleOp[String] = `!!`.^^ { v =>
+    lazy val -- : Parser[Nothing] = `!!`.^^ { v =>
       None
+    }
+
+    lazy val escape: Parser[Nothing] = --.% { _ =>
+      PhaseVec.NoOp(Some(1))
     }
   }
 
@@ -176,8 +180,9 @@ object FSMParserDSL extends DSL {
   def P(v: Char): P = P(Pattern(Pattern.CharToken(v), Pattern.RangeArgs.next))
   def P_*(v: Char): P = P(Pattern(Pattern.CharToken(v), Pattern.RangeArgs.maxLength))
 
-  def EOS = P(Pattern(Pattern.EndOfStream, Pattern.RangeArgs.next))
-  def EOS_* = P(Pattern(Pattern.EndOfStream, Pattern.RangeArgs.maxLength))
+  def EOS_/ : P = P(Pattern(Pattern.EndOfStream, Pattern.RangeArgs.next))
+  def EOS_* : P = P(Pattern(Pattern.EndOfStream, Pattern.RangeArgs.maxLength))
+  def EOS: P = EOS_*
 
   //
   case object FINISH extends Operand(Core.Node(FState.FINISH))

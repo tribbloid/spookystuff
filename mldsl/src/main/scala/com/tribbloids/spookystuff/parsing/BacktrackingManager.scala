@@ -24,7 +24,7 @@ case class BacktrackingManager(
       //      gotos: Seq[Transition]
   ) {
 
-    lazy val subRuleCache: Seq[(RangeArg, FState.SubRules)] = prevPhase._1.subRuleCache
+    val subRuleCache: Seq[(RangeArg, FState.SubRules)] = prevPhase._1.subRuleCache
 
     var _length: Long = 0L // strictly incremental
     var subRuleCacheII: Int = 0 // strictly incremental
@@ -39,6 +39,9 @@ case class BacktrackingManager(
     {
       updateState()
     }
+
+    def end(length: Long = this._length): Long = start + length
+    def token: Token = input(end().toInt)
 
     private def updateState(): Unit = {
       val subRules = getSubRules
@@ -72,9 +75,6 @@ case class BacktrackingManager(
       }
       transitionQueue(transitionQueueII)
     }
-
-    def end(length: Long = this._length): Long = start + length
-    def token: Token = input(end().toInt)
 
     // beforeFState == (length) ==> SubRules
     //        == (char) ==> Seq[Transition]

@@ -1,9 +1,11 @@
 package com.tribbloids.spookystuff.parsing
 
 import com.tribbloids.spookystuff.parsing.ParsersBenchmark.Epoch
+import com.tribbloids.spookystuff.parsing.ParsersBenchmark.UseFastParse.blacklist
 import com.tribbloids.spookystuff.testutils.FunSpecx
 import com.tribbloids.spookystuff.utils.{InterleavedIterator, Interpolation}
 import org.apache.spark.BenchmarkHelper
+import fastparse._
 
 import scala.util.Random
 
@@ -17,11 +19,11 @@ class ParsersBenchmark extends FunSpecx {
 
     ignore("parser") {
 
-      val result: String = parse("abcde$", ParsersBenchmark.to_$.result(_)).get.value
+      val result: String = parse("abcde$", ParsersBenchmark.UseFastParse.to_$.result(_)).get.value
       result.shouldBe()
     }
 
-    it("speed shoudn't be affected by JVM warming up") {
+    ignore("speed shoudn't be affected by JVM warming up") {
 
       val stream: Stream[String] = (0 to Math.pow(2, 8).toInt).toStream.map { _ =>
         ParsersBenchmark.rndStr(nextInt(30)) +
@@ -44,16 +46,23 @@ class ParsersBenchmark extends FunSpecx {
   it("replace 1") {
 
     val stream: Stream[String] = (0 to Math.pow(2, 16).toInt).toStream.map { _ =>
-      ParsersBenchmark.rndStr(nextInt(30)) +
-        "${" +
-        ParsersBenchmark.rndStr(nextInt(30)) +
-        "}" +
-        ParsersBenchmark.rndStr(nextInt(30))
+      var str = ParsersBenchmark.rndStr(nextInt(30))
+
+      for (i <- 0 to Random.nextInt(10)) {
+
+        str += "${" +
+          ParsersBenchmark.rndStr(nextInt(30)) +
+          "}"
+      }
+
+      str += ParsersBenchmark.rndStr(nextInt(30))
+      str
     }
 
     val epochs: List[Epoch] = List(
       Epoch(stream, "regex")(_.useRegex()),
-      Epoch(stream, "fastParse")(_.useFastParse())
+      Epoch(stream, "fastParse")(_.useFastParse()),
+      Epoch(stream, "FSM")(_.useFSM())
     )
 
     ParsersBenchmark.compare(epochs)
@@ -62,10 +71,7 @@ class ParsersBenchmark extends FunSpecx {
 
 object ParsersBenchmark {
 
-  import fastparse._
-  import NoWhitespace._
-
-  val blacklist = "{}$/\\".toSet
+  import scala.concurrent.duration._
 
   def rndStr(len: Int): String = {
     val charSeq = for (i <- 1 to len) yield {
@@ -78,35 +84,67 @@ object ParsersBenchmark {
       .mkString("")
   }
 
-  //  val allKWs: String = "/\\\\$}"
+  object UseFastParse {
+    import NoWhitespace._
 
-  case class UntilCharInclusive(kw: Char) {
+    val blacklist = "{}$/\\".toSet
 
-    //    final val allKWs: String = "/\\\\" + kw
+    //  val allKWs: String = "/\\\\$}"
 
-    def predicate(c: Char) = c != kw && c != '\\'
-    def strChars[_: P] = P(CharsWhile(predicate))
+    case class UntilCharInclusive(kw: Char) {
 
-    def escaped[_: P] = P("\\" ~/ AnyChar)
-    def str[_: P] = (strChars | escaped).rep.!
+      //    final val allKWs: String = "/\\\\" + kw
 
-    def result[_: P] = P(str ~ kw.toString) //TODO: why this cannot be ~/ ?
+      def predicate(c: Char) = c != kw && c != '\\'
+      def strChars[_: P] = P(CharsWhile(predicate))
+
+      def escaped[_: P] = P("\\" ~/ AnyChar)
+      def str[_: P] = (strChars | escaped).rep.!
+
+      def result[_: P] = P(str ~ kw.toString) //TODO: why this cannot be ~/ ?
+    }
+
+    val to_$ = UntilCharInclusive('$')
+    val `to_}` = UntilCharInclusive('}')
+
+    def once[_: P] = P(to_$.result ~ "{" ~ `to_}`.result)
+
+    //  def capturedOrEOS[_: P] = captured | End.!
+
+    def nTimes[_: P] = P(once.rep ~/ AnyChar.rep.!) // last String should be ignored
   }
 
-  val to_$ = UntilCharInclusive('$')
-  val `to_}` = UntilCharInclusive('}')
+  object UseFSM {
 
-  def once[_: P] = P(to_$.result ~ "{" ~ `to_}`.result)
+    import FSMParserDSL._
 
-  //  def capturedOrEOS[_: P] = captured | End.!
+    def escape(v: Parser[_]): Operand[FSMParserGraph.Layout.GG] = {
 
-  def nTimes[_: P] = P(once.rep ~/ AnyChar.rep.!) // last String should be ignored
+      val escapeChar = P_*('\\')
+      escapeChar :& escapeChar :~> v
+    }
+
+    val first = escape(P_*('$').!-)
+
+    val enclosed = escape(P_*('}').!-.^^ { v =>
+      Some(v)
+    })
+
+    val p = first :~> P('{').-- :~> enclosed :& first :~> EOS_* :~> FINISH
+
+    {
+      println(p.visualise().ASCIIArt())
+      p
+    }
+  }
 
   val interpolation = Interpolation("$")
 
-  case class UnitRunner(str: String)(replace: String => String) {
+  case class UTRunner(str: String)(replace: String => String) {
 
     def useFastParse(verbose: Boolean = false): String = {
+
+      import UseFastParse._
 
       val parsed: (Seq[(String, String)], String) = parse(str, nTimes(_), verboseFailures = verbose) match {
         case v: Parsed.Failure =>
@@ -134,27 +172,38 @@ object ParsersBenchmark {
 
     }
 
+    def useFSM(): String = {
+      import UseFSM._
+
+      val parsed = p.parse(str)
+      val interpolated: Seq[String] = parsed.exports.map {
+        case v: String        => v
+        case Some(vv: String) => replace(vv)
+      }
+      interpolated.mkString("")
+    }
+
     def useRegex(): String = {
 
       interpolation(str)(replace)
     }
   }
 
-  case class Epoch(strs: Stream[String], name: String = "")(
-      fn: ParsersBenchmark.UnitRunner => String
+  case class Epoch(stream: Stream[String], name: String = "")(
+      fn: ParsersBenchmark.UTRunner => String
   ) {
 
-    val converted: Stream[String] = strs.map { str =>
-      val runner = ParsersBenchmark.UnitRunner(str)(identity)
+    val convertedStream: Stream[String] = stream.map { str =>
+      val runner = ParsersBenchmark.UTRunner(str)(identity)
       fn(runner)
     }
 
     val closure: Int => Unit = { i: Int =>
-      System.gc()
+//      System.gc()
 //      print(name + " start profiling ...")
-      val result = converted.foreach(_ => UnitRunner)
+      val result = convertedStream.foreach(_ => {})
 //      print(" Done\n")
-      result
+//      result
     }
   }
 
@@ -162,11 +211,11 @@ object ParsersBenchmark {
 
     val zipped = new InterleavedIterator(
       epochs.map { v =>
-        v.converted.iterator
+        v.convertedStream.iterator
       }
     )
 
-    val withOriginal = epochs.head.strs.iterator.zip(zipped)
+    val withOriginal = epochs.head.stream.iterator.zip(zipped)
 
     withOriginal.foreach {
       case (original, seq) =>
@@ -181,9 +230,9 @@ object ParsersBenchmark {
         )
     }
 
-    val benchmarkHelper = BenchmarkHelper(this.getClass.getSimpleName.stripSuffix("$"), 3)
-    epochs.foreach { ee =>
-      benchmarkHelper.self.addCase(ee.name)(ee.closure)
+    val benchmarkHelper = BenchmarkHelper(this.getClass.getSimpleName.stripSuffix("$"), minTime = 60.seconds)
+    epochs.foreach { epoch =>
+      benchmarkHelper.self.addCase(epoch.name)(epoch.closure)
     }
     benchmarkHelper.self.run()
   }
