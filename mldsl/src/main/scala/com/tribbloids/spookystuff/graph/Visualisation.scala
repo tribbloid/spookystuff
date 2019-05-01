@@ -29,7 +29,7 @@ case class Visualisation[D <: Domain](
     ): String = {
       startingFrom
         .map { elem =>
-          val view = core._ElementView.fromElement(elem).WFormat(format)
+          val view = core.Views.fromElement(elem).WFormat(format)
           val treeNode = view.ForwardTreeNode()
           treeNode.treeString(format.verbose)
         }
@@ -41,7 +41,7 @@ case class Visualisation[D <: Domain](
     ): String = {
       endWith
         .map { elem =>
-          val stepView = core._ElementView.fromElement(elem).WFormat(format)
+          val stepView = core.Views.fromElement(elem).WFormat(format)
           val treeNode = stepView.BackwardTreeNode()
           treeNode.treeString(format.verbose)
         }
@@ -74,7 +74,7 @@ case class Visualisation[D <: Domain](
       val relationBuffer = mutable.HashSet.empty[(ElementView[D]#WFormat, ElementView[D]#WFormat)]
 
       for (elem <- endWith) {
-        val stepView = core._ElementView.fromElement(elem).WFormat(format)
+        val stepView = core.Views.fromElement(elem).WFormat(format)
         val treeNode = stepView.BackwardTreeNode()
         treeNode.foreach { v =>
           buffer += v.viewWFormat

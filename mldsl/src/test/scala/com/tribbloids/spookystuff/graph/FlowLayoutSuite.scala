@@ -1,13 +1,13 @@
 package com.tribbloids.spookystuff.graph
 
-import com.tribbloids.spookystuff.graph.example.SimpleGraph.DSL._
+import com.tribbloids.spookystuff.graph.example.SimpleFlowGraph.DSL._
 import com.tribbloids.spookystuff.testutils.FunSpecx
 
-class SimpleGraphSuite extends FunSpecx {
+class FlowLayoutSuite extends FunSpecx {
 
   import Implicits._
 
-  it("DSL interface from NodeData") {
+  it("Operand from NodeData") {
 
     val face = Node(Some("ABC"))
     val str = face.visualise().show()
@@ -42,7 +42,7 @@ class SimpleGraphSuite extends FunSpecx {
 
   }
 
-  it("DSL interface from EdgeData") {
+  it("Operand from EdgeData") {
 
     val face = Edge(Some("ABC"))
     val str = face.visualise().show()

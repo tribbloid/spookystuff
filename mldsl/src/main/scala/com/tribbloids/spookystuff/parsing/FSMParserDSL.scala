@@ -15,17 +15,18 @@ import scala.language.implicitConversions
   */
 object FSMParserDSL extends DSL {
 
-  class Operand[+M <: _Module](val core: Core[M], val entryNodeOpt: Option[algebra._Node] = None)
-      extends OperandLike[M] {
+  class Operand[+M <: _Module](
+      val core: Core[M],
+      val entryNode: algebra._Node = algebra.createNode(FState.Ordinary)
+  ) extends OperandLike[M] {
 
     lazy val entry: Operand[_Node] = {
-      val entryNode: _Node = entryNodeOpt.getOrElse(algebra.createNode(FState.Ordinary))
       create(entryNode)
     }
 
-    lazy val initial: Operand[_Node] = {
+    lazy val root: Operand[_Node] = {
 
-      val node: algebra._Node = algebra.createNode(FState.START, Some(entry.self._id))
+      val node: algebra._Node = algebra.createNode(FState.ROOT, Some(entry.self._id))
       create(node)
     }
 
@@ -39,7 +40,7 @@ object FSMParserDSL extends DSL {
       }
 
       val core = (base >>> topWithEntry).core
-      new Operand(core, Some(base.entry.self))
+      new Operand(core, base.entry.self)
     }
 
     def <~:(top: Operand[_]): Operand[GG] = {
@@ -52,7 +53,22 @@ object FSMParserDSL extends DSL {
       }
 
       val core = (topWithEntry <<< base).core
-      new Operand(core, Some(base.entry.self))
+      new Operand(core, base.entry.self)
+    }
+
+    override def union(another: Operand[_]): Operand[GG] = {
+      //reuse this.entryNode
+
+      val proto = super.union(another)
+      val e1 = this.entryNode
+      val e2 = another.entryNode
+
+      val collapseEntryNodes = proto.core.replicate() {
+        case e2._id => e1._id
+        case v @ _  => v
+      }
+
+      new Operand(collapseEntryNodes, e1)
     }
 
     def :&(op: Operand[_Module]) = Loop(op)
@@ -63,7 +79,7 @@ object FSMParserDSL extends DSL {
       def :~>(top: Operand[_Module]): Operand[GG] = {
 
         val base = Operand.this
-        val _top = new Operand(top.core, Some(op.entry.self))
+        val _top = new Operand(top.core, op.entry.self)
 
         base :~> _top
       }
@@ -71,7 +87,7 @@ object FSMParserDSL extends DSL {
       def <~:(top: Operand[_Module]): Operand[GG] = {
 
         val base = Operand.this
-        val _top = new Operand(top.core, Some(op.entry.self))
+        val _top = new Operand(top.core, op.entry.self)
 
         _top <~: base
       }
@@ -86,34 +102,83 @@ object FSMParserDSL extends DSL {
 
       val pruned = this.core.copy(tails = prunedTails)
 
-      (initial >>> create(pruned) <<< initial).core
+      (root >>> create(pruned) <<< root).core
     }
 
-//    lazy val compiled = FState(core.NodeView.)
+    lazy val compiled: FState = {
+
+      val nodeView = output.Views.fromNode(root.self)
+      FState(nodeView)
+    }
+
+    def parse(input: Seq[Char]): ParsingRun.ResultSeq = {
+      val result = ParsingRun(input, compiled).run
+      result
+    }
   }
 
   override def create[M <: _Module](core: Core[M]): Operand[M] = new Operand(core)
 
-  object EOS extends Operand(Core.Edge(Some(Rule(Rule.EndOfStream, Rule.RangeArgs.maxLength))))
+  protected def rule2Edge(p: Rule): FSMParserGraph.Layout.Core[FSMParserGraph.Layout._Edge] =
+    Core.Edge(Some(p))
 
-  object FINISH extends Operand(Core.Node(FState.FINISH))
+  case class RuleOp[T](rule: Pattern#Rule[T]) extends Operand[_Edge](rule2Edge(rule)) {
 
-  class PatternLike(
-      rule: Rule,
-      loops: Seq[Pattern]
-  ) extends Operand(Core.Edge(Some(rule))) {
+    def andThen[T2](
+        fn: T => Option[T2],
+        vecFn: PhaseVec => PhaseVec.Like = { v =>
+          v
+        }
+    ): RuleOp[T2] = RuleOp(
+      rule.copy { (v1, v2) =>
+        val base = rule.resultFn(v1, v2)
+        Outcome.AndThen(base, fn, vecFn)
+      }
+    )
 
-    def ^^[T](fn: => T): T = ???
+    def ^^[T2](fn: T => Option[T2]): RuleOp[T2] = andThen(fn)
+    def ^^^(fn: T => Unit): RuleOp[Nothing] = ^^ { v =>
+      fn(v)
+      None
+    }
 
-    def map(fn: Rule.MetaStateMap) = Pattern(rule.copy(forward = fn))
-
-    def addLoop(v: Pattern): PatternLike = new PatternLike(rule, loops)
+    def %(vecFn: PhaseVec => PhaseVec.Like): RuleOp[T] = andThen(v => Some(v), vecFn)
   }
 
-  case class Pattern(
-      rule: Rule
-  ) extends PatternLike(rule, Nil) {}
+  object RuleOp {
 
-  def P(v: Char) = Pattern(Rule(Rule.CharToken(v), Rule.RangeArgs.next))
-  def P_*(v: Char) = Pattern(Rule(Rule.CharToken(v), Rule.RangeArgs.maxLength))
+    implicit def toRule[T](v: RuleOp[T]): Pattern#Rule[T] = v.rule
+  }
+
+  case class P(v: Pattern) {
+
+    object !! extends RuleOp[String](v.!!)
+
+    lazy val !- : RuleOp[String] = `!!`.^^ { vv =>
+      Some(vv.dropRight(1))
+    }
+
+    lazy val -! : RuleOp[Char] = `!!`.^^ { vv =>
+      Some(vv.last)
+    }
+
+    lazy val -- : RuleOp[String] = `!!`.^^ { v =>
+      None
+    }
+  }
+
+  object P {
+
+    implicit def toRuleOp(v: P) = v.!!
+    implicit def toRule[T](v: P): Pattern#Rule[String] = v.!!.rule
+  }
+
+  def P(v: Char): P = P(Pattern(Pattern.CharToken(v), Pattern.RangeArgs.next))
+  def P_*(v: Char): P = P(Pattern(Pattern.CharToken(v), Pattern.RangeArgs.maxLength))
+
+  def EOS = P(Pattern(Pattern.EndOfStream, Pattern.RangeArgs.next))
+  def EOS_* = P(Pattern(Pattern.EndOfStream, Pattern.RangeArgs.maxLength))
+
+  //
+  case object FINISH extends Operand(Core.Node(FState.FINISH))
 }

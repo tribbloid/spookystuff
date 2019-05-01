@@ -18,18 +18,18 @@ trait FSMParserGraph extends Domain {
 
 object FSMParserGraph extends Algebra[FSMParserGraph] {
 
-  override def idAlgebra = IDAlgebra.UUIDAlgebra
+  override def idAlgebra: IDAlgebra.UUIDAlgebra.type = IDAlgebra.UUIDAlgebra
 
-  override def nodeAlgebra =
+  override def nodeAlgebra: DataAlgebra.MaxBy[NodeData] =
     DataAlgebra.MaxBy(
       {
         case FState.Ordinary => 0
-        case FState.START    => 1
+        case FState.ROOT     => 1
         case FState.FINISH   => 2
       },
       Some(FState.Ordinary)
     )
-  override def edgeAlgebra = DataAlgebra.NoAmbiguity().Monadic
+  override def edgeAlgebra = DataAlgebra.NoAmbiguity[Rule]().Monadic
 
   object Layout extends FlowLayout[FSMParserGraph] {
 

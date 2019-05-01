@@ -11,7 +11,7 @@ trait StaticGraph[T <: Domain] extends Module[T] {
   def evict_!(edge: _Edge): Unit
   def connect_!(edge: _Edge): Unit
 
-  def getLinkedNodes(ids: Seq[ID]): Map[ID, _LinkedNode]
+  def getLinkedNodes(ids: Seq[ID]): Map[ID, _NodeTriplet]
   def getEdges(ids: Seq[(ID, ID)]): MultiMapView.Immutable[(ID, ID), _Edge]
 }
 
@@ -25,11 +25,15 @@ object StaticGraph {
 
     def fromSeq(
         nodes: Seq[_NodeLike],
-        edges: Seq[_Edge]
+        edges: Seq[_Edge],
+        node_+ : CommonTypes.Binary[NodeData] = nodeAlgebra.+
     ): GG
 
-    def fromModule(v: _Module): GG
-
+    final def fromModule(graph: _Module): GG = graph match {
+      case v: _NodeLike => this.fromSeq(Seq(v), Nil)
+      case v: _Edge     => this.fromSeq(Nil, Seq(v))
+      case v: GG        => v
+    }
     def union(v1: GG, v2: GG, node_+ : CommonTypes.Binary[NodeData] = nodeAlgebra.+): GG
 
     //TODO: this API need to change to facilitate big Heads and Tails in the format of RDD

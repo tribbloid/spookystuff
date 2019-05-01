@@ -1,13 +1,24 @@
 package com.tribbloids.spookystuff.parsing
 
-import com.tribbloids.spookystuff.parsing.FState.SubRules
-import com.tribbloids.spookystuff.parsing.Rule.{CharToken, EndOfStream, Token}
-import com.tribbloids.spookystuff.utils.BacktrackingIterator
+import com.tribbloids.spookystuff.parsing.Pattern.{CharToken, EndOfStream, Token}
 
-import scala.annotation.tailrec
 import scala.collection.mutable.ArrayBuffer
 
-object ParsingRun {}
+object ParsingRun {
+
+  case class ResultSeq(
+      self: Seq[(ArrayBuffer[Token], Outcome[Any], Rule)]
+  ) {
+
+    lazy val exports: Seq[Any] = self.flatMap(v => v._2.export)
+
+    lazy val strRepr: String = exports.mkString("\n")
+
+    lazy val str2Exports: Seq[(String, Option[Any])] = self.map { v =>
+      Pattern.tokens2Str(v._1) -> v._2.export
+    }
+  }
+}
 
 // only applies to interpolation parser, there should be many others
 /**
@@ -18,7 +29,7 @@ object ParsingRun {}
 case class ParsingRun(
     stream: Seq[Char],
     initialFState: FState,
-    maxBacktracking: Int = 5
+    maxBacktracking: Int = 5 //TODO: enable it!
 ) {
 
   val input: Seq[Token] = {
@@ -28,15 +39,16 @@ case class ParsingRun(
     } ++ Seq(EndOfStream)
   }
 
-  val backtrackingMgr = BacktrackingManager(input, initialFState -> FStateMeta())
+  val backtrackingMgr = BacktrackingManager(input, initialFState -> PhaseVec())
 
-  def run() = {
-    backtrackingMgr.untilTheEnd()
+  lazy val run: ParsingRun.ResultSeq = {
+    backtrackingMgr.run_!()
 
-    backtrackingMgr.stack.toSeq.map { ls =>
-      val captured = ls.spanString :+ ls.token
-      val transition = ls.current
-      captured -> transition
+    val seq = backtrackingMgr.stack.reverse.map { ls =>
+      val captured = ls.spanTokens :+ ls.token
+      val result = ls.currentOutcome
+      (captured, result._2, result._1)
     }
+    ParsingRun.ResultSeq(seq)
   }
 }

@@ -57,8 +57,8 @@ object Algebra {
     final type NodeData = D#NodeData
     final type EdgeData = D#EdgeData
 
-    final type _Mutator = Mutator[D]
-    final type _Rotator = IDAlgebra.Rotator[ID]
+    final type DataMutator = DataAlgebra.Mutator[D]
+    final type IDRotator = IDAlgebra.Rotator[ID]
 
     final type _Module = Module[D]
     final type _Heads = Module.Heads[D]
@@ -68,7 +68,7 @@ object Algebra {
 
     final type _NodeLike = Element.NodeLike[D]
     final type _Node = Element.Node[D]
-    final type _LinkedNode = Element.NodeTriplet[D]
+    final type _NodeTriplet = Element.NodeTriplet[D]
 
     final type _Edge = Element.Edge[D]
 

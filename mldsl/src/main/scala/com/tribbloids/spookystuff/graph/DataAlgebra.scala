@@ -42,4 +42,14 @@ object DataAlgebra {
       Seq(v1, v2).maxBy(fn)
     }
   }
+
+  case class Mutator[T <: Domain](
+      nodeFn: T#NodeData => T#NodeData,
+      edgeFn: T#EdgeData => T#EdgeData
+  ) {}
+
+  object Mutator {
+
+    def identity[T <: Domain] = Mutator[T](Predef.identity, Predef.identity)
+  }
 }

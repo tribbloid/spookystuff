@@ -17,28 +17,22 @@ case class LocalGraph[D <: Domain] private (
     override implicit val algebra: Algebra[D]
 ) extends StaticGraph[D] {
 
-//  {
-//    insertDangling()
-//  }
-//
-//  def insertDangling(): Unit = {
-//
-//    val id = algebra.DANGLING._id
-//    if (!nodeMap.contains(id))
-//      nodeMap.put(id, new _LinkedNode(algebra.DANGLING))
-//  }
-
-  override def _replicate(m: _Mutator)(implicit idRotator: Rotator[ID]) = {
+  override def _replicate(m: DataMutator)(
+      implicit
+      idRotator: Rotator[ID],
+      node_+ : CommonTypes.Binary[NodeData]
+  ): LocalGraph[D] = {
 
     LocalGraph
       .BuilderImpl[D]()
       .fromSeq(
         nodeMap.values.toSeq.map(_.replicate(m)),
-        edgeMap.values.toSeq.flatMap(_.map(_.replicate(m)))
+        edgeMap.values.toSeq.flatMap(_.map(_.replicate(m))),
+        node_+
       )
   }
 
-  def removeIfExists[T](set: mutable.Set[T], v: T): Unit = {
+  def removeIfExists_![T](set: mutable.Set[T], v: T): Unit = {
 
     if (set.contains(v))
       set.remove(v)
@@ -54,11 +48,11 @@ case class LocalGraph[D <: Domain] private (
 
     if (filtered.isEmpty) {
       nodeMap.get(edge.from).foreach { node =>
-        removeIfExists(node.outbound, edge.to)
+        removeIfExists_!(node.outbound, edge.to)
       }
 
       nodeMap.get(edge.to).foreach { node =>
-        removeIfExists(node.inbound, edge.from)
+        removeIfExists_!(node.inbound, edge.from)
       }
     }
   }
@@ -75,7 +69,7 @@ case class LocalGraph[D <: Domain] private (
     edgeMap.put1(edge.from_to, edge)
   }
 
-  override def getLinkedNodes(ids: Seq[ID]): Map[ID, _LinkedNode] =
+  override def getLinkedNodes(ids: Seq[ID]): Map[ID, _NodeTriplet] =
     Map(ids.flatMap { id =>
       nodeMap.get(id).map(id -> _)
     }: _*)
@@ -96,7 +90,8 @@ object LocalGraph {
 
     override def fromSeq(
         nodes: Seq[_NodeLike],
-        edges: Seq[_Edge]
+        edges: Seq[_Edge],
+        node_+ : CommonTypes.Binary[NodeData]
     ): GG = {
 
       val existingIDs = nodes.map(_._id).toSet
@@ -112,38 +107,47 @@ object LocalGraph {
         algebra.createNode(id = Some(id))
       }
 
-      val linkedNodes: Seq[_LinkedNode] = _nodes.map {
-        case nn: _LinkedNode =>
+      val linkedNodes: Seq[_NodeTriplet] = _nodes.map {
+        case nn: _NodeTriplet =>
           nn
         case nn: _Node =>
           val inbound = mutable.LinkedHashSet(edges.filter(_.to == nn._id).map(_.from): _*)
           val outbound = mutable.LinkedHashSet(edges.filter(_.from == nn._id).map(_.to): _*)
-          val result = new _LinkedNode(nn, inbound, outbound)
+          val result = new _NodeTriplet(nn, inbound, outbound)
           result
       }
 
-      val edgeMap = MultiMapView.Mutable.empty[(ID, ID), _Edge]
+      val nodeMap: MultiMapView.Mutable[ID, _NodeTriplet] = MultiMapView.Mutable.empty
+      for (nn <- linkedNodes) {
+        nodeMap.put1(nn._id, nn)
+      }
+
+      val reducedNodeMap: mutable.Map[ID, _NodeTriplet] = {
+
+        val result = nodeMap.mapValues { seq =>
+          seq.reduce { (v1, v2) =>
+            linkedNode_+(v1, v2, node_+)
+          }
+        }
+        mutable.Map(result.toSeq: _*)
+      }
+
+      val edgeMap: MultiMapView.Mutable[(ID, ID), _Edge] = MultiMapView.Mutable.empty
       for (ee <- edges) {
         edgeMap.put1(ee.from_to, ee)
       }
 
       new GG(
-        mutable.Map(linkedNodes.map(v => v._id -> v): _*),
+        reducedNodeMap,
         edgeMap
       )(algebra)
     }
 
-    override def fromModule(graph: _Module): GG = graph match {
-      case v: _NodeLike => this.fromSeq(Seq(v), Nil)
-      case v: _Edge     => this.fromSeq(Nil, Seq(v))
-      case v: GG        => v
-    }
-
-    protected def linkedNodeReducer(
-        v1: _LinkedNode,
-        v2: _LinkedNode,
+    protected def linkedNode_+(
+        v1: _NodeTriplet,
+        v2: _NodeTriplet,
         node_+ : CommonTypes.Binary[NodeData]
-    ): _LinkedNode = {
+    ): _NodeTriplet = {
 
       require(v1._id == v2._id, s"ID mismatch, ${v1._id} ~= ${v2._id}")
 
@@ -151,27 +155,28 @@ object LocalGraph {
 
       val inbound = v1.inbound ++ v2.inbound
       val outbound = v1.outbound ++ v2.outbound
-      new _LinkedNode(node, inbound, outbound)
+      new _NodeTriplet(node, inbound, outbound)
     }
 
+    // TODO: using fromSeq can make it trivial!
     def union(
         v1: GG,
         v2: GG,
         node_+ : CommonTypes.Binary[NodeData]
     ): GG = {
 
-      val v2Reduced: mutable.Map[D#ID, _LinkedNode] = v2.nodeMap.map {
+      val v2Reduced: mutable.Map[D#ID, _NodeTriplet] = v2.nodeMap.map {
         case (k, vv2) =>
-          val reducedV: _LinkedNode = v1.nodeMap
+          val reducedV: _NodeTriplet = v1.nodeMap
             .get(k)
             .map { vv1 =>
-              linkedNodeReducer(vv1, vv2, node_+)
+              linkedNode_+(vv1, vv2, node_+)
             }
             .getOrElse(vv2)
           k -> reducedV
       }
 
-      val uNodeMap: mutable.Map[ID, _LinkedNode] = v1.nodeMap ++ v2Reduced
+      val uNodeMap: mutable.Map[ID, _NodeTriplet] = v1.nodeMap ++ v2Reduced
       val uEdgeMap: MultiMapView.Mutable[(ID, ID), _Edge] = {
         val result = v1.edgeMap +:+ v2.edgeMap
         result.distinctAllValues()

@@ -20,7 +20,7 @@ class FSMParserDSLSuite extends FunSpecx {
           |                │ │
           |                v v
           |              ╔═════╗
-          |              ║START║
+          |              ║ROOT ║
           |              ╚══╤══╝
           |                 │
           |                 v
@@ -76,7 +76,7 @@ class FSMParserDSLSuite extends FunSpecx {
           |                │ │
           |                v v
           |              ╔═════╗
-          |              ║START║
+          |              ║ROOT ║
           |              ╚══╤══╝
           |                 │
           |                 v
@@ -114,7 +114,7 @@ class FSMParserDSLSuite extends FunSpecx {
   it("can form loop") {
 
     val start = P_*('{')
-    val p = start :~> P_*('}') :& start :~> EOS :~> FINISH
+    val p = start :~> P_*('}') :& start :~> EOS_* :~> FINISH
     p.visualise()
       .ASCIIArt()
       .shouldBe(
@@ -127,7 +127,7 @@ class FSMParserDSLSuite extends FunSpecx {
           |                   │  │
           |                   v  v
           |                ╔═══════╗
-          |                ║ START ║
+          |                ║ ROOT  ║
           |                ╚═╤═╤═══╝
           |                  │ │ ^
           |         ┌────────┘ │ └──────────────────┐
@@ -168,7 +168,7 @@ class FSMParserDSLSuite extends FunSpecx {
           |                │  │
           |                v  v
           |             ╔═══════╗
-          |             ║ START ║
+          |             ║ ROOT  ║
           |             ╚═╤═══╤═╝
           |               │ ^ │
           |               │ │ └───────┐
@@ -188,6 +188,64 @@ class FSMParserDSLSuite extends FunSpecx {
           | ╔════════════╗ ╔═════╧═════════╗
           | ║(HEAD) [ ∅ ]║ ║ [ '\' [0...] ]║
           | ╚════════════╝ ╚═══════════════╝
+        """.stripMargin
+      )
+  }
+
+  it("self-loop can union with others") {
+    val escape = P_*('\\')
+
+    val _p = escape :& escape :~> P_*('$') :~> EOS_* :~> FINISH
+    val p = _p U (EOS_* :~> FINISH)
+
+    p.visualise()
+      .ASCIIArt()
+      .shouldBe(
+        """
+          |    ╔═══════════════╗    ╔═══════════════╗
+          |    ║(TAIL>>-) [ ∅ ]║    ║(TAIL-<<) [ ∅ ]║
+          |    ╚═══════╤═══════╝    ╚═══════╤═══════╝
+          |            │                    │
+          |            └─────────┐  ┌───────┘
+          |                      │  │
+          |                      v  v
+          |                  ╔═════════╗
+          |                  ║  ROOT   ║
+          |                  ╚═╤═════╤╤╝
+          |                    │   ^ ││
+          |                    │   │ │└─────┐
+          |                    v   │ │      │
+          |     ╔═══════════════╗  │ │      │
+          |     ║ [ '$' [0...] ]║  │ │      │
+          |     ╚═══╤═══════════╝  │ │      │
+          |         │              │ │      │
+          |         │              └─┼─┐    │
+          |         │                └─┼────┼─┐
+          |         │                  │    │ └───────────┐
+          |         v                  │    │             │
+          |       ╔═══╗                │    │             │
+          |       ║---║                │    │             │
+          |       ╚═╤═╝                │    │             │
+          |         │                  │    │             │
+          |         │                  └────┼───────────┐ │
+          |         v                       v           │ │
+          | ╔═══════════════════╗ ╔═══════════════════╗ │ │
+          | ║ [ '[EOS]' [0...] ]║ ║ [ '[EOS]' [0...] ]║ │ │
+          | ╚══════════╤════════╝ ╚═════════╤═════════╝ │ │
+          |            │                    │           │ │
+          |            │ ┌──────────────────┘           │ │
+          |            │ │               ┌──────────────┘ │
+          |            v v               │                │
+          |         ╔══════╗             │                │
+          |         ║FINISH║             │                │
+          |         ╚══╤═══╝             │                │
+          |            │                 │                │
+          |            │                 │    ┌───────────┘
+          |            │                 │    │
+          |            v                 │    v
+          |     ╔════════════╗     ╔═════╧═════════╗
+          |     ║(HEAD) [ ∅ ]║     ║ [ '\' [0...] ]║
+          |     ╚════════════╝     ╚═══════════════╝
         """.stripMargin
       )
   }

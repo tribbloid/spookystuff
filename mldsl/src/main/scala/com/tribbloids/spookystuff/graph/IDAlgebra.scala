@@ -44,16 +44,25 @@ trait IDAlgebra[ID, -NodeData, -EdgeData] {
 
 object IDAlgebra {
 
-  abstract class Rotator[ID](_reserved: Set[ID]) extends (ID => ID) {
+  trait Rotator[ID] extends (ID => ID)
 
-    //TODO: need local caching?
+  object Rotator {
 
-    override final def apply(v: ID): ID = {
-      if (_reserved.contains(v)) v
-      else _doApply(v)
+    implicit class FromFn[ID](fn: ID => ID) extends Rotator[ID] {
+      override def apply(v1: ID): ID = fn(v1)
     }
 
-    protected def _doApply(v: ID): ID
+    abstract class WithFixedPoint[ID](fixed: Set[ID]) extends Rotator[ID] {
+
+      //TODO: need local caching?
+
+      override final def apply(v: ID): ID = {
+        if (fixed.contains(v)) v
+        else _doApply(v)
+      }
+
+      protected def _doApply(v: ID): ID
+    }
   }
 
   case object UUIDAlgebra extends IDAlgebra[UUID, Any, Any] {
@@ -71,7 +80,7 @@ object IDAlgebra {
       }
     }
 
-    case class RotatorImpl(seed: UUID = _random()) extends Rotator[UUID](reserved) {
+    case class RotatorImpl(seed: UUID = _random()) extends Rotator.WithFixedPoint[UUID](reserved) {
 
       override def _doApply(v1: UUID): UUID = {
         val higher = v1.getMostSignificantBits ^ seed.getMostSignificantBits

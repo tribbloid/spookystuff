@@ -115,7 +115,7 @@ trait Layout[D <: Domain] extends Algebra.Sugars[D] {
 
     lazy val from: _Heads = fromOverride.getOrElse(heads)
 
-    def replicate(m: _Mutator)(implicit idRotator: Rotator[ID]): Core[M] = {
+    def replicate(m: DataMutator = DataAlgebra.Mutator.identity)(implicit idRotator: Rotator[ID]): Core[M] = {
 
       this.copy(
         self.replicate(m),
@@ -188,7 +188,7 @@ trait Layout[D <: Domain] extends Algebra.Sugars[D] {
         topTails.foldLeft(baseM: Core[_Module]) { (self, edge) =>
           val tail = Tails(Seq(edge))
           val rotator = rotatorFactory()
-          self.Ops(topFacet, baseFacet)._mergeImpl(top.replicate(Mutator.replicate[D])(rotator), tail)
+          self.Ops(topFacet, baseFacet)._mergeImpl(top.replicate(DataAlgebra.Mutator.identity[D])(rotator), tail)
         }
       }
 
@@ -211,8 +211,7 @@ trait Layout[D <: Domain] extends Algebra.Sugars[D] {
       override val core: Core[M] = Core.this
     }
 
-    object _ElementView {
-
+    object Views {
       object Cache {
         // compiled once and used all the time
         // may obsolete as underlying Core._graph is mutable, but any attempt to fix this is overengineering
@@ -258,39 +257,44 @@ trait Layout[D <: Domain] extends Algebra.Sugars[D] {
       def fromElement(element: _Element): _ElementView = {
 
         element match {
-          case nn: _NodeLike =>
-            val existingOpt = fromNodeID(nn._id)
-            existingOpt match {
-              case Some(existing) =>
-                assert(
-                  existing.element.data == nn.data,
-                  s"Node has the same ID ${nn.idStr} but different data ${nn.dataStr}/${existing.element.dataStr}"
-                )
-                existing
-              case None =>
-                NodeView(nn.toLinked(Some(Core.this._graph_WHeadsAndTails)))
-            }
+          case nn: _NodeLike => fromNode(nn)
+          case ee: _Edge     => fromEdge(ee)
+        }
+      }
 
-          case ee: _Edge =>
-            val existingSeq = fromEdgeIDs(ee.from_to)
+      def fromEdge(ee: _Edge): EdgeView = {
+        val existingSeq = fromEdgeIDs(ee.from_to)
 
-            existingSeq
-              .find(_.element == ee)
-              .getOrElse(EdgeView(ee))
+        existingSeq
+          .find(_.element == ee)
+          .getOrElse(EdgeView(ee))
+      }
+
+      def fromNode(nn: _NodeLike): NodeView = {
+        val existingOpt = fromNodeID(nn._id)
+        existingOpt match {
+          case Some(existing) =>
+            assert(
+              existing.element.data == nn.data,
+              s"Node has the same ID ${nn.idStr} but different data ${nn.dataStr}/${existing.element.dataStr}"
+            )
+            existing
+          case None =>
+            NodeView(nn.toLinked(Some(Core.this._graph_WHeadsAndTails)))
         }
       }
     }
 
     case class NodeView(
-        linkedNode: _LinkedNode
+        linkedNode: _NodeTriplet
     ) extends _ElementView {
 
-      override def element: _LinkedNode = linkedNode
+      override def element: _NodeTriplet = linkedNode
 
       def getEdgeViews(idPairs: Seq[(ID, ID)]): Seq[EdgeView] = {
 
         idPairs.flatMap { ids =>
-          _ElementView.fromEdgeIDs(ids)
+          Views.fromEdgeIDs(ids)
         }
       }
 
@@ -337,7 +341,7 @@ trait Layout[D <: Domain] extends Algebra.Sugars[D] {
         ids
           .filter(_ != algebra.idAlgebra.DANGLING)
           .flatMap { id =>
-            _ElementView.fromNodeID(id)
+            Views.fromNodeID(id)
           }
       }
 
@@ -373,6 +377,35 @@ trait Layout[D <: Domain] extends Algebra.Sugars[D] {
 
       def visualise(format: Visualisation.Format[D] = defaultFormat): Visualisation[D] =
         Visualisation[D](output, format)
+
+      def from(filter: EdgeFilter[D]): Operand[M] = {
+        val newFrom: _Heads = Heads[D](filter(core._graph))
+        create(
+          core.copy(
+            fromOverride = Some(newFrom)
+          ))
+      }
+
+      //TODO: these symbols are lame
+      final def >-[N >: M <: _Module](filter: EdgeFilter[D]) = from(filter)
+
+      //TODO: should be part of EdgeFilter
+      def and(filter: EdgeFilter[D]): Operand[M] = {
+        val newFrom = Heads[D](filter(core._graph))
+        val mergedFrom = Heads[D](core.from.seq ++ newFrom.seq)
+        create(
+          core.copy(
+            fromOverride = Some(mergedFrom)
+          ))
+      }
+
+      final def <>-(filter: EdgeFilter[D]) = and(filter)
+
+      def replicate(m: DataMutator = DataAlgebra.Mutator.identity)(implicit idRotator: Rotator[ID]): Operand[M] = {
+        create(
+          core.replicate(m)(idRotator)
+        )
+      }
     }
 
     def create[M <: _Module](core: Core[M]): Operand[M]

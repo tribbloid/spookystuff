@@ -1,14 +1,24 @@
 package com.tribbloids.spookystuff.graph
 
 import com.tribbloids.spookystuff.graph.Element.Edge
+import com.tribbloids.spookystuff.graph.IDAlgebra.Rotator
+import com.tribbloids.spookystuff.utils.CommonTypes
 
 import scala.language.implicitConversions
 
 trait Module[T <: Domain] extends Algebra.Sugars[T] {
 
-  protected def _replicate(m: _Mutator)(implicit idRotator: _Rotator): _Module
+  protected def _replicate(m: DataMutator)(
+      implicit
+      idRotator: Rotator[ID],
+      node_+ : CommonTypes.Binary[NodeData]
+  ): _Module
 
-  def replicate(m: _Mutator = Mutator.replicate)(implicit idRotator: _Rotator): this.type =
+  def replicate(m: DataMutator = DataAlgebra.Mutator.identity)(
+      implicit
+      idRotator: Rotator[ID],
+      node_+ : CommonTypes.Binary[NodeData] = nodeAlgebra.+
+  ): this.type =
     _replicate(m).asInstanceOf[this.type]
 }
 
@@ -26,7 +36,7 @@ object Module {
 
     implicit def copyImplicitly(v: Seq[Edge[T]]): Self
 
-    def replicate(m: _Mutator)(implicit idRotator: _Rotator): Self = {
+    def replicate(m: DataMutator)(implicit idRotator: IDRotator): Self = {
       seq.map(_.replicate(m))
     }
 

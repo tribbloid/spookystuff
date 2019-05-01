@@ -1,5 +1,7 @@
 package com.tribbloids.spookystuff
 
+import com.tribbloids.spookystuff.parsing.Pattern.Token
+
 package object parsing {
 
   //TODO: add following optimisations into FSM compiler
@@ -8,9 +10,14 @@ package object parsing {
   // https://en.wikipedia.org/wiki/Aho%E2%80%93Corasick_algorithm
 
   // not a finite state any more!
-  type StateWithMeta = (FState, FStateMeta)
+  type Phase = (FState, PhaseVec)
 
-  type Transition = (Rule, FState)
+  type Rule = Pattern#Rule[Any]
 
-  type TransitionWithMeta = (Rule, StateWithMeta)
+  type Rule_FState = (Rule, FState)
+
+  type OutcomeFn[R] = (
+      Seq[Token],
+      Phase
+  ) => Outcome[R]
 }

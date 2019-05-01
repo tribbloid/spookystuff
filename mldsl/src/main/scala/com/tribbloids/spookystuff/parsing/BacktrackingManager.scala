@@ -1,14 +1,15 @@
 package com.tribbloids.spookystuff.parsing
 
+import com.tribbloids.spookystuff.parsing.Exceptions.{BacktrackingFailure, ParsingError}
 import com.tribbloids.spookystuff.parsing.FState.SubRules
-import com.tribbloids.spookystuff.parsing.Rule.Token
+import com.tribbloids.spookystuff.parsing.Pattern.Token
 import com.tribbloids.spookystuff.utils.RangeArg
 
 import scala.collection.mutable
 
 case class BacktrackingManager(
     input: Seq[Token],
-    initialState: StateWithMeta
+    initialState: Phase
 ) {
 
 //  def maxBackTracking: Int = itr.maxBacktracking
@@ -16,20 +17,64 @@ case class BacktrackingManager(
   // before FState can be read from preceding Checkpoint in the stack or initialState
   // heavily stateful, backtracking only retreat to previous LinearSearch without recreating it.
   case class LinearSearch(
-      previousState: StateWithMeta,
+      prevPhase: Phase,
       start: Long = 0L
       //      spanRange: Range, // refer to the buffer in BacktrackingIterator, the last Tokenacter is the matching token
       //      subRuleSearchStartFrom: Int = 0,
       //      gotos: Seq[Transition]
   ) {
 
-    lazy val subRuleCache: Seq[(RangeArg, FState.SubRules)] = previousState._1.subRuleCache
+    lazy val subRuleCache: Seq[(RangeArg, FState.SubRules)] = prevPhase._1.subRuleCache
 
-    var length: Long = 0L // strictly incremental
+    var _length: Long = 0L // strictly incremental
     var subRuleCacheII: Int = 0 // strictly incremental
 
-    def end: Long = start + length
-    def token: Token = input(end.toInt)
+    val spanTokens: mutable.ArrayBuffer[Token] = mutable.ArrayBuffer()
+
+    var transitionQueue: Seq[Rule_FState] = Nil
+
+    var transitionQueueII: Int = 0
+
+    //init
+    {
+      updateState()
+    }
+
+    private def updateState(): Unit = {
+      val subRules = getSubRules
+
+      transitionQueue = subRules.transitionsMap.getOrElse(token, Nil)
+
+      spanTokens += token
+      transitionQueueII = 0
+    }
+
+    //update every state that depends on length
+    def length_++(): Unit = {
+
+      if (end(_length + 1) >= input.length)
+        throw BacktrackingFailure(s"reaching EOS at length ${_length}")
+
+      _length += 1
+
+      updateState()
+    }
+
+    def length_+=(v: Int): Unit = {
+      for (i <- 0 until v) length_++() //TODO: inefficient! only the last update require refreshing transitionQueue
+    }
+
+    def findValidState(): Rule_FState = {
+
+      while (transitionQueueII >= transitionQueue.length) {
+
+        length_++()
+      }
+      transitionQueue(transitionQueueII)
+    }
+
+    def end(length: Long = this._length): Long = start + length
+    def token: Token = input(end().toInt)
 
     // beforeFState == (length) ==> SubRules
     //        == (char) ==> Seq[Transition]
@@ -39,91 +84,74 @@ case class BacktrackingManager(
       while (subRuleCacheII < subRuleCache.length) {
 
         val hit = subRuleCache(subRuleCacheII)
-        if (hit._1.delegate.containsLong(length)) return hit._2
+        if (hit._1.delegate.containsLong(_length)) return hit._2
         subRuleCacheII += 1
       }
 
-      throw BacktrackingException(s"no rule is defined beyond length $length")
+      throw BacktrackingFailure(s"no rule is defined beyond length ${_length}")
     }
 
-    var transitionQueue: Seq[Transition] = Nil
-    val spanString: mutable.ArrayBuffer[Token] = mutable.ArrayBuffer.empty
+    var currentOutcome: (Rule, Outcome[Any]) = _
 
-    //update every state that depends on length
-    def length_++(): Unit = {
+    def nextPhase: Phase = {
 
-      length += 1
+      while (true) {
 
-      if (end >= input.length) throw BacktrackingException(s"reaching EOS at length $length")
+        val transition = findValidState()
+        val nextResult = transition._1.resultFn(spanTokens, prevPhase)
 
-      val subRules = getSubRules
-      val token = this.token
-      transitionQueue = subRules.transitionsMap.getOrElse(token, Nil)
-      spanString += token
-    }
-
-    var transitionQueueII: Int = 0
-
-    def nextTransition(): Transition = {
-
-      transitionQueueII += 1
-
-      while (transitionQueueII >= transitionQueue.length) {
-
-        transitionQueueII = 0
-        length_++()
+        nextResult.nextPhaseVecOpt match {
+          case PhaseVec.NoOp(skipOpt) =>
+            skipOpt match {
+              case Some(skip) => length_+=(skip + 1)
+              case None       => transitionQueueII += 1
+            }
+          case _ =>
+            transitionQueueII += 1
+            currentOutcome = transition._1 -> nextResult
+            return transition._2 -> nextResult.nextPhaseVecOpt.asInstanceOf[PhaseVec]
+        }
       }
 
-      transitionQueue(transitionQueueII)
-    }
-
-    var current: TransitionWithMeta = _
-
-    def nextState(): StateWithMeta = {
-
-      var transition: Transition = null
-      var opt: Option[FStateMeta] = null
-
-      do {
-        transition = nextTransition()
-        opt = transition._1.forward(spanString, previousState._2)
-      } while (opt.isEmpty)
-
-      current = transition._1 -> (transition._2, opt.get)
-
-      transition._2 -> opt.get
+      throw new UnsupportedOperationException("IMPOSSIBLE!")
     }
   }
 
   val stack: mutable.Stack[LinearSearch] = mutable.Stack(LinearSearch(initialState))
 
   def advance(): Boolean = {
-    val ls = stack.top // stack is from bottom to top
+    if (stack.isEmpty)
+      throw ParsingError(s"cannot parse '${input.mkString}'")
+
+    val onTop = stack.top // stack is from bottom to top
 
     try {
-      val nextState = ls.nextState()
+      val nextPhase = onTop.nextPhase
 
-      nextState._1.nodeView.element.data match {
-        case FState.Ordinary =>
+      nextPhase._1.nodeView.element.data match {
+
+        case FState.FINISH =>
+          false
+
+        case _ =>
           val nextLS = LinearSearch(
-            nextState,
-            ls.length + 1L
+            nextPhase,
+            onTop.end() + 1L
           )
 
           stack.push(nextLS)
           true
-        case FState.FINISH =>
-          false
       }
 
     } catch {
-      case e: BacktrackingException =>
+      case e: BacktrackingFailure =>
+        val ee = e
         stack.pop()
         true
     }
   }
 
-  def untilTheEnd(): Unit = {
+  def run_!(): Unit = {
 
     while (advance()) {}
   }

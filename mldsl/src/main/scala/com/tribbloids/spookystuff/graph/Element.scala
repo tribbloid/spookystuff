@@ -1,7 +1,8 @@
 package com.tribbloids.spookystuff.graph
 
+import com.tribbloids.spookystuff.graph.IDAlgebra.Rotator
 import com.tribbloids.spookystuff.graph.Module.{Heads, Tails}
-import com.tribbloids.spookystuff.utils.IDMixin
+import com.tribbloids.spookystuff.utils.{CommonTypes, IDMixin}
 
 import scala.collection.mutable
 
@@ -38,7 +39,11 @@ object Element {
 
     override lazy val toString = s"${idAlgebra.ids2Str(from_to)}: $data"
 
-    override protected def _replicate(m: _Mutator)(implicit idRotator: _Rotator): Edge[T] = {
+    override protected def _replicate(m: DataMutator)(
+        implicit
+        idRotator: Rotator[ID],
+        node_+ : CommonTypes.Binary[NodeData]
+    ): Edge[T] = {
       val newIDs = idRotator(from) -> idRotator(to)
       if (newIDs == from_to) this
       else
@@ -77,9 +82,9 @@ object Element {
 
     override def toString = s"$idStr: $data"
 
-    def toLinked(graphOpt: Option[StaticGraph[T]]): _LinkedNode = {
+    def toLinked(graphOpt: Option[StaticGraph[T]]): _NodeTriplet = {
       this match {
-        case v: _LinkedNode => v
+        case v: _NodeTriplet => v
         case v: _Node =>
           graphOpt match {
             case Some(graph) =>
@@ -87,7 +92,7 @@ object Element {
               assert(result.data == this.data)
               result
             case _ =>
-              new _LinkedNode(v)
+              new _NodeTriplet(v)
           }
       }
     }
@@ -107,7 +112,11 @@ object Element {
       implicit val algebra: Algebra[T]
   ) extends NodeLike[T] {
 
-    override def _replicate(m: _Mutator)(implicit idRotator: _Rotator) = {
+    override def _replicate(m: DataMutator)(
+        implicit
+        idRotator: Rotator[ID],
+        node_+ : CommonTypes.Binary[NodeData]
+    ) = {
       val newID = idRotator(this._id)
       if (newID == this._id)
         this
@@ -127,9 +136,11 @@ object Element {
 
     override def algebra: Algebra[D] = node.algebra
 
-    override protected def _replicate(m: _Mutator)(
-        implicit idRotator: _Rotator
-    ): _LinkedNode = {
+    override protected def _replicate(m: DataMutator)(
+        implicit
+        idRotator: Rotator[ID],
+        node_+ : CommonTypes.Binary[NodeData]
+    ): _NodeTriplet = {
       new NodeTriplet[D](
         node.replicate(m),
         inbound.map(idRotator),

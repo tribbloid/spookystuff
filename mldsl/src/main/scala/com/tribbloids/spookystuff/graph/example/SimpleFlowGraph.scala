@@ -4,14 +4,14 @@ import java.util.UUID
 
 import com.tribbloids.spookystuff.graph._
 
-trait SimpleGraph extends Domain {
+trait SimpleFlowGraph extends Domain {
 
   override type ID = UUID
   override type NodeData = Option[String]
   override type EdgeData = Option[String]
 }
 
-object SimpleGraph extends Algebra[SimpleGraph] {
+object SimpleFlowGraph extends Algebra[SimpleFlowGraph] {
 
   override def idAlgebra = IDAlgebra.UUIDAlgebra
 
@@ -23,9 +23,9 @@ object SimpleGraph extends Algebra[SimpleGraph] {
   override def nodeAlgebra = DataAlgebra.NoAmbiguity().Monadic
   override def edgeAlgebra = DataAlgebraProto.Monadic
 
-  object Layout extends FlowLayout[SimpleGraph] {
+  object Layout extends FlowLayout[SimpleFlowGraph] {
 
-    override lazy val defaultGraphBuilder: LocalGraph.BuilderImpl[SimpleGraph] = LocalGraph.BuilderImpl()
+    override lazy val defaultGraphBuilder: LocalGraph.BuilderImpl[SimpleFlowGraph] = LocalGraph.BuilderImpl()
 
     override lazy val defaultFormat = Formats.ShowOption
   }
