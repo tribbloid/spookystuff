@@ -32,8 +32,8 @@ object Cleanable {
       case _: T => true
       case _    => false
     }.map { v =>
-        v.asInstanceOf[T]
-      }
+      v.asInstanceOf[T]
+    }
     result
   }
 

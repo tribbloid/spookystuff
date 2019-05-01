@@ -78,9 +78,9 @@ class PyBinding(
       dependencies = py._1,
       converter = converter
     )._Py(
-        driver,
-        spookyOpt
-      )
+      driver,
+      spookyOpt
+    )
 
     result
   }

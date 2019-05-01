@@ -49,19 +49,19 @@ class RelationTransformer(
       )
 
     r.wgetExplore(
-        S"a"
-          .distinctBy(_.href)
-          .filter { v =>
-            val hrefMatch = v.href.exists(_.contains("://dbpedia"))
-            val relMatch = v.attr("rel").exists(_.matches(getOrDefault(Relation)))
-            val revMatch = v.attr("rev").exists(_.matches(getOrDefault(ReverseRelation)))
-            hrefMatch && (relMatch || revMatch)
-          }
-          .slice(0, getOrDefault(FirstN)),
-        range = getOrDefault(depth),
-        depthField = getOrDefault(DepthCol),
-        failSafe = 2,
-        select = S.uri ~ getOrDefault(OutputURICol)
-      )
+      S"a"
+        .distinctBy(_.href)
+        .filter { v =>
+          val hrefMatch = v.href.exists(_.contains("://dbpedia"))
+          val relMatch = v.attr("rel").exists(_.matches(getOrDefault(Relation)))
+          val revMatch = v.attr("rev").exists(_.matches(getOrDefault(ReverseRelation)))
+          hrefMatch && (relMatch || revMatch)
+        }
+        .slice(0, getOrDefault(FirstN)),
+      range = getOrDefault(depth),
+      depthField = getOrDefault(DepthCol),
+      failSafe = 2,
+      select = S.uri ~ getOrDefault(OutputURICol)
+    )
   }
 }

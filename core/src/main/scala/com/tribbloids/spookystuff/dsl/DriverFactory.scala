@@ -273,10 +273,10 @@ object DriverFactories {
       Try {
         SparkFiles.get(_localFileName)
       }.recover {
-          case e: Throwable =>
-            sc.addFile(_localURI)
-            LoggerFactory.getLogger(this.getClass).info(s"PhantomJS Deployed to $localURI")
-        }
+        case e: Throwable =>
+          sc.addFile(_localURI)
+          LoggerFactory.getLogger(this.getClass).info(s"PhantomJS Deployed to $localURI")
+      }
     }
 
     /**

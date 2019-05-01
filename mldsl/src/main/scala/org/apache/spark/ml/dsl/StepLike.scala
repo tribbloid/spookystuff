@@ -113,10 +113,10 @@ object Step extends MessageRelay[Step] {
               val valueTry = Try {
                 param.jsonDecode(compact(render(jsonValue)))
               }.orElse {
-                  Try {
-                    param.jsonDecode(compact(render(JArray(List(jsonValue)))))
-                  }
+                Try {
+                  param.jsonDecode(compact(render(JArray(List(jsonValue)))))
                 }
+              }
 
               val value = jsonValue match {
                 case js: JString =>

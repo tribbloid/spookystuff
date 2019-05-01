@@ -79,11 +79,11 @@ trait GeomMixin extends SpookyEnvFixture {
             val mse = ses.map(_.sum).sum
             assert(mse < mseCap, s"MSE = $mse")
           }.recoverWith {
-              case e: Throwable =>
-                originalErrors += e
+            case e: Throwable =>
+              originalErrors += e
 
-                Try { actualRepr.shouldBe(gd) }
-            }
+              Try { actualRepr.shouldBe(gd) }
+          }
         }
         TreeException.|||(trials.toSeq, extra = originalErrors)
     }
