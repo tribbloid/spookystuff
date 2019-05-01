@@ -25,7 +25,7 @@ class ParsersBenchmark extends FunSpecx {
 
     ignore("speed shoudn't be affected by JVM warming up") {
 
-      val stream: Stream[String] = (0 to Math.pow(2, 8).toInt).toStream.map { _ =>
+      val stream: Stream[String] = (0 until 64).toStream.map { _ =>
         ParsersBenchmark.rndStr(nextInt(30)) +
           "${" +
           ParsersBenchmark.rndStr(nextInt(30)) +
@@ -48,7 +48,7 @@ class ParsersBenchmark extends FunSpecx {
     val stream: Stream[String] = (0 to Math.pow(2, 16).toInt).toStream.map { _ =>
       var str = ParsersBenchmark.rndStr(nextInt(30))
 
-      for (i <- 0 to Random.nextInt(10)) {
+      for (i <- 1000) {
 
         str += "${" +
           ParsersBenchmark.rndStr(nextInt(30)) +
@@ -132,10 +132,10 @@ object ParsersBenchmark {
 
     val p = first :~> P('{').-- :~> enclosed :& first :~> EOS_* :~> FINISH
 
-    {
-      println(p.visualise().ASCIIArt())
-      p
-    }
+//    {
+//      println(p.visualise().ASCIIArt())
+//      p
+//    }
   }
 
   val interpolation = Interpolation("$")

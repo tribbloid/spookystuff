@@ -7,7 +7,7 @@ import scala.collection.mutable.ArrayBuffer
 object ParsingRun {
 
   case class ResultSeq(
-      self: Seq[(ArrayBuffer[Token], Outcome[Any], Rule)]
+      self: Seq[(Seq[Token], Outcome[Any], Rule)]
   ) {
 
     lazy val exports: Seq[Any] = self.flatMap(v => v._2.export)
