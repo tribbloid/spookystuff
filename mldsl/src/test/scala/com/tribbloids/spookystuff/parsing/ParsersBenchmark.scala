@@ -230,7 +230,12 @@ object ParsersBenchmark {
         )
     }
 
-    val benchmarkHelper = BenchmarkHelper(this.getClass.getSimpleName.stripSuffix("$"), minTime = 60.seconds)
+    val benchmarkHelper = BenchmarkHelper(
+      this.getClass.getSimpleName.stripSuffix("$"),
+      warmupTime = 5.seconds,
+      minTime = 60.seconds
+    )
+
     epochs.foreach { epoch =>
       benchmarkHelper.self.addCase(epoch.name)(epoch.closure)
     }
