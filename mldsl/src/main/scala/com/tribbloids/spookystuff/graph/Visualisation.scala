@@ -70,8 +70,8 @@ case class Visualisation[D <: Domain](
         endWith: Seq[Element[D]]
     ): Graph[ElementView[D]#WFormat] = {
 
-      val buffer = mutable.HashSet.empty[ElementView[D]#WFormat]
-      val relationBuffer = mutable.HashSet.empty[(ElementView[D]#WFormat, ElementView[D]#WFormat)]
+      val buffer = mutable.LinkedHashSet.empty[ElementView[D]#WFormat]
+      val relationBuffer = mutable.LinkedHashSet.empty[(ElementView[D]#WFormat, ElementView[D]#WFormat)]
 
       for (elem <- endWith) {
         val stepView = core.Views.fromElement(elem).WFormat(format)
