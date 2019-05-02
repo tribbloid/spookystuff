@@ -52,11 +52,8 @@ object ConfUtils {
   }
 
   /**
-    * from https://stackoverflow.com/questions/34028195/how-do-i-test-code-that-requires-an-environment-variable
-    * NOT stable! Only for testing.
-    * @param key
-    * @param value
-    * @return
+    * change UnmodifiableMap System.getenv() for tests
+    * NOT stable! Only for testing
     */
   def setEnv(key: String, value: String) = {
     val field = System.getenv().getClass.getDeclaredField("m")

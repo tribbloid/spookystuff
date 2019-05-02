@@ -339,7 +339,6 @@
         </plugin>
 
         <!-- Generate test jar too -->
-        <!--from http://stackoverflow.com/questions/15816805/in-a-multi-module-project-can-a-maven-module-access-transitive-test-scoped-depe-->
         <plugin>
           <groupId>org.apache.maven.plugins</groupId>
           <artifactId>maven-jar-plugin</artifactId>

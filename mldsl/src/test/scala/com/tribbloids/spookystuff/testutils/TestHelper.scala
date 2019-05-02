@@ -119,6 +119,7 @@ class TestHelper() extends NOTSerializable {
       val masterStr =
         s"local-cluster[${clusterSizeOpt.get},${numCoresPerWorkerOpt.get},${executorMemoryOpt.get}]"
       println(s"initializing SparkContext in local-cluster simulation mode:" + masterStr)
+      //TODO: Unstable! remove?
       ConfUtils.setEnv("SPARK_SCALA_VERSION", CommonUtils.scalaBinaryVersion)
       masterStr
     }

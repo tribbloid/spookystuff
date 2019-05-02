@@ -11,21 +11,13 @@ import scala.util.Random
 
 class ParsersBenchmark extends FunSpecx {
 
-  import fastparse._
-
   import Random._
 
   describe("sanity test") {
 
-    ignore("parser") {
-
-      val result: String = parse("abcde$", ParsersBenchmark.UseFastParse.to_$.result(_)).get.value
-      result.shouldBe()
-    }
-
     ignore("speed shoudn't be affected by JVM warming up") {
 
-      val list: List[String] = (0 until ParsersBenchmark.numVPerItr).toList.map { _ =>
+      val list: List[String] = ParsersBenchmark.iiInEpoch.map { _ =>
         ParsersBenchmark.rndStr(nextInt(30)) +
           "${" +
           ParsersBenchmark.rndStr(nextInt(30)) +
@@ -44,10 +36,10 @@ class ParsersBenchmark extends FunSpecx {
 
   it("replace 1") {
 
-    val stream: List[String] = (0 to Math.pow(2, 16).toInt).toList.map { _ =>
+    val stream: List[String] = ParsersBenchmark.iiInEpoch.map { _ =>
       var str = ParsersBenchmark.rndStr(nextInt(30))
 
-      for (i <- 1000) {
+      for (i <- ParsersBenchmark.streamSize) {
 
         str += "${" +
           ParsersBenchmark.rndStr(nextInt(30)) +
@@ -74,7 +66,10 @@ object ParsersBenchmark {
 
   import scala.concurrent.duration._
 
-  val numVPerItr: Int = Math.pow(2, 16).toInt
+  val numVPerEpoch: Int = Math.pow(2, 16).toInt
+  val iiInEpoch: List[Int] = (0 until ParsersBenchmark.numVPerEpoch).toList
+
+  val streamSize: Int = 2 ^ 10
 
   def rndStr(len: Int): String = {
     val charSeq = for (i <- 1 to len) yield {
@@ -259,7 +254,7 @@ object ParsersBenchmark {
 
     val benchmarkHelper = BenchmarkHelper(
       this.getClass.getSimpleName.stripSuffix("$"),
-      valuesPerIteration = numVPerItr,
+      valuesPerIteration = numVPerEpoch,
 //      minNumIters = 2,
       warmupTime = 5.seconds,
       minTime = 60.seconds

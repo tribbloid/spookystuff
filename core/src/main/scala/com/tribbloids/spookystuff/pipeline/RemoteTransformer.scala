@@ -40,46 +40,6 @@ trait RemoteTransformer extends RemoteTransformerLike with Dynamic {
     } else throw new IllegalArgumentException(s"function $methodName doesn't exist")
   }
 
-  /*
-  TODO: the original plan of using dynamic param definition to reduce pipeline code seems not to be supported by scala, suspended
-  see http://stackoverflow.com/questions/33699836/in-scala-how-to-find-invocation-of-subroutines-defined-in-a-function for detail
-   */
-  //  val dynamicParams: mutable.Map[String, Any] = mutable.Map()
-
-  //  def param[T](
-  //                name: String,
-  //                default: T = null,
-  //                example: T = null,
-  //                defaultOption: Option[T] = None,
-  //                exampleOption: Option[T] = None
-  //              ): T = {
-  //
-  //    val paramOption = params.find(_.name == name)
-  //    paramOption match {
-  //      case Some(param) =>
-  //        param
-  //      case None =>
-  //
-  //    }
-  //
-  //    if (!params.exists(_.name == name)) {
-  //      val param = new Param[T](this, name, doc)
-  //      val effectiveDefault = Option(default).orElse(defaultOption)
-  //      if (effectiveDefault.nonEmpty) this.setDefault(param -> effectiveDefault.get)
-  //      val effectiveExample = Option(example).orElse(exampleOption)
-  //      if (effectiveExample.nonEmpty) this.setExample(param -> effectiveExample.get)
-  //      this.dynamicParams += param
-  //      this.getOrDefault(param)
-  //    }
-  //    else {
-  //      val param = params.filter(_.name == name).head.asInstanceOf[Param[T]]
-  //      assert(param.doc == doc, "documentation has to be consistent")
-  //      assert(this.getDefault(param) == defaultOption, "default value has to be consistent")
-  //      assert(this.getExample(param) == exampleOption, "default value has to be consistent")
-  //      this.getOrDefault[T](param)
-  //    }
-  //  }
-
   //example value of parameters used for testing
   val exampleParamMap: ParamMap = ParamMap.empty
 

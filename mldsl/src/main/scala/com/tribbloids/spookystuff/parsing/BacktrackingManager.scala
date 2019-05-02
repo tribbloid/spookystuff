@@ -43,6 +43,7 @@ case class BacktrackingManager(
       updateState()
     }
 
+    //TODO: these are too slow and don't support streaming
     def end(length: Long = this._length): Long = start + length
     def token: Token = input(end().toInt)
 
