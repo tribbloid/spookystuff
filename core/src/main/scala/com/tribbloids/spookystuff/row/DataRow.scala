@@ -2,7 +2,6 @@ package com.tribbloids.spookystuff.row
 
 import java.util.UUID
 
-import com.tribbloids.spookystuff.Const
 import com.tribbloids.spookystuff.utils.{Interpolation, SpookyUtils, SpookyViews}
 import org.apache.spark.ml.dsl.utils.messaging.ProtoAPI
 
@@ -143,7 +142,7 @@ case class DataRow(
   //replace each '{key} in a string with their respective value in cells
   def replaceInto(
       str: String,
-      interpolation: Interpolation = Interpolation.`$`
+      interpolation: Interpolation = Interpolation.`'`
   ): Option[String] = {
 
     try {

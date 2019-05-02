@@ -29,7 +29,10 @@ case class BacktrackingManager(
     var _length: Long = 0L // strictly incremental
     var subRuleCacheII: Int = 0 // strictly incremental
 
-    val spanTokens: mutable.ArrayBuffer[Token] = mutable.ArrayBuffer()
+    val spanTokens: mutable.ArrayBuffer[Token] = {
+      val result = new mutable.ArrayBuffer[Token](2048)
+      result
+    }
 
     var transitionQueue: Seq[Rule_FState] = Nil
 
