@@ -79,7 +79,7 @@ class CleanableSuite extends SpookyEnvFixture {
   it("Lifespan._id should be updated after being shipped to driver") {
 
     val rdd = sc.uuidSeed().mapOncePerWorker { _ =>
-      val lifespan = Lifespan.Auto()
+      val lifespan = Lifespan.TaskOrJVM()
       val oldID = lifespan._id.asInstanceOf[Lifespan.Task.ID].id
       lifespan -> oldID
     }

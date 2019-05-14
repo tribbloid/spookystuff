@@ -12,7 +12,7 @@ object CleanWebDriver {
 
 class CleanWebDriver(
     val self: WebDriver,
-    override val _lifespan: Lifespan = Lifespan.Auto()
+    override val _lifespan: Lifespan = Lifespan.TaskOrJVM()
 ) extends Driver {
 
   override def cleanImpl(): Unit = {

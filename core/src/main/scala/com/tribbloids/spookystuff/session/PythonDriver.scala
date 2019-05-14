@@ -100,7 +100,7 @@ class PythonDriver(
                       |import os
                       |from __future__ import print_function
                     """.trim.stripMargin,
-    override val _lifespan: Lifespan = new Lifespan.Auto()
+    override val _lifespan: Lifespan = new Lifespan.TaskOrJVM()
 ) extends PythonProcess(pythonExe)
     with Driver {
 

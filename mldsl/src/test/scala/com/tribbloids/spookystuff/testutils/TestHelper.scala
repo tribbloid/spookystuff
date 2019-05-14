@@ -3,7 +3,7 @@ package com.tribbloids.spookystuff.testutils
 import java.io.File
 import java.util.Properties
 
-import com.tribbloids.spookystuff.utils.serialization.NOTSerializable
+import com.tribbloids.spookystuff.utils.lifespan.LocalCleanable
 import com.tribbloids.spookystuff.utils.{CommonConst, CommonUtils, ConfUtils}
 import org.apache.hadoop.fs.FileUtil
 import org.apache.spark.serializer.KryoSerializer
@@ -14,42 +14,91 @@ import org.slf4j.LoggerFactory
 import scala.reflect.ClassTag
 import scala.util.{Failure, Success, Try}
 
-class TestHelper() extends NOTSerializable {
-
-  CommonUtils.debugCPResource()
+class TestHelper() extends LocalCleanable {
 
   val properties = new Properties()
-  Try {
-    properties.load(ClassLoader.getSystemResourceAsStream(".rootkey.csv"))
-  }.recoverWith {
-      case _: Throwable =>
-        Try {
-          properties.load(ClassLoader.getSystemResourceAsStream("rootkey.csv"))
-        }
-    }
-    .getOrElse {
-      println("rootkey.csv is missing")
-    }
 
   val S3Path = Option(properties.getProperty("S3Path"))
-  if (S3Path.isDefined) println("Test on AWS S3 with credentials provided by rootkey.csv")
 
   val AWSAccessKeyId = Option(properties.getProperty("AWSAccessKeyId"))
   val AWSSecretKey = Option(properties.getProperty("AWSSecretKey"))
-  AWSAccessKeyId.foreach {
-    System.setProperty("fs.s3.awsAccessKeyId", _) //TODO: useless here? set in conf directly?
-  }
-  AWSSecretKey.foreach {
-    System.setProperty("fs.s3.awsSecretAccessKey", _)
-  }
 
-  def SPARK_HOME = System.getenv("SPARK_HOME")
+  def SPARK_HOME: String = System.getenv("SPARK_HOME")
 
   final val MAX_TOTAL_MEMORY = 16 * 1024
   final val MEMORY_PER_CORE = 1024
   //  final val EXECUTOR_JVM_MEMORY_OVERHEAD = 256 //TODO: remove, too complex
 
   final val MAX_CORES = MAX_TOTAL_MEMORY / MEMORY_PER_CORE
+
+  val METASTORE_PATH = CommonUtils.\\\(CommonConst.USER_DIR, "metastore_db")
+  val WAREHOUSE_PATH = CommonUtils.\\\(CommonConst.USER_DIR, "warehouse")
+
+  var sparkSessionInitialised: Boolean = false
+
+  {
+    CommonUtils.debugCPResource()
+
+    Try {
+      properties.load(ClassLoader.getSystemResourceAsStream(".rootkey.csv"))
+    }.recoverWith {
+        case _: Throwable =>
+          Try {
+            properties.load(ClassLoader.getSystemResourceAsStream("rootkey.csv"))
+          }
+      }
+      .getOrElse {
+        println("rootkey.csv is missing")
+      }
+
+    if (S3Path.isDefined) println("Test on AWS S3 with credentials provided by rootkey.csv")
+
+    AWSAccessKeyId.foreach {
+      System.setProperty("fs.s3.awsAccessKeyId", _) //TODO: useless here? set in conf directly?
+    }
+    AWSSecretKey.foreach {
+      System.setProperty("fs.s3.awsSecretAccessKey", _)
+    }
+
+    cleanBeforeAndAfterLifespan()
+  }
+
+  override def cleanImpl(): Unit = {
+
+    if (sparkSessionInitialised) {
+
+      println("=============== Stopping Test Spark Context ==============")
+      // Suppress the following log error when shutting down in local-cluster mode:
+      // Remote RPC client disassociated. Likely due to containers exceeding thresholds, or network issues.
+      // Check driver logs for WARN messages.
+      // java.lang.IllegalStateException: Shutdown hooks cannot be modified during shutdown
+      val logger = org.apache.log4j.Logger.getRootLogger
+      val oldLevel = logger.getLevel
+      logger.setLevel(org.apache.log4j.Level.toLevel("OFF"))
+      try {
+        TestSC.stop()
+      } catch {
+        case e: Throwable =>
+          logger.setLevel(oldLevel)
+          logger.error("cannot stop Test SparkContext", e)
+      } finally {
+        logger.setLevel(oldLevel)
+      }
+//      println("=============== Test Spark Context has stopped ==============")
+    }
+
+    cleanBeforeAndAfterLifespan()
+  }
+
+  def cleanBeforeAndAfterLifespan(): Unit = {
+    cleanTempDirs(
+      Seq(
+        WAREHOUSE_PATH,
+        METASTORE_PATH,
+        CommonConst.USER_TEMP_DIR
+      )
+    )
+  }
 
   lazy val numCores: Int = {
     val cap = Option(properties.getProperty("maxCores"))
@@ -98,9 +147,6 @@ class TestHelper() extends NOTSerializable {
   def executorMemoryOpt: Option[Int] = for (n <- numCoresPerWorkerOpt; cap <- executorMemoryCapOpt) yield {
     Math.min(n * MEMORY_PER_CORE, cap)
   }
-
-  val METASTORE_PATH = CommonUtils.\\\(CommonConst.USER_DIR, "metastore_db")
-  val WAREHOUSE_PATH = CommonUtils.\\\(CommonConst.USER_DIR, "warehouse")
 
   /**
     * @return local mode: None -> local[n, 4]
@@ -193,32 +239,12 @@ class TestHelper() extends NOTSerializable {
       )
     }
 
-    sys.addShutdownHook {
+    sparkSessionInitialised = true
 
-      println("=============== Stopping Test Spark Context ==============")
-      // Suppress the following log error when shutting down in local-cluster mode:
-      // Remote RPC client disassociated. Likely due to containers exceeding thresholds, or network issues.
-      // Check driver logs for WARN messages.
-      // java.lang.IllegalStateException: Shutdown hooks cannot be modified during shutdown
-      val logger = org.apache.log4j.Logger.getRootLogger
-      //      val oldLevel = logger.getLevel
-      logger.setLevel(org.apache.log4j.Level.toLevel("OFF"))
-      //      try {
-      //        sc.stop()
-      //      }
-      //      catch {
-      //        case e: Throwable =>
-      //          println(e)
-      //          e.printStackTrace()
-      //      }
-      //      finally {
-      //        logger.setLevel(oldLevel)
-      //      }
-      //      println("=============== Test Spark Context has stopped ==============")
-    }
-    TestHelper.assureKryoSerializer(sc)
+    assureKryoSerializer(sc)
     session
   }
+
   lazy val TestSC = TestSparkSession.sparkContext
   lazy val TestSQL = TestSparkSession.sqlContext
 
@@ -300,28 +326,6 @@ class TestHelper() extends NOTSerializable {
         throw new AssertionError(s"expecting $expectedErrorName, but no exception was thrown")
     }
   }
-
-  //  override def finalize(): Unit = {
-  //    if (testSparkCreated) {
-  //      println("=============== Stopping Test Spark Context ==============")
-  //      try {
-  //        TestSpark.stop()
-  //      }
-  //      catch {
-  //        case e: Throwable =>
-  //          println(e)
-  //          e.printStackTrace()
-  //      }
-  //      println("=============== Test Spark Context has stopped ==============")
-  //    }
-  //
-  //    super.finalize()
-  //  }
 }
 
 object TestHelper extends TestHelper()
-
-object SparkRunnerHelper extends TestHelper() {
-
-  override lazy val clusterSizeOpt: Option[Int] = None
-}

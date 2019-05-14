@@ -23,7 +23,7 @@ object Python2DriverSuite {
     def runIterable[T, R](xs: Iterable[T])(f: (T, PythonDriver) => R): Iterable[R] = {
       val pythonExec = this.pythonExec
       val proc = new PythonDriver(pythonExec,
-                                  _lifespan = Lifespan.Auto(
+                                  _lifespan = Lifespan.TaskOrJVM(
                                     nameOpt = Some("testPython")
                                   ))
       try {

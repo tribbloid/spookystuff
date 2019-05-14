@@ -7,11 +7,15 @@ import org.apache.spark.storage.BlockManagerId
 object LifespanContext {}
 
 case class LifespanContext(
-    @transient task: TaskContext = TaskContext.get(),
+    @transient _task: TaskContext = TaskContext.get(),
     @transient thread: Thread = Thread.currentThread()
 ) extends IDMixin {
 
-  @transient lazy val taskOpt: Option[TaskContext] = Option(task)
+  @transient lazy val taskOpt: Option[TaskContext] = Option(_task)
+
+  def task: TaskContext = taskOpt.getOrElse(
+    throw new UnsupportedOperationException("Not inside any Spark Task")
+  )
 
   val taskAttemptID: Option[Long] = taskOpt.map(_.taskAttemptId())
   val threadID: Long = thread.getId

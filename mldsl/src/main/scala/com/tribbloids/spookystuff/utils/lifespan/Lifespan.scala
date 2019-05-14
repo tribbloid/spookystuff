@@ -9,6 +9,21 @@ import scala.util.Try
   */
 abstract class Lifespan extends IDMixin with Serializable {
 
+  {
+    init()
+  }
+  protected def init() = {
+    ctx //always generate context on construction
+
+    if (!Cleanable.uncleaned.contains(_id)) {
+      tpe.addCleanupHook(
+        ctx, { () =>
+          Cleanable.cleanSweep(_id)
+        }
+      )
+    }
+  }
+
   def tpe: LifespanType
   def ctxFactory: () => LifespanContext
 
@@ -34,21 +49,6 @@ abstract class Lifespan extends IDMixin with Serializable {
     tpe.getCleanupBatchID(ctx)
   }
 
-  {
-    init()
-  }
-  protected def init() = {
-    ctx //always generate context on construction
-
-    if (!Cleanable.uncleaned.contains(_id)) {
-      tpe.addCleanupHook(
-        ctx, { () =>
-          Cleanable.cleanSweep(_id)
-        }
-      )
-    }
-  }
-
   def readObject(in: java.io.ObjectInputStream): Unit = {
     in.defaultReadObject()
     init() //redundant?
@@ -60,7 +60,7 @@ abstract class Lifespan extends IDMixin with Serializable {
     (nameOpt.toSeq ++ Seq(idStr)).mkString(":")
   }
 
-  def isTask = tpe == Lifespan.Task
+  def isTask: Boolean = tpe == Lifespan.Task
 }
 
 abstract class LifespanType extends Serializable {
@@ -77,11 +77,7 @@ object Lifespan {
 
   object Task extends LifespanType {
 
-    private def tc(ctx: LifespanContext) = {
-      ctx.taskOpt.getOrElse(
-        throw new UnsupportedOperationException("Not inside any Spark Task")
-      )
-    }
+    private def tc(ctx: LifespanContext) = ctx.task
 
     override def addCleanupHook(ctx: LifespanContext, fn: () => Unit): Unit = {
       tc(ctx).addTaskCompletionListener { tc =>
@@ -89,7 +85,7 @@ object Lifespan {
       }
     }
 
-    case class ID(id: Long) {
+    case class ID(id: Long) extends AnyVal {
       override def toString: String = s"Task-$id"
     }
     override def getCleanupBatchID(ctx: LifespanContext): ID = {
@@ -116,7 +112,7 @@ object Lifespan {
       }
     }
 
-    case class ID(id: Long) {
+    case class ID(id: Long) extends AnyVal {
       override def toString: String = s"Thread-$id"
     }
     override def getCleanupBatchID(ctx: LifespanContext): ID = {
@@ -132,7 +128,7 @@ object Lifespan {
     override def tpe: LifespanType = JVM
   }
 
-  object Auto extends LifespanType {
+  object TaskOrJVM extends LifespanType {
     private def delegate(ctx: LifespanContext) = {
       ctx.taskOpt match {
         case Some(tc) =>
@@ -151,12 +147,12 @@ object Lifespan {
     }
   }
   //CAUTION: keep the empty constructor! Kryo deserializer use them to initialize object
-  case class Auto(
+  case class TaskOrJVM(
       override val nameOpt: Option[String] = None,
       ctxFactory: () => LifespanContext = () => LifespanContext()
   ) extends Lifespan {
     def this() = this(None)
 
-    override def tpe: LifespanType = Auto
+    override def tpe: LifespanType = TaskOrJVM
   }
 }
