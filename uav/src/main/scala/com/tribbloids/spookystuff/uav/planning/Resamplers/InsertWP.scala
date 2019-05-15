@@ -27,7 +27,7 @@ case class InsertWP(
           case (trace, i) =>
             trace.zipWithIndex.map {
               case (vv, j) =>
-                vv -> (i, j)
+                vv -> (i -> j)
             }
         }
         flattenWIndices

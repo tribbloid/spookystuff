@@ -137,7 +137,6 @@ case class HDFSResolver(
 
     def _remove(mustExist: Boolean = true): Unit = doAsUGI {
 
-      FileUtil.fullyDelete(fs, path)
       fs.delete(path, true)
     }
 

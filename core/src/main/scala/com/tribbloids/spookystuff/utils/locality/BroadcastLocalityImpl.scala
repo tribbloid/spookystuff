@@ -20,7 +20,7 @@ case class BroadcastLocalityImpl[K: ClassTag, V: ClassTag](
       val result = bigItr.map {
         case (k, itr) =>
           val itr2 = otherMap.getOrElse(k, Nil)
-          k -> (itr, itr2)
+          k -> (itr -> itr2)
       }
       result
     }

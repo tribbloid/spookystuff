@@ -38,7 +38,7 @@ abstract class Export extends Named {
     results.map {
       case doc: Doc =>
         try {
-          filter.apply(doc, session)
+          filter.apply(doc -> session)
         } catch {
           case e: Throwable =>
             val message = getSessionExceptionMessage(session, Some(doc))

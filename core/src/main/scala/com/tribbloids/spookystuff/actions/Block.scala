@@ -307,7 +307,7 @@ final case class If(
     val current = QuickSnapshot.exe(session).head.asInstanceOf[Doc]
 
     val pages = new ArrayBuffer[DocOption]()
-    if (condition(current, session)) {
+    if (condition(current -> session)) {
       for (action <- ifTrue) {
         pages ++= action.exe(session)
       }
