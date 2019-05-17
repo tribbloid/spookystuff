@@ -101,7 +101,7 @@ class TestHelper() extends LocalCleanable {
   }
 
   lazy val numCores: Int = {
-    val cap = Option(properties.getProperty("maxCores"))
+    val cap = Option(properties.getProperty("MaxCores"))
       .map(_.toInt)
       .getOrElse(MAX_CORES)
     var n = Math.min(
