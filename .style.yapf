@@ -1,0 +1,30 @@
+# .style.yapf
+#
+# DESCRIPTION
+#       Configuration file for the python formatter yapf.
+#
+#       This configuration is based on the generic
+#       configuration published on GitHub.
+#       (gist:krnd/.style.yapf)
+#
+# SEE ALSO
+#       http://github.com/google/yapf
+#       http://github.com/google/yapf#knobs
+#       http://gist.github.com/krnd
+#
+
+[style]
+
+################### COMMON #################################
+
+# Which predefined style this style is based on.
+based_on_style = google
+
+
+column_limit: 120
+split_arguments_when_comma_terminated: true
+
+################### SPECIFIC ################################
+# Generated using `yapf --style=google --style-help`.
+
+# ...

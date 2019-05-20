@@ -1,5 +1,4 @@
 import json
-
 '''
 crash course on APM & PX4 flight modes:
 APM:
@@ -45,6 +44,7 @@ AUTO
   AUTO_RTL
   AUTO_MISSION
 '''
+
 
 class DummyPyAction(object):
 

@@ -9,7 +9,6 @@ from math import radians, cos, sin, asin, sqrt
 
 earth_radius = 6378137.0  # Radius of "spherical" earth
 
-
 DEVNULL = open(os.devnull, 'w')
 
 
@@ -25,7 +24,7 @@ def _groundDistance(lon1, lat1, lon2, lat2):
     # haversine formula
     dlon = lon2 - lon1
     dlat = lat2 - lat1
-    a = sin(dlat / 2) ** 2 + cos(lat1) * cos(lat2) * sin(dlon / 2) ** 2
+    a = sin(dlat / 2)**2 + cos(lat1) * cos(lat2) * sin(dlon / 2)**2
     c = 2 * asin(sqrt(a))
     return c * earth_radius
 
@@ -44,7 +43,9 @@ def airDistance(p1, p2):
 
 
 def retry(maxTrial=3):
+
     def decorate(fn):
+
         def retryFn(*args, **kargs):
             for i in range(maxTrial, -1, -1):
                 try:
@@ -108,7 +109,7 @@ def waitFor(condition, duration=60):
         if v:
             return
         time.sleep(1)
-        if i%10 == 0:
+        if i % 10 == 0:
             print("waiting for", condition.func_name, "\t|", i, "second(s)", comment)
     raise os.error("timeout waiting for " + condition.func_name)
 

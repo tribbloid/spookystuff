@@ -5,7 +5,6 @@ from dronekit import connect
 from dronekit_sitl import SITL
 
 from pyspookystuff.uav.utils import retry
-
 """
 crash course on APM 3.3 SITL
 Options:
@@ -31,9 +30,9 @@ def tcp_master(instance):
 
 
 class APMSim(object):
+
     def __init__(self, iNum, extraArgs, rate, speedup, vType="copter", version="3.3"):
         # type: (int, list[str], int, int, str, str) -> None
-
         """
         :param iNum: instance number, affect SITL system ID
         :param home: (lat,lng,alt,yaw)
@@ -89,6 +88,7 @@ class APMSim(object):
         @self.withVehicle()
         def set(v):
             v.parameters.set(key, value, wait_ready=True)
+
         set()
 
         self.sitl.stop()
@@ -100,10 +100,13 @@ class APMSim(object):
             v.wait_ready()
             actualValue = v._params_map[key]
             assert actualValue == value
+
         get()
 
     def withVehicle(self):
+
         def decorate(fn):
+
             def fnM(*args, **kargs):
                 v = connect(self.connStr, wait_ready=True, baud=self.rate)
                 try:

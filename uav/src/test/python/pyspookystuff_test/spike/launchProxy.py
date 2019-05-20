@@ -4,12 +4,9 @@ from __future__ import print_function
 
 import time
 
-import pyspookystuff.uav.telemetry
-proxy=pyspookystuff.uav.telemetry.Proxy(
-    master="tcp:localhost:5800",
-    name="DRONE",
-    outs = ["udp:localhost:12015", "udp:localhost:14550"]
-)
+from pyspookystuff.uav.telemetry.mavlink import MAVProxy
+
+proxy = MAVProxy(master="tcp:localhost:5800", name="DRONE", outs=["udp:localhost:12015", "udp:localhost:14550"])
 
 proxy.startAndBlock()
 

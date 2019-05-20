@@ -14,7 +14,6 @@ from MAVProxy import mavproxy
 from pyspookystuff.uav import VehicleFunctions
 from pyspookystuff.uav.const import *
 from pyspookystuff.uav.utils import retry
-
 """
 crash course on MAVProxy:
 launch mavproxy connected to a SIL endpoint
@@ -76,6 +75,7 @@ d = {'clientip': '192.168.0.1', 'user': 'fbloggs'}
 
 
 class Daemon(object):
+
     def start(self):
         print("starting", self.fullName, str(type(self)))
         try:
@@ -115,8 +115,8 @@ class Daemon(object):
 
 
 def randomLocalLocation():
-    dir = random.uniform(0,2*math.pi)
-    return dronekit.LocationLocal(50*math.cos(dir), 50*math.sin(dir), -10)
+    dir = random.uniform(0, 2 * math.pi)
+    return dronekit.LocationLocal(50 * math.cos(dir), 50 * math.sin(dir), -10)
 
 
 class Endpoint(Daemon, VehicleFunctions):
@@ -143,12 +143,7 @@ class Endpoint(Daemon, VehicleFunctions):
     def _start(self):
         if not self.vehicle:
             try:
-                self.vehicle = dronekit.connect(
-                    self.uri,
-                    wait_ready=True,
-                    source_system=self.ssid,
-                    baud=self.baudRate
-                )
+                self.vehicle = dronekit.connect(self.uri, wait_ready=True, source_system=self.ssid, baud=self.baudRate)
             except:
                 print("ERROR: ENDPOINT CANNOT CONNECT TO", self.uri)
                 raise
@@ -189,7 +184,10 @@ class Endpoint(Daemon, VehicleFunctions):
 
 
 defaultProxyOptions = ('--state-basedir=temp', '--daemon', '--default-modules="link"')  # --cmd="module unload console"'
+
+
 class MAVProxy(object):
+
     def __init__(self, master, outs, baudRate, ssid, name):
         # type: (str, list[str], int, int, str) -> None
         self.master = master
@@ -226,7 +224,7 @@ class MAVProxy(object):
             fileName = loader.get_filename(mavproxy.__name__)
             MAVPROXY = os.getenv('MAVPROXY_CMD', fileName)
 
-            runpy.run_path(MAVPROXY, {}, "__main__")
+            runpy.run_path(MAVPROXY, {"dummy": "DUMMY!"}, "__main__")  # TODO: remove experimental code
 
         finally:
             sys.argv = oldArgv
@@ -261,21 +259,24 @@ class MAVProxy(object):
         #             self.stop()
         #             raise
         #
-        #     sanityCheck()
+        #     sanityCheck()!
         #
         #     self.logPrint("Proxy spawned: PID =", self.pid, "URI =", self.outs[0])
 
 
 class LocationGlobal(dronekit.LocationGlobal):
+
     def __init__(self, lat, lon, alt=None):
         super(LocationGlobal, self).__init__(lat, lon, alt)
 
 
 class LocationGlobalRelative(dronekit.LocationGlobalRelative):
+
     def __init__(self, lat, lon, alt=None):
         super(LocationGlobalRelative, self).__init__(lat, lon, alt)
 
 
 class LocationLocal(dronekit.LocationLocal):
+
     def __init__(self, north, east, down):
         super(LocationLocal, self).__init__(north, east, down)
