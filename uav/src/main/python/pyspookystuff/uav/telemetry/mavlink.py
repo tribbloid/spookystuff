@@ -220,11 +220,11 @@ class MAVProxy(object):
         oldArgv = sys.argv
         sys.argv = _argv
         try:
-            loader = pkgutil.find_loader(mavproxy.__name__)
-            fileName = loader.get_filename(mavproxy.__name__)
-            MAVPROXY = os.getenv('MAVPROXY_CMD', fileName)
+            # loader = pkgutil.find_loader(mavproxy.__name__)
+            # fileName = loader.get_filename(mavproxy.__name__)
+            # MAVPROXY = os.getenv('MAVPROXY_CMD', fileName)
 
-            runpy.run_path(MAVPROXY, {"dummy": "DUMMY!"}, "__main__")  # TODO: remove experimental code
+            runpy.run_module(mavproxy.__name__, {"dummy": "DUMMY!"}, "__main__")  # TODO: remove experimental code
 
         finally:
             sys.argv = oldArgv
