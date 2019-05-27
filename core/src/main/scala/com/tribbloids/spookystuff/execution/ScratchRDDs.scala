@@ -3,7 +3,7 @@ package com.tribbloids.spookystuff.execution
 import com.tribbloids.spookystuff.utils.ShippingMarks
 import com.tribbloids.spookystuff.utils.lifespan.LocalCleanable
 import org.apache.spark.rdd.RDD
-import org.apache.spark.sql.DataFrame
+import org.apache.spark.sql.Dataset
 import org.apache.spark.storage.StorageLevel
 
 import scala.collection.mutable.ArrayBuffer
@@ -22,37 +22,37 @@ object ScratchRDDs {
 }
 
 case class ScratchRDDs(
-    tempTables: ArrayBuffer[(String, DataFrame)] = ArrayBuffer(),
+    tempTables: ArrayBuffer[(String, Dataset[_])] = ArrayBuffer(),
     tempRDDs: ArrayBuffer[RDD[_]] = ArrayBuffer(),
-    tempDFs: ArrayBuffer[DataFrame] = ArrayBuffer(),
+    tempDSs: ArrayBuffer[Dataset[_]] = ArrayBuffer(),
     defaultStorageLevel: StorageLevel = StorageLevel.MEMORY_AND_DISK
 ) extends LocalCleanable
     with ShippingMarks {
 
   def registerTempView(
-      df: DataFrame
+      ds: Dataset[_]
   ): String = {
 
-    val existing = tempTables.find(_._2 == df)
+    val existing = tempTables.find(_._2 == ds)
 
     existing match {
       case None =>
         val tempTableName = ScratchRDDs.tempTableName()
-        df.createOrReplaceTempView(tempTableName)
-        tempTables += tempTableName -> df
+        ds.createOrReplaceTempView(tempTableName)
+        tempTables += tempTableName -> ds
         tempTableName
       case Some(tuple) =>
         tuple._1
     }
   }
 
-  def persistDF(
-      df: DataFrame,
+  def persistDS(
+      ds: Dataset[_],
       storageLevel: StorageLevel = defaultStorageLevel
   ): Unit = {
 
-    df.persist(storageLevel)
-    tempDFs += df
+    ds.persist(storageLevel)
+    tempDSs += ds
   }
 
   def persist[T](
@@ -66,13 +66,13 @@ case class ScratchRDDs(
     rdd
   }
 
-  def unpersistDF(
-      df: DataFrame,
+  def unpersistDS(
+      ds: Dataset[_],
       blocking: Boolean = false
   ): Unit = {
 
-    df.unpersist(blocking)
-    tempDFs -= df
+    ds.unpersist(blocking)
+    tempDSs -= ds
   }
 
   def unpersist(
@@ -99,10 +99,10 @@ case class ScratchRDDs(
   ): Unit = {
 
     dropTempViews()
-    tempDFs.foreach { df =>
-      df.unpersist(blocking)
+    tempDSs.foreach { ds =>
+      ds.unpersist(blocking)
     }
-    tempDFs.clear()
+    tempDSs.clear()
     tempRDDs.foreach { rdd =>
       rdd.unpersist(blocking)
     }
@@ -117,7 +117,7 @@ case class ScratchRDDs(
     this.copy(
       <+>(other, _.tempTables),
       <+>(other, _.tempRDDs),
-      <+>(other, _.tempDFs)
+      <+>(other, _.tempDSs)
     )
   }
 

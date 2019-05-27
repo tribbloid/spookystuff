@@ -23,7 +23,7 @@ case class SpookyExecutionContext(
       scratchRDDs = ScratchRDDs(
         tempTables = <+>(bb, _.tempTables),
         tempRDDs = <+>(bb, _.tempRDDs),
-        tempDFs = <+>(bb, _.tempDFs)
+        tempDSs = <+>(bb, _.tempDSs)
       )
     )
   }
