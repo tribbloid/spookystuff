@@ -1,6 +1,8 @@
 package com.tribbloids.spookystuff.testutils
 
 import org.apache.spark.ml.dsl.utils.OptionConversion
+import org.json4s.JValue
+import org.json4s.jackson.JsonMethods
 import org.scalatest.{FunSpec, Suite}
 
 /**
@@ -114,7 +116,7 @@ trait Suitex extends OptionConversion {
       }
     }
 
-    def rowsShouldBeLike(gd: String = null) = shouldBeLike(gd, sort = true)
+    def rowsShouldBeLike(gd: String = null): Unit = shouldBeLike(gd, sort = true)
 
     //    def uriContains(contains: String): Boolean = {
     //      str.contains(contains) &&
@@ -130,6 +132,28 @@ trait Suitex extends OptionConversion {
     //          s"${URLEncoder.encode(contains,"UTF-8")}"
     //      )
     //    }
+
+    def jsonShouldBe(gd: String): Unit = {
+      val selfJ = JsonMethods.parse(str)
+      val gdJ = JsonMethods.parse(gd)
+
+      assertValidDataInJson(selfJ, gdJ)
+    }
+
+    // from org.apache.spark.JsonTestUtils
+    def assertValidDataInJson(validateJson: JValue, expectedJson: JValue) {
+
+      import org.json4s._
+
+      val Diff(c, a, d) = validateJson.diff(expectedJson)
+      val validatePretty = JsonMethods.pretty(validateJson)
+      val expectedPretty = JsonMethods.pretty(expectedJson)
+      val errorMessage = s"Expected:\n$expectedPretty\nFound:\n$validatePretty"
+      import org.scalactic.TripleEquals._
+      assert(c == JNothing, s"$errorMessage\nChanged:\n${JsonMethods.pretty(c)}")
+      assert(a == JNothing, s"$errorMessage\nAdded:\n${JsonMethods.pretty(a)}")
+      assert(d == JNothing, s"$errorMessage\nDeleted:\n${JsonMethods.pretty(d)}")
+    }
   }
 
   //TODO: update to be on par with scalatest supported by IDE

@@ -4,7 +4,7 @@ import org.apache.spark.ml.dsl.utils.Xml
 import org.apache.spark.ml.dsl.utils.refl.ScalaType
 import org.apache.spark.ml.util.Identifiable
 import org.json4s.JsonAST.{JArray, JObject}
-import org.json4s.jackson.JsonMethods.parse
+import org.json4s.jackson.JsonMethods
 import org.json4s.{Extraction, Formats, JField, JValue}
 import org.slf4j.LoggerFactory
 
@@ -44,7 +44,6 @@ Implicit scope of an argument’s type (2.9.1) - e.g. Companion objects
 Implicit scope of type arguments (2.8.0) - e.g. Companion objects
 Outer objects for nested types
 
-  * @tparam Proto
   */
 abstract class Codec[Proto] extends CodecLevel1 with HasRootTag {
 
@@ -90,7 +89,7 @@ abstract class Codec[Proto] extends CodecLevel1 with HasRootTag {
     val rootTag = reader.getRootTag(None, None)
     _fromJField(rootTag -> jv)(reader)
   }
-  final def _fromJSON[T: Codec](json: String): T = _fromJValue[T](parse(json))
+  final def _fromJSON[T: Codec](json: String): T = _fromJValue[T](JsonMethods.parse(json))
 
   final def _fromXMLNode[T: Codec](ns: NodeSeq): T = {
     val jv: JValue = Xml.toJson(ns)
