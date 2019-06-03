@@ -1,6 +1,6 @@
 package com.tribbloids.spookystuff.utils
 
-import org.apache.spark.ml.dsl.utils.metadata.Metadata
+import org.apache.spark.ml.dsl.utils.metadata.Params
 
 package object io {
 

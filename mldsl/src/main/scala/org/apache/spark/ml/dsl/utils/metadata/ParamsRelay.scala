@@ -13,7 +13,7 @@ import scala.collection.immutable.ListMap
 import scala.language.implicitConversions
 import scala.reflect.ClassTag
 
-trait MetadataRelay[T <: Metadata] extends MessageRelay[T] {
+trait ParamsRelay[T <: Params] extends MessageRelay[T] {
 
   override def getRootTag(protoOpt: Option[T], messageOpt: Option[Map[String, JValue]]): String = "root"
 
@@ -116,7 +116,7 @@ trait MetadataRelay[T <: Metadata] extends MessageRelay[T] {
             None
         }
       }
-      MetadataRelay.this.apply(kvs: _*)
+      ParamsRelay.this.apply(kvs: _*)
     }
   }
 

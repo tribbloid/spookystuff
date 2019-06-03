@@ -4,16 +4,16 @@ import com.tribbloids.spookystuff.utils.IDMixin
 
 import scala.collection.immutable.ListMap
 
-trait MetadataLike extends Serializable with IDMixin {
+trait ParamsLike extends Serializable with IDMixin {
   def self: ListMap[String, Any]
 
   override def _id: Any = self
 
   //  def +(tuple: (Param[_], Any)) = this.copy(this.map + (tuple._1.key -> tuple._2))
-  def ++(v2: MetadataLike) = new Metadata(this.self ++ v2.self)
+  def ++(v2: ParamsLike) = new Params(this.self ++ v2.self)
 
   //TODO: support mixing param and map definition? While still being serializable?
-  abstract class Param[T] {
+  abstract class Param[T] extends Serializable {
 
     final val name: String = this.getClass.getSimpleName
 

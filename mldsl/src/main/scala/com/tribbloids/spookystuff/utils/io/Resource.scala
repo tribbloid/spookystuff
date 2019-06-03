@@ -3,7 +3,7 @@ package com.tribbloids.spookystuff.utils.io
 import java.io.{InputStream, OutputStream}
 
 import com.tribbloids.spookystuff.utils.lifespan.LocalCleanable
-import org.apache.spark.ml.dsl.utils.metadata.Metadata
+import org.apache.spark.ml.dsl.utils.metadata.Params
 
 import scala.collection.immutable.ListMap
 import scala.language.implicitConversions
@@ -35,16 +35,16 @@ abstract class Resource[T] extends LocalCleanable {
 
   def isAlreadyExisting: Boolean
 
-  protected def _md: ResourceMD
+  protected def _md: ResourceMetadata
 
-  lazy val rootMetadata: ResourceMD = {
+  lazy val rootMetadata: ResourceMetadata = {
     val reflective = Resource.resourceParser(this)
-    new ResourceMD(reflective ++ _md)
+    new ResourceMetadata(reflective ++ _md)
   }
 
-  def children: Seq[ResourceMD] = Nil
+  def children: Seq[ResourceMetadata] = Nil
 
-  lazy val allMetadata: ResourceMD = {
+  lazy val allMetadata: ResourceMetadata = {
 
     val grouped = children.groupBy(_.self("Type").toString)
     val childMaps: Map[String, Seq[ListMap[String, Any]]] = grouped.mapValues {
@@ -52,7 +52,7 @@ abstract class Resource[T] extends LocalCleanable {
         md.self
       }
     }
-    val result = new ResourceMD(rootMetadata ++ Metadata.fromMap(childMaps))
+    val result = new ResourceMetadata(rootMetadata ++ Params.fromMap(childMaps))
     result
   }
 
@@ -90,7 +90,7 @@ object Resource extends {
 
   //  implicit def unbox[T](obj: Resource[T]): T = obj.body
 
-  val resourceParser = Metadata.ReflectionParser[Resource[_]]()
+  val resourceParser = Params.ReflectionParser[Resource[_]]()
 
   final val DIR = "directory"
   final val DIR_MIME = "inode/directory; charset=UTF-8"

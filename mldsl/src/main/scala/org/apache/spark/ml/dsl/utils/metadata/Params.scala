@@ -4,13 +4,13 @@ import scala.collection.immutable.ListMap
 import scala.language.implicitConversions
 
 //TODO: superceded to Spark SQL metadata?
-class Metadata(
+class Params(
     override val self: ListMap[String, Any] = ListMap.empty
-) extends MetadataLike {
+) extends ParamsLike {
 
   override def toString: String = self.toString
 }
 
-object Metadata extends MetadataRelay[Metadata] {
-  override def fromListMap(vs: ListMap[String, Any]): Metadata = new Metadata(vs)
+object Params extends ParamsRelay[Params] {
+  override def fromListMap(vs: ListMap[String, Any]): Params = new Params(vs)
 }

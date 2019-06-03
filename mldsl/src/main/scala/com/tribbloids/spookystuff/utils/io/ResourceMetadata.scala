@@ -1,13 +1,13 @@
 package com.tribbloids.spookystuff.utils.io
 
-import org.apache.spark.ml.dsl.utils.metadata.{Metadata, MetadataRelay}
+import org.apache.spark.ml.dsl.utils.metadata.{Params, ParamsRelay}
 
 import scala.collection.immutable.ListMap
 import scala.language.implicitConversions
 
-class ResourceMD(
+class ResourceMetadata(
     override val self: ListMap[String, Any] = ListMap.empty
-) extends Metadata(self) {
+) extends Params(self) {
 
   object `uri` extends Param[String]
   object `name` extends Param[String]
@@ -19,6 +19,6 @@ class ResourceMD(
   object `isDir` extends Param[Boolean]
 }
 
-object ResourceMD extends MetadataRelay[ResourceMD] {
-  override def fromListMap(vs: ListMap[String, Any]): ResourceMD = new ResourceMD(vs)
+object ResourceMetadata extends ParamsRelay[ResourceMetadata] {
+  override def fromListMap(vs: ListMap[String, Any]): ResourceMetadata = new ResourceMetadata(vs)
 }

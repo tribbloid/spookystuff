@@ -3,28 +3,28 @@ package org.apache.spark.ml.dsl.utils.metadata
 import com.tribbloids.spookystuff.testutils.FunSpecx
 import org.apache.hadoop.fs.Path
 
-class MetadataSuite extends FunSpecx {
+class ParamsSuite extends FunSpecx {
 
-  val wellformed = Metadata(
+  val wellformed = Params(
     "int" -> 1,
     "double" -> 2.5,
     "itr" -> Seq("a", "b"),
     "map" -> Map("a" -> 1, "b" -> 2)
   )
 
-  val malformed = new Metadata(
+  val malformed = new Params(
     wellformed.self ++ Map(
       "path" -> new Path("file://home/dir/")
     )
   )
-  val malformedFixed = new Metadata(self = malformed.self.updated("path", "file://home/dir/"))
+  val malformedFixed = new Params(self = malformed.self.updated("path", "file://home/dir/"))
 
-  val nested = new Metadata(
+  val nested = new Params(
     malformed.self ++ Map(
       "children" -> malformed.self
     )
   )
-  val nestedFixed = new Metadata(
+  val nestedFixed = new Params(
     malformedFixed.self ++ Map(
       "children" -> malformedFixed.self
     )
@@ -46,7 +46,7 @@ class MetadataSuite extends FunSpecx {
         |}
       """.stripMargin
     )
-    val back: Metadata = Metadata.fromJSON(json)
+    val back: Params = Params.fromJSON(json)
     assert(o == back)
   }
 
@@ -68,7 +68,7 @@ class MetadataSuite extends FunSpecx {
         |}
       """.stripMargin
     )
-    val back: Metadata = Metadata.fromJSON(json)
+    val back: Params = Params.fromJSON(json)
     assert(malformedFixed == back)
   }
 
@@ -100,7 +100,7 @@ class MetadataSuite extends FunSpecx {
         |}
       """.stripMargin
     )
-    val back: Metadata = Metadata.fromJSON(json)
+    val back: Params = Params.fromJSON(json)
     assert(nestedFixed == back)
   }
 }

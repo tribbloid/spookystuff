@@ -97,7 +97,7 @@ case class HDFSResolver(
 
       override lazy val _md = HDFSResolver.mdParser.apply(status)
 
-      override lazy val children: Seq[ResourceMD] = {
+      override lazy val children: Seq[ResourceMetadata] = {
         if (isDirectory) {
 
           val children = fs.listStatus(path).toSeq
@@ -195,7 +195,7 @@ object HDFSResolver {
 
   def noUGIFactory: () => None.type = () => None
 
-  val mdParser: ResourceMD.ReflectionParser[FileStatus] = ResourceMD.ReflectionParser[FileStatus]()
+  val mdParser: ResourceMetadata.ReflectionParser[FileStatus] = ResourceMetadata.ReflectionParser[FileStatus]()
 
   //  def serviceUGIFactory = () => Some(SparkHelper.serviceUGI)
   //

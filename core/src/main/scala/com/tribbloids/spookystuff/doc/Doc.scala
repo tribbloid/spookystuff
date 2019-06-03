@@ -6,7 +6,7 @@ import java.util.UUID
 import com.tribbloids.spookystuff._
 import com.tribbloids.spookystuff.actions._
 import com.tribbloids.spookystuff.caching.DocCacheLevel
-import com.tribbloids.spookystuff.utils.io.ResourceMD
+import com.tribbloids.spookystuff.utils.io.ResourceMetadata
 import com.tribbloids.spookystuff.utils.{CommonUtils, IDMixin}
 import org.apache.commons.csv.CSVFormat
 import org.apache.hadoop.fs.Path
@@ -64,7 +64,7 @@ trait DocOption extends Serializable {
 
   type RootType
   def root: RootType
-  def metadata: ResourceMD
+  def metadata: ResourceMetadata
 }
 
 //Merely a placeholder if a conditional block is not applicable
@@ -72,7 +72,7 @@ case class NoDoc(
     backtrace: Trace,
     override val timeMillis: Long = System.currentTimeMillis(),
     override val cacheLevel: DocCacheLevel.Value = DocCacheLevel.All,
-    override val metadata: ResourceMD = Map.empty[String, Any]
+    override val metadata: ResourceMetadata = Map.empty[String, Any]
 ) extends Serializable
     with DocOption {
 
@@ -139,7 +139,7 @@ case class Doc(
     saved: scala.collection.mutable.Set[String] = scala.collection.mutable.Set(), //TODO: move out of constructor
     override val cacheLevel: DocCacheLevel.Value = DocCacheLevel.All,
     httpStatus: Option[StatusLine] = None,
-    override val metadata: ResourceMD = ResourceMD.empty //for customizing parsing TODO: remove, delegate to CSVElement.
+    override val metadata: ResourceMetadata = ResourceMetadata.empty //for customizing parsing TODO: remove, delegate to CSVElement.
 ) extends DocOption
     with IDMixin {
 
