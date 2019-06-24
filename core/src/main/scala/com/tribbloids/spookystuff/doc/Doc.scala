@@ -139,7 +139,7 @@ case class Doc(
     saved: scala.collection.mutable.Set[String] = scala.collection.mutable.Set(), //TODO: move out of constructor
     override val cacheLevel: DocCacheLevel.Value = DocCacheLevel.All,
     httpStatus: Option[StatusLine] = None,
-    override val metadata: ResourceMetadata = ResourceMetadata.empty //for customizing parsing TODO: remove, delegate to CSVElement.
+    override val metadata: ResourceMetadata = ResourceMetadata.proto //for customizing parsing TODO: remove, delegate to CSVElement.
 ) extends DocOption
     with IDMixin {
 
@@ -216,7 +216,7 @@ case class Doc(
     } else if (mimeType.contains("json")) {
       JsonElement(contentStr, null, uri) //not serialize, parsing is faster
     } else if (mimeType.contains("csv")) {
-      val csvFormat: CSVFormat = this.metadata.self
+      val csvFormat: CSVFormat = this.metadata.asMap
         .get(Doc.CSV_FORMAT)
         .map {
           case v: CSVFormat => v
@@ -327,6 +327,6 @@ case class Doc(
   }
 
   def setMetadata(tuples: (String, Any)*): Doc = this.copy(
-    metadata = this.metadata.self ++ Map(tuples: _*)
+    metadata = this.metadata.asMap ++ Map(tuples: _*)
   )
 }

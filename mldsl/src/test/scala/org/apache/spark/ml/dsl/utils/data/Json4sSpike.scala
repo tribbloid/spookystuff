@@ -1,4 +1,4 @@
-package org.apache.spark.ml.dsl.utils.metadata
+package org.apache.spark.ml.dsl.utils.data
 
 import com.tribbloids.spookystuff.testutils.FunSpecx
 import org.json4s.{DefaultFormats, Extraction}

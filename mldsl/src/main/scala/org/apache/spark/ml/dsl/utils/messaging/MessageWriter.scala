@@ -11,9 +11,9 @@ import org.json4s.{Extraction, Formats, JValue}
 import scala.language.implicitConversions
 import scala.xml.NodeSeq
 
-case class MessageWriter[M](
-    message: M,
-    formats: Formats = Xml.defaultFormats,
+class MessageWriter[M](
+    val message: M,
+    val formats: Formats = Xml.defaultFormats,
     rootTagOverride: Option[String] = None
 ) extends Serializable {
 
@@ -126,7 +126,11 @@ case class MessageWriter[M](
   }
 }
 
-//object MessageWriter {
-//
-//  implicit def unbox[M](v: MessageWriter[M]): M = v.message
-//}
+object MessageWriter {
+
+  def apply[M](
+      message: M,
+      formats: Formats = Xml.defaultFormats,
+      rootTagOverride: Option[String] = None
+  ): MessageWriter[M] = new MessageWriter[M](message, formats, rootTagOverride)
+}

@@ -1,24 +1,26 @@
 package com.tribbloids.spookystuff.utils.io
 
-import org.apache.spark.ml.dsl.utils.metadata.{Params, ParamsRelay}
+import org.apache.spark.ml.dsl.utils.data.{EAV, EAVRelay}
 
-import scala.collection.immutable.ListMap
 import scala.language.implicitConversions
 
-class ResourceMetadata(
-    override val self: ListMap[String, Any] = ListMap.empty
-) extends Params(self) {
+case class ResourceMetadata(
+    override val source: EAV.Impl = EAV.empty
+) extends EAV {
 
-  object `uri` extends Param[String]
-  object `name` extends Param[String]
-  object `type` extends Param[String]
-  object `content-type` extends Param[String]
-  object `length` extends Param[Long]
-  object `status-code` extends Param[Int]
+  type VV = Any
+  override val ctg = _ctg
 
-  object `isDir` extends Param[Boolean]
+  object uri extends Attr[String]()
+  object name extends Attr[String]()
+  object `type` extends Attr[String]()
+  object `content-type` extends Attr[String]()
+  object length extends Attr[Long]()
+  object `status-code` extends Attr[Int]()
+
+  object `isDir` extends Attr[Boolean]()
 }
 
-object ResourceMetadata extends ParamsRelay[ResourceMetadata] {
-  override def fromListMap(vs: ListMap[String, Any]): ResourceMetadata = new ResourceMetadata(vs)
+object ResourceMetadata extends EAVRelay[ResourceMetadata] {
+  override def fromCore(v: EAV.Impl): ResourceMetadata = ResourceMetadata(v)
 }

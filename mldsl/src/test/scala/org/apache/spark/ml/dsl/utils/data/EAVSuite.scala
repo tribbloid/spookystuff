@@ -1,30 +1,31 @@
-package org.apache.spark.ml.dsl.utils.metadata
+package org.apache.spark.ml.dsl.utils.data
 
 import com.tribbloids.spookystuff.testutils.FunSpecx
 import org.apache.hadoop.fs.Path
+import org.apache.spark.ml.dsl.utils.data.EAV.Impl
 
-class ParamsSuite extends FunSpecx {
+class EAVSuite extends FunSpecx {
 
-  val wellformed = Params(
+  val wellformed = Impl(
     "int" -> 1,
     "double" -> 2.5,
     "itr" -> Seq("a", "b"),
     "map" -> Map("a" -> 1, "b" -> 2)
   )
 
-  val malformed = new Params(
+  val malformed = Impl(
     wellformed.self ++ Map(
       "path" -> new Path("file://home/dir/")
     )
   )
-  val malformedFixed = new Params(self = malformed.self.updated("path", "file://home/dir/"))
+  val malformedFixed = Impl(self = malformed.self.updated("path", "file://home/dir/"))
 
-  val nested = new Params(
+  val nested = Impl(
     malformed.self ++ Map(
       "children" -> malformed.self
     )
   )
-  val nestedFixed = new Params(
+  val nestedFixed = Impl(
     malformedFixed.self ++ Map(
       "children" -> malformedFixed.self
     )
@@ -46,7 +47,7 @@ class ParamsSuite extends FunSpecx {
         |}
       """.stripMargin
     )
-    val back: Params = Params.fromJSON(json)
+    val back: Impl = Impl.fromJSON(json)
     assert(o == back)
   }
 
@@ -68,7 +69,7 @@ class ParamsSuite extends FunSpecx {
         |}
       """.stripMargin
     )
-    val back: Params = Params.fromJSON(json)
+    val back: Impl = Impl.fromJSON(json)
     assert(malformedFixed == back)
   }
 
@@ -100,7 +101,7 @@ class ParamsSuite extends FunSpecx {
         |}
       """.stripMargin
     )
-    val back: Params = Params.fromJSON(json)
+    val back: Impl = Impl.fromJSON(json)
     assert(nestedFixed == back)
   }
 }

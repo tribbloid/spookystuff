@@ -19,11 +19,14 @@ import org.scalatest.{BeforeAndAfter, BeforeAndAfterAll, Retries}
 import scala.language.implicitConversions
 
 object SpookyEnvFixture {
+
+  import scala.collection.JavaConverters._
+
   //  def cleanDriverInstances(): Unit = {
   //    CleanMixin.unclean.foreach {
   //      tuple =>
   //        tuple._2.foreach (_.finalize())
-  //        assert(tuple._2.isEmpty)
+  //        Predef.assert(tuple._2.isEmpty)
   //    }
   //  }
 
@@ -31,11 +34,11 @@ object SpookyEnvFixture {
 
   def shouldBeClean(
       spooky: SpookyContext,
-      pNames: Seq[String]
+      conditions: Seq[ProcessInfo => Boolean]
   ): Unit = {
 
     instancesShouldBeClean(spooky)
-    processShouldBeClean(pNames)
+    processShouldBeClean(conditions)
   }
 
   def instancesShouldBeClean(spooky: SpookyContext): Unit = {
@@ -46,19 +49,22 @@ object SpookyEnvFixture {
           .filter { v =>
             v.lifespan.tpe == Lifespan.Task
           }
-        assert(
+        Predef.assert(
           nonLocalDrivers.isEmpty,
           s": ${tuple._1} is unclean! ${nonLocalDrivers.size} left:\n" + nonLocalDrivers.mkString("\n")
         )
       }
   }
 
+  def getProcesses: Seq[ProcessInfo] = RetryFixedInterval(5, 1000) {
+    JProcesses.getProcessList().asScala
+  }
+
   /**
     * slow
     */
   def processShouldBeClean(
-      names: Seq[String] = Nil,
-      keywords: Seq[String] = Nil,
+      conditions: Seq[ProcessInfo => Boolean] = Nil,
       cleanSweepDrivers: Boolean = true
   ): Unit = {
 
@@ -72,25 +78,13 @@ object SpookyEnvFixture {
       )
     }
 
-    import scala.collection.JavaConverters._
-
-    val processes: Seq[ProcessInfo] = RetryFixedInterval(5, 1000) {
-      JProcesses.getProcessList().asScala
-    }
-
-    names.foreach { name =>
-      val matchedProcess = processes.filter(v => v.getName == name)
-      assert(
+    conditions.foreach { condition =>
+      val matchedProcess = getProcesses.filter { v =>
+        condition(v)
+      }
+      Predef.assert(
         matchedProcess.isEmpty,
-        s"${matchedProcess.size} $name process(es) left:\n" + matchedProcess.mkString("\n")
-      )
-    }
-
-    keywords.foreach { keyword =>
-      val matchedProcess = processes.filter(v => v.getCommand.contains(keyword))
-      assert(
-        matchedProcess.isEmpty,
-        s"${matchedProcess.size} $keyword process(es) left:\n" + matchedProcess.mkString("\n")
+        s"${matchedProcess.size} process(es) left:\n" + matchedProcess.mkString("\n")
       )
     }
   }
@@ -131,7 +125,7 @@ abstract class SpookyEnvFixture
     with BeforeAndAfterAll
     with Retries {
 
-  //  val startTime = System.currentTimeMillis()
+  val exitingPIDs = SpookyEnvFixture.getProcesses.map(_.getPid).toSet
 
   def parallelism: Int = sc.defaultParallelism
 
@@ -161,15 +155,26 @@ abstract class SpookyEnvFixture
   import com.tribbloids.spookystuff.utils.SpookyViews._
 
   def _processNames = Seq("phantomjs", "python")
-  final lazy val processNames = _processNames
+  final lazy val conditions = {
+    val _processNames = this._processNames
+    val exitingPIDs = this.exitingPIDs
+    _processNames.map { name =>
+      { process: ProcessInfo =>
+        val c1 = process.getName == name
+        val c2 = !exitingPIDs.contains(process.getPid)
+        c1 && c2
+      }
+    }
+  }
 
   override def beforeAll(): Unit = if (SpookyEnvFixture.firstRun) {
 
-    val spooky = this.spooky
-    val processNames = this.processNames
     super.beforeAll()
+
+    val spooky = this.spooky
+    val conditions = this.conditions
     sc.runEverywhere() { _ =>
-      SpookyEnvFixture.shouldBeClean(spooky, processNames)
+      SpookyEnvFixture.shouldBeClean(spooky, conditions)
     }
     SpookyEnvFixture.firstRun = false
   }
@@ -177,7 +182,7 @@ abstract class SpookyEnvFixture
   override def afterAll() {
 
     val spooky = this.spooky
-    val processNames = this.processNames
+    val conditions = this.conditions
     TestHelper.cleanTempDirs()
 
     //unpersist all RDDs, disabled to better detect memory leak
@@ -186,8 +191,9 @@ abstract class SpookyEnvFixture
     //    }
 
     sc.runEverywhere() { _ =>
-      SpookyEnvFixture.shouldBeClean(spooky, processNames)
+      SpookyEnvFixture.shouldBeClean(spooky, conditions)
     }
+
     super.afterAll()
   }
 

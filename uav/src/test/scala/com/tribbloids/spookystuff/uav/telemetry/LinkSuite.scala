@@ -10,6 +10,7 @@ import com.tribbloids.spookystuff.utils.lifespan.Cleanable
 import com.tribbloids.spookystuff.utils.{CommonUtils, SpookyUtils}
 import com.tribbloids.spookystuff.{SpookyContext, SpookyEnvFixture}
 import org.apache.spark.rdd.RDD
+import org.jutils.jprocesses.model.ProcessInfo
 
 object LinkSuite {
 
@@ -265,10 +266,15 @@ abstract class SimLinkSuite extends SITLFixture with LinkSuite {
           link.disconnect()
         }
       }
+
+      val condition = { process: ProcessInfo =>
+        process.getName == "mavproxy" || process.getCommand.contains("mavproxy")
+      }
+
       //wait for zombie process to be deregistered
       CommonUtils.retry(5, 2000) {
         sc.runEverywhere() { _ =>
-          SpookyEnvFixture.processShouldBeClean(Seq("mavproxy"), Seq("mavproxy"), cleanSweepDrivers = false)
+          SpookyEnvFixture.processShouldBeClean(Seq(condition), cleanSweepDrivers = false)
 
           Link.registered.foreach { v =>
             v._2.disconnect()

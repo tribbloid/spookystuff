@@ -1,4 +1,4 @@
-package org.apache.spark.ml.dsl.utils.metadata
+package org.apache.spark.ml.dsl.utils.data
 
 import java.lang.reflect.{InvocationTargetException, Method}
 
@@ -13,9 +13,12 @@ import scala.collection.immutable.ListMap
 import scala.language.implicitConversions
 import scala.reflect.ClassTag
 
-trait ParamsRelay[T <: Params] extends MessageRelay[T] {
+trait EAVRelay[I <: EAV] extends MessageRelay[I] with EAVBuilder[I] {
 
-  override def getRootTag(protoOpt: Option[T], messageOpt: Option[Map[String, JValue]]): String = "root"
+  override final type Impl = I
+  final override def Impl = this
+
+  override def getRootTag(protoOpt: Option[I], messageOpt: Option[Map[String, JValue]]): String = "root"
 
   private val jvBlacklist: Set[JValue] = Set(
     JObject()
@@ -25,27 +28,22 @@ trait ParamsRelay[T <: Params] extends MessageRelay[T] {
     jv
   }
 
-  def fromListMap(vs: ListMap[String, Any]): T
+  //TODO: too much boilerplates! should use the overriding pattern in:
+  // https://stackoverflow.com/questions/55801443/in-scala-how-can-an-inner-case-class-consistently-override-a-method
+  def fromCore(v: EAV.Impl): I
 
-  def apply(vs: Tuple2[String, Any]*): T = fromListMap(ListMap(vs: _*))
+  final type M = Map[String, JValue]
+  override def messageMF: Manifest[Map[String, JValue]] = implicitly[Manifest[M]]
 
-  implicit def fromMap(map: Map[String, Any]): T = apply(map.toSeq: _*)
-  implicit def toMap(v: T) = v.self
-
-  val empty: T = apply()
-
-  type M = Map[String, JValue]
-  override def messageMF = implicitly[Manifest[M]]
-
-  override def toMessage_>>(md: T): M = {
-    val result: Seq[(String, json4s.JValue)] = md.self.toSeq
+  override def toMessage_>>(md: I): M = {
+    val result: Seq[(String, json4s.JValue)] = md.asMap.toSeq
       .map {
         case (k, v) =>
           val mapped = Nested[Any](v).map[JValue] { elem: Any =>
             TreeException
               .|||^[JValue](Seq(
                 { () =>
-                  val codec = Registry.Default.findCodecOrDefault(v)
+                  val codec = Registry.Default.findCodecOrDefault[Any](v)
                   assertWellFormed(codec.toWriter_>>(elem).toJValue)
                 }, { () =>
                   JString(elem.toString)
@@ -59,7 +57,7 @@ trait ParamsRelay[T <: Params] extends MessageRelay[T] {
     ListMap(result: _*)
   }
 
-  override def toProto_<<(m: M, rootTag: String): T = {
+  override def toProto_<<(m: M, rootTag: String): I = {
     val map = m.toSeq
       .map {
         case (k, jv) =>
@@ -75,11 +73,8 @@ trait ParamsRelay[T <: Params] extends MessageRelay[T] {
         //            }
         //          )
       }
-    apply(map: _*)
+    fromUntypedTuples(map: _*)
   }
-
-  //  def ParamsParser(vs: Tuple2[MetadataLike#Param[_], Any]*) =
-  //    Metadata(ListMap(vs.map { case (k, v) => k.name -> v }: _*))
 
   case class ReflectionParser[TT: ClassTag]() {
 
@@ -107,7 +102,7 @@ trait ParamsRelay[T <: Params] extends MessageRelay[T] {
     }
 
     def apply(obj: TT) = {
-      val kvs = validGetters.flatMap { tuple =>
+      val kvs: Seq[(String, Any)] = validGetters.flatMap { tuple =>
         try {
           tuple._2.setAccessible(true)
           Some(tuple._1 -> tuple._2.invoke(obj).asInstanceOf[Any])
@@ -115,8 +110,8 @@ trait ParamsRelay[T <: Params] extends MessageRelay[T] {
           case e: InvocationTargetException =>
             None
         }
-      }
-      ParamsRelay.this.apply(kvs: _*)
+      }.toList
+      EAVRelay.this.fromUntypedTuples(kvs: _*)
     }
   }
 

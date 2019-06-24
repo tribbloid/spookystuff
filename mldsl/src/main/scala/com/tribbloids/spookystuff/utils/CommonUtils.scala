@@ -10,7 +10,7 @@ import org.slf4j.LoggerFactory
 
 import scala.concurrent.TimeoutException
 import scala.reflect.ClassTag
-import scala.util.Random
+import scala.util.{Failure, Random, Success, Try}
 
 abstract class CommonUtils {
 
@@ -181,6 +181,21 @@ abstract class CommonUtils {
   }
 
   def toStrNullSafe(v: Any): String = "" + v
+
+  def tryParseBoolean(str: => String): Try[Boolean] = {
+    Try { str }.flatMap { v =>
+      v.toLowerCase match {
+        case "true" | "1" | ""    => Success(true)
+        case "false" | "0" | "-1" => Success(false)
+        case _ =>
+          Failure(
+            new UnsupportedOperationException(
+              s"$v is not a boolean value"
+            )
+          )
+      }
+    }
+  }
 }
 
 object CommonUtils extends CommonUtils

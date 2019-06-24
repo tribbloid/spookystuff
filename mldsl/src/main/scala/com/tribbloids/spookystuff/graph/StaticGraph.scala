@@ -5,6 +5,7 @@ import com.tribbloids.spookystuff.utils.{CommonTypes, MultiMapView}
 
 import scala.collection.mutable
 import scala.language.higherKinds
+import scala.reflect.ClassTag
 
 trait StaticGraph[T <: Domain] extends Module[T] {
 
@@ -20,8 +21,10 @@ object StaticGraph {
   trait Builder[D <: Domain] extends Algebra.Sugars[D] {
 
     type GG <: StaticGraph[D]
+    protected def _ctg(implicit ev: ClassTag[GG]) = ev
+    implicit def ctg: ClassTag[GG]
 
-    implicit val algebra: Algebra[D]
+//    implicit val algebra: Algebra[D]
 
     def fromSeq(
         nodes: Seq[_NodeLike],
@@ -29,10 +32,14 @@ object StaticGraph {
         node_+ : CommonTypes.Binary[NodeData] = nodeAlgebra.+
     ): GG
 
-    final def fromModule(graph: _Module): GG = graph match {
-      case v: _NodeLike => this.fromSeq(Seq(v), Nil)
-      case v: _Edge     => this.fromSeq(Nil, Seq(v))
-      case v: GG        => v
+    final def fromModule(graph: _Module): GG = {
+
+      val ctg = this.ctg
+      graph match {
+        case v: _NodeLike => this.fromSeq(Seq(v), Nil)
+        case v: _Edge     => this.fromSeq(Nil, Seq(v))
+        case ctg(v)       => v
+      }
     }
     def union(v1: GG, v2: GG, node_+ : CommonTypes.Binary[NodeData] = nodeAlgebra.+): GG
 

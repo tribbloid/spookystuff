@@ -87,6 +87,7 @@ object LocalGraph {
   ) extends StaticGraph.Builder[D] {
 
     type GG = LocalGraph[D]
+    override val ctg = _ctg
 
     override def fromSeq(
         nodes: Seq[_NodeLike],

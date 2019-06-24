@@ -286,21 +286,6 @@ These special characters are often called "metacharacters".
     h
   }
 
-  def tryParseBoolean(str: => String): Try[Boolean] = {
-    Try { str }.flatMap { v =>
-      v.toLowerCase match {
-        case "true" | "1" | ""    => Success(true)
-        case "false" | "0" | "-1" => Success(false)
-        case _ =>
-          Failure(
-            new UnsupportedOperationException(
-              s"$v is not a boolean value"
-            )
-          )
-      }
-    }
-  }
-
   /**
     * much faster and takes much less memory than groupBy + reduce
     */
