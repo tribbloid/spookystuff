@@ -63,6 +63,10 @@ object LinkSuite {
       )
     }
   }
+
+  val processCondition = { process: ProcessInfo =>
+    process.getName == "mavproxy" || process.getCommand.contains("mavproxy")
+  }
 }
 
 trait LinkSuite extends UAVFixture {
@@ -267,14 +271,10 @@ abstract class SimLinkSuite extends SITLFixture with LinkSuite {
         }
       }
 
-      val condition = { process: ProcessInfo =>
-        process.getName == "mavproxy" || process.getCommand.contains("mavproxy")
-      }
-
       //wait for zombie process to be deregistered
       CommonUtils.retry(5, 2000) {
         sc.runEverywhere() { _ =>
-          SpookyEnvFixture.processShouldBeClean(Seq(condition), cleanSweepDrivers = false)
+          SpookyEnvFixture.processShouldBeClean(Seq(LinkSuite.processCondition), cleanSweepDrivers = false)
 
           Link.registered.foreach { v =>
             v._2.disconnect()
