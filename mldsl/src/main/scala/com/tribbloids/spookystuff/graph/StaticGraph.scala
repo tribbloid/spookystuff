@@ -21,8 +21,9 @@ object StaticGraph {
   trait Builder[D <: Domain] extends Algebra.Sugars[D] {
 
     type GG <: StaticGraph[D]
-    protected def _ctg(implicit ev: ClassTag[GG]) = ev
+    protected def getCtg(implicit ev: ClassTag[GG]) = ev
     implicit def ctg: ClassTag[GG]
+    final lazy val _ctg = ctg
 
 //    implicit val algebra: Algebra[D]
 
@@ -34,11 +35,10 @@ object StaticGraph {
 
     final def fromModule(graph: _Module): GG = {
 
-      val ctg = this.ctg
       graph match {
         case v: _NodeLike => this.fromSeq(Seq(v), Nil)
         case v: _Edge     => this.fromSeq(Nil, Seq(v))
-        case ctg(v)       => v
+        case _ctg(v)      => v
       }
     }
     def union(v1: GG, v2: GG, node_+ : CommonTypes.Binary[NodeData] = nodeAlgebra.+): GG

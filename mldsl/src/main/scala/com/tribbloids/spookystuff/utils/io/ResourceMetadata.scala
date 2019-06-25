@@ -9,7 +9,7 @@ case class ResourceMetadata(
 ) extends EAV {
 
   type VV = Any
-  override val ctg = _ctg
+  override def ctg = getCtg
 
   object uri extends Attr[String]()
   object name extends Attr[String]()

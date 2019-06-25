@@ -17,8 +17,9 @@ import scala.util.Try
 trait EAV extends Serializable with IDMixin {
 
   type VV
-  protected def _ctg(implicit v: ClassTag[VV]) = v
-  implicit def ctg: ClassTag[VV]
+  protected def getCtg(implicit v: ClassTag[VV]) = v
+  def ctg: ClassTag[VV]
+  final lazy val _ctg = ctg
 
   def source: EAV
 
@@ -29,9 +30,8 @@ trait EAV extends Serializable with IDMixin {
 
   def asOriginalMap: ListMap[String, VV] = {
 
-    val ctg = this.ctg
     core.self.collect {
-      case (k, ctg(v)) => k -> v
+      case (k, _ctg(v)) => k -> v
     }
   }
   lazy val asCaseInsensitiveMap: Map[String, VV] = CaseInsensitiveMap(asOriginalMap)

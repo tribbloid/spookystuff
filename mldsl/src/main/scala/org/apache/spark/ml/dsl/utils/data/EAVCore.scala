@@ -10,7 +10,7 @@ case class EAVCore(
 ) extends EAV.ImplicitSrc {
 
   override type VV = Any
-  override val ctg: ClassTag[VV] = _ctg
+  override def ctg: ClassTag[VV] = getCtg
 
   final override lazy val source: Impl = this
 }
