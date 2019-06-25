@@ -82,8 +82,6 @@ trait EAV extends Serializable with IDMixin {
 
   lazy val showStr = formattedStr()
 
-  override def toString: String = showStr
-
   lazy val providedHintStr: Option[String] = {
     if (asStrMap.isEmpty) {
       None
@@ -123,7 +121,7 @@ trait EAV extends Serializable with IDMixin {
 
   def contains(k: String): Boolean = tryGet(k).isSuccess
 
-  def attr(v: String) = new AA(primaryNameOverride = v)
+  def attr(v: String) = new Attr_(primaryNameOverride = v)
 
   def drop(vs: Magnets.K*): EAV.Impl = EAV.Impl.fromMap(asMap -- vs.flatMap(_.names))
 
@@ -203,7 +201,7 @@ trait EAV extends Serializable with IDMixin {
     implicit def fromStr(v: String): Attr[VV] = new Attr[VV](primaryNameOverride = v)
   }
 
-  type AA = Attr[VV]
+  type Attr_ = Attr[VV]
 }
 
 object EAV extends EAVBuilder[EAV] {

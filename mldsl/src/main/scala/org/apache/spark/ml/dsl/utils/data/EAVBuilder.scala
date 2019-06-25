@@ -37,9 +37,18 @@ trait EAVBuilder[I <: EAV] {
 
   final def fromCaseClass(v: Product): Impl = {
 
-    val kvMap = ReflectionUtils.getCaseAccessorMap(v)
+    val kvMap: Seq[(String, Any)] = ReflectionUtils.getCaseAccessorMap(v)
 
-    fromUntypedTuples(kvMap: _*)
+    val kvMapFlattenOpt = kvMap.flatMap {
+      case (k, vMaybeOpt) =>
+        vMaybeOpt match {
+          case Some(vv) => Some(k -> vv)
+          case None     => None
+          case _        => Some(k -> vMaybeOpt)
+        }
+    }
+
+    fromUntypedTuples(kvMapFlattenOpt: _*)
   }
 
   lazy final val proto: Impl = apply()
