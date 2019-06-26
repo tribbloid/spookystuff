@@ -36,7 +36,7 @@ trait EAV extends Serializable with IDMixin {
   }
   lazy val asCaseInsensitiveMap: Map[String, VV] = CaseInsensitiveMap(asOriginalMap)
 
-  def asMap: Map[String, VV] = asOriginalMap
+  def asMap: Map[String, VV] = asCaseInsensitiveMap
   def asStrMap: Map[String, String] = asMap.mapValues(v => Option(v).map(_.toString).orNull)
 
   override def _id = asMap
