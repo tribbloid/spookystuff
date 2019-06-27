@@ -94,7 +94,7 @@ trait EAV extends Serializable with IDMixin {
 
   def tryGet(k: String, nullable: Boolean = false): Try[VV] = Try {
     val result = asMap.getOrElse(
-      k.toLowerCase(),
+      k,
       throw new UnsupportedOperationException(
         (
           Seq(
@@ -103,7 +103,7 @@ trait EAV extends Serializable with IDMixin {
         ).mkString("\n")
       )
     )
-    if (!nullable) require(result != null, s"null value for `${k.toLowerCase}`")
+    if (!nullable) require(result != null, s"null value for `$k`")
     result
   }
 
@@ -114,7 +114,7 @@ trait EAV extends Serializable with IDMixin {
   def getOrElse(k: String, default: VV): VV = {
     require(
       default != null,
-      s"default value for `${k.toLowerCase}` cannot be null"
+      s"default value for `$k` cannot be null"
     )
     get(k).getOrElse(default)
   }
@@ -166,7 +166,7 @@ trait EAV extends Serializable with IDMixin {
       tryGet
         .flatMap { v =>
           Try {
-            enum.withName(ev(v).toLowerCase())
+            enum.withName(ev(v))
           }
         }
     }

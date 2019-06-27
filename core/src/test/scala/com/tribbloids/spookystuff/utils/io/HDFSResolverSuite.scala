@@ -1,6 +1,5 @@
 package com.tribbloids.spookystuff.utils.io
 
-import com.tribbloids.spookystuff.testutils.LocalPathDocsFixture
 import org.apache.hadoop.conf.Configuration
 import org.apache.hadoop.security.UserGroupInformation
 
