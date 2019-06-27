@@ -29,5 +29,5 @@ trait AttrLike[T] extends Serializable {
 
 object AttrLike {
 
-  implicit def toV[T](attr: AttrLike[T]): T = attr.value
+//  implicit def toV[T](attr: AttrLike[T]): T = attr.value
 }
