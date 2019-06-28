@@ -70,6 +70,44 @@ trait EAV extends Serializable with IDMixin {
     :++(other)
   }
 
+  //TODO: move to superclass
+  final def +=+(
+      other: EAV,
+      include: List[Any] = Nil
+  ): EAV.Impl = {
+
+    val _include: List[String] = if (include.isEmpty) {
+      (this.asMap.keys ++ other.asMap.keys).toList
+    } else {
+      include.flatMap {
+        case v: this.Attr[_] => v.allNames
+        case v: String       => Seq(v)
+        case v @ _ =>
+          throw new UnsupportedOperationException(s"unsupported key type for $v")
+      }
+    }
+
+    val result: Seq[(String, Any)] = _include.flatMap { key =>
+      val vs = Seq(this, other).map { v =>
+        v.asMap.get(key)
+      }.flatten
+
+      val mergedOpt = vs match {
+        case Seq(v1, v2) =>
+          require(v1 == v2, s"cannot merge, diverging values for $key: $v1 != $v2")
+          vs.headOption
+        case _ =>
+          vs.headOption
+      }
+
+      mergedOpt.map { merged =>
+        key -> merged
+      }
+    }
+
+    EAV.Impl.fromUntypedTuples(result: _*)
+  }
+
   def updated(key: String, value: VV): EAV.Impl = {
     EAV.Impl.fromMap(this.asMap.updated(key, value))
   }
