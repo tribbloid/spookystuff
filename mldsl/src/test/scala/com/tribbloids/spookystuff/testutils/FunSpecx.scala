@@ -48,12 +48,12 @@ trait Suitex extends OptionConversion {
           if (sort) b = b.sorted
           if (ignoreCase) b = b.map(_.toLowerCase)
           if (superSet) {
-            TestHelper.assert(
+            Predef.assert(
               a.intersect(b).nonEmpty,
               AssertionErrorObject(a, b)
             )
           } else {
-            TestHelper.assert(
+            Predef.assert(
               a == b,
               AssertionErrorObject(a, b)
             )
@@ -69,6 +69,13 @@ trait Suitex extends OptionConversion {
 //
 //      JSONAssert.assertEquals(str, gd, mode)
 //    }
+
+    def jsonShouldBe(gd: String): Unit = {
+      val selfJ = JsonMethods.parse(str)
+      val gdJ = JsonMethods.parse(gd)
+
+      assertValidDataInJson(selfJ, gdJ)
+    }
 
     def rowsShouldBe(
         gd: String = null
@@ -102,10 +109,10 @@ trait Suitex extends OptionConversion {
           try {
             a.zipAll(b, null, null).foreach { tuple =>
               val fixes = tuple._2.split("[\\.]{6,}", 2)
-              TestHelper.assert(
+              Predef.assert(
                 tuple._1.startsWith(fixes.head)
               )
-              TestHelper.assert(
+              Predef.assert(
                 tuple._1.endsWith(fixes.last)
               )
             }
@@ -132,13 +139,6 @@ trait Suitex extends OptionConversion {
     //          s"${URLEncoder.encode(contains,"UTF-8")}"
     //      )
     //    }
-
-    def jsonShouldBe(gd: String): Unit = {
-      val selfJ = JsonMethods.parse(str)
-      val gdJ = JsonMethods.parse(gd)
-
-      assertValidDataInJson(selfJ, gdJ)
-    }
 
     // from org.apache.spark.JsonTestUtils
     def assertValidDataInJson(validateJson: JValue, expectedJson: JValue) {

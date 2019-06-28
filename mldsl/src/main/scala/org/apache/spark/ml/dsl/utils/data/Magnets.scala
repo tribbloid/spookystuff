@@ -4,7 +4,7 @@ import scala.language.implicitConversions
 
 object Magnets {
 
-  case class KV[T](
+  case class KV[+T](
       k: String,
       vOpt: Option[T]
   )

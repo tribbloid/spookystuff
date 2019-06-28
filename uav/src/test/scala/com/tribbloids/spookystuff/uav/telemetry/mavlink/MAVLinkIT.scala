@@ -1,7 +1,6 @@
 package com.tribbloids.spookystuff.uav.telemetry.mavlink
 
 import com.tribbloids.spookystuff.session.Session
-import com.tribbloids.spookystuff.testutils.TestHelper
 import com.tribbloids.spookystuff.uav.dsl.{Routing, Routings}
 import com.tribbloids.spookystuff.uav.sim.{APMQuadFixture, APMSim}
 import com.tribbloids.spookystuff.uav.system.UAV
@@ -53,7 +52,7 @@ class MAVLinkIT extends LinkITFixture with APMQuadFixture {
       def changeAndVerifyMode(endpoint: Endpoint, mode: String) = CommonUtils.withDeadline(20.seconds) {
         val py = endpoint.PY
         py.setMode(mode)
-        TestHelper.assert(py.vehicle.mode.name.$STR.get == mode)
+        Predef.assert(py.vehicle.mode.name.$STR.get == mode)
       }
 
       changeAndVerifyMode(endpoint2, "BRAKE")

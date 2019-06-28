@@ -32,6 +32,7 @@ trait EAV extends Serializable with IDMixin {
 
     core.self.collect {
       case (k, _ctg(v)) => k -> v
+      case (k, null)    => k -> null.asInstanceOf[VV]
     }
   }
   lazy val asCaseInsensitiveMap: Map[String, VV] = CaseInsensitiveMap(asOriginalMap)
@@ -53,8 +54,12 @@ trait EAV extends Serializable with IDMixin {
 
   /**
     * favor the key-value pair in first operand
+    * attempt to preserve sequence as much as possible
     */
-  def :++(other: EAV): EAV.Impl = EAV.Impl.fromMap(other.asMap ++ this.asMap)
+  def :++(other: EAV): EAV.Impl = {
+
+    EAV.Impl.fromMap(CommonUtils.mergePreserveOrder(this.core.self, other.core.self))
+  }
 
   /**
     * favor the key-value pair in second operand

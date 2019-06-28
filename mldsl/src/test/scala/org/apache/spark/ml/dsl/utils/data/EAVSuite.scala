@@ -13,23 +13,19 @@ class EAVSuite extends FunSpecx {
     "map" -> Map("a" -> 1, "b" -> 2)
   )
 
-  val malformed = Impl(
-    wellformed.self ++ Map(
-      "path" -> new Path("file://home/dir/")
-    )
+  val malformed = wellformed :++ Impl(
+    "path" -> new Path("file://home/dir")
   )
-  val malformedFixed = Impl(self = malformed.self.updated("path", "file://home/dir/"))
+  val malformedFixed = Impl(self = malformed.self.updated("path", "file://home/dir"))
 
-  val nested = Impl(
-    malformed.self ++ Map(
-      "children" -> malformed.self
-    )
+  val nested = malformed :++ Impl(
+    "children" -> malformed.self
   )
-  val nestedFixed = Impl(
-    malformedFixed.self ++ Map(
-      "children" -> malformedFixed.self
-    )
+  val nestedFixed = malformedFixed :++ Impl(
+    "children" -> malformedFixed.self
   )
+
+  val withNull = wellformed :++ Impl("nullable" -> null)
 
   it("wellformed <=> JSON") {
     val o = wellformed
@@ -51,11 +47,10 @@ class EAVSuite extends FunSpecx {
     assert(o == back)
   }
 
-  //TODO: report bug and fix
-  ignore("malformed <=> JSON") {
+  it("malformed <=> JSON") {
     val o = malformed
     val json = o.toJSON()
-    json.shouldBe(
+    json.jsonShouldBe(
       """
         |{
         |  "int" : 1,
@@ -73,11 +68,10 @@ class EAVSuite extends FunSpecx {
     assert(malformedFixed == back)
   }
 
-  //TODO: report bug and fix
-  ignore("nested <=> JSON") {
+  it("nested <=> JSON") {
     val o = nested
     val json = o.toJSON()
-    json.shouldBe(
+    json.jsonShouldBe(
       """
         |{
         |  "int" : 1,
@@ -103,5 +97,27 @@ class EAVSuite extends FunSpecx {
     )
     val back: Impl = Impl.fromJSON(json)
     assert(nestedFixed == back)
+  }
+
+  it("withNull <=> JSON") {
+
+    val o = withNull
+    val json = o.toJSON()
+    json.shouldBe(
+      """
+        |{
+        |  "nullable" : null,
+        |  "itr" : [ "a", "b" ],
+        |  "map" : {
+        |    "a" : 1,
+        |    "b" : 2
+        |  },
+        |  "double" : 2.5,
+        |  "int" : 1
+        |}
+      """.stripMargin
+    )
+    val back: Impl = Impl.fromJSON(json)
+    assert(withNull == back)
   }
 }

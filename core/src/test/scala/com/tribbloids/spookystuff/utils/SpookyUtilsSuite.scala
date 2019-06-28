@@ -64,7 +64,7 @@ class SpookyUtilsSuite extends FunSpecx {
         )
       }
     }
-    TestHelper.assert(time < 12000)
+    Predef.assert(time < 12000)
 
     val (_, time2) = CommonUtils.timed {
       CommonUtils.withDeadline(10.seconds, Some(1.second))(
@@ -94,7 +94,7 @@ class SpookyUtilsSuite extends FunSpecx {
         )
       }
     }
-    TestHelper.assert(time < 12000)
+    Predef.assert(time < 12000)
     log
       .mkString("\n")
       .shouldBe(
@@ -125,7 +125,7 @@ class SpookyUtilsSuite extends FunSpecx {
         }
       )
     }
-    TestHelper.assert(time2 < 6000)
+    Predef.assert(time2 < 6000)
     log
       .mkString("\n")
       .shouldBe(
@@ -151,7 +151,7 @@ class SpookyUtilsSuite extends FunSpecx {
           }
         }
       }
-      TestHelper.assert(time < 11000, s"$time vs 11000")
+      Predef.assert(time < 11000, s"$time vs 11000")
 
       val (_, time2) = CommonUtils.timed {
         CommonUtils.withDeadline(10.seconds, Some(1.second)) {
@@ -159,7 +159,7 @@ class SpookyUtilsSuite extends FunSpecx {
           println("result 2")
         }
       }
-      TestHelper.assert(time2 < 6000, s"$time2 vs 6000")
+      Predef.assert(time2 < 6000, s"$time2 vs 6000")
     }
   }
 

@@ -8,6 +8,7 @@ import org.apache.spark.ml.dsl.utils.FlowUtils
 import org.apache.spark.storage.BlockManagerId
 import org.slf4j.LoggerFactory
 
+import scala.collection.immutable.ListMap
 import scala.concurrent.TimeoutException
 import scala.reflect.ClassTag
 import scala.util.{Failure, Random, Success, Try}
@@ -195,6 +196,26 @@ abstract class CommonUtils {
           )
       }
     }
+  }
+
+  def orderedGroupBy[T, R](vs: Seq[T])(fn: T => R): Seq[(R, Seq[T])] = {
+
+    val keys = vs.map(fn).distinct
+    val grouped = vs.groupBy(fn)
+    val orderedGrouped = keys.map(key => key -> grouped(key))
+    orderedGrouped
+  }
+
+  def mergePreserveOrder[K, V](
+      x: Iterable[(K, V)],
+      y: Iterable[(K, V)]
+  ): ListMap[K, V] = {
+
+    val proto = orderedGroupBy((x ++ y).toSeq)(_._1)
+    val proto2 = proto.map {
+      case (k, v) => k -> v.head._2
+    }
+    ListMap(proto2: _*)
   }
 }
 

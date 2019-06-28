@@ -281,7 +281,7 @@ class TestHelper() extends LocalCleanable {
       } catch {
         case e: SparkException =>
           val ee = e
-          assert(
+          Predef.assert(
             ee.getMessage.contains("com.esotericsoftware.kryo.KryoException"),
             "should be triggered by KryoException, but the message doesn't indicate that:\n" + ee.getMessage
           )
@@ -308,11 +308,6 @@ class TestHelper() extends LocalCleanable {
     }
   }
 
-  def assert(fn: => Boolean) = Predef.assert(fn)
-  def assert(fn: => Boolean, message: => Any) = {
-    if (!fn)
-      throw new java.lang.AssertionError(message)
-  }
   def intercept[EE <: Exception: ClassTag](fn: => Any) = {
     val trial = Try {
       fn
