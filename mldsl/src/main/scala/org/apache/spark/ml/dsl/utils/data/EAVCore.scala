@@ -14,8 +14,9 @@ case class EAVCore(
 
   final override lazy val source: Impl = this
 
+  override def defaultSeparator = ", "
   override def toString: String =
-    s"<${_ctg.runtimeClass.getSimpleName}>: {${formattedStr(", ")}}"
+    s"<${_ctg.runtimeClass.getSimpleName}>: {${formattedStr()}}"
 }
 
 object EAVCore extends EAVRelay[EAVCore] {

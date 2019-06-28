@@ -108,19 +108,22 @@ trait EAV extends Serializable with IDMixin {
     EAV.Impl.fromUntypedTuples(result: _*)
   }
 
-  def updated(key: String, value: VV): EAV.Impl = {
-    EAV.Impl.fromMap(this.asMap.updated(key, value))
+  def updated(key: Magnets.K, value: VV): EAV.Impl = {
+    EAV.Impl.fromMap(this.asMap.updated(key.names.head, value))
   }
 
-  def updateIfExists(key: String, vOpt: Nullable[VV]): EAV.Impl = {
+  def updateIfExists(key: Magnets.K, vOpt: Nullable[VV]): EAV.Impl = {
     vOpt.asOption match {
       case None    => this.core
       case Some(v) => updated(key, v)
     }
   }
 
-  def formattedStr(sep: String = " "): String = {
-    asStrMap.map(tuple => s"${tuple._1}=${tuple._2}").mkString(sep)
+  def defaultSeparator = " "
+  def defaultQuote = ""
+
+  def formattedStr(sep: String = defaultSeparator, quote: String = defaultQuote): String = {
+    asStrMap.map(tuple => s"${tuple._1}=$defaultQuote${tuple._2}$defaultQuote").mkString(sep)
   }
 
   lazy val showStr = formattedStr()
