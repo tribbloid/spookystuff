@@ -14,12 +14,20 @@ object ConfUtils {
     val result = Option(System.getProperty(property))
       .filter(_.toLowerCase != "null")
       .map { v =>
-        LoggerFactory.getLogger(this.getClass).info(s"System has property $property -> $v")
+        LoggerFactory
+          .getLogger(this.getClass)
+          .info(
+            s"System property:\t $property -> $v"
+          )
         v
       }
       .orElse {
         Option(System.getenv(env)).filter(_.toLowerCase != "null").map { v =>
-          LoggerFactory.getLogger(this.getClass).info(s"System has environment $env -> $v")
+          LoggerFactory
+            .getLogger(this.getClass)
+            .info(
+              s"Environment variable:\t $env -> $v"
+            )
           v
         }
       }
@@ -27,7 +35,11 @@ object ConfUtils {
         Option(conf) //this is ill-suited for third-party application, still here but has lowest precedence.
           .flatMap(
             _.getOption(property).map { v =>
-              LoggerFactory.getLogger(this.getClass).info(s"SparkConf has property $property -> $v")
+              LoggerFactory
+                .getLogger(this.getClass)
+                .info(
+                  s"Spark Configurations:\t $property -> $v"
+                )
               v
             }
           )
