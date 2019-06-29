@@ -103,7 +103,7 @@ class EAVSuite extends FunSpecx {
 
     val o = withNull
     val json = o.toJSON()
-    json.shouldBe(
+    json.jsonShouldBe(
       """
         |{
         |  "nullable" : null,
