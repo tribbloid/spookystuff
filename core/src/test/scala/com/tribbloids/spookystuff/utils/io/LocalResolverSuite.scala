@@ -110,7 +110,7 @@ class LocalResolverSuite extends FunSpecx with LocalPathDocsFixture {
       md
     }
     val mds = mdRDD.collect().map {
-      _.asMap.filterNot(_._1.contains("space")).map(identity)
+      _.asMap.filterNot(_._1.contains("Space")).map(identity)
     }
 
     AssertSerializable(mds.head)
@@ -128,7 +128,7 @@ class LocalResolverSuite extends FunSpecx with LocalPathDocsFixture {
       md
     }
     val mds = mdRDD.collect().map {
-      _.asMap.filterNot(_._1.contains("space")).map(identity)
+      _.asMap.filterNot(_._1.contains("Space")).map(identity)
     }
 
     AssertSerializable(mds.head)
