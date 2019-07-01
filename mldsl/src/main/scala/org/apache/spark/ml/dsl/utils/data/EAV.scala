@@ -186,6 +186,12 @@ trait EAV extends Serializable with IDMixin {
       extends AttrLike[T]
       with ScalaNameMixin {
 
+    override def toString: String = {
+      throw new UnsupportedOperationException(
+        "Attribute cannot be used as string, please use primaryName or value instead"
+      )
+    }
+
     def outer: EAV = EAV.this
 
     final def primaryName: String = primaryNameOverride.getOrElse(objectSimpleName)
