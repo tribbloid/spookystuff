@@ -4,6 +4,8 @@ import com.tribbloids.spookystuff.testutils.FunSpecx
 import org.apache.hadoop.fs.Path
 import org.apache.spark.ml.dsl.utils.data.EAV.Impl
 
+import scala.reflect.ClassTag
+
 class EAVSuite extends FunSpecx {
 
   val wellformed = Impl(
@@ -26,6 +28,15 @@ class EAVSuite extends FunSpecx {
   )
 
   val withNull = wellformed :++ Impl("nullable" -> null)
+
+  case class WithEnum(source: EAV) extends EAV {
+    override type VV = Any
+    override def ctg: ClassTag[Any] = getCtg
+
+    object enumField extends Attr[String]()
+  }
+
+  val withEnum: WithEnum = WithEnum(wellformed.updated("enumField", "bb"))
 
   it("wellformed <=> JSON") {
     val o = wellformed
@@ -119,5 +130,19 @@ class EAVSuite extends FunSpecx {
     )
     val back: Impl = Impl.fromJSON(json)
     assert(withNull == back)
+  }
+
+  it("tryGetEnum can convert String to Enumeration") {
+
+    val v = withEnum.enumField.tryGetEnum(EAVSuite.EE)
+    assert(v.get == EAVSuite.EE.bb)
+  }
+}
+
+object EAVSuite {
+
+  object EE extends Enumeration {
+
+    val aa, bb, cc, dd = Value
   }
 }
