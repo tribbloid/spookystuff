@@ -28,7 +28,7 @@ trait EAV extends Serializable with IDMixin {
     case _           => source.core
   }
 
-  def asOriginalMap: ListMap[String, VV] = {
+  lazy val asOriginalMap: ListMap[String, VV] = {
 
     core.self.collect {
       case (k, _ctg(v)) => k -> v
@@ -123,10 +123,11 @@ trait EAV extends Serializable with IDMixin {
   def defaultQuote = ""
 
   def formattedStr(sep: String = defaultSeparator, quote: String = defaultQuote): String = {
-    asStrMap.map(tuple => s"${tuple._1}=$defaultQuote${tuple._2}$defaultQuote").mkString(sep)
+    asStrMap.map(tuple => s"${tuple._1}=$quote${tuple._2}$quote").mkString(sep)
   }
 
   lazy val showStr = formattedStr()
+  lazy val showStr_unquoted = formattedStr(quote = "")
 
   lazy val providedHintStr: Option[String] = {
     if (asStrMap.isEmpty) {
@@ -264,4 +265,9 @@ object EAV extends EAVBuilder[EAV] {
   trait ImplicitSrc extends EAV
 
   def empty: Impl = Impl.proto
+
+  trait CaseInsensitive extends EAV {
+
+    override def asMap: Map[String, VV] = asCaseInsensitiveMap
+  }
 }
