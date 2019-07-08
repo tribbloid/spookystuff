@@ -26,6 +26,6 @@ case class Assert(condition: DocCondition) extends Assertion {
   override def exeNoOutput(session: Session): Unit = {
     val page = QuickSnapshot.apply(session).head.asInstanceOf[Doc]
 
-    assert(condition(page, session))
+    assert(condition(page -> session))
   }
 }
