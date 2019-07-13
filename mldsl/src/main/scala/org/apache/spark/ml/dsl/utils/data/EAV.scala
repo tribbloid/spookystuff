@@ -40,7 +40,7 @@ trait EAV extends Serializable with IDMixin {
   def asMap: Map[String, VV] = asOriginalMap
   def asStrMap: Map[String, String] = asMap.mapValues(v => Option(v).map(_.toString).orNull)
 
-  override def _id = asMap
+  override def _id: Any = asMap
 
   def asProperties: Properties = {
     val properties = new Properties()
@@ -170,11 +170,32 @@ trait EAV extends Serializable with IDMixin {
 
   def attr(v: String) = new Attr_(primaryNameOverride = v)
 
+  lazy val declaredAttrs: List[Attr[_]] = {
+
+    val methods = this.getClass.getMethods.toList
+      .filter { method =>
+        val parameterMatch = method.getParameterCount == 0
+        val returnTypeMatch = classOf[Attr[_]].isAssignableFrom(method.getReturnType)
+
+        returnTypeMatch && parameterMatch
+      }
+
+    val publicMethods = methods.filter { method =>
+      method.getModifiers == 1
+    }
+
+    publicMethods.map { method =>
+      method.invoke(this).asInstanceOf[Attr[_]]
+    }
+  }
+
   def drop(vs: Magnets.K*): EAV.Impl = EAV.Impl.fromMap(asMap -- vs.flatMap(_.names))
 
   def dropAll(vs: Iterable[Magnets.K]): EAV.Impl = drop(vs.toSeq: _*)
 
   def --(vs: Iterable[Magnets.K]): EAV.Impl = dropAll(vs)
+
+  lazy val dropUndeclared: EAVCore = dropAll(declaredAttrs)
 
   //TODO: support mixing param and map definition? While still being serializable?
   class Attr[T](
