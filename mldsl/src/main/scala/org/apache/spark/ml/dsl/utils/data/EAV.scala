@@ -197,6 +197,18 @@ trait EAV extends Serializable with IDMixin {
 
   lazy val dropUndeclared: EAVCore = dropAll(declaredAttrs)
 
+  lazy val withDefaults: EAVCore = {
+    val declaredMap: Seq[(this.Attr[_], Any)] = declaredAttrs.flatMap { k =>
+      k.get.map { v =>
+        k -> v
+      }
+    }
+
+    val declaredEAV = EAV.fromMap(declaredMap)
+
+    this :++ declaredEAV
+  }
+
   //TODO: support mixing param and map definition? While still being serializable?
   class Attr[T](
       // should only be used in setters
