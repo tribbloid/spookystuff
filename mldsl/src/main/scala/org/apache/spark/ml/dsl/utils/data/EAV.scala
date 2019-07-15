@@ -108,26 +108,29 @@ trait EAV extends Serializable with IDMixin {
     EAV.Impl.fromUntypedTuples(result: _*)
   }
 
-  def updated(key: Magnets.K, value: VV): EAV.Impl = {
-    EAV.Impl.fromMap(this.asMap.updated(key.names.head, value))
+  def updated(kvs: Magnets.KV[VV]*): EAV.Impl = {
+    this ++: EAV(kvs: _*)
   }
 
-  def updateIfExists(key: Magnets.K, vOpt: Nullable[VV]): EAV.Impl = {
-    vOpt.asOption match {
-      case None    => this.core
-      case Some(v) => updated(key, v)
-    }
+  def updateIfExists(kvOpts: Magnets.KVOpt[VV]*): EAV.Impl = {
+
+    updated(kvOpts.map(_.asKV): _*)
   }
 
   def defaultSeparator = " "
-  def defaultQuote = ""
+  def defaultKQuote = ""
+  def defaultVQuote = ""
 
-  def formattedStr(sep: String = defaultSeparator, quote: String = defaultQuote): String = {
-    asStrMap.map(tuple => s"${tuple._1}=$quote${tuple._2}$quote").mkString(sep)
+  def formattedStr(
+      sep: String = defaultSeparator,
+      kQuote: String = defaultKQuote,
+      vQuote: String = defaultVQuote
+  ): String = {
+    asStrMap.map(tuple => s"$kQuote${tuple._1}$kQuote=$vQuote${tuple._2}$vQuote").mkString(sep)
   }
 
   lazy val showStr = formattedStr()
-  lazy val showStr_unquoted = formattedStr(quote = "")
+  lazy val showStr_unquoted = formattedStr(vQuote = "")
 
   lazy val providedHintStr: Option[String] = {
     if (asStrMap.isEmpty) {

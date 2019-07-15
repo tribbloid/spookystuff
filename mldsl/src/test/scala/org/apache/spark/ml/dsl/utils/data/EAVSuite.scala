@@ -36,7 +36,7 @@ class EAVSuite extends FunSpecx {
     object enumField extends Attr[String]()
   }
 
-  val withEnum: WithEnum = WithEnum(wellformed.updated("enumField", "bb"))
+  val withEnum: WithEnum = WithEnum(wellformed.updated("enumField" -> "bb"))
 
   it("wellformed <=> JSON") {
     val o = wellformed

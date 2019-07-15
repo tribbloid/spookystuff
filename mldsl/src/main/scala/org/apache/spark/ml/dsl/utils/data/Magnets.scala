@@ -17,6 +17,22 @@ object Magnets {
     implicit def fromItr[T, Src](kvs: Iterable[Src])(implicit ev: Src => KV[T]): Iterable[KV[T]] = kvs.map(ev)
   }
 
+  case class KVOpt[+T](
+      k: String,
+      vOpt: Option[T]
+  ) {
+
+    def asKV = KV(k, vOpt)
+  }
+
+  object KVOpt {
+
+    implicit def fromTuple1[T](kv: (String, Option[T])): KVOpt[T] = KVOpt(kv._1, kv._2)
+    implicit def fromTuple2[T](kv: (AttrLike[T], Option[T])): KVOpt[T] = KVOpt(kv._1.primaryName, kv._2)
+
+    implicit def fromItr[T, Src](kvs: Iterable[Src])(implicit ev: Src => KVOpt[T]): Iterable[KVOpt[T]] = kvs.map(ev)
+  }
+
   case class K(names: Seq[String])
 
   object K {
