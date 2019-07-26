@@ -1,6 +1,6 @@
 package org.apache.spark.ml.dsl.utils.data
 
-import org.apache.spark.ml.dsl.utils.Nullable
+import org.apache.spark.ml.dsl.utils.{?, Nullable}
 
 import scala.language.implicitConversions
 import scala.util.Try
@@ -17,7 +17,7 @@ trait AttrLike[T] extends Serializable {
     Magnets.KV[T](this.primaryName, Some(v))
   }
 
-  def -?>(vOpt: Nullable[T]): Magnets.KV[T] = {
+  def -?>(vOpt: T ? _): Magnets.KV[T] = {
 
     Magnets.KV[T](this.primaryName, vOpt.asOption)
   }

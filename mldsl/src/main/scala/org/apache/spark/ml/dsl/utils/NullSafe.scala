@@ -7,52 +7,63 @@ import scala.language.implicitConversions
   */
 object NullSafe {
 
-  def apply[T](asOption: Option[T]): Immutable[T] = Immutable(asOption)
+//  object Val extends IsMutable
+  final class Var extends Serializable
 
-  trait Magnetic[+T] extends Product with Serializable {
+//  def apply[T](asOption: Option[T]): Immutable[T] = Immutable(asOption)
+
+  trait Magnet[+T] extends Product with Serializable {
 
     def asOption: Option[T]
-
-    def value: T = asOption.get
   }
 
-  case class Immutable[+T](asOption: Option[T]) extends Magnetic[T] {}
+  case class CanBeNull[T, +M](private var _self: Option[T]) extends Magnet[T] {
 
-  object Immutable {
+    override def asOption: Option[T] = _self
 
-    implicit def fromV[T](v: T): Immutable[T] = Immutable(Option(v))
-    implicit def fromOpt[T](v: Option[T]): Immutable[T] = Immutable(v)
-
-    implicit def toOpt[T](magnet: Immutable[T]): Option[T] = magnet.asOption
-  }
-
-  case class Mutable[T](var asOption: Option[T]) extends Magnetic[T] {
-
-    def value_=(v: T): Unit = {
-      asOption = Option(v)
+    def :=(v: T)(implicit ev: M <:< Var): Unit = {
+      _self = Option(v)
     }
   }
 
-  object Mutable {
+  trait LowLevelImplicits {}
 
-    implicit def fromV[T](v: T): Mutable[T] = Mutable(Option(v))
-    implicit def fromOpt[T](v: Option[T]): Mutable[T] = Mutable(v)
+  object CanBeNull extends LowLevelImplicits {
 
-    implicit def toOpt[T](magnet: Mutable[T]): Option[T] = magnet.asOption
+    implicit def fromV[T, M](v: T): CanBeNull[T, M] = CanBeNull[T, M](Option(v))
+
+    implicit def fromOpt[T, M](v: Option[T]): CanBeNull[T, M] = CanBeNull[T, M](v)
+
+    implicit def toOption[T](magnet: CanBeNull[T, _]): Option[T] = magnet.asOption
   }
 
-  case class NOT[+T](private val v: T) extends Magnetic[T] {
+  case class CannotBeNull[T, +M](var value: T) extends Magnet[T] {
+
     {
-      require(v != null, "value cannot be null")
+      validate(value)
     }
 
-    override def asOption: Option[T] = Some(v)
+    def validate(value: T): Unit = {
+      require(value != null, "value cannot be null")
+    }
+
+    override def asOption: Some[T] = Some(value)
+
+    def :=(value: T)(implicit ev: M <:< Var): Unit = {
+      validate(value)
+
+      this.value = value
+    }
   }
 
-  object NOT {
+  object CannotBeNull extends LowLevelImplicits {
 
-    implicit def fromV[T](v: T): NOT[T] = NOT(v)
-    implicit def toV[T](magnet: NOT[T]): T = magnet.v
+    implicit def fromV[T, M](v: T): CannotBeNull[T, M] = CannotBeNull[T, M](v)
+
+    implicit def fromSome[T, M](v: Some[T]): CannotBeNull[T, M] = CannotBeNull[T, M](v.get)
+
+    implicit def toOption[T](magnet: CannotBeNull[T, _]): Some[T] = Some(magnet.value)
+
+    implicit def toV[T](magnet: CannotBeNull[T, _]): T = magnet.value
   }
-
 }

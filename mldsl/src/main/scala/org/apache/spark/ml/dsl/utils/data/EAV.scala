@@ -3,7 +3,7 @@ package org.apache.spark.ml.dsl.utils.data
 import java.util.Properties
 
 import com.tribbloids.spookystuff.utils.{CommonUtils, IDMixin, TreeException}
-import org.apache.spark.ml.dsl.utils.{Nullable, ScalaNameMixin}
+import org.apache.spark.ml.dsl.utils.{?, Nullable, ScalaNameMixin}
 import org.apache.spark.sql.catalyst.util.CaseInsensitiveMap
 
 import scala.collection.immutable.ListMap
@@ -184,8 +184,8 @@ trait EAV extends Serializable with IDMixin {
       // should only be used in setters
       val aliases: List[String] = Nil,
       nullable: Boolean = false,
-      default: Nullable[T] = None,
-      primaryNameOverride: Nullable[String] = None
+      default: T ? _ = None,
+      primaryNameOverride: String ? _ = None
   )(implicit ev: T <:< VV)
       extends AttrLike[T]
       with ScalaNameMixin {
