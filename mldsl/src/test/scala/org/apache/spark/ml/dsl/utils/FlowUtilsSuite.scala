@@ -16,7 +16,7 @@ class FlowUtilsSuite extends FunSuite {
   val caller3 = caller2
 
   def defaultParamCaller(
-      c: Array[StackTraceElement] = caller()
+      c: Array[StackTraceElement] = caller2
   ): Array[StackTraceElement] = c
 
   test("methodName should return caller's name") {
@@ -26,6 +26,6 @@ class FlowUtilsSuite extends FunSuite {
 
     val dpc = defaultParamCaller()
     assert(dpc.head.getMethodName == "caller")
-    assert(dpc.apply(1).getMethodName == "defaultParamCaller$default$1")
+    assert(dpc.apply(1).getMethodName == "caller2")
   }
 }

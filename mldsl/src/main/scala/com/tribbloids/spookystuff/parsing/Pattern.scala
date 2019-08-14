@@ -5,8 +5,6 @@ import java.util.UUID
 import com.tribbloids.spookystuff.parsing.Pattern.Token
 import com.tribbloids.spookystuff.utils.{IDMixin, RangeArg}
 
-import scala.language.implicitConversions
-
 case class Pattern(
     token: Token,
     range: RangeArg = Pattern.RangeArgs.next

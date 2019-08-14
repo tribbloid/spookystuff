@@ -20,7 +20,7 @@ object AutoTakeoffRule extends RewriteRule[Trace] {
 
   override def rewrite(v1: Trace, schema: SpookySchema): Trace = {
 
-    val uavConf = schema.ec.spooky.getConf[UAVConf]
+//    val uavConf = schema.ec.spooky.getConf[UAVConf]
 
     val navs = v1.collect {
       case nav: UAVNavigation => nav

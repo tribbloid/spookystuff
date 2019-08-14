@@ -2,8 +2,8 @@ package com.tribbloids.spookystuff.uav.spatial.point
 
 import com.tribbloids.spookystuff.uav.spatial._
 import com.tribbloids.spookystuff.uav.spatial.util.{SearchAttempt, SearchHistory}
-import org.osgeo.proj4j.datum.Ellipsoid
-import org.osgeo.proj4j.proj.{EquidistantAzimuthalProjection, Projection}
+import org.locationtech.proj4j.datum.Ellipsoid
+import org.locationtech.proj4j.proj.{EquidistantAzimuthalProjection, Projection}
 
 import scala.language.implicitConversions
 

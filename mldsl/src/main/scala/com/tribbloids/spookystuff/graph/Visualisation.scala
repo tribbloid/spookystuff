@@ -4,6 +4,7 @@ import com.github.mdr.ascii.graph.Graph
 import com.github.mdr.ascii.layout.GraphLayout
 import com.github.mdr.ascii.layout.prefs.LayoutPrefsImpl
 import com.tribbloids.spookystuff.graph.Visualisation.Format
+import com.tribbloids.spookystuff.utils.CommonUtils
 
 import scala.collection.mutable
 
@@ -52,7 +53,7 @@ case class Visualisation[D <: Domain](
 
       if (format.forward) {
 
-        val facets = core.layout.facets
+        val facets = core.layout.facetsSorted
         val strs = facets.map { facet =>
           facet.arrow + "\n" + Tree.showForward(core.tails(facet).seq)
         }
@@ -78,9 +79,15 @@ case class Visualisation[D <: Domain](
         val treeNode = stepView.BackwardTreeNode()
         treeNode.foreach { v =>
           buffer += v.viewWFormat
+//          println(v.viewWFormat)
+//          val vv = v.children.map(_.view.element.dataStr)
+
           v.children.foreach { child =>
+            buffer += child.viewWFormat
             relationBuffer += child.viewWFormat -> v.viewWFormat
           }
+
+//          vv
         }
       }
 
@@ -134,18 +141,17 @@ object Visualisation {
   }
 
   lazy val defaultASCIILayout = LayoutPrefsImpl(
-    unicode = true,
     explicitAsciiBends = true
   )
 
   //TODO: merge into algebra?
-  case class Format[T <: Domain](
-      showNode: Element.NodeLike[T] => String,
-      showEdge: Element.Edge[T] => String,
-      nodeShortName: Element.NodeLike[T] => String = { v: Element.NodeLike[T] =>
+  case class Format[D <: Domain](
+      showNode: Element.NodeLike[D] => String = CommonUtils.toStrNullSafe _,
+      showEdge: Element.Edge[D] => String = CommonUtils.toStrNullSafe _,
+      nodeShortName: Element.NodeLike[D] => String = { v: Element.NodeLike[D] =>
         v.idStr
       },
-      edgeShortName: Element.Edge[T] => String = { v: Element.Edge[T] =>
+      edgeShortName: Element.Edge[D] => String = { v: Element.Edge[D] =>
         v.idStr
       },
       showPrefix: Boolean = true,
@@ -154,18 +160,18 @@ object Visualisation {
       asciiLayout: LayoutPrefsImpl = defaultASCIILayout
   ) {
 
-    def _showNode(v: Element.NodeLike[T]): String =
+    def _showNode(v: Element.NodeLike[D]): String =
       if (v.isDangling) "??"
       else showNode(v)
 
-    def shortNameOf(v: Element[T]): String = v match {
-      case nn: Element.NodeLike[T] => nodeShortName(nn)
-      case ee: Element.Edge[T]     => edgeShortName(ee)
+    def shortNameOf(v: Element[D]): String = v match {
+      case nn: Element.NodeLike[D] => nodeShortName(nn)
+      case ee: Element.Edge[D]     => edgeShortName(ee)
     }
 
-    def showElement(v: Element[T]): String = v match {
-      case nn: Element.NodeLike[T] => _showNode(nn)
-      case ee: Element.Edge[T]     => showEdge(ee)
+    def showElement(v: Element[D]): String = v match {
+      case nn: Element.NodeLike[D] => _showNode(nn)
+      case ee: Element.Edge[D]     => showEdge(ee)
     }
   }
 }

@@ -6,7 +6,7 @@
 
   <groupId>com.tribbloids.spookystuff</groupId>
   <artifactId>spookystuff</artifactId>
-  <version>0.5.0-SNAPSHOT</version>
+  <version>0.6.0-SNAPSHOT</version>
   <packaging>pom</packaging>
   <name>spookystuff</name>
   <description>Scalable Query Engine for Data Acquisition based on Apache Spark</description>
@@ -45,10 +45,10 @@
     <project.reporting.outputEncoding>UTF-8</project.reporting.outputEncoding>
     <java.version>1.8</java.version>
 
-    <scala.version>2.11.12</scala.version>
-    <scala.binary.version>2.11</scala.binary.version>
-    <spark.version>2.2.3</spark.version>
-    <spark.binary.version>2.2</spark.binary.version>
+    <scala.version>2.12.8</scala.version>
+    <scala.binary.version>2.12</scala.binary.version>
+    <spark.version>2.4.3</spark.version>
+    <spark.binary.version>2.4</spark.binary.version>
     <spark.assembly.version>${spark.binary.version}</spark.assembly.version>
     <spark.classifier>spark${spark.binary.version}</spark.classifier>
 
@@ -67,37 +67,33 @@
       </activation>
     </profile>
 
-    <profile>
-      <id>scala-2.11</id>
-      <activation>
-        <activeByDefault>true</activeByDefault>
-      </activation>
-    </profile>
-    <!--No longer supported-->
-    <!--<profile>-->
-    <!--<id>scala-2.10</id>-->
-    <!--<properties>-->
-    <!--<scala.version>2.10.6</scala.version>-->
-    <!--<scala.binary.version>2.10</scala.binary.version>-->
-    <!--</properties>-->
-    <!--</profile>-->
 
     <profile>
       <id>spark-2.2</id>
-      <activation>
-        <activeByDefault>true</activeByDefault>
-      </activation>
       <properties>
+        <spark.version>2.2.3</spark.version>
+        <spark.binary.version>2.2</spark.binary.version>
+        <scala.version>2.11.12</scala.version>
+        <scala.binary.version>2.11</scala.binary.version>
       </properties>
     </profile>
 
-    <!--<profile>-->
-    <!--<id>spark-2.0</id>-->
-    <!--<properties>-->
-    <!--<spark.version>2.0.1</spark.version>-->
-    <!--<spark.binary.version>2.0</spark.binary.version>-->
-    <!--</properties>-->
-    <!--</profile>-->
+    <profile>
+      <id>spark-2.3</id>
+      <properties>
+        <spark.version>2.3.3</spark.version>
+        <spark.binary.version>2.3</spark.binary.version>
+        <scala.version>2.11.12</scala.version>
+        <scala.binary.version>2.11</scala.binary.version>
+      </properties>
+    </profile>
+
+    <profile>
+      <id>spark-2.4</id>
+      <activation>
+        <activeByDefault>true</activeByDefault>
+      </activation>
+    </profile>
 
     <profile>
       <id>release-sign-artifacts</id>
@@ -164,24 +160,24 @@
       <url>https://oss.sonatype.org/content/repositories/snapshots</url>
     </repository>
     <!--<repository>-->
-      <!--<id>IESL Releases</id>-->
-      <!--<name>IESL Repo</name>-->
-      <!--<url>https://dev-iesl.cs.umass.edu/nexus/content/groups/public</url>-->
-      <!--<snapshots>-->
-        <!--<enabled>false</enabled>-->
-      <!--</snapshots>-->
-      <!--<releases>-->
-        <!--<enabled>true</enabled>-->
-      <!--</releases>-->
+    <!--<id>IESL Releases</id>-->
+    <!--<name>IESL Repo</name>-->
+    <!--<url>https://dev-iesl.cs.umass.edu/nexus/content/groups/public</url>-->
+    <!--<snapshots>-->
+    <!--<enabled>false</enabled>-->
+    <!--</snapshots>-->
+    <!--<releases>-->
+    <!--<enabled>true</enabled>-->
+    <!--</releases>-->
     <!--</repository>-->
     <!--<repository>-->
     <!--<id>clojars.org</id>-->
     <!--<url>http://clojars.org/repo</url>-->
     <!--</repository>-->
     <!--<repository>-->
-      <!--<id>DataNucleus_Repos2</id>-->
-      <!--<name>DataNucleus Repository</name>-->
-      <!--<url>http://www.datanucleus.org/downloads/maven2</url>-->
+    <!--<id>DataNucleus_Repos2</id>-->
+    <!--<name>DataNucleus Repository</name>-->
+    <!--<url>http://www.datanucleus.org/downloads/maven2</url>-->
     <!--</repository>-->
 
     <!--<repository>-->
@@ -242,10 +238,10 @@
     </dependency>
     <!-- https://mvnrepository.com/artifact/com.holdenkarau/spark-testing-base -->
     <!--<dependency>-->
-      <!--<groupId>com.holdenkarau</groupId>-->
-      <!--<artifactId>spark-testing-base_${scala.binary.version}</artifactId>-->
-      <!--<version>${spark.version}_0.9.0</version>-->
-      <!--<scope>test</scope>-->
+    <!--<groupId>com.holdenkarau</groupId>-->
+    <!--<artifactId>spark-testing-base_${scala.binary.version}</artifactId>-->
+    <!--<version>${spark.version}_0.9.0</version>-->
+    <!--<scope>test</scope>-->
     <!--</dependency>-->
     <!--for driver leakage detection-->
     <dependency>
@@ -261,13 +257,12 @@
       </exclusions>
     </dependency>
 
-
-    <!--<dependency>-->
-    <!--<groupId>org.scalacheck</groupId>-->
-    <!--<artifactId>scalacheck_${scala.binaryexclusions.version}</artifactId>-->
-    <!--<version>1.13.2</version>-->
-    <!--<scope>test</scope>-->
-    <!--</dependency>-->
+    <dependency>
+      <groupId>org.scalacheck</groupId>
+      <artifactId>scalacheck_${scala.binary.version}</artifactId>
+      <version>1.14.0</version>
+      <scope>test</scope>
+    </dependency>
 
     <dependency>
       <groupId>org.apache.spark</groupId>
@@ -492,7 +487,7 @@
       <plugin>
         <groupId>org.codehaus.mojo</groupId>
         <artifactId>flatten-maven-plugin</artifactId>
-        <version>1.0.1</version>
+        <version>1.1.0</version>
         <executions>
           <!-- enable flattening -->
           <execution>
@@ -573,18 +568,18 @@
           <!--add python into fat jar that are shipped to all workers-->
           <!--original:-->
           <!--<resources>-->
-            <!--<resource>-->
-              <!--<directory>src/main/resources</directory>-->
-            <!--</resource>-->
+          <!--<resource>-->
+          <!--<directory>src/main/resources</directory>-->
+          <!--</resource>-->
 
-            <!--<resource>-->
-              <!--<directory>src/main/python</directory>-->
-              <!--<targetPath>python</targetPath>-->
-            <!--</resource>-->
-            <!--<resource>-->
-              <!--<directory>target/generated-sources/python</directory>-->
-              <!--<targetPath>python</targetPath>-->
-            <!--</resource>-->
+          <!--<resource>-->
+          <!--<directory>src/main/python</directory>-->
+          <!--<targetPath>python</targetPath>-->
+          <!--</resource>-->
+          <!--<resource>-->
+          <!--<directory>target/generated-sources/python</directory>-->
+          <!--<targetPath>python</targetPath>-->
+          <!--</resource>-->
           <!--</resources>-->
 
           <execution>
@@ -675,9 +670,9 @@
             <!--<arg>-P:wartremover:only-warn-traverser:org.wartremover.warts.Unsafe</arg>-->
           </args>
           <!--<jvmArgs>-->
-            <!--<jvmArg>-Xms64m</jvmArg>-->
-            <!--<jvmArg>-Xms1024m</jvmArg>-->
-            <!--<jvmArg>-Xmx1024m</jvmArg>-->
+          <!--<jvmArg>-Xms64m</jvmArg>-->
+          <!--<jvmArg>-Xms1024m</jvmArg>-->
+          <!--<jvmArg>-Xmx1024m</jvmArg>-->
           <!--</jvmArgs>-->
           <javacArgs>
             <javacArg>-source</javacArg>
@@ -775,8 +770,34 @@
       <!--</systemPropertyVariables>-->
       <!--</configuration>-->
       <!--</plugin>-->
-    </plugins>
 
+
+      <plugin>
+        <groupId>org.apache.maven.plugins</groupId>
+        <artifactId>maven-enforcer-plugin</artifactId>
+        <version>3.0.0-M2</version>
+        <executions>
+          <execution>
+            <id>enforce-profiles</id>
+            <goals>
+              <goal>enforce</goal>
+            </goals>
+            <configuration>
+              <rules>
+                <requireActiveProfile>
+                  <profiles>spark-2.2,spark-2.3,spark-2.4</profiles>
+                  <all>false</all>
+                </requireActiveProfile>
+              </rules>
+              <fail>true</fail>
+            </configuration>
+          </execution>
+        </executions>
+
+        <!--very important! child pom doesn't inherit profile!-->
+        <inherited>false</inherited>
+      </plugin>
+    </plugins>
 
   </build>
 

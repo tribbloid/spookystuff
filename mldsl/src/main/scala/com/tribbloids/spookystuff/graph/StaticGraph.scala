@@ -4,7 +4,6 @@ import com.tribbloids.spookystuff.graph.Element.Edge
 import com.tribbloids.spookystuff.utils.{CommonTypes, MultiMapView}
 
 import scala.collection.mutable
-import scala.language.higherKinds
 import scala.reflect.ClassTag
 
 trait StaticGraph[T <: Domain] extends Module[T] {

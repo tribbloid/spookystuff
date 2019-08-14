@@ -33,32 +33,6 @@ object FlowUtils {
   private lazy val LZYCOMPUTE = "$lzycompute"
   private lazy val INIT = "<init>"
 
-  final val breakpointInfoBlacklist = Seq(
-    this.getClass.getCanonicalName,
-    classOf[Thread].getCanonicalName
-  )
-  private def extraFilter(vs: Array[StackTraceElement]) = {
-    vs.filterNot { v =>
-      v.getClassName.startsWith("scala") ||
-      breakpointInfoBlacklist.contains(v.getClassName)
-    }
-  }
-
-  def getBreakpointInfo(
-      filterInitializer: Boolean = true,
-      filterLazyRelay: Boolean = true,
-      filterDefaultRelay: Boolean = true
-  ): Array[StackTraceElement] = {
-    val stackTraceElements: Array[StackTraceElement] = Thread.currentThread().getStackTrace
-    var effectiveElements = stackTraceElements
-
-    if (filterInitializer) effectiveElements = effectiveElements.filter(v => !(v.getMethodName == INIT))
-    if (filterLazyRelay) effectiveElements = effectiveElements.filter(v => !v.getMethodName.endsWith(LZYCOMPUTE))
-    effectiveElements = extraFilter(effectiveElements)
-
-    effectiveElements
-  }
-
   def stackTracesShowStr(
       vs: Array[StackTraceElement],
       maxDepth: Int = 1
@@ -67,12 +41,45 @@ object FlowUtils {
       .mkString("\n\t< ")
   }
 
-  def callerShowStr(
+  private final val breakpointInfoBlacklist = {
+    Seq(
+      this.getClass.getCanonicalName,
+      classOf[Thread].getCanonicalName
+    ).map(_.stripSuffix("$"))
+  }
+  private def breakpointInfoFilter(vs: Array[StackTraceElement]) = {
+    vs.filterNot { v =>
+      val className = v.getClassName
+      val outerClassName = className.split('$').head
+      outerClassName.startsWith("scala") ||
+      breakpointInfoBlacklist.contains(outerClassName)
+    }
+  }
+
+  def getBreakpointInfo(
+      filterAnon: Boolean = true,
+      filterInitializer: Boolean = true,
+      filterLazyCompute: Boolean = true,
+      filterDefaultRelay: Boolean = true,
+      exclude: Seq[Class[_]] = Nil
+  ): Array[StackTraceElement] = {
+    val stackTraceElements: Array[StackTraceElement] = Thread.currentThread().getStackTrace
+    var effectiveElements = breakpointInfoFilter(stackTraceElements)
+
+    if (filterAnon) effectiveElements = effectiveElements.filter(v => !(v.getMethodName.contains('$')))
+    if (filterInitializer) effectiveElements = effectiveElements.filter(v => !(v.getMethodName == INIT))
+    if (filterLazyCompute) effectiveElements = effectiveElements.filter(v => !v.getMethodName.endsWith(LZYCOMPUTE))
+
+    effectiveElements
+  }
+
+  case class Caller(
       depth: Int = 0,
       exclude: Seq[Class[_]] = Nil
-  ): String = {
-    stackTracesShowStr {
-      val bp = getBreakpointInfo()
+  ) {
+
+    lazy val bpInfo = {
+      val bp = FlowUtils.getBreakpointInfo()
       val filteredIndex = bp.toSeq.indexWhere(
         { element =>
           !exclude.exists { v =>
@@ -83,12 +90,16 @@ object FlowUtils {
       )
       bp.slice(filteredIndex, Int.MaxValue)
     }
-  }
 
-  def callerMethodName(depth: Int = 2): String = {
-    val bp = FlowUtils.getBreakpointInfo().apply(depth)
-    assert(!bp.isNativeMethod, "can only getCallerMethodName in def & lazy val blocks")
-    bp.getMethodName
+    def showStr = {
+      stackTracesShowStr(bpInfo)
+    }
+
+    def fnName = {
+      val bp = bpInfo.head
+      assert(!bp.isNativeMethod, "can only get fnName in def & lazy val blocks")
+      bp.getMethodName
+    }
   }
 
   def liftCamelCase(str: String) = str.head.toUpper.toString + str.substring(1)

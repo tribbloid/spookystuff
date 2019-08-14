@@ -78,8 +78,9 @@ trait ElementTreeNode[D <: Domain] extends TreeNode[ElementTreeNode[D]] with Alg
 
   override lazy val children: Seq[ElementTreeNode[D]] = {
 
-    val result = _children.toList
-      .sortBy(v => v.element.dataStr)
+    val asList = _children.toList.sorted
+
+    val result = asList
       .map {
         copyCutOffCyclic
       }

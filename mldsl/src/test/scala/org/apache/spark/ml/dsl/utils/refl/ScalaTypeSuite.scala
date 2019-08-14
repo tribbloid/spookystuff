@@ -4,7 +4,7 @@ import com.tribbloids.spookystuff.testbeans.{Example, ExampleUDT}
 import com.tribbloids.spookystuff.testutils.{FunSpecx, TestHelper}
 import org.apache.spark.ml.dsl.utils.messaging.{Multipart, User}
 import org.apache.spark.sql.catalyst.ScalaReflection
-import org.apache.spark.sql.catalyst.expressions.codegen.CodegenContext
+import org.apache.spark.sql.catalyst.expressions.codegen.CodeGenerator
 import org.apache.spark.sql.types._
 
 /**
@@ -74,25 +74,25 @@ class ScalaTypeSuite extends FunSpecx {
       it(s"scalaType (${pair._2.tpe}) => catalystType (${pair._1})") {
         val converted = pair._2.tryReify.toOption
         println(converted)
-        assert(converted == Some(pair._1))
+        assert(converted.contains(pair._1))
       }
 
       it(s"catalystType (${pair._1}) => scalaType (${pair._2.tpe})") {
         val converted = pair._1.scalaTypeOpt
         println(converted)
-        assert(converted.map(_.asClass) == Some(pair._2.asClass))
+        assert(converted.map(_.asClass).contains(pair._2.asClass))
       }
 
       //TODO: this failed on CI for UDT with unknown reason, why?
-      ignore(s"CodeGenerator.javaType(${pair._1})") {
-        val genCtx = new CodegenContext
+      it(s"CodeGenerator.javaType(${pair._1})") {
+//        val genCtx = new CodegenContext
         pair._1 match {
           case v: UserDefinedType[_] =>
             println(s"UDT: ${pair._1.getClass.getCanonicalName}")
             assert(v.sqlType == BinaryType)
           case _ =>
         }
-        val tt = genCtx.javaType(pair._1)
+        val tt = CodeGenerator.javaType(pair._1)
         assert(tt.toLowerCase() != "object")
       }
 
@@ -116,7 +116,7 @@ class ScalaTypeSuite extends FunSpecx {
       it(s"scalaType (${pair._1.tpe}) => catalystType (${pair._2})") {
         val converted = pair._1.tryReify.toOption
         println(converted)
-        assert(converted == Some(pair._2))
+        assert(converted.contains(pair._2))
       }
     }
 

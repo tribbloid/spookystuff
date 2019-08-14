@@ -149,7 +149,6 @@ case class BacktrackingManager(
 
     } catch {
       case e: BacktrackingFailure =>
-        val ee = e
         stack.pop()
         true
     }

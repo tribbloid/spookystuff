@@ -19,9 +19,11 @@ case class AwaitWithHeartbeat(
 )(callbackOpt: Option[Int => Unit] = None) {
 
   protected lazy val _callerShowStr = {
-    val result = FlowUtils.callerShowStr(
-      exclude = Seq(classOf[CommonUtils], classOf[AwaitWithHeartbeat])
-    )
+    val result = FlowUtils
+      .Caller(
+        exclude = Seq(classOf[CommonUtils], classOf[AwaitWithHeartbeat])
+      )
+      .showStr
     result
   }
 

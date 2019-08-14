@@ -1,7 +1,7 @@
 package com.tribbloids.spookystuff.uav.spatial
 
 import com.tribbloids.spookystuff.testutils.FunSpecx
-import com.vividsolutions.jts.geom.{GeometryFactory, Point}
+import org.locationtech.jts.geom.{GeometryFactory, Point}
 
 class WKTReadWriteSuite extends FunSpecx {
 

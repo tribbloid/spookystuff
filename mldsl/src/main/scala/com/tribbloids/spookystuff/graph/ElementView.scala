@@ -5,6 +5,16 @@ import com.tribbloids.spookystuff.utils.IDMixin
 import scala.collection.mutable.ArrayBuffer
 import scala.language.implicitConversions
 
+object ElementView {
+
+  implicit def ordering[D <: Domain]: Ordering[ElementView[D]] = {
+
+    Ordering.by({ v: ElementView[D] =>
+      v.orderedBy
+    }) //(Ordering.Tuple3[Iterable[Int], Iterable[String], String])
+  }
+}
+
 trait ElementView[D <: Domain] extends Algebra.Sugars[D] with IDMixin {
 
   val core: Layout[D]#Core[_]
@@ -15,7 +25,50 @@ trait ElementView[D <: Domain] extends Algebra.Sugars[D] with IDMixin {
   def inbound: Seq[ElementView[D]]
   def outbound: Seq[ElementView[D]]
 
-  override final def _id = element
+  override final def _id: _Element = element
+
+  lazy val (prefixes, positioning): (Seq[String], Seq[Int]) = {
+    element match {
+      case edge: Element.Edge[D] =>
+        val prefixes = ArrayBuffer[String]()
+        val positioning = ArrayBuffer[Int]()
+
+        if (core.heads.seq contains edge) {
+          prefixes += "HEAD"
+          positioning += -1
+        }
+
+        val facets: Seq[Facet] = core.layout.facetsSorted
+
+        val feathers: Seq[String] = facets
+          .flatMap { facet =>
+            if (core.tails(facet).seq contains edge) {
+              positioning += facet.positioning
+              Seq(facet.feather)
+            } else Nil
+          }
+
+        val tailOpt =
+          if (feathers.isEmpty) Nil
+          else Seq("TAIL" + feathers.mkString(" "))
+
+        prefixes ++= tailOpt
+        if (positioning.isEmpty) positioning += 0
+
+        prefixes -> positioning
+      case _ =>
+        Nil -> Nil
+    }
+  }
+
+  lazy val orderedBy: (Iterable[Int], Iterable[String], String) = {
+
+    (
+      positioning,
+      prefixes,
+      element.dataStr
+    )
+  }
 
   case class WFormat(
       format: _ShowFormat
@@ -23,39 +76,21 @@ trait ElementView[D <: Domain] extends Algebra.Sugars[D] with IDMixin {
 
     def outer: ElementView[D] = ElementView.this
 
-    override lazy val toString: String = element match {
-      case edge: Element.Edge[D] =>
-        val prefixes: Seq[String] =
-          if (format.showPrefix) {
-            val buffer = ArrayBuffer[String]()
-            if (core.heads.seq contains edge) buffer += "HEAD"
+    override lazy val toString: String = {
+      val _prefix: Option[String] = if (format.showPrefix && prefixes.nonEmpty) {
+        Some(prefixes.map("(" + _ + ")").mkString(""))
+      } else None
 
-            val facets: Seq[Facet] = core.layout.facets
+      val _body = element match {
+        case edge: Element.Edge[D] =>
+          "[ " + format.showEdge(edge) + " ]"
+        case node: Element.NodeLike[D] =>
+          format.showNode(node)
+        case v @ _ =>
+          "" + v
+      }
 
-            val tailSuffix = facets
-              .flatMap { facet =>
-                val ff = facet
-                if (core.tails(facet).seq contains edge) Some(facet.feather)
-                else None
-              }
-              .mkString(" ")
-
-            val tailOpt =
-              if (tailSuffix.isEmpty) Nil
-              else Seq("TAIL" + tailSuffix)
-
-            buffer ++= tailOpt
-
-            buffer
-          } else Nil
-
-        prefixes.map("(" + _ + ")").mkString("") + " [ " +
-          format.showEdge(edge) + " ]"
-
-      case node: Element.NodeLike[D] =>
-        format.showNode(node)
-      case v @ _ =>
-        "" + v
+      (_prefix.toSeq ++ Seq(_body)).mkString(" ")
     }
 
     case class ForwardTreeNode(
@@ -92,5 +127,4 @@ trait ElementView[D <: Domain] extends Algebra.Sugars[D] with IDMixin {
         v.WFormat(format).BackwardTreeNode(visited + element)
     }
   }
-
 }

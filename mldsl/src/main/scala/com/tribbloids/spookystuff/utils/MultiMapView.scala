@@ -38,7 +38,7 @@ trait MultiMapView[K, +V] {
   */
 object MultiMapView {
 
-  type Self[K, V] = collection.Map[K, Seq[V]]
+  type Self[K, +V] = collection.Map[K, Seq[V]]
   type MSelf[K, V] = mutable.Map[K, Seq[V]]
 
   implicit def fromSelf[K, V](self: Self[K, V]): Immutable[K, V] = new Immutable(self)

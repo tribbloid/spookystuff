@@ -97,7 +97,7 @@ class MAVLinkSuite extends SimLinkSuite with APMQuadFixture {
           ).get
         }
 
-        val badLink = Link.registered(drone).asInstanceOf[MAVLink]
+        //        val badLink = Link.registered(drone).asInstanceOf[MAVLink]
         //          val driver = badLink.proxyOpt.get.PY.driver
         //          print(driver.historyCodeOpt.get)
         //          assert(badLink.Endpoints.primary._driver == null,

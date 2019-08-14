@@ -95,9 +95,11 @@ case class RetryImpl[T](
     //TODO: merge with CommonUtils
     lazy val _callerShowStr = {
       Option(showStr).getOrElse {
-        FlowUtils.callerShowStr(
-          exclude = Seq(classOf[Retry], classOf[RetryImpl[_]], classOf[CommonUtils])
-        )
+        FlowUtils
+          .Caller(
+            exclude = Seq(classOf[Retry], classOf[RetryImpl[_]], classOf[CommonUtils])
+          )
+          .showStr
       }
     }
 

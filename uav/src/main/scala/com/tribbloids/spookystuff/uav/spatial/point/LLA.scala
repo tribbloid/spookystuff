@@ -3,7 +3,7 @@ package com.tribbloids.spookystuff.uav.spatial.point
 import com.tribbloids.spookystuff.uav.spatial.Anchor
 import com.tribbloids.spookystuff.uav.spatial.util.SearchHistory
 import geotrellis.proj4.LatLng
-import org.osgeo.proj4j.proj.Projection
+import org.locationtech.proj4j.proj.Projection
 
 import scala.language.implicitConversions
 

@@ -80,7 +80,7 @@ object Lifespan {
     private def tc(ctx: LifespanContext) = ctx.task
 
     override def addCleanupHook(ctx: LifespanContext, fn: () => Unit): Unit = {
-      tc(ctx).addTaskCompletionListener { tc =>
+      tc(ctx).addTaskCompletionListener[Unit] { tc =>
         fn()
       }
     }

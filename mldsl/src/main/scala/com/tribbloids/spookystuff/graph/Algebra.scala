@@ -73,7 +73,7 @@ object Algebra {
     final type _Edge = Element.Edge[D]
 
     final type _ShowFormat = Visualisation.Format[D]
-    final def _ShowFormat = Visualisation.Format
+    final def _ShowFormat: Visualisation.Format.type = Visualisation.Format
 
 //    final type _ElementView = ElementView[D]
   }

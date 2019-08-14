@@ -251,7 +251,7 @@ object Xml {
     )
   }
 
-  val baseFormat = XMLDefaultFormats
+  val baseFormat: XMLDefaultFormats.type = XMLDefaultFormats
 
   def xmlFormats(base: Formats = baseFormat) =
     base +
@@ -272,17 +272,19 @@ class CompoundDateFormat() extends SimpleDateFormat("abc")
 object XMLDefaultFormats extends DefaultFormats {
 
   override val dateFormat: DateFormat = new DateFormat {
-    def parse(s: String): Some[Date] =
+    def parse(s: String) =
       dateFormats.flatMap { format =>
         Try {
           Some(format.parse(s))
         }.toOption
       }.head
 
-    def format(d: Date): String = dateFormats.head.format(d)
-  }
+    def format(d: Date) = dateFormats.head.format(d)
 
-  def dateFormats: Seq[SimpleDateFormat] = baseDataFormatsFactory()
+    def timezone = dateFormats.head.getTimeZone
+
+    def dateFormats: Seq[SimpleDateFormat] = baseDataFormatsFactory()
+  }
 
   override val wantsBigDecimal = true
 }

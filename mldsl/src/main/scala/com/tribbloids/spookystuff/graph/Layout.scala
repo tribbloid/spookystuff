@@ -15,7 +15,9 @@ trait Layout[D <: Domain] extends Algebra.Sugars[D] {
 
   type GG = defaultGraphBuilder.GG
 
-  def facets: List[Facet]
+  def facets: Set[Facet]
+
+  def facetsSorted: Seq[Facet] = facets.toSeq.sortBy(_.positioning)
 
   object Core {
 
@@ -25,7 +27,7 @@ trait Layout[D <: Domain] extends Algebra.Sugars[D] {
           val tails = v.asTails
 
           val tailsMap = Map(
-            facets.map { facet =>
+            facetsSorted.map { facet =>
               facet ->
                 tails.copy(
                   tails.seq.map(_.copy(qualifier = Seq(facet))(algebra))
@@ -44,7 +46,7 @@ trait Layout[D <: Domain] extends Algebra.Sugars[D] {
         case v: _Edge =>
           val tails = v.asTails
           val tailsMap = Map(
-            facets.map { facet =>
+            facetsSorted.map { facet =>
               facet -> tails
             }: _*
           )
@@ -171,7 +173,7 @@ trait Layout[D <: Domain] extends Algebra.Sugars[D] {
         Core(
           newGraph: GG,
           newTails,
-          heads = newHeads
+          newHeads
         )
       }
 
@@ -427,11 +429,7 @@ trait Layout[D <: Domain] extends Algebra.Sugars[D] {
 
   object Formats {
 
-    object Default
-        extends Visualisation.Format[D](
-          showNode = CommonUtils.toStrNullSafe,
-          showEdge = CommonUtils.toStrNullSafe
-        )
+    object Default extends Visualisation.Format[D]()
 
     object ShowData
         extends Visualisation.Format[D](
@@ -461,10 +459,12 @@ object Layout {
 
   abstract class Facet(
       val feather: String,
-      val arrow: String
+      val arrow: String,
   ) {
 
     override def toString: String = arrow
+
+    def positioning: Int = 0
   }
 
   private def monad2Str(v: Any) = {

@@ -2,8 +2,6 @@ package com.tribbloids.spookystuff.parsing
 
 import com.tribbloids.spookystuff.parsing.Pattern.{CharToken, EndOfStream, Token}
 
-import scala.collection.mutable.ArrayBuffer
-
 object ParsingRun {
 
   case class ResultSeq(

@@ -8,7 +8,7 @@ trait FlowLayout[D <: Domain] extends Layout[D] {
 
   import FlowLayout._
 
-  lazy val facets = List(FromLeft, FromRight)
+  lazy val facets = Set(FromLeft, FromRight)
 
   trait DSL extends super.DSL {
 
@@ -81,6 +81,10 @@ trait FlowLayout[D <: Domain] extends Layout[D] {
 
 object FlowLayout {
 
-  object FromLeft extends Facet(">>-", ">>- -->")
-  object FromRight extends Facet("-<<", "<-- -<<")
+  object FromLeft extends Facet(">>-", ">>- -->") {
+    override def positioning: Int = -1
+  }
+  object FromRight extends Facet("-<<", "<-- -<<") {
+    override def positioning: Int = 1
+  }
 }

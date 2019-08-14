@@ -24,7 +24,7 @@ trait ShippingMarks extends Serializable {
   def notShipped = !isShipped
 
   def requireNotShipped() = {
-    val methodName = FlowUtils.callerMethodName()
+    def methodName = FlowUtils.Caller().fnName
 
     require(notShipped, s"method $methodName can only be used on Spark driver, it is disabled after shipping")
   }

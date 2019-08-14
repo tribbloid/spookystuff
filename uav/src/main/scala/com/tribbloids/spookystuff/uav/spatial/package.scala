@@ -1,7 +1,7 @@
 package com.tribbloids.spookystuff.uav
 
-import com.vividsolutions.jts.geom.PrecisionModel
-import com.vividsolutions.jts.{geom, io}
+import org.locationtech.jts.geom.PrecisionModel
+import org.locationtech.jts.{geom, io}
 import geotrellis.vector.{Geometry, Point}
 
 /**

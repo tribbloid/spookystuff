@@ -54,9 +54,11 @@ abstract class CommonUtils {
   def retry: RetryFixedInterval.type = RetryFixedInterval
 
   protected def _callerShowStr = {
-    val result = FlowUtils.callerShowStr(
-      exclude = Seq(classOf[CommonUtils])
-    )
+    val result = FlowUtils
+      .Caller(
+        exclude = Seq(classOf[CommonUtils])
+      )
+      .showStr
     result
   }
 

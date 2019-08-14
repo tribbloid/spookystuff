@@ -16,7 +16,7 @@ package object parsing {
 
   type Rule_FState = (Rule, FState)
 
-  type OutcomeFn[R] = (
+  type OutcomeFn[+R] = (
       Seq[Token],
       Phase
   ) => Outcome[R]

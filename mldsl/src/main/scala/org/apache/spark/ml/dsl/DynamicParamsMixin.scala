@@ -21,9 +21,8 @@ trait DynamicParamsMixin extends Params with Dynamic {
       val arg = args.head
 
       val fieldName = methodName.stripPrefix("set")
-      val expectedName = methodName.stripPrefix("set")
       val fieldOption =
-        this.params.find(v => (v.name == expectedName) || (FlowUtils.liftCamelCase(v.name) == expectedName))
+        this.params.find(v => (v.name == fieldName) || (FlowUtils.liftCamelCase(v.name) == fieldName))
 
       fieldOption match {
         case Some(field) =>
@@ -38,7 +37,7 @@ trait DynamicParamsMixin extends Params with Dynamic {
   }
 
   protected def Param[T: ClassTag](
-      name: String = FlowUtils.callerMethodName(),
+      name: String = FlowUtils.Caller().fnName,
       doc: String = "Pending ...",
       default: T = null
   ): Param[T] = {
@@ -51,7 +50,7 @@ trait DynamicParamsMixin extends Params with Dynamic {
   }
 
   protected def GenericParam[T: Manifest](
-      name: String = FlowUtils.callerMethodName(),
+      name: String = FlowUtils.Caller().fnName,
       doc: String = "Pending ...",
       default: T = null
   ): Param[T] = {
