@@ -1,7 +1,7 @@
 #!/usr/bin/env bash
 
 CRDIR="$(cd "`dirname "$0"`"; pwd)"
-SPARK_NAME="${SPARK:-spark-2.2.3}"
+SPARK_NAME="${SPARK:-spark-2.4.3}"
 
 SPARK_DIR_NAME="$SPARK_NAME"-bin-hadoop2.7
 
@@ -12,4 +12,4 @@ tar -xzf .spark-dist/"$SPARK_DIR_NAME".tgz -C .spark-dist
 export SPARK_HOME="$PWD"/.spark-dist/"$SPARK_DIR_NAME"
 echo $SPARK_HOME
 
-"$CRDIR"/test.sh -Pspark-2.2 -Pscala-2.11 "$@"
+"$CRDIR"/test.sh "$@"
