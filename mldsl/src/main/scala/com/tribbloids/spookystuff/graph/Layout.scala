@@ -458,7 +458,7 @@ object Layout {
 
   abstract class Facet(
       val feather: String,
-      val arrow: String,
+      val arrow: String
   ) {
 
     override def toString: String = arrow
