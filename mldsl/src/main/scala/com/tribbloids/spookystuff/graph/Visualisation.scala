@@ -82,13 +82,17 @@ case class Visualisation[D <: Domain](
 //          println(v.viewWFormat)
 //          val vv = v.children.map(_.view.element.dataStr)
 
-          v.children.foreach { child =>
+          v.children.reverse.foreach { child =>
             buffer += child.viewWFormat
             relationBuffer += child.viewWFormat -> v.viewWFormat
           }
 
 //          vv
         }
+      }
+
+      buffer.foreach { v =>
+        println(v)
       }
 
       val graph = Graph[ElementView[D]#WFormat](buffer.toSet, relationBuffer.toList)
