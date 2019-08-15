@@ -1,10 +1,9 @@
 package com.tribbloids.spookystuff.graph
 
-import com.tribbloids.spookystuff.graph.Layout.Facet
 import com.tribbloids.spookystuff.graph.IDAlgebra.Rotator
+import com.tribbloids.spookystuff.graph.Layout.Facet
 import com.tribbloids.spookystuff.graph.Module.{Heads, Tails}
 import com.tribbloids.spookystuff.utils.CachingUtils.ConcurrentMap
-import com.tribbloids.spookystuff.utils.CommonUtils
 
 import scala.language.{higherKinds, implicitConversions}
 
