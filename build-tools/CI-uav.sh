@@ -12,7 +12,7 @@ tar -xzf .spark-dist/"$SPARK_DIR_NAME".tgz -C .spark-dist
 export SPARK_HOME="$PWD"/.spark-dist/"$SPARK_DIR_NAME"
 echo $SPARK_HOME
 
-ALL_ARGS="$@"
+ALL_ARGS="-Pdummy $*"
 
-"$CRDIR"/mvn-install.sh "$ALL_ARGS" && \
-"$CRDIR"/test.sh "$ALL_ARGS" -Puav -pl uav
+exec "$CRDIR"/mvn-install.sh "$ALL_ARGS" && \
+exec "$CRDIR"/test.sh "$ALL_ARGS" -Puav -pl uav
