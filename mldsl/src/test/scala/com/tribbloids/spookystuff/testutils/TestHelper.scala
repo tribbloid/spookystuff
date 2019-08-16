@@ -234,8 +234,12 @@ class TestHelper() extends LocalCleanable {
     CommonUtils.retry(20, 5000, silent = true) {
       // wait for all executors in local-cluster mode to be online
       require(
-        sc.defaultParallelism == numCores,
-        s"waiting for $numCores cores timeout, only ${sc.defaultParallelism} are registered"
+        sc.defaultParallelism == numCores, {
+          val info = s"waiting for $numCores cores, only ${sc.defaultParallelism} are registered:\n" +
+            getExecutorSummaryText(sc)
+          LoggerFactory.getLogger(this.getClass).warn(info)
+          "timeout: " + info
+        }
       )
     }
 
@@ -243,6 +247,16 @@ class TestHelper() extends LocalCleanable {
 
     assureKryoSerializer(sc)
     session
+  }
+
+  def getExecutorSummaryText(sc: SparkContext): String = {
+    val status = sc.getExecutorMemoryStatus
+    status
+      .map {
+        case (k, v) =>
+          s"$k :\t ${v._1} bytes available / ${v._2} bytes remaining"
+      }
+      .mkString("\n")
   }
 
   lazy val TestSC = TestSparkSession.sparkContext
