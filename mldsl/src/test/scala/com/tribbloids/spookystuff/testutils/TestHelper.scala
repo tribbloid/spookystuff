@@ -216,6 +216,17 @@ class TestHelper() extends LocalCleanable {
     }
 
     conf.setAppName("Test")
+
+    println(
+      s"""
+         |------------------------------------------
+         |deriving SparkConf for testing ...
+         |------------------------------------------
+         |${conf.toDebugString}
+         |==========================================
+         |""".stripMargin
+    )
+
     conf
   }
 
