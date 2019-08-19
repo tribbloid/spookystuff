@@ -149,7 +149,7 @@ trait Suitex extends OptionConversion {
       val validatePretty = JsonMethods.pretty(validateJson)
       val expectedPretty = JsonMethods.pretty(expectedJson)
       val errorMessage = s"Expected:\n$expectedPretty\nFound:\n$validatePretty"
-      import org.scalactic.TripleEquals._
+//      import org.scalactic.TripleEquals._
       assert(c == JNothing, s"$errorMessage\nChanged:\n${JsonMethods.pretty(c)}")
       assert(a == JNothing, s"$errorMessage\nAdded:\n${JsonMethods.pretty(a)}")
       assert(d == JNothing, s"$errorMessage\nDeleted:\n${JsonMethods.pretty(d)}")
