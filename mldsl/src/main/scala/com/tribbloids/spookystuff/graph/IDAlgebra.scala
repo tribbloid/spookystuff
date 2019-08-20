@@ -3,6 +3,7 @@ package com.tribbloids.spookystuff.graph
 import java.util.UUID
 
 import com.tribbloids.spookystuff.graph.IDAlgebra.Rotator
+import com.tribbloids.spookystuff.utils.UUIDUtils
 
 trait IDAlgebra[ID, -NodeData, -EdgeData] {
 
@@ -82,11 +83,7 @@ object IDAlgebra {
 
     case class RotatorImpl(seed: UUID = _random()) extends Rotator.WithFixedPoint[UUID](reserved) {
 
-      override def _doApply(v1: UUID): UUID = {
-        val higher = v1.getMostSignificantBits ^ seed.getMostSignificantBits
-        val lower = v1.getLeastSignificantBits ^ seed.getLeastSignificantBits
-        new UUID(higher, lower)
-      }
+      override def _doApply(v1: UUID): UUID = UUIDUtils.xor(v1, seed)
     }
   }
 }
