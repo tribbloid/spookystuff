@@ -11,6 +11,7 @@ import scala.language.implicitConversions
 /**
   * Created by peng on 31/10/16.
   */
+//TODO: should use magnet pattern
 class ByteEncoded(
     blob: Array[Byte]
 ) extends IDMixin {
