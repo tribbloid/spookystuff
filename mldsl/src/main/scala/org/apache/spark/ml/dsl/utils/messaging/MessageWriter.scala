@@ -21,6 +21,7 @@ class MessageWriter[M](
     Codec.getRootTag(message)
   )
 
+  //TODO: move into case class WFormats(.) and enable lazy val
   def toJValue(implicit formats: Formats = formats): JValue = Extraction.decompose(message)
   def compactJSON(implicit formats: Formats = formats): String = compact(render(toJValue))
   def prettyJSON(implicit formats: Formats = formats): String = pretty(render(toJValue))
@@ -36,6 +37,10 @@ class MessageWriter[M](
   def toXMLStr(pretty: Boolean = true)(implicit formats: Formats = formats): String = {
     if (pretty) prettyXML
     else compactXML
+  }
+
+  def cast[T: Codec](formats: Formats = formats) = {
+    MessageReader._fromJValue[T](toJValue(formats))
   }
 
   //TODO: delegate to Nested
@@ -120,10 +125,6 @@ class MessageWriter[M](
   lazy val memberStrPretty = this.getMemberStr("(\n", ",\n", "\n)", { _ =>
     "\t"
   })
-
-  def cast[T: Codec](formats: Formats = formats) = {
-    MessageReader._fromJValue[T](toJValue(formats))
-  }
 }
 
 object MessageWriter {

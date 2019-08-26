@@ -19,7 +19,7 @@
         </dependency>
         <dependency>
             <groupId>org.clapper</groupId>
-            <artifactId>classutil_2.10</artifactId>
+            <artifactId>classutil_${scala.binary.version}</artifactId>
             <version>1.0.6</version>
             <scope>test</scope>
         </dependency>
