@@ -1,5 +1,7 @@
 package org.apache.spark.ml.dsl.utils
 
+import com.tribbloids.spookystuff.utils.IDMixin
+
 import scala.language.implicitConversions
 
 //TODO: merge into NullSafe
@@ -10,7 +12,8 @@ import scala.language.implicitConversions
   */
 class LazyVar[T](
     fn: => T
-) extends Serializable {
+) extends Serializable
+    with IDMixin {
 
   val cached: T ? Var = None
 
@@ -32,6 +35,8 @@ class LazyVar[T](
   }
 
   def isCached: Boolean = cached.asOption.nonEmpty
+
+  override def _id: Any = value
 }
 
 object LazyVar {
