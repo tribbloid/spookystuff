@@ -37,6 +37,8 @@ class LazyVar[T](
   def isCached: Boolean = cached.asOption.nonEmpty
 
   override def _id: Any = value
+
+  override def toString: String = value.toString
 }
 
 object LazyVar {
