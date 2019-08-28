@@ -11,5 +11,5 @@ class InterleavedIterator[T](iterators: List[Iterator[T]]) extends Iterator[Seq[
     assert(mapped.length == 1, "iterators have different lengths")
     mapped.head
   }
-  def next = iterators.map(_.next)
+  def next: List[T] = iterators.map(_.next)
 }

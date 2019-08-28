@@ -3,7 +3,7 @@ package org.apache.spark.ml.dsl.utils.data
 import java.util.Properties
 
 import com.tribbloids.spookystuff.utils.{CommonUtils, IDMixin, TreeException}
-import org.apache.spark.ml.dsl.utils.{?, Nullable, ScalaNameMixin}
+import org.apache.spark.ml.dsl.utils.{?, ScalaNameMixin}
 import org.apache.spark.sql.catalyst.util.CaseInsensitiveMap
 
 import scala.collection.immutable.ListMap
