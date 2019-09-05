@@ -1,6 +1,7 @@
 package org.apache.spark.ml.dsl.utils
 
 import org.apache.spark.ml.dsl.AbstractFlowSuite
+import org.json4s.Formats
 
 object XMLWeakDeserializerSuite {
   case class StrStr(
@@ -40,7 +41,7 @@ object XMLWeakDeserializerSuite {
 
 class XMLWeakDeserializerSuite extends AbstractFlowSuite {
 
-  implicit val formats = Xml.defaultFormats
+  implicit val formats: Formats = XMLFormats.defaultFormats
 
   import XMLWeakDeserializerSuite._
   import org.json4s.Extraction._

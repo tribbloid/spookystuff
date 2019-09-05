@@ -16,14 +16,7 @@
 
 package org.apache.spark.ml.dsl.utils
 
-import java.text.SimpleDateFormat
-import java.util.Date
-
-import com.tribbloids.spookystuff.utils.ThreadLocal
-import org.apache.spark.ml.dsl.utils.Xml.baseDataFormatsFactory
 import org.json4s._
-
-import scala.util.Try
 
 /** Functions to convert between JSON and XML.
   */
@@ -242,49 +235,4 @@ object Xml {
       extends Elem(null, name, attributes, TopScope, false, children: _*)
 
   class XmlElem(name: String, value: String) extends Elem(null, name, xml.Null, TopScope, false, Text(value))
-
-  val baseDataFormatsFactory = ThreadLocal { _ =>
-    Seq(
-      new java.text.SimpleDateFormat("yyyy-MM-dd'T'HH:mm:ss.SSS"),
-      new java.text.SimpleDateFormat("yyyy-MM-dd'T'HH:mm:ss"),
-      new java.text.SimpleDateFormat("yyyy-MM-dd'T'HH:mm")
-    )
-  }
-
-  val baseFormat: XMLDefaultFormats.type = XMLDefaultFormats
-
-  def xmlFormats(base: Formats = baseFormat) =
-    base +
-      StringToNumberDeserializer +
-      EmptyStringToEmptyObjectDeserializer +
-      ElementToArrayDeserializer +
-      DurationJSONSerializer
-  //  +
-  //    FallbackJSONSerializer
-
-  lazy val defaultFormats = xmlFormats()
-
-  val defaultXMLPrinter = new scala.xml.PrettyPrinter(80, 2)
-}
-
-class CompoundDateFormat() extends SimpleDateFormat("abc")
-
-object XMLDefaultFormats extends DefaultFormats {
-
-  override val dateFormat: DateFormat = new DateFormat {
-    def parse(s: String) =
-      dateFormats.flatMap { format =>
-        Try {
-          Some(format.parse(s))
-        }.toOption
-      }.head
-
-    def format(d: Date) = dateFormats.head.format(d)
-
-    def timezone = dateFormats.head.getTimeZone
-
-    def dateFormats: Seq[SimpleDateFormat] = baseDataFormatsFactory()
-  }
-
-  override val wantsBigDecimal = true
 }

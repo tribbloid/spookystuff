@@ -1,5 +1,7 @@
 package org.apache.spark.ml.dsl.utils
 
+import java.util
+
 import org.apache.spark.ml.dsl.utils.messaging.MessageAPI
 import org.json4s.Extraction._
 import org.json4s.JsonAST.JString
@@ -7,7 +9,36 @@ import org.json4s._
 import org.json4s.reflect.{TypeInfo, _}
 import org.slf4j.LoggerFactory
 
+object XMLWeakDeserializer {
+  case class ParsingExceptionMetadata(
+      jValue: Option[JValue] = None,
+      typeInfo: Option[String] = None,
+      serDe: SerDeMetadata
+  ) extends MessageAPI
+
+  case class SerDeMetadata(
+      reporting: Option[String] = None,
+      primitives: Seq[String] = Nil,
+      field: Map[String, String] = Map.empty,
+      custom: Seq[String] = Nil
+  )
+
+  class ParsingException(
+      override val shortStr: String,
+      cause: Exception,
+      metadata: ParsingExceptionMetadata
+  ) extends MappingException(shortStr, cause)
+      with Verbose {
+
+    override def getMessage: String = detailedStr
+
+    override def detail: String = "=========== [METADATA] ============\n" + metadata.toJSON()
+  }
+}
+
 abstract class XMLWeakDeserializer[T: Manifest] extends Serializer[T] {
+
+  import XMLWeakDeserializer._
 
   // cannot serialize
   override def serialize(implicit format: Formats): PartialFunction[Any, JValue] = PartialFunction.empty
@@ -16,7 +47,7 @@ abstract class XMLWeakDeserializer[T: Manifest] extends Serializer[T] {
       jValue: JValue,
       typeInfo: TypeInfo,
       formats: Formats
-  ) = JSONExceptionMetadata(
+  ): ParsingExceptionMetadata = ParsingExceptionMetadata(
     Some(jValue),
     Some(typeInfo.toString),
     SerDeMetadata(
@@ -33,7 +64,7 @@ abstract class XMLWeakDeserializer[T: Manifest] extends Serializer[T] {
     } catch {
       case e: Exception =>
         val metadata = exceptionMetadata(jv, ti, format)
-        throw new JSONException(
+        throw new ParsingException(
           e.getMessage,
           e,
           metadata
@@ -98,10 +129,10 @@ object EmptyStringToEmptyObjectDeserializer extends XMLWeakDeserializer[Any] {
 // <tag>abc</tag> => tag: ["abc"]
 object ElementToArrayDeserializer extends XMLWeakDeserializer[Any] {
 
-  val listClass = classOf[List[_]]
-  val seqClass = classOf[Seq[_]]
-  val setClass = classOf[Set[_]]
-  val arrayListClass = classOf[java.util.ArrayList[_]]
+  val listClass: Class[List[_]] = classOf[List[_]]
+  val seqClass: Class[Seq[_]] = classOf[Seq[_]]
+  val setClass: Class[Set[_]] = classOf[Set[_]]
+  val arrayListClass: Class[util.ArrayList[_]] = classOf[java.util.ArrayList[_]]
 
   override def _deserialize(implicit format: Formats): PartialFunction[(TypeInfo, JValue), Any] = {
 
@@ -121,7 +152,7 @@ object ElementToArrayDeserializer extends XMLWeakDeserializer[Any] {
       mkTypedArray(a, firstTypeArg(ti))
   }
 
-  def mkTypedArray(a: Array[_], typeArg: ScalaType) = {
+  def mkTypedArray(a: Array[_], typeArg: ScalaType): AnyRef = {
     import java.lang.reflect.Array.{newInstance => newArray}
 
     a.foldLeft((newArray(typeArg.erasure, a.length), 0)) { (tuple, e) =>
@@ -148,29 +179,4 @@ object ElementToArrayDeserializer extends XMLWeakDeserializer[Any] {
     val firstTypeArg = tpe.typeArgs.head
     firstTypeArg
   }
-}
-
-case class JSONExceptionMetadata(
-    jValue: Option[JValue] = None,
-    typeInfo: Option[String] = None,
-    serDe: SerDeMetadata
-) extends MessageAPI
-
-case class SerDeMetadata(
-    reporting: Option[String] = None,
-    primitives: Seq[String] = Nil,
-    field: Map[String, String] = Map.empty,
-    custom: Seq[String] = Nil
-)
-
-class JSONException(
-    msg: String,
-    cause: Exception,
-    metadata: JSONExceptionMetadata
-) extends MappingException(msg, cause)
-    with Verbose {
-
-  override def getMessage = detailedStr
-
-  override def detail = "=========== [METADATA] ============\n" + metadata.toJSON()
 }

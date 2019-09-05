@@ -2,6 +2,7 @@ package com.tribbloids.spookystuff.parsing
 
 import com.tribbloids.spookystuff.parsing.ParsersBenchmark.Epoch
 import com.tribbloids.spookystuff.parsing.ParsersBenchmark.UseFastParse.blacklist
+import com.tribbloids.spookystuff.testutils.FunSpecx
 import com.tribbloids.spookystuff.utils.{InterleavedIterator, Interpolation}
 import fastparse._
 import org.apache.spark.BenchmarkHelper

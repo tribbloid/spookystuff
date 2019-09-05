@@ -13,7 +13,7 @@ import scala.xml.NodeSeq
 
 class MessageWriter[M](
     val message: M,
-    val formats: Formats = Xml.defaultFormats,
+    val formats: Formats = XMLFormats.defaultFormats,
     rootTagOverride: Option[String] = None
 ) extends Serializable {
 
@@ -33,13 +33,13 @@ class MessageWriter[M](
   def toXMLNode(implicit formats: Formats = formats): NodeSeq =
     Xml.toXml(JObject(rootTag -> toJValue))
   def compactXML(implicit formats: Formats = formats): String = toXMLNode.toString().replaceAllLiterally("\n", "")
-  def prettyXML(implicit formats: Formats = formats): String = Xml.defaultXMLPrinter.formatNodes(toXMLNode)
+  def prettyXML(implicit formats: Formats = formats): String = XMLFormats.defaultXMLPrinter.formatNodes(toXMLNode)
   def toXMLStr(pretty: Boolean = true)(implicit formats: Formats = formats): String = {
     if (pretty) prettyXML
     else compactXML
   }
 
-  def cast[T: Codec](formats: Formats = formats) = {
+  def cast[T: Codec](formats: Formats = formats): T = {
     MessageReader._fromJValue[T](toJValue(formats))
   }
 
@@ -119,10 +119,10 @@ class MessageWriter[M](
     }
   }
 
-  lazy val memberStr = this.getMemberStr()
-  lazy val memberStr_\\\ = this.getMemberStr(File.separator, File.separator, File.separator)
-  lazy val memberStr_/:/ = this.getMemberStr("/", "/", "/")
-  lazy val memberStrPretty = this.getMemberStr("(\n", ",\n", "\n)", { _ =>
+  lazy val memberStr: String = this.getMemberStr()
+  lazy val memberStr_\\\ : String = this.getMemberStr(File.separator, File.separator, File.separator)
+  lazy val memberStr_/:/ : String = this.getMemberStr("/", "/", "/")
+  lazy val memberStrPretty: String = this.getMemberStr("(\n", ",\n", "\n)", { _ =>
     "\t"
   })
 }
@@ -131,7 +131,7 @@ object MessageWriter {
 
   def apply[M](
       message: M,
-      formats: Formats = Xml.defaultFormats,
+      formats: Formats = XMLFormats.defaultFormats,
       rootTagOverride: Option[String] = None
   ): MessageWriter[M] = new MessageWriter[M](message, formats, rootTagOverride)
 }

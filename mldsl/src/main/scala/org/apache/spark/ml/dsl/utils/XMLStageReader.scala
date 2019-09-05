@@ -18,7 +18,7 @@ trait XMLReaderMixin[T] {
 
   def extraSer: Seq[Serializer[_]] = Nil
 
-  implicit def format: Formats = Xml.defaultFormats
+  implicit def format: Formats = XMLFormats.defaultFormats
 
   def fromJson(json: String): T = {
     Serialization.read[T](json)
