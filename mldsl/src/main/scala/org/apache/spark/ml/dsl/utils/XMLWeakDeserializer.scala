@@ -2,15 +2,16 @@ package org.apache.spark.ml.dsl.utils
 
 import java.util
 
+import com.tribbloids.spookystuff.utils.CachingUtils
+import com.tribbloids.spookystuff.utils.CachingUtils.ConcurrentCache
 import org.apache.spark.ml.dsl.utils.messaging.MessageAPI
 import org.json4s.Extraction._
 import org.json4s.JsonAST.JString
 import org.json4s._
 import org.json4s.reflect.{TypeInfo, _}
-import org.slf4j.LoggerFactory
 
 object XMLWeakDeserializer {
-  case class ParsingExceptionMetadata(
+  case class ExceptionMetadata(
       jValue: Option[JValue] = None,
       typeInfo: Option[String] = None,
       serDe: SerDeMetadata
@@ -23,16 +24,45 @@ object XMLWeakDeserializer {
       custom: Seq[String] = Nil
   )
 
+  val cached: ConcurrentCache[Long, ParsingException] = CachingUtils.ConcurrentCache[Long, ParsingException]()
+
+  trait ExceptionLike extends Throwable with Verbose {
+
+//    def metadata: ExceptionMetadata
+
+    override def getMessage: String = detailedStr
+  }
+
   class ParsingException(
       override val shortStr: String,
       cause: Exception,
-      metadata: ParsingExceptionMetadata
+      val metadata: ExceptionMetadata
   ) extends MappingException(shortStr, cause)
-      with Verbose {
+      with ExceptionLike {
 
-    override def getMessage: String = detailedStr
+    {
+      cached.put(System.currentTimeMillis(), this)
+    }
 
-    override def detail: String = "=========== [METADATA] ============\n" + metadata.toJSON()
+    override def detail: String =
+      s"""
+        |"METADATA": ${metadata.toJSON()}
+        |""".trim.stripMargin
+  }
+
+  case class UnrecoverableError(
+      override val shortStr: String,
+      cause: Throwable
+//      override val metadata: ExceptionMetadata
+  ) extends Error
+      with ExceptionLike {
+
+    override def detail: String =
+      s"""
+         |### [RECENT XML EXCEPTIONS] ###
+         |
+         |${cached.toSeq.sortBy(_._1).map(_._2).mkString("\n")}
+         |""".stripMargin
   }
 }
 
@@ -47,7 +77,7 @@ abstract class XMLWeakDeserializer[T: Manifest] extends Serializer[T] {
       jValue: JValue,
       typeInfo: TypeInfo,
       formats: Formats
-  ): ParsingExceptionMetadata = ParsingExceptionMetadata(
+  ): ExceptionMetadata = ExceptionMetadata(
     Some(jValue),
     Some(typeInfo.toString),
     SerDeMetadata(
@@ -59,15 +89,31 @@ abstract class XMLWeakDeserializer[T: Manifest] extends Serializer[T] {
   )
 
   def wrapException[A](ti: TypeInfo, jv: JValue, format: Formats)(fn: => A): A = {
+
+    lazy val metadata = exceptionMetadata(jv, ti, format)
+
     try {
       fn
     } catch {
-      case e: Exception =>
-        val metadata = exceptionMetadata(jv, ti, format)
+      case e: MappingException =>
         throw new ParsingException(
           e.getMessage,
           e,
           metadata
+        )
+
+      case e: Exception =>
+//        throw new ParsingException(
+//          e.getMessage,
+//          e,
+//          metadata
+//        )
+        throw e
+
+      case e: Throwable =>
+        throw UnrecoverableError(
+          e.getClass.getSimpleName,
+          e
         )
     }
   }
@@ -75,12 +121,9 @@ abstract class XMLWeakDeserializer[T: Manifest] extends Serializer[T] {
   override final def deserialize(implicit format: Formats): PartialFunction[(TypeInfo, JValue), T] = {
     val result: ((TypeInfo, JValue)) => Option[T] = {
       case (ti, jv) =>
-        LoggerFactory
-          .getLogger(this.getClass)
-          .debug(
-            s"JSON === [${this.getClass.getSimpleName}] ==> Object"
-          )
-        _deserialize(format).lift.apply(ti -> jv)
+        wrapException(ti, jv, format) {
+          _deserialize(format).lift.apply(ti -> jv)
+        }
     }
     Function.unlift(result)
   }
@@ -117,9 +160,9 @@ object EmptyStringToEmptyObjectDeserializer extends XMLWeakDeserializer[Any] {
   override def _deserialize(implicit format: Formats): PartialFunction[(TypeInfo, JValue), Any] = Function.unlift {
 
     case (ti @ TypeInfo(cc, _), jv @ JString(str)) if !cc.isAssignableFrom(classOf[String]) && str.trim.isEmpty =>
-      wrapException(ti, jv, format) {
-        Some(extract(JObject(), ti)(format))
-      }
+//      wrapException(ti, jv, format) {
+      Some(extract(JObject(), ti)(format))
+//      }
 
     case _ => None
   }
@@ -165,13 +208,13 @@ object ElementToArrayDeserializer extends XMLWeakDeserializer[Any] {
   }
 
   def extractInner(ti: TypeInfo, jv: JValue, format: Formats): Option[Any] = {
-    wrapException(ti, jv, format) {
-      val result = jv match {
-        case JNothing => None
-        case _        => Some(extract(jv, firstTypeArg(ti))(format))
-      }
-      result
+//    wrapException(ti, jv, format) {
+    val result = jv match {
+      case JNothing => None
+      case _        => Some(extract(jv, firstTypeArg(ti))(format))
     }
+    result
+//    }
   }
 
   def firstTypeArg(ti: TypeInfo): ScalaType = {

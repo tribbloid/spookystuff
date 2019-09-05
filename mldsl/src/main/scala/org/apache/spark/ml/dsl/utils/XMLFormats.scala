@@ -24,8 +24,8 @@ object XMLFormats extends DefaultFormats {
     base +
       StringToNumberDeserializer +
       EmptyStringToEmptyObjectDeserializer +
-      ElementToArrayDeserializer +
-      DurationJSONSerializer
+      ElementToArrayDeserializer
+  //      DurationJSONSerializer
   //  +
   //    FallbackJSONSerializer
 
