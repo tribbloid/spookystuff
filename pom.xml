@@ -73,8 +73,6 @@
       <properties>
         <spark.version>2.2.3</spark.version>
         <spark.binary.version>2.2</spark.binary.version>
-        <scala.version>2.11.12</scala.version>
-        <scala.binary.version>2.11</scala.binary.version>
       </properties>
     </profile>
 
@@ -83,8 +81,6 @@
       <properties>
         <spark.version>2.3.3</spark.version>
         <spark.binary.version>2.3</spark.binary.version>
-        <scala.version>2.11.12</scala.version>
-        <scala.binary.version>2.11</scala.binary.version>
       </properties>
     </profile>
 
@@ -93,6 +89,15 @@
       <activation>
         <activeByDefault>true</activeByDefault>
       </activation>
+    </profile>
+
+    <profile>
+      <id>spark-2.4-scala-2.12</id>
+
+      <properties>
+        <scala.version>2.12.8</scala.version>
+        <scala.binary.version>2.12</scala.binary.version>
+      </properties>
     </profile>
 
     <profile>
@@ -792,7 +797,7 @@
             <configuration>
               <rules>
                 <requireActiveProfile>
-                  <profiles>spark-2.2,spark-2.3,spark-2.4</profiles>
+                  <profiles>spark-2.2,spark-2.3,spark-2.4,spark-2.4-scala-2.12</profiles>
                   <all>false</all>
                 </requireActiveProfile>
               </rules>
