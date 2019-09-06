@@ -6,12 +6,14 @@ import com.tribbloids.spookystuff.row.{FetchedRow, SpookySchema}
 import com.tribbloids.spookystuff.session.Session
 import com.tribbloids.spookystuff.utils.CommonUtils
 import com.tribbloids.spookystuff.{Const, QueryException, SpookyContext}
-import org.apache.spark.ml.dsl.utils.Verbose
+import org.apache.spark.ml.dsl.utils.{DurationJSONSerializer, Verbose}
 import org.apache.spark.ml.dsl.utils.messaging.AutomaticRelay
 import org.apache.spark.sql.catalyst.trees.TreeNode
 import org.slf4j.LoggerFactory
 
 object ActionLike extends AutomaticRelay[ActionLike] {
+
+  override lazy val formats = super.formats + DurationJSONSerializer
 
   //TODO: aggregate all object that has children
   case class TreeNodeView(
