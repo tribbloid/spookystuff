@@ -216,6 +216,11 @@ object Xml {
         xs flatMap { v =>
           toXml(name, v)
         }
+      case JSet(xs) =>
+        xs.flatMap { v =>
+          toXml(name, v)
+        }(collection.breakOut)
+      case JLong(x)    => new XmlElem(name, x.toString)
       case JInt(x)     => new XmlElem(name, x.toString)
       case JDouble(x)  => new XmlElem(name, x.toString)
       case JDecimal(x) => new XmlElem(name, x.toString)
