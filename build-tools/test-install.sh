@@ -3,7 +3,8 @@
 FWDIR="$(cd "`dirname "$0"`"/..; pwd)"
 DATE=$(date --iso-8601=second)
 
-mvn dependency:tree -f "$FWDIR"/pom.xml -Puav -Pdist "$@" > "$FWDIR"/logs/mvnTree_"$DATE".log
+mkdir -p logs
+mvn dependency:tree --batch-mode -f "$FWDIR"/pom.xml -Puav -Pdist "$@" > "$FWDIR"/logs/mvnTree_"$DATE".log
 
 # mandatory after Spark 2.3
 # https://stackoverflow.com/questions/49143271/invalid-spark-url-in-local-spark-session
