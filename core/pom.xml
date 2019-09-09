@@ -69,12 +69,6 @@
       <groupId>org.apache.tika</groupId>
       <artifactId>tika-parsers</artifactId>
       <version>1.13</version>
-      <exclusions>
-        <exclusion>
-          <groupId>com.google.guava</groupId>
-          <artifactId>guava</artifactId>
-        </exclusion>
-      </exclusions>
     </dependency>
     <!--cannot upgrade tika due to fasterxml version conflict-->
     <!--<dependency>-->

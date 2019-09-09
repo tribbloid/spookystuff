@@ -17,17 +17,19 @@ class LazyVar[T](
 
   val cached: T ? Var = None
 
-  private def opt = cached.asOption
+  private def opt: Option[T] = cached.asOption
 
   def value: T = opt.getOrElse {
     this.synchronized {
 
-      opt.getOrElse {
-        val result = fn
-        :=(result)
-        result
-      }
+      opt.getOrElse(regenerate)
     }
+  }
+
+  def regenerate: T = {
+    val result = fn
+    :=(result)
+    result
   }
 
   def :=(v: T): Unit = {

@@ -7,7 +7,7 @@ import com.tribbloids.spookystuff.utils.lifespan.LocalCleanable
 import com.tribbloids.spookystuff.utils.{CommonConst, CommonUtils, ConfUtils}
 import org.apache.hadoop.fs.FileUtil
 import org.apache.spark.serializer.KryoSerializer
-import org.apache.spark.sql.SparkSession
+import org.apache.spark.sql.{SQLContext, SparkSession}
 import org.apache.spark.{SparkConf, SparkContext, SparkEnv, SparkException}
 import org.slf4j.LoggerFactory
 
@@ -18,10 +18,10 @@ class TestHelper() extends LocalCleanable {
 
   val properties = new Properties()
 
-  val S3Path = Option(properties.getProperty("S3Path"))
+  val S3Path: Option[String] = Option(properties.getProperty("S3Path"))
 
-  val AWSAccessKeyId = Option(properties.getProperty("AWSAccessKeyId"))
-  val AWSSecretKey = Option(properties.getProperty("AWSSecretKey"))
+  val AWSAccessKeyId: Option[String] = Option(properties.getProperty("AWSAccessKeyId"))
+  val AWSSecretKey: Option[String] = Option(properties.getProperty("AWSSecretKey"))
 
   def SPARK_HOME: String = System.getenv("SPARK_HOME")
 
@@ -31,8 +31,8 @@ class TestHelper() extends LocalCleanable {
 
   final val MAX_CORES = MAX_TOTAL_MEMORY / MEMORY_PER_CORE
 
-  val METASTORE_PATH = CommonUtils.\\\(CommonConst.USER_DIR, "metastore_db")
-  val WAREHOUSE_PATH = CommonUtils.\\\(CommonConst.USER_DIR, "warehouse")
+  val METASTORE_PATH: String = CommonUtils.\\\(CommonConst.USER_DIR, "metastore_db")
+  val WAREHOUSE_PATH: String = CommonUtils.\\\(CommonConst.USER_DIR, "warehouse")
 
   var sparkSessionInitialised: Boolean = false
 
@@ -148,6 +148,11 @@ class TestHelper() extends LocalCleanable {
     Math.min(n * MEMORY_PER_CORE, cap)
   }
 
+  @transient lazy val envOverrides = Map(
+    "SPARK_SCALA_VERSION" -> CommonUtils.scalaBinaryVersion
+//    "SPARK_LOCAL_HOSTNAME" -> "localhost"
+  )
+
   /**
     * @return local mode: None -> local[n, 4]
     *         cluster simulation mode: Some(SPARK_HOME) -> local-cluster[m,n, mem]
@@ -162,11 +167,25 @@ class TestHelper() extends LocalCleanable {
       println("initializing SparkContext in local mode:" + masterStr)
       masterStr
     } else {
+
+      {
+        //TODO: Unstable! remove?
+        LoggerFactory
+          .getLogger(this.getClass)
+          .warn(
+            "overriding system variables ... this may be unstable for some JVM"
+          )
+
+        envOverrides.foreach {
+          case (k, v) =>
+            ConfUtils.overrideEnv(k, v)
+        }
+      }
+
       val masterStr =
         s"local-cluster[${clusterSizeOpt.get},${numCoresPerWorkerOpt.get},${executorMemoryOpt.get}]"
       println(s"initializing SparkContext in local-cluster simulation mode:" + masterStr)
-      //TODO: Unstable! remove?
-      ConfUtils.setEnv("SPARK_SCALA_VERSION", CommonUtils.scalaBinaryVersion)
+
       masterStr
     }
 
@@ -230,7 +249,7 @@ class TestHelper() extends LocalCleanable {
     conf
   }
 
-  lazy val TestSparkSession = {
+  lazy val TestSparkSession: SparkSession = {
 
     val builder = SparkSession.builder
       .config(TestSparkConf)
@@ -242,7 +261,7 @@ class TestHelper() extends LocalCleanable {
     val session = builder.getOrCreate()
     val sc = session.sparkContext
 
-    CommonUtils.retry(20, 5000, silent = true) {
+    CommonUtils.retry(3, 8000, silent = true) {
       // wait for all executors in local-cluster mode to be online
       require(
         sc.defaultParallelism == numCores, {
@@ -261,17 +280,22 @@ class TestHelper() extends LocalCleanable {
   }
 
   def getExecutorSummaryText(sc: SparkContext): String = {
-    val status = sc.getExecutorMemoryStatus
-    status
+    val executors = sc.getExecutorMemoryStatus
+    val executorReport = executors
       .map {
         case (k, v) =>
           s"$k :\t ${v._1} bytes available / ${v._2} bytes remaining"
       }
       .mkString("\n")
+
+    s"""
+       |Executors:
+       |$executorReport
+       |""".trim.stripMargin
   }
 
-  lazy val TestSC = TestSparkSession.sparkContext
-  lazy val TestSQL = TestSparkSession.sqlContext
+  lazy val TestSC: SparkContext = TestSparkSession.sparkContext
+  lazy val TestSQL: SQLContext = TestSparkSession.sqlContext
 
   def setLoggerDuring[T](clazzes: Class[_]*)(fn: => T, level: String = "OFF"): T = {
     val logger_oldLevels = clazzes.map { clazz =>
@@ -317,6 +341,7 @@ class TestHelper() extends LocalCleanable {
   }
 
   //TODO: clean up S3 as well
+  // also, this should become a class that inherit cleanable
   def cleanTempDirs(paths: Seq[String] = Seq(CommonConst.USER_TEMP_DIR)): Unit = {
     paths.filter(_ != null).foreach { path =>
       try {
@@ -333,7 +358,7 @@ class TestHelper() extends LocalCleanable {
     }
   }
 
-  def intercept[EE <: Exception: ClassTag](fn: => Any) = {
+  def intercept[EE <: Exception: ClassTag](fn: => Any): Unit = {
     val trial = Try {
       fn
     }

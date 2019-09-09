@@ -16,12 +16,12 @@
       <artifactId>ascii-graphs_${scala.binary.version}</artifactId>
       <version>0.0.7</version>
 
-      <exclusions>
-        <exclusion>
-          <groupId>org.scala-lang</groupId>
-          <artifactId>scala-library</artifactId>
-        </exclusion>
-      </exclusions>
+      <!--      <exclusions>-->
+      <!--        <exclusion>-->
+      <!--          <groupId>org.scala-lang</groupId>-->
+      <!--          <artifactId>scala-library</artifactId>-->
+      <!--        </exclusion>-->
+      <!--      </exclusions>-->
     </dependency>
 
   </dependencies>

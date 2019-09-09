@@ -67,10 +67,18 @@ object ConfUtils {
     * change UnmodifiableMap System.getenv() for tests
     * NOT stable! Only for testing
     */
-  def setEnv(key: String, value: String) = {
+  def overrideEnv(key: String, value: String): Unit = {
     val field = System.getenv().getClass.getDeclaredField("m")
     field.setAccessible(true)
     val map = field.get(System.getenv()).asInstanceOf[java.util.Map[java.lang.String, java.lang.String]]
     map.put(key, value)
+
+    Thread.sleep(500)
+
+    {
+      // validation
+      val actual = System.getenv(key)
+      require(value == actual, s"Set environment variable failed: expected `$value`, actual `$actual`")
+    }
   }
 }

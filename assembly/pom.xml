@@ -35,16 +35,16 @@
       </build>
     </profile>
 
-    <profile>
-      <id>uav</id>
-      <dependencies>
-        <dependency>
-          <groupId>com.tribbloids.spookystuff</groupId>
-          <artifactId>spookystuff-uav</artifactId>
-          <version>${project.version}</version>
-        </dependency>
-      </dependencies>
-    </profile>
+<!--    <profile>-->
+<!--      <id>uav</id>-->
+<!--      <dependencies>-->
+<!--        <dependency>-->
+<!--          <groupId>com.tribbloids.spookystuff</groupId>-->
+<!--          <artifactId>spookystuff-uav</artifactId>-->
+<!--          <version>${project.version}</version>-->
+<!--        </dependency>-->
+<!--      </dependencies>-->
+<!--    </profile>-->
   </profiles>
 
   <dependencies>
@@ -72,6 +72,13 @@
     <!--<artifactId>spookystuff-uav</artifactId>-->
     <!--<version>${project.version}</version>-->
     <!--</dependency>-->
+
+    <dependency>
+      <groupId>org.jhades</groupId>
+      <artifactId>jhades</artifactId>
+      <version>1.0.4</version>
+      <scope>test</scope>
+    </dependency>
   </dependencies>
 
   <build>

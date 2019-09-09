@@ -1,9 +1,8 @@
 #!/usr/bin/env bash
 
+CRDIR="$(cd "`dirname "$0"`"; pwd)"
 FWDIR="$(cd "`dirname "$0"`"/..; pwd)"
 
-# mandatory after Spark 2.3
-# https://stackoverflow.com/questions/49143271/invalid-spark-url-in-local-spark-session
-MAVEN_OPTS="-Xmx4g -XX:MaxPermSize=4g -XX:ReservedCodeCacheSize=512m" \
-SPARK_LOCAL_HOSTNAME=localhost \
+source "${CRDIR}/.test-common.sh"
+
 mvn test -f "$FWDIR"/pom.xml -Pdist "$@"

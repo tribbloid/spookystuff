@@ -68,21 +68,21 @@
     </profile>
 
 
-    <profile>
-      <id>spark-2.2</id>
-      <properties>
-        <spark.version>2.2.3</spark.version>
-        <spark.binary.version>2.2</spark.binary.version>
-      </properties>
-    </profile>
+<!--    <profile>-->
+<!--      <id>spark-2.2</id>-->
+<!--      <properties>-->
+<!--        <spark.version>2.2.3</spark.version>-->
+<!--        <spark.binary.version>2.2</spark.binary.version>-->
+<!--      </properties>-->
+<!--    </profile>-->
 
-    <profile>
-      <id>spark-2.3</id>
-      <properties>
-        <spark.version>2.3.3</spark.version>
-        <spark.binary.version>2.3</spark.binary.version>
-      </properties>
-    </profile>
+<!--    <profile>-->
+<!--      <id>spark-2.3</id>-->
+<!--      <properties>-->
+<!--        <spark.version>2.3.3</spark.version>-->
+<!--        <spark.binary.version>2.3</spark.binary.version>-->
+<!--      </properties>-->
+<!--    </profile>-->
 
     <profile>
       <id>spark-2.4</id>
@@ -215,6 +215,24 @@
 
   </pluginRepositories>
 
+  <dependencyManagement>
+    <dependencies>
+
+      <!--DON'T DELETE! guava has too many versions and a ground truth has to be setup.-->
+      <dependency>
+        <groupId>com.google.guava</groupId>
+        <artifactId>guava</artifactId>
+        <version>16.0.1</version>
+      </dependency>
+
+      <dependency>
+        <groupId>org.apache.commons</groupId>
+        <artifactId>commons-compress</artifactId>
+        <version>1.11</version>
+      </dependency>
+    </dependencies>
+  </dependencyManagement>
+
   <dependencies>
     <dependency>
       <groupId>org.scala-lang</groupId>
@@ -261,12 +279,6 @@
       <artifactId>jProcesses</artifactId>
       <version>1.6.2</version>
       <scope>test</scope>
-      <exclusions>
-        <exclusion>
-          <groupId>com.google.guava</groupId>
-          <artifactId>guava</artifactId>
-        </exclusion>
-      </exclusions>
     </dependency>
 
     <dependency>
@@ -318,19 +330,6 @@
       <version>${protobuf.version}</version>
       <scope>provided</scope>
     </dependency>
-
-    <!--DON'T DELETE! guava has too many versions and a ground truth has to be setup.-->
-    <!--<dependency>-->
-    <!--<groupId>com.google.guava</groupId>-->
-    <!--<artifactId>guava</artifactId>-->
-    <!--<version>16.0.1</version>-->
-    <!--</dependency>-->
-    <!--<dependency>-->
-    <!--<groupId>org.apache.spark</groupId>-->
-    <!--<artifactId>spark-graphx_${scala.binary.version}</artifactId>-->
-    <!--<version>${spark.version}</version>-->
-    <!--<scope>provided</scope>-->
-    <!--</dependency>-->
 
   </dependencies>
 
