@@ -9,7 +9,7 @@
   </parent>
   <modelVersion>4.0.0</modelVersion>
 
-  <artifactId>spookystuff-assembly</artifactId>
+  <artifactId>spookystuff-assembly_${scala.binary.version}</artifactId>
 
   <properties>
     <assembly.jar.dir>scala-${scala.binary.version}</assembly.jar.dir>
@@ -58,7 +58,7 @@
     </dependency>
     <dependency>
       <groupId>com.tribbloids.spookystuff</groupId>
-      <artifactId>spookystuff-core</artifactId>
+      <artifactId>spookystuff-core_${scala.binary.version}</artifactId>
       <version>${project.version}</version>
       <!--<classifier>${project.classifier}</classifier>-->
     </dependency>

@@ -9,17 +9,17 @@
   </parent>
   <modelVersion>4.0.0</modelVersion>
 
-  <artifactId>spookystuff-core</artifactId>
+  <artifactId>spookystuff-core_${scala.binary.version}</artifactId>
 
   <dependencies>
     <dependency>
       <groupId>com.tribbloids.spookystuff</groupId>
-      <artifactId>spookystuff-mldsl</artifactId>
+      <artifactId>spookystuff-mldsl_${scala.binary.version}</artifactId>
       <version>${project.version}</version>
     </dependency>
     <dependency>
       <groupId>com.tribbloids.spookystuff</groupId>
-      <artifactId>spookystuff-mldsl</artifactId>
+      <artifactId>spookystuff-mldsl_${scala.binary.version}</artifactId>
       <version>${project.version}</version>
       <type>test-jar</type>
       <scope>test</scope>
