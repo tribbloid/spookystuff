@@ -1,11 +1,12 @@
 package org.apache.spark.ml.dsl.utils.data
 
-import org.apache.spark.ml.dsl.utils.{?, Nullable}
+import com.tribbloids.spookystuff.utils.IDMixin
+import org.apache.spark.ml.dsl.utils.?
 
 import scala.language.implicitConversions
 import scala.util.Try
 
-trait AttrLike[T] extends Serializable {
+trait AttrLike[T] extends Serializable with IDMixin {
 
   def primaryName: String
   def aliases: List[String]
@@ -25,6 +26,8 @@ trait AttrLike[T] extends Serializable {
   def tryGet: Try[T]
   def get: Option[T] = tryGet.toOption
   def value: T = tryGet.get
+
+  override def _id: Any = this.allNames -> get
 }
 
 object AttrLike {

@@ -40,6 +40,7 @@ trait EAV extends Serializable with IDMixin {
   def asMap: Map[String, VV] = asOriginalMap
   def asStrMap: Map[String, String] = asMap.mapValues(v => Option(v).map(_.toString).orNull)
 
+  //TODO: change to declaredAttrs?
   override def _id: Any = asMap
 
   def asProperties: Properties = {
