@@ -13,14 +13,10 @@ import org.slf4j.LoggerFactory
 import scala.collection.mutable
 import scala.language.implicitConversions
 import scala.reflect.ClassTag
-import scala.util.{Failure, Success, Try}
-import scala.xml.PrettyPrinter
 
 abstract class SpookyUtils extends CommonUtils {
 
   import SpookyViews._
-
-  @transient lazy val xmlPrinter = new PrettyPrinter(Int.MaxValue, 2)
 
   //  def retryWithDeadline[T](n: Int, t: Duration)(fn: => T): T = retry(n){withDeadline(t){fn}}
 
