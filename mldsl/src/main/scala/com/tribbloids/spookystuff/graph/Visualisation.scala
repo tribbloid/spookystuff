@@ -82,7 +82,7 @@ case class Visualisation[D <: Domain](
 //          println(v.viewWFormat)
 //          val vv = v.children.map(_.view.element.dataStr)
 
-          v.children.reverse.foreach { child =>
+          v.children.foreach { child =>
             buffer += child.viewWFormat
             relationBuffer += child.viewWFormat -> v.viewWFormat
           }

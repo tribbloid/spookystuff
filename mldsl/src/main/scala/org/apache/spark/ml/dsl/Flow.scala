@@ -895,7 +895,6 @@ trait FlowComponent extends MayHaveHeads with MayHaveTails {
   ): String = {
 
     try {
-      // TODO: underlying library doesn't support scala 2.11, discard/replace!
       val prettyColl = coll.mapValues { v =>
         StepVisualWrapper(v, showID, showInputs, showOutput, showPrefix)
       }

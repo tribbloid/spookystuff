@@ -12,16 +12,9 @@
   <artifactId>spookystuff-mldsl</artifactId>
   <dependencies>
     <dependency>
-      <groupId>com.github.jlmauduy</groupId>
+      <groupId>com.github.mutcianm</groupId>
       <artifactId>ascii-graphs_${scala.binary.version}</artifactId>
-      <version>0.0.7</version>
-
-      <!--      <exclusions>-->
-      <!--        <exclusion>-->
-      <!--          <groupId>org.scala-lang</groupId>-->
-      <!--          <artifactId>scala-library</artifactId>-->
-      <!--        </exclusion>-->
-      <!--      </exclusions>-->
+      <version>0.0.6</version>
     </dependency>
 
   </dependencies>
