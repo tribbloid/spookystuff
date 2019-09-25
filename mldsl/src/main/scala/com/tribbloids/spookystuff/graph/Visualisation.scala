@@ -77,17 +77,18 @@ case class Visualisation[D <: Domain](
       for (elem <- endWith) {
         val stepView = core.Views.fromElement(elem).WFormat(format)
         val treeNode = stepView.BackwardTreeNode()
+
         treeNode.foreach { v =>
           buffer += v.viewWFormat
-//          println(v.viewWFormat)
-//          val vv = v.children.map(_.view.element.dataStr)
+          //          println(v.viewWFormat)
+          //          val vv = v.children.map(_.view.element.dataStr)
 
-          v.children.foreach { child =>
+          val children = v.children.reverse
+
+          children.foreach { child =>
             buffer += child.viewWFormat
             relationBuffer += child.viewWFormat -> v.viewWFormat
           }
-
-//          vv
         }
       }
 
