@@ -6,7 +6,8 @@
 
   <groupId>com.tribbloids.spookystuff</groupId>
   <artifactId>spookystuff</artifactId>
-  <version>0.6.0-SNAPSHOT</version>
+  <version>${revision}</version>
+
   <packaging>pom</packaging>
   <name>spookystuff</name>
   <description>Scalable Query Engine for Data Acquisition based on Apache Spark</description>
@@ -56,10 +57,24 @@
 
     <jmh.version>1.21</jmh.version>
 
+    <!--    https://maven.apache.org/maven-ci-friendly.html-->
+    <revision>0.6.0-SNAPSHOT</revision>
+
     <!--<failsafe.version>2.18</failsafe.version>-->
   </properties>
 
   <profiles>
+
+    <profile>
+      <id>scala-suffix</id>
+
+<!--      experimental, attach scala version to artifact version-->
+<!--      TODO: canonical way should be attaching scala version to artifact ID, but maven doesn support it-->
+      <properties>
+        <revision>0.6.0_${scala.binary.version}-SNAPSHOT</revision>
+      </properties>
+    </profile>
+
     <profile>
       <id>java8</id>
       <activation>
@@ -68,21 +83,21 @@
     </profile>
 
 
-<!--    <profile>-->
-<!--      <id>spark-2.2</id>-->
-<!--      <properties>-->
-<!--        <spark.version>2.2.3</spark.version>-->
-<!--        <spark.binary.version>2.2</spark.binary.version>-->
-<!--      </properties>-->
-<!--    </profile>-->
+    <!--    <profile>-->
+    <!--      <id>spark-2.2</id>-->
+    <!--      <properties>-->
+    <!--        <spark.version>2.2.3</spark.version>-->
+    <!--        <spark.binary.version>2.2</spark.binary.version>-->
+    <!--      </properties>-->
+    <!--    </profile>-->
 
-<!--    <profile>-->
-<!--      <id>spark-2.3</id>-->
-<!--      <properties>-->
-<!--        <spark.version>2.3.3</spark.version>-->
-<!--        <spark.binary.version>2.3</spark.binary.version>-->
-<!--      </properties>-->
-<!--    </profile>-->
+    <!--    <profile>-->
+    <!--      <id>spark-2.3</id>-->
+    <!--      <properties>-->
+    <!--        <spark.version>2.3.3</spark.version>-->
+    <!--        <spark.binary.version>2.3</spark.binary.version>-->
+    <!--      </properties>-->
+    <!--    </profile>-->
 
     <profile>
       <id>spark-2.4</id>

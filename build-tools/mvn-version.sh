@@ -4,4 +4,5 @@ FWDIR="$(cd "`dirname "$0"`"/..; pwd)"
 
 #mvn versions:use-latest-releases
 
-mvn versions:set -DnewVersion=0.6.0-SNAPSHOT -Puav -f "$FWDIR"/pom.xml "$@"
+# TODO: this is rendered obsolete by: https://maven.apache.org/maven-ci-friendly.html
+mvn versions:set -DnewVersion=0.6.0-SNAPSHOT -Puav -Pbenchmark -f "$FWDIR"/pom.xml "$@"
