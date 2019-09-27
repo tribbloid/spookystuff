@@ -69,7 +69,7 @@
       <id>scala-suffix</id>
 
 <!--      experimental, attach scala version to artifact version-->
-<!--      TODO: canonical way should be attaching scala version to artifact ID, but maven doesn support it-->
+<!--      TODO: canonical way should be attaching scala version to artifact ID, but maven doesn't support it-->
       <properties>
         <revision>0.6.0_${scala.binary.version}-SNAPSHOT</revision>
       </properties>
