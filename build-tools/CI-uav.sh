@@ -7,4 +7,4 @@ source "${CRDIR}/.CI-common.sh"
 ALL_ARGS="-Pdummy $*"
 
 exec "$CRDIR"/mvn-install.sh "$ALL_ARGS" && \
-exec "$CRDIR"/test.sh "$ALL_ARGS" -Pscala-suffix -Puav -pl uav
+exec "$CRDIR"/test.sh "$ALL_ARGS" -Pscala-suffix -Puav -Pspark-2.4 -pl uav
