@@ -427,7 +427,7 @@
         <plugin>
           <groupId>org.apache.maven.plugins</groupId>
           <artifactId>maven-source-plugin</artifactId>
-          <version>2.4</version>
+          <version>3.1.0</version>
           <configuration>
             <attach>true</attach>
           </configuration>
@@ -444,18 +444,19 @@
         <plugin>
           <groupId>org.apache.maven.plugins</groupId>
           <artifactId>maven-javadoc-plugin</artifactId>
-          <version>2.10.4</version>
+          <version>3.1.1</version>
           <configuration>
             <attach>true</attach>
+            <validateLinks>false</validateLinks>
           </configuration>
-          <executions>
-            <execution>
-              <id>attach-javadoc</id>
-              <goals>
-                <goal>jar</goal>
-              </goals>
-            </execution>
-          </executions>
+<!--          <executions>-->
+<!--            <execution>-->
+<!--              <id>attach-javadoc</id>-->
+<!--              <goals>-->
+<!--                <goal>jar</goal>-->
+<!--              </goals>-->
+<!--            </execution>-->
+<!--          </executions>-->
         </plugin>
 
         <plugin>
