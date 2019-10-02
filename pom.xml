@@ -68,8 +68,8 @@
     <profile>
       <id>scala-suffix</id>
 
-<!--      experimental, attach scala version to artifact version-->
-<!--      TODO: canonical way should be attaching scala version to artifact ID, but maven doesn't support it-->
+      <!--      experimental, attach scala version to artifact version-->
+      <!--      TODO: canonical way should be attaching scala version to artifact ID, but maven doesn't support it-->
       <properties>
         <revision>0.6.0_${scala.binary.version}-SNAPSHOT</revision>
       </properties>
@@ -107,7 +107,7 @@
     </profile>
 
     <profile>
-      <id>spark-2.4-scala-2.12</id>
+      <id>scala-2.12</id>
 
       <properties>
         <scala.version>2.12.8</scala.version>
@@ -449,14 +449,14 @@
             <attach>true</attach>
             <validateLinks>false</validateLinks>
           </configuration>
-<!--          <executions>-->
-<!--            <execution>-->
-<!--              <id>attach-javadoc</id>-->
-<!--              <goals>-->
-<!--                <goal>jar</goal>-->
-<!--              </goals>-->
-<!--            </execution>-->
-<!--          </executions>-->
+          <!--          <executions>-->
+          <!--            <execution>-->
+          <!--              <id>attach-javadoc</id>-->
+          <!--              <goals>-->
+          <!--                <goal>jar</goal>-->
+          <!--              </goals>-->
+          <!--            </execution>-->
+          <!--          </executions>-->
         </plugin>
 
         <plugin>
@@ -812,9 +812,18 @@
             <configuration>
               <rules>
                 <requireActiveProfile>
-                  <profiles>spark-2.2,spark-2.3,spark-2.4,spark-2.4-scala-2.12</profiles>
+                  <profiles>spark-2.2,spark-2.3,spark-2.4</profiles>
                   <all>false</all>
                 </requireActiveProfile>
+<!--                TODO: use custom rules-->
+<!--                <requireActiveProfile>-->
+<!--                  <profiles>spark-2.2,scala-2.12</profiles>-->
+<!--                  <all>false</all>-->
+<!--                </requireActiveProfile>-->
+<!--                <requireActiveProfile>-->
+<!--                  <profiles>spark-2.3,scala-2.12</profiles>-->
+<!--                  <all>false</all>-->
+<!--                </requireActiveProfile>-->
               </rules>
               <fail>true</fail>
             </configuration>
