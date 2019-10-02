@@ -55,6 +55,8 @@
 
     <protobuf.version>2.5.0</protobuf.version>
 
+    <cxf.version>3.0.16</cxf.version>
+
     <jmh.version>1.21</jmh.version>
 
     <!--    https://maven.apache.org/maven-ci-friendly.html-->
@@ -245,6 +247,23 @@
         <artifactId>commons-compress</artifactId>
         <version>1.18</version>
       </dependency>
+
+      <dependency>
+        <groupId>com.google.protobuf</groupId>
+        <artifactId>protobuf-java</artifactId>
+        <version>${protobuf.version}</version>
+      </dependency>
+
+      <dependency>
+        <groupId>org.apache.cxf</groupId>
+        <artifactId>cxf-rt-rs-client</artifactId>
+        <version>${cxf.version}</version>
+      </dependency>
+      <dependency>
+        <groupId>org.apache.cxf</groupId>
+        <artifactId>cxf-rt-frontend-jaxrs</artifactId>
+        <version>${cxf.version}</version>
+      </dependency>
     </dependencies>
   </dependencyManagement>
 
@@ -338,13 +357,6 @@
       <scope>test</scope>
     </dependency>
 
-    <!--DON'T DELETE! used by protobuf plugin!-->
-    <dependency>
-      <groupId>com.google.protobuf</groupId>
-      <artifactId>protobuf-java</artifactId>
-      <version>${protobuf.version}</version>
-      <scope>provided</scope>
-    </dependency>
 
   </dependencies>
 
