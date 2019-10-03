@@ -1,7 +1,7 @@
 #!/usr/bin/env bash
 
+# TODO: this file is merely kept for backward compatibility
+
 CRDIR="$(cd "`dirname "$0"`"; pwd)"
 
-source "${CRDIR}/.CI-common.sh"
-
-"$CRDIR"/test.sh -Pbenchmark -Pscala-suffix -Pspark-2.4 "$@"
+"$CRDIR"/CI/core-stage1.sh apache-latest
