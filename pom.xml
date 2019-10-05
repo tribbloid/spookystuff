@@ -42,6 +42,10 @@
   </modules>
 
   <properties>
+
+    <!--    https://maven.apache.org/maven-ci-friendly.html-->
+    <revision>0.6.0-SNAPSHOT</revision>
+
     <project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
     <project.reporting.outputEncoding>UTF-8</project.reporting.outputEncoding>
     <java.version>1.8</java.version>
@@ -56,11 +60,9 @@
     <protobuf.version>2.5.0</protobuf.version>
 
     <cxf.version>3.0.16</cxf.version>
+    <jackson.version>2.9.10</jackson.version>
 
-    <jmh.version>1.21</jmh.version>
-
-    <!--    https://maven.apache.org/maven-ci-friendly.html-->
-    <revision>0.6.0-SNAPSHOT</revision>
+<!--    <jmh.version>1.21</jmh.version>-->
 
     <!--<failsafe.version>2.18</failsafe.version>-->
   </properties>
@@ -264,6 +266,29 @@
         <artifactId>cxf-rt-frontend-jaxrs</artifactId>
         <version>${cxf.version}</version>
       </dependency>
+
+
+      <dependency>
+        <groupId>com.fasterxml.jackson.core</groupId>
+        <artifactId>jackson-core</artifactId>
+        <version>${jackson.version}</version>
+      </dependency>
+      <dependency>
+        <groupId>com.fasterxml.jackson.core</groupId>
+        <artifactId>jackson-databind</artifactId>
+        <version>${jackson.version}</version>
+      </dependency>
+      <dependency>
+        <groupId>com.fasterxml.jackson.core</groupId>
+        <artifactId>jackson-annotations</artifactId>
+        <version>${jackson.version}</version>
+      </dependency>
+      <dependency>
+        <groupId>com.fasterxml.jackson.module</groupId>
+        <artifactId>jackson-module-scala_${scala.binary.version}</artifactId>
+        <version>${jackson.version}</version>
+      </dependency>
+
     </dependencies>
   </dependencyManagement>
 
