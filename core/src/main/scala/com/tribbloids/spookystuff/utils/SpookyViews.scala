@@ -127,6 +127,7 @@ abstract class SpookyViews extends CommonViews {
       seed(uuids, parallelismOpt, mustHaveNonEmptyPartitions = true)
     }
 
+    //TODO: this should be superseded by https://github.com/apache/spark/pull/22192
     def runEverywhere[T: ClassTag](alsoOnDriver: Boolean = true)(f: ((Int, UUID)) => T): Seq[T] = {
       val localFuture: Option[Future[T]] =
         if (alsoOnDriver) Some(Future[T] {
