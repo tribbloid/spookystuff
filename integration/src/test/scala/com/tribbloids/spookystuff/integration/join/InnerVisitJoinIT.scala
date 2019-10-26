@@ -2,7 +2,7 @@ package com.tribbloids.spookystuff.integration.join
 
 import com.tribbloids.spookystuff.actions.{Action, Visit}
 import com.tribbloids.spookystuff.dsl._
-import com.tribbloids.spookystuff.extractors.{Col, Extractor}
+import com.tribbloids.spookystuff.extractors.Col
 import com.tribbloids.spookystuff.integration.IntegrationFixture
 
 class InnerVisitJoinIT extends IntegrationFixture {

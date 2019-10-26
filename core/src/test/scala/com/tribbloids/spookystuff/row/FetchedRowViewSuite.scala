@@ -4,8 +4,6 @@ import com.tribbloids.spookystuff.actions.Wget
 import com.tribbloids.spookystuff.testutils.LocalPathDocsFixture
 import com.tribbloids.spookystuff.{dsl, SpookyEnvFixture}
 
-import scala.language.implicitConversions
-
 /**
   * Created by peng on 12/3/14.
   */
@@ -22,8 +20,8 @@ class FetchedRowViewSuite extends SpookyEnvFixture with LocalPathDocsFixture {
     val page1 = row.getOnlyDoc
     assert(page1.get === pages.head)
 
-    println(Wget(HTML_URL).toString())
-    val defaultName = Wget(HTML_URL).toString()
+    println(Wget(HTML_URL).toString)
+    val defaultName = Wget(HTML_URL).toString
     val page2 = row.getDoc(defaultName)
     assert(page2.get === pages.head)
   }

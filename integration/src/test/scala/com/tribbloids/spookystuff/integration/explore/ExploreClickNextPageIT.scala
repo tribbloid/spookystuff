@@ -3,8 +3,6 @@ package com.tribbloids.spookystuff.integration.explore
 import com.tribbloids.spookystuff.actions._
 import com.tribbloids.spookystuff.integration.IntegrationFixture
 
-import scala.concurrent.duration._
-
 /**
   * Created by peng on 12/10/14.
   */

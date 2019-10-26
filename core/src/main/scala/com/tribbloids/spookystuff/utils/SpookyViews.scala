@@ -16,7 +16,6 @@ import scala.collection.immutable.ListMap
 import scala.collection.{immutable, Map, TraversableLike}
 import scala.concurrent.duration.Duration
 import scala.concurrent.{Await, Future}
-import scala.language.implicitConversions
 import scala.reflect.ClassTag
 import scala.util.Random
 
