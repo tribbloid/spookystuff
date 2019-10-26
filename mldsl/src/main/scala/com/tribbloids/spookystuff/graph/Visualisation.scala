@@ -6,6 +6,7 @@ import com.github.mdr.ascii.layout.prefs.LayoutPrefsImpl
 import com.tribbloids.spookystuff.graph.Visualisation.Format
 import com.tribbloids.spookystuff.utils.CommonUtils
 
+import scala.collection.immutable.ListMap
 import scala.collection.mutable
 
 case class Visualisation[D <: Domain](
@@ -70,8 +71,14 @@ case class Visualisation[D <: Domain](
     def compileASCII(
         endWith: Seq[Element[D]]
     ): Graph[ElementView[D]#WFormat] = {
+      import scala.collection.JavaConverters._
 
-      val buffer = mutable.LinkedHashSet.empty[ElementView[D]#WFormat]
+      //      val buffer = mutable.LinkedHashSet.empty[ElementView[D]#WFormat]
+      val buffer = {
+        val base = new java.util.LinkedHashSet[ElementView[D]#WFormat]()
+        base.asScala
+      }
+
       val relationBuffer = mutable.LinkedHashSet.empty[(ElementView[D]#WFormat, ElementView[D]#WFormat)]
 
       for (elem <- endWith) {
@@ -83,7 +90,7 @@ case class Visualisation[D <: Domain](
           //          println(v.viewWFormat)
           //          val vv = v.children.map(_.view.element.dataStr)
 
-          val children = v.children.reverse
+          val children = v.children
 
           children.foreach { child =>
             buffer += child.viewWFormat
@@ -92,11 +99,24 @@ case class Visualisation[D <: Domain](
         }
       }
 
-//      buffer.foreach { v =>
-//        println(v)
-//      }
+      val bufferList = buffer.toList
 
-      val graph = Graph[ElementView[D]#WFormat](buffer.toSet, relationBuffer.toList)
+      val bufferSet = ListMap(bufferList.map(v => v -> Unit): _*)
+        .keySet
+
+      {
+        //TODO: don't remove! set ordering varies depending on scala versions
+        assert(
+          bufferSet.toList == bufferList,
+          (
+            bufferSet.toList.map(_.outer.orderedBy) ++
+              Seq("=====================") ++
+              bufferList.map(_.outer.orderedBy)
+          ).mkString("\n{{\n", "\n", "\n}}")
+        )
+      }
+
+      val graph = Graph[ElementView[D]#WFormat](bufferSet, relationBuffer.toList)
       graph
     }
 
@@ -109,7 +129,6 @@ case class Visualisation[D <: Domain](
       else {
         forwardStr
           .split('\n')
-          .reverse
           .mkString("\n")
           .map(Visualisation.flipChar)
       }

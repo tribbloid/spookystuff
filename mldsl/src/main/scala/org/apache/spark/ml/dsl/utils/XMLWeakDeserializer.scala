@@ -28,7 +28,7 @@ object XMLWeakDeserializer {
 
   trait ExceptionLike extends Throwable with Verbose {
 
-//    def metadata: ExceptionMetadata
+    //    def metadata: ExceptionMetadata
 
     override def getMessage: String = detailedStr
   }
@@ -46,14 +46,14 @@ object XMLWeakDeserializer {
 
     override def detail: String =
       s"""
-        |"METADATA": ${metadata.toJSON()}
-        |""".trim.stripMargin
+         |"METADATA": ${metadata.toJSON()}
+         |""".trim.stripMargin
   }
 
   case class UnrecoverableError(
       override val shortStr: String,
       cause: Throwable
-//      override val metadata: ExceptionMetadata
+      //      override val metadata: ExceptionMetadata
   ) extends Error
       with ExceptionLike {
 
@@ -103,11 +103,11 @@ abstract class XMLWeakDeserializer[T: Manifest] extends Serializer[T] {
         )
 
       case e: Exception =>
-//        throw new ParsingException(
-//          e.getMessage,
-//          e,
-//          metadata
-//        )
+        //        throw new ParsingException(
+        //          e.getMessage,
+        //          e,
+        //          metadata
+        //        )
         throw e
 
       case e: Throwable =>
@@ -160,9 +160,9 @@ object EmptyStringToEmptyObjectDeserializer extends XMLWeakDeserializer[Any] {
   override def _deserialize(implicit format: Formats): PartialFunction[(TypeInfo, JValue), Any] = Function.unlift {
 
     case (ti @ TypeInfo(cc, _), jv @ JString(str)) if !cc.isAssignableFrom(classOf[String]) && str.trim.isEmpty =>
-//      wrapException(ti, jv, format) {
+      //      wrapException(ti, jv, format) {
       Some(extract(JObject(), ti)(format))
-//      }
+    //      }
 
     case _ => None
   }
@@ -208,13 +208,13 @@ object ElementToArrayDeserializer extends XMLWeakDeserializer[Any] {
   }
 
   def extractInner(ti: TypeInfo, jv: JValue, format: Formats): Option[Any] = {
-//    wrapException(ti, jv, format) {
+    //    wrapException(ti, jv, format) {
     val result = jv match {
       case JNothing => None
       case _        => Some(extract(jv, firstTypeArg(ti))(format))
     }
     result
-//    }
+    //    }
   }
 
   def firstTypeArg(ti: TypeInfo): ScalaType = {
