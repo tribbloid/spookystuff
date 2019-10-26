@@ -92,9 +92,9 @@ case class Visualisation[D <: Domain](
         }
       }
 
-      buffer.foreach { v =>
-        println(v)
-      }
+//      buffer.foreach { v =>
+//        println(v)
+//      }
 
       val graph = Graph[ElementView[D]#WFormat](buffer.toSet, relationBuffer.toList)
       graph

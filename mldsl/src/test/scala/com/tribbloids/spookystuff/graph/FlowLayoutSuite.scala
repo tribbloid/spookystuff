@@ -56,98 +56,101 @@ class FlowLayoutSuite extends FunSpecx {
 
   }
 
-  it("node >>> node") {
+  describe("acyclic") {
 
-    val f1: Op = Some("ABC")
-    val f2: Op = Some("DEF")
+    it("node >>> node") {
 
-    val linked = f1 >>> f2
-    linked.visualise().show() shouldBe
-      """
-        |>>- -->
-        |v (TAIL>>-) [ ∅ ]
-        |+- ABC
-        |   +- v [ ∅ ]
-        |      +- DEF
-        |         +- v (HEAD) [ ∅ ]
-        |<-- -<<
-        |v (TAIL-<<) [ ∅ ]
-        |+- DEF
-        |   +- v (HEAD) [ ∅ ]
+      val f1: Op = Some("ABC")
+      val f2: Op = Some("DEF")
+
+      val linked = f1 >>> f2
+      linked.visualise().show() shouldBe
+        """
+          |>>- -->
+          |v (TAIL>>-) [ ∅ ]
+          |+- ABC
+          |   +- v [ ∅ ]
+          |      +- DEF
+          |         +- v (HEAD) [ ∅ ]
+          |<-- -<<
+          |v (TAIL-<<) [ ∅ ]
+          |+- DEF
+          |   +- v (HEAD) [ ∅ ]
       """.stripMargin
 
-    linked
-      .visualise()
-      .show(asciiArt = true) shouldBe
-      """
-        |    ┌───────────────┐
-        |    │(TAIL>>-) [ ∅ ]│
-        |    └───────┬───────┘
-        |            │
-        |            v
-        |          ┌───┐
-        |          │ABC│
-        |          └─┬─┘
-        |            │
-        |    ┌───────┘
-        |    │
-        |    v
-        | ┌─────┐ ┌───────────────┐
-        | │[ ∅ ]│ │(TAIL-<<) [ ∅ ]│
-        | └──┬──┘ └───┬───────────┘
-        |    │        │
-        |    └──────┐ │
-        |           │ │
-        |           v v
-        |         ┌─────┐
-        |         │ DEF │
-        |         └───┬─┘
-        |             │
-        |             v
-        |      ┌────────────┐
-        |      │(HEAD) [ ∅ ]│
-        |      └────────────┘
+      linked
+        .visualise()
+        .show(asciiArt = true) shouldBe
+        """
+          |    ┌───────────────┐
+          |    │(TAIL>>-) [ ∅ ]│
+          |    └───────┬───────┘
+          |            │
+          |            v
+          |          ┌───┐
+          |          │ABC│
+          |          └─┬─┘
+          |            │
+          |    ┌───────┘
+          |    │
+          |    v
+          | ┌─────┐ ┌───────────────┐
+          | │[ ∅ ]│ │(TAIL-<<) [ ∅ ]│
+          | └──┬──┘ └───┬───────────┘
+          |    │        │
+          |    └──────┐ │
+          |           │ │
+          |           v v
+          |         ┌─────┐
+          |         │ DEF │
+          |         └───┬─┘
+          |             │
+          |             v
+          |      ┌────────────┐
+          |      │(HEAD) [ ∅ ]│
+          |      └────────────┘
       """.stripMargin
+    }
+
+    it("node >>> edge >>> node") {
+
+      val f1: Op = Some("ABC")
+      val e1: Op = Edge(Some("edge"))
+      val f2: Op = Some("DEF")
+
+      val linked = f1 >>> e1 >>> f2
+      linked.visualise().show() shouldBe
+        """
+          |>>- -->
+          |v (TAIL>>-) [ ∅ ]
+          |+- ABC
+          |   +- v [ edge ]
+          |      +- DEF
+          |         +- v (HEAD) [ ∅ ]
+          |<-- -<<
+          |v (TAIL-<<) [ ∅ ]
+          |+- DEF
+          |   +- v (HEAD) [ ∅ ]
+      """.stripMargin
+    }
+
+    it("detached edge >>> detached edge") {
+
+      val f1: Op = Edge(Some("ABC"))
+      val f2: Op = Edge(Some("DEF"))
+
+      val linked = f1 >>> f2
+      linked.visualise().show() shouldBe
+        """
+          |>>- -->
+          |v (HEAD)(TAIL>>- -<<) [ ABCDEF ]
+          |<-- -<<
+          |v (HEAD)(TAIL>>- -<<) [ ABCDEF ]
+      """.stripMargin
+    }
   }
 
-  it("node >>> edge >>> node") {
-
-    val f1: Op = Some("ABC")
-    val e1: Op = Edge(Some("edge"))
-    val f2: Op = Some("DEF")
-
-    val linked = f1 >>> e1 >>> f2
-    linked.visualise().show() shouldBe
-      """
-        |>>- -->
-        |v (TAIL>>-) [ ∅ ]
-        |+- ABC
-        |   +- v [ edge ]
-        |      +- DEF
-        |         +- v (HEAD) [ ∅ ]
-        |<-- -<<
-        |v (TAIL-<<) [ ∅ ]
-        |+- DEF
-        |   +- v (HEAD) [ ∅ ]
-      """.stripMargin
-  }
-
-  it("detached edge >>> detached edge") {
-
-    val f1: Op = Edge(Some("ABC"))
-    val f2: Op = Edge(Some("DEF"))
-
-    val linked = f1 >>> f2
-    linked.visualise().show() shouldBe
-      """
-        |>>- -->
-        |v (HEAD)(TAIL>>- -<<) [ ABCDEF ]
-        |<-- -<<
-        |v (HEAD)(TAIL>>- -<<) [ ABCDEF ]
-      """.stripMargin
-  }
-
-  describe("=> cyclic graph") {
+  describe("cyclic") {
 
     it("node >>> itself") {
 
@@ -302,26 +305,29 @@ class FlowLayoutSuite extends FunSpecx {
     }
   }
 
-  it("node >>> node <<< node") {
+  describe("bidirectional") {
 
-    val n1: Op = Node(Some("A"))
-    val n2: Op = Some("B")
-    val n3: Op = Some("C")
+    it("node >>> node <<< node") {
 
-    (n1 >>> n2 <<< n3).visualise().show() shouldBe
-      """
-        |>>- -->
-        |v (TAIL>>-) [ ∅ ]
-        |+- A
-        |   +- v [ ∅ ]
-        |      +- B
-        |         +- v (HEAD) [ ∅ ]
-        |<-- -<<
-        |v (TAIL-<<) [ ∅ ]
-        |+- C
-        |   +- v [ ∅ ]
-        |      +- B
-        |         +- v (HEAD) [ ∅ ]
+      val n1: Op = Node(Some("A"))
+      val n2: Op = Some("B")
+      val n3: Op = Some("C")
+
+      (n1 >>> n2 <<< n3).visualise().show() shouldBe
+        """
+          |>>- -->
+          |v (TAIL>>-) [ ∅ ]
+          |+- A
+          |   +- v [ ∅ ]
+          |      +- B
+          |         +- v (HEAD) [ ∅ ]
+          |<-- -<<
+          |v (TAIL-<<) [ ∅ ]
+          |+- C
+          |   +- v [ ∅ ]
+          |      +- B
+          |         +- v (HEAD) [ ∅ ]
       """.stripMargin
+    }
   }
 }
