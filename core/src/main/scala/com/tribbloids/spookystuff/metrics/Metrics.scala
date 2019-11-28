@@ -18,7 +18,7 @@ object Metrics {
 
   trait CanBuildFrom[T1, IN <: AccumulatorV2[_, _]] extends (T1 => Acc[IN])
   trait BuildLong[T] extends CanBuildFrom[T, LongAccumulator] {
-    override def apply(v1: T) = new Acc(new LongAccumulator()) {
+    override def apply(v1: T): Acc[LongAccumulator] = new Acc(new LongAccumulator()) {
       override def +=(v: Number): Unit = {
         val vv = v.longValue()
         self.add(vv)
@@ -26,7 +26,7 @@ object Metrics {
     }
   }
   trait BuildDouble[T] extends CanBuildFrom[T, DoubleAccumulator] {
-    override def apply(v1: T) = new Acc(new DoubleAccumulator()) {
+    override def apply(v1: T): Acc[DoubleAccumulator] = new Acc(new DoubleAccumulator()) {
       override def +=(v: Number): Unit = {
         val vv = v.doubleValue()
         self.add(vv)

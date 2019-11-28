@@ -9,7 +9,7 @@ import com.esotericsoftware.kryo.{Kryo, KryoSerializable}
   */
 trait NOTSerializable extends KryoSerializable with Serializable {
 
-  lazy val error = new NotSerializableException(s"${this.getClass.getCanonicalName} is NOT serializable")
+  private lazy val error = new NotSerializableException(s"${this.getClass.getCanonicalName} is NOT serializable")
 
   private val _serDeHook = SerDeHook({ _ =>
     throw error

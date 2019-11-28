@@ -1,6 +1,6 @@
 package com.tribbloids.spookystuff.uav.telemetry.mavlink
 
-import java.util.concurrent.{Executors, TimeUnit}
+import java.util.concurrent.{ExecutorService, Executors, TimeUnit}
 
 import com.tribbloids.spookystuff.python.ref.{BindedRef, CaseInstanceRef}
 import com.tribbloids.spookystuff.session.{ConflictDetection, PythonDriver}
@@ -8,13 +8,13 @@ import com.tribbloids.spookystuff.uav.{UAVConf, UAVException}
 import com.tribbloids.spookystuff.utils.FutureInterruptable
 import com.tribbloids.spookystuff.utils.lifespan.Cleanable
 
-import scala.concurrent.{Await, ExecutionContext, TimeoutException}
+import scala.concurrent.{Await, ExecutionContext, ExecutionContextExecutor, TimeoutException}
 import scala.util.{Failure, Success, Try}
 
 object MAVProxy {
 
-  val threadPool = Executors.newCachedThreadPool()
-  val executionContext = ExecutionContext.fromExecutor(threadPool)
+  val threadPool: ExecutorService = Executors.newCachedThreadPool()
+  val executionContext: ExecutionContextExecutor = ExecutionContext.fromExecutor(threadPool)
 }
 
 /**

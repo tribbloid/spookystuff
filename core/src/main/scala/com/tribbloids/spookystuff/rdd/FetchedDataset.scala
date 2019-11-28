@@ -124,20 +124,22 @@ case class FetchedDataset(
 
     sorted
   }
-  def toMapRDD(sort: Boolean = false): RDD[Map[String, Any]] = sparkContext.withJob(s"toMapRDD(sort=$sort)") {
-    {
-      if (!sort) dataRDD
-      else dataRDDSorted
-    }.map(_.toMap)
-  }
+  def toMapRDD(sort: Boolean = false): RDD[Map[String, Any]] =
+    sparkContext.withJob("toMapRDD", s"toMapRDD(sort=$sort)") {
+      {
+        if (!sort) dataRDD
+        else dataRDDSorted
+      }.map(_.toMap)
+    }
 
-  def toJSON(sort: Boolean = false): RDD[String] = sparkContext.withJob(s"toJSON(sort=$sort)") {
+  def toJSON(sort: Boolean = false): RDD[String] =
+    sparkContext.withJob("toMapRDD", s"toJSON(sort=$sort)") {
 
-    {
-      if (!sort) dataRDD
-      else dataRDDSorted
-    }.map(_.compactJSON)
-  }
+      {
+        if (!sort) dataRDD
+        else dataRDDSorted
+      }.map(_.compactJSON)
+    }
 
   protected def toInternalRowRDD(
       sort: Boolean = false,
@@ -180,7 +182,7 @@ case class FetchedDataset(
   }
 
   def toDF(sort: Boolean = false): DataFrame =
-    sparkContext.withJob(s"toDF(sort=$sort)") {
+    sparkContext.withJob("toDF", s"toDF(sort=$sort)") {
 
       val filteredSchema: SpookySchema = schema.filterFields()
       val sqlSchema: StructType = filteredSchema.structType

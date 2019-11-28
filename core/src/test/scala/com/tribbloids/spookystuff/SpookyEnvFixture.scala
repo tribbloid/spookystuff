@@ -14,7 +14,7 @@ import org.apache.spark.SparkContext
 import org.apache.spark.sql.SQLContext
 import org.jutils.jprocesses.JProcesses
 import org.jutils.jprocesses.model.ProcessInfo
-import org.scalatest.{BeforeAndAfter, BeforeAndAfterAll, Retries}
+import org.scalatest.{BeforeAndAfterAll, BeforeAndAfterEach, Outcome, Retries}
 
 import scala.language.implicitConversions
 
@@ -88,51 +88,68 @@ object SpookyEnvFixture {
       )
     }
   }
-}
 
-trait SpookyEnv {
+  trait EnvBase {
 
-  def sc: SparkContext = TestHelper.TestSC
-  def sql: SQLContext = TestHelper.TestSQL
+    def sc: SparkContext = TestHelper.TestSC
+    def sql: SQLContext = TestHelper.TestSQL
 
-  lazy val driverFactory: DriverFactory[CleanWebDriver] = SpookyConf.TEST_WEBDRIVER_FACTORY
+    lazy val driverFactory: DriverFactory[CleanWebDriver] = SpookyConf.TEST_WEBDRIVER_FACTORY
 
-  @transient lazy val spookyConf = new SpookyConf(
-    webDriverFactory = driverFactory
-  )
-  var _spooky: SpookyContext = _
-  def spooky = {
-    Option(_spooky)
-      .getOrElse {
-        val result: SpookyContext = reloadSpooky
-        result
-      }
+    @transient lazy val spookyConf = new SpookyConf(
+      webDriverFactory = driverFactory
+    )
+    var _spooky: SpookyContext = _
+    def spooky: SpookyContext = {
+      Option(_spooky)
+        .getOrElse {
+          val result: SpookyContext = reloadSpooky
+          result
+        }
+    }
+
+    def reloadSpooky: SpookyContext = {
+      val sql = this.sql
+      val result = new SpookyContext(sql, spookyConf)
+      _spooky = result
+      result
+    }
   }
 
-  def reloadSpooky: SpookyContext = {
-    val sql = this.sql
-    val result = new SpookyContext(sql, spookyConf)
-    _spooky = result
-    result
+  abstract class DescribeJobs extends SpookyEnvFixture {
+
+    import com.tribbloids.spookystuff.utils.SpookyViews._
+
+    def it[T](description: String)(fn: => T): Unit = {
+
+      val _it = new ItWord
+      _it(description) {
+
+        sc.withJob(description) {
+          fn
+        }
+      }
+
+    }
   }
 }
 
 abstract class SpookyEnvFixture
     extends FunSpecx
-    with SpookyEnv
+    with SpookyEnvFixture.EnvBase
     with RemoteDocsFixture
-    with BeforeAndAfter
+    with BeforeAndAfterEach
     with BeforeAndAfterAll
     with Retries {
 
-  val exitingPIDs = SpookyEnvFixture.getProcesses.map(_.getPid).toSet
+  val exitingPIDs: Set[String] = SpookyEnvFixture.getProcesses.map(_.getPid).toSet
 
   def parallelism: Int = sc.defaultParallelism
 
-  lazy val defaultEC = SpookyExecutionContext(spooky)
-  lazy val defaultSchema = SpookySchema(defaultEC)
+  lazy val defaultEC: SpookyExecutionContext = SpookyExecutionContext(spooky)
+  lazy val defaultSchema: SpookySchema = SpookySchema(defaultEC)
 
-  def emptySchema = SpookySchema(SpookyExecutionContext(spooky))
+  def emptySchema: SpookySchema = SpookySchema(SpookyExecutionContext(spooky))
 
   implicit def withSchema(row: SquashedFetchedRow): SquashedFetchedRow#WSchema = row.WSchema(emptySchema)
   implicit def extractor2Resolved[T, R](extractor: Alias[T, R]): GenResolved[T, R] = GenResolved(
@@ -146,7 +163,7 @@ abstract class SpookyEnvFixture
     extractor.resolve(emptySchema)
   implicit def doc2Root(doc: Doc): Unstructured = doc.root
 
-  override def withFixture(test: NoArgTest) = {
+  override def withFixture(test: NoArgTest): Outcome = {
     if (isRetryable(test))
       CommonUtils.retry(4) { super.withFixture(test) } else
       super.withFixture(test)
@@ -197,19 +214,7 @@ abstract class SpookyEnvFixture
     super.afterAll()
   }
 
-  before {
-    // bypass java.lang.NullPointerException at org.apache.spark.broadcast.TorrentBroadcast$.unpersist(TorrentBroadcast.scala:228)
-    // TODO: clean up after fix
-    CommonUtils.retry(3, 1000) {
-      setUp()
-    }
-  }
-
-  after {
-    tearDown()
-  }
-
-  def setUp(): Unit = {
+  override def beforeEach(): Unit = CommonUtils.retry(3, 1000) {
     //    SpookyEnvFixture.cleanDriverInstances()
     spooky._configurations = submodules
     spooky.spookyMetrics.zero()
@@ -229,7 +234,7 @@ abstract class SpookyEnvFixture
     )
   }
 
-  def tearDown(): Unit = {
+  override def afterEach(): Unit = {
     val spooky = this.spooky
     sc.runEverywhere() { _ =>
       SpookyEnvFixture.instancesShouldBeClean(spooky)

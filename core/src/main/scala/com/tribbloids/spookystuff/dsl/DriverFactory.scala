@@ -193,11 +193,11 @@ object DriverFactories {
     // TODO: separate win/mac/linux32/linux64 versions
     final val HTTP_RESOURCE_URI = "https://s3-us-west-1.amazonaws.com/spooky-bin/phantomjs-linux/phantomjs"
 
-    final def uri2fileName(path: String) = path.split("/").last
+    final def uri2fileName(path: String): String = path.split("/").last
 
-    final def DEFAULT_PATH = System.getProperty("user.home") \\ ".spookystuff" \\ "phantomjs"
+    final def DEFAULT_PATH: String = System.getProperty("user.home") \\ ".spookystuff" \\ "phantomjs"
 
-    def verifyExe(pathStr: String) = Try {
+    def verifyExe(pathStr: String): Try[String] = Try {
       val isExists = LocalResolver.isAlreadyExisting(pathStr) { v =>
         v.getLenth >= 1024 * 1024 * 60
       }
@@ -237,7 +237,7 @@ object DriverFactories {
       }
     }
 
-    def copySparkFile2Local(sparkFile: String, dstStr: String) = {
+    def copySparkFile2Local(sparkFile: String, dstStr: String): Option[Any] = {
 
       val srcStr = SparkFiles.get(sparkFile)
       val srcFile = new File(srcStr)

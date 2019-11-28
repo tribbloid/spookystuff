@@ -18,14 +18,14 @@ class LinkFactoriesSuite extends SpookyEnvFixture {
     result
   }
 
-  override def setUp(): Unit = {
-    super.setUp()
+  override def beforeEach(): Unit = {
+    super.beforeEach()
     Link.registered.values.foreach(_.tryClean())
   }
 
-  override def tearDown(): Unit = {
+  override def afterEach(): Unit = {
     assert(Link.registered.size == 1) // ensure that canCreate won't leave zombie link(s)
-    super.tearDown()
+    super.afterEach()
   }
 
   it("NoProxy can create link without proxy") {

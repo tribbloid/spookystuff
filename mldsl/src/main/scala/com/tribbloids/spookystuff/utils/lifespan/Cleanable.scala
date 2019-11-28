@@ -54,7 +54,7 @@ object Cleanable {
 
   def cleanSweepAll(
       condition: Cleanable => Boolean = _ => true
-  ) = {
+  ): Unit = {
 
     uncleaned.keys.toList
       .foreach { tt =>
@@ -109,7 +109,7 @@ trait Cleanable {
   def logPrefix: String = {
     s"$trackingNumber @ ${lifespan.toString} \t| "
   }
-  protected def logPrefixed(s: String) = {
+  protected def logPrefixed(s: String): Unit = {
     LoggerFactory.getLogger(this.getClass).debug(s"$logPrefix $s")
   }
 
@@ -174,5 +174,5 @@ trait Cleanable {
     }
   }
 
-  override protected def finalize() = tryClean()
+  override protected def finalize(): Unit = tryClean()
 }

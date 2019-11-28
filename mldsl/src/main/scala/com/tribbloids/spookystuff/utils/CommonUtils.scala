@@ -18,18 +18,18 @@ abstract class CommonUtils {
   import scala.concurrent.duration._
 
   lazy val scalaVersion: String = scala.util.Properties.versionNumberString
-  lazy val scalaBinaryVersion = scalaVersion.split('.').slice(0, 2).mkString(".")
+  lazy val scalaBinaryVersion: String = scalaVersion.split('.').slice(0, 2).mkString(".")
 
-  def numDriverCores = {
+  def numLocalCores: Int = {
     val result = Runtime.getRuntime.availableProcessors()
     assert(result > 0)
     result
   }
 
-  def qualifiedName(separator: String)(parts: String*) = {
+  def qualifiedName(separator: String)(parts: String*): String = {
     parts.flatMap(v => Option(v)).reduceLeftOption(addSuffix(separator, _) + _).orNull
   }
-  def addSuffix(suffix: String, part: String) = {
+  def addSuffix(suffix: String, part: String): String = {
     if (part.endsWith(suffix)) part
     else part + suffix
   }
@@ -53,7 +53,7 @@ abstract class CommonUtils {
   // TODO: remove, use object API everywhere.
   def retry: RetryFixedInterval.type = RetryFixedInterval
 
-  protected def _callerShowStr = {
+  protected def _callerShowStr: String = {
     val result = FlowUtils
       .Caller(
         exclude = Seq(classOf[CommonUtils])
@@ -112,7 +112,8 @@ abstract class CommonUtils {
   def debugCPResource(
       classpathFiles: Seq[String] = List(
         "log4j.properties",
-        "rootkey.csv"
+        "rootkey.csv",
+        ".rootkey.csv"
       )
   ): Unit = {
 
@@ -141,7 +142,7 @@ abstract class CommonUtils {
     (result, endTime - startTime)
   }
 
-  def randomSuffix = Math.abs(Random.nextLong())
+  def randomSuffix: Long = Math.abs(Random.nextLong())
 
   def randomChars: String = {
     val len = Random.nextInt(128)

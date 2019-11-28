@@ -1,7 +1,8 @@
 package com.tribbloids.spookystuff.integration
 
-import com.tribbloids.spookystuff.SpookyEnv
+import com.tribbloids.spookystuff.SpookyEnvFixture
 import com.tribbloids.spookystuff.actions.{Trace, Wget}
+import com.tribbloids.spookystuff.extractors.{FR, GenExtractor}
 import com.tribbloids.spookystuff.rdd.FetchedDataset
 import com.tribbloids.spookystuff.utils.CommonConst
 
@@ -10,26 +11,26 @@ import com.tribbloids.spookystuff.utils.CommonConst
   * may use wayback machine:
   * https://web.archive.org/web/20170707111752/http://webscraper.io:80/test-sites
   */
-object SnapshotRunner extends SpookyEnv {
+object SnapshotRunner extends SpookyEnvFixture.EnvBase {
 
   val SPLITTER = "/http://webscraper.io(:80)?"
   val SPLITTER_MIN = "/http://webscraper.io"
 
   import scala.concurrent.duration._
-  val cooldown = Some(5.seconds)
+  val coolDown: Some[FiniteDuration] = Some(5.seconds)
 
   implicit class FDSView(fd: FetchedDataset) {
 
     import com.tribbloids.spookystuff.dsl.DSL._
     import com.tribbloids.spookystuff.utils.CommonViews.StringView
 
-    val pathEncoding = S.uri
+    val pathEncoding: GenExtractor[FR, String] = S.uri
       .andFn { uri =>
         val base = uri.split(SPLITTER).last
         CommonConst.USER_TEMP_DIR \\ "test-sites" \\ base
       }
 
-    def save() = {
+    def save(): FetchedDataset = {
 
       fd.persist()
       val originalVersion = fd.wget(
@@ -44,7 +45,7 @@ object SnapshotRunner extends SpookyEnv {
             }
           }
         ),
-        cooldown = cooldown
+        cooldown = coolDown
       )
       originalVersion
         .savePages_!(pathEncoding, overwrite = true)
@@ -76,11 +77,11 @@ object SnapshotRunner extends SpookyEnv {
         "https://web.archive.org/web/20170707111752/http://webscraper.io:80/test-sites"
       )
       .save()
-      .wgetJoin(S"h2.site-heading a", cooldown = cooldown, keyBy = keyBy)
+      .wgetJoin(S"h2.site-heading a", cooldown = coolDown, keyBy = keyBy)
       .save()
-      .wgetExplore(S"div.sidebar-nav a", cooldown = cooldown, keyBy = keyBy)
+      .wgetExplore(S"div.sidebar-nav a", cooldown = coolDown, keyBy = keyBy)
       .save()
-      .wgetExplore(S"ul.pagination a", cooldown = cooldown, keyBy = keyBy)
+      .wgetExplore(S"ul.pagination a", cooldown = coolDown, keyBy = keyBy)
       .save()
   }
 }

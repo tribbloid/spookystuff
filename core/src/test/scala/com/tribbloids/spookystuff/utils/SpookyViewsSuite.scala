@@ -81,7 +81,7 @@ class SpookyViewsSuite extends SpookyEnvFixture {
     assert(Array(1, 2.2, "a").filterByType[String].toSeq == Seq("a"))
   }
 
-  val nullStr = null: String
+  val nullStr: String = null: String
   it(":/ can handle null component") {
 
     assert(nullStr :/ nullStr :/ "abc" :/ null :/ null == "abc")
@@ -226,7 +226,7 @@ class SpookyViewsSuite extends SpookyEnvFixture {
     assert(interpolated == "ORAReplaced")
   }
 
-  val special = Seq(
+  val special: Seq[String] = Seq(
     "$",
     "\\$",
     "\\\\$"

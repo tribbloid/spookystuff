@@ -16,8 +16,8 @@ class CleanableSuite extends SpookyEnvFixture {
 
   import com.tribbloids.spookystuff.utils.SpookyViews._
 
-  override def setUp(): Unit = {
-    super.setUp()
+  override def beforeEach(): Unit = {
+    super.beforeEach()
     sc.runEverywhere(alsoOnDriver = false) { _ =>
       Cleanable.cleanSweepAll {
         case _: DummyCleanable => true

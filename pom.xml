@@ -237,6 +237,12 @@
   <dependencyManagement>
     <dependencies>
 
+      <dependency>
+        <groupId>org.scalatest</groupId>
+        <artifactId>scalatest_${scala.binary.version}</artifactId>
+        <version>3.0.8</version>
+      </dependency>
+
       <!--DON'T DELETE! guava has too many versions and a ground truth has to be setup.-->
       <dependency>
         <groupId>com.google.guava</groupId>
@@ -247,7 +253,7 @@
       <dependency>
         <groupId>org.apache.commons</groupId>
         <artifactId>commons-compress</artifactId>
-        <version>1.19</version>
+        <version>1.18</version>
       </dependency>
 
       <dependency>
@@ -322,7 +328,6 @@
     <dependency>
       <groupId>org.scalatest</groupId>
       <artifactId>scalatest_${scala.binary.version}</artifactId>
-      <version>3.0.4</version>
       <scope>test</scope>
     </dependency>
     <!-- https://mvnrepository.com/artifact/com.holdenkarau/spark-testing-base -->

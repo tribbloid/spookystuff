@@ -1,12 +1,16 @@
 package com.tribbloids.spookystuff.utils
 
 import java.util.UUID
+import java.util.concurrent.ArrayBlockingQueue
 
+import com.tribbloids.spookystuff.execution.ScratchRDDs
 import com.tribbloids.spookystuff.row._
 import com.tribbloids.spookystuff.utils.CachingUtils.ConcurrentMap
 import com.tribbloids.spookystuff.utils.locality.PartitionIdPassthrough
 import org.apache.spark.rdd.RDD
+import org.apache.spark.spookystuf.rdd.NarrowDispersedRDD
 import org.apache.spark.sql.DataFrame
+import org.apache.spark.sql.utils.SparkHelper
 import org.apache.spark.storage.{RDDInfo, StorageLevel}
 import org.apache.spark.{HashPartitioner, SparkContext, TaskContext}
 import org.slf4j.LoggerFactory
@@ -15,9 +19,9 @@ import scala.collection.generic.CanBuildFrom
 import scala.collection.immutable.ListMap
 import scala.collection.{immutable, Map, TraversableLike}
 import scala.concurrent.duration.Duration
-import scala.concurrent.{Await, Future}
+import scala.concurrent.{Await, ExecutionContext, Future}
 import scala.reflect.ClassTag
-import scala.util.Random
+import scala.util.{Failure, Random, Success, Try}
 
 /**
   * Created by peng on 11/7/14.
@@ -38,23 +42,30 @@ object SpookyViewsSingleton {
 
   // large enough such that all idle threads has a chance to pick up >1 partition
   val REPLICATING_FACTOR = 16
+
 }
 
 abstract class SpookyViews extends CommonViews {
 
   import SpookyViewsSingleton._
-  import scala.concurrent.ExecutionContext.Implicits.global
 
   implicit class SparkContextView(val self: SparkContext) {
 
-    def withJob[T](description: String)(fn: T): T = {
+    // Test is rare, how to make sure that it is working
+    def withJob[T](description: String = null, groupID: String = null)(fn: => T): T = {
 
-      val oldDescription = self.getLocalProperty(SPARK_JOB_DESCRIPTION)
-      if (oldDescription == null) self.setJobDescription(description)
-      else self.setJobDescription(oldDescription + " > " + description)
+      val old = SparkLocalProperties(self)
+
+      val _description =
+        if (old.description == null) description
+        else old.description + " > " + description
+
+      self.setJobGroup(groupID, _description)
 
       val result: T = fn
-      self.setJobGroup(null, oldDescription)
+
+      self.setJobGroup(old.groupID, old.description)
+
       result
     }
 
@@ -131,7 +142,7 @@ abstract class SpookyViews extends CommonViews {
       val localFuture: Option[Future[T]] =
         if (alsoOnDriver) Some(Future[T] {
           f(-1 -> UUID.randomUUID())
-        })
+        }(ExecutionContext.global))
         else {
           None
         }
@@ -163,7 +174,9 @@ abstract class SpookyViews extends CommonViews {
     //    }
   }
 
-  implicit class RDDView[T](val self: RDD[T]) {
+  implicit class RDDView[T](val self: RDD[T]) extends RDDViewBase[T] {
+
+    def sc: SparkContext = self.sparkContext
 
     def collectPerPartition: Array[List[T]] =
       self
@@ -182,7 +195,7 @@ abstract class SpookyViews extends CommonViews {
     //TODO: this is the first implementation, simple but may not the most efficient
     def multiPassFlatMap[U: ClassTag](f: T => Option[TraversableOnce[U]]): RDD[U] = {
 
-      val counter = self.sparkContext.longAccumulator
+      val counter = sc.longAccumulator
       var halfDone: RDD[Either[T, TraversableOnce[U]]] = self.map(v => Left(v))
 
       while (true) {
@@ -257,7 +270,7 @@ abstract class SpookyViews extends CommonViews {
     //    Unit
     //  }
 
-    def injectPassthroughPartitioner(implicit ev: ClassTag[T]): RDD[(Int, T)] = {
+    def injectPassthroughPartitioner: RDD[(Int, T)] = {
 
       val withPID = self.map(v => TaskContext.get().partitionId() -> v)
       val result = withPID.partitionBy(new PartitionIdPassthrough(withPID.partitions.length))
@@ -265,7 +278,7 @@ abstract class SpookyViews extends CommonViews {
     }
 
     def storageInfo: RDDInfo = {
-      val rddInfos = self.sparkContext.getRDDStorageInfo
+      val rddInfos = sc.getRDDStorageInfo
       rddInfos.find(_.id == self.id).get
     }
 
@@ -278,7 +291,7 @@ abstract class SpookyViews extends CommonViews {
       assert(self.isEmpty())
     }
 
-    def shufflePartitions(implicit ev: ClassTag[T]): RDD[T] = {
+    def shufflePartitions: RDD[T] = {
 
       val randomKeyed: RDD[(Long, T)] = self.keyBy(_ => Random.nextLong())
       val shuffled = randomKeyed.partitionBy(new HashPartitioner(self.partitions.length))
@@ -335,6 +348,62 @@ abstract class SpookyViews extends CommonViews {
         }
       }
     }
+
+    case class Disperse(
+        pSizeGen: Int => Long = _ => Long.MaxValue,
+        scratchRDD: ScratchRDDs = ScratchRDDs()
+    ) {
+
+      def asRDD(numPartitions: Int): RDD[T] = {
+
+        val result = new NarrowDispersedRDD(
+          self,
+          numPartitions,
+          NarrowDispersedRDD.ByRange(pSizeGen)
+        )
+        result
+      }
+    }
+
+    def _toLocalIteratorPreemptively(capacity: Int)(
+        implicit exeCtx: ExecutionContext = PartitionExecution.exeCtx
+    ): Iterator[Array[T]] = SparkHelper.withScope(sc) {
+      val executions = self.partitions.indices.map { ii =>
+        PartitionExecution(self, ii)
+      }
+
+      val buffer = new ArrayBlockingQueue[Try[PartitionExecution[T]]](capacity)
+
+      val p = SparkLocalProperties(self.sparkContext)
+
+      Future {
+
+        self.sparkContext.setJobGroup(p.groupID, p.description)
+
+        sc.withJob("toLocalIteratorPreemptively") {
+
+          executions.foreach { exe =>
+            buffer.put(Success(exe)) // may be blocking due to capacity
+            exe.eager // non-blocking
+          }
+        }
+      }.onFailure {
+        case e: Throwable =>
+          buffer.put(Failure(e))
+      }
+
+      self.partitions.indices.toIterator.map { _ =>
+        val exe = buffer.take().get
+        exe.AsArray.get
+      }
+    }
+
+    def toLocalIteratorPreemptively(capacity: Int)(
+        implicit exeCtx: ExecutionContext = PartitionExecution.exeCtx
+    ): Iterator[T] = {
+
+      _toLocalIteratorPreemptively(capacity).flatten
+    }
   }
 
   implicit class StringRDDView(val self: RDD[String]) {
@@ -353,7 +422,7 @@ abstract class SpookyViews extends CommonViews {
       }
     }
 
-    def tsvToMap(headerRow: String) = csvToMap(headerRow, "\t")
+    def tsvToMap(headerRow: String): RDD[Map[String, String]] = csvToMap(headerRow, "\t")
   }
 
   implicit class PairRDDView[K: ClassTag, V: ClassTag](val self: RDD[(K, V)]) {
@@ -364,12 +433,12 @@ abstract class SpookyViews extends CommonViews {
     //    def logicalCombinationsByKey[S](
     //                                     other: RDD[(K, V)])(
     //                                     innerReducer: (V, V) => V)(
-    //                                     staging: RDD[(K, (Option[V], Option[V]))] => S
+    //                                     staging: RDD[(K, (Option[T], Option[T]))] => S
     //                                     ): (RDD[(K, V)], RDD[(K, (V, V))], RDD[(K, V)], S) = {
     //
     //      val cogrouped = self.cogroup(other)
     //
-    //      val mixed: RDD[(K, (Option[V], Option[V]))] = cogrouped.mapValues{
+    //      val mixed: RDD[(K, (Option[T], Option[T]))] = cogrouped.mapValues{
     //        tuple =>
     //          val leftOption = tuple._1.reduceLeftOption(innerReducer)
     //          val rightOption = tuple._2.reduceLeftOption(innerReducer)
@@ -430,7 +499,7 @@ abstract class SpookyViews extends CommonViews {
     //      */
     //    def genJoin[V2: ClassTag](
     //                               other: RDD[(K, V2)],
-    //                               cogroup: RDD[(K, V2)] => RDD[(K, (Iterable[V], Iterable[V2]))] = {
+    //                               cogroup: RDD[(K, V2)] => RDD[(K, (Iterable[T], Iterable[V2]))] = {
     //                                 v =>
     //                                   this.broadcastCogroup[V2](v)
     //                               }

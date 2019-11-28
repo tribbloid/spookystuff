@@ -56,8 +56,8 @@ trait UAVFixture extends SpookyEnvFixture {
 
   def routing: Routing
 
-  override def setUp(): Unit = {
-    super.setUp()
+  override def beforeEach(): Unit = {
+    super.beforeEach()
     val uavConf = spooky.getConf[UAVConf]
     //    uavConf.fastConnectionRetries = 2
     uavConf.fleet = Fleet.Inventory(fleet)
@@ -66,7 +66,7 @@ trait UAVFixture extends SpookyEnvFixture {
     UAVUtils.sanityCheck(sc)
   }
 
-  override def tearDown(): Unit = {
+  override def afterEach(): Unit = {
     UAVUtils.sanityCheck(sc)
   }
 

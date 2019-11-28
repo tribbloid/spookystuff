@@ -5,7 +5,7 @@ import com.tribbloids.spookystuff.testbeans._
 import org.apache.spark
 import org.apache.spark.rdd.RDD
 import org.apache.spark.{HashPartitioner, RangePartitioner, SparkException}
-import org.scalatest.{Assertions, FunSpec}
+import org.scalatest.Assertions
 
 import scala.reflect.ClassTag
 import scala.util.Random
@@ -90,7 +90,7 @@ class LocalityImplSuite extends SpookyEnvFixture {
           still.collect()
         }
       }
-      Validate(moved, still, false).assertLocalityWithoutOrder()
+      Validate(moved, still, firstStay = false).assertLocalityWithoutOrder()
     }
 
     describe("in Spark 1.x") {
@@ -102,7 +102,7 @@ class LocalityImplSuite extends SpookyEnvFixture {
           val moved = rdd2
             .partitionBy(new RangePartitioner(np, rdd2))
 
-          Validate(moved, still, false).assertLocalityWithoutOrder()
+          Validate(moved, still, firstStay = false).assertLocalityWithoutOrder()
         }
 
         it("the second will NOT move even if both have partitioners and the second is in memory") {
@@ -114,7 +114,7 @@ class LocalityImplSuite extends SpookyEnvFixture {
             .persist()
           moved.count()
 
-          Validate(moved, still, false).assertLocalityWithoutOrder()
+          Validate(moved, still, firstStay = false).assertLocalityWithoutOrder()
         }
       }
     }
@@ -128,7 +128,7 @@ class LocalityImplSuite extends SpookyEnvFixture {
           val moved = rdd2
             .partitionBy(new RangePartitioner(np, rdd2))
 
-          Validate(moved, still, true).assertLocalityWithoutOrder()
+          Validate(moved, still).assertLocalityWithoutOrder()
         }
 
         it("the first will NOT move even if both have partitioners and the second is in memory") {
@@ -140,7 +140,7 @@ class LocalityImplSuite extends SpookyEnvFixture {
             .persist()
           moved.count()
 
-          Validate(moved, still, true).assertLocalityWithoutOrder()
+          Validate(moved, still).assertLocalityWithoutOrder()
         }
       }
     }

@@ -75,8 +75,8 @@ trait LinkSuite extends UAVFixture {
 
   import com.tribbloids.spookystuff.utils.SpookyViews._
 
-  override def setUp(): Unit = {
-    super.setUp()
+  override def beforeEach(): Unit = {
+    super.beforeEach()
     LinkUtils.cleanAll(sc)
     Thread.sleep(2000)
     // Waiting for both python drivers to terminate.

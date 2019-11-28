@@ -39,7 +39,7 @@ class ParsersBenchmark extends FunSpecx {
     val stream: List[String] = ParsersBenchmark.iiInEpoch.map { _ =>
       var str = ParsersBenchmark.rndStr(nextInt(30))
 
-      for (i <- ParsersBenchmark.streamSize) {
+      for (i <- ParsersBenchmark.streamRange) {
 
         str += "${" +
           ParsersBenchmark.rndStr(nextInt(30)) +
@@ -69,7 +69,7 @@ object ParsersBenchmark {
   val numVPerEpoch: Int = Math.pow(2, 16).toInt
   val iiInEpoch: List[Int] = (0 until ParsersBenchmark.numVPerEpoch).toList
 
-  val streamSize: Int = 2 ^ 10
+  val streamRange: Range = 1 to 2 ^ 10
 
   def rndStr(len: Int): String = {
     val charSeq = for (i <- 1 to len) yield {

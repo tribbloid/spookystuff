@@ -42,6 +42,7 @@ trait LocalityImpl[K, V] extends Product with Serializable {
       }
     }
   }
+
 }
 
 /**

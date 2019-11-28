@@ -1,7 +1,6 @@
 package com.tribbloids.spookystuff.utils.locality
 
 import org.apache.spark.rdd.RDD
-import org.apache.spark.util.SizeEstimator
 
 import scala.reflect.ClassTag
 
@@ -13,8 +12,8 @@ case class LocalityRDDView[K: ClassTag, V: ClassTag](
 
   final val BROADCAST_SIZE_CAP_BYTE = 10 * 1024 * 1024
 
-  override def cogroupBase[V2: ClassTag](rdd2: RDD[(K, V2)]) = {
-    lazy val size2 = SizeEstimator.estimate(rdd2)
+  override def cogroupBase[V2: ClassTag](rdd2: RDD[(K, V2)]): RDD[(K, (V, Iterable[V2]))] = {
+    lazy val size2 = rdd2.countApprox(5000, 0.9)
 
     val impl: Locality_OrdinalityImpl[K, V] = {
 //      if (size2 < BROADCAST_SIZE_CAP_BYTE) BroadcastLocalityImpl(rdd1)

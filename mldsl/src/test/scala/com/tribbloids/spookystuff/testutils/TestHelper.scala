@@ -1,7 +1,7 @@
 package com.tribbloids.spookystuff.testutils
 
 import java.io.File
-import java.util.Properties
+import java.util.{Date, Properties}
 
 import com.tribbloids.spookystuff.utils.lifespan.LocalCleanable
 import com.tribbloids.spookystuff.utils.{CommonConst, CommonUtils, ConfUtils}
@@ -297,6 +297,11 @@ class TestHelper() extends LocalCleanable {
   lazy val TestSC: SparkContext = TestSparkSession.sparkContext
   lazy val TestSQL: SQLContext = TestSparkSession.sqlContext
 
+  lazy val enableCheckpoint: Unit = {
+
+    TestSC.setCheckpointDir("/tmp/spark-checkpoint/" + new Date().toString)
+  }
+
   def setLoggerDuring[T](clazzes: Class[_]*)(fn: => T, level: String = "OFF"): T = {
     val logger_oldLevels = clazzes.map { clazz =>
       val logger = org.apache.log4j.Logger.getLogger(clazz)
@@ -373,4 +378,4 @@ class TestHelper() extends LocalCleanable {
   }
 }
 
-object TestHelper extends TestHelper()
+object TestHelper extends TestHelper() {}

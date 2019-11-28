@@ -2,11 +2,14 @@ package com.tribbloids.spookystuff.execution
 
 import com.tribbloids.spookystuff.utils.ShippingMarks
 import com.tribbloids.spookystuff.utils.lifespan.LocalCleanable
+import org.apache.spark.SparkContext
+import org.apache.spark.broadcast.Broadcast
 import org.apache.spark.rdd.RDD
 import org.apache.spark.sql.Dataset
 import org.apache.spark.storage.StorageLevel
 
 import scala.collection.mutable.ArrayBuffer
+import scala.reflect.ClassTag
 import scala.util.Random
 
 /**
@@ -25,6 +28,7 @@ case class ScratchRDDs(
     tempTables: ArrayBuffer[(String, Dataset[_])] = ArrayBuffer(),
     tempRDDs: ArrayBuffer[RDD[_]] = ArrayBuffer(),
     tempDSs: ArrayBuffer[Dataset[_]] = ArrayBuffer(),
+    tempBroadcasts: ArrayBuffer[Broadcast[_]] = ArrayBuffer(),
     defaultStorageLevel: StorageLevel = StorageLevel.MEMORY_AND_DISK
 ) extends LocalCleanable
     with ShippingMarks {
@@ -44,6 +48,14 @@ case class ScratchRDDs(
       case Some(tuple) =>
         tuple._1
     }
+  }
+
+  def broadcast[T: ClassTag](sc: SparkContext)(
+      v: T
+  ): Broadcast[T] = {
+    val result = sc.broadcast(v)
+    tempBroadcasts += result
+    result
   }
 
   def persistDS(
@@ -99,14 +111,21 @@ case class ScratchRDDs(
   ): Unit = {
 
     dropTempViews()
+
     tempDSs.foreach { ds =>
       ds.unpersist(blocking)
     }
     tempDSs.clear()
+
     tempRDDs.foreach { rdd =>
       rdd.unpersist(blocking)
     }
     tempRDDs.clear()
+
+    tempBroadcasts.foreach { b =>
+      b.destroy()
+    }
+    tempBroadcasts.clear()
   }
 
   def <+>[T](b: ScratchRDDs, f: ScratchRDDs => ArrayBuffer[T]): ArrayBuffer[T] = {
@@ -117,7 +136,8 @@ case class ScratchRDDs(
     this.copy(
       <+>(other, _.tempTables),
       <+>(other, _.tempRDDs),
-      <+>(other, _.tempDSs)
+      <+>(other, _.tempDSs),
+      <+>(other, _.tempBroadcasts)
     )
   }
 

@@ -26,7 +26,7 @@ object CachingUtils {
   def ConcurrentCache[K, V](): ConcurrentCache[K, V] = {
     CacheBuilder
       .newBuilder()
-      .concurrencyLevel(CommonUtils.numDriverCores)
+      .concurrencyLevel(CommonUtils.numLocalCores)
       .softValues()
       .build[Object, Object]()
       .asMap()
