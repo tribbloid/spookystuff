@@ -12,7 +12,7 @@ import scala.util.Random
 
 class RDDDisperseSuite extends SpookyEnvFixture.DescribeJobs with HasEager {
 
-  implicit val exeCtx: ExecutionContextExecutor = ExecutionContext.global
+  implicit val concurrentCtx: ExecutionContextExecutor = ExecutionContext.global
 
   object Consts {
 

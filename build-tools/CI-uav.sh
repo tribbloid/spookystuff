@@ -4,4 +4,4 @@
 
 CRDIR="$(cd "`dirname "$0"`"; pwd)"
 
-"$CRDIR"/CI/uav-stage1.sh apache-stable
+"$CRDIR"/CI/stage1-uav.sh apache-stable

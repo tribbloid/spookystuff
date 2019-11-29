@@ -114,22 +114,35 @@ class TestHelper() extends LocalCleanable {
   }
 
   lazy val clusterSize_numCoresPerWorker_Opt: Option[(Int, Int)] = {
-    Option(SPARK_HOME).flatMap { h =>
-      val tuple = (
-        Option(properties.getProperty("ClusterSize")).map(_.toInt),
-        Option(properties.getProperty("NumCoresPerWorker")).map(_.toInt)
-      )
-      tuple match {
-        case (None, None) =>
-          None
-        case (Some(v1), Some(v2)) =>
-          Some(v1 -> v2)
-        case (Some(v1), None) =>
-          Some(v1 -> Math.max(numCores / v1, 1))
-        case (None, Some(v2)) =>
-          Some(Math.max(numCores / v2, 1) -> v2)
+
+    val tuple = (
+      Option(properties.getProperty("ClusterSize")).map(_.toInt),
+      Option(properties.getProperty("NumCoresPerWorker")).map(_.toInt)
+    )
+
+    Option(SPARK_HOME)
+      .flatMap { h =>
+        tuple match {
+          case (None, None) =>
+            None
+          case (Some(v1), Some(v2)) =>
+            Some(v1 -> v2)
+          case (Some(v1), None) =>
+            Some(v1 -> Math.max(numCores / v1, 1))
+          case (None, Some(v2)) =>
+            Some(Math.max(numCores / v2, 1) -> v2)
+        }
       }
-    }
+      .orElse {
+        tuple match {
+          case (None, None) =>
+          case _ =>
+            LoggerFactory
+              .getLogger(this.getClass)
+              .warn("cannot use cluster mode as SPARK_HOME is missing")
+        }
+        None
+      }
   }
 
   def clusterSizeOpt: Option[Int] = clusterSize_numCoresPerWorker_Opt.map(_._1)
