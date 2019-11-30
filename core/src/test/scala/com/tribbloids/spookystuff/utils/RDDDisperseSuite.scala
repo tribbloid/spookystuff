@@ -7,46 +7,49 @@ import org.apache.spark.rdd.RDD
 import org.apache.spark.storage.StorageLevel
 import org.apache.spark.util.LongAccumulator
 
+import scala.collection.immutable
 import scala.concurrent.{ExecutionContext, ExecutionContextExecutor}
 import scala.util.Random
 
 class RDDDisperseSuite extends SpookyEnvFixture.DescribeJobs with HasEager {
 
+  import SpookyViews._
+
   implicit val concurrentCtx: ExecutionContextExecutor = ExecutionContext.global
-
-  object Consts {
-
-    val size: Int = Random.nextInt(90000) + 10000
-    val data: Range = 1 to size
-
-    val fixedTgtPartRange: Range = 1 to sc.defaultParallelism
-
-    val smallNPart: Int = Random.nextInt(10) + fixedTgtPartRange.max
-
-    val tgtNPart: Int = Random.nextInt(100) + smallNPart
-    val expectedMinNNonEmptyPart: Int = 2
-
-    val pSizeGen: Int => Long = { i =>
-      1000L
-    }
-  }
 
 //  object Consts {
 //
-//    val size: Int = 1000
+//    val size: Int = Random.nextInt(90000) + 10000
 //    val data: Range = 1 to size
 //
-//    val fixedTgtPartRange: Range = 1 to 4
+//    val fixedTgtPartRange: Range = 1 to sc.defaultParallelism
 //
-//    val smallNPart: Int = sc.defaultParallelism
+//    val smallNPart: Int = Random.nextInt(10) + fixedTgtPartRange.max
 //
-//    val tgtNPart: Int = smallNPart + 24
+//    val tgtNPart: Int = Random.nextInt(100) + smallNPart
 //    val expectedMinNNonEmptyPart: Int = 2
 //
-//    val pSizeGen: Int => Long = { i =>
-//      10L
+//    val pSizeGen: Int => Long = { _ =>
+//      1000L
 //    }
 //  }
+
+  object Consts {
+
+    val size: Int = 1000
+    val data: Range = 1 to size
+
+    val fixedTgtPartRange: Range = 1 to 4
+
+    val smallNPart: Int = sc.defaultParallelism
+
+    val tgtNPart: Int = smallNPart + 24
+    val expectedMinNNonEmptyPart: Int = 2
+
+    val pSizeGen: Int => Long = { i =>
+      10L
+    }
+  }
 
   import Consts._
 
@@ -70,12 +73,25 @@ class RDDDisperseSuite extends SpookyEnvFixture.DescribeJobs with HasEager {
 
     Predef.assert(nonEmptyCount >= expectedMinNNonEmptyPart)
 
-    (1 to 3).foreach { _ =>
-      val cc = rdd.collect()
-      assert(cc.length === size)
-      Predef.assert(cc.toSet == data.toSet)
+    val lists: Seq[(String, List[Int])] = Seq(
+      "collect" -> rdd.collect().toList,
+      "toLocalIterator" -> rdd.toLocalIterator.toList,
+      "toLocalIteratorPreemptively" -> rdd.toLocalIteratorPreemptively(CommonUtils.numLocalCores).toList
+    )
+
+    lists.foreach {
+      case (n, ll) =>
+        assert(ll.size === size, n)
+        val set1 = ll.toSet
+        val set2 = data.toSet
+
+        Predef.assert(
+          set1 == set2,
+          n + ": " + (set1.union(set2) -- set1.intersect(set2))
+        )
     }
 
+//    val ii = rdd.toLocalIterator.toList
   }
 
   def assertCanBeBalanced_raw(rdd: RDD[Int]): Unit = {
@@ -98,6 +114,10 @@ class RDDDisperseSuite extends SpookyEnvFixture.DescribeJobs with HasEager {
     final def assertCanBeBalanced(rdd: RDD[Int]): Unit = {
 
       val acc = this.acc
+
+      acc.reset()
+      Predef.assert(acc.value == 0)
+
       val _rdd = rdd.map { v =>
         acc.add(1)
 //        val task = TaskContext.get()
@@ -109,7 +129,6 @@ class RDDDisperseSuite extends SpookyEnvFixture.DescribeJobs with HasEager {
 
       doAssert(_rdd)
 
-      acc.reset()
     }
 
     def doAssert(rdd: RDD[Int]): Unit
@@ -141,6 +160,7 @@ class RDDDisperseSuite extends SpookyEnvFixture.DescribeJobs with HasEager {
 
         assertCanBeBalanced(rdd)
       }
+
     }
   }
 
@@ -181,7 +201,7 @@ class RDDDisperseSuite extends SpookyEnvFixture.DescribeJobs with HasEager {
       rdd.persist(level)
       assertCanBeBalanced_raw(rdd)
 
-      assert(acc.value === size)
+      assert(acc.value <= size * TestHelper.numComputers)
     }
 
     override def facetName: String = super.facetName + ": " + level.description
@@ -231,7 +251,7 @@ class RDDDisperseSuite extends SpookyEnvFixture.DescribeJobs with HasEager {
 
       assertCanBeBalanced_raw(s)
 
-      assert(acc.value === size)
+      assert(acc.value <= size * TestHelper.numComputers)
     }
   }
 
@@ -239,11 +259,13 @@ class RDDDisperseSuite extends SpookyEnvFixture.DescribeJobs with HasEager {
 
     override def doAssert(rdd: RDD[Int]): Unit = {
 
+      val shuffleSeed = Random.nextLong()
+
       val s = rdd
         .mapPartitions { itr =>
 //        val list = itr.toList
 
-          val shuffled = BufferedShuffleIteratorV1(itr)
+          val shuffled = BufferedShuffleIteratorV1(itr, seed = shuffleSeed)
 
           shuffled
         }
@@ -251,7 +273,7 @@ class RDDDisperseSuite extends SpookyEnvFixture.DescribeJobs with HasEager {
 
       assertCanBeBalanced_raw(s)
 
-      assert(acc.value === size)
+      assert(acc.value <= size * TestHelper.numComputers)
     }
   }
 
@@ -272,7 +294,5 @@ class RDDDisperseSuite extends SpookyEnvFixture.DescribeJobs with HasEager {
   it("Benchmark: can be much faster than ") {
 
     //TODO: move to benchmark and implement!
-
-    //    Thread.sleep(100000000)
   }
 }

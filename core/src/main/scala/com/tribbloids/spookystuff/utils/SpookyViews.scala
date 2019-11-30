@@ -62,9 +62,12 @@ abstract class SpookyViews extends CommonViews {
 
       self.setJobGroup(groupID, _description)
 
-      val result: T = fn
+      val result = try {
+        fn
+      } finally {
 
-      self.setJobGroup(old.groupID, old.description)
+        self.setJobGroup(old.groupID, old.description)
+      }
 
       result
     }
