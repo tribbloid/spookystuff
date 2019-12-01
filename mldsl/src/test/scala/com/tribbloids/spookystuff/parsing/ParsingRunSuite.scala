@@ -1,6 +1,7 @@
 package com.tribbloids.spookystuff.parsing
 
 import com.tribbloids.spookystuff.parsing.FSMParserDSL._
+import com.tribbloids.spookystuff.parsing.PhaseVec.{Depth, Eye, NoOp}
 import com.tribbloids.spookystuff.testutils.FunSpecx
 import com.tribbloids.spookystuff.utils.RangeArg
 
@@ -178,7 +179,78 @@ class ParsingRunSuite extends FunSpecx {
 
   describe("conditional") {
 
-    //TODO: use P_*('}').%(case ... => NoOp) to make some transition conditional
+    it("can parse paired brackets") {
+      //TODO: use P_*('}').%(case ... => NoOp) to make some transition conditional
+
+      val entry = P_*('P').!- :~> P('{').--
+
+      val more = P_*('{') % {
+        case Depth(i) => Depth(i + 1)
+        case _        => Depth(1)
+      }
+
+      val less = P_*('}') % {
+        case Depth(i) if i >= 1 => Depth(i - 1)
+        case _                  => NoOp()
+      }
+
+      val moreOrLess = more U less
+
+      val out = P_*('}').!- % {
+        case Depth(i) if i >= 1 => NoOp()
+        case Depth(i)           => Eye
+        case _                  => Eye
+      }
+
+      val p: Operand[FSMParserGraph.Layout.GG] = (entry :~> moreOrLess :& moreOrLess) :~>
+        out :& entry :~>
+        EOS_* :~> FINISH
+
+      //TODO: visualisation of conditional
+      println(p.visualise().ASCIIArt.showStr)
+
+      p.parse("aBCDP{12} b")
+        .ioMapToString
+        .shouldBe(
+          """
+            |aBCDP	-> aBCD
+            |{
+            |12}	-> 12
+            | b	->  b
+          """.stripMargin
+        )
+
+      p.parse("aBCDP{12{34}56}EFG")
+        .ioMapToString
+        .shouldBe(
+          """
+            |aBCDP	-> aBCD
+            |{
+            |12{	-> 12{
+            |34}	-> 34}
+            |56}	-> 56
+            |EFG	-> EFG
+          """.stripMargin
+        )
+
+      p.parse("aP{12{34}56}BCP{78}D")
+        .ioMapToString
+        .shouldBe(
+          """
+            |aP	-> a
+            |{
+            |12{	-> 12{
+            |34}	-> 34}
+            |56}	-> 56
+            |BCP	-> BC
+            |{
+            |78}	-> 78
+            |D	-> D
+          """.stripMargin
+        )
+    }
 
   }
 }
+
+object ParsingRunSuite {}

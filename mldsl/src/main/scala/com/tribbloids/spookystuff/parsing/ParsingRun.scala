@@ -48,7 +48,7 @@ case class ParsingRun(
     } ++ Seq(EndOfStream)
   }
 
-  val backtrackingMgr: BacktrackingManager = BacktrackingManager(input, initialFState -> PhaseVec.InitialPhaseVec)
+  val backtrackingMgr: BacktrackingManager = BacktrackingManager(input, initialFState -> PhaseVec.Eye)
 
   lazy val run: ParsingRun.ResultSeq = {
     backtrackingMgr.run_!()

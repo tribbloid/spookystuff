@@ -10,7 +10,7 @@ class FlowLayoutSuite extends FunSpecx {
   it("Operand from NodeData") {
 
     val face = Node(Some("ABC"))
-    val str = face.visualise().show()
+    val str = face.visualise().showStr()
     str shouldBe
       """
         |>>- -->
@@ -27,7 +27,7 @@ class FlowLayoutSuite extends FunSpecx {
   it("... implicitly") {
 
     val face = Some("ABC")
-    val str = face.visualise().show()
+    val str = face.visualise().showStr()
     str shouldBe
       """
         |>>- -->
@@ -45,7 +45,7 @@ class FlowLayoutSuite extends FunSpecx {
   it("Operand from EdgeData") {
 
     val face = Edge(Some("ABC"))
-    val str = face.visualise().show()
+    val str = face.visualise().showStr()
     str shouldBe
       """
         |>>- -->
@@ -64,7 +64,7 @@ class FlowLayoutSuite extends FunSpecx {
       val f2: Op = Some("DEF")
 
       val linked = f1 >>> f2
-      linked.visualise().show() shouldBe
+      linked.visualise().showStr() shouldBe
         """
           |>>- -->
           |v (TAIL>>-) [ ∅ ]
@@ -80,7 +80,7 @@ class FlowLayoutSuite extends FunSpecx {
 
       linked
         .visualise()
-        .show(asciiArt = true) shouldBe
+        .showStr(asciiArt = true) shouldBe
         """
           |    ┌───────────────┐
           |    │(TAIL>>-) [ ∅ ]│
@@ -119,7 +119,7 @@ class FlowLayoutSuite extends FunSpecx {
       val f2: Op = Some("DEF")
 
       val linked = f1 >>> e1 >>> f2
-      linked.visualise().show() shouldBe
+      linked.visualise().showStr() shouldBe
         """
           |>>- -->
           |v (TAIL>>-) [ ∅ ]
@@ -140,7 +140,7 @@ class FlowLayoutSuite extends FunSpecx {
       val f2: Op = Edge(Some("DEF"))
 
       val linked = f1 >>> f2
-      linked.visualise().show() shouldBe
+      linked.visualise().showStr() shouldBe
         """
           |>>- -->
           |v (HEAD)(TAIL>>- -<<) [ ABCDEF ]
@@ -157,7 +157,7 @@ class FlowLayoutSuite extends FunSpecx {
       val node: Op = Some("ABC")
 
       val linked = node >>> node
-      linked.visualise().show() shouldBe
+      linked.visualise().showStr() shouldBe
         """
           |>>- -->
           |v (TAIL>>-) [ ∅ ]
@@ -173,7 +173,7 @@ class FlowLayoutSuite extends FunSpecx {
           |      +- (cyclic)ABC
         """.stripMargin
 
-      linked.visualise().show(asciiArt = true) shouldBe
+      linked.visualise().showStr(asciiArt = true) shouldBe
         """
           | ┌───────────────┐ ┌───────────────┐
           | │(TAIL>>-) [ ∅ ]│ │(TAIL-<<) [ ∅ ]│
@@ -202,7 +202,7 @@ class FlowLayoutSuite extends FunSpecx {
       val edge: Op = Edge(Some("loop"))
 
       val n1 = node >>> edge
-      n1.visualise().show() shouldBe
+      n1.visualise().showStr() shouldBe
         """
           |>>- -->
           |v (TAIL>>-) [ ∅ ]
@@ -213,7 +213,7 @@ class FlowLayoutSuite extends FunSpecx {
         """.stripMargin
 
       val linked = n1 >>> node
-      linked.visualise().show() shouldBe
+      linked.visualise().showStr() shouldBe
         """
           |>>- -->
           |v (TAIL>>-) [ ∅ ]
@@ -229,7 +229,7 @@ class FlowLayoutSuite extends FunSpecx {
           |      +- (cyclic)ABC
         """.stripMargin
 
-      linked.visualise().show(asciiArt = true) shouldBe
+      linked.visualise().showStr(asciiArt = true) shouldBe
         """
           | ┌───────────────┐ ┌───────────────┐
           | │(TAIL>>-) [ ∅ ]│ │(TAIL-<<) [ ∅ ]│
@@ -257,7 +257,7 @@ class FlowLayoutSuite extends FunSpecx {
       val edge_node: Op = Edge(Some("loop")) >>> Node(Some("ABC"))
 
       val linked = edge_node >>> edge_node
-      linked.visualise().show(asciiArt = true) shouldBe
+      linked.visualise().showStr(asciiArt = true) shouldBe
         """
           | ┌──────────────────┐ ┌───────────────┐
           | │(TAIL>>-) [ loop ]│ │(TAIL-<<) [ ∅ ]│
@@ -285,7 +285,7 @@ class FlowLayoutSuite extends FunSpecx {
       val edges_node = (Edge(Some("loop1")) U Edge(Some("loop2"))) >>> Node(Some("ABC"))
 
       val linked = edges_node >>> edges_node
-      linked.visualise().show(asciiArt = true) shouldBe
+      linked.visualise().showStr(asciiArt = true) shouldBe
         """
           | ┌───────────────────┐ ┌───────────────────┐ ┌───────────────┐
           | │(TAIL>>-) [ loop1 ]│ │(TAIL>>-) [ loop2 ]│ │(TAIL-<<) [ ∅ ]│
@@ -317,7 +317,7 @@ class FlowLayoutSuite extends FunSpecx {
       val n2: Op = Some("B")
       val n3: Op = Some("C")
 
-      (n1 >>> n2 <<< n3).visualise().show() shouldBe
+      (n1 >>> n2 <<< n3).visualise().showStr() shouldBe
         """
           |>>- -->
           |v (TAIL>>-) [ ∅ ]

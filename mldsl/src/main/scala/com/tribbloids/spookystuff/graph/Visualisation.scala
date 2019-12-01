@@ -18,9 +18,9 @@ case class Visualisation[D <: Domain](
 
   trait Impl {
 
-    def show: String
+    def showStr: String
 
-    def apply(): String = show
+    def apply(): String = showStr
   }
 
   object Tree extends Impl {
@@ -50,7 +50,7 @@ case class Visualisation[D <: Domain](
         .mkString("")
     }
 
-    override lazy val show: String = {
+    override lazy val showStr: String = {
 
       if (format.forward) {
 
@@ -120,7 +120,7 @@ case class Visualisation[D <: Domain](
       graph
     }
 
-    override lazy val show: String = {
+    override lazy val showStr: String = {
 
       val graph = compileASCII(core.heads.seq)
 
@@ -135,14 +135,14 @@ case class Visualisation[D <: Domain](
     }
   }
 
-  def show(
+  def showStr(
       asciiArt: Boolean = false
   ): String = {
 
     if (!asciiArt) {
-      Tree.show
+      Tree.showStr
     } else {
-      ASCIIArt.show
+      ASCIIArt.showStr
     }
   }
 }
