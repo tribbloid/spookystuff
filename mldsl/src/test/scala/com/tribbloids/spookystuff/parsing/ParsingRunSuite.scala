@@ -191,13 +191,13 @@ class ParsingRunSuite extends FunSpecx {
 
       val less = P_*('}') % {
         case Depth(i) if i >= 1 => Depth(i - 1)
-        case _                  => NoOp()
+        case _                  => NoOp
       }
 
       val moreOrLess = more U less
 
       val out = P_*('}').!- % {
-        case Depth(i) if i >= 1 => NoOp()
+        case Depth(i) if i >= 1 => NoOp
         case Depth(i)           => Eye
         case _                  => Eye
       }

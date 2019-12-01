@@ -170,7 +170,7 @@ object FSMParserDSL extends DSL {
     }
 
     lazy val escape: Parser[Nothing] = --.% { _ =>
-      PhaseVec.NoOp(Some(1))
+      PhaseVec.Skip(1)
     }
   }
 

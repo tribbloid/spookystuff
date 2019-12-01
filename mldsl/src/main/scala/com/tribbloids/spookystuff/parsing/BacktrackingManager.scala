@@ -106,11 +106,10 @@ case class BacktrackingManager(
         val nextPhaseVec = outcome.nextPhaseVec
 
         nextPhaseVec match {
-          case PhaseVec.NoOp(skipOpt) =>
-            skipOpt match {
-              case Some(skip) => length_+=(skip + 1)
-              case None       => transitionQueueII += 1
-            }
+          case PhaseVec.NoOp =>
+            transitionQueueII += 1
+          case PhaseVec.Skip(skip) =>
+            length_+=(skip + 1)
           case _ =>
             transitionQueueII += 1
             currentOutcome = transition._1 -> outcome

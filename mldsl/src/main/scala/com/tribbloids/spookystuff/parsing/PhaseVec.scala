@@ -7,9 +7,9 @@ object PhaseVec {
 
   case object Eye extends PhaseVec
 
-  case class NoOp(
-      skipOpt: Option[Int] = None
-  ) extends PhaseVec {
+  case object NoOp extends PhaseVec
+
+  case class Skip(length: Int) extends PhaseVec {
 
     //    def next(bm: BacktrackingManager#LinearSearch): Option[Like] = {
     //
