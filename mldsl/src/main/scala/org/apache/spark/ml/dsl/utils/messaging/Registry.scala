@@ -66,9 +66,9 @@ object Registry {
     */
   object Default extends Registry {}
 
-  /**
-    * the registry is populated by every codec on object creation
-    */
+//  /**
+//    * the registry is populated by every codec on object creation
+//    */
   //  object AllInclusive extends Catalog {
   //
   //  }

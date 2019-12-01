@@ -21,10 +21,10 @@ case class Pattern(
 
     def outer: Pattern = Pattern.this
 
-    def token = outer.token
+    def token: Token = outer.token
     def range: RangeArg = outer.range
 
-    override def toString = outer.toString
+    override def toString: String = outer.toString
   }
 
   object `!!` extends Rule(Outcome.Factories(_, _).`!!`)

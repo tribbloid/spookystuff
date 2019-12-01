@@ -27,6 +27,9 @@ object Outcome {
       override lazy val nextPhaseVecOpt: PhaseVec.Like = prevPhase._2
     }
 
+    /**
+      * export tokens as is
+      */
     object `!!` extends Outcome[String] {
 
       override lazy val export: Option[String] = Some(Pattern.tokens2Str(tokens))

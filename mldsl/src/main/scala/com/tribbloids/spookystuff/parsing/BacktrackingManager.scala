@@ -1,6 +1,6 @@
 package com.tribbloids.spookystuff.parsing
 
-import com.tribbloids.spookystuff.parsing.Exceptions.{BacktrackingFailure, ParsingError}
+import com.tribbloids.spookystuff.parsing.Exceptions.{BacktrackableFailure, ParsingError}
 import com.tribbloids.spookystuff.parsing.FState.SubRules
 import com.tribbloids.spookystuff.parsing.Pattern.Token
 import com.tribbloids.spookystuff.utils.RangeArg
@@ -60,7 +60,7 @@ case class BacktrackingManager(
     def length_++(): Unit = {
 
       if (end(_length + 1) >= input.length)
-        throw BacktrackingFailure(s"reaching EOS at length ${_length}")
+        throw BacktrackableFailure(s"reaching EOS at length ${_length}")
 
       _length += 1
 
@@ -68,7 +68,7 @@ case class BacktrackingManager(
     }
 
     def length_+=(v: Int): Unit = {
-      for (i <- 0 until v) length_++() //TODO: inefficient! only the last update require refreshing transitionQueue
+      for (_ <- 0 until v) length_++() //TODO: inefficient! only the last update require refreshing transitionQueue
     }
 
     def findValidState(): Rule_FState = {
@@ -92,7 +92,7 @@ case class BacktrackingManager(
         subRuleCacheII += 1
       }
 
-      throw BacktrackingFailure(s"no rule is defined beyond length ${_length}")
+      throw BacktrackableFailure(s"no rule is defined beyond length ${_length}")
     }
 
     var currentOutcome: (Rule, Outcome[Any]) = _
@@ -121,13 +121,17 @@ case class BacktrackingManager(
     }
   }
 
-  val stack: mutable.Stack[LinearSearch] = mutable.Stack(LinearSearch(initialState))
+  val stack: mutable.ArrayBuffer[LinearSearch] = mutable.ArrayBuffer(LinearSearch(initialState))
 
   def advance(): Boolean = {
     if (stack.isEmpty)
-      throw ParsingError(s"cannot parse '${input.mkString}'")
+      throw ParsingError(
+        s"""cannot parse '${input.mkString}'
+           |all parsing rules are not applicable after backtracking
+           |""".stripMargin
+      )
 
-    val onTop = stack.top // stack is from bottom to top
+    val onTop = stack.last // stack is from bottom to top
 
     try {
       val nextPhase = onTop.nextPhase
@@ -143,20 +147,23 @@ case class BacktrackingManager(
             onTop.end() + 1L
           )
 
-          stack.push(nextLS)
+          stack += nextLS
           true
       }
 
     } catch {
-      case e: BacktrackingFailure =>
-        stack.pop()
+      case _: BacktrackableFailure =>
+        stack.remove(stack.length - 1)
         true
     }
   }
 
   def run_!(): Unit = {
 
-    while (advance()) {}
+    while ({
+      val hasMore = advance()
+      hasMore
+    }) {}
   }
 }
 

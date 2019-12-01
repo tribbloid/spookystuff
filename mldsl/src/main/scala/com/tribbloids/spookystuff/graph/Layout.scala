@@ -71,7 +71,7 @@ trait Layout[D <: Domain] extends Algebra.Sugars[D] {
       fromElement(node)
     }
 
-    lazy val empty = Core(defaultGraphBuilder.fromSeq(Nil, Nil))
+    lazy val empty: Core[defaultGraphBuilder.GG] = Core(defaultGraphBuilder.fromSeq(Nil, Nil))
   }
 
   case class Core[+M <: _Module](
@@ -89,7 +89,7 @@ trait Layout[D <: Domain] extends Algebra.Sugars[D] {
     /**
       * kind of a sanity check
       */
-    lazy val _graph_WHeadsAndTails = {
+    lazy val _graph_WHeadsAndTails: defaultGraphBuilder.GG = {
 
       val latentTails = tails.values.toList.flatMap(_.seq).distinct
       val latentHeads = heads.seq
@@ -338,7 +338,7 @@ trait Layout[D <: Domain] extends Algebra.Sugars[D] {
 
       override def element: _Edge = edge
 
-      def getNodeViews(ids: Seq[ID]) = {
+      def getNodeViews(ids: Seq[ID]): Seq[NodeView] = {
         ids
           .filter(_ != algebra.idAlgebra.DANGLING)
           .flatMap { id =>
@@ -388,7 +388,7 @@ trait Layout[D <: Domain] extends Algebra.Sugars[D] {
       }
 
       //TODO: these symbols are lame
-      final def >-[N >: M <: _Module](filter: EdgeFilter[D]) = from(filter)
+      final def >-[N >: M <: _Module](filter: EdgeFilter[D]): Operand[M] = from(filter)
 
       //TODO: should be part of EdgeFilter
       def and(filter: EdgeFilter[D]): Operand[M] = {
@@ -400,7 +400,7 @@ trait Layout[D <: Domain] extends Algebra.Sugars[D] {
           ))
       }
 
-      final def <>-(filter: EdgeFilter[D]) = and(filter)
+      final def <>-(filter: EdgeFilter[D]): Operand[M] = and(filter)
 
       def replicate(m: DataMutator = DataAlgebra.Mutator.identity)(implicit idRotator: Rotator[ID]): Operand[M] = {
         create(

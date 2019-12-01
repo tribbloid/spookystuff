@@ -4,7 +4,7 @@ import com.tribbloids.spookystuff.utils.TreeException
 
 object Exceptions {
 
-  case class BacktrackingFailure(
+  case class BacktrackableFailure(
       override val simpleMsg: String = "",
       cause: Throwable = null
   ) extends TreeException

@@ -85,7 +85,7 @@ object ParsersBenchmark {
   object UseFastParse {
     import NoWhitespace._
 
-    val blacklist = "{}$/\\".toSet
+    val blacklist: Set[Char] = "{}$/\\".toSet
 
     //  val allKWs: String = "/\\\\$}"
 
@@ -93,23 +93,23 @@ object ParsersBenchmark {
 
       //    final val allKWs: String = "/\\\\" + kw
 
-      def predicate(c: Char) = c != kw && c != '\\'
-      def strChars[_: P] = P(CharsWhile(predicate))
+      def predicate(c: Char): Boolean = c != kw && c != '\\'
+      def strChars[_: P]: P[Unit] = P(CharsWhile(predicate))
 
-      def escaped[_: P] = P("\\" ~/ AnyChar)
-      def str[_: P] = (strChars | escaped).rep.!
+      def escaped[_: P]: P[Unit] = P("\\" ~/ AnyChar)
+      def str[_: P]: P[String] = (strChars | escaped).rep.!
 
-      def result[_: P] = P(str ~ kw.toString) //TODO: why this cannot be ~/ ?
+      def result[_: P]: P[String] = P(str ~ kw.toString) //TODO: why this cannot be ~/ ?
     }
 
-    val to_$ = UntilCharInclusive('$')
-    val `to_}` = UntilCharInclusive('}')
+    val to_$ : UntilCharInclusive = UntilCharInclusive('$')
+    val `to_}`: UntilCharInclusive = UntilCharInclusive('}')
 
-    def once[_: P] = P(to_$.result ~ "{" ~ `to_}`.result)
+    def once[_: P]: P[(String, String)] = P(to_$.result ~ "{" ~ `to_}`.result)
 
     //  def capturedOrEOS[_: P] = captured | End.!
 
-    def nTimes[_: P] = P(once.rep ~/ AnyChar.rep.!) // last String should be ignored
+    def nTimes[_: P]: P[(Seq[(String, String)], String)] = P(once.rep ~/ AnyChar.rep.!) // last String should be ignored
   }
 
   object UseFSM {
@@ -122,25 +122,26 @@ object ParsersBenchmark {
       escapeChar :& escapeChar :~> v
     }
 
-    val first = escape(P_*('$').!-)
+    val first: Operand[FSMParserGraph.Layout.GG] = escape(P_*('$').!-)
 
-    val enclosed = escape(P_*('}').!-.^^ { v =>
-      Some(v)
+    val enclosed: Operand[FSMParserGraph.Layout.GG] = escape(P_*('}').!-.^^ { v =>
+      Some(Some(v))
     })
 
-    val p = first :~> P('{').-- :~> enclosed :& first :~> EOS_* :~> FINISH
+    val fsmParser: Operand[FSMParserGraph.Layout.GG] = first :~> P('{').-- :~> enclosed :& first :~> EOS_* :~> FINISH
 
-//    {
-//      println(p.visualise().ASCIIArt())
-//      p
-//    }
+    {
+      println(fsmParser.visualise().ASCIIArt())
+    }
   }
 
-  val interpolation = Interpolation("$")
+  val interpolation: Interpolation = Interpolation("$")
 
   class UTRunner(val str: String) extends AnyVal {
 
-    def replace: String => String = identity[String]
+    def replace: String => String = { str =>
+      (0 until str.length).map(_ => "X").mkString("[", "", "]")
+    }
 
     def useFastParse(verbose: Boolean = false): String = {
 
@@ -175,8 +176,9 @@ object ParsersBenchmark {
     def useFSM(): String = {
       import UseFSM._
 
-      val parsed = p.parse(str)
-      val interpolated: Seq[String] = parsed.exports.map {
+      val parsed: ParsingRun.ResultSeq = fsmParser.parse(str)
+
+      val interpolated: Seq[String] = parsed.outputs.map {
         case v: String        => v
         case Some(vv: String) => replace(vv)
       }
@@ -229,15 +231,16 @@ object ParsersBenchmark {
 
   def compare(epochs: List[Epoch]): Unit = {
 
+    val _epochs = epochs.filterNot(_.skipResultCheck)
+
     val zipped = new InterleavedIterator(
-      epochs
-        .filterNot(_.skipResultCheck)
+      _epochs
         .map { v =>
           v.convertedStream.iterator
         }
     )
 
-    val withOriginal = epochs.head.convertedStream.iterator.zip(zipped)
+    val withOriginal = _epochs.head.convertedStream.iterator.zip(zipped)
 
     withOriginal.foreach {
       case (original, seq) =>
@@ -247,7 +250,7 @@ object ParsersBenchmark {
              |result mismatch!
              |original:
              |$original
-             |${epochs.map(_.name).zip(seq).map { case (k, v) => s"$k:\n$v" }.mkString("\n")}
+             |${_epochs.map(_.name).zip(seq).map { case (k, v) => s"$k:\n$v" }.mkString("\n")}
          """.stripMargin
         )
     }

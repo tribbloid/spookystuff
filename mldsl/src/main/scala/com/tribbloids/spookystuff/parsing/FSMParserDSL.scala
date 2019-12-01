@@ -71,8 +71,8 @@ object FSMParserDSL extends DSL {
       new Operand(collapseEntryNodes, e1)
     }
 
-    def :&(op: Operand[_Module]) = Loop(op)
-    def &:(op: Operand[_Module]) = Loop(op)
+    def :&(op: Operand[_Module]): Loop = Loop(op)
+    def &:(op: Operand[_Module]): Loop = Loop(op)
 
     case class Loop(op: Operand[_Module]) {
 
@@ -173,16 +173,15 @@ object FSMParserDSL extends DSL {
 
   object P {
 
-    implicit def toRuleOp(v: P) = v.!!
+    implicit def toRuleOp(v: P): v.!!.type = v.!!
     implicit def toRule[T](v: P): Pattern#Rule[String] = v.!!.rule
   }
 
   def P(v: Char): P = P(Pattern(Pattern.CharToken(v), Pattern.RangeArgs.next))
   def P_*(v: Char): P = P(Pattern(Pattern.CharToken(v), Pattern.RangeArgs.maxLength))
 
-  def EOS_/ : P = P(Pattern(Pattern.EndOfStream, Pattern.RangeArgs.next))
+  def EOS: P = P(Pattern(Pattern.EndOfStream, Pattern.RangeArgs.next))
   def EOS_* : P = P(Pattern(Pattern.EndOfStream, Pattern.RangeArgs.maxLength))
-  def EOS: P = EOS_*
 
   //
   case object FINISH extends Operand(Core.Node(FState.FINISH))

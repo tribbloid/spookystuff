@@ -94,13 +94,11 @@ trait ElementView[D <: Domain] extends Algebra.Sugars[D] with IDMixin {
     }
 
     case class ForwardTreeNode(
-        /**
-          * VERY IMPORTANT for cycle elimination
-          */
+        //VERY IMPORTANT for cycle elimination
         visited: Set[_Element] = Set.empty
     ) extends ElementTreeNode[D] {
 
-      override def viewWFormat = WFormat.this
+      override def viewWFormat: ElementView[D]#WFormat = WFormat.this
 
       override def dirSymbol = "v "
 
@@ -111,13 +109,11 @@ trait ElementView[D <: Domain] extends Algebra.Sugars[D] with IDMixin {
     }
 
     case class BackwardTreeNode(
-        /**
-          * VERY IMPORTANT for cycle elimination
-          */
+        //VERY IMPORTANT for cycle elimination
         visited: Set[_Element] = Set.empty
     ) extends ElementTreeNode[D] {
 
-      override def viewWFormat = WFormat.this
+      override def viewWFormat: ElementView[D]#WFormat = WFormat.this
 
       override def dirSymbol = "^ "
 

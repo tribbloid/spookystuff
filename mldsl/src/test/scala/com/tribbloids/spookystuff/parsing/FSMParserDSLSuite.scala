@@ -1,5 +1,6 @@
 package com.tribbloids.spookystuff.parsing
 
+import com.tribbloids.spookystuff.parsing.Exceptions.ParsingError
 import com.tribbloids.spookystuff.parsing.FSMParserDSL._
 import com.tribbloids.spookystuff.testutils.FunSpecx
 
@@ -7,10 +8,7 @@ class FSMParserDSLSuite extends FunSpecx {
 
   it("can form linear graph") {
 
-    val p = P_*('$') :~> P('{') :~> P_*('}') :~> FINISH
-
-    //    val forward = p.visualise(Format(forward = true)).Tree.show
-    //    val backward = p.visualise(Format(forward = false)).Tree.show
+    val p = P_*('$') :~> P('{').-- :~> P_*('}').!- :~> FINISH
 
     p.visualise()
       .ASCIIArt()
@@ -63,6 +61,40 @@ class FSMParserDSLSuite extends FunSpecx {
           |           ╚════════════╝
         """.stripMargin
       )
+
+    {
+      p.parse("${abc}")
+        .ioMapToString
+        .shouldBe(
+          """
+          |$	-> $
+          |{
+          |abc}	-> abc
+          |""".stripMargin
+        )
+    }
+
+    {
+      p.parse("abc${def}ghi")
+        .ioMapToString
+        .shouldBe(
+          """
+          |abc$	-> abc$
+          |{
+          |def}	-> def
+          |""".stripMargin
+        )
+    }
+
+    Seq(
+      "ab",
+      "$ab",
+      "${ab"
+    ).foreach { ii =>
+      intercept[ParsingError] {
+        println(p.parse(ii).ioMapToString)
+      }
+    }
   }
 
   it("can form non-linear graph") {
@@ -113,12 +145,43 @@ class FSMParserDSLSuite extends FunSpecx {
           |           ╚════════════╝
         """.stripMargin
       )
+
+    {
+      p.parse("P123")
+        .ioMapToString
+        .shouldBe(
+          """
+            |P	-> P
+            |1	-> 1
+            |""".stripMargin
+        )
+    }
+
+    {
+      p.parse("P213")
+        .ioMapToString
+        .shouldBe(
+          """
+            |P	-> P
+            |2	-> 2
+            |""".stripMargin
+        )
+    }
+
+    Seq(
+      "Q1",
+      "P3"
+    ).foreach { ii =>
+      intercept[ParsingError] {
+        println(p.parse(ii).ioMapToString)
+      }
+    }
   }
 
   it("can form loop") {
 
-    val start = P_*('{')
-    val p = start :~> P_*('}') :& start :~> EOS_* :~> FINISH
+    val start = P_*('{').!-
+    val p = start :~> P_*('}').!- :& start :~> EOS_* :~> FINISH
     p.visualise()
       .ASCIIArt()
       .shouldBe(
@@ -154,12 +217,60 @@ class FSMParserDSLSuite extends FunSpecx {
           |   ╚════════════╝   ╚══════════════╝
         """.stripMargin
       )
+
+    {
+      p.parse(" {abc}def")
+        .ioMapToString
+        .shouldBe(
+          """
+            | {	->
+            |abc}	-> abc
+            |def	-> def
+            |""".stripMargin
+        )
+    }
+
+    {
+      p.parse(" {abc} {123} ")
+        .ioMapToString
+        .shouldBe(
+          """
+            | {	->
+            |abc}	-> abc
+            | {	->
+            |123}	-> 123
+            | 	->
+            |""".stripMargin
+        )
+    }
+
+    {
+      p.parse(" {abc ")
+        .ioMapToString
+        .shouldBe(
+          """
+            | {abc 	->  {abc
+            |""".stripMargin
+        )
+    }
+
+    {
+      p.parse(" {abc} {def")
+        .ioMapToString
+        .shouldBe(
+          """
+            | {	->
+            |abc}	-> abc
+            | {def	->  {def
+            |""".stripMargin
+        )
+    }
   }
 
   it("can form self-loop") {
 
     val escape = P_*('\\')
-    val p = escape :& escape :~> P_*('$') :~> FINISH
+    val p = escape :& escape :~> EOS_* :~> FINISH
     p.visualise()
       .ASCIIArt()
       .shouldBe(
@@ -176,13 +287,13 @@ class FSMParserDSLSuite extends FunSpecx {
           |             ╚═╤═══╤═╝
           |               │ ^ │
           |               │ │ └───────┐
-          |               │ └──┐     ┌┘
-          |               │    └┐    │
-          |               v     │    │
-          |    ╔══════════════╗ │    │
-          |    ║[ '$' [0...] ]║ │    │
-          |    ╚═════╤════════╝ │    │
-          |          │          │    │
+          |               │ └────────┐│
+          |               v          ││
+          |   ╔══════════════════╗   ││
+          |   ║[ '[EOS]' [0...] ]║   ││
+          |   ╚══════╤═══════════╝   ││
+          |          │          ┌────┘│
+          |          │          │    ┌┘
           |          v          │    │
           |      ╔══════╗       │    │
           |      ║FINISH║       │    │
@@ -194,6 +305,19 @@ class FSMParserDSLSuite extends FunSpecx {
           | ╚════════════╝ ╚══════════════╝
         """.stripMargin
       )
+
+    {
+      p.parse("abc\\def\\\\ghi")
+        .ioMapToString
+        .shouldBe(
+          """
+            |abc\	-> abc\
+            |def\	-> def\
+            |\	-> \
+            |ghi	-> ghi
+            |""".stripMargin
+        )
+    }
   }
 
   it("self-loop can union with others") {

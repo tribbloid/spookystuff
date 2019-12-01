@@ -15,6 +15,7 @@ class ParsingRunSuite extends FunSpecx {
     */
   describe("linear") {
 
+    //TODO: should use ioMapToString in all assertions
     it("for 1 rule") {
       val p = P_*('$').!- :~> FINISH
 
@@ -22,8 +23,8 @@ class ParsingRunSuite extends FunSpecx {
       assert(cache.map(_._1) == Seq[RangeArg](0L to Long.MaxValue))
 
       p.parse("abcd$efg")
-        .strRepr
-        .shouldBe("abcd")
+        .ioMapToString
+        .shouldBe("abcd$\t-> abcd")
     }
 
     it("for 4 rules in 2 stages + EOS") {
@@ -39,31 +40,33 @@ class ParsingRunSuite extends FunSpecx {
       assert(cache.map(_._1) == Seq[RangeArg](0L to 0L, 1L to Long.MaxValue))
 
       p.parse("xyz<-")
-        .strRepr
-        .shouldBe("""
-            |xyz
-            |(<-,-)
-          """.stripMargin)
-
-      p.parse("xyz<abc>|")
-        .strRepr
+        .ioMapToString
         .shouldBe(
           """
-            |xyz
-            |(<.>,abc>)
+            |xyz<	-> xyz
+            |-	-> (<-,-)
+          """.stripMargin
+        )
+
+      p.parse("xyz<abc>|")
+        .ioMapToString
+        .shouldBe(
+          """
+            |xyz<	-> xyz
+            |abc>	-> (<.>,abc>)
           """.stripMargin
         )
 
       p.parse("xyz<12|34>")
-        .strRepr
+        .ioMapToString
         .shouldBe("""
-            |xyz
-            |(<.|,12|)
+            |xyz<	-> xyz
+            |12|	-> (<.|,12|)
           """.stripMargin)
 
       p.parse("abcd$efg")
-        .strRepr
-        .shouldBe("abcd$efg")
+        .ioMapToString
+        .shouldBe("abcd$efg\t-> abcd$efg")
     }
 
     it("for 4 rules with diamond path") {
@@ -74,17 +77,19 @@ class ParsingRunSuite extends FunSpecx {
       val p = (a1 U a2) :~> EOS_* :~> FINISH
 
       p.parse("xyz{{12((34")
-        .strRepr
+        .ioMapToString
         .shouldBe("""
-                    |xyz
-                    |12((34
+                    |xyz{	-> xyz
+                    |{
+                    |12((34	-> 12((34
                   """.stripMargin)
 
       p.parse("xyz((12{{34")
-        .strRepr
+        .ioMapToString
         .shouldBe("""
-                    |xyz
-                    |12{{34
+                    |xyz(	-> xyz
+                    |(
+                    |12{{34	-> 12{{34
                   """.stripMargin)
     }
   }
@@ -99,23 +104,23 @@ class ParsingRunSuite extends FunSpecx {
       val p = _p U (EOS_* :~> FINISH)
 
       p.parse("abc$xyz")
-        .strRepr
+        .ioMapToString
         .shouldBe("""
-                    |abc
-                    |xyz
+                    |abc$	-> abc
+                    |xyz	-> xyz
                   """.stripMargin)
 
       p.parse("abc\\$xyz")
-        .strRepr
+        .ioMapToString
         .shouldBe("""
-                    |abc\$xyz
+                    |abc\$xyz	-> abc\$xyz
                   """.stripMargin)
 
       p.parse("abc\\q$xyz")
-        .strRepr
+        .ioMapToString
         .shouldBe("""
-                    |abc\q
-                    |xyz
+                    |abc\q$	-> abc\q
+                    |xyz	-> xyz
                   """.stripMargin)
     }
 
@@ -125,28 +130,28 @@ class ParsingRunSuite extends FunSpecx {
       val p = `{` :~> P_*('}').!- :& `{` :~> EOS_* :~> FINISH
 
       p.parse("abc{def}ghi{jkl}mno{pqr}st")
-        .strRepr
+        .ioMapToString
         .shouldBe(
           """
-            |abc
-            |def
-            |ghi
-            |jkl
-            |mno
-            |pqr
-            |st
+            |abc{	-> abc
+            |def}	-> def
+            |ghi{	-> ghi
+            |jkl}	-> jkl
+            |mno{	-> mno
+            |pqr}	-> pqr
+            |st	-> st
           """.stripMargin
         )
 
       p.parse("abc{def}ghi{}jk")
-        .strRepr
+        .ioMapToString
         .shouldBe(
           """
-            |abc
-            |def
-            |ghi
-            |
-            |jk
+            |abc{	-> abc
+            |def}	-> def
+            |ghi{	-> ghi
+            |}	->
+            |jk	-> jk
           """.stripMargin
         )
     }
@@ -157,15 +162,15 @@ class ParsingRunSuite extends FunSpecx {
     it("unclosed bracket") {
 
       val `{` = P_*('{').!-
-      val p = `{` :~> P_*('}').!- :& `{` :~> EOS :~> FINISH
+      val p = `{` :~> P_*('}').!- :& `{` :~> EOS_* :~> FINISH
 
       p.parse("abc{def}ghi{jk")
-        .strRepr
+        .ioMapToString
         .shouldBe(
           """
-            |abc
-            |def
-            |ghi{jk
+            |abc{	-> abc
+            |def}	-> def
+            |ghi{jk	-> ghi{jk
           """.stripMargin
         )
     }
