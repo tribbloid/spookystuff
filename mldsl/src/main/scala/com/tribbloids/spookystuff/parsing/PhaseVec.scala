@@ -1,15 +1,34 @@
 package com.tribbloids.spookystuff.parsing
 
 // TODO: generalise!
-case class PhaseVec(
-    depth: Int = 0
-) extends PhaseVec.Like
+trait PhaseVec
 
 object PhaseVec {
 
-  trait Like
+  object InitialPhaseVec extends PhaseVec
 
   case class NoOp(
       skipOpt: Option[Int] = None
-  ) extends Like
+  ) extends PhaseVec {
+
+//    def next(bm: BacktrackingManager#LinearSearch): Option[Like] = {
+//
+//      skipOpt match {
+//        case Some(skip) => bm.length_+=(skip + 1)
+//        case None       => bm.transitionQueueII += 1 //TODO: is it really useful?
+//      }
+//      None
+//    }
+  }
+
+//  trait Transition extends Like {
+//
+//    def next(bm: BacktrackingManager#LinearSearch): Option[Like] = {
+//
+//      bm.transitionQueueII += 1
+//      bm.currentOutcome = transition._1 -> nextResult
+//      return transition._2 -> nextResult.nextPhaseVecOpt.asInstanceOf[PhaseVec]
+//    }
+//
+//  }
 }

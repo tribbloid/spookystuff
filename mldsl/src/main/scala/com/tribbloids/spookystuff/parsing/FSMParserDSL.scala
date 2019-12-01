@@ -105,14 +105,14 @@ object FSMParserDSL extends DSL {
       (root >>> create(pruned) <<< root).core
     }
 
-    lazy val compiled: FState = {
+    lazy val initialFState: FState = {
 
       val nodeView = output.Views.fromNode(root.self)
       FState(nodeView)
     }
 
     def parse(input: Seq[Char]): ParsingRun.ResultSeq = {
-      val result = ParsingRun(input, compiled).run
+      val result = ParsingRun(input, initialFState).run
       result
     }
   }
@@ -126,12 +126,12 @@ object FSMParserDSL extends DSL {
 
     def andThen[T2](
         fn: T => Option[T2],
-        vecFn: PhaseVec => PhaseVec.Like = { v =>
+        vecFn: PhaseVec => PhaseVec = { v =>
           v
         }
     ): Parser[T2] = Parser(
       rule.copy { (v1, v2) =>
-        val base = rule.resultFn(v1, v2)
+        val base = rule.fn(v1, v2)
         Outcome.AndThen(base, fn, vecFn)
       }
     )
@@ -142,7 +142,7 @@ object FSMParserDSL extends DSL {
       None
     }
 
-    def %(vecFn: PhaseVec => PhaseVec.Like): Parser[T] = andThen(v => Some(v), vecFn)
+    def %(vecFn: PhaseVec => PhaseVec): Parser[T] = andThen(v => Some(v), vecFn)
   }
 
   object Parser {
@@ -150,6 +150,9 @@ object FSMParserDSL extends DSL {
     implicit def toRule[T](v: Parser[T]): Pattern#Rule[T] = v.rule
   }
 
+  /**
+    * magnet class
+    */
   case class P(v: Pattern) {
 
     object !! extends Parser[String](v.!!)
@@ -173,7 +176,7 @@ object FSMParserDSL extends DSL {
 
   object P {
 
-    implicit def toRuleOp(v: P): v.!!.type = v.!!
+    implicit def toParser(v: P): Parser[String] = v.!!
     implicit def toRule[T](v: P): Pattern#Rule[String] = v.!!.rule
   }
 

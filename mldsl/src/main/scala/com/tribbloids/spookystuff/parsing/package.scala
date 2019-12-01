@@ -1,7 +1,5 @@
 package com.tribbloids.spookystuff
 
-import com.tribbloids.spookystuff.parsing.Pattern.Token
-
 package object parsing {
 
   //TODO: add following optimisations into FSM compiler
@@ -14,10 +12,5 @@ package object parsing {
 
   type Rule = Pattern#Rule[Any]
 
-  type Rule_FState = (Rule, FState)
-
-  type OutcomeFn[+R] = (
-      Seq[Token],
-      Phase
-  ) => Outcome[R]
+  type Transition = (Rule, FState)
 }

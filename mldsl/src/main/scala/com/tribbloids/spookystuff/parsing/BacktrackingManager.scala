@@ -1,8 +1,7 @@
 package com.tribbloids.spookystuff.parsing
 
-import com.tribbloids.spookystuff.parsing.Exceptions.{BacktrackableFailure, ParsingError}
-import com.tribbloids.spookystuff.parsing.FState.SubRules
 import com.tribbloids.spookystuff.parsing.Pattern.Token
+import com.tribbloids.spookystuff.parsing.exception.{BacktrackableFailure, BacktrackableMixin, ParsingError}
 import com.tribbloids.spookystuff.utils.RangeArg
 
 import scala.collection.mutable
@@ -24,7 +23,7 @@ case class BacktrackingManager(
       //      gotos: Seq[Transition]
   ) {
 
-    val subRuleCache: Seq[(RangeArg, FState.SubRules)] = prevPhase._1.subRuleCache
+    val subRuleCache: Seq[(RangeArg, Transitions)] = prevPhase._1.subRuleCache
 
     var _length: Long = 0L // strictly incremental
     var subRuleCacheII: Int = 0 // strictly incremental
@@ -34,7 +33,7 @@ case class BacktrackingManager(
       result
     }
 
-    var transitionQueue: Seq[Rule_FState] = Nil
+    var transitionQueue: Seq[Transition] = Nil
 
     var transitionQueueII: Int = 0
 
@@ -71,7 +70,7 @@ case class BacktrackingManager(
       for (_ <- 0 until v) length_++() //TODO: inefficient! only the last update require refreshing transitionQueue
     }
 
-    def findValidState(): Rule_FState = {
+    def findValidTransition(): Transition = {
 
       while (transitionQueueII >= transitionQueue.length) {
 
@@ -83,7 +82,7 @@ case class BacktrackingManager(
     // beforeFState == (length) ==> SubRules
     //        == (char) ==> Seq[Transition]
     //        == (index) ==> Transition ==> Rule, afterFState
-    def getSubRules: SubRules = {
+    def getSubRules: Transitions = {
 
       while (subRuleCacheII < subRuleCache.length) {
 
@@ -101,10 +100,12 @@ case class BacktrackingManager(
 
       while (true) {
 
-        val transition = findValidState()
-        val nextResult = transition._1.resultFn(spanTokens, prevPhase)
+        val transition: Transition = findValidTransition()
+        val outcome: Outcome[Any] = transition._1.fn(spanTokens, prevPhase)
 
-        nextResult.nextPhaseVecOpt match {
+        val nextPhaseVec = outcome.nextPhaseVec
+
+        nextPhaseVec match {
           case PhaseVec.NoOp(skipOpt) =>
             skipOpt match {
               case Some(skip) => length_+=(skip + 1)
@@ -112,8 +113,8 @@ case class BacktrackingManager(
             }
           case _ =>
             transitionQueueII += 1
-            currentOutcome = transition._1 -> nextResult
-            return transition._2 -> nextResult.nextPhaseVecOpt.asInstanceOf[PhaseVec]
+            currentOutcome = transition._1 -> outcome
+            return transition._2 -> nextPhaseVec
         }
       }
 
@@ -152,7 +153,7 @@ case class BacktrackingManager(
       }
 
     } catch {
-      case _: BacktrackableFailure =>
+      case _: BacktrackableMixin =>
         stack.remove(stack.length - 1)
         true
     }

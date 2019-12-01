@@ -2,7 +2,6 @@ package com.tribbloids.spookystuff.uav.actions
 
 import com.tribbloids.spookystuff.actions._
 import com.tribbloids.spookystuff.row.SpookySchema
-import com.tribbloids.spookystuff.uav.UAVConf
 
 /**
   * Do many things:

@@ -7,34 +7,34 @@ trait Outcome[+R] {
   /**
     * mutate PhaseVec
     * @return has 4 outcomes:
-    *         * Some -> jump to next state, with ParsingRun updated
-    *         * None -> NoOp, no change to ParsingRun, keep searching using upcoming rules or even rules yields from upcoming tokens
-    *         * throw BacktrackingException -> backtrack, captured by previous step processing and becomes an NoOp
-    *         * throw other Exceptions -> fail immediately, no backtracking
+    *         Normal -> jump to next state, with ParsingRun updated
+    *         [[com.tribbloids.spookystuff.parsing.PhaseVec.NoOp]] -> no change to ParsingRun, keep searching using upcoming rules or even rules yields from upcoming tokens
+    *         throw [[com.tribbloids.spookystuff.parsing.exception.BacktrackableFailure]] -> backtrack, captured by previous step processing and becomes an NoOp
+    *         throw other Exceptions -> fail immediately, no backtracking
     */
-  def nextPhaseVecOpt: PhaseVec.Like
-
+  def nextPhaseVec: PhaseVec
 }
 
 object Outcome {
 
-  case class Factories(tokens: Seq[Pattern.Token], prevPhase: Phase) {
+  case class Builder(tokens: Seq[Pattern.Token], prevPhase: Phase) {
 
-    object Skip extends Outcome[Nothing] {
-
-      override lazy val export: Option[Nothing] = None
-
-      override lazy val nextPhaseVecOpt: PhaseVec.Like = prevPhase._2
-    }
+    //TODO: remove rendered useless by !!.--
+//    object Skip extends Outcome[Nothing] {
+//
+//      override lazy val export: Option[Nothing] = None
+//
+//      override lazy val nextPhaseVec: PhaseVec = prevPhase._2
+//    }
 
     /**
-      * export tokens as is
+      * export [[com.tribbloids.spookystuff.parsing.Pattern.Token]]s as is and do not change [[PhaseVec]]
       */
     object `!!` extends Outcome[String] {
 
       override lazy val export: Option[String] = Some(Pattern.tokens2Str(tokens))
 
-      override lazy val nextPhaseVecOpt: PhaseVec.Like = prevPhase._2
+      override lazy val nextPhaseVec: PhaseVec = prevPhase._2
     }
   }
 
@@ -43,19 +43,15 @@ object Outcome {
       exportFn: R => Option[R2] = { v: R =>
         None
       },
-      phaseVecFn: PhaseVec => PhaseVec.Like = { v =>
+      phaseVecFn: PhaseVec => PhaseVec = { v: PhaseVec =>
         v
       }
   ) extends Outcome[R2] {
 
     override lazy val export: Option[R2] = base.export.flatMap(exportFn)
 
-    override lazy val nextPhaseVecOpt: PhaseVec.Like = {
-      base.nextPhaseVecOpt match {
-        case v: PhaseVec => phaseVecFn(v)
-        case v @ _       => v
-      }
-
+    override lazy val nextPhaseVec: PhaseVec = {
+      phaseVecFn(base.nextPhaseVec)
     }
   }
 }

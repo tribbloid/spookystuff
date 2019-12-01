@@ -10,11 +10,13 @@ case class Pattern(
     range: RangeArg = Pattern.RangeArgs.next
 ) {
 
+  import Pattern.RuleFn
+
   override def toString = s"'$token' $range"
 
   // ID is to make sure that rules created by P/P_* operator can be referenced in the resultSet
   case class Rule[+R](
-      resultFn: OutcomeFn[R]
+      fn: RuleFn[R]
   ) extends IDMixin {
 
     override val _id: UUID = UUID.randomUUID()
@@ -27,10 +29,15 @@ case class Pattern(
     override def toString: String = outer.toString
   }
 
-  object `!!` extends Rule(Outcome.Factories(_, _).`!!`)
+  object `!!` extends Rule((tokens, phase) => Outcome.Builder(tokens, phase).`!!`)
 }
 
 object Pattern {
+
+  type RuleFn[+R] = (
+      Seq[Token],
+      Phase
+  ) => Outcome[R]
 
   trait Token extends Any
 

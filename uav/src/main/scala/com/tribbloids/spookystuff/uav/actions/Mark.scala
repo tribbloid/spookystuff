@@ -5,7 +5,6 @@ import com.tribbloids.spookystuff.doc.{Doc, DocOption, DocUID}
 import com.tribbloids.spookystuff.session.{NoPythonDriverException, Session}
 import com.tribbloids.spookystuff.uav.utils.UAVViews.SessionView
 import org.apache.http.entity.ContentType
-import org.apache.spark.ml.dsl.utils.messaging.MessageWriter
 
 /**
   * Mark current vehicle status

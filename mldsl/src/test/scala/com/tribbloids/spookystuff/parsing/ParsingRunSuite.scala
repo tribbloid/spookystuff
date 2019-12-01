@@ -19,7 +19,7 @@ class ParsingRunSuite extends FunSpecx {
     it("for 1 rule") {
       val p = P_*('$').!- :~> FINISH
 
-      val cache = p.compiled.subRuleCache
+      val cache = p.initialFState.subRuleCache
       assert(cache.map(_._1) == Seq[RangeArg](0L to Long.MaxValue))
 
       p.parse("abcd$efg")
@@ -36,7 +36,7 @@ class ParsingRunSuite extends FunSpecx {
       val bs = (b1 U b2 U b3) :~> FINISH
       val p = (a :~> bs) U (EOS_* :~> FINISH)
 
-      val cache = bs.compiled.subRuleCache
+      val cache = bs.initialFState.subRuleCache
       assert(cache.map(_._1) == Seq[RangeArg](0L to 0L, 1L to Long.MaxValue))
 
       p.parse("xyz<-")
@@ -174,5 +174,11 @@ class ParsingRunSuite extends FunSpecx {
           """.stripMargin
         )
     }
+  }
+
+  describe("conditional") {
+
+    //TODO: use P_*('}').%(case ... => NoOp) to make some transition conditional
+
   }
 }
