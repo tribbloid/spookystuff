@@ -99,13 +99,12 @@ class ParsingRunSuite extends FunSpecx {
 
     it("escape by \\") {
 
-      val escape = {
-        val self = P_*('\\').escape
-        self :& self
-      }
+      val escape = ESC('\\')
 
       val _p = escape :~> P_*('$').!- :~> EOS_* :~> FINISH
       val p = _p U (EOS_* :~> FINISH)
+
+      val str = p.visualise().ASCIIArt.showStr
 
       p.parse("abc$xyz")
         .ioMapToString

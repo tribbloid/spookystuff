@@ -178,10 +178,6 @@ object FSMParserDSL extends DSL {
     lazy val -- : Parser[Nothing] = `!!`.^^ { v =>
       None
     }
-
-    lazy val escape: Parser[Nothing] = --.% { _ =>
-      PhaseVec.Skip(1)
-    }
   }
 
   object P {
@@ -195,6 +191,13 @@ object FSMParserDSL extends DSL {
 
   def EOS: P = P(Pattern(Pattern.EndOfStream, Pattern.RangeArgs.next))
   def EOS_* : P = P(Pattern(Pattern.EndOfStream, Pattern.RangeArgs.maxLength))
+
+  def ESC(v: Char): Parser[Nothing]#Loop = {
+    val p: Parser[Nothing] = P_*(v).--.% { _ =>
+      PhaseVec.Skip(1)
+    }
+    p :& p
+  }
 
   //
   case object FINISH extends Operand(Core.Node(FState.FINISH))
