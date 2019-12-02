@@ -182,7 +182,6 @@ class ParsingRunSuite extends FunSpecx {
   describe("conditional") {
 
     it("can parse paired brackets") {
-      //TODO: use P_*('}').%(case ... => NoOp) to make some transition conditional
 
       val entry = P_*('P').!- :~> P('{').--.% { _ =>
         Depth(0)

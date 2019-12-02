@@ -13,6 +13,13 @@ trait RuleOutcome[+R] {
     *         throw other Exceptions -> fail immediately, no backtracking
     */
   def nextPhaseVec: PhaseVec
+
+  override lazy val toString: String = {
+    s"""
+       |phase: $nextPhaseVec
+       |${`export`.getOrElse("[EMPTY]")}
+       |""".stripMargin
+  }
 }
 
 object RuleOutcome {

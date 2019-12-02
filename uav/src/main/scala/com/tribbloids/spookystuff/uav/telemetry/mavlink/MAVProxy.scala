@@ -75,7 +75,7 @@ case class MAVProxy(
         case Failure(e: TimeoutException) => //normal
         case Failure(e: Throwable) =>
           throw new UAVException(errorInfo, e)
-        case Success(v) => throw new RuntimeException("IMPOSSIBLE!")
+        case Success(v) => sys.error("IMPOSSIBLE!")
       }
 
       this._started = attempt

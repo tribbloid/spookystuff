@@ -5,7 +5,16 @@ import scala.language.implicitConversions
 case class RuleIO[R](
     input: RuleInput,
     outcome: RuleOutcome[R]
-) {}
+) {
+
+  override lazy val toString: String = {
+    s"""
+       |$input
+       |vvv
+       |$outcome
+       |""".stripMargin
+  }
+}
 
 object RuleIO {
 
