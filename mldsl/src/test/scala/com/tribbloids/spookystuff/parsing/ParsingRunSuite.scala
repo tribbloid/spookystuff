@@ -30,9 +30,9 @@ class ParsingRunSuite extends FunSpecx {
 
     it("for 4 rules in 2 stages + EOS") {
       val a = P_*('<').!-
-      val b1 = P('-').^^(v => Some("<-" -> v))
-      val b2 = P_*('>').^^(v => Some("<.>" -> v))
-      val b3 = P_*('|').^^(v => Some("<.|" -> v))
+      val b1 = P('-').^^(v => Some("<-" -> v.`export`.get))
+      val b2 = P_*('>').^^(v => Some("<.>" -> v.`export`.get))
+      val b3 = P_*('|').^^(v => Some("<.|" -> v.`export`.get))
 
       val bs = (b1 U b2 U b3) :~> FINISH
       val p = (a :~> bs) U (EOS_* :~> FINISH)
@@ -99,9 +99,12 @@ class ParsingRunSuite extends FunSpecx {
 
     it("escape by \\") {
 
-      val escape = P_*('\\').escape
+      val escape = {
+        val self = P_*('\\').escape
+        self :& self
+      }
 
-      val _p = escape :& escape :~> P_*('$').!- :~> EOS_* :~> FINISH
+      val _p = escape :~> P_*('$').!- :~> EOS_* :~> FINISH
       val p = _p U (EOS_* :~> FINISH)
 
       p.parse("abc$xyz")
@@ -182,24 +185,30 @@ class ParsingRunSuite extends FunSpecx {
     it("can parse paired brackets") {
       //TODO: use P_*('}').%(case ... => NoOp) to make some transition conditional
 
-      val entry = P_*('P').!- :~> P('{').--
-
-      val more = P_*('{') % {
-        case Depth(i) => Depth(i + 1)
-        case _        => Depth(1)
+      val entry = P_*('P').!- :~> P('{').--.% { _ =>
+        Depth(0)
       }
 
-      val less = P_*('}') % {
-        case Depth(i) if i >= 1 => Depth(i - 1)
-        case _                  => NoOp
+      val more = P_*('{') % { io =>
+        io.nextPhaseVec match {
+          case Depth(i) => Depth(i + 1)
+        }
+      }
+
+      val less = P_*('}') % { io =>
+        io.nextPhaseVec match {
+          case Depth(0) => NoOp
+          case Depth(i) => Depth(i - 1)
+        }
       }
 
       val moreOrLess = more U less
 
-      val out = P_*('}').!- % {
-        case Depth(i) if i >= 1 => NoOp
-        case Depth(i)           => Eye
-        case _                  => Eye
+      val out = P_*('}').!- % { io =>
+        io.nextPhaseVec match {
+          case Depth(0) => Eye
+          case Depth(_) => NoOp
+        }
       }
 
       val p: Operand[FSMParserGraph.Layout.GG] = (entry :~> moreOrLess :& moreOrLess) :~>

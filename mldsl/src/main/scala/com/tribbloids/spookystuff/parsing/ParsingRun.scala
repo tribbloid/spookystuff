@@ -5,7 +5,7 @@ import com.tribbloids.spookystuff.parsing.Pattern.{CharToken, EndOfStream, Token
 object ParsingRun {
 
   case class ResultSeq(
-      self: Seq[(Seq[Token], Outcome[Any], Rule)]
+      self: Seq[(Seq[Token], RuleOutcome[Any], Rule)]
   ) {
 
     lazy val outputs: Seq[Any] = self.flatMap(v => v._2.export)

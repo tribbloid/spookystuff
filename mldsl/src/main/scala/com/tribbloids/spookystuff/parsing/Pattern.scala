@@ -1,25 +1,21 @@
 package com.tribbloids.spookystuff.parsing
 
-import java.util.UUID
-
 import com.tribbloids.spookystuff.parsing.Pattern.Token
-import com.tribbloids.spookystuff.utils.{IDMixin, RangeArg}
+import com.tribbloids.spookystuff.utils.RangeArg
 
 case class Pattern(
     token: Token,
     range: RangeArg = Pattern.RangeArgs.next
 ) {
 
-  import Pattern.RuleFn
-
   override def toString = s"'$token' $range"
 
   // ID is to make sure that rules created by P/P_* operator can be referenced in the resultSet
-  case class Rule[+R](
-      fn: RuleFn[R]
-  ) extends IDMixin {
+  trait Rule[+R] {
 
-    override val _id: UUID = UUID.randomUUID()
+    def fn(ev: RuleInput): RuleOutcome[R]
+
+//    lazy val name: String =
 
     def outer: Pattern = Pattern.this
 
@@ -27,17 +23,30 @@ case class Pattern(
     def range: RangeArg = outer.range
 
     override def toString: String = outer.toString
+
+    def andThen[R1 >: R, R2](_fn: RuleIO[R1] => RuleOutcome[R2]): Rule[R2] = {
+      AndThen(this, _fn)
+    }
   }
 
-  object `!!` extends Rule((tokens, phase) => Outcome.Builder(tokens, phase).`!!`)
+  case object !! extends Rule[String] {
+    override def fn(ev: RuleInput): RuleOutcome[String] = ev.!!
+  }
+
+  case class AndThen[R, R2](
+      base: Rule[R],
+      _fn: RuleIO[R] => RuleOutcome[R2]
+  ) extends Rule[R2] {
+
+    override def fn(ev: RuleInput): RuleOutcome[R2] = {
+      val o1 = base.fn(ev)
+      _fn(RuleIO(ev, o1))
+    }
+  }
+
 }
 
 object Pattern {
-
-  type RuleFn[+R] = (
-      Seq[Token],
-      Phase
-  ) => Outcome[R]
 
   trait Token extends Any
 

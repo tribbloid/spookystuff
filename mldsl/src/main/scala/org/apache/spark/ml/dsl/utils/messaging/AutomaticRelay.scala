@@ -4,8 +4,6 @@ import org.apache.spark.ml.dsl.utils.refl.{ReflectionUtils, RuntimeTypeOverride,
 
 import scala.collection.immutable.ListMap
 
-import scala.language.existentials
-
 //TODO: add type information
 case class GenericProduct[T <: Product: Manifest](
     override val productPrefix: String,
@@ -33,7 +31,7 @@ case class GenericProduct[T <: Product: Manifest](
 abstract class AutomaticRelay[T <: Product: Manifest] extends MessageRelay[T] {
 
   override type M = GenericProduct[T]
-  override def messageMF = implicitly[Manifest[M]]
+  override def messageMF: Manifest[GenericProduct[T]] = implicitly[Manifest[M]]
 
   override def toMessage_>>(v: T): GenericProduct[T] = {
     val prefix = v.productPrefix

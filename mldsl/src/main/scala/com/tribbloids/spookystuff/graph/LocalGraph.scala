@@ -23,8 +23,7 @@ case class LocalGraph[D <: Domain] private (
       node_+ : CommonTypes.Binary[NodeData]
   ): LocalGraph[D] = {
 
-    LocalGraph
-      .BuilderImpl[D]()
+    new LocalGraph.BuilderImpl[D]()
       .fromSeq(
         nodeMap.values.toSeq.map(_.replicate(m)),
         edgeMap.values.toSeq.flatMap(_.map(_.replicate(m))),
@@ -82,7 +81,7 @@ case class LocalGraph[D <: Domain] private (
 
 object LocalGraph {
 
-  case class BuilderImpl[D <: Domain](
+  class BuilderImpl[D <: Domain](
       implicit override val algebra: Algebra[D]
   ) extends StaticGraph.Builder[D] {
 

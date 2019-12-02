@@ -2,8 +2,6 @@ package com.tribbloids.spookystuff.utils.io
 
 import org.apache.spark.ml.dsl.utils.data.{EAV, EAVRelay, EAVView}
 
-import scala.language.implicitConversions
-
 case class ResourceMetadata(
     override val source: EAV.Impl = EAV.empty
 ) extends EAVView {

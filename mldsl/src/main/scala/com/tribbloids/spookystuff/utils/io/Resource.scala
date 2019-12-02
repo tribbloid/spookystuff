@@ -5,8 +5,6 @@ import java.io.{InputStream, OutputStream}
 import com.tribbloids.spookystuff.utils.lifespan.LocalCleanable
 import org.apache.spark.ml.dsl.utils.data.EAV
 
-import scala.language.implicitConversions
-
 abstract class Resource[T] extends LocalCleanable {
 
   import Resource._

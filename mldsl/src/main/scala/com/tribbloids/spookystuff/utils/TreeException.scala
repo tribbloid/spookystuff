@@ -4,7 +4,6 @@ import com.tribbloids.spookystuff.utils.TreeException._combine
 import org.apache.spark.ml.dsl.utils.FlowUtils
 import org.apache.spark.sql.catalyst.trees.TreeNode
 
-import scala.collection.mutable.ArrayBuffer
 import scala.util.{Failure, Success, Try}
 
 object TreeException {
@@ -102,7 +101,7 @@ object TreeException {
       extra: Seq[Throwable] = Nil
   ): Option[T] = {
 
-    val buffer = ArrayBuffer[Try[T]]()
+//    val buffer = ArrayBuffer[Try[T]]()
 
     if (trials.isEmpty) return None
 

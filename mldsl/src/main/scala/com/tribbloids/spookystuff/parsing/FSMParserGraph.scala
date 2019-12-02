@@ -4,6 +4,7 @@ import java.util.UUID
 
 import com.github.mdr.ascii.layout.prefs.LayoutPrefsImpl
 import com.tribbloids.spookystuff.graph._
+import com.tribbloids.spookystuff.parsing
 
 /**
   * State-machine based parser combinator that takes a graph and compile into a deterministic decision process
@@ -29,13 +30,13 @@ object FSMParserGraph extends Algebra[FSMParserGraph] {
       },
       Some(FState.Ordinary)
     )
-  override def edgeAlgebra = DataAlgebra.NoAmbiguity[Rule]().Monadic
+  override def edgeAlgebra: DataAlgebra[parsing.FSMParserGraph.EdgeData] = DataAlgebra.NoAmbiguity[Rule]().Monadic
 
   object Layout extends FlowLayout[FSMParserGraph] {
 
-    override lazy val defaultGraphBuilder: LocalGraph.BuilderImpl[FSMParserGraph] = LocalGraph.BuilderImpl()
+    override lazy val defaultGraphBuilder: LocalGraph.BuilderImpl[FSMParserGraph] = new LocalGraph.BuilderImpl()
 
-    override lazy val defaultFormat = Formats.ShowOption.copy(
+    override lazy val defaultFormat: Visualisation.Format[FSMParserGraph] = Formats.ShowOption.copy(
       asciiLayout = LayoutPrefsImpl(
         unicode = true,
 //        compactify = false,

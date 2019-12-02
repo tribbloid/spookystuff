@@ -2,6 +2,7 @@ package com.tribbloids.spookystuff.graph.example
 
 import java.util.UUID
 
+import com.tribbloids.spookystuff.graph
 import com.tribbloids.spookystuff.graph._
 
 trait SimpleFlowGraph extends Domain {
@@ -13,21 +14,23 @@ trait SimpleFlowGraph extends Domain {
 
 object SimpleFlowGraph extends Algebra[SimpleFlowGraph] {
 
-  override def idAlgebra = IDAlgebra.UUIDAlgebra
+  override def idAlgebra: IDAlgebra[graph.example.SimpleFlowGraph.ID,
+                                    graph.example.SimpleFlowGraph.NodeData,
+                                    graph.example.SimpleFlowGraph.EdgeData] = IDAlgebra.UUIDAlgebra
 
   object DataAlgebraProto extends DataAlgebra[String] {
 
     override def +(v1: String, v2: String): String = v1 + v2
   }
 
-  override def nodeAlgebra = DataAlgebra.NoAmbiguity().Monadic
-  override def edgeAlgebra = DataAlgebraProto.Monadic
+  override def nodeAlgebra: DataAlgebra[graph.example.SimpleFlowGraph.NodeData] = DataAlgebra.NoAmbiguity().Monadic
+  override def edgeAlgebra: DataAlgebra[graph.example.SimpleFlowGraph.EdgeData] = DataAlgebraProto.Monadic
 
   object Layout extends FlowLayout[SimpleFlowGraph] {
 
-    override lazy val defaultGraphBuilder: LocalGraph.BuilderImpl[SimpleFlowGraph] = LocalGraph.BuilderImpl()
+    override lazy val defaultGraphBuilder: LocalGraph.BuilderImpl[SimpleFlowGraph] = new LocalGraph.BuilderImpl()
 
-    override lazy val defaultFormat = Formats.ShowOption
+    override lazy val defaultFormat: Visualisation.Format[SimpleFlowGraph] = Formats.ShowOption
   }
 
   object DSL extends Layout.DSL {

@@ -25,43 +25,55 @@ case class BacktrackingManager(
 
     val subRuleCache: Seq[(RangeArg, Transitions)] = prevPhase._1.subRuleCache
 
-    var _length: Long = 0L // strictly incremental
+    def getEnd(length: Long): Long = start + length
+
+    //TODO: convert the following to AtomicInteger/Long and benchmark again.
+    private var _length = 0L // strictly incremental
+    private var _end = start
+
+    def length: Long = _length
+    def length_=(length: Long): Unit = {
+      _length = length
+      _end = getEnd(length)
+    }
+    def end: Long = _end
+
     var subRuleCacheII: Int = 0 // strictly incremental
 
-    val spanTokens: mutable.ArrayBuffer[Token] = {
-      val result = new mutable.ArrayBuffer[Token](2048)
-      result
-    }
-
     var transitionQueue: Seq[Transition] = Nil
-
     var transitionQueueII: Int = 0
 
-    //init
     {
       updateState()
     }
 
-    //TODO: these are too slow and don't support streaming
-    def end(length: Long = this._length): Long = start + length
-    def token: Token = input(end().toInt)
+    def token: Token = input(end.toInt)
+
+    //TODO: remove, no need to take extra memory space! a slice of input is good enough
+    //    val spanTokens: mutable.ArrayBuffer[Token] = {
+    //      val result = new mutable.ArrayBuffer[Token](2048)
+    //      result
+    //    }
+
+    //TODO: how to index by long
+    def spanTokens: Seq[Token] = input.slice(start.toInt, end.toInt + 1)
+
+    def lookForwardTokens: Seq[Token] = input.drop(end.toInt + 1)
 
     private def updateState(): Unit = {
       val subRules = getSubRules
 
       transitionQueue = subRules.transitionsMap.getOrElse(token, Nil)
-
-      spanTokens += token
       transitionQueueII = 0
     }
 
     //update every state that depends on length
     def length_++(): Unit = {
 
-      if (end(_length + 1) >= input.length)
-        throw BacktrackableFailure(s"reaching EOS at length ${_length}")
+      if (getEnd(length + 1) >= input.length)
+        throw BacktrackableFailure(s"reaching EOS at length $length")
 
-      _length += 1
+      length += 1
 
       updateState()
     }
@@ -87,21 +99,22 @@ case class BacktrackingManager(
       while (subRuleCacheII < subRuleCache.length) {
 
         val hit = subRuleCache(subRuleCacheII)
-        if (hit._1.delegate.containsLong(_length)) return hit._2
+        if (hit._1.delegate.containsLong(length)) return hit._2
         subRuleCacheII += 1
       }
 
-      throw BacktrackableFailure(s"no rule is defined beyond length ${_length}")
+      throw BacktrackableFailure(s"no rule is defined beyond length $length")
     }
 
-    var currentOutcome: (Rule, Outcome[Any]) = _
+    var currentOutcome: (Rule, RuleOutcome[Any]) = _
 
     def nextPhase: Phase = {
 
       while (true) {
 
         val transition: Transition = findValidTransition()
-        val outcome: Outcome[Any] = transition._1.fn(spanTokens, prevPhase)
+        val rule = transition._1
+        val outcome: RuleOutcome[Any] = rule.fn(RuleInput(spanTokens, lookForwardTokens, prevPhase))
 
         val nextPhaseVec = outcome.nextPhaseVec
 
@@ -144,7 +157,7 @@ case class BacktrackingManager(
         case _ =>
           val nextLS = LinearSearch(
             nextPhase,
-            onTop.end() + 1L
+            onTop.end + 1L
           )
 
           stack += nextLS

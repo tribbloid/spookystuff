@@ -3,7 +3,6 @@ package org.apache.spark.ml.dsl.utils.data
 import com.tribbloids.spookystuff.utils.IDMixin
 import org.apache.spark.ml.dsl.utils.?
 
-import scala.language.implicitConversions
 import scala.util.Try
 
 trait AttrLike[T] extends Serializable with IDMixin {

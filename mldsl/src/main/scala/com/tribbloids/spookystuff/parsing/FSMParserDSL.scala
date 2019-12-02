@@ -122,27 +122,33 @@ object FSMParserDSL extends DSL {
   protected def rule2Edge(p: Rule): FSMParserGraph.Layout.Core[FSMParserGraph.Layout._Edge] =
     Core.Edge(Some(p))
 
-  case class Parser[+T](rule: Pattern#Rule[T]) extends Operand[_Edge](rule2Edge(rule)) {
+  case class Parser[T](rule: Pattern#Rule[T]) extends Operand[_Edge](rule2Edge(rule)) {
 
-    def andThen[T2](
-        fn: T => Option[T2],
-        vecFn: PhaseVec => PhaseVec = { v =>
-          v
-        }
-    ): Parser[T2] = Parser(
-      rule.copy { (v1, v2) =>
-        val base = rule.fn(v1, v2)
-        Outcome.AndThen(base, fn, vecFn)
+    def map[T2](
+        fn: Pattern#Rule[T] => Pattern#Rule[T2]
+    ): Parser[T2] = {
+
+      Parser(fn(rule))
+    }
+
+    def ^^[T2](fn: RuleIO[T] => Option[T2]): Parser[T2] = map { v =>
+      v.andThen { io: RuleIO[T] =>
+        val o2 = RuleOutcome.O[T2](fn(io), io.nextPhaseVec)
+        o2
       }
-    )
+    }
 
-    def ^^[T2](fn: T => Option[T2]): Parser[T2] = andThen(fn)
-    def ^^^(fn: T => Unit): Parser[Nothing] = ^^ { v =>
+    def %(fn: RuleIO[T] => PhaseVec): Parser[T] = map { v =>
+      v.andThen { io: RuleIO[T] =>
+        val o2 = RuleOutcome.O[T](io.`export`, fn(io))
+        o2
+      }
+    }
+
+    def ^^^(fn: RuleIO[T] => Unit): Parser[Nothing] = ^^ { v =>
       fn(v)
       None
     }
-
-    def %(vecFn: PhaseVec => PhaseVec): Parser[T] = andThen(v => Some(v), vecFn)
   }
 
   object Parser {
@@ -158,11 +164,15 @@ object FSMParserDSL extends DSL {
     object !! extends Parser[String](v.!!)
 
     lazy val !- : Parser[String] = `!!`.^^ { vv =>
-      Some(vv.dropRight(1))
+      vv.`export`.map { str =>
+        str.dropRight(1)
+      }
     }
 
     lazy val -! : Parser[Char] = `!!`.^^ { vv =>
-      Some(vv.last)
+      vv.`export`.map { str =>
+        str.last
+      }
     }
 
     lazy val -- : Parser[Nothing] = `!!`.^^ { v =>

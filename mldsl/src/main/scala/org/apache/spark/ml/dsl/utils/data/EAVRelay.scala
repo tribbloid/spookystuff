@@ -10,13 +10,12 @@ import org.json4s
 import org.json4s.JsonAST.{JObject, JString, JValue}
 
 import scala.collection.immutable.ListMap
-import scala.language.implicitConversions
 import scala.reflect.ClassTag
 
 trait EAVRelay[I <: EAV] extends MessageRelay[I] with EAVBuilder[I] {
 
   override final type Impl = I
-  final override def Impl = this
+  final override def Impl: EAVRelay[I] = this
 
   override def getRootTag(protoOpt: Option[I], messageOpt: Option[Map[String, JValue]]): String = "root"
 
@@ -101,7 +100,7 @@ trait EAVRelay[I <: EAV] extends MessageRelay[I] with EAVBuilder[I] {
       (commonGetters ++ booleanGetters).sortBy(_._1)
     }
 
-    def apply(obj: TT) = {
+    def apply(obj: TT): I = {
       val kvs: Seq[(String, Any)] = validGetters.flatMap { tuple =>
         try {
           tuple._2.setAccessible(true)
@@ -117,7 +116,7 @@ trait EAVRelay[I <: EAV] extends MessageRelay[I] with EAVBuilder[I] {
 
   @Deprecated //use ReflectionParser
   object RuntimeReflectionParser {
-    def apply[TT](obj: TT) = {
+    def apply[TT](obj: TT): I = {
       val scalaType = ScalaType.fromClass[TT](obj.getClass.asInstanceOf[Class[TT]])
       implicit val classTag: ClassTag[TT] = scalaType.asClassTag
 
