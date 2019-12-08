@@ -4,7 +4,6 @@ import com.tribbloids.spookystuff.parsing.ParsersBenchmark.Epoch
 import com.tribbloids.spookystuff.parsing.ParsersBenchmark.UseFastParse.blacklist
 import com.tribbloids.spookystuff.testutils.FunSpecx
 import com.tribbloids.spookystuff.utils.{InterleavedIterator, Interpolation}
-import fastparse._
 import org.apache.spark.BenchmarkHelper
 
 import scala.util.Random
@@ -83,6 +82,8 @@ object ParsersBenchmark {
   }
 
   object UseFastParse {
+
+    import fastparse._
     import NoWhitespace._
 
     val blacklist: Set[Char] = "{}$/\\".toSet
@@ -110,22 +111,38 @@ object ParsersBenchmark {
     //  def capturedOrEOS[_: P] = captured | End.!
 
     def nTimes[_: P]: P[(Seq[(String, String)], String)] = P(once.rep ~/ AnyChar.rep.!) // last String should be ignored
+
+    def parseStr(str: String, verbose: Boolean = false): (Seq[(String, String)], String) = {
+      parse(str, nTimes(_), verboseFailures = verbose) match {
+        case v: Parsed.Failure =>
+          throw new UnsupportedOperationException(
+            s"""
+               |Cannot parse:
+               |$str
+               |${if (verbose) v.longMsg else v.msg}
+            """.stripMargin
+          )
+        case v @ _ =>
+          v.get.value
+      }
+
+    }
   }
 
   object UseFSM {
 
     import FSMParserDSL._
 
-    def escape(v: Parser[_]): Operand[FSMParserGraph.Layout.GG] = {
+    def esc(v: Parser[_]): Operand[FSMParserGraph.Layout.GG] = {
 
-      val escapeChar = P_*('\\')
-      escapeChar :& escapeChar :~> v
+      val esc = ESC('\\')
+      esc :~> v
     }
 
-    val first: Operand[FSMParserGraph.Layout.GG] = escape(P_*('$').!-)
+    val first: Operand[FSMParserGraph.Layout.GG] = esc(P_*('$').!-)
 
-    val enclosed: Operand[FSMParserGraph.Layout.GG] = escape(P_*('}').!-.^^ { v =>
-      Some(Some(v))
+    val enclosed: Operand[FSMParserGraph.Layout.GG] = esc(P_*('}').!-.^^ { io =>
+      Some(io.outcome.`export`)
     })
 
     val fsmParser: Operand[FSMParserGraph.Layout.GG] = first :~> P('{').-- :~> enclosed :& first :~> EOS_* :~> FINISH
@@ -147,18 +164,7 @@ object ParsersBenchmark {
 
       import UseFastParse._
 
-      val parsed: (Seq[(String, String)], String) = parse(str, nTimes(_), verboseFailures = verbose) match {
-        case v: Parsed.Failure =>
-          throw new UnsupportedOperationException(
-            s"""
-               |Cannot parse:
-               |$str
-               |${if (verbose) v.longMsg else v.msg}
-            """.stripMargin
-          )
-        case v @ _ =>
-          v.get.value
-      }
+      val parsed = parseStr(str, verbose)
 
       val interpolated = parsed._1
         .flatMap {
@@ -181,6 +187,8 @@ object ParsersBenchmark {
       val interpolated: Seq[String] = parsed.outputs.map {
         case v: String        => v
         case Some(vv: String) => replace(vv)
+        case v @ _ =>
+          sys.error(v.toString)
       }
       interpolated.mkString("")
     }
