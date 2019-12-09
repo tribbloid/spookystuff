@@ -1,11 +1,12 @@
 package com.tribbloids.spookystuff.parsing
 
 import com.tribbloids.spookystuff.parsing.ParsersBenchmark.Epoch
-import com.tribbloids.spookystuff.parsing.ParsersBenchmark.UseFastParse.blacklist
 import com.tribbloids.spookystuff.testutils.FunSpecx
 import com.tribbloids.spookystuff.utils.{InterleavedIterator, Interpolation}
+import fastparse.internal.Logger
 import org.apache.spark.BenchmarkHelper
 
+import scala.collection.mutable.ArrayBuffer
 import scala.util.Random
 
 class ParsersBenchmark extends FunSpecx {
@@ -77,55 +78,64 @@ object ParsersBenchmark {
     }
 
     charSeq
-      .filterNot(v => blacklist.contains(v))
+      .filterNot(v => UseFastParse.blacklist.contains(v))
       .mkString("")
   }
 
   object UseFastParse {
 
-    import fastparse._
-    import NoWhitespace._
-
     val blacklist: Set[Char] = "{}$/\\".toSet
 
-    //  val allKWs: String = "/\\\\$}"
+    case class Impl(log: ArrayBuffer[String] = ArrayBuffer.empty) {
 
-    case class UntilCharInclusive(kw: Char) {
+      import fastparse._
+      import NoWhitespace._
 
-      //    final val allKWs: String = "/\\\\" + kw
+      implicit val logger: Logger = Logger(v => log += v)
 
-      def predicate(c: Char): Boolean = c != kw && c != '\\'
-      def strChars[_: P]: P[Unit] = P(CharsWhile(predicate))
+      //  val allKWs: String = "/\\\\$}"
 
-      def escaped[_: P]: P[Unit] = P("\\" ~/ AnyChar)
-      def str[_: P]: P[String] = (strChars | escaped).rep.!
+      case class UntilCharInclusive(kw: Char) {
 
-      def result[_: P]: P[String] = P(str ~ kw.toString) //TODO: why this cannot be ~/ ?
-    }
+        //    final val allKWs: String = "/\\\\" + kw
 
-    val to_$ : UntilCharInclusive = UntilCharInclusive('$')
-    val `to_}`: UntilCharInclusive = UntilCharInclusive('}')
+        def predicate(c: Char): Boolean = c != kw && c != '\\'
+        def strChars[_: P]: P[Unit] = P(CharsWhile(predicate))
 
-    def once[_: P]: P[(String, String)] = P(to_$.result ~ "{" ~ `to_}`.result)
+        def escaped[_: P]: P[Unit] = P("\\" ~/ AnyChar)
+        def str[_: P]: P[String] = (strChars | escaped).rep.!
 
-    //  def capturedOrEOS[_: P] = captured | End.!
-
-    def nTimes[_: P]: P[(Seq[(String, String)], String)] = P(once.rep ~/ AnyChar.rep.!) // last String should be ignored
-
-    def parseStr(str: String, verbose: Boolean = false): (Seq[(String, String)], String) = {
-      parse(str, nTimes(_), verboseFailures = verbose) match {
-        case v: Parsed.Failure =>
-          throw new UnsupportedOperationException(
-            s"""
-               |Cannot parse:
-               |$str
-               |${if (verbose) v.longMsg else v.msg}
-            """.stripMargin
-          )
-        case v @ _ =>
-          v.get.value
+        def result[_: P]: P[String] = P(str ~ kw.toString).log
       }
 
+      val to_$ : UntilCharInclusive = UntilCharInclusive('$')
+      val `to_}`: UntilCharInclusive = UntilCharInclusive('}')
+
+      def once[_: P]: P[(String, String)] = P(to_$.result ~ "{" ~ `to_}`.result)
+
+      def nTimes[_: P]: P[(Seq[(String, String)], String)] =
+        P(once.rep ~/ AnyChar.rep.!) // last String should be ignored
+
+      def parser[_: P]: P[(Seq[(String, String)], String)] = nTimes.log
+
+      def parseStr(str: String, verbose: Boolean = false): (Seq[(String, String)], String) = {
+
+        parse(str, parser(_), verboseFailures = verbose) match {
+          case v: Parsed.Failure =>
+            throw new UnsupportedOperationException(
+              s"""
+                 |Cannot parse:
+                 |$str
+                 |${if (verbose) v.longMsg else v.msg}
+                 | === error breakdown ===
+                 |${log.mkString("\n")}
+            """.stripMargin
+            )
+          case v @ _ =>
+            v.get.value
+        }
+
+      }
     }
   }
 
@@ -148,7 +158,56 @@ object ParsersBenchmark {
     val fsmParser: Operand[FSMParserGraph.Layout.GG] = first :~> P('{').-- :~> enclosed :& first :~> EOS_* :~> FINISH
 
     {
-      println(fsmParser.visualise().ASCIIArt())
+      assert(
+        fsmParser.visualise().ASCIIArt() ==
+          """
+            |          ╔═══════════════╗          ╔═══════════════╗            
+            |          ║(TAIL>>-) [ ∅ ]║          ║(TAIL-<<) [ ∅ ]║            
+            |          ╚═══════╤═══════╝          ╚═══════╤═══════╝            
+            |                  │                          │                    
+            |                  └───────────┐   ┌──────────┘                    
+            |                              │   │                               
+            |                              v   v                               
+            |                          ╔═══════════╗                           
+            |                          ║   ROOT    ║                           
+            |                          ╚═╤═════╤═╤═╝                           
+            |                            │ ^^  │ │                             
+            |               ┌────────────┘ ││┌─┘ └─────────┐                   
+            |               │            ┌─┼┘│             │                   
+            |               v            │ │ │             │                   
+            |       ╔══════════════╗     │ │ │             │                   
+            |       ║[ '$' [0...] ]║     │ │ │             │                   
+            |       ╚══╤═══════════╝     │ │ │             │                   
+            |          │                 │ │ │             │                   
+            |          v                 │ │ │             │                   
+            |        ╔═══╗               │ │ │             │                   
+            |        ║---║               │ │ │             │                   
+            |        ╚═╤═╝               │ │ │             │                   
+            |          │                 │ │ │             │                   
+            |          v                 │ │ │             v                   
+            |    ╔═══════════╗           │ │ │   ╔══════════════════╗          
+            |    ║[ '{' [0] ]║           │ │ │   ║[ '[EOS]' [0...] ]║          
+            |    ╚══════╤════╝           │ │ │   ╚══════════════╤═══╝          
+            |           │                │ │ │                  │              
+            |           │                │ │ └────────────┐     │              
+            |           │                │ └─────────┐    │     │              
+            |           v                │           │    │     v              
+            |       ╔═══════╗            │           │    │ ╔══════╗           
+            |       ║  ---  ║            │           │    │ ║FINISH║           
+            |       ╚═╤═══╤═╝            │           │    │ ╚═══╤══╝           
+            |         │ ^ │              │           │    │     │              
+            |         │ │ └──────────┐   │           │    │     └───────┐      
+            |         │ │            │   │           │    │             │      
+            |         v │            v   │           │    v             v      
+            | ╔═════════╧════╗ ╔═════════╧════╗ ╔════╧═════════╗ ╔════════════╗
+            | ║[ '\' [0...] ]║ ║[ '}' [0...] ]║ ║[ '\' [0...] ]║ ║(HEAD) [ ∅ ]║
+            | ╚══════════════╝ ╚══════════════╝ ╚══════════════╝ ╚════════════╝
+            |""".stripMargin
+            .split("\n")
+            .toList
+            .filterNot(_.replaceAllLiterally(" ", "").isEmpty)
+            .mkString("\n")
+      )
     }
   }
 
@@ -162,9 +221,9 @@ object ParsersBenchmark {
 
     def useFastParse(verbose: Boolean = false): String = {
 
-      import UseFastParse._
+      val impl = UseFastParse.Impl()
 
-      val parsed = parseStr(str, verbose)
+      val parsed = impl.parseStr(str, verbose)
 
       val interpolated = parsed._1
         .flatMap {
