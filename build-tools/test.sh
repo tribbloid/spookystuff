@@ -5,4 +5,4 @@ FWDIR="$(cd "`dirname "$0"`"/..; pwd)"
 
 source "${CRDIR}/.mvn-common.sh"
 
-mvn test -f "$FWDIR"/pom.xml -fn -Pdist "$@"
+exec mvn test -f "$FWDIR"/pom.xml -fn -Pdist "$@"
