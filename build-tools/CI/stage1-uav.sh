@@ -8,4 +8,4 @@ set -e
 source "${CRDIR}/profiles/${1}/.common.sh"
 
 "$CRDIR"/../mvn-install.sh "${MVN_PROFILES[@]}" -Puav && \
-"$CRDIR"/../test.sh "${MVN_PROFILES[@]}" -Puav -pl uav
+exec "$CRDIR"/../test.sh "${MVN_PROFILES[@]}" -Puav -pl uav

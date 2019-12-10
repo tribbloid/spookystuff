@@ -8,4 +8,4 @@ set -e
 source "${CRDIR}/profiles/${1}/.common.sh"
 
 "$CRDIR"/../mvn-install.sh "${MVN_PROFILES[@]}" -Pbenchmark && \
-"$CRDIR"/../test.sh "${MVN_PROFILES[@]}" -Pbenchmark
+exec "$CRDIR"/../test.sh "${MVN_PROFILES[@]}" -Pbenchmark
