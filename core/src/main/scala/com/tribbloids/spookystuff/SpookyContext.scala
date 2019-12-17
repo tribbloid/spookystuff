@@ -275,7 +275,7 @@ case class SpookyContext(
           }
           new FetchedDataset(
             self,
-            fieldMap = ListMap(Field("_") -> ScalaType.fromTypeTag(ttg).reify),
+            fieldMap = ListMap(Field("_") -> ScalaType.fromTypeTag(ttg).asCatalystType),
             spooky = getSpookyForRDD
           )
       }

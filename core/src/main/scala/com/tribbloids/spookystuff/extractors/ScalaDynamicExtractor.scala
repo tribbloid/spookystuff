@@ -3,7 +3,7 @@ package com.tribbloids.spookystuff.extractors
 import java.lang.reflect.Method
 
 import com.tribbloids.spookystuff.extractors.impl.Lit
-import org.apache.spark.ml.dsl.utils.refl.{ReflectionLock, TypeUtils, UnreifiedScalaType}
+import org.apache.spark.ml.dsl.utils.refl.{ReflectionLock, TypeUtils, UnreifiedObjectType}
 import org.apache.spark.ml.dsl.utils.FlowUtils
 import org.apache.spark.sql.catalyst.ScalaReflection.universe._
 
@@ -154,7 +154,7 @@ case class ScalaDynamicExtractor[T](
   override def resolveType(tt: DataType): DataType = locked {
     val tag: TypeTag[Any] = _resolveTypeTag(tt)
 
-    UnreifiedScalaType.forType(tag)
+    UnreifiedObjectType.forType(tag)
   }
 
   private def _resolveTypeTag(tt: DataType): TypeTag[Any] = locked {
@@ -313,7 +313,7 @@ trait ScalaDynamicMixin[T, +R] extends Dynamic with ReflectionLock {
       case ex: GenExtractor[_, _] =>
         ex.asInstanceOf[GenExtractor[T, Any]]
       case v @ _ =>
-        val tt = UnreifiedScalaType.forRuntimeInstance(v)
+        val tt = UnreifiedObjectType.forRuntimeInstance(v)
         new Lit[T, Any](Option(v), tt)
     }
 

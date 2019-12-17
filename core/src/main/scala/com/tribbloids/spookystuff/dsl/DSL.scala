@@ -11,7 +11,7 @@ import com.tribbloids.spookystuff.extractors.impl.{Append, Get, Interpolate, Zip
 import com.tribbloids.spookystuff.rdd.FetchedDataset
 import com.tribbloids.spookystuff.row.{FetchedRow, Field}
 import com.tribbloids.spookystuff.utils.Default
-import org.apache.spark.ml.dsl.utils.refl.UnreifiedScalaType
+import org.apache.spark.ml.dsl.utils.refl.UnreifiedObjectType
 import org.apache.spark.rdd.RDD
 import org.apache.spark.sql.types.MapType
 
@@ -198,7 +198,7 @@ sealed trait Level2 {
 
     def groupBy[K: TypeTag](f: T => K): Extractor[Map[K, Seq[T]]] = {
 
-      val keyType = UnreifiedScalaType.forType[K]
+      val keyType = UnreifiedObjectType.forType[K]
 
       self.andTyped(
         groupByImpl(f), { t =>

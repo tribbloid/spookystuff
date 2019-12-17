@@ -5,14 +5,12 @@ import java.nio.ByteBuffer
 
 import com.tribbloids.spookystuff.utils.IDMixin
 import org.apache.hadoop.io.Writable
-import org.apache.spark.ml.dsl.utils.refl.{ScalaType, TypeUtils}
 import org.apache.spark.serializer.{JavaSerializer, KryoSerializer, SerializerInstance}
 import org.apache.spark.sql.catalyst.ScalaReflection.universe.TypeTag
 import org.apache.spark.{SerializableWritable, SparkConf}
 
 import scala.language.implicitConversions
 import scala.reflect.ClassTag
-import scala.util.Try
 
 object SerBox {
 
@@ -115,34 +113,3 @@ case class SerBox[T: ClassTag](
 //    result
 //  }
 //}
-
-/**
-  * this is a makeshift wrapper to circumvent scala 2.10 reflection's serialization problem
-  */
-class WritableTypeTag[T](
-    @transient val _ttg: TypeTag[T]
-) extends Serializable {
-
-  val boxOpt = Try {
-    new SerBox(_ttg, SerBox.javaOverride) //TypeTag is incompatible with Kryo
-  }.toOption
-
-  val dTypeOpt = TypeUtils.tryCatalystTypeFor(_ttg).toOption
-
-  @transient lazy val value: TypeTag[T] = Option(_ttg)
-    .orElse {
-      boxOpt.map { v =>
-        v.value
-      }
-    }
-    .orElse {
-      dTypeOpt.flatMap { dType =>
-        ScalaType.DataTypeView(dType).scalaTypeOpt.map(_.asInstanceOf[TypeTag[T]])
-      }
-    }
-    .getOrElse(
-      throw new UnsupportedOperationException(
-        "TypeTag is lost during serialization and unrecoverable from Catalyst DataType"
-      )
-    )
-}

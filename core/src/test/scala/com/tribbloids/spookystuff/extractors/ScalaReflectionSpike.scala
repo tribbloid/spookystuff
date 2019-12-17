@@ -4,7 +4,7 @@ import com.tribbloids.spookystuff.extractors.impl.Lit
 import com.tribbloids.spookystuff.row.FetchedRow
 import com.tribbloids.spookystuff.testbeans.{Example, GenericExample}
 import com.tribbloids.spookystuff.testutils.FunSpecx
-import org.apache.spark.ml.dsl.utils.refl.{TypeUtils, UnreifiedScalaType}
+import org.apache.spark.ml.dsl.utils.refl.{TypeUtils, UnreifiedObjectType}
 import org.apache.spark.sql.types.{IntegerType, StringType}
 
 //object ScalaReflectionSuite {
@@ -14,7 +14,7 @@ class ScalaReflectionSpike extends FunSpecx {
   import org.apache.spark.ml.dsl.utils.refl.ScalaType._
 
   lazy val exLit: Lit[FetchedRow, _] = Lit(new Example())
-  lazy val exType: DataType = UnreifiedScalaType.forType[Example]
+  lazy val exType: DataType = UnreifiedObjectType.forType[Example]
 
   it("getMethodsByName should work on overloaded function") {
 
@@ -307,5 +307,5 @@ class ScalaReflectionSpike_Generic extends ScalaReflectionSpike {
 
   override lazy val exLit = Lit(new GenericExample[Int]("dummy", 1))
   //  val evi = (ex.dataType)
-  override lazy val exType = UnreifiedScalaType.forType[GenericExample[Int]]
+  override lazy val exType = UnreifiedObjectType.forType[GenericExample[Int]]
 }

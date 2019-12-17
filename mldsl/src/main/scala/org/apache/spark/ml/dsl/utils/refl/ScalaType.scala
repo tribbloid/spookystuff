@@ -1,11 +1,7 @@
 package org.apache.spark.ml.dsl.utils.refl
 
-import java.nio.ByteBuffer
 import java.sql.{Date, Timestamp}
 
-import com.tribbloids.spookystuff.utils.serialization.WritableTypeTag
-import org.apache.spark.SparkConf
-import org.apache.spark.serializer.JavaSerializer
 import org.apache.spark.sql.catalyst.ScalaReflection
 import org.apache.spark.sql.catalyst.ScalaReflection.universe._
 import org.apache.spark.sql.types._
@@ -21,20 +17,19 @@ import scala.reflect.ClassTag
   * Will be simplified again once Spark 2.2 introduces UserDefinedType V2.
   */
 //TODO: change to ThreadLocal to bypass thread safety?
-//TODO: use scala type class: http://danielwestheide.com/blog/2013/02/06/the-neophytes-guide-to-scala-part-12-type-classes.html
 //TODO: this should be a codec
-trait ScalaType[T] extends DataType with (() => TypeTag[T]) with ReflectionLock with Serializable {
+trait ScalaType[T] extends ReflectionLock with Serializable {
 
-  override def defaultSize: Int = 0
-  override def asNullable: this.type = this
-
-  override def toString = typeName
+  override def toString = asType.toString
 
   @transient lazy val mirror: Mirror = asTypeTag.mirror
 
-  @transient lazy val asTypeTag: TypeTag[T] = locked {
-    apply()
+  @transient final lazy val asTypeTag: TypeTag[T] = locked {
+    _asTypeTag
   }
+
+  def _asTypeTag: TypeTag[T]
+
   @transient lazy val asType: Type = locked {
     ScalaReflection.localTypeOf(asTypeTag)
   }
@@ -46,23 +41,18 @@ trait ScalaType[T] extends DataType with (() => TypeTag[T]) with ReflectionLock 
     ClassTag(asClass)
   }
 
-  //TODO: aggregate into catalyst obj
   @transient lazy val tryReify: scala.util.Try[DataType] = locked {
     TypeUtils
       .tryCatalystTypeFor(asTypeTag)
-      .flatMap { t =>
-        scala.util.Try {
-          assert(t.getClass != this.getClass, "cyclic reification")
-          t
-        }
-      }
   }
 
   def reify: DataType = tryReify.get
-  def reifyOrSelf = tryReify.getOrElse { this }
-  def reifyOrNullType = tryReify.getOrElse { NullType }
 
-  //TODO: add classManifest
+  def asCatalystType = tryReify.getOrElse {
+    new UnreifiedObjectType[T]()(this)
+  }
+
+  //  def reifyOrNullType = tryReify.getOrElse { NullType }
 
   // see [SPARK-8647], this achieves the needed constant hash code without declaring singleton
   final override def hashCode: Int = asClass.hashCode()
@@ -100,21 +90,7 @@ trait ScalaType[T] extends DataType with (() => TypeTag[T]) with ReflectionLock 
   }
 }
 
-object ScalaType {
-
-  trait TTg[T] extends ScalaType[T] {
-
-    def _typeTag: TypeTag[T] // not serializable in 2.10
-
-    lazy val serTypeTag: WritableTypeTag[T] = new WritableTypeTag(_typeTag)
-    serTypeTag
-
-    override def apply() = Option(_typeTag).getOrElse {
-      serTypeTag.value
-    }
-  }
-  implicit class FromTypeTag[T](@transient override val _typeTag: TypeTag[T]) extends TTg[T]
-  def fromTypeTag[T](implicit v: TypeTag[T]) = new FromTypeTag(v)
+abstract class ScalaType_Level1 {
 
   trait Clz[T] extends ScalaType[T] {
 
@@ -136,12 +112,16 @@ object ScalaType {
       tpe
     }
 
-    override def apply(): TypeTag[T] = {
+    override def _asTypeTag: TypeTag[T] = {
       TypeUtils.createTypeTag(asType, mirror)
     }
   }
+
   implicit class FromClass[T](val _class: Class[T]) extends Clz[T]
-  def fromClass[T](implicit v: Class[T]) = new FromClass(v)
+  implicit def fromClass[T](implicit v: Class[T]) = new FromClass(v)
+}
+
+abstract class ScalaType_Level2 extends ScalaType_Level1 {
 
   trait Ctg[T] extends Clz[T] {
 
@@ -155,7 +135,21 @@ object ScalaType {
     }
   }
   implicit class FromClassTag[T](val _classTag: ClassTag[T]) extends Ctg[T]
-  def fromClassTag[T](implicit v: ClassTag[T]) = new FromClassTag(v)
+  implicit def fromClassTag[T](implicit v: ClassTag[T]) = new FromClassTag(v)
+}
+
+object ScalaType extends ScalaType_Level2 {
+
+  trait Ttg[T] extends ScalaType[T] {
+
+    def _typeTag: TypeTag[T] // not serializable in 2.10
+
+    override def _asTypeTag = _typeTag
+  }
+  implicit class FromTypeTag[T](@transient override val _typeTag: TypeTag[T]) extends Ttg[T]
+  implicit def fromTypeTag[T](implicit v: TypeTag[T]) = new FromTypeTag(v)
+
+  def summon[T](implicit ev: ScalaType[T]): ScalaType[T] = ev
 
   def getRuntimeType(v: Any): ScalaType[_] = {
     v match {
@@ -164,7 +158,7 @@ object ScalaType {
     }
   }
 
-  object DataTypeView {
+  object FromCatalystType {
 
     lazy val atomicExamples: Seq[(Any, TypeTag[_])] = {
 
@@ -197,33 +191,32 @@ object ScalaType {
     }
   }
 
-  //TODO: subclass ScalaType
-  implicit class DataTypeView(tt: DataType) extends ReflectionLock {
+  implicit class FromCatalystType(tt: DataType) extends ReflectionLock {
 
     // CatalystType => ScalaType
     // used in ReflectionMixin to determine the exact function to:
     // 1. convert data from CatalystType to canonical Scala Type (and obtain its TypeTag)
     // 2. use the obtained TypeTag to get the specific function implementation and applies to the canonic Scala Type data.
     // 3. get the output TypeTag of the function, use it to generate the output DataType of the new Extraction.
-    def scalaTypeOpt: Option[TypeTag[_]] = locked {
+    def typeTagOpt: Option[TypeTag[_]] = locked {
 
       tt match {
         case NullType =>
           Some(TypeTag.Null)
-        case st: ScalaType[_] =>
-          Some(st.asTypeTag)
-        case t if DataTypeView.atomicTypeMap.contains(t) =>
-          DataTypeView.atomicTypeMap.get(t)
+        case st: ScalaType.AsCatalystType[_] =>
+          Some(st.self.asTypeTag)
+        case t if FromCatalystType.atomicTypeMap.contains(t) =>
+          FromCatalystType.atomicTypeMap.get(t)
         case ArrayType(inner, _) =>
-          val innerTagOpt = inner.scalaTypeOpt
+          val innerTagOpt = inner.typeTagOpt
           innerTagOpt.map {
             case at: TypeTag[a] =>
               implicit val att = at
               typeTag[Array[a]]
           }
         case MapType(key, value, _) =>
-          val keyTag = key.scalaTypeOpt
-          val valueTag = value.scalaTypeOpt
+          val keyTag = key.typeTagOpt
+          val valueTag = value.typeTagOpt
           val pairs = (keyTag, valueTag) match {
             case (Some(kt), Some(vt)) => Some(kt -> vt)
             case _                    => None
@@ -243,16 +236,16 @@ object ScalaType {
     }
 
     def asTypeTag: TypeTag[_] = {
-      scalaTypeOpt.getOrElse {
+      typeTagOpt.getOrElse {
         throw new UnsupportedOperationException(
-          s"cannot convert Catalyst type $tt to Scala type: TypeTag=${tt.scalaTypeOpt}")
+          s"cannot convert Catalyst type $tt to Scala type: TypeTag=${tt.typeTagOpt}")
       }
     }
 
     def asTypeTagCasted[T]: TypeTag[T] = asTypeTag.asInstanceOf[TypeTag[T]]
 
     @transient lazy val reified: DataType = locked {
-      val result = UnreifiedScalaType.reify(tt)
+      val result = UnreifiedObjectType.reify(tt)
       result
     }
 
@@ -321,80 +314,9 @@ object ScalaType {
       )
     }
   }
-}
 
-/**
-  * Can only exist in DataRowSchema & extractor to remember ScalaType
-  * Not allowed to be used in DataFrame schema
-  */
-class UnreifiedScalaType[T](@transient val _typeTag: TypeTag[T]) extends ScalaType.TTg[T] {
+  trait AsCatalystType[T] {
 
-  override val typeName: String = "(unreified) " + asType
-}
-
-object UnreifiedScalaType {
-
-  def forType[T](implicit ttg: TypeTag[T]): DataType = {
-    if (ttg == TypeTag.Null) NullType
-    else new UnreifiedScalaType(ttg)
-  }
-
-  def forRuntimeInstance[T](obj: T): DataType = {
-    val clazz: Class[_] = obj.getClass
-    forType(new ScalaType.FromClass(clazz).asTypeTag)
-  }
-
-  def reify(tt: DataType): DataType = {
-    tt match {
-      case udt: UnreifiedScalaType[_] => udt.reify
-      case ArrayType(v, n) =>
-        ArrayType(reify(v), n)
-      case StructType(fields) =>
-        StructType(
-          fields.map { ff =>
-            ff.copy(
-              dataType = reify(ff.dataType)
-            )
-          }
-        )
-      case MapType(k, v, n) =>
-        MapType(reify(k), reify(v), n)
-      case _ => tt
-    }
-  }
-}
-
-/**
-  *  A Scala TypeTag-based UDT, by default it doesn't compress object
-  *  ideally it should compress object into InternalRow.
-  *  Should be working and serve as the fallback strategy for ScalaReflection.schemaFor
-  */
-abstract class ScalaUDT[T >: Null: ClassTag] extends UserDefinedType[T] with ScalaType.Ctg[T] {
-
-  override val typeName = this.getClass.getSimpleName.stripSuffix("$") //.stripSuffix("Type").stripSuffix("UDT").toLowerCase
-
-  def serDe = { //TODO: kryo is better
-    val conf = new SparkConf()
-    new JavaSerializer(conf)
-  }
-
-  def _classTag: ClassTag[T] = implicitly[ClassTag[T]]
-
-  def sqlType: DataType = BinaryType
-
-  override def userClass: Class[T] = {
-    _classTag.runtimeClass.asInstanceOf[Class[T]]
-  }
-
-  //should convert to internal Row.
-  override def serialize(obj: T): Any = {
-    serDe.newInstance().serialize(obj).array()
-  }
-
-  override def deserialize(datum: Any): T = {
-    datum match {
-      case a: Array[Byte] =>
-        serDe.newInstance().deserialize[T](ByteBuffer.wrap(a))
-    }
+    def self: ScalaType[T]
   }
 }

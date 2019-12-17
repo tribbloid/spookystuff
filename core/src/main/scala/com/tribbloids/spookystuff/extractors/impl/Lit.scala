@@ -5,7 +5,7 @@ import com.tribbloids.spookystuff.extractors.GenExtractor.Static
 import com.tribbloids.spookystuff.extractors._
 import com.tribbloids.spookystuff.utils.IDMixin
 import org.apache.spark.ml.dsl.utils.messaging.Relay_>>
-import org.apache.spark.ml.dsl.utils.refl.UnreifiedScalaType
+import org.apache.spark.ml.dsl.utils.refl.UnreifiedObjectType
 import org.apache.spark.sql.catalyst.ScalaReflection.universe.TypeTag
 import org.apache.spark.sql.types._
 
@@ -31,7 +31,7 @@ case class Lit[T, +R](value: R, dataType: DataType) extends Static[T, R] with ID
 object Lit extends Relay_>>[Lit[_, _]] {
 
   def apply[T: TypeTag](v: T): Lit[FR, T] = {
-    apply[FR, T](v, UnreifiedScalaType.forType[T])
+    apply[FR, T](v, UnreifiedObjectType.forType[T])
   }
 
   def erased[T](v: T): Lit[FR, T] = {

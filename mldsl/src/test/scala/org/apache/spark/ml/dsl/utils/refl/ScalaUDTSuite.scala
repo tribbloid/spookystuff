@@ -15,7 +15,7 @@ class ScalaUDTSuite extends FunSpecx {
   import org.apache.spark.sql.catalyst.ScalaReflection.universe._
 
   def getAndTestReifiedType[T: TypeTag]: DataType = {
-    val unreified: DataType = UnreifiedScalaType.forType[T]
+    val unreified: DataType = UnreifiedObjectType.forType[T]
     AssertSerializable(unreified)
 
     val reified = TypeUtils.tryCatalystTypeFor[T].get

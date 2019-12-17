@@ -17,9 +17,9 @@ class ScalaTypeSuite extends FunSpecx {
 
   it("UnreifiedScalaType.toString") {
 
-    val tt = UnreifiedScalaType.forType(typeTag[Int])
+    val tt = UnreifiedObjectType.forType(typeTag[Int])
     tt.toString.shouldBe(
-      "(unreified) Int"
+      "(unreified) ObjectType(int)"
     )
   }
 
@@ -78,7 +78,7 @@ class ScalaTypeSuite extends FunSpecx {
       }
 
       it(s"catalystType (${pair._1}) => scalaType (${pair._2.tpe})") {
-        val converted = pair._1.scalaTypeOpt
+        val converted = pair._1.typeTagOpt
         println(converted)
         assert(converted.map(_.asClass).contains(pair._2.asClass))
       }

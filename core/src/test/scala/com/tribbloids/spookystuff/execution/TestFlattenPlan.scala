@@ -2,7 +2,7 @@ package com.tribbloids.spookystuff.execution
 
 import com.tribbloids.spookystuff.SpookyEnvFixture
 import com.tribbloids.spookystuff.extractors.impl.Lit
-import org.apache.spark.ml.dsl.utils.refl.UnreifiedScalaType
+import org.apache.spark.ml.dsl.utils.refl.UnreifiedObjectType
 import org.apache.spark.sql.types.{IntegerType, StringType, StructField, StructType}
 
 /**
@@ -97,9 +97,9 @@ class TestFlattenPlan extends SpookyEnvFixture {
       )
   }
 
-  def assertTypeEqual(t1: UnreifiedScalaType[_], t2: UnreifiedScalaType[_]) = {
-    assert(t1.asClass == t2.asClass)
-    assert(t1.asType =:= t2.asType)
+  def assertTypeEqual(t1: UnreifiedObjectType[_], t2: UnreifiedObjectType[_]) = {
+    assert(t1.self.asClass == t2.self.asClass)
+    assert(t1.self.asType =:= t2.self.asType)
     assert(t1 == t2)
   }
 
@@ -112,8 +112,8 @@ class TestFlattenPlan extends SpookyEnvFixture {
         Lit(Array("a" -> 1, "b" -> 2)) ~ 'Array
       )
 
-    val t1 = extracted.schema.typedFor('Array).get.dataType.asInstanceOf[UnreifiedScalaType[_]]
-    val t2 = UnreifiedScalaType.forType[Array[Tuple2[String, Int]]].asInstanceOf[UnreifiedScalaType[_]]
+    val t1 = extracted.schema.typedFor('Array).get.dataType.asInstanceOf[UnreifiedObjectType[_]]
+    val t2 = UnreifiedObjectType.forType[Array[Tuple2[String, Int]]].asInstanceOf[UnreifiedObjectType[_]]
     assertTypeEqual(t1, t2)
 
     val flattened = extracted
@@ -139,8 +139,8 @@ class TestFlattenPlan extends SpookyEnvFixture {
         Lit(Seq("a" -> 1, "b" -> 2)) ~ 'Array
       )
 
-    val t1 = extracted.schema.typedFor('Array).get.dataType.asInstanceOf[UnreifiedScalaType[_]]
-    val t2 = UnreifiedScalaType.forType[Seq[Tuple2[String, Int]]].asInstanceOf[UnreifiedScalaType[_]]
+    val t1 = extracted.schema.typedFor('Array).get.dataType.asInstanceOf[UnreifiedObjectType[_]]
+    val t2 = UnreifiedObjectType.forType[Seq[Tuple2[String, Int]]].asInstanceOf[UnreifiedObjectType[_]]
     assertTypeEqual(t1, t2)
 
     val flattened = extracted
@@ -166,8 +166,8 @@ class TestFlattenPlan extends SpookyEnvFixture {
         Lit(List("a" -> 1, "b" -> 2)) ~ 'Array
       )
 
-    val t1 = extracted.schema.typedFor('Array).get.dataType.asInstanceOf[UnreifiedScalaType[_]]
-    val t2 = UnreifiedScalaType.forType[List[Tuple2[String, Int]]].asInstanceOf[UnreifiedScalaType[_]]
+    val t1 = extracted.schema.typedFor('Array).get.dataType.asInstanceOf[UnreifiedObjectType[_]]
+    val t2 = UnreifiedObjectType.forType[List[Tuple2[String, Int]]].asInstanceOf[UnreifiedObjectType[_]]
     assertTypeEqual(t1, t2)
 
     val flattened = extracted

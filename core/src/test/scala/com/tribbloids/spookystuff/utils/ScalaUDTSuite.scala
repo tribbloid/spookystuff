@@ -5,7 +5,7 @@ import com.tribbloids.spookystuff.actions.Action
 import com.tribbloids.spookystuff.doc.{Doc, DocOption, Unstructured}
 import com.tribbloids.spookystuff.testutils.FunSpecx
 import com.tribbloids.spookystuff.utils.serialization.AssertSerializable
-import org.apache.spark.ml.dsl.utils.refl.{TypeUtils, UnreifiedScalaType}
+import org.apache.spark.ml.dsl.utils.refl.{TypeUtils, UnreifiedObjectType}
 import org.apache.spark.sql.types.DataType
 
 /**
@@ -17,7 +17,7 @@ class ScalaUDTSuite extends SpookyEnvFixture with FunSpecx {
   import org.apache.spark.sql.catalyst.ScalaReflection.universe._
 
   def getAndTestReifiedType[T: TypeTag]: DataType = {
-    val unreified = UnreifiedScalaType.forType[T]
+    val unreified = UnreifiedObjectType.forType[T]
     AssertSerializable(unreified)
 
     val reified = TypeUtils.tryCatalystTypeFor[T].get
