@@ -25,10 +25,10 @@ trait ScalaType[T] extends ReflectionLock with Serializable {
   @transient lazy val mirror: Mirror = asTypeTag.mirror
 
   @transient final lazy val asTypeTag: TypeTag[T] = locked {
-    _asTypeTag
+    _typeTag
   }
 
-  def _asTypeTag: TypeTag[T]
+  def _typeTag: TypeTag[T]
 
   @transient lazy val asType: Type = locked {
     ScalaReflection.localTypeOf(asTypeTag)
@@ -112,7 +112,7 @@ abstract class ScalaType_Level1 {
       tpe
     }
 
-    override def _asTypeTag: TypeTag[T] = {
+    override def _typeTag: TypeTag[T] = {
       TypeUtils.createTypeTag(asType, mirror)
     }
   }
@@ -140,13 +140,8 @@ abstract class ScalaType_Level2 extends ScalaType_Level1 {
 
 object ScalaType extends ScalaType_Level2 {
 
-  trait Ttg[T] extends ScalaType[T] {
-
-    def _typeTag: TypeTag[T] // not serializable in 2.10
-
-    override def _asTypeTag = _typeTag
-  }
-  implicit class FromTypeTag[T](@transient override val _typeTag: TypeTag[T]) extends Ttg[T]
+  trait Ttg[T] extends ScalaType[T] {}
+  implicit class FromTypeTag[T](override val _typeTag: TypeTag[T]) extends Ttg[T]
   implicit def fromTypeTag[T](implicit v: TypeTag[T]) = new FromTypeTag(v)
 
   def summon[T](implicit ev: ScalaType[T]): ScalaType[T] = ev
