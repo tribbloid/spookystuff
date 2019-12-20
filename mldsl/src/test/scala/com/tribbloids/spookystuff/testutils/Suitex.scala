@@ -1,11 +1,10 @@
 package com.tribbloids.spookystuff.testutils
 
-import org.apache.spark.ml.dsl.utils.OptionConversion
 import org.json4s.JValue
 import org.json4s.jackson.JsonMethods
 import org.scalatest.Suite
 
-trait Suitex extends OptionConversion {
+trait Suitex {
   self: Suite =>
 
   final val ACTUAL =

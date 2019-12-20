@@ -167,7 +167,7 @@ object ScalaType extends ScalaType_Level2 {
     }
   }
 
-  object FromCatalystType {
+  object fromCatalystType {
 
     lazy val atomicExamples: Seq[(Any, TypeTag[_])] = {
 
@@ -200,7 +200,7 @@ object ScalaType extends ScalaType_Level2 {
     }
   }
 
-  implicit class FromCatalystType(tt: DataType) extends ReflectionLock {
+  implicit class fromCatalystType(tt: DataType) extends ReflectionLock {
 
     // CatalystType => ScalaType
     // used in ReflectionMixin to determine the exact function to:
@@ -212,10 +212,10 @@ object ScalaType extends ScalaType_Level2 {
       tt match {
         case NullType =>
           Some(TypeTag.Null)
-        case st: ScalaType.AsCatalystType[_] =>
+        case st: ScalaType.CatalystTypeMixin[_] =>
           Some(st.self.asTypeTag)
-        case t if FromCatalystType.atomicTypeMap.contains(t) =>
-          FromCatalystType.atomicTypeMap.get(t)
+        case t if fromCatalystType.atomicTypeMap.contains(t) =>
+          fromCatalystType.atomicTypeMap.get(t)
         case ArrayType(inner, _) =>
           val innerTagOpt = inner.typeTagOpt
           innerTagOpt.map {
@@ -239,6 +239,16 @@ object ScalaType extends ScalaType_Level2 {
                 universe.typeTag[Map[a, b]]
             }
           }
+        case StructType(fields) =>
+          fields.length match {
+            case 1 => Some(typeTag[Product1[Any]])
+            case 2 => Some(typeTag[Product2[Any, Any]])
+            case 3 => Some(typeTag[Product3[Any, Any, Any]])
+            case 4 => Some(typeTag[Product4[Any, Any, Any, Any]])
+            case 5 => Some(typeTag[Product5[Any, Any, Any, Any, Any]])
+            //TODO: keep going for this, OR find more general solution, using shapeless?
+            case _ => None
+          }
         case _ =>
           None
       }
@@ -251,7 +261,7 @@ object ScalaType extends ScalaType_Level2 {
       }
     }
 
-    def asTypeTagCasted[T]: TypeTag[T] = asTypeTag.asInstanceOf[TypeTag[T]]
+    def asTypeTag_casted[T]: TypeTag[T] = asTypeTag.asInstanceOf[TypeTag[T]]
 
     @transient lazy val reified: DataType = locked {
       val result = UnreifiedObjectType.reify(tt)
@@ -324,7 +334,7 @@ object ScalaType extends ScalaType_Level2 {
     }
   }
 
-  trait AsCatalystType[T] {
+  trait CatalystTypeMixin[T] extends DataType {
 
     def self: ScalaType[T]
   }

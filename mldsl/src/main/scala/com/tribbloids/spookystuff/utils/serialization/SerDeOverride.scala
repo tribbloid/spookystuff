@@ -16,22 +16,22 @@ object SerDeOverride {
 
   case class WithConf(conf: SparkConf = new SparkConf()) {
 
-    val _conf: SparkConf = conf
+    @transient lazy val _conf: SparkConf = conf
       .registerKryoClasses(Array(classOf[TypeTag[_]]))
 
-    val javaSerializer = new JavaSerializer(_conf)
-    val javaOverride: () => Some[SerializerInstance] = { //TODO: use singleton?
+    @transient lazy val javaSerializer = new JavaSerializer(_conf)
+    @transient lazy val javaOverride: () => Some[SerializerInstance] = { //TODO: use singleton?
       () =>
         Some(javaSerializer.newInstance())
     }
 
-    val kryoSerializer = new KryoSerializer(_conf)
-    val kryoOverride: () => Some[SerializerInstance] = { //TODO: use singleton?
+    @transient lazy val kryoSerializer = new KryoSerializer(_conf)
+    @transient lazy val kryoOverride: () => Some[SerializerInstance] = { //TODO: use singleton?
       () =>
         Some(kryoSerializer.newInstance())
     }
 
-    val allSerializers = List(javaSerializer, kryoSerializer)
+    @transient lazy val allSerializers = List(javaSerializer, kryoSerializer)
   }
 
   object Default extends WithConf

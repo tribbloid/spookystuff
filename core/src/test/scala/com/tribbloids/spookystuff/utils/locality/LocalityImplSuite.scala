@@ -1,7 +1,7 @@
 package com.tribbloids.spookystuff.utils.locality
 
 import com.tribbloids.spookystuff.SpookyEnvFixture
-import com.tribbloids.spookystuff.testbeans._
+import com.tribbloids.spookystuff.TestBeans._
 import org.apache.spark
 import org.apache.spark.rdd.RDD
 import org.apache.spark.{HashPartitioner, RangePartitioner, SparkException}

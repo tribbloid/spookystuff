@@ -1,6 +1,7 @@
 package org.apache.spark.ml.dsl.utils.messaging
 
 import com.tribbloids.spookystuff.testutils.FunSpecx
+import org.apache.spark.ml.dsl.utils.messaging.TestBeans._
 
 class RegistrySuite extends FunSpecx {
 

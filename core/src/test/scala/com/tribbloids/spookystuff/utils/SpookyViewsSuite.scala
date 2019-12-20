@@ -2,7 +2,7 @@ package com.tribbloids.spookystuff.utils
 
 import com.tribbloids.spookystuff.SpookyEnvFixture
 import com.tribbloids.spookystuff.metrics.Metrics
-import com.tribbloids.spookystuff.testbeans._
+import com.tribbloids.spookystuff.TestBeans._
 import com.tribbloids.spookystuff.testutils.TestHelper
 import com.tribbloids.spookystuff.utils.lifespan.LifespanContext
 import com.tribbloids.spookystuff.utils.locality.PartitionIdPassthrough

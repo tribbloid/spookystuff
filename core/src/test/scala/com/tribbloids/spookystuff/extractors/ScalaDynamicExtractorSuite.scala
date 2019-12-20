@@ -4,7 +4,7 @@ import com.tribbloids.spookystuff.SpookyEnvFixture
 import com.tribbloids.spookystuff.actions.{Action, ActionUDT, Wget}
 import com.tribbloids.spookystuff.doc.{Doc, Unstructured}
 import com.tribbloids.spookystuff.extractors.impl.{Get, Lit}
-import com.tribbloids.spookystuff.testbeans.Example
+import com.tribbloids.spookystuff.TestBeans.Example
 import com.tribbloids.spookystuff.testutils.LocalPathDocsFixture
 import com.tribbloids.spookystuff.utils.CommonUtils
 import org.apache.spark.sql.types._

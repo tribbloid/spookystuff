@@ -1,18 +1,7 @@
 package org.apache.spark.ml.dsl.utils.messaging
 
 import com.tribbloids.spookystuff.testutils.FunSpecx
-
-case class WithCodec(str: String)
-
-object WithCodec extends MessageRelay[WithCodec] {
-  override def toMessage_>>(v: WithCodec) = v.str
-
-  override type M = String
-}
-
-case class CodecWrapper(vs: WithCodec) extends MessageAPI
-
-object CodecWrapper extends AutomaticRelay[CodecWrapper]
+import org.apache.spark.ml.dsl.utils.messaging.TestBeans._
 
 class MessageWriterSuite extends FunSpecx {
 

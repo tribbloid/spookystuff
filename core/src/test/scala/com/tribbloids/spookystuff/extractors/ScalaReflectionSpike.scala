@@ -2,7 +2,7 @@ package com.tribbloids.spookystuff.extractors
 
 import com.tribbloids.spookystuff.extractors.impl.Lit
 import com.tribbloids.spookystuff.row.FetchedRow
-import com.tribbloids.spookystuff.testbeans.{Example, GenericExample}
+import com.tribbloids.spookystuff.TestBeans.{Example, GenericExample}
 import com.tribbloids.spookystuff.testutils.FunSpecx
 import org.apache.spark.ml.dsl.utils.refl.{TypeUtils, UnreifiedObjectType}
 import org.apache.spark.sql.types.{IntegerType, StringType}

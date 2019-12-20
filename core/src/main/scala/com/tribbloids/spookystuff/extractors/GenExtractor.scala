@@ -2,18 +2,17 @@ package com.tribbloids.spookystuff.extractors
 
 import com.tribbloids.spookystuff.Const
 import com.tribbloids.spookystuff.row.Field
-import org.apache.spark.ml.dsl.utils.refl.{ScalaType, UnreifiedObjectType}
 import com.tribbloids.spookystuff.utils.SpookyUtils
 import org.apache.spark.ml.dsl.utils.messaging.AutomaticRelay
-import org.apache.spark.sql.catalyst.ScalaReflection.universe.{typeTag, TypeTag}
+import org.apache.spark.ml.dsl.utils.refl.{ScalaType, UnreifiedObjectType}
+import org.apache.spark.sql.catalyst.ScalaReflection.universe.TypeTag
 import org.apache.spark.sql.catalyst.trees.TreeNode
 
-import scala.language.implicitConversions
-import scala.language.existentials
+import scala.language.{existentials, implicitConversions}
 
 object GenExtractor extends AutomaticRelay[GenExtractor[_, _]] {
 
-  import org.apache.spark.ml.dsl.utils.refl.ScalaType._
+//  import org.apache.spark.ml.dsl.utils.refl.ScalaType._
 
   final val functionVID = -592849327L
 
@@ -91,16 +90,20 @@ object GenExtractor extends AutomaticRelay[GenExtractor[_, _]] {
       arg1: GenExtractor[T, R1],
       arg2: GenExtractor[T, R2]
   ) extends GenExtractor[T, (R1, R2)] {
-    //resolve to a Spark SQL DataType according to an exeuction plan
+    //resolve to a Spark SQL DataType according to an execution plan
     override def resolveType(tt: DataType): DataType = locked {
       val t1 = arg1.resolveType(tt)
       val t2 = arg2.resolveType(tt)
 
-      val ttg = (t1.asTypeTag, t2.asTypeTag) match {
+      //TODO: need to figure out how to implement this kind of pattern matching with unapply API
+      val ttg = (
+        ScalaType.fromCatalystType(t1).asTypeTag,
+        ScalaType.fromCatalystType(t2).asTypeTag
+      ) match {
         case (ttg1: TypeTag[a], ttg2: TypeTag[b]) =>
           implicit val t1 = ttg1
           implicit val t2 = ttg2
-          typeTag[Tuple2[a, b]]
+          implicitly[TypeTag[Tuple2[a, b]]]
       }
 
       UnreifiedObjectType.forType(ttg)

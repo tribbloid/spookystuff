@@ -13,7 +13,7 @@ import scala.language.{existentials, implicitConversions}
   */
 class UnreifiedObjectType[T](implicit val self: ScalaType[T])
     extends ObjectType(self.asClass)
-    with ScalaType.AsCatalystType[T] {
+    with ScalaType.CatalystTypeMixin[T] {
 
 //  override def simpleString: String = "(unreified) " + ev.asType
 

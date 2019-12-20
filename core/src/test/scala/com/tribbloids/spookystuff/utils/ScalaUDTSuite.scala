@@ -26,6 +26,26 @@ class ScalaUDTSuite extends SpookyEnvFixture with FunSpecx {
     reified
   }
 
+  it("Int has a datatype") {
+
+    val reified = getAndTestReifiedType[Int]
+    reified.toString.shouldBe(
+      """
+        |IntegerType
+      """.stripMargin
+    )
+  }
+
+  it("Array[Int] has a datatype") {
+
+    val reified = getAndTestReifiedType[Array[Int]]
+    reified.toString.shouldBe(
+      """
+        |ArrayType(IntegerType,false)
+      """.stripMargin
+    )
+  }
+
   it("Action has a datatype") {
 
     val reified = getAndTestReifiedType[Action]

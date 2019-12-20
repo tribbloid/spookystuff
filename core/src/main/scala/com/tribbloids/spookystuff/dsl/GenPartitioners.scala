@@ -7,7 +7,6 @@ import org.apache.spark.Partitioner
 import org.apache.spark.rdd.RDD
 import org.apache.spark.storage.StorageLevel
 
-import scala.language.existentials
 import scala.reflect.ClassTag
 
 object GenPartitioners {
@@ -21,7 +20,7 @@ object GenPartitioners {
       Inst[K]()
     }
 
-    case class Inst[K](
+    case class Inst[K]()(
         implicit val ctg: ClassTag[K]
     ) extends Instance[K] {
 
@@ -48,7 +47,7 @@ object GenPartitioners {
       Inst[K]()
     }
 
-    case class Inst[K](
+    case class Inst[K]()(
         implicit val ctg: ClassTag[K]
     ) extends Instance[K] {
 

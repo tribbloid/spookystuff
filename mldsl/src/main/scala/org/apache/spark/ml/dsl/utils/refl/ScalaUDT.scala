@@ -15,9 +15,11 @@ import scala.language.{existentials, implicitConversions}
   */
 abstract class ScalaUDT[T >: Null](implicit val self: ScalaType[T])
     extends UserDefinedType[T]
-    with ScalaType.AsCatalystType[T] {
+    with ScalaType.CatalystTypeMixin[T] {
 
   override val typeName: String = this.getClass.getSimpleName.stripSuffix("$") //.stripSuffix("Type").stripSuffix("UDT").toLowerCase
+
+  override def toString: String = typeName
 
   def serDe: JavaSerializer = { //TODO: kryo is better
     val conf = new SparkConf()

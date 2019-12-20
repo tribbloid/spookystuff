@@ -3,7 +3,7 @@ package com.tribbloids.spookystuff.utils
 import com.tribbloids.spookystuff.utils.MultiMapView.Self
 
 import scala.collection.mutable
-import scala.language.implicitConversions
+import scala.language.{higherKinds, implicitConversions}
 
 trait MultiMapView[K, +V] {
 
@@ -49,7 +49,7 @@ object MultiMapView {
 
   class Immutable[K, V](override val self: Self[K, V]) extends MultiMapView[K, V] {}
 
-  class Mutable[K, V](override val self: MSelf[K, V]) extends Immutable[K, V](self) {
+  class Mutable[K, V](override val self: MSelf[K, V]) extends Immutable[K, V](self) with MultiMapView[K, V] {
 
     def put1(k: K, v: V): Unit = {
 
@@ -88,19 +88,29 @@ object MultiMapView {
     }
   }
 
-  object Immutable {
-    def apply[K, V](kvs: (K, V)*): Immutable[K, V] = {
+  trait Factory {
+
+    type View[K, V]
+
+    def apply[K, V](kvs: (K, V)*): View[K, V]
+
+    final def empty[K, V]: View[K, V] = apply()
+  }
+
+  object Immutable extends Factory {
+
+    type View[K, V] = Immutable[K, V]
+
+    override def apply[K, V](kvs: (K, V)*): Immutable[K, V] = {
       val buffer: Mutable[K, V] = Mutable(kvs: _*)
 
       new Immutable(buffer.self)
     }
-
-    private lazy val emptyProto: Immutable[Nothing, Nothing] = Immutable()
-
-    def empty[K, V]: Immutable[K, V] = emptyProto.asInstanceOf[Immutable[K, V]]
   }
 
-  object Mutable {
+  object Mutable extends Factory {
+
+    type View[K, V] = Mutable[K, V]
 
     def apply[K, V](kvs: (K, V)*): Mutable[K, V] = {
       val buffer: Mutable[K, V] = mutable.HashMap.empty[K, Seq[V]]
@@ -111,7 +121,20 @@ object MultiMapView {
 
       buffer
     }
-
-    def empty[K, V]: Mutable[K, V] = Mutable()
   }
+
+//  object Mutable_List extends Factory {
+//
+//    type View[K, V] = Mutable[K, V]
+//
+//    def apply[K, V](kvs: (K, V)*): Mutable[K, V] = {
+//      val buffer: Mutable[K, V] = mutable.ListMap.empty[K, Seq[V]]
+//
+//      kvs.foreach {
+//        case (k, v) => buffer.put1(k, v)
+//      }
+//
+//      buffer
+//    }
+//  }
 }

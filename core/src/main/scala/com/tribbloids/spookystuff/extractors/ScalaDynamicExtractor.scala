@@ -7,7 +7,7 @@ import org.apache.spark.ml.dsl.utils.refl.{ReflectionLock, TypeUtils, UnreifiedO
 import org.apache.spark.ml.dsl.utils.FlowUtils
 import org.apache.spark.sql.catalyst.ScalaReflection.universe._
 
-import scala.language.{dynamics, implicitConversions}
+import scala.language.dynamics
 
 case class ScalaDynamic(
     methodName: String
@@ -16,7 +16,7 @@ case class ScalaDynamic(
   import org.apache.spark.ml.dsl.utils.refl.ScalaType._
 
   def getMethodsByName(dType: DataType): List[MethodSymbol] = locked {
-    val tpe = dType.asTypeTag.tpe
+    val tpe = dType.asTypeTag_casted.tpe
 
     //Java reflection preferred as more battle tested?
     val allMembers = tpe.members.toList
@@ -34,7 +34,7 @@ case class ScalaDynamic(
     val expectedTypeList: Seq[Option[List[Type]]] = argDTypesOpt match {
       case Some(dTypes) =>
         val tpess = dTypes.map { v =>
-          List(v.asTypeTag.tpe)
+          List(v.asTypeTag_casted.tpe)
         }
         val cartesian = FlowUtils.cartesianProductList(tpess)
         cartesian.map(
@@ -56,7 +56,7 @@ case class ScalaDynamic(
 
     val valid = methods.flatMap { method =>
       val paramTypess_returnType: (List[List[Type]], Type) = {
-        TypeUtils.getParameter_ReturnTypes(method, baseDType.asTypeTag.tpe)
+        TypeUtils.getParameter_ReturnTypes(method, baseDType.asTypeTag_casted.tpe)
       }
       val actualTypess: List[List[Type]] = paramTypess_returnType._1
       val firstTypeOpt = actualTypess.headOption
@@ -78,7 +78,7 @@ case class ScalaDynamic(
             "(" + t.mkString(", ") + ")"
           }
           .getOrElse("")
-        s"method ${baseDType.asTypeTag.tpe}.$methodName$argsStr does not exist"
+        s"method ${baseDType.asTypeTag_casted.tpe}.$methodName$argsStr does not exist"
       }
       throw new UnsupportedOperationException(
         errorStrs.mkString("\n")
@@ -92,12 +92,12 @@ case class ScalaDynamic(
     */
   def getMethodByJava(baseDType: DataType, argDTypesOpt: Option[List[DataType]]): Method = {
 
-    val baseClz = baseDType.asTypeTag.asClass
+    val baseClz = baseDType.asTypeTag_casted.asClass
 
     val expectedClasssList: Seq[Option[List[Class[_]]]] = argDTypesOpt match {
       case Some(argDTypes) =>
         val classess: List[List[Class[_]]] = argDTypes.map { v =>
-          List(v.asTypeTag.asClass) :+ classOf[Object]
+          List(v.asTypeTag_casted.asClass) :+ classOf[Object]
         }
         val cartesian = FlowUtils.cartesianProductList(classess)
         cartesian.map(
@@ -166,8 +166,8 @@ case class ScalaDynamicExtractor[T](
       }
     }
     val scalaMethod: MethodSymbol = dynamic.getMethodByScala(baseDType, argDTypes)
-    val (_, resultType) = TypeUtils.getParameter_ReturnTypes(scalaMethod, baseDType.asTypeTag.tpe)
-    val resultTag = TypeUtils.createTypeTag[Any](resultType, baseDType.asTypeTag.mirror)
+    val (_, resultType) = TypeUtils.getParameter_ReturnTypes(scalaMethod, baseDType.asTypeTag_casted.tpe)
+    val resultTag = TypeUtils.createTypeTag[Any](resultType, baseDType.asTypeTag_casted.mirror)
     resultTag
   }
 

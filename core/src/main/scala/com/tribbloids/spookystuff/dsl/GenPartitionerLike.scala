@@ -5,7 +5,6 @@ import com.tribbloids.spookystuff.row.{BeaconRDD, SpookySchema}
 import com.tribbloids.spookystuff.utils.locality.LocalityRDDView
 import org.apache.spark.rdd.RDD
 
-import scala.language.existentials
 import scala.reflect.ClassTag
 
 /**
@@ -105,7 +104,7 @@ object GenPartitionerLike {
       Inst[K]()
     }
 
-    case class Inst[K](
+    case class Inst[K]()(
         implicit val ctg: ClassTag[K]
     ) extends Instance[K] {
 

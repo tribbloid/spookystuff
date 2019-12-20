@@ -3,26 +3,8 @@ package org.apache.spark.ml.dsl.utils.messaging
 import java.util.Date
 
 import org.apache.spark.ml.dsl.AbstractFlowSuite
+import org.apache.spark.ml.dsl.utils.messaging.TestBeans._
 import org.json4s.MappingException
-
-case class TimeWrapper(time: Date)
-
-case class UsersWrapper(a: String, users: Users)
-
-case class Users(user: Seq[User])
-
-case class User(
-    name: String,
-    roles: Option[Roles] = None
-)
-
-case class Roles(role: Seq[String])
-
-case class Multipart(a: String, b: String)(c: Int = 10)
-
-object Multipart extends MessageReader[Multipart] {}
-
-//case object ObjectExample1 extends AbstractObjectExample
 
 class MessageReaderSuite extends AbstractFlowSuite {
 
