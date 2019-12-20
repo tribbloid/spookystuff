@@ -2,7 +2,9 @@ package org.apache.spark.ml.dsl.utils.refl
 
 import java.sql.{Date, Timestamp}
 
+import com.tribbloids.spookystuff.utils.serialization.SerDeOverride
 import org.apache.spark.sql.catalyst.ScalaReflection
+import org.apache.spark.sql.catalyst.ScalaReflection.universe
 import org.apache.spark.sql.catalyst.ScalaReflection.universe._
 import org.apache.spark.sql.types._
 
@@ -20,7 +22,7 @@ import scala.reflect.ClassTag
 //TODO: this should be a codec
 trait ScalaType[T] extends ReflectionLock with Serializable {
 
-  override def toString = asType.toString
+  override def toString: String = asType.toString
 
   @transient lazy val mirror: Mirror = asTypeTag.mirror
 
@@ -48,7 +50,7 @@ trait ScalaType[T] extends ReflectionLock with Serializable {
 
   def reify: DataType = tryReify.get
 
-  def asCatalystType = tryReify.getOrElse {
+  def asCatalystType: DataType = tryReify.getOrElse {
     new UnreifiedObjectType[T]()(this)
   }
 
@@ -95,17 +97,17 @@ abstract class ScalaType_Level1 {
   trait Clz[T] extends ScalaType[T] {
 
     def _class: Class[T]
-    override lazy val asClass = {
+    override lazy val asClass: Class[T] = {
       _class
     }
 
-    @transient override lazy val mirror = {
+    @transient override lazy val mirror: universe.Mirror = {
       val loader = _class.getClassLoader
       runtimeMirror(loader)
     }
     //    def mirror = ReflectionUtils.mirrorFactory.get()
 
-    @transient override lazy val asType = locked {
+    @transient override lazy val asType: universe.Type = locked {
       //      val name = _class.getCanonicalName
       val classSymbol = mirror.classSymbol(_class)
       val tpe = classSymbol.selfType
@@ -118,7 +120,7 @@ abstract class ScalaType_Level1 {
   }
 
   implicit class FromClass[T](val _class: Class[T]) extends Clz[T]
-  implicit def fromClass[T](implicit v: Class[T]) = new FromClass(v)
+  implicit def fromClass[T](implicit v: Class[T]): FromClass[T] = new FromClass(v)
 }
 
 abstract class ScalaType_Level2 extends ScalaType_Level1 {
@@ -126,7 +128,7 @@ abstract class ScalaType_Level2 extends ScalaType_Level1 {
   trait Ctg[T] extends Clz[T] {
 
     def _classTag: ClassTag[T]
-    @transient override lazy val asClassTag = {
+    @transient override lazy val asClassTag: ClassTag[T] = {
       _classTag
     }
 
@@ -135,14 +137,20 @@ abstract class ScalaType_Level2 extends ScalaType_Level1 {
     }
   }
   implicit class FromClassTag[T](val _classTag: ClassTag[T]) extends Ctg[T]
-  implicit def fromClassTag[T](implicit v: ClassTag[T]) = new FromClassTag(v)
+  implicit def fromClassTag[T](implicit v: ClassTag[T]): FromClassTag[T] = new FromClassTag(v)
 }
 
 object ScalaType extends ScalaType_Level2 {
 
   trait Ttg[T] extends ScalaType[T] {}
-  implicit class FromTypeTag[T](override val _typeTag: TypeTag[T]) extends Ttg[T]
-  implicit def fromTypeTag[T](implicit v: TypeTag[T]) = new FromTypeTag(v)
+  implicit class FromTypeTag[T](@transient val typeTag: TypeTag[T]) extends Ttg[T] {
+
+    val typeTag_ser: SerDeOverride[TypeTag[T]] =
+      SerDeOverride(typeTag, SerDeOverride.javaOverride)
+
+    def _typeTag: TypeTag[T] = typeTag_ser.obj
+  }
+  implicit def fromTypeTag[T](implicit v: TypeTag[T]): FromTypeTag[T] = new FromTypeTag(v)
 
   def summon[T](implicit ev: ScalaType[T]): ScalaType[T] = ev
 
@@ -206,8 +214,8 @@ object ScalaType extends ScalaType_Level2 {
           val innerTagOpt = inner.typeTagOpt
           innerTagOpt.map {
             case at: TypeTag[a] =>
-              implicit val att = at
-              typeTag[Array[a]]
+              implicit val att: universe.TypeTag[a] = at
+              universe.typeTag[Array[a]]
           }
         case MapType(key, value, _) =>
           val keyTag = key.typeTagOpt
@@ -220,9 +228,9 @@ object ScalaType extends ScalaType_Level2 {
           pairs.map { pair =>
             (pair._1, pair._2) match {
               case (ttg1: TypeTag[a], ttg2: TypeTag[b]) =>
-                implicit val t1 = ttg1
-                implicit val t2 = ttg2
-                typeTag[Map[a, b]]
+                implicit val t1: universe.TypeTag[a] = ttg1
+                implicit val t2: universe.TypeTag[b] = ttg2
+                universe.typeTag[Map[a, b]]
             }
           }
         case _ =>

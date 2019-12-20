@@ -4,7 +4,7 @@ import java.io.{InputStream, OutputStream}
 import java.security.{PrivilegedAction, PrivilegedActionException}
 
 import com.tribbloids.spookystuff.utils.CommonUtils
-import com.tribbloids.spookystuff.utils.serialization.SerBox
+import com.tribbloids.spookystuff.utils.serialization.SerDeOverride
 import org.apache.hadoop.conf.Configuration
 import org.apache.hadoop.fs._
 import org.apache.hadoop.security.UserGroupInformation
@@ -13,7 +13,7 @@ import org.apache.hadoop.security.UserGroupInformation
   * Created by peng on 17/05/17.
   */
 case class HDFSResolver(
-    hadoopConf: SerBox[Configuration],
+    hadoopConf: SerDeOverride[Configuration],
     ugiFactory: () => Option[UserGroupInformation] = HDFSResolver.noUGIFactory
 ) extends URIResolver {
 

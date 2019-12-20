@@ -12,7 +12,7 @@ import org.apache.spark.{SerializableWritable, SparkConf}
 import scala.language.implicitConversions
 import scala.reflect.ClassTag
 
-object SerBox {
+object SerDeOverride {
 
   val conf = new SparkConf()
     .registerKryoClasses(Array(classOf[TypeTag[_]]))
@@ -31,7 +31,7 @@ object SerBox {
 
   val serializers = List(javaSerializer, kryoSerializer)
 
-  implicit def boxing[T: ClassTag](v: T): SerBox[T] = SerBox(v)
+  implicit def boxing[T: ClassTag](v: T): SerDeOverride[T] = SerDeOverride(v)
 }
 
 /**
@@ -39,13 +39,13 @@ object SerBox {
   * discard original value
   * wrapping & unwrapping is lazy
   */
-case class SerBox[T: ClassTag](
+case class SerDeOverride[T: ClassTag](
     @transient obj: T,
-    serOverride: () => SerializerInstance = null
+    instance: () => SerializerInstance = null
 ) extends Serializable
     with IDMixin {
 
-  @transient lazy val serOpt: Option[SerializerInstance] = Option(serOverride).map(_.apply)
+  @transient lazy val serOpt: Option[SerializerInstance] = Option(instance).map(_.apply)
 
   @transient lazy val serObj: io.Serializable = obj match {
     case ss: Serializable =>

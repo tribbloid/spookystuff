@@ -6,7 +6,7 @@ import com.tribbloids.spookystuff.rdd.FetchedDataset
 import com.tribbloids.spookystuff.row._
 import com.tribbloids.spookystuff.session.Session
 import com.tribbloids.spookystuff.utils.io.HDFSResolver
-import com.tribbloids.spookystuff.utils.serialization.SerBox
+import com.tribbloids.spookystuff.utils.serialization.SerDeOverride
 import org.apache.spark.ml.dsl.utils.refl.ScalaType
 import com.tribbloids.spookystuff.utils.{ShippingMarks, TreeException}
 import org.apache.hadoop.conf.Configuration
@@ -107,9 +107,9 @@ case class SpookyContext(
     setConf(v)
   }
 
-  val broadcastedHadoopConf: Broadcast[SerBox[Configuration]] = {
+  val broadcastedHadoopConf: Broadcast[SerDeOverride[Configuration]] = {
     sqlContext.sparkContext.broadcast(
-      SerBox(this.sqlContext.sparkContext.hadoopConfiguration)
+      SerDeOverride(this.sqlContext.sparkContext.hadoopConfiguration)
     )
   }
   def hadoopConf: Configuration = broadcastedHadoopConf.value.value
