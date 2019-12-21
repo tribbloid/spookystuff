@@ -36,7 +36,9 @@ object SerDeOverride {
 
   object Default extends WithConf
 
-  def boxing[T: ClassTag](v: T): SerDeOverride[T] = SerDeOverride(v)
+  implicit def box[T: ClassTag](v: T): SerDeOverride[T] = SerDeOverride(v)
+
+  implicit def unbox[T: ClassTag](v: SerDeOverride[T]): T = v.value
 }
 
 /**

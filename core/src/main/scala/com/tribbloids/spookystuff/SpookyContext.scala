@@ -19,6 +19,7 @@ import org.slf4j.LoggerFactory
 
 import scala.collection.immutable.ListMap
 import scala.language.implicitConversions
+import scala.reflect.ClassTag
 
 case class SpookyContext(
     @transient sqlContext: SQLContext, //can't be used on executors, TODO: change to SparkSession
@@ -93,7 +94,7 @@ case class SpookyContext(
     */
   def setConf[T <: AbstractConf](v: T)(implicit ev: Submodules.Builder[T]): Unit = {
     requireNotShipped()
-    implicit val ctg = ev.ctg
+    implicit val ctg: ClassTag[T] = ev.ctg
     _configurations.transform {
       case _: T  => v
       case v @ _ => v
@@ -112,9 +113,9 @@ case class SpookyContext(
       SerDeOverride(this.sqlContext.sparkContext.hadoopConfiguration)
     )
   }
-  def hadoopConf: Configuration = broadcastedHadoopConf.value.value
+  def hadoopConf: SerDeOverride[Configuration] = broadcastedHadoopConf.value
 
-  def pathResolver = HDFSResolver(hadoopConf)
+  def pathResolver: HDFSResolver = HDFSResolver(hadoopConf)
 
   var broadcastedConfigurations: Broadcast[Submodules[AbstractConf]] = {
     sqlContext.sparkContext.broadcast(
@@ -161,7 +162,7 @@ case class SpookyContext(
     this
   }
 
-  def getSpookyForRDD = {
+  def getSpookyForRDD: SpookyContext = {
     if (spookyConf.shareMetrics) this
     else {
       rebroadcast()
@@ -181,7 +182,7 @@ case class SpookyContext(
       seq: TraversableOnce[T]
   ): FetchedDataset = {
 
-    implicit val ctg = ScalaType.fromTypeTag[T].asClassTag
+    implicit val ctg: ClassTag[T] = ScalaType.fromTypeTag[T].asClassTag
     this.dsl.rddToFetchedDataset(this.sqlContext.sparkContext.parallelize(seq.toSeq))
   }
   def create[T: TypeTag](
@@ -189,7 +190,7 @@ case class SpookyContext(
       numSlices: Int
   ): FetchedDataset = {
 
-    implicit val ctg = ScalaType.fromTypeTag[T].asClassTag
+    implicit val ctg: ClassTag[T] = ScalaType.fromTypeTag[T].asClassTag
     this.dsl.rddToFetchedDataset(this.sqlContext.sparkContext.parallelize(seq.toSeq, numSlices))
   }
 
@@ -204,9 +205,9 @@ case class SpookyContext(
     }
   }
 
-  lazy val _blankSelfRDD = sparkContext.parallelize(Seq(SquashedFetchedRow.blank))
+  lazy val _blankSelfRDD: RDD[SquashedFetchedRow] = sparkContext.parallelize(Seq(SquashedFetchedRow.blank))
 
-  def createBlank = this.create(_blankSelfRDD)
+  def createBlank: FetchedDataset = this.create(_blankSelfRDD)
 
   object dsl extends Serializable {
 
