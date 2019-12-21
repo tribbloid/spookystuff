@@ -30,7 +30,7 @@ class ScalaTypeSuite extends FunSpecx {
 
     val arr: Seq[String] = Seq("abc", "def")
     val cls = arr.head.getClass
-    val ttg: TypeTag[Seq[String]] = TypeUtils.getTypeTag(arr)
+    val ttg: TypeTag[Seq[String]] = TypeUtils.summon(arr)
     val fns = ttg.tpe.members
     val fn = fns
       .filter(_.name.toString == "head")

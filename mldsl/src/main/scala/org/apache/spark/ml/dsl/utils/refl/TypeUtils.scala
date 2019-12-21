@@ -1,7 +1,10 @@
 package org.apache.spark.ml.dsl.utils.refl
 
+import org.apache.spark.SparkException
 import org.apache.spark.sql.catalyst.ScalaReflection
 import org.apache.spark.sql.types._
+
+import scala.util.Failure
 
 object TypeUtils extends ReflectionLock {
 
@@ -16,15 +19,24 @@ object TypeUtils extends ReflectionLock {
   //    CatalystTypeConverters.convertToScala(internal, dataType)
   //  }
 
-  def getTypeTag[T: TypeTag](a: T) = implicitly[TypeTag[T]]
+  def summon[T: TypeTag](a: T): TypeTag[T] = implicitly[TypeTag[T]]
 
   def tryCatalystTypeFor[T](implicit ttg: TypeTag[T]): scala.util.Try[DataType] = locked {
-    scala.util.Try {
-      if (ttg == TypeTag.Null) NullType
-      else {
-        ScalaReflection.schemaFor[T](ttg).dataType
+    scala.util
+      .Try {
+        if (ttg == TypeTag.Null) NullType
+        else {
+          ScalaReflection.schemaFor[T](ttg).dataType
+        }
       }
-    }
+      .recoverWith {
+        case e: Throwable =>
+          Failure(
+            new SparkException(
+              s"Cannot find catalyst type for ${ttg}",
+              e
+            ))
+      }
   }
 
   /**
@@ -36,13 +48,16 @@ object TypeUtils extends ReflectionLock {
       case at: TypeTag[a] =>
         if (at.tpe <:< typeOf[Option[_]]) Seq[TypeTag[_]](at)
         else {
-          implicit val att = at
+          implicit val att: TypeTag[a] = at
           Seq[TypeTag[_]](at, typeTag[Option[a]])
         }
     }
   }
 
-  def getParameter_ReturnTypes(symbol: MethodSymbol, impl: Type) = locked {
+  def getParameter_ReturnTypes(
+      symbol: MethodSymbol,
+      impl: Type
+  ): (List[List[Type]], Type) = locked {
 
     val signature = symbol.typeSignatureIn(impl)
     val result = methodSignatureToParameter_ReturnTypes(signature)
@@ -88,7 +103,7 @@ object TypeUtils extends ReflectionLock {
     TypeTag.apply(
       mirror,
       new reflect.api.TypeCreator {
-        def apply[U <: reflect.api.Universe with Singleton](m: reflect.api.Mirror[U]) = {
+        def apply[U <: reflect.api.Universe with Singleton](m: reflect.api.Mirror[U]): U#Type = {
           //          assert(m eq mirror, s"TypeTag[$tpe] defined in $mirror cannot be migrated to $m.")
           tpe.asInstanceOf[U#Type]
         }

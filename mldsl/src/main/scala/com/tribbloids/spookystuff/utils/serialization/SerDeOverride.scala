@@ -14,24 +14,29 @@ import scala.reflect.ClassTag
 
 object SerDeOverride {
 
-  val conf = new SparkConf()
-    .registerKryoClasses(Array(classOf[TypeTag[_]]))
+  case class WithConf(conf: SparkConf = new SparkConf()) {
 
-  val javaSerializer = new JavaSerializer(conf)
-  val javaOverride: () => SerializerInstance = { //TODO: use singleton?
-    () =>
-      javaSerializer.newInstance()
+    val _conf: SparkConf = conf
+      .registerKryoClasses(Array(classOf[TypeTag[_]]))
+
+    val javaSerializer = new JavaSerializer(_conf)
+    val javaOverride: () => Some[SerializerInstance] = { //TODO: use singleton?
+      () =>
+        Some(javaSerializer.newInstance())
+    }
+
+    val kryoSerializer = new KryoSerializer(_conf)
+    val kryoOverride: () => Some[SerializerInstance] = { //TODO: use singleton?
+      () =>
+        Some(kryoSerializer.newInstance())
+    }
+
+    val allSerializers = List(javaSerializer, kryoSerializer)
   }
 
-  val kryoSerializer = new KryoSerializer(conf)
-  val kryoOverride: () => SerializerInstance = { //TODO: use singleton?
-    () =>
-      kryoSerializer.newInstance()
-  }
+  object Default extends WithConf
 
-  val serializers = List(javaSerializer, kryoSerializer)
-
-  implicit def boxing[T: ClassTag](v: T): SerDeOverride[T] = SerDeOverride(v)
+  def boxing[T: ClassTag](v: T): SerDeOverride[T] = SerDeOverride(v)
 }
 
 /**
@@ -40,20 +45,20 @@ object SerDeOverride {
   * wrapping & unwrapping is lazy
   */
 case class SerDeOverride[T: ClassTag](
-    @transient obj: T,
-    instance: () => SerializerInstance = null
+    @transient private val _original: T,
+    overrideImpl: () => Option[SerializerInstance] = () => None // no override by default
 ) extends Serializable
     with IDMixin {
 
-  @transient lazy val serOpt: Option[SerializerInstance] = Option(instance).map(_.apply)
+  @transient lazy val serOpt: Option[SerializerInstance] = overrideImpl.apply
 
-  @transient lazy val serObj: io.Serializable = obj match {
+  @transient lazy val serObj: io.Serializable = _original match {
     case ss: Serializable =>
       ss: Serializable
     case ww: Writable =>
       new SerializableWritable(ww)
     case _ =>
-      throw new UnsupportedOperationException(s"$obj is not Serializable or Writable")
+      throw new UnsupportedOperationException(s"${_original} is not Serializable or Writable")
   }
 
   val delegate: Either[io.Serializable, Array[Byte]] = {
@@ -62,11 +67,11 @@ case class SerDeOverride[T: ClassTag](
       case None =>
         Left(serObj)
       case Some(serde) =>
-        Right(serde.serialize(obj).array())
+        Right(serde.serialize(_original).array())
     }
   }
 
-  @transient lazy val value: T = Option(obj).getOrElse {
+  @transient lazy val value: T = Option(_original).getOrElse {
     (serOpt, delegate) match {
       case (None, Left(_serObj)) =>
         _serObj match {

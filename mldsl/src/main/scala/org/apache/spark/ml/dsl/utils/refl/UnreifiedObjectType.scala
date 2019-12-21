@@ -36,7 +36,8 @@ object UnreifiedObjectType {
 
   def reify(tt: DataType): DataType = {
     tt match {
-      case udt: UnreifiedObjectType[_] => udt.self.tryReify.get
+      case udt: UnreifiedObjectType[_] =>
+        udt.self.reify
       case ArrayType(v, n) =>
         ArrayType(reify(v), n)
       case StructType(fields) =>

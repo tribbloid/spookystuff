@@ -45,7 +45,7 @@ class NOTSerializableSuite extends FunSpecx {
     assert(out == Seq("abc1", "abc2"))
   }
 
-  SerDeOverride.serializers.foreach { ser =>
+  SerDeOverride.Default.allSerializers.foreach { ser =>
     describe(s"when using ${ser.getClass.getSimpleName}") {
       it(s"mixin will trigger a runtime error") {
         val thing = Thing2("abc")

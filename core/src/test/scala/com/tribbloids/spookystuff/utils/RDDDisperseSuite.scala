@@ -6,8 +6,8 @@ import org.apache.spark.ml.dsl.utils.ScalaNameMixin
 import org.apache.spark.rdd.RDD
 import org.apache.spark.storage.StorageLevel
 import org.apache.spark.util.LongAccumulator
+import org.slf4j.LoggerFactory
 
-import scala.collection.immutable
 import scala.concurrent.{ExecutionContext, ExecutionContextExecutor}
 import scala.util.Random
 
@@ -17,39 +17,39 @@ class RDDDisperseSuite extends SpookyEnvFixture.DescribeJobs with HasEager {
 
   implicit val concurrentCtx: ExecutionContextExecutor = ExecutionContext.global
 
-//  object Consts {
-//
-//    val size: Int = Random.nextInt(90000) + 10000
-//    val data: Range = 1 to size
-//
-//    val fixedTgtPartRange: Range = 1 to sc.defaultParallelism
-//
-//    val smallNPart: Int = Random.nextInt(10) + fixedTgtPartRange.max
-//
-//    val tgtNPart: Int = Random.nextInt(100) + smallNPart
-//    val expectedMinNNonEmptyPart: Int = 2
-//
-//    val pSizeGen: Int => Long = { _ =>
-//      1000L
-//    }
-//  }
-
   object Consts {
 
-    val size: Int = 1000
+    val size: Int = Random.nextInt(90000) + 10000
     val data: Range = 1 to size
 
-    val fixedTgtPartRange: Range = 1 to 4
+    val fixedTgtPartRange: Range = 1 to sc.defaultParallelism
 
-    val smallNPart: Int = sc.defaultParallelism
+    val smallNPart: Int = Random.nextInt(10) + fixedTgtPartRange.max
 
-    val tgtNPart: Int = smallNPart + 24
+    val tgtNPart: Int = Random.nextInt(100) + smallNPart * 2
     val expectedMinNNonEmptyPart: Int = 2
 
-    val pSizeGen: Int => Long = { i =>
-      10L
+    val pSizeGen: Int => Long = { _ =>
+      1000L
     }
   }
+
+//  object Consts {
+//
+//    val size: Int = 1000
+//    val data: Range = 1 to size
+//
+//    val fixedTgtPartRange: Range = 1 to 4
+//
+//    val smallNPart: Int = sc.defaultParallelism
+//
+//    val tgtNPart: Int = smallNPart + 24
+//    val expectedMinNNonEmptyPart: Int = 2
+//
+//    val pSizeGen: Int => Long = { i =>
+//      10L
+//    }
+//  }
 
   import Consts._
 
@@ -67,9 +67,11 @@ class RDDDisperseSuite extends SpookyEnvFixture.DescribeJobs with HasEager {
 
     val nonEmptyCount = nonEmptySizes.length
 
-    println(
-      s"$nonEmptyCount partition(s) of ${rdd.partitions.length} are non-empty"
-    )
+    LoggerFactory
+      .getLogger(this.getClass)
+      .info(
+        s"$nonEmptyCount partition(s) of ${rdd.partitions.length} are non-empty"
+      )
 
     Predef.assert(nonEmptyCount >= expectedMinNNonEmptyPart)
 

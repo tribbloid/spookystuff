@@ -145,10 +145,16 @@ object ScalaType extends ScalaType_Level2 {
   trait Ttg[T] extends ScalaType[T] {}
   implicit class FromTypeTag[T](@transient val typeTag: TypeTag[T]) extends Ttg[T] {
 
-    val typeTag_ser: SerDeOverride[TypeTag[T]] =
-      SerDeOverride(typeTag, SerDeOverride.javaOverride)
+    {
+      typeTag_ser
+    }
 
-    def _typeTag: TypeTag[T] = typeTag_ser.obj
+    lazy val typeTag_ser: SerDeOverride[TypeTag[T]] = {
+
+      SerDeOverride(typeTag, SerDeOverride.Default.javaOverride)
+    }
+
+    def _typeTag: TypeTag[T] = typeTag_ser.value
   }
   implicit def fromTypeTag[T](implicit v: TypeTag[T]): FromTypeTag[T] = new FromTypeTag(v)
 
@@ -166,7 +172,7 @@ object ScalaType extends ScalaType_Level2 {
     lazy val atomicExamples: Seq[(Any, TypeTag[_])] = {
 
       implicit def pairFor[T: TypeTag](v: T): (T, TypeTag[T]) = {
-        v -> TypeUtils.getTypeTag[T](v)
+        v -> TypeUtils.summon[T](v)
       }
 
       val result = Seq[(Any, TypeTag[_])](
