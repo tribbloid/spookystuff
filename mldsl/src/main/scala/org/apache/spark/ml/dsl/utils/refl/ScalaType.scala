@@ -109,9 +109,25 @@ abstract class ScalaType_Level1 {
 
     @transient override lazy val asType: universe.Type = locked {
       //      val name = _class.getCanonicalName
-      val classSymbol = mirror.classSymbol(_class)
+
+      val classSymbol = getClassSymbol(_class)
       val tpe = classSymbol.selfType
       tpe
+    }
+
+    def getClassSymbol(_class: Class[_]): ClassSymbol = {
+
+      try {
+        mirror.classSymbol(_class)
+      } catch {
+        case e: AssertionError =>
+          val superclass = Seq(_class.getSuperclass).filter { v =>
+            v != classOf[AnyRef]
+          }
+          val interfaces = _class.getInterfaces
+
+          mirror.classSymbol((superclass ++ interfaces).head)
+      }
     }
 
     override def _typeTag: TypeTag[T] = {
