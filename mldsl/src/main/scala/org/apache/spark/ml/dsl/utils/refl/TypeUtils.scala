@@ -33,7 +33,7 @@ object TypeUtils extends ReflectionLock {
         case e: Throwable =>
           Failure(
             new SparkException(
-              s"Cannot find catalyst type for ${ttg}",
+              s"Cannot find catalyst type for $ttg",
               e
             ))
       }
