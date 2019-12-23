@@ -13,7 +13,6 @@ import org.openqa.selenium.{JavascriptExecutor, WebDriver}
 
 import scala.collection.mutable
 import scala.concurrent.duration.Duration
-import scala.language.dynamics
 import scala.util.Random
 
 @SerialVersionUID(-98257039403274083L)
@@ -232,9 +231,9 @@ case class ClickNext(
 
     val elements = this.getElements(selector, session)
 
-    import scala.collection.JavaConversions._ //TODO: use JavaConverters
+    import scala.collection.JavaConverters._
 
-    elements.foreach { element =>
+    elements.asScala.foreach { element =>
       {
         if (!clicked.contains(element.getText)) {
           webDriverWait(session).until(ExpectedConditions.elementToBeClickable(element))

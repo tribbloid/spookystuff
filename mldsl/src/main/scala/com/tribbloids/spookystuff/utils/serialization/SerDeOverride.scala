@@ -69,7 +69,7 @@ case class SerDeOverride[T: ClassTag](
       case None =>
         Left(serObj)
       case Some(serde) =>
-        Right(serde.serialize(_original).array())
+        Right(serde.serialize(serObj).array())
     }
   }
 

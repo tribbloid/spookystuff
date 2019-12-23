@@ -3,8 +3,8 @@ package com.tribbloids.spookystuff.extractors
 import java.lang.reflect.Method
 
 import com.tribbloids.spookystuff.extractors.impl.Lit
-import org.apache.spark.ml.dsl.utils.refl.{ReflectionLock, TypeUtils, UnreifiedObjectType}
 import org.apache.spark.ml.dsl.utils.FlowUtils
+import org.apache.spark.ml.dsl.utils.refl.{ReflectionLock, TypeUtils, UnreifiedObjectType}
 import org.apache.spark.sql.catalyst.ScalaReflection.universe._
 
 import scala.language.dynamics
@@ -166,8 +166,12 @@ case class ScalaDynamicExtractor[T](
       }
     }
     val scalaMethod: MethodSymbol = dynamic.getMethodByScala(baseDType, argDTypes)
-    val (_, resultType) = TypeUtils.getParameter_ReturnTypes(scalaMethod, baseDType.asTypeTag_casted.tpe)
-    val resultTag = TypeUtils.createTypeTag[Any](resultType, baseDType.asTypeTag_casted.mirror)
+
+    val baseTTg = baseDType.asTypeTag_casted
+
+    val (paramTypes, resultType) = TypeUtils.getParameter_ReturnTypes(scalaMethod, baseTTg.tpe)
+
+    val resultTag = TypeUtils.createTypeTag[Any](resultType, baseTTg.mirror)
     resultTag
   }
 

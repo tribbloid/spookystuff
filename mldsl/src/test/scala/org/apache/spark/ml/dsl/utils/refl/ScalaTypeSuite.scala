@@ -1,6 +1,9 @@
 package org.apache.spark.ml.dsl.utils.refl
 
+import java.sql.Timestamp
+
 import com.tribbloids.spookystuff.testutils.FunSpecx
+import com.tribbloids.spookystuff.utils.serialization.AssertSerializable
 import org.apache.spark.ml.dsl.utils.PairwiseConversionMixin
 import org.apache.spark.ml.dsl.utils.PairwiseConversionMixin.Repr
 import org.apache.spark.ml.dsl.utils.messaging.TestBeans._
@@ -49,28 +52,63 @@ class ScalaTypeSuite extends FunSpecx with PairwiseConversionMixin {
 
   import ScalaReflection.universe._
 
-  it("UnreifiedScalaType.toString") {
-
-    val tt = UnreifiedObjectType.forType(typeTag[Int])
-    tt.toString.shouldBe(
-      "(unreified) ObjectType(int)"
-    )
-  }
-
   class Facet(
       val _catalystType: Repr[DataType] = Repr(None, -1),
       val _typeTag: TypeTagRepr = Repr[TypeTag[_]](None, -1),
       val _classTag: Repr[ClassTag[_]] = Repr(None, -1)
   ) extends PairwiseCases {
 
-    lazy val _class = _classTag.map(_.runtimeClass)
+    lazy val _class: Repr[Class[_]] = _classTag.map(_.runtimeClass)
 
-    lazy val cases = Seq[PairwiseCase[_, _]](
-      PairwiseCase(_typeTag, Repr[Mirror](None, 0), { r: TypeTag[_] =>
-        ScalaType.fromTypeTag(r).mirror
-      }, { _: Any =>
-        ???
-      }),
+    describe(s"From ${_typeTag}") {
+
+      _typeTag.map { ttg =>
+        def vType = ScalaType.fromTypeTag(ttg)
+
+        it("has a mirror") {
+          vType.mirror
+        }
+
+        it("is Serializable") {
+
+          AssertSerializable(vType)
+        }
+
+        it("... even if created from raw Type") {
+
+          val tt = ttg.tpe
+
+          val ttg2 = TypeUtils.createTypeTag[String](tt, ttg.mirror)
+
+          val vType2 = ScalaType.fromTypeTag(ttg2)
+
+          AssertSerializable(vType2)
+        }
+      }
+    }
+
+    describe(s"From ${_classTag}") {
+
+      _classTag.map { v =>
+        def vType = ScalaType.fromClassTag(v)
+
+        it("has a mirror") {
+          vType.mirror
+        }
+
+        it("is Serializable") {
+
+          AssertSerializable(vType)
+        }
+      }
+    }
+
+    lazy val cases: Seq[PairwiseCase[_, _]] = Seq[PairwiseCase[_, _]](
+//      PairwiseCase(_typeTag, Repr[Mirror](None, 0), { r: TypeTag[_] =>
+//        ScalaType.fromTypeTag(r).mirror
+//      }, { _: Any =>
+//        ???
+//      }),
       PairwiseCase(_typeTag, _class, { r: TypeTag[_] =>
         ScalaType.fromTypeTag(r).asClass
       }, { r: Class[_] =>
@@ -110,6 +148,13 @@ class ScalaTypeSuite extends FunSpecx with PairwiseConversionMixin {
       extends Facet(
         Repr(Some(DoubleType)),
         Repr(Some(typeTag[Double])),
+        Repr(None)
+      )
+
+  object TimestampFacet
+      extends Facet(
+        Repr(Some(TimestampType)),
+        Repr(Some(typeTag[Timestamp])),
         Repr(None)
       )
 
@@ -200,6 +245,7 @@ class ScalaTypeSuite extends FunSpecx with PairwiseConversionMixin {
     StringFacet,
     IntFacet,
     DoubleFacet,
+    TimestampFacet,
     TupleFacet,
     //
     ArrayFacet(StringFacet, containsNull = true),
