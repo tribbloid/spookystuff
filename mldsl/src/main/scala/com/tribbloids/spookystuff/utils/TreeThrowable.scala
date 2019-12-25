@@ -150,7 +150,8 @@ object TreeThrowable {
 
   protected case class ExceptionWithCauses(
       override val causes: Seq[Throwable] = Nil
-  ) extends TreeThrowable {
+  ) extends Exception
+      with TreeThrowable {
 
     override def getCause: Throwable = causes.headOption.orNull
 

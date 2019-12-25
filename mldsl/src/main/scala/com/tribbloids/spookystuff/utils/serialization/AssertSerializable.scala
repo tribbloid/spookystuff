@@ -44,5 +44,7 @@ case class AssertWeaklySerializable[T <: AnyRef: ClassTag](
     }
   }
 
-  TreeThrowable.&&&(trials)
+  TreeThrowable.&&&(
+    trials
+  )
 }
