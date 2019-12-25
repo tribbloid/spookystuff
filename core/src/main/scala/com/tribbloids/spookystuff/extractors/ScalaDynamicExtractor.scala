@@ -4,7 +4,7 @@ import java.lang.reflect.Method
 
 import com.tribbloids.spookystuff.extractors.impl.Lit
 import org.apache.spark.ml.dsl.utils.FlowUtils
-import org.apache.spark.ml.dsl.utils.refl.{ReflectionLock, TypeUtils, UnreifiedObjectType}
+import org.apache.spark.ml.dsl.utils.refl.{ReflectionLock, ScalaType, TypeUtils, UnreifiedObjectType}
 import org.apache.spark.sql.catalyst.ScalaReflection.universe._
 
 import scala.language.dynamics
@@ -171,8 +171,8 @@ case class ScalaDynamicExtractor[T](
 
     val (paramTypes, resultType) = TypeUtils.getParameter_ReturnTypes(scalaMethod, baseTTg.tpe)
 
-    val resultTag = TypeUtils.createTypeTag[Any](resultType, baseTTg.mirror)
-    resultTag
+    val resultScalaType = ScalaType.fromType[Any](resultType, baseTTg.mirror)
+    resultScalaType.typeTag
   }
 
   override def resolve(tt: DataType): PartialFunction[T, Any] = locked {
@@ -303,6 +303,7 @@ case class ScalaResolvedFunction[T](
   * this complex mixin enables many scala functions of Docs & Unstructured to be directly called on Extraction shortcuts.
   * supersedes many implementations
   */
+@Deprecated // no type safety
 trait ScalaDynamicMixin[T, +R] extends Dynamic with ReflectionLock {
   selfType: GenExtractor[T, R] =>
 

@@ -2,7 +2,7 @@ package org.apache.spark.ml.dsl.utils.data
 
 import java.util.Properties
 
-import com.tribbloids.spookystuff.utils.{CommonUtils, IDMixin, TreeException}
+import com.tribbloids.spookystuff.utils.{CommonUtils, IDMixin, TreeThrowable}
 import org.apache.spark.ml.dsl.utils.{?, ScalaNameMixin}
 import org.apache.spark.sql.catalyst.util.CaseInsensitiveMap
 
@@ -213,7 +213,7 @@ trait EAV extends Serializable with IDMixin {
       } ++ Seq(() => _getDefaultV)
 
       Try {
-        TreeException
+        TreeThrowable
           .|||^(trials)
           .get
       }

@@ -1,7 +1,7 @@
 package com.tribbloids.spookystuff.session
 
 import com.tribbloids.spookystuff.utils.lifespan.Cleanable
-import com.tribbloids.spookystuff.utils.{CommonUtils, TreeException}
+import com.tribbloids.spookystuff.utils.{CommonUtils, TreeThrowable}
 
 import scala.util.Try
 
@@ -73,6 +73,6 @@ object ConflictDetection {
 
   def detectConflict(extra: Seq[Throwable] = Nil): Unit = {
 
-    TreeException.&&&(conflicts, extra = extra)
+    TreeThrowable.&&&(conflicts, extra = extra)
   }
 }

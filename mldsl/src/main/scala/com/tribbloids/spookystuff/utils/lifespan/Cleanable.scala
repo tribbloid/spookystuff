@@ -1,7 +1,7 @@
 package com.tribbloids.spookystuff.utils.lifespan
 
 import com.tribbloids.spookystuff.utils.CachingUtils._
-import com.tribbloids.spookystuff.utils.TreeException
+import com.tribbloids.spookystuff.utils.TreeThrowable
 import org.slf4j.LoggerFactory
 
 import scala.reflect.ClassTag
@@ -149,7 +149,7 @@ trait Cleanable {
         }
       }
     }
-    TreeException.&&&(chained :+ self)
+    TreeThrowable.&&&(chained :+ self)
 
     uncleanedInBatch -= this.trackingNumber
   }

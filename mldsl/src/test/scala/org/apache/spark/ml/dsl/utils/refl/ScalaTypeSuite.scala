@@ -74,13 +74,11 @@ class ScalaTypeSuite extends FunSpecx with PairwiseConversionMixin {
           AssertSerializable(vType)
         }
 
-        it("... even if created from raw Type") {
+        ignore("... even if created from raw Type") {
 
           val tt = ttg.tpe
 
-          val ttg2 = TypeUtils.createTypeTag[String](tt, ttg.mirror)
-
-          val vType2 = ScalaType.fromTypeTag(ttg2)
+          val vType2 = ScalaType.fromType(tt, ttg.mirror)
 
           AssertSerializable(vType2)
         }

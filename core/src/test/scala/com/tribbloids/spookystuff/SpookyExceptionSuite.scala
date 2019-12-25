@@ -1,7 +1,7 @@
 package com.tribbloids.spookystuff
 
 import com.tribbloids.spookystuff.testutils.FunSpecx
-import com.tribbloids.spookystuff.utils.TreeException
+import com.tribbloids.spookystuff.utils.TreeThrowable
 
 class SpookyExceptionSuite extends FunSpecx {
 
@@ -10,7 +10,7 @@ class SpookyExceptionSuite extends FunSpecx {
 
       val ee = new DFSReadException(
         "ee",
-        TreeException.combine(
+        TreeThrowable.combine(
           Seq(
             new AssertionError("2"),
             new AssertionError("1")

@@ -4,7 +4,7 @@ import com.tribbloids.spookystuff.Const
 import com.tribbloids.spookystuff.row.Field
 import com.tribbloids.spookystuff.utils.SpookyUtils
 import org.apache.spark.ml.dsl.utils.messaging.AutomaticRelay
-import org.apache.spark.ml.dsl.utils.refl.{ScalaType, UnreifiedObjectType}
+import org.apache.spark.ml.dsl.utils.refl.{ReflectionLock, ScalaType, UnreifiedObjectType}
 import org.apache.spark.sql.catalyst.ScalaReflection.universe.TypeTag
 import org.apache.spark.sql.catalyst.trees.TreeNode
 
@@ -148,7 +148,7 @@ object GenExtractor extends AutomaticRelay[GenExtractor[_, _]] {
 // a subclass wraps an expression and convert it into extractor, which converts all attribute reference children into data reference children and
 // (To be implemented) can be converted to an expression to be wrapped by other expressions
 //TODO: merge with Extractor
-trait GenExtractor[T, +R] extends Product with Serializable with ScalaDynamicMixin[T, R] {
+trait GenExtractor[T, +R] extends Product with ReflectionLock with Serializable {
 
   import com.tribbloids.spookystuff.extractors.GenExtractor._
 

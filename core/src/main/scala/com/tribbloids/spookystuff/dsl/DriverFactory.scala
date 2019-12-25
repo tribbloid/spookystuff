@@ -23,7 +23,7 @@ import com.tribbloids.spookystuff.session.{PythonDriver, _}
 import com.tribbloids.spookystuff.utils.CachingUtils.ConcurrentMap
 import com.tribbloids.spookystuff.utils.io.LocalResolver
 import com.tribbloids.spookystuff.utils.lifespan.{Cleanable, Lifespan}
-import com.tribbloids.spookystuff.utils.{ConfUtils, SpookyUtils, TreeException}
+import com.tribbloids.spookystuff.utils.{ConfUtils, SpookyUtils, TreeThrowable}
 import org.apache.commons.io.FileUtils
 import org.apache.spark.{SparkFiles, TaskContext}
 import org.openqa.selenium.htmlunit.HtmlUnitDriver
@@ -289,7 +289,7 @@ object DriverFactories {
       val localURI = getLocalURI(spooky)
       def localURITry = PhantomJS.verifyExe(localURI)
 
-      val result: Option[String] = TreeException.|||^(
+      val result: Option[String] = TreeThrowable.|||^(
         Seq(
           //already exists
           { () =>

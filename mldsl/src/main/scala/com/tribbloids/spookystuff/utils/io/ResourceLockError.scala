@@ -1,11 +1,11 @@
 package com.tribbloids.spookystuff.utils.io
 
-import com.tribbloids.spookystuff.utils.TreeException
+import com.tribbloids.spookystuff.utils.TreeThrowable
 
 class ResourceLockError(
     override val simpleMsg: String = "",
     val cause: Throwable = null
-) extends TreeException {
+) extends TreeThrowable {
 
   override def getCause: Throwable = cause
 }

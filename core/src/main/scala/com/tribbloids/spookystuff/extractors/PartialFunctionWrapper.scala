@@ -1,7 +1,5 @@
 package com.tribbloids.spookystuff.extractors
 
-import scala.runtime.AbstractPartialFunction
-
 //this entire file is created because default result of .lift & .unlift are not serializable
 trait PartialFunctionWrapper[-T, +R] extends PartialFunction[T, R] {
   def partialFunction: scala.PartialFunction[T, R]
@@ -11,9 +9,13 @@ trait PartialFunctionWrapper[-T, +R] extends PartialFunction[T, R] {
   override final def applyOrElse[A1 <: T, B1 >: R](x: A1, default: A1 => B1): B1 =
     partialFunction.applyOrElse(x, default)
 
-  override final def lift: Function1[T, Option[R]] = partialFunction match {
-    case ul: Unlift[T, R] => ul.lift
-    case _                => this.Lift
+  override final def lift: Function1[T, Option[R]] = {
+
+    this.Lift
+//    partialFunction match {
+//      case ul: Unlift[T, R] => ul.lift
+//      case _                => this.Lift
+//    }
   }
 
   case object Lift extends Function1[T, Option[R]] {
@@ -25,19 +27,12 @@ trait PartialFunctionWrapper[-T, +R] extends PartialFunction[T, R] {
   }
 }
 
-//Equivalent to Function.unlift, except being Serializable
-case class Unlift[-T, +R](
-    liftFn: T => Option[R]
-) extends AbstractPartialFunction[T, R] {
+object Unlift {
 
-  override final def isDefinedAt(x: T): Boolean = liftFn(x).isDefined
+  def apply[T, R](fn: T => Option[R]): PartialFunction[T, R] = {
 
-  override final def applyOrElse[A1 <: T, B1 >: R](x: A1, default: A1 => B1): B1 = {
-    val z = liftFn(x)
-    z.getOrElse(default(x))
+    Function.unlift(fn)
   }
-
-  override final def lift: Function1[T, Option[R]] = liftFn
 }
 
 case class Partial[-T, +R](
@@ -45,9 +40,7 @@ case class Partial[-T, +R](
 ) extends PartialFunctionWrapper[T, R] {
 
   val partialFunction: scala.PartialFunction[T, R] = fn match {
-    case pf: scala.PartialFunction[T, R] =>
-      pf
-    case _ =>
-      PartialFunction(fn)
+    case pf: scala.PartialFunction[T, R] => pf
+    case _                               => { case v => fn(v) }
   }
 }

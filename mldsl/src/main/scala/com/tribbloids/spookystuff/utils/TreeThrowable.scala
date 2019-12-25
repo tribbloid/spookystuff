@@ -1,17 +1,17 @@
 package com.tribbloids.spookystuff.utils
 
-import com.tribbloids.spookystuff.utils.TreeException._combine
+import com.tribbloids.spookystuff.utils.TreeThrowable.ExceptionWithCauses
 import org.apache.spark.ml.dsl.utils.FlowUtils
 import org.apache.spark.sql.catalyst.trees.TreeNode
 
 import scala.util.{Failure, Success, Try}
 
-object TreeException {
+object TreeThrowable {
 
   case class TreeNodeView(self: Throwable) extends TreeNode[TreeNodeView] {
     override def children: Seq[TreeNodeView] = {
       val result = self match {
-        case v: TreeException =>
+        case v: TreeThrowable =>
           v.causes.map(TreeNodeView)
         case _ =>
           val eOpt = Option(self).flatMap(
@@ -24,7 +24,7 @@ object TreeException {
 
     override def simpleString: String = {
       self match {
-        case v: TreeException =>
+        case v: TreeThrowable =>
           v.simpleMsg
         case _ =>
           self.getClass.getName + ": " + self.getMessage
@@ -66,7 +66,8 @@ object TreeException {
     if (es.isEmpty) {
       trials.map(_.get)
     } else {
-      throw agg(extra.flatMap(v => Option(v)) ++ es)
+      val ee = agg(extra.flatMap(v => Option(v)) ++ es)
+      throw ee
     }
   }
 
@@ -136,7 +137,7 @@ object TreeException {
     if (_causes.size == 1 && upliftUnary) {
       _causes.head
     } else {
-      _combine(causes = _causes)
+      ExceptionWithCauses(causes = _causes)
     }
   }
 
@@ -147,26 +148,25 @@ object TreeException {
     )
   }
 
-  protected case class _combine(
+  protected case class ExceptionWithCauses(
       override val causes: Seq[Throwable] = Nil
-  ) extends TreeException {
+  ) extends TreeThrowable {
+
+    override def getCause: Throwable = causes.headOption.orNull
 
     val simpleMsg: String = s"[CAUSED BY ${causes.size} EXCEPTION(S)]"
   }
 }
 
-trait TreeException extends Throwable {
+trait TreeThrowable extends Throwable {
 
-  import com.tribbloids.spookystuff.utils.TreeException.TreeNodeView
-
-  override def getCause: Throwable
+  import com.tribbloids.spookystuff.utils.TreeThrowable.TreeNodeView
 
   def causes: Seq[Throwable] = {
     val cause = getCause
     cause match {
-      case _combine(causes) => causes
-      case _ =>
-        Option(cause).toSeq
+      case ExceptionWithCauses(causes) => causes
+      case _                           => Option(cause).toSeq
     }
   }
   lazy val treeNodeView = TreeNodeView(this)

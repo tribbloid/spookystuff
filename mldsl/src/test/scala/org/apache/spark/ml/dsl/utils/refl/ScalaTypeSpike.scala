@@ -1,6 +1,7 @@
 package org.apache.spark.ml.dsl.utils.refl
 
 import com.tribbloids.spookystuff.testutils.FunSpecx
+import com.tribbloids.spookystuff.utils.serialization.AssertSerializable
 import org.apache.spark.sql.catalyst.ScalaReflection
 import org.apache.spark.sql.catalyst.ScalaReflection.universe
 
@@ -56,6 +57,17 @@ class ScalaTypeSpike extends FunSpecx {
     val sym = mirror.classSymbol(llClass)
 
     print(sym.selfType)
+  }
+
+  ignore("TypeTag from Type can be serializable") {
+
+    val ttg = implicitly[TypeTag[String]]
+    val tpe = ttg.tpe
+
+    val ttgSlow = TypeUtils.createTypeTag_slowButSerializable(tpe, ttg.mirror)
+    val ttgFast = TypeUtils.createTypeTag_fast(tpe, ttg.mirror)
+
+    AssertSerializable(ttgSlow)
   }
 
   it("can get TypeTag") {

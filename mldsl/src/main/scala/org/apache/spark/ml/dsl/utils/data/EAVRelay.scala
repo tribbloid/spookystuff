@@ -2,7 +2,7 @@ package org.apache.spark.ml.dsl.utils.data
 
 import java.lang.reflect.{InvocationTargetException, Method}
 
-import com.tribbloids.spookystuff.utils.TreeException
+import com.tribbloids.spookystuff.utils.TreeThrowable
 import org.apache.spark.ml.dsl.utils.FlowUtils
 import org.apache.spark.ml.dsl.utils.messaging.{MessageRelay, MessageWriter, Nested, Registry}
 import org.apache.spark.ml.dsl.utils.refl.ScalaType
@@ -39,7 +39,7 @@ trait EAVRelay[I <: EAV] extends MessageRelay[I] with EAVBuilder[I] {
       .map {
         case (k, v) =>
           val mapped = Nested[Any](v).map[JValue] { elem: Any =>
-            TreeException
+            TreeThrowable
               .|||^[JValue](Seq(
                 { () =>
                   val codec = Registry.Default.findCodecOrDefault[Any](v)

@@ -8,7 +8,7 @@ import com.tribbloids.spookystuff.session.Session
 import com.tribbloids.spookystuff.utils.io.HDFSResolver
 import com.tribbloids.spookystuff.utils.serialization.SerDeOverride
 import org.apache.spark.ml.dsl.utils.refl.ScalaType
-import com.tribbloids.spookystuff.utils.{ShippingMarks, TreeException}
+import com.tribbloids.spookystuff.utils.{ShippingMarks, TreeThrowable}
 import org.apache.hadoop.conf.Configuration
 import org.apache.spark._
 import org.apache.spark.broadcast.Broadcast
@@ -143,7 +143,7 @@ case class SpookyContext(
           v.deployGlobally(this)
         }
       }
-    TreeException.&&&(trials)
+    TreeThrowable.&&&(trials)
   }
 
   def metrics: Submodules[Metrics] = {

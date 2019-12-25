@@ -2,7 +2,7 @@ package com.tribbloids.spookystuff
 
 import java.io.IOException
 
-import com.tribbloids.spookystuff.utils.TreeException
+import com.tribbloids.spookystuff.utils.TreeThrowable
 
 /**
   * Created by peng on 9/11/14.
@@ -28,7 +28,7 @@ import com.tribbloids.spookystuff.utils.TreeException
 //  }
 //}
 
-trait SpookyException extends TreeException {
+trait SpookyException extends TreeThrowable {
 
   def cause: Throwable = null
 

@@ -2,21 +2,27 @@ package com.tribbloids.spookystuff.extractors
 
 import com.tribbloids.spookystuff.SpookyEnvFixture
 import com.tribbloids.spookystuff.actions.{Action, ActionUDT, Wget}
-import com.tribbloids.spookystuff.doc.{Doc, Unstructured}
+import com.tribbloids.spookystuff.doc.{Doc, DocOption, Unstructured}
 import com.tribbloids.spookystuff.extractors.impl.{Get, Lit}
 import com.tribbloids.spookystuff.TestBeans.Example
+import com.tribbloids.spookystuff.rdd.FetchedDataset
+import com.tribbloids.spookystuff.row.SpookySchema
 import com.tribbloids.spookystuff.testutils.LocalPathDocsFixture
 import com.tribbloids.spookystuff.utils.CommonUtils
+import org.apache.spark.rdd.RDD
+import org.apache.spark.sql.DataFrame
 import org.apache.spark.sql.types._
+import org.scalatest.Ignore
 
 /**
   * Created by peng on 09/07/16.
   */
+@Ignore // TODO: remove due to deprecation of ScalaDynamicMixin
 class ScalaDynamicExtractorSuite extends SpookyEnvFixture with LocalPathDocsFixture {
 
   import org.apache.spark.ml.dsl.utils.refl.ScalaType._
 
-  val doc = Wget(HTML_URL).fetch(spooky).head
+  val doc: DocOption = Wget(HTML_URL).fetch(spooky).head
 
   it("can resolve Fetched.timestamp") {
 
@@ -128,18 +134,18 @@ class ScalaDynamicExtractorSuite extends SpookyEnvFixture with LocalPathDocsFixt
     (Some(new Example()), None, "abd"),
     (None, Some(2), "abe")
   )
-  val df = sql.createDataFrame(src).toDF("A", "B", "C")
-  val ds = spooky
+  val df: DataFrame = sql.createDataFrame(src).toDF("A", "B", "C")
+  val ds: FetchedDataset = spooky
     .create(df)
     .fetch(
       Wget(HTML_URL)
     )
 
-  val rdd = ds.unsquashedRDD.persist()
-  val rows = rdd.take(10)
-  override lazy val emptySchema = ds.schema
+  val rdd: RDD[FR] = ds.unsquashedRDD.persist()
+  val rows: Array[FR] = rdd.take(10)
+  override lazy val emptySchema: SpookySchema = ds.schema
 
-  val getNullType = Lit[Null](null)
+  val getNullType: Lit[FR, Null] = Lit[Null](null)
 
   def verifyOnDriverAndWorkers(dynamic: ScalaDynamicExtractor[FR], staticFn: FR => Option[Any]): Unit = {
 

@@ -101,8 +101,10 @@ abstract class ScalaType_Level1 {
       _class
     }
 
+    def classLoader = _class.getClassLoader
+
     @transient override lazy val mirror: universe.Mirror = {
-      val loader = _class.getClassLoader
+      val loader = classLoader
       runtimeMirror(loader)
     }
     //    def mirror = ReflectionUtils.mirrorFactory.get()
@@ -131,7 +133,7 @@ abstract class ScalaType_Level1 {
     }
 
     override def _typeTag: TypeTag[T] = {
-      TypeUtils.createTypeTag(asType, mirror)
+      TypeUtils.createTypeTag_fast(asType, mirror)
     }
   }
 
@@ -173,6 +175,13 @@ object ScalaType extends ScalaType_Level2 {
     def _typeTag: TypeTag[T] = typeTag_ser.value
   }
   implicit def fromTypeTag[T](implicit v: TypeTag[T]): FromTypeTag[T] = new FromTypeTag(v)
+
+  def fromType[T](tpe: Type, mirror: Mirror): FromTypeTag[T] = {
+
+    val ttg = TypeUtils.createTypeTag_slowButSerializable[T](tpe, mirror)
+
+    new FromTypeTag(ttg)
+  }
 
   def summon[T](implicit ev: ScalaType[T]): ScalaType[T] = ev
 

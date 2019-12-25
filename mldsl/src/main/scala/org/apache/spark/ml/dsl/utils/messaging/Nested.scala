@@ -1,6 +1,6 @@
 package org.apache.spark.ml.dsl.utils.messaging
 
-import com.tribbloids.spookystuff.utils.TreeException
+import com.tribbloids.spookystuff.utils.TreeThrowable
 
 import scala.collection.mutable.ArrayBuffer
 import scala.reflect.ClassTag
@@ -70,7 +70,7 @@ case class Nested[T: ClassTag](
 
     val treeException = if (errorBuffer.nonEmpty) {
 
-      val treeException = TreeException.combine(errorBuffer)
+      val treeException = TreeThrowable.combine(errorBuffer)
       if (failFast) throw treeException
       Some(treeException)
     } else {
