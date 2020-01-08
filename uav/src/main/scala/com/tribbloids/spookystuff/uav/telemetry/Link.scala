@@ -9,7 +9,7 @@ import com.tribbloids.spookystuff.uav.system.UAV
 import com.tribbloids.spookystuff.uav.utils.{Lock, UAVUtils}
 import com.tribbloids.spookystuff.uav.{UAVConf, UAVMetrics}
 import com.tribbloids.spookystuff.utils.lifespan.{Cleanable, Lifespan, LocalCleanable}
-import com.tribbloids.spookystuff.utils.{CachingUtils, CommonUtils, TreeException}
+import com.tribbloids.spookystuff.utils.{CachingUtils, CommonUtils, TreeThrowable}
 import org.slf4j.LoggerFactory
 
 import scala.collection.mutable.ArrayBuffer
@@ -201,7 +201,7 @@ trait Link extends LocalCleanable with ConflictDetection {
               UAVUtils.localSanityTrials
             val afterDetection = {
               try {
-                TreeException.&&&(sanityTrials)
+                TreeThrowable.&&&(sanityTrials)
                 e
               } catch {
                 case ee: Throwable =>

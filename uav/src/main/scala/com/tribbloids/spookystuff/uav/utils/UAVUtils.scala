@@ -4,7 +4,7 @@ import com.tribbloids.spookystuff.python.ref.PyRef
 import com.tribbloids.spookystuff.session.ConflictDetection
 import com.tribbloids.spookystuff.uav.telemetry.Link
 import com.tribbloids.spookystuff.uav.telemetry.mavlink.MAVLink
-import com.tribbloids.spookystuff.utils.TreeException
+import com.tribbloids.spookystuff.utils.TreeThrowable
 import org.apache.spark.SparkContext
 
 import scala.util.Try
@@ -20,7 +20,7 @@ object UAVUtils {
       ConflictDetection.conflicts
   }
 
-  def localSanityCheck = TreeException.&&&(localSanityTrials)
+  def localSanityCheck = TreeThrowable.&&&(localSanityTrials)
 
   import com.tribbloids.spookystuff.utils.SpookyViews._
 

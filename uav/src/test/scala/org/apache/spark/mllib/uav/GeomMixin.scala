@@ -8,7 +8,7 @@ import com.tribbloids.spookystuff.uav.UAVConf
 import com.tribbloids.spookystuff.uav.actions.UAVNavigation
 import com.tribbloids.spookystuff.uav.spatial.Spatial
 import com.tribbloids.spookystuff.uav.spatial.point.NED
-import com.tribbloids.spookystuff.utils.TreeException
+import com.tribbloids.spookystuff.utils.TreeThrowable
 
 import scala.collection.mutable.ArrayBuffer
 import scala.util.Try
@@ -85,7 +85,7 @@ trait GeomMixin extends SpookyEnvFixture {
               Try { actualRepr.shouldBe(gd) }
           }
         }
-        TreeException.|||(trials.toSeq, extra = originalErrors)
+        TreeThrowable.|||(trials.toSeq, extra = originalErrors)
     }
   }
 }

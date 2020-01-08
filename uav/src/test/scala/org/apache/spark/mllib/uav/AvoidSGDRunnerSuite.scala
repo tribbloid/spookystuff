@@ -5,8 +5,8 @@ import com.tribbloids.spookystuff.row.FetchedRow
 import com.tribbloids.spookystuff.uav.actions.Waypoint
 import com.tribbloids.spookystuff.uav.planning.TrafficControls.Avoid
 import com.tribbloids.spookystuff.uav.spatial.point.NED
+import com.tribbloids.spookystuff.utils.TreeThrowable
 import com.tribbloids.spookystuff.utils.serialization.AssertSerializable
-import com.tribbloids.spookystuff.utils.TreeException
 import org.apache.spark.ml.uav.{AvoidGradient, AvoidSGDRunner}
 import org.apache.spark.rdd.RDD
 
@@ -162,7 +162,7 @@ class AvoidSGDRunnerSuite extends GeomMixin {
     val runner = AvoidSGDRunner(map2rdd(input), schema, clearance)
 
     val output = runner.traces_flatten
-    TreeException.|||(
+    TreeThrowable.|||(
       Seq(
         Try {}
       )

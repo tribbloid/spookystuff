@@ -256,7 +256,7 @@ class ScalaTypeSuite extends FunSpecx with PairwiseConversionMixin {
     //
     ClassFacet,
     MultipartClassFacet,
-    ObjectFacet,
+    ObjectFacet
   )
 
 //  describe("CatalystType <==> TypeTag") {
