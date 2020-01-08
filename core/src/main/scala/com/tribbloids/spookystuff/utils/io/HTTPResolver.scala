@@ -4,6 +4,7 @@ import java.io._
 import java.net.{InetSocketAddress, URI}
 
 import com.tribbloids.spookystuff.session.WebProxySetting
+import com.tribbloids.spookystuff.utils.{Retry, RetryExponentialBackoff}
 import com.tribbloids.spookystuff.utils.http._
 import javax.net.ssl.SSLContext
 import org.apache.http.client.HttpClient
@@ -15,6 +16,8 @@ import org.apache.http.conn.socket.ConnectionSocketFactory
 import org.apache.http.impl.client.{CloseableHttpClient, HttpClients}
 import org.apache.http.impl.conn.PoolingHttpClientConnectionManager
 import org.apache.http.{HttpEntity, HttpHost, HttpResponse}
+
+import scala.concurrent.duration.Duration
 
 object HTTPResolver {
 
@@ -105,11 +108,13 @@ case class HTTPResolver(
     //                         headers: Map[String, String] = Map.empty,
     input2Request: URI => HttpRequestBase = { v =>
       new HttpGet(v)
-    }
+    },
     //                         output2Request: URI => HttpEntityEnclosingRequestBase = { //TODO: need test
     //                           v =>
     //                             new HttpPost(v)
     //                         }
+    override val retry: Retry = RetryExponentialBackoff(8, 16000),
+    override val lockExpireAfter: Duration = URIResolver.defaultLockExpireAfter
 ) extends URIResolver {
 
 //  val currentReq = context.getAttribute(HttpCoreContext.HTTP_REQUEST).asInstanceOf[HttpUriRequest]

@@ -18,8 +18,9 @@ import scala.concurrent.duration.Duration
 abstract class URIResolver extends Serializable {
 
   def Execution(pathStr: String): this.Execution
-  protected[io] def retry: Retry = RetryExponentialBackoff(8, 16000)
-  protected[io] def lockExpireAfter: Duration = URIResolver.defaultLockExpireAfter
+
+  def retry: Retry = RetryExponentialBackoff(8, 16000)
+  def lockExpireAfter: Duration = URIResolver.defaultLockExpireAfter
 
   lazy val unlockForInput: Boolean = false
 

@@ -3,8 +3,10 @@ package com.tribbloids.spookystuff.utils.io
 import java.io.{InputStream, OutputStream}
 import java.net.{URI, URLConnection}
 
+import com.tribbloids.spookystuff.utils.{Retry, RetryExponentialBackoff}
 import com.tribbloids.spookystuff.utils.http.HttpUtils
 
+import scala.concurrent.duration.Duration
 import scala.util.Try
 
 object FTPResolver {
@@ -25,7 +27,9 @@ object FTPResolver {
 }
 
 case class FTPResolver(
-    input2Connection: URI => URLConnection
+    input2Connection: URI => URLConnection,
+    override val retry: Retry = RetryExponentialBackoff(8, 16000),
+    override val lockExpireAfter: Duration = URIResolver.defaultLockExpireAfter
 ) extends URIResolver {
 
   import scala.collection.JavaConverters._

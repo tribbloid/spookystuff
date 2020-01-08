@@ -3,18 +3,22 @@ package com.tribbloids.spookystuff.utils.io
 import java.io.{InputStream, OutputStream}
 import java.security.{PrivilegedAction, PrivilegedActionException}
 
-import com.tribbloids.spookystuff.utils.CommonUtils
+import com.tribbloids.spookystuff.utils.{CommonUtils, Retry, RetryExponentialBackoff}
 import com.tribbloids.spookystuff.utils.serialization.SerDeOverride
 import org.apache.hadoop.conf.Configuration
 import org.apache.hadoop.fs._
 import org.apache.hadoop.security.UserGroupInformation
+
+import scala.concurrent.duration.Duration
 
 /**
   * Created by peng on 17/05/17.
   */
 case class HDFSResolver(
     hadoopConf: SerDeOverride[Configuration],
-    ugiFactory: () => Option[UserGroupInformation] = HDFSResolver.noUGIFactory
+    ugiFactory: () => Option[UserGroupInformation] = HDFSResolver.noUGIFactory,
+    override val retry: Retry = RetryExponentialBackoff(8, 16000),
+    override val lockExpireAfter: Duration = URIResolver.defaultLockExpireAfter
 ) extends URIResolver {
 
   import Resource._
