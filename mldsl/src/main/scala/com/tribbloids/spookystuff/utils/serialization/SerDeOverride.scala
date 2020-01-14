@@ -56,11 +56,14 @@ case class SerDeOverride[T: ClassTag](
 
   @transient lazy val serObj: io.Serializable = _original match {
     case ss: Serializable =>
-      ss: Serializable
+      ss
+    case ss: java.io.Serializable =>
+      ss
     case ww: Writable =>
       new SerializableWritable(ww)
     case _ =>
-      throw new UnsupportedOperationException(s"${_original} is not Serializable or Writable")
+      throw new UnsupportedOperationException(
+        s"${_original}: ${_original.getClass.getCanonicalName} is not Serializable or Writable")
   }
 
   val delegate: Either[io.Serializable, Array[Byte]] = {
