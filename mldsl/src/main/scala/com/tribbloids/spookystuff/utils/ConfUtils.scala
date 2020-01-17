@@ -7,7 +7,15 @@ object ConfUtils {
 
   def getPropertyOrEnv(
       property: String
-  )(implicit conf: SparkConf = Option(SparkEnv.get).map(_.conf).orNull): Option[String] = {
+  )(
+      implicit sparkConf: SparkConf = {
+        Option(SparkEnv.get)
+          .map(_.conf)
+          .getOrElse(
+            new SparkConf()
+          )
+      }
+  ): Option[String] = {
 
     val env = property.replace('.', '_').toUpperCase
 
@@ -22,6 +30,7 @@ object ConfUtils {
         v
       }
       .orElse {
+
         Option(System.getenv(env)).filter(_.toLowerCase != "null").map { v =>
           LoggerFactory
             .getLogger(this.getClass)
@@ -32,17 +41,17 @@ object ConfUtils {
         }
       }
       .orElse {
-        Option(conf) //this is ill-suited for third-party application, still here but has lowest precedence.
-          .flatMap(
-            _.getOption(property).map { v =>
-              LoggerFactory
-                .getLogger(this.getClass)
-                .info(
-                  s"Spark Configurations:\t $property -> $v"
-                )
-              v
-            }
-          )
+
+        sparkConf
+          .getOption(property)
+          .map { v =>
+            LoggerFactory
+              .getLogger(this.getClass)
+              .info(
+                s"Spark Configurations:\t $property -> $v"
+              )
+            v
+          }
           .filter(_.toLowerCase != "null")
       }
 
@@ -55,9 +64,15 @@ object ConfUtils {
   def getOrDefault(
       property: String,
       default: String = null
-  )(implicit conf: SparkConf = Option(SparkEnv.get).map(_.conf).orNull): String = {
+  )(
+      implicit sparkConf: SparkConf = Option(SparkEnv.get)
+        .map(_.conf)
+        .getOrElse(
+          new SparkConf()
+        )
+  ): String = {
 
-    val v = getPropertyOrEnv(property)
+    val v = getPropertyOrEnv(property)(sparkConf)
     v.getOrElse {
       default
     }
