@@ -7,31 +7,31 @@ import com.tribbloids.spookystuff.utils.lifespan.LifespanContext
 
 import scala.util.Try
 
-object Lock {
+object Binding {
 
-  val LOCK_EXPIRE_AFTER = 60 * 1000 //TODO: de-hardcode?
+  val LOCK_EXPIRE_AFTER: Int = 60 * 1000 //TODO: de-hardcode?
 
-  object Open extends Lock(None, LifespanContext(), 0) {
+  object Open extends Binding(None, LifespanContext(), 0) {
 
     override def toString: String = "(open)"
 
-    override def getAvailability(keyOpt: Option[Lock]): Int = 0
+    override def getAvailability(keyOpt: Option[Binding]): Int = 0
   }
 
   def Transient(
       _id: Option[UUID] = Some(UUID.randomUUID()), //can only be lifted by PreferUAV that has the same token.
       ctx: LifespanContext = LifespanContext()
-  ) = Lock(_id, ctx, 0)
+  ): Binding = Binding(_id, ctx, 0)
 
   def OnHold(
       _id: Option[UUID] = Some(UUID.randomUUID()), //can only be lifted by PreferUAV that has the same token.
       ctx: LifespanContext = LifespanContext()
-  ) = Lock(_id, ctx, System.currentTimeMillis() + LOCK_EXPIRE_AFTER)
+  ): Binding = Binding(_id, ctx, System.currentTimeMillis() + LOCK_EXPIRE_AFTER)
 }
 
 /**
   * VERY IMPORTANT in attaching telemetry links to Spark tasks or Java threads
-  * a locked link cannot be commissioned for anything else unless:
+  * a binded link cannot be commissioned for anything else unless:
   *   - unlocked
   * OR ALL OF THE FOLLOWING conditions are fulfilled:
   *   - expired after predefined timestamp
@@ -40,7 +40,7 @@ object Lock {
   *   - contains identical id OR
   *   - contain identical threadID (in this case, either in the same task or previous task that use it has completed)
   */
-case class Lock(
+case class Binding(
     _id: Option[UUID], //can only be lifted by PreferUAV that has the same token.
     ctx: LifespanContext,
     expireAfter: Long
@@ -65,12 +65,12 @@ case class Lock(
     * @param keyOpt access will be granted if the key contains identical UUID or threadID
     * @return strength of the availability, >0 means available, higher number means more preferable:
     *         -1  access denied
-    *         0   lock has expired / open to all
+    *         0   binding has expired / open to all
     *         1   on top of 1, key has identical threadID
     *         2   key has identical taskID
     *         3   key has identical ID (strongest)
     */
-  def getAvailability(keyOpt: Option[Lock] = None): Int = {
+  def getAvailability(keyOpt: Option[Binding] = None): Int = {
 
     for (key <- keyOpt) {
       if (Try(this._id.get == key._id.get).getOrElse(false)) return 3

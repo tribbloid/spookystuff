@@ -8,7 +8,8 @@ import scala.language.implicitConversions
 //TODO: use AnyVal to minimise overhead
 //TODO: need thread safety test
 /**
-  * similar to lazy val, but cached value can be overwritten from outside
+  * similar to lazy val, but cached value can be peeked & overwritten from outside
+  * thread safe and value only initialized once
   */
 class LazyVar[T](
     fn: => T

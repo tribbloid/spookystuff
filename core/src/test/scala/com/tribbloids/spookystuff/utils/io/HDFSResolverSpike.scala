@@ -26,7 +26,7 @@ class HDFSResolverSpike extends FunSpec {
 //          val path = "ftp://mirror.csclub.uwaterloo.ca/apache/"
         val path = "ftp://mirror.csclub.uwaterloo.ca/apache/spark/spark-1.6.3/spark-1.6.3-bin-hadoop1-scala2.11.tgz"
         val md = resolver.input(path) { in =>
-          in.allMetadata
+          in.metadata.all
         }
         md
       }

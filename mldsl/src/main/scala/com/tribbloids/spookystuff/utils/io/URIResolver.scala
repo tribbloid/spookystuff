@@ -1,12 +1,14 @@
 package com.tribbloids.spookystuff.utils.io
 
+import com.tribbloids.spookystuff.utils.io.lock.{Lock, LockExpired}
+import com.tribbloids.spookystuff.utils.lifespan.LocalCleanable
+import com.tribbloids.spookystuff.utils.{CachingUtils, CommonUtils, Retry}
+import org.apache.commons.io.IOUtils
+
 import java.io._
 import java.util.concurrent.TimeUnit
-
-import com.tribbloids.spookystuff.utils.serialization.NOTSerializable
-import com.tribbloids.spookystuff.utils.{CommonUtils, Retry, RetryExponentialBackoff}
-
 import scala.concurrent.duration.Duration
+import scala.util.Random
 
 /*
  * to make it resilient to asynchronous read/write, let output rename the file, write it, and rename back,
@@ -17,24 +19,33 @@ import scala.concurrent.duration.Duration
  */
 abstract class URIResolver extends Serializable {
 
-  def Execution(pathStr: String): this.Execution
+  import CachingUtils.MapView
 
-  def retry: Retry = RetryExponentialBackoff(8, 16000)
+  type Execution <: AbstractExecution
+
+  @transient lazy val cache: CachingUtils.ConcurrentCache[String, Execution] = CachingUtils.ConcurrentCache()
+
+  final def execute(pathStr: String): Execution = {
+
+    cache.getOrUpdateSync(pathStr)(newExecution(pathStr))
+  }
+
+  def newExecution(pathStr: String): Execution
+
+  def retry: Retry = URIResolver.default.retry
   def lockExpireAfter: Duration = URIResolver.defaultLockExpireAfter
 
-  lazy val unlockForInput: Boolean = false
-
   final def input[T](pathStr: String)(f: InputResource => T): T = {
-    val exe = Execution(pathStr)
+    val exe = execute(pathStr)
     exe.input(f)
   }
 
-  final def output[T](pathStr: String, overwrite: Boolean)(f: OutputResource => T): T = {
-    val exe = Execution(pathStr)
-    exe.output(overwrite)(f)
+  final def output[T](pathStr: String, mode: WriteMode)(f: OutputResource => T): T = {
+    val exe = execute(pathStr)
+    exe.output(mode)(f)
   }
 
-  final def toAbsolute(pathStr: String): String = Execution(pathStr).absolutePathStr
+  final def toAbsolute(pathStr: String): String = execute(pathStr).absolutePathStr
 
   final def isAbsolute(pathStr: String): Boolean = {
     toAbsolute(pathStr) == pathStr
@@ -51,73 +62,168 @@ abstract class URIResolver extends Serializable {
     result
   }
 
-  @Deprecated // TODO: broken, need better abstraction
-  def lockAccessDuring[T](pathStr: String)(f: String => T): T = {
-    val lock = new Lock(Execution(pathStr))
-    val path = lock.acquire()
-    try {
-      f(path)
-    } finally {
-      lock.clean()
-    }
+  /**
+    * ensure sequential access, doesn't work on non-existing path
+    */
+  def lock[T](pathStr: String)(fn: URIExecution => T): T = {
+    val exe = execute(pathStr)
+
+    val lock = new Lock(exe)
+    lock.during(fn)
   }
 
-  def isAlreadyExisting(pathStr: String)(
-      condition: InputResource => Boolean = { v =>
-        v.getLenth > 0 //empty files are usually useless
-      }
-  ): Boolean = {
-    val result = this.input(pathStr) { v =>
-      v.isAlreadyExisting && condition(v)
-    }
-    result
+  def unsupported(op: String): Nothing = {
+    throw new UnsupportedOperationException(
+      s"Implementation doesn't support ${this.getClass.getSimpleName}.$op operation"
+    )
   }
 
   /**
-    * ensure sequential access
-    *
+    * all implementations must be stateless
     */
-  //  def lockAccessDuring[T](pathStr: String)(f: String => T): T = {f(pathStr)}
-
-  trait Execution extends NOTSerializable {
+  trait AbstractExecution extends LocalCleanable {
 
     def outer: URIResolver = URIResolver.this
 
     def absolutePathStr: String
 
-    // read: may execute lazily
-    def input[T](f: InputResource => T): T
-
     // remove & write: execute immediately! write an empty file even if stream is not used
-    protected[io] def _remove(mustExist: Boolean = true): Unit
-    final def remove(mustExist: Boolean = true): Unit = {
-      _remove(mustExist)
-      retry {
-        input { in =>
-          assert(!in.isAlreadyExisting, s"$absolutePathStr cannot be deleted")
+    protected[io] def _delete(mustExist: Boolean = true): Unit
+    final def delete(mustExist: Boolean = true): Unit = {
+      _delete(mustExist)
+//      retry {
+//        input { in =>
+//          assert(!in.isAlreadyExisting, s"$absolutePathStr cannot be deleted")
+//        }
+//      }
+    }
+
+    def moveTo(target: String): Unit
+
+    //removed, no need if creating new file is always recursive
+//    def mkDirs(): Unit
+
+    final def copyTo(target: String, mode: WriteMode): Unit = {
+
+      val tgtSession = outer.execute(target)
+
+      this.input { in =>
+        tgtSession.output(mode) { out =>
+          IOUtils.copy(in.stream, out.stream)
         }
       }
     }
 
-    def output[T](overwrite: Boolean)(f: OutputResource => T): T
+    final def createNew(): Unit = create_simple()
 
-    //    final def peek(): Unit] = {
-    //      read({_ =>})
-    //    }
-    //
-    //    final def touch(overwrite: Boolean = false): Resource[Unit] = {
-    //      write(overwrite, { _ =>})
-    //
-    //      //          retry { //TODO: necessary?
-    //      //            assert(
-    //      //              fs.exists(lockPath),
-    //      //              s"Lock '$lockPath' cannot be persisted")
-    //      //          }
-    //    }
+    def zeroByte = Array.empty[Byte]
+
+    private def create_simple(): Unit = {
+
+      try {
+        this.output(WriteMode.CreateOnly) { out =>
+          out.stream.write(zeroByte)
+        }
+
+        this.input { in =>
+          val v = IOUtils.toByteArray(in.stream)
+          require(v.toSeq == zeroByte.toSeq)
+        }
+      } catch {
+        case e: Throwable =>
+          this.delete(false)
+          throw e
+      }
+
+    }
+
+    private def create_complex(): Unit = { //TODO: remove
+
+      val touchSession: URIExecution = {
+
+        val touchPathStr = this.absolutePathStr + URIResolver.TOUCH
+
+        outer.execute(touchPathStr)
+      }
+
+      // this convoluted way of creating file is to ensure that atomic contract can be engaged
+      // TODO: not working in any FS! why?
+
+      touchSession.output(WriteMode.CreateOnly) { out =>
+        out.stream.write(zeroByte)
+      }
+
+      try {
+        touchSession.moveTo(this.absolutePathStr)
+
+        this.input { in =>
+          val v = IOUtils.toByteArray(in.stream)
+          require(v.toSeq == zeroByte.toSeq)
+        }
+
+        this.output(WriteMode.Overwrite) { out =>
+          out.stream
+        }
+
+      } catch {
+        case e: Throwable =>
+          touchSession.delete(false)
+          throw e
+      } finally {
+
+        touchSession.clean()
+      }
+    }
+
+    final def isExisting: Boolean = {
+      input(_.isExisting)
+    }
+
+    final def isNonEmpty: Boolean = satisfy { v =>
+      v.getLength > 0
+    }
+
+    final def satisfy(
+        condition: InputResource => Boolean
+    ): Boolean = {
+
+      val result = input { v =>
+        v.isExisting && condition(v)
+      }
+      result
+    }
+
+    // read: may execute lazily
+    def input[T](fn: InputResource => T): T
+
+    def output[T](mode: WriteMode)(fn: OutputResource => T): T
+
+    override protected def cleanImpl(): Unit = {}
   }
+
 }
 
 object URIResolver {
+
+  object default {
+
+    //  val defaultRetry: Retry = Retry.ExponentialBackoff(10, 32000, 1.5, silent = false)
+    val retry: Retry = Retry(
+      n = 16,
+      intervalFactory = { n =>
+        (10000.doubleValue() / Math.pow(1.2, n - 2)).asInstanceOf[Long] + Random.nextInt(1000).longValue()
+      },
+      silent = true
+//      silent = false
+    )
+
+    val expired: LockExpired = LockExpired(
+      unlockAfter = 30 -> TimeUnit.SECONDS,
+      deleteAfter = 1 -> TimeUnit.HOURS
+    )
+  }
+
+  final val TOUCH = ".touch"
 
   val defaultLockExpireAfter: Duration = 24 -> TimeUnit.HOURS
 }

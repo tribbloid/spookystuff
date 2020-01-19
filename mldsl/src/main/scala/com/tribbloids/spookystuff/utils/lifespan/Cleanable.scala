@@ -4,7 +4,7 @@ import java.io.Closeable
 
 import com.tribbloids.spookystuff.utils.CachingUtils._
 import com.tribbloids.spookystuff.utils.TreeThrowable
-import org.slf4j.LoggerFactory
+import org.slf4j.{Logger, LoggerFactory}
 
 import scala.reflect.ClassTag
 import scala.util.Try
@@ -126,8 +126,14 @@ trait Cleanable extends Closeable {
   def logPrefix: String = {
     s"$trackingNumber @ ${lifespan.toString} \t| "
   }
+
+  protected def cleanableLogFunction(logger: Logger): String => Unit = {
+    logger.debug
+  }
+
   protected def logPrefixed(s: String): Unit = {
-    LoggerFactory.getLogger(this.getClass).debug(s"$logPrefix $s")
+    cleanableLogFunction(LoggerFactory.getLogger(this.getClass))
+      .apply(s"$logPrefix $s")
   }
 
   /**
@@ -145,7 +151,7 @@ trait Cleanable extends Closeable {
 
   def chainClean: Seq[Cleanable] = Nil
 
-  def clean(silent: Boolean = false): Unit = {
+  final def clean(silent: Boolean = false): Unit = {
     val chained: Seq[Try[Unit]] = chainClean.map { v =>
       Try {
         v.clean(silent)
@@ -177,7 +183,7 @@ trait Cleanable extends Closeable {
 
   def isSilent(ee: Throwable): Boolean = false
 
-  def tryClean(silent: Boolean = false): Unit = {
+  final def tryClean(silent: Boolean = false): Unit = {
     try {
       clean(silent)
     } catch {

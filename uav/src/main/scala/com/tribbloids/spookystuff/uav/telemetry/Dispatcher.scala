@@ -2,7 +2,7 @@ package com.tribbloids.spookystuff.uav.telemetry
 
 import com.tribbloids.spookystuff.session.Session
 import com.tribbloids.spookystuff.uav.system.UAV
-import com.tribbloids.spookystuff.uav.utils.Lock
+import com.tribbloids.spookystuff.uav.utils.Binding
 import com.tribbloids.spookystuff.uav.{LinkDepletedException, UAVConf}
 import com.tribbloids.spookystuff.utils.CommonUtils
 import org.slf4j.LoggerFactory
@@ -21,7 +21,7 @@ import scala.util.Try
 case class Dispatcher(
     uavList: List[UAV],
     session: Session,
-    lock: Lock = Lock.Transient(), // Lock.ctx is ignored, session.lifespan.ctx will be used instead
+    lock: Binding = Binding.Transient(), // Lock.ctx is ignored, session.lifespan.ctx will be used instead
     prefer: List[Link] => Option[Link] = { _.headOption },
     recommissionWithNewProxy: Boolean = true
 ) {

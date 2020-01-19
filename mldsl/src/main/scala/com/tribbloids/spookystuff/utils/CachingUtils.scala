@@ -45,4 +45,20 @@ object CachingUtils {
     //    new ConcurrentHashMap[V, Unit]().keySet().asScala //TODO: switch to this
     new mutable.HashSet[V]() with mutable.SynchronizedSet[V]
   }
+
+  implicit class MapView[K, V](self: mutable.Map[K, V]) {
+
+    def getOrUpdateSync(key: K)(value: => V): V = {
+
+      self.getOrElse(key, {
+        self.synchronized {
+          self.getOrElseUpdate(
+            key, {
+              value
+            }
+          )
+        }
+      })
+    }
+  }
 }

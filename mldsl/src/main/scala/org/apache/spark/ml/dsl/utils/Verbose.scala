@@ -10,7 +10,7 @@ trait Verbose extends Product {
   def shortStr: String = ScalaRunTime._toString(this)
   def detail: String = ""
 
-  def withDetail(str: String) = {
+  def withDetail(str: String): String = {
     val result = str + Option(detail)
       .filter(_.nonEmpty)
       .map("\n" + _)
@@ -18,7 +18,7 @@ trait Verbose extends Product {
     result
   }
 
-  def detailedStr = {
+  def detailedStr: String = {
     withDetail(shortStr)
   }
 }

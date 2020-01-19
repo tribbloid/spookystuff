@@ -3,7 +3,7 @@ package com.tribbloids.spookystuff.uav.telemetry
 import com.tribbloids.spookystuff.SpookyContext
 import com.tribbloids.spookystuff.uav.UAVConf
 import com.tribbloids.spookystuff.uav.system.UAV
-import com.tribbloids.spookystuff.uav.utils.Lock
+import com.tribbloids.spookystuff.uav.utils.Binding
 import org.apache.spark.SparkContext
 import org.apache.spark.rdd.RDD
 
@@ -30,8 +30,8 @@ object LinkUtils {
         spooky.withSession { session =>
           val fleet: List[UAV] = spooky.getConf[UAVConf].uavsInFleetShuffled
           val lock =
-            if (onHold) Lock.OnHold(Some(uuid))
-            else Lock.Transient(Some(uuid))
+            if (onHold) Binding.OnHold(Some(uuid))
+            else Binding.Transient(Some(uuid))
           val linkTry = Dispatcher(
             fleet,
             session,

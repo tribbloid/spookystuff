@@ -8,7 +8,7 @@ import com.tribbloids.spookystuff.uav.UAVConf
 import com.tribbloids.spookystuff.uav.actions.UAVNavigation
 import com.tribbloids.spookystuff.uav.spatial.point.Location
 import com.tribbloids.spookystuff.uav.telemetry.{Dispatcher, LinkStatus}
-import com.tribbloids.spookystuff.uav.utils.Lock
+import com.tribbloids.spookystuff.uav.utils.Binding
 import com.tribbloids.spookystuff.utils.ShippingMarks
 
 import scala.concurrent.duration.Duration
@@ -36,7 +36,7 @@ private[uav] case class PreferUAV(
     Dispatcher(
       List(uavStatus.uav),
       session,
-      Lock.Transient(lockIDOpt)
+      Binding.Transient(lockIDOpt)
     )
 
     Nil
