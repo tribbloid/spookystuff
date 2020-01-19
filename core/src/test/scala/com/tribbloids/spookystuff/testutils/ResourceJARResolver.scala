@@ -23,6 +23,11 @@ case class ResourceJARResolver(
     ))
   final val RESOURCE_NAME = root + File.separator
 
+  {
+    deleteUnpackedRoot()
+    Thread.sleep(100) // wait for eventual consistency
+  }
+
   // run once and for all TODO: or clean up at shutdown hook
   lazy val unpackOnce: Unit = {
     val resourceOpt = SpookyUtils.getCPResource(RESOURCE_NAME)

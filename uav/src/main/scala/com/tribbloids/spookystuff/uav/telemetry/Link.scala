@@ -6,7 +6,7 @@ import com.tribbloids.spookystuff.session._
 import com.tribbloids.spookystuff.uav.dsl.Routing
 import com.tribbloids.spookystuff.uav.spatial.point.Location
 import com.tribbloids.spookystuff.uav.system.UAV
-import com.tribbloids.spookystuff.uav.utils.{Lock, UAVUtils}
+import com.tribbloids.spookystuff.uav.utils.{Binding, UAVUtils}
 import com.tribbloids.spookystuff.uav.{UAVConf, UAVMetrics}
 import com.tribbloids.spookystuff.utils.lifespan.{Cleanable, Lifespan, LocalCleanable}
 import com.tribbloids.spookystuff.utils.{CachingUtils, CommonUtils, TreeThrowable}
@@ -222,9 +222,9 @@ trait Link extends LocalCleanable with ConflictDetection {
   /**
     * set this to avoid being used by another task even the current task finish.
     */
-  @volatile var _lock: Lock = _
-  def lock: Lock = Option(_lock).getOrElse(Lock.Open)
-  def lock_=(v: Lock): Unit = this.synchronized {
+  @volatile var _lock: Binding = _
+  def lock: Binding = Option(_lock).getOrElse(Binding.Open)
+  def lock_=(v: Binding): Unit = this.synchronized {
     assert(lock.getAvailability(Some(v)) >= 0, s"Cannot lock to $v until existing lock is opened:\n$statusStr")
     this._lock = v
   }
@@ -253,7 +253,7 @@ trait Link extends LocalCleanable with ConflictDetection {
   //  }
 
   // return true regardless if given the same MutexID
-  def isAvailable(key: Option[Lock] = None): Boolean = {
+  def isAvailable(key: Option[Binding] = None): Boolean = {
     isReachable && !isCleaned && (lock.getAvailability(key) >= 0)
   }
 

@@ -62,6 +62,7 @@ abstract class SpookyViews extends SpookyViews_Imp0 {
         }
 
         updated.persist().count()
+
         halfDone.unpersist()
 
         if (counter.value == 0) return updated.flatMap(_.right.get)

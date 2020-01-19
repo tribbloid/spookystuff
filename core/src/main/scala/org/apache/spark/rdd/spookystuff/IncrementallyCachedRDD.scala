@@ -1,12 +1,9 @@
 package org.apache.spark.rdd.spookystuff
 
-import java.util.concurrent.Semaphore
-
-import com.tribbloids.spookystuff.utils.CachingUtils.{ConcurrentCache, ConcurrentMap}
+import com.tribbloids.spookystuff.utils.CachingUtils.ConcurrentMap
 import com.tribbloids.spookystuff.utils.accumulator.MapAccumulator
 import com.tribbloids.spookystuff.utils.lifespan.{Cleanable, Lifespan, LocalCleanable}
-import com.tribbloids.spookystuff.utils.serialization.NOTSerializable
-import com.tribbloids.spookystuff.utils.{CachingUtils, IDMixin, RetryExponentialBackoff, SCFunctions}
+import com.tribbloids.spookystuff.utils.{CachingUtils, IDMixin, Retry, SCFunctions}
 import org.apache.spark
 import org.apache.spark.broadcast.Broadcast
 import org.apache.spark.internal.Logging
@@ -19,6 +16,7 @@ import org.apache.spark.storage.StorageLevel
 import org.apache.spark.util.AccumulatorV2
 import org.apache.spark.{OneToOneDependency, Partition, SparkEnv, TaskContext}
 
+import java.util.concurrent.Semaphore
 import scala.collection.mutable
 import scala.reflect.ClassTag
 
@@ -298,7 +296,7 @@ case class IncrementallyCachedRDD[T: ClassTag](
 
   override def compute(split: Partition, context: TaskContext): Iterator[T] = {
 
-    RetryExponentialBackoff(3, 1000) {
+    Retry.ExponentialBackoff(3, 1000) {
       // unpersistIncremental relies on scheduler and may not execute immediately, in this case
 
       try {
@@ -313,7 +311,6 @@ case class IncrementallyCachedRDD[T: ClassTag](
           }
           result
         }
-
 
         val inTask = findDependency(split).InTask(context)
         val result = inTask.cachedOrCompute() // TODO: start should be customisable
@@ -369,7 +366,7 @@ case class IncrementallyCachedRDD[T: ClassTag](
 
     logInfo(info)
 
-   val result =  SCFunctions(sparkContext).withJob(info) {
+    val result = SCFunctions(sparkContext).withJob(info) {
 
       this
         .mapOncePerWorker { v =>

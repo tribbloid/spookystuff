@@ -1,93 +1,118 @@
 package com.tribbloids.spookystuff.utils.io
 
-import java.nio.file.FileAlreadyExistsException
+import com.tribbloids.spookystuff.utils.lifespan.{Lifespan, LocalCleanable}
+import com.tribbloids.spookystuff.utils.{BypassingRule, CachingUtils, CommonUtils, TreeThrowable}
 
-import com.tribbloids.spookystuff.utils.lifespan.LocalCleanable
-import org.slf4j.LoggerFactory
+import java.util.UUID
 
-import scala.annotation.tailrec
-
-class Lock(
-    execution: URIResolver#Execution
+/**
+  * Deprecated: Doesn't work for HDFSResolver (and future resolvers for other file systems)!
+  * use [[Snapshot]] instead
+  */
+case class Lock(
+    source: URIExecution,
+    expired: LockExpired = URIResolver.default.expired, // TODO: use it!
+    override val _lifespan: Lifespan = Lifespan.JVM()
 ) extends LocalCleanable {
 
   import Lock._
-  val resolver: URIResolver = execution.outer
-  import resolver._
 
-  lazy val lockPathStr: String = execution.absolutePathStr + SUFFIX
-  lazy val lockExecution: resolver.Execution = Execution(lockPathStr)
+  @volatile var acquiredTimestamp: Long = -1
 
-  //  @volatile var _acquired = false
+  val resolver: URIResolver = source.outer
+  def absolutePathStr: String = source.absolutePathStr
 
-  def acquire(): String = {
-    assertUnlocked(true)
-    execution.absolutePathStr
+//  def getOriginal: resolver.Execution = resolver.Execution(absolutePathStr)
+//  lazy val original: resolver.Execution = getOriginal
+
+  val id: UUID = UUID.randomUUID()
+
+  private case object Moved {
+
+    private case object PathStrs {
+
+      lazy val dir: String = source.absolutePathStr + LOCK
+
+      lazy val file: String = CommonUtils.\\\(dir, id + LOCKED)
+//      lazy val file: String = CommonUtils.\\\(dir, LOCKED)
+    }
+
+    lazy val target: resolver.Execution = resolver.Execution(PathStrs.file)
   }
 
-  def assertUnlocked(acquire: Boolean = false): Unit = {
-    retry {
-      //TODO: fail early for non LockError
-      assertUnlockedOnce(acquire)
-    }
-  }
+  def acquire(): URIExecution = {
 
-  @tailrec
-  protected final def assertUnlockedOnce(
-      acquire: Boolean = false
-  ): Unit = {
-    var lockExpired = false
-
-    def processLocked(out: Resource[_], e: FileAlreadyExistsException): Unit = {
-      val lockedTime = out.getLastModified
-      val lockedDuration = System.currentTimeMillis() - lockedTime
-
-      def errorInfo =
-        s"Lock '$lockPathStr' is acquired by another executor or thread for $lockedDuration milliseconds"
-
-      if (lockedDuration >= lockExpireAfter.toMillis) {
-        LoggerFactory.getLogger(this.getClass).error(errorInfo + " and has expired")
-        lockExpired = true
-      } else {
-        throw new ResourceLockError(errorInfo, e)
-      }
-    }
-
-    if (acquire) {
-      lockExecution.output(overwrite = false) { out =>
-        try {
-          out.stream
-        } catch {
-          case e: FileAlreadyExistsException =>
-            processLocked(out, e)
-        }
-      }
-    } else {
-      lockExecution.input { in =>
-        if (in.isAlreadyExisting) processLocked(in, null)
-      }
-    }
-
-    if (lockExpired) {
-      release()
-      assertUnlockedOnce(acquire)
-    }
+    source.moveTo(Moved.target.absolutePathStr)
+    logAcquire(source)
+    Moved.target
   }
 
   def release(): Unit = {
-    lockExecution.remove(false)
+
+    logRelease(Moved.target)
+    Moved.target.moveTo(source.absolutePathStr)
+    //      moved.clean()
   }
 
-  /**
+  def duringOnce[T](fn: URIExecution => T): T = {
+    val acquired = acquire()
+    try {
+      fn(acquired)
+    } catch {
+      case e: LockError => //TODO: remove, pointless
+        throw e
+      case e @ _ =>
+        throw BypassingRule.NoRetry(e)
+    } finally {
+
+      release()
+    }
+  }
+
+  final def during[T](fn: URIExecution => T): T = {
+    resolver.retry {
+      duringOnce(fn)
+    }
+  }
+
+  /**e
     * unlock on cleanup
     */
   override protected def cleanImpl(): Unit = {
 
+//    ByLockFile.release()
     release()
+  }
+
+  def logAcquire(execution: URIExecution): Unit = {
+
+    Lock.acquired += execution -> System.currentTimeMillis()
+
+    this.logPrefixed(s"=== ACQUIRED!: ${execution.absolutePathStr}")
+  }
+
+  def logRelease(execution: URIExecution): Unit = {
+    Lock.acquired -= execution
+
+    this.logPrefixed(s"=== RELEASED! ${execution.absolutePathStr}")
   }
 }
 
 object Lock {
 
-  final val SUFFIX: String = ".lock"
+  val acquired: CachingUtils.ConcurrentCache[URIExecution, Long] = CachingUtils.ConcurrentCache()
+
+  final val LOCK: String = ".lock"
+
+  final val LOCKED: String = ".locked"
+
+  class LockError(
+      override val simpleMsg: String = "",
+      val cause: Throwable = null
+  ) extends Exception
+      with TreeThrowable {
+
+    override def getCause: Throwable = cause
+  }
+
 }

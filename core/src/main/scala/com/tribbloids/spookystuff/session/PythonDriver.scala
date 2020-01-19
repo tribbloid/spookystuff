@@ -2,9 +2,8 @@ package com.tribbloids.spookystuff.session
 
 import java.io.File
 import java.util.regex.Pattern
-
 import com.tribbloids.spookystuff.utils.lifespan.Lifespan
-import com.tribbloids.spookystuff.utils.{CommonUtils, Silent, SpookyUtils}
+import com.tribbloids.spookystuff.utils.{BypassingRule, CommonUtils, SpookyUtils}
 import com.tribbloids.spookystuff.{PyException, PyInterpretationException, SpookyContext}
 import org.apache.commons.io.FileUtils
 import org.apache.spark.ml.dsl.utils.FlowUtils
@@ -164,7 +163,7 @@ class PythonDriver(
           }
         } catch {
           case e: TimeoutException =>
-            throw Silent(e)
+            throw BypassingRule.Silent(e)
           case e: Throwable =>
             throw e
         }

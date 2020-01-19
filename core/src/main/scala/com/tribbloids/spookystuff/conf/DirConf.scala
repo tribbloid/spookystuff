@@ -39,16 +39,27 @@ case class DirConf(
     val result = DirConf(
       root = _root,
       localRoot = _localRoot,
-      autoSave = Option(autoSave).getOrElse(ConfUtils.getOrDefault("spooky.dirs.autosave", _root \\ "autosave")),
-      cache = Option(cache).getOrElse(ConfUtils.getOrDefault("spooky.dirs.cache", _root \\ "cache")),
-      errorDump = Option(errorDump).getOrElse(ConfUtils.getOrDefault("spooky.dirs.error.dump", _root \\ "errorDump")),
+      autoSave = Option(autoSave).getOrElse(
+        ConfUtils.getOrDefault("spooky.dirs.autosave", _root \\ "autosave")
+      ),
+      cache = Option(cache).getOrElse(
+        ConfUtils.getOrDefault("spooky.dirs.cache", _root \\ "cache")
+      ),
+      errorDump = Option(errorDump).getOrElse(
+        ConfUtils.getOrDefault("spooky.dirs.error.dump", _root \\ "errorDump")
+      ),
       errorScreenshot = Option(errorScreenshot).getOrElse(
-        ConfUtils.getOrDefault("spooky.dirs.error.screenshot", _root \\ "errorScreenshot")),
-      checkpoint = Option(checkpoint).getOrElse(ConfUtils.getOrDefault("spooky.dirs.checkpoint", _root \\ "checkpoint")),
+        ConfUtils.getOrDefault("spooky.dirs.error.screenshot", _root \\ "errorScreenshot")
+      ),
+      checkpoint = Option(checkpoint).getOrElse(
+        ConfUtils.getOrDefault("spooky.dirs.checkpoint", _root \\ "checkpoint")
+      ),
       errorDumpLocal = Option(errorDumpLocal).getOrElse(
-        ConfUtils.getOrDefault("spooky.dirs.error.dump.local", _root \\ "errorDumpLocal")),
+        ConfUtils.getOrDefault("spooky.dirs.error.dump.local", _root \\ "errorDumpLocal")
+      ),
       errorScreenshotLocal = Option(errorScreenshotLocal).getOrElse(
-        ConfUtils.getOrDefault("spooky.dirs.error.screenshot.local", _root \\ "errorScreenshotLocal"))
+        ConfUtils.getOrDefault("spooky.dirs.error.screenshot.local", _root \\ "errorScreenshotLocal")
+      )
     ).asInstanceOf[this.type]
     result
   }

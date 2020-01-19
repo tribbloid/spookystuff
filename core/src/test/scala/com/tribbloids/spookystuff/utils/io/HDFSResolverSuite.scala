@@ -6,9 +6,10 @@ import org.apache.hadoop.security.UserGroupInformation
 /**
   * Created by peng on 07/10/15.
   */
-class HDFSResolverSuite extends LocalResolverSuite {
+class HDFSResolverSuite extends AbstractURIResolverSuite {
 
-  @transient override lazy val resolver: URIResolver = HDFSResolver(new Configuration())
+  override val resolver: HDFSResolver = HDFSResolver(new Configuration())
+
   @transient override lazy val schemaPrefix = "file:"
 
   val nonExistingSchemePath = "file:/non-existing/not-a-file.txt"
@@ -24,20 +25,20 @@ class HDFSResolverSuite extends LocalResolverSuite {
     assert(abs == nonExistingSchemePath)
   }
 
-  val resolverWithUser: HDFSResolver = HDFSResolver(
+  val resolverWithUGI: HDFSResolver = HDFSResolver(
     new Configuration(),
     () => Some(UserGroupInformation.createUserForTesting("dummy", Array.empty))
   )
 
   it("can override login UGI") {
-    val user: String = resolverWithUser.input(HTML_URL) { is =>
+    val user: String = resolverWithUGI.input(HTML_URL) { is =>
       UserGroupInformation.getCurrentUser.getUserName
     }
     user.shouldBe("dummy")
   }
 
-  it("can override login UGI on executors") {
-    val resolver = this.resolverWithUser
+  it("... on executors") {
+    val resolver = this.resolverWithUGI
     val HTML_URL = this.HTML_URL
     val users = sc
       .parallelize(1 to (sc.defaultParallelism * 2))
@@ -52,4 +53,5 @@ class HDFSResolverSuite extends LocalResolverSuite {
       .mkString("\n")
     users.shouldBe("dummy")
   }
+
 }

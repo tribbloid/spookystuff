@@ -4,7 +4,7 @@ class CommonConst {
 
   import scala.concurrent.duration._
 
-  val maxLoop = Int.MaxValue
+  val maxLoop: Int = Int.MaxValue
 
   val defaultTextCharset = "ISO-8859-1"
   val defaultApplicationCharset = "UTF-8"
@@ -13,7 +13,7 @@ class CommonConst {
   //  webClientOptions.setUseInsecureSSL(true)
 
   //TODO: move to SpookyConf as much as possible
-  val sessionInitializationTimeout = 40.seconds
+  val sessionInitializationTimeout: FiniteDuration = 40.seconds
 
   val localResourceLocalRetries = 3 //In-node/partition retries
   val remoteResourceLocalRetries = 2 //In-node/partition retries
@@ -29,13 +29,16 @@ class CommonConst {
 
   val hardTerminateOverhead: Duration = 20.seconds
 
-  val USER_DIR = System.getProperty("user.dir")
-  val USER_TEMP_DIR = CommonUtils.\\\(USER_DIR, "temp")
-  val ROOT_TEMP_DIR = System.getProperty("java.io.tmpdir")
+  val USER_DIR: String = System.getProperty("user.dir")
+
+  val TEMP = "temp"
+
+  val USER_TEMP_DIR: String = CommonUtils.\\\(USER_DIR, TEMP)
+  val ROOT_TEMP_DIR: String = System.getProperty("java.io.tmpdir")
 
   val HADOOP_TEMP_DIR = "/tmp"
 
-  val UNPACK_RESOURCE_DIR = CommonUtils.\\\(ROOT_TEMP_DIR, "spookystuff", "resources")
+  val UNPACK_RESOURCE_DIR: String = CommonUtils.\\\(ROOT_TEMP_DIR, "spookystuff", "resources")
 }
 
 object CommonConst extends CommonConst

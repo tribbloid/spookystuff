@@ -15,17 +15,21 @@ trait CompoundResolver extends URIResolver {
   override def Execution(pathStr: String) = new Execution(pathStr)
   case class Execution(pathStr: String) extends super.Execution {
 
-    lazy val impl = getImpl(pathStr).Execution(pathStr)
+    lazy val impl: URIExecution = getImpl(pathStr).Execution(pathStr)
 
     override def absolutePathStr: String = impl.absolutePathStr
 
-    override def input[T](f: InputResource => T) =
-      impl.input(f)
+    override def input[T](fn: InputResource => T): T =
+      impl.input(fn)
 
-    override def output[T](overwrite: Boolean)(f: OutputResource => T) =
-      impl.output(overwrite)(f)
+    override def output[T](mode: WriteMode)(fn: OutputResource => T): T =
+      impl.output(mode)(fn)
 
-    override def _remove(mustExist: Boolean): Unit = impl._remove(mustExist)
+    override def _delete(mustExist: Boolean): Unit = impl._delete(mustExist)
+
+    override def moveTo(target: String): Unit = impl.moveTo(target)
+
+//    override def mkDirs(): Unit = impl.mkDirs()
   }
 
 //  override def lockAccessDuring[T](pathStr: String)(f: String => T) =
@@ -37,9 +41,9 @@ class FSResolver(
     timeoutMillis: Int
 ) extends CompoundResolver {
 
-  lazy val hdfs = HDFSResolver(hadoopConf)
+  lazy val hdfs: HDFSResolver = HDFSResolver(hadoopConf)
 
-  lazy val ftp = FTPResolver(timeoutMillis)
+  lazy val ftp: FTPResolver = FTPResolver(timeoutMillis)
 
   override def getImpl(uri: String): URIResolver = {
 
@@ -76,5 +80,5 @@ class OmniResolver(
     }
   }
 
-  lazy val http = HTTPResolver(timeoutMillis, webProxy, input2Http)
+  lazy val http: HTTPResolver = HTTPResolver(timeoutMillis, webProxy, input2Http)
 }

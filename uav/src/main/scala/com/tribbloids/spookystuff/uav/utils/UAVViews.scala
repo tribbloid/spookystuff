@@ -24,7 +24,7 @@ object UAVViews {
       Dispatcher(
         uavConf.uavsInFleetShuffled,
         session,
-        Lock.Transient(None)
+        Binding.Transient(None)
       ).tryGet
     }
 
