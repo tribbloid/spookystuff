@@ -15,7 +15,7 @@ object JarHellDetection {
   val _scanner: LazyVar[ClasspathScanner] = LazyVar {
     new ClasspathScanner
   }
-  def scanner: ClasspathScanner = _scanner.value
+  def scanner: ClasspathScanner = _scanner.get
 
 }
 

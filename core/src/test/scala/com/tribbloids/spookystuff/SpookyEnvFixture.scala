@@ -9,7 +9,7 @@ import com.tribbloids.spookystuff.row.{SpookySchema, SquashedFetchedRow, TypedFi
 import com.tribbloids.spookystuff.session.{CleanWebDriver, Driver}
 import com.tribbloids.spookystuff.testutils.{FunSpecx, RemoteDocsFixture, TestHelper}
 import com.tribbloids.spookystuff.utils.lifespan.{Cleanable, Lifespan}
-import com.tribbloids.spookystuff.utils.{CommonConst, CommonUtils, RetryFixedInterval}
+import com.tribbloids.spookystuff.utils.{CommonConst, CommonUtils, Retry}
 import org.apache.spark.SparkContext
 import org.apache.spark.sql.SQLContext
 import org.jutils.jprocesses.JProcesses
@@ -56,7 +56,7 @@ object SpookyEnvFixture {
       }
   }
 
-  def getProcesses: Seq[ProcessInfo] = RetryFixedInterval(5, 1000) {
+  def getProcesses: Seq[ProcessInfo] = Retry.FixedInterval(5, 1000) {
     JProcesses.getProcessList().asScala
   }
 

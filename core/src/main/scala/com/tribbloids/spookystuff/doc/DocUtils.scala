@@ -4,6 +4,7 @@ import java.util.Date
 
 import com.tribbloids.spookystuff._
 import com.tribbloids.spookystuff.utils.CommonUtils
+import com.tribbloids.spookystuff.utils.io.WriteMode
 import org.apache.commons.io.IOUtils
 import org.apache.hadoop.fs.{FileStatus, Path}
 import org.apache.spark.SparkEnv
@@ -69,7 +70,11 @@ object DocUtils {
     dfsWrite("cache", pathStr, spooky) {
       val list = pageLikes.toList // Seq may be a stream that cannot be serialized
 
-      spooky.pathResolver.output(pathStr, overwrite) { out =>
+      val mode =
+        if (overwrite) WriteMode.Overwrite
+        else WriteMode.CreateOnly
+
+      spooky.pathResolver.output(pathStr, mode) { out =>
         val ser = SparkEnv.get.serializer.newInstance()
         val serOut = ser.serializeStream(out.stream)
 

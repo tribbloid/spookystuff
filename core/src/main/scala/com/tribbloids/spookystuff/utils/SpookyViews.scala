@@ -216,6 +216,7 @@ abstract class SpookyViews extends CommonViews {
         }
 
         updated.persist().count()
+
         halfDone.unpersist()
 
         if (counter.value == 0) return updated.flatMap(_.right.get)

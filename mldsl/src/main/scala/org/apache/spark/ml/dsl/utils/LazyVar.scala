@@ -8,7 +8,8 @@ import scala.language.implicitConversions
 //TODO: use AnyVal to minimise overhead
 //TODO: need thread safety test
 /**
-  * similar to lazy val, but cached value can be overwritten from outside
+  * similar to lazy val, but cached value can be peeked & overwritten from outside
+  * thread safe and value only initialized once
   */
 class LazyVar[T](
     fn: => T
@@ -17,35 +18,35 @@ class LazyVar[T](
 
   val cached: T ? Var = None
 
-  private def opt: Option[T] = cached.asOption
+  def peek: Option[T] = cached.asOption
 
-  def value: T = opt.getOrElse {
+  def get: T = peek.getOrElse {
     this.synchronized {
 
-      opt.getOrElse(regenerate)
+      peek.getOrElse(regenerate)
     }
   }
 
   def regenerate: T = {
     val result = fn
-    :=(result)
+    set(result)
     result
   }
 
-  def :=(v: T): Unit = {
+  def set(v: T): Unit = {
     cached := v
   }
 
   def isCached: Boolean = cached.asOption.nonEmpty
 
-  override def _id: Any = value
+  override def _id: Any = get
 
-  override def toString: String = value.toString
+  override def toString: String = get.toString
 }
 
 object LazyVar {
 
-  implicit def unbox[T](v: LazyVar[T]): T = v.value
+  implicit def unbox[T](v: LazyVar[T]): T = v.get
 
   def apply[T](fn: => T) = new LazyVar[T](fn)
 }

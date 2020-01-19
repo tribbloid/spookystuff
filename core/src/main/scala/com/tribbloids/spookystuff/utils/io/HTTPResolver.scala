@@ -4,8 +4,8 @@ import java.io._
 import java.net.{InetSocketAddress, URI}
 
 import com.tribbloids.spookystuff.session.WebProxySetting
-import com.tribbloids.spookystuff.utils.{Retry, RetryExponentialBackoff}
 import com.tribbloids.spookystuff.utils.http._
+import com.tribbloids.spookystuff.utils.Retry
 import javax.net.ssl.SSLContext
 import org.apache.http.client.HttpClient
 import org.apache.http.client.config.RequestConfig
@@ -16,8 +16,6 @@ import org.apache.http.conn.socket.ConnectionSocketFactory
 import org.apache.http.impl.client.{CloseableHttpClient, HttpClients}
 import org.apache.http.impl.conn.PoolingHttpClientConnectionManager
 import org.apache.http.{HttpEntity, HttpHost, HttpResponse}
-
-import scala.concurrent.duration.Duration
 
 object HTTPResolver {
 
@@ -113,8 +111,7 @@ case class HTTPResolver(
     //                           v =>
     //                             new HttpPost(v)
     //                         }
-    override val retry: Retry = RetryExponentialBackoff(8, 16000),
-    override val lockExpireAfter: Duration = URIResolver.defaultLockExpireAfter
+    override val retry: Retry = Retry.ExponentialBackoff(8, 16000)
 ) extends URIResolver {
 
 //  val currentReq = context.getAttribute(HttpCoreContext.HTTP_REQUEST).asInstanceOf[HttpUriRequest]
@@ -126,25 +123,25 @@ case class HTTPResolver(
 //    currentHost.toURI + currentReq.getURI
 //  }
 
-  override def Execution(pathStr: String) = new Execution(pathStr)
-  case class Execution(pathStr: String) extends super.Execution {
+  override def newSession(pathStr: String) = new Session(pathStr)
+  case class Session(pathStr: String) extends super.URISession {
 
     override def absolutePathStr: String = pathStr
 
-    override def input[T](f: InputResource => T) = {
+    override def input[T](fn: InputResource => T) = {
 
       val uri = HttpUtils.uri(pathStr)
       val ir = new InputResource with HttpResource[InputStream] {
         override lazy val request: HttpUriRequest = input2Request(uri)
 
-        override protected def _stream: InputStream = entity.getContent
+        override protected def createStream: InputStream = entity.getContent
 
-        override lazy val isAlreadyExisting: Boolean = {
+        override lazy val isExisting: Boolean = {
           getStatusCode.exists(_.toString.startsWith("2"))
         }
       }
       try {
-        f(ir)
+        fn(ir)
       } finally {
         ir.clean()
       }
@@ -158,13 +155,17 @@ case class HTTPResolver(
       //    }
     }
 
-    override def _remove(mustExist: Boolean): Unit = {
+    override def _delete(mustExist: Boolean): Unit = {
       ???
     }
 
-    override def output[T](overwrite: Boolean)(f: OutputResource => T): T = {
+    override def output[T](mode: WriteMode)(fn: OutputResource => T): T = {
       ???
     }
+
+    override def moveTo(target: String): Unit = ???
+
+//    override def mkDirs(): Unit = ???
   }
 
   trait HttpResource[T] extends Resource[T] {
@@ -185,13 +186,13 @@ case class HTTPResolver(
 
     override lazy val getContentType: String = entity.getContentType.getValue
 
-    override lazy val getLenth: Long = entity.getContentLength
+    override lazy val getLength: Long = entity.getContentLength
 
     override lazy val getStatusCode: Option[Int] = Some(response.getStatusLine.getStatusCode)
 
     override lazy val getLastModified: Long = -1
 
-    override lazy val _md: ResourceMetadata = {
+    override lazy val _metadata: ResourceMetadata = {
       val mapped = response.getAllHeaders.map { header =>
         header.getName -> header.getValue
       }.toSeq

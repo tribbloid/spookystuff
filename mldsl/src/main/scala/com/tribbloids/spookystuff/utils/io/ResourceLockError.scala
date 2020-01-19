@@ -5,7 +5,8 @@ import com.tribbloids.spookystuff.utils.TreeThrowable
 class ResourceLockError(
     override val simpleMsg: String = "",
     val cause: Throwable = null
-) extends TreeThrowable {
+) extends Exception
+    with TreeThrowable {
 
   override def getCause: Throwable = cause
 }

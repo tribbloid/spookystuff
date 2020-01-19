@@ -8,53 +8,34 @@ import scala.util.{Failure, Success, Try}
 /**
   * Created by peng on 18/09/16.
   */
-class BypassingRule {
+object Retry {
 
-  def apply(e: Throwable) = {
-    e match {
-      case ee: Exception => ee
-      case _             => new Exception(e)
-    }
+  object FixedInterval {
+
+    def apply(
+        n: Int,
+        interval: Long = 0L,
+        silent: Boolean = false,
+        callerStr: String = null
+    ): Retry =
+      Retry(n, { _ =>
+        interval
+      }, silent, callerStr)
   }
 
-  class Exception(cause: Throwable) extends RuntimeException("Bypassing: " + this.getClass.getSimpleName, cause)
+  object ExponentialBackoff {
 
-  def mapException[T](f: => T): T = {
-    try {
-      f
-    } catch {
-      case e: Throwable => throw apply(e)
-    }
+    def apply(
+        n: Int,
+        longestInterval: Long = 0L,
+        expBase: Double = 2.0,
+        silent: Boolean = false,
+        callerStr: String = null
+    ): Retry =
+      Retry(n, { n =>
+        (longestInterval.doubleValue() / Math.pow(expBase, n - 2)).asInstanceOf[Long]
+      }, silent, callerStr)
   }
-}
-
-case object NoRetry extends BypassingRule
-case object Silent extends BypassingRule
-
-object RetryFixedInterval {
-
-  def apply(
-      n: Int,
-      interval: Long = 0L,
-      silent: Boolean = false,
-      callerStr: String = null
-  ) =
-    Retry(n, { _ =>
-      interval
-    }, silent, callerStr)
-}
-
-object RetryExponentialBackoff {
-
-  def apply(
-      n: Int,
-      longestInterval: Long = 0L,
-      silent: Boolean = false,
-      callerStr: String = null
-  ) =
-    Retry(n, { n =>
-      (longestInterval / Math.pow(2, n - 2)).asInstanceOf[Long]
-    }, silent, callerStr)
 }
 
 case class Retry(
@@ -66,12 +47,12 @@ case class Retry(
     showStr: String = null
 ) {
 
-  def apply[T](fn: => T) = {
+  def apply[T](fn: => T): T = {
 
     new RetryImpl[T](() => fn).get(this)
   }
 
-  def getImpl[T](fn: => T) = {
+  def getImpl[T](fn: => T): RetryImpl[T] = {
     new RetryImpl[T](() => fn, this)
   }
 }
@@ -107,10 +88,10 @@ case class RetryImpl[T](
     Try { fn() } match {
       case Success(x) =>
         x
-      case Failure(e: NoRetry.Exception) =>
+      case Failure(e: NoRetry.BypassedException) =>
         throw e.getCause
       case Failure(e) if n > 1 =>
-        if (!(silent || e.isInstanceOf[Silent.Exception])) {
+        if (!(silent || e.isInstanceOf[Silent.BypassedException])) {
           val logger = LoggerFactory.getLogger(this.getClass)
           logger.warn(
             s"Retrying locally on ${e.getClass.getSimpleName} in ${interval.toDouble / 1000} second(s)... ${n - 1} time(s) left" +
@@ -129,8 +110,8 @@ case class RetryImpl[T](
   def map[T2](g: Try[T] => T2): RetryImpl[T2] = {
 
     val effectiveG: Try[T] => T2 = {
-      case Failure(ee: NoRetry.Exception) =>
-        NoRetry.mapException {
+      case Failure(ee: NoRetry.BypassedException) =>
+        NoRetry.during {
           g(Failure[T](ee.getCause))
         }
       case v =>

@@ -3,23 +3,24 @@ package com.tribbloids.spookystuff.utils.io
 import java.io._
 import java.nio.file.{FileAlreadyExistsException, Files, Paths}
 
+import com.tribbloids.spookystuff.utils.Retry
 import org.apache.hadoop.fs.FileUtil
 
-object LocalResolver extends URIResolver {
+case class LocalResolver(
+    override val retry: Retry = URIResolver.defaultRetry
+) extends URIResolver {
 
   @transient lazy val mdParser: ResourceMetadata.ReflectionParser[File] = ResourceMetadata.ReflectionParser[File]()
 
-  override lazy val unlockForInput: Boolean = true
-
-  override def Execution(pathStr: String) = Execution(new File(pathStr))
-  case class Execution(file: File) extends super.Execution {
+  override def newSession(pathStr: String): Session = Session(new File(pathStr))
+  case class Session(file: File) extends super.URISession {
     //    ensureAbsolute(file)
 
     import Resource._
 
-    override lazy val absolutePathStr: String = {
-      file.getAbsolutePath
-    }
+    lazy val absoluteFile: File = file.getAbsoluteFile
+
+    override lazy val absolutePathStr: String = file.getAbsolutePath
 
     trait LocalResource[T] extends Resource[T] {
 
@@ -38,117 +39,99 @@ object LocalResolver extends URIResolver {
         else Files.probeContentType(Paths.get(absolutePathStr))
       }
 
-      override lazy val getLenth: Long = file.length()
+      override lazy val getLength: Long = file.length()
 
       override lazy val getLastModified: Long = file.lastModified()
 
-      override lazy val _md: ResourceMetadata = {
+      override lazy val _metadata: ResourceMetadata = {
         mdParser(file)
       }
 
-      override lazy val isAlreadyExisting: Boolean = file.exists()
+      override lazy val isExisting: Boolean = file.exists()
 
-      override lazy val children: Seq[ResourceMetadata] = {
+      override lazy val children: Seq[URISession] = {
         if (isDirectory) {
 
           file
             .listFiles()
             .toSeq
             .map { file =>
-              val childExecution = Execution(file)
-              val md = childExecution.input {
-                _.rootMetadata
-              }
-              md
+              Session(file)
             }
         } else Nil
       }
     }
 
-    override def input[T](f: InputResource => T): T = {
+    override def input[T](fn: InputResource => T): T = {
 
       val ir = new InputResource with LocalResource[InputStream] {
 
-        override def _stream: InputStream = {
-          //          if (!absolutePathStr.endsWith(lockedSuffix)) {
-          //            //wait for its locked file to finish its locked session
-          //
-          //            val lockedPath = absolutePathStr + lockedSuffix
-          //            val lockedFile = new File(lockedPath)
-          //
-          //            //wait for 15 seconds in total
-          //            retry {
-          //              assert(!lockedFile.exists(),
-          //                s"File $absolutePathStr is locked by another executor or thread")
-          //            }
-          //          }
+        override def createStream: InputStream = {
 
           new FileInputStream(file)
         }
       }
 
       try {
-        f(ir)
+        fn(ir)
       } finally {
         ir.clean()
       }
     }
 
-    override def _remove(mustExist: Boolean): Unit = {
-      FileUtil.fullyDelete(file, true)
-    }
-
-    override def output[T](overwrite: Boolean)(f: OutputResource => T): T = {
+    override def output[T](mode: WriteMode)(fn: OutputResource => T): T = {
 
       val or = new OutputResource with LocalResource[OutputStream] {
 
-        override def _stream: OutputStream = {
-          (isAlreadyExisting, overwrite) match {
-            case (true, false) => throw new FileAlreadyExistsException(s"$absolutePathStr already exists")
-            case (true, true) =>
-              remove(false)
+        override def createStream: OutputStream = {
+          val fos = (isExisting, mode) match {
+            case (true, WriteMode.CreateOnly) =>
+              throw new FileAlreadyExistsException(s"$absolutePathStr already exists")
+            case (true, WriteMode.Overwrite) =>
+              delete(false)
               file.createNewFile()
+              new FileOutputStream(absolutePathStr, false)
+            case (true, WriteMode.Append) =>
+              new FileOutputStream(absolutePathStr, true)
+
             case (false, _) =>
-              file.getParentFile.mkdirs()
+              absoluteFile.getParentFile.mkdirs()
               file.createNewFile()
+              new FileOutputStream(absolutePathStr, false)
           }
 
-          val fos = new FileOutputStream(absolutePathStr, false)
           fos
         }
       }
 
       try {
-        val result = f(or)
+        val result = fn(or)
         result
       } finally {
         or.clean()
       }
     }
+    override def _delete(mustExist: Boolean): Unit = {
+      val isExisting = file.exists()
+
+      (isExisting, mustExist) match {
+        case (false, true) => throw new UnsupportedOperationException(s"file ${file.toURI} does not exist")
+        case _             => FileUtil.fullyDelete(absoluteFile, true)
+      }
+    }
+
+    override def moveTo(target: String): Unit = {
+
+      val newFile = new File(target).getAbsoluteFile
+      newFile.getParentFile.mkdirs()
+      file.renameTo(newFile)
+    }
+
+//    override def mkDirs(): Unit = {
+//
+//      file.mkdirs()
+//    }
   }
-  //
-  //  override def lockAccessDuring[T](pathStr: String)(f: String => T): T = {
-  //
-  //    val file = new File(pathStr)
-  //    //    ensureAbsolute(file)
-  //
-  //    val lockedPath = pathStr + lockedSuffix
-  //    val lockedFile = new File(lockedPath)
-  //
-  //    retry {
-  //      assert(!lockedFile.exists(),
-  //        s"File $pathStr is locked by another executor or thread")
-  //      //        Thread.sleep(3*1000)
-  //    }
-  //
-  //    if (file.exists()) file.renameTo(lockedFile)
-  //
-  //    try {
-  //      val result = f(lockedPath)
-  //      result
-  //    }
-  //    finally {
-  //      lockedFile.renameTo(file)
-  //    }
-  //  }
 }
+
+object LocalResolver extends LocalResolver(URIResolver.defaultRetry)

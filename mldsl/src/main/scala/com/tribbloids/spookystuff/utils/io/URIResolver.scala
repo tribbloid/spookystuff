@@ -3,10 +3,12 @@ package com.tribbloids.spookystuff.utils.io
 import java.io._
 import java.util.concurrent.TimeUnit
 
-import com.tribbloids.spookystuff.utils.serialization.NOTSerializable
-import com.tribbloids.spookystuff.utils.{CommonUtils, Retry, RetryExponentialBackoff}
+import com.tribbloids.spookystuff.utils.lifespan.{Lifespan, LocalCleanable}
+import com.tribbloids.spookystuff.utils.{CommonUtils, Retry}
+import org.apache.commons.io.IOUtils
 
 import scala.concurrent.duration.Duration
+import scala.util.Random
 
 /*
  * to make it resilient to asynchronous read/write, let output rename the file, write it, and rename back,
@@ -17,28 +19,27 @@ import scala.concurrent.duration.Duration
  */
 abstract class URIResolver extends Serializable {
 
-  def Execution(pathStr: String): this.Execution
+  def newSession(pathStr: String): this.URISession
 
-  def retry: Retry = RetryExponentialBackoff(8, 16000)
-  def lockExpireAfter: Duration = URIResolver.defaultLockExpireAfter
+  def retry: Retry = URIResolver.defaultRetry
 
-  lazy val unlockForInput: Boolean = false
+//  lazy val unlockForInput: Boolean = false
 
-  final def input[T](pathStr: String, unlockFirst: Boolean = unlockForInput)(f: InputResource => T): T = {
-    val exe = Execution(pathStr)
-    if (unlockFirst) {
-      val lock = new Lock(Execution(pathStr))
-      lock.assertUnlocked()
-    }
+  final def input[T](pathStr: String)(f: InputResource => T): T = {
+    val exe = newSession(pathStr)
+//    if (unlockFirst) {
+//      val lock = new Lock(newSession(pathStr))
+//      lock.assertUnlocked()
+//    }
     exe.input(f)
   }
 
-  final def output[T](pathStr: String, overwrite: Boolean)(f: OutputResource => T): T = {
-    val exe = Execution(pathStr)
-    exe.output(overwrite)(f)
+  final def output[T](pathStr: String, mode: WriteMode)(f: OutputResource => T): T = {
+    val exe = newSession(pathStr)
+    exe.output(mode)(f)
   }
 
-  final def toAbsolute(pathStr: String): String = Execution(pathStr).absolutePathStr
+  final def toAbsolute(pathStr: String): String = newSession(pathStr).absolutePathStr
 
   final def isAbsolute(pathStr: String): Boolean = {
     toAbsolute(pathStr) == pathStr
@@ -55,23 +56,18 @@ abstract class URIResolver extends Serializable {
     result
   }
 
-  def lockAccessDuring[T](pathStr: String)(f: String => T) = {
-    val lock = new Lock(Execution(pathStr))
-    val path = lock.acquire()
-    try {
-      f(path)
-    } finally {
-      lock.clean()
-    }
+  def lockAccessDuring[T](pathStr: String)(f: String => T): T = {
+    val lock = new Lock(newSession(pathStr))
+    lock.during(f)
   }
 
   def isAlreadyExisting(pathStr: String)(
       condition: InputResource => Boolean = { v =>
-        v.getLenth > 0 //empty files are usually useless
+        v.getLength > 0 //empty files are usually useless
       }
   ): Boolean = {
     val result = this.input(pathStr) { v =>
-      v.isAlreadyExisting && condition(v)
+      v.isExisting && condition(v)
     }
     result
   }
@@ -82,45 +78,68 @@ abstract class URIResolver extends Serializable {
     */
   //  def lockAccessDuring[T](pathStr: String)(f: String => T): T = {f(pathStr)}
 
-  trait Execution extends NOTSerializable {
+  trait URISession extends LocalCleanable {
 
     def outer: URIResolver = URIResolver.this
 
     def absolutePathStr: String
 
-    // read: may execute lazily
-    def input[T](f: InputResource => T): T
-
     // remove & write: execute immediately! write an empty file even if stream is not used
-    protected[io] def _remove(mustExist: Boolean = true): Unit
-    final def remove(mustExist: Boolean = true): Unit = {
-      _remove(mustExist)
-      retry {
-        input { in =>
-          assert(!in.isAlreadyExisting, s"$absolutePathStr cannot be deleted")
+    protected[io] def _delete(mustExist: Boolean = true): Unit
+    final def delete(mustExist: Boolean = true): Unit = {
+      _delete(mustExist)
+//      retry {
+//        input { in =>
+//          assert(!in.isAlreadyExisting, s"$absolutePathStr cannot be deleted")
+//        }
+//      }
+    }
+
+    def moveTo(target: String): Unit
+
+    //removed, no need if creating new file is always recursive
+//    def mkDirs(): Unit
+
+    final def copyTo(target: String, mode: WriteMode): Unit = {
+
+      val tgtSession = outer.newSession(target)
+
+      this.input { in =>
+        tgtSession.output(mode) { out =>
+          IOUtils.copy(in.stream, out.stream)
         }
       }
     }
 
-    def output[T](overwrite: Boolean)(f: OutputResource => T): T
+    final def isExisting: Boolean = {
+      input(_.isExisting)
+    }
 
-    //    final def peek(): Unit] = {
-    //      read({_ =>})
-    //    }
-    //
-    //    final def touch(overwrite: Boolean = false): Resource[Unit] = {
-    //      write(overwrite, { _ =>})
-    //
-    //      //          retry { //TODO: necessary?
-    //      //            assert(
-    //      //              fs.exists(lockPath),
-    //      //              s"Lock '$lockPath' cannot be persisted")
-    //      //          }
-    //    }
+    final def snapshot(
+        lockExpireAfter: Duration = URIResolver.defaultLockExpireAfter,
+        lifespan: Lifespan = Lifespan.JVM()
+    ): Snapshot = Snapshot(this, lockExpireAfter, lifespan)
+
+    // read: may execute lazily
+    def input[T](fn: InputResource => T): T
+
+    def output[T](mode: WriteMode)(fn: OutputResource => T): T
+
+    override protected def cleanImpl(): Unit = {}
   }
+
 }
 
 object URIResolver {
 
-  val defaultLockExpireAfter: Duration = 24 -> TimeUnit.HOURS
+//  val defaultRetry: Retry = Retry.ExponentialBackoff(10, 32000, 1.5, silent = false)
+  val defaultRetry: Retry = Retry(
+    n = 16,
+    intervalFactory = { n =>
+      (10000.doubleValue() / Math.pow(1.2, n - 2)).asInstanceOf[Long] + Random.nextInt(1000).longValue()
+    },
+    silent = false
+  )
+
+  val defaultLockExpireAfter: Duration = 1 -> TimeUnit.MINUTES
 }

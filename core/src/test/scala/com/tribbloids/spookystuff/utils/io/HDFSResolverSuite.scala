@@ -6,9 +6,12 @@ import org.apache.hadoop.security.UserGroupInformation
 /**
   * Created by peng on 07/10/15.
   */
-class HDFSResolverSuite extends LocalResolverSuite {
+class HDFSResolverSuite extends AbstractURIResolverSuite {
 
-  @transient override lazy val resolver = HDFSResolver(new Configuration())
+  override val resolver = HDFSResolver(new Configuration())
+
+//  override lazy val aFile = "file:///./a-file.txt"
+
   @transient override lazy val schemaPrefix = "file:"
 
   val nonExistingSchemePath = "file:/non-existing/not-a-file.txt"

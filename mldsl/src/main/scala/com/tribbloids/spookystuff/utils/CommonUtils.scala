@@ -51,7 +51,7 @@ abstract class CommonUtils {
   }
 
   // TODO: remove, use object API everywhere.
-  def retry: RetryFixedInterval.type = RetryFixedInterval
+  def retry: Retry.FixedInterval.type = Retry.FixedInterval
 
   protected def _callerShowStr: String = {
     val result = FlowUtils

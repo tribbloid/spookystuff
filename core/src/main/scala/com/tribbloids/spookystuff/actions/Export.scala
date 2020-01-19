@@ -253,7 +253,7 @@ case class Wget(
     val cacheLevel = DocCacheLevel.getDefault(uriOption)
     val doc = resolver.input(_uri) { in =>
       if (in.isDirectory) {
-        val xmlStr = in.allMetadata.toXMLStr()
+        val xmlStr = in.metadata.all.toXMLStr()
 
         new Doc(
           uid = DocUID(List(this), this)(),
@@ -261,7 +261,7 @@ case class Wget(
           raw = xmlStr.getBytes("utf-8"),
           declaredContentType = Some("inode/directory; charset=UTF-8"),
           cacheLevel = cacheLevel,
-          metadata = in.rootMetadata
+          metadata = in.metadata.root
         )
       } else {
 
@@ -270,7 +270,7 @@ case class Wget(
           uri = in.getURI,
           raw = IOUtils.toByteArray(in.stream),
           cacheLevel = cacheLevel,
-          metadata = in.rootMetadata
+          metadata = in.metadata.root
         )
       }
     }
@@ -309,7 +309,7 @@ case class WpostImpl private[actions] (
       case v: StringEntity =>
         val text =
           v.toString + "\n" +
-            IOUtils.toString(v.getContent)
+            IOUtils.toString(v.getContent, entity.getContentEncoding.getValue)
         text
       case _ => entity.toString
     }
@@ -350,7 +350,7 @@ case class WpostImpl private[actions] (
     val doc = impl match {
       case v: HTTPResolver =>
         v.input(uri) { in =>
-          val md = in.rootMetadata
+          val md = in.metadata.root
           val cacheLevel = DocCacheLevel.getDefault(uriOption)
 
           new Doc(
@@ -364,9 +364,9 @@ case class WpostImpl private[actions] (
         }
 
       case _ =>
-        impl.output(uri, overwrite = true) { out =>
+        impl.output(uri, WriteMode.Overwrite) { out =>
           val length = IOUtils.copy(entity.getContent, out.stream)
-          val md: ResourceMetadata = out.rootMetadata.asMap.updated("length", length)
+          val md: ResourceMetadata = out.metadata.root.asMap.updated("length", length)
           NoDoc(
             backtrace = List(this),
             cacheLevel = DocCacheLevel.NoCache,
