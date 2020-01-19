@@ -19,7 +19,7 @@ object Routings {
   }
 
   case class Direct(
-      override val pythonExe: String = "python2"
+      override val pythonExe: String = PythonDriver.EXE
   ) extends Routing {
 
     def apply(uav: UAV): MAVLink = {
@@ -34,7 +34,7 @@ object Routings {
       //this is the default port listened by QGCS
       toGCS: UAV => Set[String] = _ => Set("udp:localhost:14550"),
       toSparkSize: Int = 1,
-      override val pythonExe: String = "python2"
+      override val pythonExe: String = PythonDriver.EXE
   ) extends Routing {
 
     //CAUTION: DO NOT select primary out sequentially!
@@ -68,7 +68,7 @@ abstract class Routing extends Serializable {
 
   def apply(uav: UAV): Link
 
-  def pythonExe: String = "python2"
+  @transient lazy val driverTemplate = new PythonDriver()
 
-  @transient lazy val driverTemplate = new PythonDriver(pythonExe)
+  def pythonExe: String = PythonDriver.EXE
 }

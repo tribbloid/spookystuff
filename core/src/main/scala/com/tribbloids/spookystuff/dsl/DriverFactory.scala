@@ -430,6 +430,5 @@ object DriverFactories {
     }
   }
 
-  object Python2 extends Python((_: SpookyContext) => "python2")
   object Python3 extends Python((_: SpookyContext) => "python3")
 }

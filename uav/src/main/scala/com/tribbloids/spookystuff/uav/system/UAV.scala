@@ -19,7 +19,7 @@ case class UAV(
     name: String = "DRONE"
 ) {
 
-  val primaryURI = uris.head
+  val primaryURI: String = uris.head
   val fullName = s"${(Seq(name) ++ frame.toSeq).mkString(":")}@${uris.head}"
 
   def getLink(
@@ -45,5 +45,5 @@ case class UAV(
     link
   }
 
-  override def toString = fullName
+  override def toString: String = fullName
 }

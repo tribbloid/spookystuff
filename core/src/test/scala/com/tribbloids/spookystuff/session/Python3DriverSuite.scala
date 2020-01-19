@@ -37,7 +37,6 @@ object Python3DriverSuite {
     }
   }
 
-  object Runner2 extends Runner("python2")
   object Runner3 extends Runner("python3")
 }
 

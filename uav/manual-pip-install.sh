@@ -1,0 +1,1 @@
+pip3 install -r requirements.txt --upgrade --force-reinstall --ignore-installed --target target/classes/python

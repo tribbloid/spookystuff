@@ -13,8 +13,8 @@
 
   <properties>
     <jsprit.version>1.7.2</jsprit.version>
-    <python.command>python2</python.command>
-    <pip.command>pip2</pip.command>
+    <python.command>python3</python.command>
+    <pip.command>pip3</pip.command>
   </properties>
 
   <repositories> <!-- add this, if you don't have any repository definitions yet -->
@@ -141,6 +141,7 @@
               <executable>${pip.command}</executable>
               <arguments>
                 <argument>install</argument>
+<!--                <argument>&#45;&#45;user</argument>-->
                 <argument>-r</argument>
                 <argument>requirements.txt</argument>
                 <argument>--upgrade</argument>

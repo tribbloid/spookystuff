@@ -62,6 +62,8 @@ foo
 .flattened-pom.xml
 pom.xml.flatten
 
+#conda
+**/conda/.env
 
 #pytest
 **/.pytest_cache
