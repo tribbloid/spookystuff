@@ -23,7 +23,7 @@ case class Snapshot(
     lazy val session: resolver.URISession = resolver.newSession(pathStr)
   }
 
-  lazy val oldFilePath = original.absolutePathStr + OLD_SUFFIX
+  lazy val oldFilePath: String = original.absolutePathStr + OLD_SUFFIX
 
   object TempFile {
 
@@ -153,7 +153,7 @@ case class Snapshot(
       tempFileInitialized = true
     }
 
-    // just a file rotation, 2 mv only
+    // just a file rotation, 2 moves only
     def commitBack(): Unit = {
 
       if (tempSession.isExisting) {

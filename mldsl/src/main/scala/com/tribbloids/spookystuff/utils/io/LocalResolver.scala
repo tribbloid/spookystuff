@@ -1,7 +1,9 @@
 package com.tribbloids.spookystuff.utils.io
 
+//TODO: should embrace NIO 100%?
+// https://java7fs.fandom.com/wiki/Why_File_sucks
 import java.io._
-import java.nio.file.{FileAlreadyExistsException, Files, Paths}
+import java.nio.file.{FileAlreadyExistsException, Files, Paths, StandardCopyOption}
 
 import com.tribbloids.spookystuff.utils.Retry
 import org.apache.hadoop.fs.FileUtil
@@ -127,7 +129,8 @@ case class LocalResolver(
 
       val newFile = new File(target).getAbsoluteFile
       newFile.getParentFile.mkdirs()
-      file.renameTo(newFile)
+
+      Files.move(file.toPath, newFile.toPath, StandardCopyOption.ATOMIC_MOVE)
     }
 
 //    override def mkDirs(): Unit = {
