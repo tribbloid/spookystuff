@@ -148,7 +148,7 @@ case class Snapshot(
         }
       }
 
-      validateIntegrity() // otherwise the copy may be obsolete
+      checkIntegrity() // otherwise the copy may be obsolete
 
       tempFileInitialized = true
     }
@@ -160,7 +160,7 @@ case class Snapshot(
 
         if (tempFileModified) {
 
-          validateIntegrity()
+          checkIntegrity()
 
           if (original.isExisting)
             original.moveTo(oldFilePath)
@@ -173,17 +173,7 @@ case class Snapshot(
 
     }
 
-    def validateIntegrity(): Unit = {
-
-      val updatedSignature = getIntegritySignature()
-      if (this.originalSignature != updatedSignature)
-        abort(
-          s"""
-             |file integrity signature has been updated:
-             |original : $originalSignature
-             |updated  : $updatedSignature
-             |""".stripMargin
-        )
+    def checkIntegrity(): Unit = {
 
       val exists = TempDir.session.isExisting
 
@@ -228,6 +218,19 @@ case class Snapshot(
              |""".stripMargin
         )
       }
+
+      Thread.sleep(10)
+      //WARNING: DO NOT DELETE! this line eliminates race condition between file renaming & both checks
+
+      val updatedSignature = getIntegritySignature()
+      if (this.originalSignature != updatedSignature)
+        abort(
+          s"""
+             |file integrity signature has been updated:
+             |original : $originalSignature
+             |updated  : $updatedSignature
+             |""".stripMargin
+        )
     }
 
     override def absolutePathStr: String = tempSession.absolutePathStr
