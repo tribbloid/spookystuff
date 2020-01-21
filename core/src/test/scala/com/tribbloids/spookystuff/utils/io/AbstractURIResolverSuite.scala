@@ -10,6 +10,8 @@ import org.apache.commons.io.IOUtils
 import org.apache.spark.SparkContext
 import org.apache.spark.broadcast.Broadcast
 
+import scala.util.Random
+
 object AbstractURIResolverSuite {
 
   case class Semaphore(
@@ -99,6 +101,8 @@ abstract class AbstractURIResolverSuite extends FunSpecx with LocalPathDocsFixtu
     )
   }
 
+  describe("Session") {}
+
   describe("input") {
 
     it("can get metadata concurrently") {
@@ -117,6 +121,38 @@ abstract class AbstractURIResolverSuite extends FunSpecx with LocalPathDocsFixtu
 
       AssertSerializable(mds.head)
       assert(mds.head == mds.last)
+    }
+
+    it("all accessors can be mutated after creation") {
+
+      def accessorVs(rr: InputResource) = {
+        Seq(
+          rr.getLength,
+          rr.getLastModified
+        )
+      }
+
+      existingFile.requireEmptyFile {
+
+        val session = resolver.newSession(existingFile.pathStr)
+
+        var vs1 = session.input(accessorVs)
+
+        for (i <- 1 to 3) {
+          resolver.output(existingFile.pathStr, WriteMode.Overwrite) { out =>
+            val a = Array.ofDim[Byte](16 * i)
+            Random.nextBytes(a)
+
+            out.stream.write(a)
+          }
+
+          val vs2 = session.input(accessorVs)
+
+          assert(vs1 != vs2)
+
+          vs1 = vs2
+        }
+      }
     }
   }
 
@@ -216,13 +252,15 @@ abstract class AbstractURIResolverSuite extends FunSpecx with LocalPathDocsFixtu
 
   describe("Snapshot") {
 
-    def testSnapshotIO(
+    val numWrites = 1000
+
+    def testSequentialIO(
         url: String,
-        toBeWritten: Seq[Byte]
+        groundTruth: Seq[Byte]
     ): Unit = {
 
       try {
-        val rdd = sc.parallelize(1 to 100, 100)
+        val rdd = sc.parallelize(1 to numWrites, numWrites)
 
         val resolver: URIResolver = this.resolver
 
@@ -249,12 +287,17 @@ abstract class AbstractURIResolverSuite extends FunSpecx with LocalPathDocsFixtu
 
         Predef.assert(!resolver.isAlreadyExisting(HTML_URL + ".lock")())
 
-        val bytes = resolver.input(url) { in =>
-          IOUtils.toByteArray(in.stream)
-        }
+        val bytes = resolver
+          .input(url) { in =>
+            IOUtils.toByteArray(in.stream)
+          }
+          .toSeq
 
-        assert(bytes.length === toBeWritten.size)
-        assert(bytes.toSeq == toBeWritten)
+        assert(
+          s"${bytes.size} elements:\n ${bytes.mkString(" ")}" ===
+            s"${groundTruth.size} elements:\n ${groundTruth.mkString(" ")}"
+        )
+        assert(bytes.length === groundTruth.size)
 
       } finally {
 
@@ -269,16 +312,16 @@ abstract class AbstractURIResolverSuite extends FunSpecx with LocalPathDocsFixtu
           out.stream.write(Array(10.byteValue()))
         }
 
-        val groundTruth = (10 to 110).map(_.byteValue())
-        testSnapshotIO(existingFile.session.absolutePathStr, groundTruth)
+        val groundTruth = (10 to numWrites + 10).map(_.byteValue())
+        testSequentialIO(existingFile.session.absolutePathStr, groundTruth)
       }
     }
 
     it("can guarantee sequential read and write on non-existing file") {
       existingFile.requireVoid {
 
-        val groundTruth = (1 to 100).map(_.byteValue())
-        testSnapshotIO(existingFile.session.absolutePathStr, groundTruth)
+        val groundTruth = (1 to numWrites).map(_.byteValue())
+        testSequentialIO(existingFile.session.absolutePathStr, groundTruth)
       }
     }
   }

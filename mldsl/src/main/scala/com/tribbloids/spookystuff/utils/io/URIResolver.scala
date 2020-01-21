@@ -7,7 +7,6 @@ import com.tribbloids.spookystuff.utils.lifespan.{Lifespan, LocalCleanable}
 import com.tribbloids.spookystuff.utils.{CommonUtils, Retry}
 import org.apache.commons.io.IOUtils
 
-import scala.concurrent.duration.Duration
 import scala.util.Random
 
 /*
@@ -21,7 +20,7 @@ abstract class URIResolver extends Serializable {
 
   def newSession(pathStr: String): this.URISession
 
-  def retry: Retry = URIResolver.defaultRetry
+  def retry: Retry = URIResolver.default.retry
 
 //  lazy val unlockForInput: Boolean = false
 
@@ -116,7 +115,7 @@ abstract class URIResolver extends Serializable {
     }
 
     final def snapshot(
-        lockExpireAfter: Duration = URIResolver.defaultLockExpireAfter,
+        lockExpireAfter: Obsolescence = URIResolver.default.expire,
         lifespan: Lifespan = Lifespan.JVM()
     ): Snapshot = Snapshot(this, lockExpireAfter, lifespan)
 
@@ -132,14 +131,20 @@ abstract class URIResolver extends Serializable {
 
 object URIResolver {
 
-//  val defaultRetry: Retry = Retry.ExponentialBackoff(10, 32000, 1.5, silent = false)
-  val defaultRetry: Retry = Retry(
-    n = 16,
-    intervalFactory = { n =>
-      (10000.doubleValue() / Math.pow(1.2, n - 2)).asInstanceOf[Long] + Random.nextInt(1000).longValue()
-    },
-    silent = false
-  )
+  object default {
 
-  val defaultLockExpireAfter: Duration = 1 -> TimeUnit.MINUTES
+    //  val defaultRetry: Retry = Retry.ExponentialBackoff(10, 32000, 1.5, silent = false)
+    val retry: Retry = Retry(
+      n = 16,
+      intervalFactory = { n =>
+        (10000.doubleValue() / Math.pow(1.2, n - 2)).asInstanceOf[Long] + Random.nextInt(1000).longValue()
+      },
+      silent = true
+    )
+
+    val expire: Obsolescence = Obsolescence(
+      ignoreAfter = 30 -> TimeUnit.SECONDS,
+      deleteAfter = 1 -> TimeUnit.HOURS
+    )
+  }
 }

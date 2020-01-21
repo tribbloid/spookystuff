@@ -16,7 +16,7 @@ import org.apache.spark.ml.dsl.utils.LazyVar
 case class HDFSResolver(
     hadoopConf: SerDeOverride[Configuration],
     ugiFactory: () => Option[UserGroupInformation] = HDFSResolver.noUGIFactory,
-    override val retry: Retry = URIResolver.defaultRetry
+    override val retry: Retry = URIResolver.default.retry
 ) extends URIResolver {
 
   import Resource._

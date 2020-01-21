@@ -5,12 +5,10 @@ import java.util.UUID
 import com.tribbloids.spookystuff.utils.lifespan.{Lifespan, LocalCleanable}
 import com.tribbloids.spookystuff.utils.{CachingUtils, CommonUtils, NoRetry}
 
-import scala.concurrent.duration.Duration
-
 // stage by moving to a secret location
 case class Snapshot(
     original: URIResolver#URISession,
-    lockExpireAfter: Duration = URIResolver.defaultLockExpireAfter,
+    expire: Obsolescence = URIResolver.default.expire,
     override val _lifespan: Lifespan = Lifespan.JVM()
 ) extends LocalCleanable {
 
@@ -75,9 +73,9 @@ case class Snapshot(
       case e @ _                => throw new NoRetry.BypassedException(e)
     }
 
-    snapshotSession.commitBack()
+    snapshotSession.commitBack() // point of no return
 
-    conclude()
+    succeed()
 
     result
   }
@@ -93,7 +91,7 @@ case class Snapshot(
       }
     }
 
-    lazy val delegate: resolver.URISession = TempFile.session
+    lazy val tempSession: resolver.URISession = TempFile.session
 
     @transient var tempFileInitialized: Boolean = false
     @transient var tempFileModified: Boolean = false
@@ -104,14 +102,14 @@ case class Snapshot(
 
         if (original.isExisting) {
           //        println(s"empty snapshot: ${delegate.absolutePathStr}")
-          delegate.output(WriteMode.CreateOnly)(_.stream)
+          tempSession.output(WriteMode.CreateOnly)(_.stream)
         } else {
 //          println(s"dir only: ${TempFile.session.absolutePathStr}")
-          delegate.output(WriteMode.CreateOnly)(_.stream)
-          delegate.delete() // just leaving the directory
+          tempSession.output(WriteMode.CreateOnly)(_.stream)
+          tempSession.delete() // just leaving the directory
         }
 
-        val delegateSignature = getIntegritySignature(delegate)
+        val delegateSignature = getIntegritySignature(tempSession)
 
         try {
           val result = overwriteFn()
@@ -120,12 +118,12 @@ case class Snapshot(
           result
         } catch {
           case e: Throwable =>
-            if (delegateSignature != getIntegritySignature(delegate)) {
+            if (delegateSignature != getIntegritySignature(tempSession)) {
               // overwrite is partially successful
               tempFileInitialized = true
             } else {
               // overwrite doesn't do a thing
-              delegate.delete(false)
+              tempSession.delete(false)
             }
             throw e
         }
@@ -142,11 +140,11 @@ case class Snapshot(
 
         if (original.isExisting) {
           //        println(s"real snapshot: ${delegate.absolutePathStr}")
-          original.copyTo(delegate.absolutePathStr, WriteMode.CreateOnly)
+          original.copyTo(tempSession.absolutePathStr, WriteMode.CreateOnly)
         } else {
 //          println(s"dir only: ${TempFile.session.absolutePathStr}")
-          delegate.output(WriteMode.CreateOnly)(_.stream)
-          delegate.delete() // just leaving the directory
+          tempSession.output(WriteMode.CreateOnly)(_.stream)
+          tempSession.delete() // just leaving the directory
         }
       }
 
@@ -158,7 +156,7 @@ case class Snapshot(
     // just a file rotation, 2 mv only
     def commitBack(): Unit = {
 
-      if (delegate.isExisting) {
+      if (tempSession.isExisting) {
 
         if (tempFileModified) {
 
@@ -167,9 +165,9 @@ case class Snapshot(
           if (original.isExisting)
             original.moveTo(oldFilePath)
 
-          delegate.moveTo(original.absolutePathStr)
+          tempSession.moveTo(original.absolutePathStr)
         } else {
-          delegate.delete(false)
+          tempSession.delete(false)
         }
       }
 
@@ -193,11 +191,14 @@ case class Snapshot(
 
         // ensure that all snapshots in it are either obsolete or have a later create time
 
+        // ensure that all snapshots in it are obsolete
         val existingTempFiles = TempDir.session.input(in => in.children)
-        val existingNotSelf = existingTempFiles.filter { session =>
+        val notExpired = expire.filter(existingTempFiles)
+        val notExpiredOrSelf = notExpired.filter { session =>
           session.absolutePathStr != TempFile.session.absolutePathStr
         }
-        existingNotSelf.foreach { ff =>
+
+        notExpiredOrSelf.foreach { ff =>
           val fileName = ff.absolutePathStr.split('/').last
           val createTime = TempFile.fromFileName(fileName).getOrElse {
             abort(
@@ -215,6 +216,9 @@ case class Snapshot(
                  |likely before the current snapshot being created at T${TempFile.createTime}
                  |""".stripMargin
             )
+//          else {
+//            println("")
+//          }
         }
       } else {
 
@@ -226,12 +230,12 @@ case class Snapshot(
       }
     }
 
-    override def absolutePathStr: String = delegate.absolutePathStr
+    override def absolutePathStr: String = tempSession.absolutePathStr
 
     override protected[io] def _delete(mustExist: Boolean): Unit = {
 
       needOverwrittenFile { () =>
-        delegate.delete(mustExist)
+        tempSession.delete(mustExist)
       }
       tempFileModified = true
     }
@@ -240,7 +244,7 @@ case class Snapshot(
 
       needOriginalFile()
 
-      delegate.moveTo(target)
+      tempSession.moveTo(target)
       tempFileModified = true
     }
 
@@ -248,7 +252,7 @@ case class Snapshot(
 
       needOriginalFile()
 
-      delegate.input(fn)
+      tempSession.input(fn)
     }
 
     override def output[T](mode: WriteMode)(fn: OutputResource => T): T = {
@@ -257,13 +261,13 @@ case class Snapshot(
         case WriteMode.Overwrite | WriteMode.CreateOnly =>
           var result: Option[T] = None
           needOverwrittenFile { () =>
-            result = Some(delegate.output(mode)(fn))
+            result = Some(tempSession.output(mode)(fn))
           }
           result.get
         case WriteMode.Append =>
           needOriginalFile()
 
-          delegate.output(mode)(fn)
+          tempSession.output(mode)(fn)
       }
 
       tempFileModified = true
@@ -276,7 +280,6 @@ case class Snapshot(
 
     requireNoExistingSnapshot()
 
-    // yield SnapshotSession
     LazySnapshotSession()
   }
 
@@ -297,24 +300,20 @@ case class Snapshot(
     if (exists) {
       // ensure that all snapshots in it are obsolete
       val existingTempFiles = TempDir.session.input(in => in.children)
-      existingTempFiles.foreach { ff =>
-        val lastModified = ff.input(in => in.getLastModified)
+      val notExpired = expire.filter(existingTempFiles)
 
-        val elapsed = System.currentTimeMillis() - lastModified
-
-        if (elapsed >= lockExpireAfter.toMillis) {
-          // expired, safe to delete
-          ff.delete(false)
-        } else {
+      notExpired.foreach { ff =>
+        val elapsedOpt = expire.checkSession(ff)
+        elapsedOpt.foreach { v =>
           abort(
-            s"another snapshot file '${ff.absolutePathStr}' has existed for $elapsed milliseconds"
+            s"another snapshot file '${ff.absolutePathStr}' has existed for ${v.elapsedMillis} milliseconds"
           )
         }
       }
     }
   }
 
-  def conclude(): Unit = {
+  def succeed(): Unit = {
     TempDir.session.delete()
   }
 

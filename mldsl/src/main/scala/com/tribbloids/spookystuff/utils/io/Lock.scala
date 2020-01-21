@@ -7,12 +7,11 @@ import com.tribbloids.spookystuff.utils.lifespan.{Lifespan, LocalCleanable}
 import com.tribbloids.spookystuff.utils.{CachingUtils, CommonUtils}
 import org.slf4j.{Logger, LoggerFactory}
 
-import scala.concurrent.duration.Duration
 import scala.util.Random
 
 class Lock(
     execution: URIResolver#URISession,
-    lockExpireAfter: Duration = URIResolver.defaultLockExpireAfter,
+    expire: Obsolescence = URIResolver.default.expire,
     override val _lifespan: Lifespan = Lifespan.JVM()
 ) extends LocalCleanable {
 
@@ -36,7 +35,7 @@ class Lock(
         def errorInfo =
           s"Lock '$lockPathStr' is acquired by another executor or thread for $lockedDuration milliseconds"
 
-        if (lockedDuration >= lockExpireAfter.toMillis) {
+        if (lockedDuration >= expire.ignoreAfter.toMillis) {
           LoggerFactory.getLogger(this.getClass).error(errorInfo + " and has expired")
           true
         } else {

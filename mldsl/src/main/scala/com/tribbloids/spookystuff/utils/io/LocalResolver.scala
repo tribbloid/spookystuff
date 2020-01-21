@@ -7,7 +7,7 @@ import com.tribbloids.spookystuff.utils.Retry
 import org.apache.hadoop.fs.FileUtil
 
 case class LocalResolver(
-    override val retry: Retry = URIResolver.defaultRetry
+    override val retry: Retry = URIResolver.default.retry
 ) extends URIResolver {
 
   @transient lazy val mdParser: ResourceMetadata.ReflectionParser[File] = ResourceMetadata.ReflectionParser[File]()
@@ -85,12 +85,15 @@ case class LocalResolver(
 
         override def createStream: OutputStream = {
           val fos = (isExisting, mode) match {
+
             case (true, WriteMode.CreateOnly) =>
               throw new FileAlreadyExistsException(s"$absolutePathStr already exists")
+
             case (true, WriteMode.Overwrite) =>
               delete(false)
               file.createNewFile()
               new FileOutputStream(absolutePathStr, false)
+
             case (true, WriteMode.Append) =>
               new FileOutputStream(absolutePathStr, true)
 
@@ -134,4 +137,4 @@ case class LocalResolver(
   }
 }
 
-object LocalResolver extends LocalResolver(URIResolver.defaultRetry)
+object LocalResolver extends LocalResolver(URIResolver.default.retry)

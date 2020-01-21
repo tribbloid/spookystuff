@@ -12,9 +12,9 @@ case class TempResource(
 
   import TempResource._
 
-  lazy val session = resolver.newSession(pathStr)
+  lazy val session: resolver.URISession = resolver.newSession(pathStr)
 
-  def absolutePathStr: String = session.absolutePathStr
+//  def absolutePathStr: String = session.absolutePathStr
 
   private object snapshot {
 
