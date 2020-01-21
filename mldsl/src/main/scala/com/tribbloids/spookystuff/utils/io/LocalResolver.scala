@@ -1,12 +1,10 @@
 package com.tribbloids.spookystuff.utils.io
 
-//TODO: should embrace NIO 100%?
-// https://java7fs.fandom.com/wiki/Why_File_sucks
-import java.io._
-import java.nio.file.{FileAlreadyExistsException, Files, Paths, StandardCopyOption}
+import java.io.{File, InputStream, OutputStream}
+import java.nio.file._
 
 import com.tribbloids.spookystuff.utils.Retry
-import org.apache.hadoop.fs.FileUtil
+import org.apache.commons.io.FileUtils
 
 case class LocalResolver(
     override val retry: Retry = URIResolver.default.retry
@@ -14,15 +12,23 @@ case class LocalResolver(
 
   @transient lazy val mdParser: ResourceMetadata.ReflectionParser[File] = ResourceMetadata.ReflectionParser[File]()
 
-  override def newSession(pathStr: String): Session = Session(new File(pathStr))
-  case class Session(file: File) extends super.URISession {
-    //    ensureAbsolute(file)
+  override def newSession(pathStr: String): Session = {
+    Session(Paths.get(pathStr))
+  }
+  case class Session(path: Path) extends super.URISession {
 
     import Resource._
 
-    lazy val absoluteFile: File = file.getAbsoluteFile
+    import scala.collection.JavaConverters._
 
-    override lazy val absolutePathStr: String = file.getAbsolutePath
+    // this is an old IO object, usage should be minimised
+    //TODO: should embrace NIO 100%?
+    // https://java7fs.fandom.com/wiki/Why_File_sucks
+    lazy val file: File = path.toFile
+
+    lazy val absolutePath: Path = path.toAbsolutePath
+
+    override lazy val absolutePathStr: String = absolutePath.toString
 
     trait LocalResource[T] extends Resource[T] {
 
@@ -31,34 +37,37 @@ case class LocalResolver(
       override lazy val getName: String = file.getName
 
       override lazy val getType: String = {
-        if (file.isDirectory) DIR
-        else if (file.isFile) "file"
+        if (Files.isDirectory(path)) DIR
+        else if (Files.isRegularFile(path)) FILE
         else UNKNOWN
       }
 
       override lazy val getContentType: String = {
         if (isDirectory) DIR_MIME
-        else Files.probeContentType(Paths.get(absolutePathStr))
+        else Files.probeContentType(path)
       }
 
-      override lazy val getLength: Long = file.length()
+      override lazy val getLength: Long = Files.size(path)
 
-      override lazy val getLastModified: Long = file.lastModified()
+      override lazy val getLastModified: Long = Files.getLastModifiedTime(path).toMillis
 
       override lazy val _metadata: ResourceMetadata = {
+        // TODO: use Files.getFileAttributeView
         mdParser(file)
       }
 
-      override lazy val isExisting: Boolean = file.exists()
+      override lazy val isExisting: Boolean = Files.exists(path)
 
       override lazy val children: Seq[URISession] = {
         if (isDirectory) {
 
-          file
-            .listFiles()
+          Files
+            .newDirectoryStream(path)
+            .iterator()
+            .asScala
             .toSeq
-            .map { file =>
-              Session(file)
+            .map { subPath =>
+              Session(subPath)
             }
         } else Nil
       }
@@ -70,7 +79,7 @@ case class LocalResolver(
 
         override def createStream: InputStream = {
 
-          new FileInputStream(file)
+          Files.newInputStream(path)
         }
       }
 
@@ -93,16 +102,16 @@ case class LocalResolver(
 
             case (true, WriteMode.Overwrite) =>
               delete(false)
-              file.createNewFile()
-              new FileOutputStream(absolutePathStr, false)
+//              Files.createFile(path)
+              Files.newOutputStream(path, StandardOpenOption.CREATE_NEW)
 
             case (true, WriteMode.Append) =>
-              new FileOutputStream(absolutePathStr, true)
+              Files.newOutputStream(path, StandardOpenOption.APPEND)
 
             case (false, _) =>
-              absoluteFile.getParentFile.mkdirs()
-              file.createNewFile()
-              new FileOutputStream(absolutePathStr, false)
+              Files.createDirectories(absolutePath.getParent)
+//              Files.createFile(path)
+              Files.newOutputStream(path, StandardOpenOption.CREATE_NEW)
           }
 
           fos
@@ -117,11 +126,10 @@ case class LocalResolver(
       }
     }
     override def _delete(mustExist: Boolean): Unit = {
-      val isExisting = file.exists()
 
       (isExisting, mustExist) match {
-        case (false, true) => throw new UnsupportedOperationException(s"file ${file.toURI} does not exist")
-        case _             => FileUtil.fullyDelete(absoluteFile, true)
+        case (false, false) =>
+        case _              => FileUtils.forceDelete(file)
       }
     }
 

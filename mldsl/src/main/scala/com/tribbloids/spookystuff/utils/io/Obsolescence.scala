@@ -1,6 +1,7 @@
 package com.tribbloids.spookystuff.utils.io
 
 import java.io.FileNotFoundException
+import java.nio.file.NoSuchFileException
 
 import scala.concurrent.duration.Duration
 
@@ -26,6 +27,7 @@ case class Obsolescence(
         Some(result)
       } catch {
         case e: FileNotFoundException => None
+        case e: NoSuchFileException   => None
       }
     }
   }

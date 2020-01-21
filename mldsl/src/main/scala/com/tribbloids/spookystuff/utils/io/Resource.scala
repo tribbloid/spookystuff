@@ -83,6 +83,8 @@ object Resource extends {
   val resourceParser = EAV.Impl.ReflectionParser[Resource[_]]()
 
   final val DIR = "directory"
+  final val FILE = "file"
+
   final val DIR_MIME = "inode/directory; charset=UTF-8"
   final val UNKNOWN = "unknown"
 
