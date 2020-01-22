@@ -4,7 +4,8 @@ import java.io.IOException
 import java.util.concurrent.atomic.AtomicInteger
 
 import com.tribbloids.spookystuff.testutils.{FunSpecx, LocalPathDocsFixture, TestHelper}
-import com.tribbloids.spookystuff.utils.CommonConst
+import com.tribbloids.spookystuff.utils.{CommonConst, Retry}
+import com.tribbloids.spookystuff.utils.io.AbstractURIResolverSuite.Semaphore
 import com.tribbloids.spookystuff.utils.serialization.AssertSerializable
 import org.apache.commons.io.IOUtils
 import org.apache.spark.SparkContext
@@ -43,6 +44,8 @@ abstract class AbstractURIResolverSuite extends FunSpecx with LocalPathDocsFixtu
 
   @transient val resolver: URIResolver
   @transient val schemaPrefix: String
+
+  val numConcurrentWrites = 1000
 
   def temp(path: String): TempResource = TempResource(
     resolver,
@@ -252,15 +255,13 @@ abstract class AbstractURIResolverSuite extends FunSpecx with LocalPathDocsFixtu
 
   describe("Snapshot") {
 
-    val numWrites = 1000
-
-    def testSequentialIO(
+    def testConcurrentIO(
         url: String,
         groundTruth: Seq[Byte]
     ): Unit = {
 
       try {
-        val rdd = sc.parallelize(1 to numWrites, numWrites)
+        val rdd = sc.parallelize(1 to numConcurrentWrites, numConcurrentWrites)
 
         val resolver: URIResolver = this.resolver
 
@@ -285,7 +286,7 @@ abstract class AbstractURIResolverSuite extends FunSpecx with LocalPathDocsFixtu
           }
         }
 
-        Predef.assert(!resolver.isAlreadyExisting(HTML_URL + ".lock")())
+        Predef.assert(!resolver.isAlreadyExisting(url + ".lock")())
 
         val bytes = resolver
           .input(url) { in =>
@@ -312,112 +313,240 @@ abstract class AbstractURIResolverSuite extends FunSpecx with LocalPathDocsFixtu
           out.stream.write(Array(10.byteValue()))
         }
 
-        val groundTruth = (10 to numWrites + 10).map(_.byteValue())
-        testSequentialIO(existingFile.session.absolutePathStr, groundTruth)
+        val groundTruth = (10 to numConcurrentWrites + 10).map(_.byteValue())
+        testConcurrentIO(existingFile.session.absolutePathStr, groundTruth)
       }
     }
 
     it("can guarantee sequential read and write on non-existing file") {
-      existingFile.requireVoid {
+      nonExistingFile.requireVoid {
 
-        val groundTruth = (1 to numWrites).map(_.byteValue())
-        testSequentialIO(existingFile.session.absolutePathStr, groundTruth)
+        val groundTruth = (1 to numConcurrentWrites).map(_.byteValue())
+        testConcurrentIO(nonExistingFile.session.absolutePathStr, groundTruth)
       }
     }
   }
 
-//  ignore("Lock") {
-//
-//    def testLock(url: String) = {
-//      val rdd = sc.parallelize(1 to 100, 100)
-//
-//      val resolver: URIResolver = this.resolver
-////      val logger = LoggerFactory.getLogger(this.getClass)
-//
-//      val ss = Semaphore(sc)
-//      val errors = rdd
-//        .map { i =>
-////        logger.info(s"locking: $i")
-//
-//          resolver.lockAccessDuring(url) { _ =>
-//            val r1 = ss.get()
-//            Thread.sleep(Random.nextInt(10))
-//            val r2 = ss.give()
-//            r1 ++ r2
-//          }
-//        }
-//        .collect()
-//        .flatten
-//        .toSeq
-//
-//      assert(errors.isEmpty)
-//
-//      assert(!resolver.isAlreadyExisting(HTML_URL + ".lock")())
-//    }
-//
-//    def testLockIO(url: String): Unit = {
-//
-//      try {
-//        val rdd = sc.parallelize(1 to 1000, 100)
-//
-//        val resolver: URIResolver = this.resolver
-////        val logger = LoggerFactory.getLogger(this.getClass)
-//
-//        rdd.foreach { i =>
-////          logger.info(s"locking: $i")
-//
-//          resolver.lockAccessDuring(url) { lockedPath =>
-//            val bytes: Array[Byte] = resolver.input(lockedPath, unlockFirst = false) { in =>
-//              if (in.isExisting) IOUtils.toByteArray(in.stream)
-//              else Array.empty
-//            }
-//
-//            val lastByte: Byte = bytes.toSeq.lastOption.getOrElse(0: Byte)
-//
-//            resolver.output(lockedPath, WriteMode.Overwrite) { out =>
-//              val stream = out.stream
-//              stream.write(bytes)
-//              stream.write(lastByte + 1)
-//              stream.flush()
-//              stream.close()
-//            }
-//          }
-//        }
-//
-//        Predef.assert(!resolver.isAlreadyExisting(HTML_URL + ".lock")())
-//
-//        val bytes = resolver.input(url) { in =>
-//          IOUtils.toByteArray(in.stream)
-//        }
-//
-//        val length = rdd.count()
-//        assert(bytes.length === length)
-//
-//        assert(
-//          bytes.toSeq ==
-//            (1 to length.intValue()).map(_.byteValue())
-//        )
-//
-//      } finally {
-//
-//        resolver.newSession(url).delete(false)
-//      }
-//    }
-//
-////    it("can guarantee sequential locking") {
-////      testLock(HTML_URL)
-////    }
-//
-//    it("... even for non existing path") {
-//      resolver.newSession(nonExisting).delete(false)
-//
-//      testLock(nonExisting)
-//    }
-//
-//    it("can guarantee sequential read and write") {
-//      resolver.newSession(existing).delete(false)
-//
-//      testLockIO(existing)
-//    }
-//  }
+  it("move should be atomic") {
+
+    existingFile.requireEmptyFile {
+      val pathStr = existingFile.pathStr
+      val rdd = sc.parallelize(1 to numConcurrentWrites, numConcurrentWrites)
+
+      val resolver: URIResolver = this.resolver
+
+      val ss = Semaphore(sc)
+      val errors = rdd
+        .map { i =>
+          Retry.FixedInterval(n = 30, interval = 1000, silent = true) {
+            resolver
+              .newSession(pathStr)
+              .moveTo(pathStr + ".moved")
+
+            val r1 = ss.get()
+            Thread.sleep(Random.nextInt(10))
+            val r2 = ss.give()
+
+            resolver
+              .newSession(pathStr + ".moved")
+              .moveTo(pathStr)
+
+            r1 ++ r2
+          }
+        }
+        .collect()
+        .flatten
+        .toSeq
+
+      assert(errors.isEmpty)
+    }
+  }
+
+  ignore("move to a target should be atomic") {
+    existingFile.requireEmptyFile {
+      val pathStr = existingFile.pathStr
+      val rdd = sc.parallelize(1 to numConcurrentWrites, numConcurrentWrites)
+
+      val resolver: URIResolver = this.resolver
+
+      val ss = Semaphore(sc)
+      val errors = rdd
+        .map { i =>
+          Retry.FixedInterval(n = 30, interval = 1000, silent = true) {
+            val src = resolver
+              .newSession(pathStr + s"${Random.nextInt()}")
+
+            src.touch()
+            src.moveTo(pathStr)
+
+            val r1 = ss.get()
+            Thread.sleep(Random.nextInt(10))
+            val r2 = ss.give()
+
+            resolver
+              .newSession(pathStr + ".moved")
+              .delete(false)
+
+            r1 ++ r2
+          }
+        }
+        .collect()
+        .flatten
+        .toSeq
+
+      assert(errors.isEmpty)
+    }
+  }
+
+  ignore("touch should be atomic") {
+
+    existingFile.requireVoid {
+      val pathStr = existingFile.pathStr
+      val rdd = sc.parallelize(1 to numConcurrentWrites, numConcurrentWrites)
+
+      val resolver: URIResolver = this.resolver
+
+      val ss = Semaphore(sc)
+      val errors = rdd
+        .map { i =>
+          Retry.FixedInterval(n = 30, interval = 1000, silent = true) {
+            resolver
+              .newSession(pathStr)
+              .touch()
+
+            val r1 = ss.get()
+            Thread.sleep(Random.nextInt(10))
+            val r2 = ss.give()
+
+            resolver
+              .newSession(pathStr)
+              .delete()
+
+            r1 ++ r2
+          }
+        }
+        .collect()
+        .flatten
+        .toSeq
+
+      assert(errors.isEmpty)
+    }
+  }
+
+  def testLock(): Unit = {
+
+    // doesn't work for HDFS, so moved here
+    describe("Lock") {
+
+      def testConcurrent(
+          url: String
+      ): Unit = {
+
+        val rdd = sc.parallelize(1 to numConcurrentWrites, numConcurrentWrites)
+
+        val resolver: URIResolver = this.resolver
+
+        val ss = Semaphore(sc)
+        val errors = rdd
+          .map { i =>
+            resolver.lock(url).during { _ =>
+              val r1 = ss.get()
+              Thread.sleep(Random.nextInt(10))
+              val r2 = ss.give()
+              r1 ++ r2
+            }
+          }
+          .collect()
+          .flatten
+          .toSeq
+
+        assert(errors.isEmpty)
+      }
+
+      it("can guarantee sequential locking") {
+        existingFile.requireEmptyFile {
+
+          testConcurrent(existingFile.pathStr)
+        }
+      }
+
+      it("... even for non existing path") {
+        nonExistingFile.requireEmptyFile {
+
+          testConcurrent(nonExistingFile.pathStr)
+        }
+      }
+
+      def testConcurrentIO(
+          url: String,
+          groundTruth: Seq[Byte]
+      ): Unit = {
+
+        try {
+          val rdd = sc.parallelize(1 to numConcurrentWrites, numConcurrentWrites)
+
+          val resolver: URIResolver = this.resolver
+
+          rdd.foreach { _ =>
+            val lock = Lock(resolver.newSession(url))
+            lock.during { session =>
+              val bytes: Array[Byte] = session.input { in =>
+                if (in.isExisting) IOUtils.toByteArray(in.stream)
+                else Array.empty
+              }
+
+              val lastByte: Byte = bytes.toSeq.lastOption.getOrElse(0)
+
+              val withExtra = bytes :+ (lastByte + 1).byteValue()
+
+              //            println(s"write ${bytes.length} => ${withExtra.length}")
+
+              session.output(WriteMode.Overwrite) { out =>
+                val stream = out.stream
+                stream.write(withExtra)
+              }
+            }
+          }
+
+          Predef.assert(!resolver.isAlreadyExisting(url + ".lock")())
+
+          val bytes = resolver
+            .input(url) { in =>
+              IOUtils.toByteArray(in.stream)
+            }
+            .toSeq
+
+          assert(
+            s"${bytes.size} elements:\n ${bytes.mkString(" ")}" ===
+              s"${groundTruth.size} elements:\n ${groundTruth.mkString(" ")}"
+          )
+          assert(bytes.length === groundTruth.size)
+
+        } finally {
+
+          resolver.newSession(url).delete(false)
+        }
+      }
+
+      it("can guarantee sequential read and write on existing file") {
+        existingFile.requireEmptyFile {
+
+          existingFile.session.output(WriteMode.Overwrite) { out =>
+            out.stream.write(Array(10.byteValue()))
+          }
+
+          val groundTruth = (10 to numConcurrentWrites + 10).map(_.byteValue())
+          testConcurrentIO(existingFile.session.absolutePathStr, groundTruth)
+        }
+      }
+
+      it("can guarantee sequential read and write on non-existing file") {
+        nonExistingFile.requireVoid {
+
+          val groundTruth = (1 to numConcurrentWrites).map(_.byteValue())
+          testConcurrentIO(nonExistingFile.session.absolutePathStr, groundTruth)
+        }
+      }
+    }
+  }
 }

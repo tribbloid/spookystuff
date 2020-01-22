@@ -19,6 +19,9 @@ case class Obsolescence(
   def checkSession(v: URISession): Option[Verdict] = {
 
     v.input { in =>
+      if (v.absolutePathStr.split('/').lastOption.contains(Snapshot.MASTER))
+        return None
+
       try {
         val lastModified = in.getLastModified
 

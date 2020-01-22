@@ -103,15 +103,15 @@ case class LocalResolver(
             case (true, WriteMode.Overwrite) =>
               delete(false)
 //              Files.createFile(path)
-              Files.newOutputStream(path, StandardOpenOption.CREATE_NEW)
+              Files.newOutputStream(path, StandardOpenOption.CREATE_NEW, StandardOpenOption.SYNC)
 
             case (true, WriteMode.Append) =>
-              Files.newOutputStream(path, StandardOpenOption.APPEND)
+              Files.newOutputStream(path, StandardOpenOption.APPEND, StandardOpenOption.SYNC)
 
             case (false, _) =>
               Files.createDirectories(absolutePath.getParent)
 //              Files.createFile(path)
-              Files.newOutputStream(path, StandardOpenOption.CREATE_NEW)
+              Files.newOutputStream(path, StandardOpenOption.CREATE_NEW, StandardOpenOption.SYNC)
           }
 
           fos

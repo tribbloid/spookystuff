@@ -55,9 +55,16 @@ abstract class URIResolver extends Serializable {
     result
   }
 
-  def lockAccessDuring[T](pathStr: String)(f: String => T): T = {
-    val lock = new Lock(newSession(pathStr))
-    lock.during(f)
+  final def snapshot(
+      pathStr: String,
+      lockExpireAfter: Obsolescence = URIResolver.default.expire,
+      lifespan: Lifespan = Lifespan.JVM()
+  ): Snapshot = {
+    Snapshot(newSession(pathStr), lockExpireAfter, lifespan)
+  }
+
+  final def lock[T](pathStr: String): Lock = {
+    Lock(newSession(pathStr))
   }
 
   def isAlreadyExisting(pathStr: String)(
@@ -110,14 +117,72 @@ abstract class URIResolver extends Serializable {
       }
     }
 
+    final def touch(): Unit = touch_2()
+
+    private def touch_2(): Unit = {
+
+      val mark = Seq(Random.nextInt().byteValue())
+
+      try {
+        this.output(WriteMode.CreateOnly) { out =>
+          out.stream.write(mark.toArray)
+        }
+
+        this.input { in =>
+          val v = IOUtils.toByteArray(in.stream)
+          require(v.toSeq == mark)
+        }
+      } catch {
+        case e: Throwable =>
+          this.delete(false)
+          throw e
+      }
+
+    }
+
+    private def touch_1(): Unit = {
+
+      val touchSession: URIResolver#URISession = {
+
+        val touchPathStr = this.absolutePathStr + URIResolver.TOUCH
+
+        outer.newSession(touchPathStr)
+      }
+
+      // this convoluted way of creating file is to ensure that atomic contract can be engaged
+      // TODO: not working in any FS! why?
+
+      val mark = Seq(Random.nextInt().byteValue())
+
+      touchSession.output(WriteMode.CreateOnly) { out =>
+        out.stream.write(mark.toArray)
+      }
+
+      try {
+        touchSession.moveTo(this.absolutePathStr)
+
+        this.input { in =>
+          val v = IOUtils.toByteArray(in.stream)
+          require(v.toSeq == mark)
+        }
+
+        this.output(WriteMode.Overwrite) { out =>
+          out.stream
+        }
+
+      } catch {
+        case e: Throwable =>
+          touchSession.delete(false)
+          throw e
+      } finally {
+
+        touchSession.clean()
+      }
+    }
+
     final def isExisting: Boolean = {
       input(_.isExisting)
     }
-
-    final def snapshot(
-        lockExpireAfter: Obsolescence = URIResolver.default.expire,
-        lifespan: Lifespan = Lifespan.JVM()
-    ): Snapshot = Snapshot(this, lockExpireAfter, lifespan)
 
     // read: may execute lazily
     def input[T](fn: InputResource => T): T
@@ -147,4 +212,6 @@ object URIResolver {
       deleteAfter = 1 -> TimeUnit.HOURS
     )
   }
+
+  final val TOUCH = ".touch"
 }

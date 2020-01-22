@@ -18,9 +18,9 @@ case class TempResource(
 
   private object snapshot {
 
-    val self: Snapshot = session.snapshot()
+    val self: Snapshot = Snapshot(session)
 
-    lazy val dir: URISession = self.TempDir.session
+    lazy val dir: URISession = self.tempDir.session
     lazy val old: URIResolver#URISession = session.outer.newSession(self.oldFilePath)
   }
 
@@ -29,32 +29,35 @@ case class TempResource(
     else Seq(session)
   }
 
-  def requireVoid[T](fn: => T): T = {
+  def deleteBeforeAndAfter[T](fn: => T): T = {
+    delete()
+    try {
+      fn
+    } finally {
+      delete()
+    }
+  }
 
-    delete()
+  def requireVoid[T](fn: => T): T = deleteBeforeAndAfter {
+
     val result = fn
-    delete()
     result
   }
 
-  def requireEmptyFile[T](fn: => T): T = {
+  def requireEmptyFile[T](fn: => T): T = deleteBeforeAndAfter {
 
-    delete()
-    session.output(WriteMode.CreateOnly)(out => out.stream)
+    session.touch()
     val result = fn
-    delete()
     result
   }
 
-  def requireRandomFile[T](length: Int = defaultRandomFileSize)(fn: => T): T = {
-    delete()
+  def requireRandomFile[T](length: Int = defaultRandomFileSize)(fn: => T): T = deleteBeforeAndAfter {
     session.output(WriteMode.CreateOnly) { out =>
       val bytes = Array.ofDim[Byte](length)
       Random.nextBytes(bytes)
       out.stream.write(bytes)
     }
     val result = fn
-    delete()
     result
   }
 

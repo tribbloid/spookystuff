@@ -55,4 +55,6 @@ class HDFSResolverSuite extends AbstractURIResolverSuite {
       .mkString("\n")
     users.shouldBe("dummy")
   }
+
+//  testLock()
 }

@@ -4,13 +4,16 @@ import java.nio.file.FileAlreadyExistsException
 import java.util.UUID
 
 import com.tribbloids.spookystuff.utils.lifespan.{Lifespan, LocalCleanable}
-import com.tribbloids.spookystuff.utils.{CachingUtils, CommonUtils}
-import org.slf4j.{Logger, LoggerFactory}
+import com.tribbloids.spookystuff.utils.{CachingUtils, CommonUtils, NoRetry}
+import org.slf4j.LoggerFactory
 
-import scala.util.Random
-
-class Lock(
-    execution: URIResolver#URISession,
+/**
+  * Deprecated: Doesn't work for HDFSResolver (and future resolvers for other file systems)!
+  * use [[Snapshot]] instead
+  */
+@Deprecated
+case class Lock(
+    original: URIResolver#URISession,
     expire: Obsolescence = URIResolver.default.expire,
     override val _lifespan: Lifespan = Lifespan.JVM()
 ) extends LocalCleanable {
@@ -19,23 +22,64 @@ class Lock(
 
   @volatile var acquiredTimestamp: Long = -1
 
-  override def cleanableLogFunction(logger: Logger): String => Unit = logger.info
+//  override def cleanableLogFunction(logger: Logger): String => Unit = logger.info
 
-  val resolver: URIResolver = execution.outer
+  val resolver: URIResolver = original.outer
 
-  case class ByLockFile(session: resolver.URISession) {
+  case object ByLockFile {
+
+    val session: resolver.URISession = resolver.newSession(original.absolutePathStr + LOCK)
+
+    def during[T](fn: URISession => T): T = {
+
+      original.outer.retry {
+        duringOnce(fn)
+      }
+    }
+
+    protected def duringOnce[T](fn: URISession => T): T = {
+      checkUnlocked()
+
+      @volatile var needRelease = false
+
+//      try {
+//        session.touch()
+//      } catch {
+//        case e: Throwable =>
+//          throw new ResourceLockError("cannot move to lock file path", e)
+//      }
+      // touch in most FS are unfortunately not atomic, has to create an OutputStream to hog the resource
+
+      session.output(WriteMode.CreateOnly) { out =>
+        out.stream
+        needRelease = true
+
+        logAcquire(session)
+
+        try {
+          fn(original)
+        } catch {
+          case e: ResourceLockError => throw e
+          case e @ _                => throw NoRetry(e)
+        } finally {
+
+          if (needRelease)
+            release()
+        }
+      }
+    }
 
     //  @tailrec
-    final def assertUnlockedOnce(): Unit = {
+    final def checkUnlocked(): Unit = {
 
       def existingLockIsExpired(r: Resource[_], e: FileAlreadyExistsException): Boolean = {
         val lockedTime = r.getLastModified
         val lockedDuration = System.currentTimeMillis() - lockedTime
 
         def errorInfo =
-          s"Lock '$lockPathStr' is acquired by another executor or thread for $lockedDuration milliseconds"
+          s"Lock '${session.absolutePathStr}' is acquired by another executor or thread for $lockedDuration milliseconds"
 
-        if (lockedDuration >= expire.ignoreAfter.toMillis) {
+        if (lockedDuration >= expire.deleteAfter.toMillis) {
           LoggerFactory.getLogger(this.getClass).error(errorInfo + " and has expired")
           true
         } else {
@@ -48,36 +92,16 @@ class Lock(
 
         if (lockExpired) {
           drop()
-          assertUnlockedOnce()
+          checkUnlocked()
         }
       }
 
-      session.output(mode = WriteMode.CreateOnly) { out =>
-        //        if (out.isAlreadyExisting) {
-        //
-        //          this.logPrefixed("=== CANNOT ACCESS")
-        //          handleExistingLock(out, null)
-        //        } else {
+      session.input { in =>
+        if (in.isExisting) {
 
-//        if (acquire) {
-//          try {
-//            out.stream
-//            acquiredTimestamp = out.getLastModified
-//
-//          } catch {
-//            case e: FileAlreadyExistsException =>
-//              handleExistingLock(out, e)
-//          }
-//        } else {
-
-        if (out.isExisting) {
-
-          handleExistingLock(out, null)
+          handleExistingLock(in, null)
         }
-//        }
-        //        }
       }
-
     }
 
     def drop(): Unit = {
@@ -94,13 +118,13 @@ class Lock(
           session.input { in =>
             // lock acquired or deleted by others, release will interfere with others
             if (!in.isExisting)
-              throw new ResourceLockError(
+              throw new RuntimeException(
                 s"$logPrefix: lock file ${session.absolutePathStr} has been deleted"
               )
 
             val lastModified = in.getLastModified
             if (lastModified != acquiredTimestamp)
-              throw new ResourceLockError(
+              throw new RuntimeException(
                 s"$logPrefix: lock file ${session.absolutePathStr} has been tampered and has a different timestamp: " +
                   s"expected $acquiredTimestamp, actual $lastModified"
               )
@@ -115,25 +139,27 @@ class Lock(
     }
   }
 
-  lazy val lockPathStr: String = execution.absolutePathStr + SUFFIX
-  def byLockFile: ByLockFile = ByLockFile(resolver.newSession(lockPathStr))
+  /**
+    * Don't use, experimental only
+    */
+  private case object ByMoving {
 
-  case class ByMoving(session: resolver.URISession) {
+    lazy val movedPathStr: String = {
 
-    def acquireByMv(): String = {
-
-      resolver.retry {
-        acquireByMvOnce()
-      }
+      val name = UUID.randomUUID().toString
+      val path = CommonUtils./:/(ByLockFile.session.absolutePathStr, name)
+      path
     }
 
-    def acquireByMvOnce(): String = {
+    val session: resolver.URISession = resolver.newSession(movedPathStr)
 
-      val oldSize = execution.input { in =>
+    def acquire(): String = {
+
+      val oldSize = original.input { in =>
         in.getLength
       }
 
-      execution.moveTo(session.absolutePathStr)
+      original.moveTo(session.absolutePathStr)
 
       val newSize = session.input { in =>
         in.getLength
@@ -146,114 +172,35 @@ class Lock(
       session.absolutePathStr
     }
 
-    def releaseByMvOnce(): Unit = {
+    def release(): Unit = {
 
       logRelease(session)
 
-      session.moveTo(execution.absolutePathStr)
+      session.moveTo(original.absolutePathStr)
     }
   }
 
-  lazy val movedPathStr: String = {
-
-    val name = UUID.randomUUID().toString
-    val path = CommonUtils./:/(lockPathStr, name)
-    path
-  }
-  def byMoving: ByMoving = {
-
-    ByMoving(resolver.newSession(movedPathStr))
+  def during[T](fn: URISession => T): T = {
+    ByLockFile.during(fn)
   }
 
-  def during[T](f: String => T): T = {
-    assertUnlocked()
-
-    val lockSession = byLockFile.session
-    var needRelease = false
-
-    try {
-      lockSession.output(mode = WriteMode.CreateOnly) { out =>
-        val sig = Random.nextInt().byteValue()
-
-        resolver.retry {
-          val stream = out.stream
-          needRelease = true
-          stream.write(sig)
-          stream.flush()
-          this.acquiredTimestamp = out.getLastModified
-          val size = out.getLength
-          assert(size == 1, s"size before == $size")
-        }
-
-        logAcquire(lockSession)
-
-        val result = f(execution.absolutePathStr)
-
-        val size2 = out.getLength
-        assert(size2 == 1, s"size after == $size2")
-
-        logPrefixed("prepare for release")
-        result
-      }
-    } finally {
-      if (needRelease)
-        release()
-    }
-
-//    val path = acquireByMv()
-//    try {
-//      f(path)
-////      movedExecution.output(false) { out =>
-////        f(path)
-////      }
-//
-//    } finally {
-//      releaseByMvOnce()
-//    }
-
-//    lockExecution.output(overwrite = false) { out =>
-//      try {
-//        f(path)
-//      } finally {
-//        release()
-//      }
-//    }
-  }
-
-//  def acquire(): String = {
-//    assertUnlocked(false)
-//    execution.absolutePathStr
-//  }
-
-  def assertUnlocked(): Unit = {
-    //TODO: fail early for non LockError
-    resolver.retry {
-      byLockFile.assertUnlockedOnce()
-    }
-  }
-
-  def release(): Unit = {
-
-    byLockFile.release()
-  }
-
-  /**
+  /**e
     * unlock on cleanup
     */
   override protected def cleanImpl(): Unit = {
 
-    release()
+    ByLockFile.release()
   }
 
-  def logAcquire(execution: URIResolver#URISession) = {
+  def logAcquire(execution: URIResolver#URISession): Unit = {
 
-    Lock.acquired += execution -> System.currentTimeMillis()
+    Lock.acquiredRegistry += execution -> System.currentTimeMillis()
 
     this.logPrefixed(s"=== ACQUIRED!: ${execution.absolutePathStr}")
   }
 
-  def logRelease(execution: URIResolver#URISession) = {
-    Lock.acquired -= execution
+  def logRelease(execution: URIResolver#URISession): Unit = {
+    Lock.acquiredRegistry -= execution
 
     this.logPrefixed(s"=== RELEASED! ${execution.absolutePathStr}")
   }
@@ -261,7 +208,7 @@ class Lock(
 
 object Lock {
 
-  val acquired: CachingUtils.ConcurrentMap[URIResolver#URISession, Long] = CachingUtils.ConcurrentMap()
+  val acquiredRegistry: CachingUtils.ConcurrentMap[URIResolver#URISession, Long] = CachingUtils.ConcurrentMap()
 
-  final val SUFFIX: String = ".lock"
+  final val LOCK: String = ".lock"
 }
