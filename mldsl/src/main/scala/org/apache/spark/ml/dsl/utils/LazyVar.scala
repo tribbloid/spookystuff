@@ -15,14 +15,14 @@ class LazyVar[T](
 ) extends Serializable
     with IDMixin {
 
-  protected val cached: T ? Var = None
+  val cached: T ? Var = None
 
-  def peek: Option[T] = cached.asOption
+  private def opt: Option[T] = cached.asOption
 
-  def value: T = peek.getOrElse {
+  def value: T = opt.getOrElse {
     this.synchronized {
 
-      peek.getOrElse(regenerate)
+      opt.getOrElse(regenerate)
     }
   }
 

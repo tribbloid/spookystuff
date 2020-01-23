@@ -1,7 +1,5 @@
 package com.tribbloids.spookystuff.extractors
 
-import scala.runtime.AbstractPartialFunction
-
 //this entire file is created because default result of .lift & .unlift are not serializable
 trait PartialFunctionWrapper[-T, +R] extends PartialFunction[T, R] {
   def partialFunction: scala.PartialFunction[T, R]
@@ -29,19 +27,12 @@ trait PartialFunctionWrapper[-T, +R] extends PartialFunction[T, R] {
   }
 }
 
-// WARNING: DO NOT CHANGE! result of PartialFunctions.unlift in scala 2.11 is NOT serializable!
-case class Unlift[-T, +R](
-    liftFn: T => Option[R]
-) extends AbstractPartialFunction[T, R] {
+object Unlift {
 
-  override final def isDefinedAt(x: T): Boolean = liftFn(x).isDefined
+  def apply[T, R](fn: T => Option[R]): PartialFunction[T, R] = {
 
-  override final def applyOrElse[A1 <: T, B1 >: R](x: A1, default: A1 => B1): B1 = {
-    val z = liftFn(x)
-    z.getOrElse(default(x))
+    Function.unlift(fn)
   }
-
-  override final def lift: Function1[T, Option[R]] = liftFn
 }
 
 case class Partial[-T, +R](

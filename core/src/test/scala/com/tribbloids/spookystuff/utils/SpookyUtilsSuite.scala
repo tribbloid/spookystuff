@@ -78,7 +78,7 @@ class SpookyUtilsSuite extends FunSpecx {
 
   it("withDeadline can execute heartbeat") {
 
-    var log = ArrayBuffer[Int]()
+    var log = ArrayBuffer[String]()
 
     val (_, time) = CommonUtils.timed {
       TestHelper.intercept[TimeoutException] {
@@ -89,13 +89,28 @@ class SpookyUtilsSuite extends FunSpecx {
           Some { i: Int =>
             val str = s"heartbeat: i=$i"
             println(str)
-            log += i
+            log += str
           }
         )
       }
     }
     Predef.assert(time < 12000)
-    Predef.assert(Seq(9, 10).contains(log.max))
+    log
+      .mkString("\n")
+      .shouldBe(
+        """
+        |heartbeat: i=0
+        |heartbeat: i=1
+        |heartbeat: i=2
+        |heartbeat: i=3
+        |heartbeat: i=4
+        |heartbeat: i=5
+        |heartbeat: i=6
+        |heartbeat: i=7
+        |heartbeat: i=8
+        |heartbeat: i=9
+      """.stripMargin
+      )
 
     log.clear()
     val (_, time2) = CommonUtils.timed {
@@ -106,12 +121,22 @@ class SpookyUtilsSuite extends FunSpecx {
         Some { i: Int =>
           val str = s"heartbeat: i=$i"
           println(str)
-          log += i
+          log += str
         }
       )
     }
     Predef.assert(time2 < 6000)
-    Predef.assert(Seq(4, 5).contains(log.max))
+    log
+      .mkString("\n")
+      .shouldBe(
+        """
+        |heartbeat: i=0
+        |heartbeat: i=1
+        |heartbeat: i=2
+        |heartbeat: i=3
+        |heartbeat: i=4
+      """.stripMargin
+      )
   }
 
   it("withDeadline won't be affected by scala concurrency global ForkJoin thread pool") {

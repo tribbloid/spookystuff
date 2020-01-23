@@ -3,7 +3,6 @@ package org.apache.spark.ml.dsl.utils.messaging
 import org.apache.spark.ml.dsl.utils.refl.{ReflectionUtils, RuntimeTypeOverride, ScalaType}
 
 import scala.collection.immutable.ListMap
-import scala.language.existentials
 
 //TODO: add type information
 case class GenericProduct[T <: Product: Manifest](
