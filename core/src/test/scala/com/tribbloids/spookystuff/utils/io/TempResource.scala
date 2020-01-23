@@ -46,7 +46,7 @@ case class TempResource(
 
   def requireEmptyFile[T](fn: => T): T = deleteBeforeAndAfter {
 
-    session.touch()
+    session.createNew()
     val result = fn
     result
   }

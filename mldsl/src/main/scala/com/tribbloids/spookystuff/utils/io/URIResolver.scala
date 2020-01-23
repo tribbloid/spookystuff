@@ -64,7 +64,7 @@ abstract class URIResolver extends Serializable {
   }
 
   final def lock[T](pathStr: String): Lock = {
-    Lock(newSession(pathStr))
+    Lock(this, pathStr)
   }
 
   def isAlreadyExisting(pathStr: String)(
@@ -117,9 +117,9 @@ abstract class URIResolver extends Serializable {
       }
     }
 
-    final def touch(): Unit = touch_2()
+    final def createNew(): Unit = create_simple()
 
-    private def touch_2(): Unit = {
+    private def create_simple(): Unit = {
 
       val mark = Seq(Random.nextInt().byteValue())
 
@@ -140,7 +140,7 @@ abstract class URIResolver extends Serializable {
 
     }
 
-    private def touch_1(): Unit = {
+    private def create_complex(): Unit = {
 
       val touchSession: URIResolver#URISession = {
 

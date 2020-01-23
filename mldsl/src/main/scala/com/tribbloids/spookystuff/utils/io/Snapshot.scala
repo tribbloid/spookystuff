@@ -18,16 +18,12 @@ case class Snapshot(
 
   object tempDir {
 
-    lazy val pathStr: String = original.absolutePathStr + DIR
+    lazy val pathStr: String = original.absolutePathStr + SUFFIX
 
     lazy val session: resolver.URISession = resolver.newSession(pathStr)
   }
 
-  lazy val masterLockSession: resolver.URISession = resolver.newSession(
-    CommonUtils./:/(tempDir.pathStr, MASTER)
-  )
-
-  lazy val oldFilePath: String = original.absolutePathStr + OLD
+  lazy val oldFilePath: String = original.absolutePathStr + OLD_SUFFIX
 
   object tempFile {
 
@@ -53,7 +49,9 @@ case class Snapshot(
 
       val ext = parts.last
 
-      if (!ext.startsWith("T")) return None
+      if (!ext.startsWith("T")) {
+        None
+      }
 
       Some(ext.stripPrefix("T").toLong)
     }
@@ -65,44 +63,17 @@ case class Snapshot(
     }
   }
 
-  protected def checkNoExisting(): Unit = {
-
-    try {
-      masterLockSession.touch()
-    } catch {
-      case e: java.nio.file.FileAlreadyExistsException        => checkAllSnapshotsExpired()
-      case e: org.apache.hadoop.fs.FileAlreadyExistsException => checkAllSnapshotsExpired()
-    }
-  }
-
   def duringOnce[T](fn: URISession => T): T = {
+    val snapshotSession: LazySnapshotSession = acquireSession()
 
-//    checkNoExisting()
-    val snapshotSession: LazySnapshotSession = LazySnapshotSession()
-
-    @transient var bypassMasterLock = false
-
-    val result = {
-
-      masterLockSession.output(WriteMode.CreateOnly) { out =>
-        try {
-          out.stream
-        } catch {
-          case _: java.nio.file.FileAlreadyExistsException | _: org.apache.hadoop.fs.FileAlreadyExistsException =>
-            checkAllSnapshotsExpired()
-            bypassMasterLock = true
-        }
-
-        try {
-          val result = fn(snapshotSession)
-          snapshotSession.commitBack() // point of no return
-          result
-        } catch {
-          case e: ResourceLockError => throw e
-          case e @ _                => throw NoRetry(e)
-        }
-      }
+    val result = try {
+      fn(snapshotSession)
+    } catch {
+      case e: ResourceLockError => throw e
+      case e @ _                => throw new NoRetry.BypassedException(e)
     }
+
+    snapshotSession.commitBack() // point of no return
 
     succeed()
 
@@ -113,9 +84,6 @@ case class Snapshot(
 
     val originalSignature: IntegritySignature = getIntegritySignature()
 
-    @transient var tempFileInitialized: Boolean = false
-    @transient var tempFileModified: Boolean = false
-
     def getIntegritySignature(session: URISession = original): IntegritySignature = {
       session.input { in =>
         if (in.isExisting) Some(IntegritySignature.V(in.getLastModified, in.getLength))
@@ -125,13 +93,20 @@ case class Snapshot(
 
     lazy val tempSession: resolver.URISession = tempFile.session
 
+    @transient var tempFileInitialized: Boolean = false
+    @transient var tempFileModified: Boolean = false
+
     protected def needOverwrittenFile[T](overwriteFn: () => T): T = {
 
       if (!tempFileInitialized) {
 
-        //        println(s"empty snapshot: ${delegate.absolutePathStr}")
         if (original.isExisting) {
+          //        println(s"empty snapshot: ${delegate.absolutePathStr}")
           tempSession.output(WriteMode.CreateOnly)(_.stream)
+        } else {
+          //          println(s"dir only: ${TempFile.session.absolutePathStr}")
+          tempSession.output(WriteMode.CreateOnly)(_.stream)
+          tempSession.delete() // just leaving the directory
         }
 
         val delegateSignature = getIntegritySignature(tempSession)
@@ -158,18 +133,18 @@ case class Snapshot(
       }
     }
 
-    protected def needCopiedFile(): Unit = {
+    // takes a copy
+    protected def needOriginalFile(): Unit = {
 
       if (!tempFileInitialized) {
 
-        //        println(s"real snapshot: ${delegate.absolutePathStr}")
         if (original.isExisting) {
-          try {
-            original.copyTo(tempSession.absolutePathStr, WriteMode.CreateOnly)
-          } catch {
-            case e: Throwable =>
-              abort(e.getMessage)
-          }
+          //        println(s"real snapshot: ${delegate.absolutePathStr}")
+          original.copyTo(tempSession.absolutePathStr, WriteMode.CreateOnly)
+        } else {
+          //          println(s"dir only: ${TempFile.session.absolutePathStr}")
+          tempSession.output(WriteMode.CreateOnly)(_.stream)
+          tempSession.delete() // just leaving the directory
         }
       }
 
@@ -200,10 +175,13 @@ case class Snapshot(
 
     def checkIntegrity(): Unit = {
 
-      try {
+      val exists = tempDir.session.isExisting
+
+      if (exists) {
 
         // ensure that all snapshots in it are either obsolete or have a later create time
 
+        // ensure that all snapshots in it are obsolete
         val existingTempFiles = tempDir.session.input(in => in.children)
         val notExpired = expire.filter(existingTempFiles)
         val notExpiredOrSelf = notExpired.filter { session =>
@@ -232,12 +210,13 @@ case class Snapshot(
         //            println("")
         //          }
         }
-      } catch {
+      } else {
 
-        case e: Throwable =>
-          abort(
-            e.getMessage
-          )
+        abort(
+          s"""
+             |snapshot directory has been deleted
+             |""".stripMargin
+        )
       }
 
       Thread.sleep(10)
@@ -266,7 +245,7 @@ case class Snapshot(
 
     override def moveTo(target: String): Unit = {
 
-      needCopiedFile()
+      needOriginalFile()
 
       tempSession.moveTo(target)
       tempFileModified = true
@@ -274,7 +253,7 @@ case class Snapshot(
 
     override def input[T](fn: InputResource => T): T = {
 
-      needCopiedFile()
+      needOriginalFile()
 
       tempSession.input(fn)
     }
@@ -289,7 +268,7 @@ case class Snapshot(
           }
           result.get
         case WriteMode.Append =>
-          needCopiedFile()
+          needOriginalFile()
 
           tempSession.output(mode)(fn)
       }
@@ -300,29 +279,39 @@ case class Snapshot(
     }
   }
 
-  protected def checkAllSnapshotsExpired(): Unit = {
+  def acquireSession(): LazySnapshotSession = {
 
-    // ensure that all snapshots in it are obsolete
-    val existingTempFiles = tempDir.session.input { in =>
-      if (!in.isExisting) return // no need to check
+    requireNoExistingSnapshot()
 
-      if (!in.isDirectory)
+    LazySnapshotSession()
+  }
+
+  def requireNoExistingSnapshot(): Unit = {
+
+    val exists = tempDir.session.input { in =>
+      val result = in.isExisting
+      if (result && !in.isDirectory)
         abort(
           s"""
-               |snapshot directory should not be a file:
-               |${tempDir.session}
-               |""".stripMargin
+             |snapshot directory should not be a file:
+             |${tempDir.session}
+             |""".stripMargin
         )
-      in.children
+      result
     }
-    val notExpired = expire.filter(existingTempFiles)
 
-    notExpired.foreach { ff =>
-      val elapsedOpt = expire.checkSession(ff)
-      elapsedOpt.foreach { v =>
-        abort(
-          s"another snapshot file '${ff.absolutePathStr}' has existed for ${v.elapsedMillis} milliseconds"
-        )
+    if (exists) {
+      // ensure that all snapshots in it are obsolete
+      val existingTempFiles = tempDir.session.input(in => in.children)
+      val notExpired = expire.filter(existingTempFiles)
+
+      notExpired.foreach { ff =>
+        val elapsedOpt = expire.checkSession(ff)
+        elapsedOpt.foreach { v =>
+          abort(
+            s"another snapshot file '${ff.absolutePathStr}' has existed for ${v.elapsedMillis} milliseconds"
+          )
+        }
       }
     }
   }
@@ -347,11 +336,11 @@ object Snapshot {
 
   val acquired: CachingUtils.ConcurrentMap[URIResolver#URISession, Long] = CachingUtils.ConcurrentMap()
 
-  final val DIR: String = ".lock"
+  final val SUFFIX: String = ".lock"
 
-  final val MASTER: String = ".master"
+  final val OLD_SUFFIX: String = ".old"
 
-  final val OLD: String = ".old"
+  final val CREATED: String = ".created"
 
   object IntegritySignature {
     case class V(

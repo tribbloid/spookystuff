@@ -376,7 +376,7 @@ abstract class AbstractURIResolverSuite extends FunSpecx with LocalPathDocsFixtu
             val src = resolver
               .newSession(pathStr + s"${Random.nextInt()}")
 
-            src.touch()
+            src.createNew()
             src.moveTo(pathStr)
 
             val r1 = ss.get()
@@ -412,7 +412,7 @@ abstract class AbstractURIResolverSuite extends FunSpecx with LocalPathDocsFixtu
           Retry.FixedInterval(n = 30, interval = 1000, silent = true) {
             resolver
               .newSession(pathStr)
-              .touch()
+              .createNew()
 
             val r1 = ss.get()
             Thread.sleep(Random.nextInt(10))
@@ -488,7 +488,7 @@ abstract class AbstractURIResolverSuite extends FunSpecx with LocalPathDocsFixtu
           val resolver: URIResolver = this.resolver
 
           rdd.foreach { _ =>
-            val lock = Lock(resolver.newSession(url))
+            val lock = resolver.lock(url)
             lock.during { session =>
               val bytes: Array[Byte] = session.input { in =>
                 if (in.isExisting) IOUtils.toByteArray(in.stream)

@@ -4,7 +4,7 @@ import java.nio.file.FileAlreadyExistsException
 import java.util.UUID
 
 import com.tribbloids.spookystuff.utils.lifespan.{Lifespan, LocalCleanable}
-import com.tribbloids.spookystuff.utils.{CachingUtils, CommonUtils, NoRetry}
+import com.tribbloids.spookystuff.utils.{CachingUtils, NoRetry}
 import org.slf4j.LoggerFactory
 
 /**
@@ -13,7 +13,8 @@ import org.slf4j.LoggerFactory
   */
 @Deprecated
 case class Lock(
-    original: URIResolver#URISession,
+    resolver: URIResolver,
+    pathStr: String,
     expire: Obsolescence = URIResolver.default.expire,
     override val _lifespan: Lifespan = Lifespan.JVM()
 ) extends LocalCleanable {
@@ -22,11 +23,12 @@ case class Lock(
 
   @volatile var acquiredTimestamp: Long = -1
 
+  def getOriginal: resolver.URISession = resolver.newSession(pathStr)
+  lazy val original: resolver.URISession = getOriginal
+
 //  override def cleanableLogFunction(logger: Logger): String => Unit = logger.info
 
-  val resolver: URIResolver = original.outer
-
-  case object ByLockFile {
+  private case object ByLockFile {
 
     val session: resolver.URISession = resolver.newSession(original.absolutePathStr + LOCK)
 
@@ -146,37 +148,47 @@ case class Lock(
 
     lazy val movedPathStr: String = {
 
-      val name = UUID.randomUUID().toString
-      val path = CommonUtils./:/(ByLockFile.session.absolutePathStr, name)
+      val rnd = UUID.randomUUID().toString
+//      val path = original.absolutePathStr + s".$rnd" + LOCK
+      val path = original.absolutePathStr + LOCK
       path
     }
 
-    val session: resolver.URISession = resolver.newSession(movedPathStr)
+    def moved: resolver.URISession = resolver.newSession(movedPathStr)
 
-    def acquire(): String = {
+    def acquire(): Unit = {
 
-      val oldSize = original.input { in =>
-        in.getLength
-      }
-
-      original.moveTo(session.absolutePathStr)
-
-      val newSize = session.input { in =>
-        in.getLength
-      }
-
-      assert(newSize == oldSize, s"cannot acquire, copy failed: newSize: $newSize oldSize: $oldSize")
-
-      logAcquire(session)
-
-      session.absolutePathStr
+      val moved = this.moved
+      getOriginal.moveTo(moved.absolutePathStr)
+      logAcquire(moved)
+      moved.clean()
     }
 
     def release(): Unit = {
 
-      logRelease(session)
+      val moved = this.moved
+      logRelease(moved)
+      moved.moveTo(original.absolutePathStr)
+      moved.clean()
+    }
 
-      session.moveTo(original.absolutePathStr)
+    def duringOnce[T](fn: URISession => T): T = {
+      acquire()
+      try {
+        fn(getOriginal)
+      } catch {
+        case e: ResourceLockError => throw e
+        case e @ _                => throw NoRetry(e)
+      } finally {
+
+        release()
+      }
+    }
+
+    def during[T](fn: URISession => T): T = {
+      resolver.retry {
+        during(fn)
+      }
     }
   }
 
@@ -189,7 +201,8 @@ case class Lock(
     */
   override protected def cleanImpl(): Unit = {
 
-    ByLockFile.release()
+//    ByLockFile.release()
+    ByMoving.release()
   }
 
   def logAcquire(execution: URIResolver#URISession): Unit = {
