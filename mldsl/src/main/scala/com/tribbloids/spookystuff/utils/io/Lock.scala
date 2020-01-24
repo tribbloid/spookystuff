@@ -187,13 +187,13 @@ case class Lock(
 
     def during[T](fn: URISession => T): T = {
       resolver.retry {
-        during(fn)
+        duringOnce(fn)
       }
     }
   }
 
   def during[T](fn: URISession => T): T = {
-    ByLockFile.during(fn)
+    ByMoving.during(fn)
   }
 
   /**e
