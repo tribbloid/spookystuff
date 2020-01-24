@@ -70,7 +70,7 @@ case class Snapshot(
       fn(snapshotSession)
     } catch {
       case e: ResourceLockError => throw e
-      case e @ _                => throw new NoRetry.BypassedException(e)
+      case e @ _                => throw NoRetry(e)
     }
 
     snapshotSession.commitBack() // point of no return
@@ -175,9 +175,7 @@ case class Snapshot(
 
     def checkIntegrity(): Unit = {
 
-      val exists = tempDir.session.isExisting
-
-      if (exists) {
+      try {
 
         // ensure that all snapshots in it are either obsolete or have a later create time
 
@@ -210,13 +208,9 @@ case class Snapshot(
         //            println("")
         //          }
         }
-      } else {
-
-        abort(
-          s"""
-             |snapshot directory has been deleted
-             |""".stripMargin
-        )
+      } catch {
+        case e: Throwable =>
+          abort(e.getMessage)
       }
 
       Thread.sleep(10)
