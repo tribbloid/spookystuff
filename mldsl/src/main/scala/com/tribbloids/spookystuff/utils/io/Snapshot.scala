@@ -275,37 +275,34 @@ case class Snapshot(
 
   def acquireSession(): LazySnapshotSession = {
 
-    requireNoExistingSnapshot()
+    checkAllSnapshotsExpired()
 
     LazySnapshotSession()
   }
 
-  def requireNoExistingSnapshot(): Unit = {
+  def checkAllSnapshotsExpired(): Unit = {
 
-    val exists = tempDir.session.input { in =>
-      val result = in.isExisting
-      if (result && !in.isDirectory)
+    // ensure that all snapshots in it are obsolete
+    val existingTempFiles = tempDir.session.input { in =>
+      if (!in.isExisting) return // no need to check
+
+      if (!in.isDirectory)
         abort(
           s"""
              |snapshot directory should not be a file:
              |${tempDir.session}
              |""".stripMargin
         )
-      result
+      in.children
     }
+    val notExpired = expire.filter(existingTempFiles)
 
-    if (exists) {
-      // ensure that all snapshots in it are obsolete
-      val existingTempFiles = tempDir.session.input(in => in.children)
-      val notExpired = expire.filter(existingTempFiles)
-
-      notExpired.foreach { ff =>
-        val elapsedOpt = expire.checkSession(ff)
-        elapsedOpt.foreach { v =>
-          abort(
-            s"another snapshot file '${ff.absolutePathStr}' has existed for ${v.elapsedMillis} milliseconds"
-          )
-        }
+    notExpired.foreach { ff =>
+      val elapsedOpt = expire.checkSession(ff)
+      elapsedOpt.foreach { v =>
+        abort(
+          s"another snapshot file '${ff.absolutePathStr}' has existed for ${v.elapsedMillis} milliseconds"
+        )
       }
     }
   }
