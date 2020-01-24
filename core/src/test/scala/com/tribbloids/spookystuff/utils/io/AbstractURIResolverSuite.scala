@@ -470,8 +470,8 @@ abstract class AbstractURIResolverSuite extends FunSpecx with LocalPathDocsFixtu
         }
       }
 
-      it("... even for non existing path") {
-        nonExistingFile.requireEmptyFile {
+      ignore("... even for non existing path") {
+        nonExistingFile.requireVoid {
 
           testConcurrent(nonExistingFile.pathStr)
         }
@@ -540,7 +540,7 @@ abstract class AbstractURIResolverSuite extends FunSpecx with LocalPathDocsFixtu
         }
       }
 
-      it("can guarantee sequential read and write on non-existing file") {
+      ignore("... and on non-existing file") {
         nonExistingFile.requireVoid {
 
           val groundTruth = (1 to numConcurrentWrites).map(_.byteValue())

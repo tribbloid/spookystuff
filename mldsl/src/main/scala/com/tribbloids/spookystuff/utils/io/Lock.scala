@@ -149,19 +149,19 @@ case class Lock(
     lazy val movedPathStr: String = {
 
       val rnd = UUID.randomUUID().toString
-//      val path = original.absolutePathStr + s".$rnd" + LOCK
-      val path = original.absolutePathStr + LOCK
+      val path = original.absolutePathStr + s".$rnd" + LOCK
+//      val path = original.absolutePathStr + LOCK
       path
     }
 
-    def moved: resolver.URISession = resolver.newSession(movedPathStr)
+    lazy val moved: resolver.URISession = resolver.newSession(movedPathStr)
 
     def acquire(): Unit = {
 
       val moved = this.moved
-      getOriginal.moveTo(moved.absolutePathStr)
+      original.moveTo(moved.absolutePathStr)
       logAcquire(moved)
-      moved.clean()
+//      moved.clean()
     }
 
     def release(): Unit = {
@@ -169,13 +169,13 @@ case class Lock(
       val moved = this.moved
       logRelease(moved)
       moved.moveTo(original.absolutePathStr)
-      moved.clean()
+//      moved.clean()
     }
 
     def duringOnce[T](fn: URISession => T): T = {
       acquire()
       try {
-        fn(getOriginal)
+        fn(moved)
       } catch {
         case e: ResourceLockError => throw e
         case e @ _                => throw NoRetry(e)
