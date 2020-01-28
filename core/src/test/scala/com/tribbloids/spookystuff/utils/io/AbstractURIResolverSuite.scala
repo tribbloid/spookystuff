@@ -338,7 +338,7 @@ abstract class AbstractURIResolverSuite extends FunSpecx with LocalPathDocsFixtu
       val ss = Semaphore(sc)
       val errors = rdd
         .map { i =>
-          Retry.FixedInterval(n = 30, interval = 1000, silent = true) {
+          resolver.retry {
             resolver
               .newSession(pathStr)
               .moveTo(pathStr + ".moved")
@@ -372,7 +372,7 @@ abstract class AbstractURIResolverSuite extends FunSpecx with LocalPathDocsFixtu
       val ss = Semaphore(sc)
       val errors = rdd
         .map { i =>
-          Retry.FixedInterval(n = 30, interval = 1000, silent = true) {
+          resolver.retry {
             val src = resolver
               .newSession(pathStr + s"${Random.nextInt()}")
 
@@ -409,7 +409,7 @@ abstract class AbstractURIResolverSuite extends FunSpecx with LocalPathDocsFixtu
       val ss = Semaphore(sc)
       val errors = rdd
         .map { i =>
-          Retry.FixedInterval(n = 30, interval = 1000, silent = true) {
+          resolver.retry {
             resolver
               .newSession(pathStr)
               .createNew()
