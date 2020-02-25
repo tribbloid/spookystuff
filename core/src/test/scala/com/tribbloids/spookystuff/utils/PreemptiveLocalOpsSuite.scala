@@ -6,10 +6,10 @@ import org.scalatest.FunSpec
 
 import scala.language.implicitConversions
 
-class ToLocalIteratorPreemptivelySuite extends FunSpec {
+class PreemptiveLocalOpsSuite extends FunSpec {
 
   import SpookyViews._
-  import ToLocalIteratorPreemptivelySuite._
+  import PreemptiveLocalOpsSuite._
 
   val sc: SparkContext = TestHelper.TestSC
 
@@ -37,7 +37,7 @@ class ToLocalIteratorPreemptivelySuite extends FunSpec {
 
       val capacity = 4
       val (r2, t2) = timed {
-        slowRDD.toLocalIteratorPreemptively(capacity).toList
+        PreemptiveLocalOps(capacity).ForRDD(slowRDD).toLocalIterator.toList
       }
 
       assert(r1 == r2)
@@ -50,7 +50,7 @@ class ToLocalIteratorPreemptivelySuite extends FunSpec {
   }
 }
 
-object ToLocalIteratorPreemptivelySuite {
+object PreemptiveLocalOpsSuite {
 
   def timed[T](fn: => T): (T, Long) = {
     val startTime = System.currentTimeMillis()

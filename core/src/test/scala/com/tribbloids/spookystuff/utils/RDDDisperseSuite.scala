@@ -13,8 +13,6 @@ import scala.util.Random
 
 class RDDDisperseSuite extends SpookyEnvFixture.DescribeJobs with HasEager {
 
-  import SpookyViews._
-
   implicit val concurrentCtx: ExecutionContextExecutor = ExecutionContext.global
 
   object Consts {
@@ -78,7 +76,10 @@ class RDDDisperseSuite extends SpookyEnvFixture.DescribeJobs with HasEager {
     val lists: Seq[(String, List[Int])] = Seq(
       "collect" -> rdd.collect().toList,
       "toLocalIterator" -> rdd.toLocalIterator.toList,
-      "toLocalIteratorPreemptively" -> rdd.toLocalIteratorPreemptively(CommonUtils.numLocalCores).toList
+      "toLocalIteratorPreemptively" -> PreemptiveLocalOps(CommonUtils.numLocalCores)
+        .ForRDD(rdd)
+        .toLocalIterator
+        .toList
     )
 
     lists.foreach {

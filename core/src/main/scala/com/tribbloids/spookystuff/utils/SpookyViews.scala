@@ -367,46 +367,6 @@ abstract class SpookyViews extends CommonViews {
         result
       }
     }
-
-    def _toLocalIteratorPreemptively(capacity: Int)(
-        implicit exeCtx: ExecutionContext = PartitionExecution.exeCtx
-    ): Iterator[Array[T]] = SparkHelper.withScope(sc) {
-      val executions = self.partitions.indices.map { ii =>
-        PartitionExecution(self, ii)
-      }
-
-      val buffer = new ArrayBlockingQueue[Try[PartitionExecution[T]]](capacity)
-
-      val p = SparkLocalProperties(self.sparkContext)
-
-      Future {
-
-        self.sparkContext.setJobGroup(p.groupID, p.description)
-
-        sc.withJob("toLocalIteratorPreemptively") {
-
-          executions.foreach { exe =>
-            buffer.put(Success(exe)) // may be blocking due to capacity
-            exe.eager // non-blocking
-          }
-        }
-      }.onFailure {
-        case e: Throwable =>
-          buffer.put(Failure(e))
-      }
-
-      self.partitions.indices.toIterator.map { _ =>
-        val exe = buffer.take().get
-        exe.AsArray.get
-      }
-    }
-
-    def toLocalIteratorPreemptively(capacity: Int)(
-        implicit exeCtx: ExecutionContext = PartitionExecution.exeCtx
-    ): Iterator[T] = {
-
-      _toLocalIteratorPreemptively(capacity).flatten
-    }
   }
 
   implicit class StringRDDView(val self: RDD[String]) {
