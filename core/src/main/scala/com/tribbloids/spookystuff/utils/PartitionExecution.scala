@@ -14,7 +14,7 @@ case class PartitionExecution[T](
     partitionID: Int // TODO: should be plural?
 ) {
 
-  implicit def classTag: ClassTag[T] = SparkHelper.rddClassTag(rdd)
+  implicit val classTag: ClassTag[T] = SparkHelper.rddClassTag(rdd)
 
   lazy val partition: Partition = rdd.partitions(partitionID)
 
