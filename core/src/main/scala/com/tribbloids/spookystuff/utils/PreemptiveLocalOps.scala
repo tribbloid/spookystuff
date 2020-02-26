@@ -46,7 +46,7 @@ case class PreemptiveLocalOps(capacity: Int)(
           buffer.put(Failure(e))
       }
 
-      partitionExes.indices.toIterator.map { _ =>
+      partitionExes.toIterator.map { _ =>
         val exe = buffer.take().get
         exe.AsArray.get
       }
@@ -62,7 +62,7 @@ case class PreemptiveLocalOps(capacity: Int)(
 
     override lazy val partitionExes: Stream[PartitionExecution[T]] = {
 
-      self.partitions.indices.toStream.map { i =>
+      self.partitions.map(_.index).toStream.map { i =>
         PartitionExecution[T](self, i)
       }
     }
