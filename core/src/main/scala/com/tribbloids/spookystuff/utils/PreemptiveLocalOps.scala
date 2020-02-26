@@ -24,7 +24,7 @@ case class PreemptiveLocalOps(capacity: Int)(
 
     lazy val sc: SparkContext = partitionExes.head.rdd.sparkContext
 
-    protected def _localIterator: Iterator[Array[T]] = SparkHelper.withScope(sc) {
+    def toLocalPartitionIterator: Iterator[Array[T]] = SparkHelper.withScope(sc) {
 
       val buffer = new ArrayBlockingQueue[Try[PartitionExecution[T]]](capacity)
 
@@ -54,7 +54,7 @@ case class PreemptiveLocalOps(capacity: Int)(
 
     def toLocalIterator: Iterator[T] = {
 
-      _localIterator.flatMap(v => v.iterator)
+      toLocalPartitionIterator.flatMap(v => v.iterator)
     }
   }
 
