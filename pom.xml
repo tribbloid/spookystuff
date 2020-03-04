@@ -63,7 +63,7 @@
     <protobuf.version>2.5.0</protobuf.version>
 
     <cxf.version>3.0.16</cxf.version>
-    <jackson.version>2.9.10</jackson.version>
+    <jackson.version>2.10.3</jackson.version>
 
 <!--    <jmh.version>1.21</jmh.version>-->
 
