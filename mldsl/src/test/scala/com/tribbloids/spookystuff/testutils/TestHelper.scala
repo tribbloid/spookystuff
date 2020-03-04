@@ -14,7 +14,7 @@ import org.slf4j.LoggerFactory
 import scala.reflect.ClassTag
 import scala.util.{Failure, Success, Try}
 
-class TestHelper() extends LocalCleanable {
+abstract class TestHelper extends LocalCleanable {
 
   val properties = new Properties()
 
@@ -63,6 +63,12 @@ class TestHelper() extends LocalCleanable {
     cleanBeforeAndAfterLifespan()
   }
 
+  @volatile var _waitBeforeExitDuration: Long = -1
+
+  def waitBeforeExit(duration: Long): Unit = {
+    _waitBeforeExitDuration = duration
+  }
+
   override def cleanImpl(): Unit = {
 
     if (sparkSessionInitialised) {
@@ -88,6 +94,12 @@ class TestHelper() extends LocalCleanable {
     }
 
     cleanBeforeAndAfterLifespan()
+
+    if (_waitBeforeExitDuration> 0) {
+      println(s"TEST FINISHED, waiting for ${_waitBeforeExitDuration}ms before termination ... (or you can terminate the process manually)")
+
+      Thread.sleep(_waitBeforeExitDuration)
+    }
   }
 
   def cleanBeforeAndAfterLifespan(): Unit = {
@@ -391,4 +403,6 @@ class TestHelper() extends LocalCleanable {
   }
 }
 
-object TestHelper extends TestHelper() {}
+object TestHelper extends TestHelper() {
+
+}

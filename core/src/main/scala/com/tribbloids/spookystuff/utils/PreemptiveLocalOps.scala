@@ -34,12 +34,14 @@ case class PreemptiveLocalOps(capacity: Int)(
 
         sc.setJobGroup(p.groupID, p.description)
 
-        sc.withJob(PreemptiveLocalOps.this.toString) {
+        partitionExes.zipWithIndex.foreach {
+          case (exe, ii) =>
+            val jobText = s"${PreemptiveLocalOps.this.toString} - $ii"
 
-          partitionExes.foreach { exe =>
-            buffer.put(Success(exe)) // may be blocking due to capacity
-            exe.AsArray.start // non-blocking
-          }
+            sc.withJob(jobText) {
+              buffer.put(Success(exe)) // may be blocking due to capacity
+              exe.AsArray.start // non-blocking
+            }
         }
       }.onFailure {
         case e: Throwable =>
