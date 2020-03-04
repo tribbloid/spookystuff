@@ -71,6 +71,14 @@ abstract class TestHelper extends LocalCleanable {
 
   override def cleanImpl(): Unit = {
 
+    if (_waitBeforeExitDuration > 0) {
+      println(
+        s"TEST FINISHED, waiting for ${_waitBeforeExitDuration}ms before termination ... (or you can terminate the process manually)"
+      )
+
+      Thread.sleep(_waitBeforeExitDuration)
+    }
+
     if (sparkSessionInitialised) {
 
       println("=============== Stopping Test Spark Context ==============")
@@ -95,11 +103,6 @@ abstract class TestHelper extends LocalCleanable {
 
     cleanBeforeAndAfterLifespan()
 
-    if (_waitBeforeExitDuration> 0) {
-      println(s"TEST FINISHED, waiting for ${_waitBeforeExitDuration}ms before termination ... (or you can terminate the process manually)")
-
-      Thread.sleep(_waitBeforeExitDuration)
-    }
   }
 
   def cleanBeforeAndAfterLifespan(): Unit = {
@@ -403,6 +406,4 @@ abstract class TestHelper extends LocalCleanable {
   }
 }
 
-object TestHelper extends TestHelper() {
-
-}
+object TestHelper extends TestHelper() {}
