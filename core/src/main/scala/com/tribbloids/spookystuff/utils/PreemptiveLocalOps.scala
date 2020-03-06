@@ -22,7 +22,7 @@ case class PreemptiveLocalOps(capacity: Int)(
 
     lazy val partitions: Stream[Partition] = partitionExes.map(_.partition)
 
-    lazy val sc: SparkContext = partitionExes.head.rdd.sparkContext
+    def sc: SparkContext
 
     def toLocalPartitionIterator: Iterator[Array[T]] = SparkHelper.withScope(sc) {
 
@@ -62,6 +62,8 @@ case class PreemptiveLocalOps(capacity: Int)(
 
   case class ForRDD[T](self: RDD[T]) extends Impl[T] {
 
+    def sc: SparkContext = self.sparkContext
+
     override lazy val partitionExes: Stream[PartitionExecution[T]] = {
 
       self.partitions.map(_.index).toStream.map { i =>
@@ -71,6 +73,8 @@ case class PreemptiveLocalOps(capacity: Int)(
   }
 
   case class ForDataset[T](self: Dataset[T]) extends Impl[T] {
+
+    def sc: SparkContext = self.sparkSession.sparkContext
 
     lazy val delegate: ForRDD[T] = ForRDD(self.rdd)
 
