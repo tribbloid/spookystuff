@@ -3,7 +3,7 @@ package com.tribbloids.spookystuff.session
 import java.io.File
 import java.util.regex.Pattern
 
-import com.tribbloids.spookystuff.utils.lifespan.{Lifespan, LocalCleanable}
+import com.tribbloids.spookystuff.utils.lifespan.Lifespan
 import com.tribbloids.spookystuff.utils.{CommonUtils, Silent, SpookyUtils}
 import com.tribbloids.spookystuff.{PyException, PyInterpretationException, SpookyContext}
 import org.apache.commons.io.FileUtils
@@ -100,7 +100,7 @@ class PythonDriver(
                       |import os
                       |from __future__ import print_function
                     """.trim.stripMargin,
-    override val _lifespan: Lifespan = new Lifespan.TaskOrJVM()
+    override val _lifespan: Lifespan = Lifespan.TaskOrJVM()
 ) extends PythonProcess(pythonExe)
     with Driver {
 
@@ -117,7 +117,7 @@ class PythonDriver(
 
   import PythonDriver._
 
-  def historyCodeOpt = {
+  def historyCodeOpt: Option[String] = {
     if (this.historyLines.isEmpty) None
     else {
       val combined = "\n" + this.historyLines.mkString("\n").stripPrefix("\n")
@@ -174,7 +174,7 @@ class PythonDriver(
     )
   }
 
-  def closeOrInterrupt() = {
+  def closeOrInterrupt(): Unit = {
     Try(this.closeProcess())
       .getOrElse(this.interrupt())
   }
@@ -185,7 +185,7 @@ class PythonDriver(
     str.stripPrefix("\r").replaceAll(PROMPTS, "")
   }
 
-  override def logPyOutput(line: String) = {
+  override def logPyOutput(line: String): String = {
     val effectiveLine = removePrompts(line)
     s"$logPrefix $effectiveLine"
   }

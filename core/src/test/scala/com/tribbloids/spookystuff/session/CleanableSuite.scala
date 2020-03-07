@@ -51,6 +51,17 @@ class CleanableSuite extends SpookyEnvFixture {
     }
   }
 
+  it("Lifespan.SparkApp is serializable") {
+
+    AssertSerializable(Lifespan.SparkApp())
+    intercept[SparkException] {
+      sc.uuidSeed().foreach { _ =>
+        val lifespan = Lifespan.SparkApp()
+        AssertSerializable(lifespan)
+      }
+    }
+  }
+
   it("Lifespan._id should be updated after being shipped to a different executor") {
 
     val rdd = sc.uuidSeed().mapOncePerCore { _ =>

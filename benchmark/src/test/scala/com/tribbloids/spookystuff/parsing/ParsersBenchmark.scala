@@ -4,11 +4,13 @@ import com.tribbloids.spookystuff.testutils.FunSpecx
 import com.tribbloids.spookystuff.utils.{InterleavedIterator, Interpolation}
 import fastparse.internal.Logger
 import org.apache.spark.BenchmarkHelper
+import org.scalatest.Ignore
 import org.slf4j.LoggerFactory
 
 import scala.collection.mutable.ArrayBuffer
 import scala.util.Random
 
+@Ignore //TODO: enable!
 class ParsersBenchmark extends FunSpecx {
 
   import com.tribbloids.spookystuff.parsing.ParsersBenchmark._

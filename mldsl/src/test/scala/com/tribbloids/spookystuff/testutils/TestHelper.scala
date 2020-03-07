@@ -63,21 +63,7 @@ abstract class TestHelper extends LocalCleanable {
     cleanBeforeAndAfterLifespan()
   }
 
-  @volatile var _waitBeforeExitDuration: Long = -1
-
-  def waitBeforeExit(duration: Long): Unit = {
-    _waitBeforeExitDuration = duration
-  }
-
   override def cleanImpl(): Unit = {
-
-    if (_waitBeforeExitDuration > 0) {
-      println(
-        s"TEST FINISHED, waiting for ${_waitBeforeExitDuration}ms before termination ... (or you can terminate the process manually)"
-      )
-
-      Thread.sleep(_waitBeforeExitDuration)
-    }
 
     if (sparkSessionInitialised) {
 

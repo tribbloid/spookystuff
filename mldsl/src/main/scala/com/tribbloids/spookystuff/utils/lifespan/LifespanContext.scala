@@ -21,7 +21,7 @@ case class LifespanContext(
   val threadID: Long = thread.getId
   val stageID: Option[Int] = taskOpt.map(_.stageId())
 
-  @transient lazy val _sparkEnvOpt = Option(SparkEnv.get)
+  @transient lazy val _sparkEnvOpt: Option[SparkEnv] = Option(SparkEnv.get)
 
   val blockManagerID: Option[BlockManagerId] = _sparkEnvOpt.map(_.blockManager.blockManagerId)
   val executorID: Option[String] = _sparkEnvOpt.map(_.executorId)
@@ -55,7 +55,7 @@ case class LifespanContext(
 
   val taskLocationStr: Option[String] = CommonUtils.taskLocationStrOpt
 
-  override def toString =
+  override def toString: String =
     if (taskStr.isEmpty || threadStr.contains(taskStr)) {
       threadStr
     } else {
