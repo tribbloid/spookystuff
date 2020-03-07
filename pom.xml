@@ -111,6 +111,15 @@
     </profile>
 
     <profile>
+      <id>spark-2.4-cloudera2</id>
+
+      <properties>
+        <spark.version>2.4.0.cloudera2</spark.version>
+        <version.suffix>.cloudera2</version.suffix>
+      </properties>
+    </profile>
+
+    <profile>
       <id>scala-2.12</id>
 
       <properties>
