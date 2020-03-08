@@ -1,6 +1,7 @@
 package com.tribbloids.spookystuff.utils.lifespan
 
 import com.tribbloids.spookystuff.utils.IDMixin
+import org.apache.spark.SparkContext
 import org.apache.spark.scheduler.{SparkListener, SparkListenerApplicationEnd}
 import org.apache.spark.sql.SparkSession
 
@@ -133,19 +134,18 @@ object Lifespan {
   object SparkApp extends LifespanType {
 
     {
-      val sc = SparkSession.active.sparkContext
       sc
     }
 
-    override def addCleanupHook(ctx: LifespanContext, fn: () => Unit): Unit = {
-      try {
+    lazy val sc: SparkContext = SparkSession.active.sparkContext
 
-        SparkSession.active.sparkContext.addSparkListener(new Listener(fn))
-      }
+    override def addCleanupHook(ctx: LifespanContext, fn: () => Unit): Unit = {
+
+      sc.addSparkListener(new Listener(fn))
     }
 
     override def getCleanupBatchID(ctx: LifespanContext): Any = {
-      SparkSession.active.sparkContext.applicationId
+      sc.applicationId
     }
 
     class Listener(fn: () => Unit) extends SparkListener with Serializable {
