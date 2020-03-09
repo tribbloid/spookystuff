@@ -43,8 +43,9 @@
 
   <properties>
 
+    <revision.base>0.6.1</revision.base>
     <!--    https://maven.apache.org/maven-ci-friendly.html-->
-    <revision>0.6.1-SNAPSHOT</revision>
+    <revision>${revision.base}-SNAPSHOT</revision>
 
     <project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
     <project.reporting.outputEncoding>UTF-8</project.reporting.outputEncoding>
@@ -78,7 +79,7 @@
       <!--      experimental, attach scala version to artifact version-->
       <!--      TODO: canonical way should be attaching scala version to artifact ID, but maven doesn't support it-->
       <properties>
-        <revision>0.6.0_${scala.binary.version}${version.suffix}-SNAPSHOT</revision>
+        <revision>${revision.base}_${scala.binary.version}${version.suffix}-SNAPSHOT</revision>
       </properties>
     </profile>
 
