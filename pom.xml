@@ -111,6 +111,15 @@
     </profile>
 
     <profile>
+      <id>spark-2.4-cloudera2</id>
+
+      <properties>
+        <spark.version>2.4.0.cloudera2</spark.version>
+        <version.suffix>.cloudera2</version.suffix>
+      </properties>
+    </profile>
+
+    <profile>
       <id>scala-2.12</id>
 
       <properties>
@@ -222,6 +231,10 @@
     <!--<url>https://maven.oracle.com</url>-->
     <!--<layout>default</layout>-->
     <!--</repository>-->
+    <repository>
+      <id>cloudera</id>
+      <url>https://repository.cloudera.com/artifactory/cloudera-repos/</url>
+    </repository>
   </repositories>
 
   <pluginRepositories>
@@ -854,7 +867,7 @@
             <configuration>
               <rules>
                 <requireActiveProfile>
-                  <profiles>spark-2.2,spark-2.3,spark-2.4</profiles>
+                  <profiles>spark-2.2,spark-2.3,spark-2.4,spark-2.4-cloudera2</profiles>
                   <all>false</all>
                 </requireActiveProfile>
 <!--                TODO: use custom rules-->
@@ -888,6 +901,7 @@
       <id>ossrh</id>
       <url>https://oss.sonatype.org/content/repositories/snapshots</url>
     </snapshotRepository>
+
   </distributionManagement>
 
 </project>
