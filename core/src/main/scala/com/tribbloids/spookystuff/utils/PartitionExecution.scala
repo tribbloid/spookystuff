@@ -11,7 +11,8 @@ import scala.reflect.ClassTag
 
 case class PartitionExecution[T](
     @transient rdd: RDD[T],
-    partitionID: Int // TODO: should be plural?
+    partitionID: Int, // TODO: should be plural?
+    jobTextOvrd: Option[String] = None
 ) {
 
   implicit val classTag: ClassTag[T] = SparkHelper.rddClassTag(rdd)

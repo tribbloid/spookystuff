@@ -18,9 +18,9 @@ case class PreemptiveLocalOps(capacity: Int)(
 
   trait Impl[T] {
 
-    def partitionExes: Stream[PartitionExecution[T]]
+    def partitionExes: Seq[PartitionExecution[T]]
 
-    lazy val partitions: Stream[Partition] = partitionExes.map(_.partition)
+    lazy val partitions: Seq[Partition] = partitionExes.map(_.partition)
 
     def sc: SparkContext
 
@@ -36,7 +36,9 @@ case class PreemptiveLocalOps(capacity: Int)(
 
         partitionExes.zipWithIndex.foreach {
           case (exe, ii) =>
-            val jobText = s"${PreemptiveLocalOps.this.toString} - $ii"
+            val jobText = exe.jobTextOvrd.getOrElse(
+              s"$ii (preemptive)"
+            )
 
             sc.withJob(jobText) {
               buffer.put(Success(exe)) // may be blocking due to capacity
@@ -64,9 +66,9 @@ case class PreemptiveLocalOps(capacity: Int)(
 
     def sc: SparkContext = self.sparkContext
 
-    override lazy val partitionExes: Stream[PartitionExecution[T]] = {
+    override lazy val partitionExes: Seq[PartitionExecution[T]] = {
 
-      self.partitions.map(_.index).toStream.map { i =>
+      self.partitions.toSeq.map(_.index).map { i =>
         PartitionExecution[T](self, i)
       }
     }
@@ -78,7 +80,7 @@ case class PreemptiveLocalOps(capacity: Int)(
 
     lazy val delegate: ForRDD[T] = ForRDD(self.rdd)
 
-    override def partitionExes: Stream[PartitionExecution[T]] = delegate.partitionExes
+    override def partitionExes: Seq[PartitionExecution[T]] = delegate.partitionExes
   }
 
 }

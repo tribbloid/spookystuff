@@ -167,6 +167,23 @@ abstract class SpookyViews extends CommonViews {
       }
     }
 
+    def blockUntilKill(timeMillis: Long): Try[Array[(Int, Int)]] = {
+
+      withJob(s"⛔ Blocking for ${timeMillis}ms! This job can be killed to proceed ⛔") {
+
+        Try {
+          self
+            .seed(Seq(0), Some(1))
+            .map { v =>
+              Thread.sleep(timeMillis)
+              v
+            }
+            .collect()
+        }
+      }
+
+    }
+
     //TODO: remove! not useful
     //    def allExecutorCoreIDs = {
     //      mapAtLeastOncePerExecutorCore {
