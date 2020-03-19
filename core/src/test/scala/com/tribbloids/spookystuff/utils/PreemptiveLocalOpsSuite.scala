@@ -9,7 +9,6 @@ import scala.language.implicitConversions
 class PreemptiveLocalOpsSuite extends FunSpec {
 
   import SpookyViews._
-  import PreemptiveLocalOpsSuite._
 
   val sc: SparkContext = TestHelper.TestSC
 
@@ -25,18 +24,18 @@ class PreemptiveLocalOpsSuite extends FunSpec {
         v
       }
 
-      val (r0, t0) = timed {
+      val (r0, t0) = CommonUtils.timed {
         val jbiid = sc.getLocalProperty("spark.jobGroup.id")
 
         slowRDD.collect().toList
       }
 
-      val (r1, t1) = timed {
+      val (r1, t1) = CommonUtils.timed {
         slowRDD.toLocalIterator.toList
       }
 
       val capacity = 4
-      val (r2, t2) = timed {
+      val (r2, t2) = CommonUtils.timed {
         PreemptiveLocalOps(capacity).ForRDD(slowRDD).toLocalIterator.toList
       }
 
@@ -47,15 +46,5 @@ class PreemptiveLocalOpsSuite extends FunSpec {
     }
 
 //    Thread.sleep(10000000)
-  }
-}
-
-object PreemptiveLocalOpsSuite {
-
-  def timed[T](fn: => T): (T, Long) = {
-    val startTime = System.currentTimeMillis()
-    val result = fn
-    val endTime = System.currentTimeMillis()
-    (result, endTime - startTime)
   }
 }

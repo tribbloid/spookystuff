@@ -136,10 +136,10 @@ abstract class CommonUtils {
   }
 
   def timed[T](fn: => T): (T, Long) = {
-    val startTime = System.currentTimeMillis()
-    val result = fn
-    val endTime = System.currentTimeMillis()
-    (result, endTime - startTime)
+
+    Stopwatch() {
+      fn
+    }.exportAs(v => v.split)
   }
 
   def randomSuffix: Long = Math.abs(Random.nextLong())
