@@ -28,7 +28,7 @@ object Acc {
 
   implicit def unbox[T <: AccumulatorV2[_, _]](acc: Acc[T]): T = acc.self
 
-  trait CanBuildFrom[V0, T <: AccumulatorV2[_, _]] extends (V0 => T) {
+  trait CanBuildFrom[V0, T <: AccumulatorV2[_, _]] extends (V0 => T) with Serializable {
 
     def addNumber(self: T, v: Number): Unit
 

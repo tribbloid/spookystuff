@@ -1,5 +1,7 @@
 package com.tribbloids.spookystuff.metrics
 
+import java.lang.reflect.Modifier
+
 import org.apache.spark.ml.dsl.utils.NestedMap
 import org.apache.spark.ml.dsl.utils.refl.ReflectionUtils
 import org.apache.spark.util.AccumulatorV2
@@ -9,23 +11,54 @@ import scala.language.implicitConversions
 /**
   * Created by peng on 03/10/15.
   */
-object Metrics {}
+object Metrics {
+
+  abstract class HasExtraMembers extends Metrics {
+
+    override def symbol2children: List[(String, Any)] = {
+      val methods = this.getClass.getMethods.toList
+        .filter { method =>
+          val parameterMatch = method.getParameterCount == 0
+          val returnTypeMatch = classOf[MetricLike].isAssignableFrom(method.getReturnType)
+
+          returnTypeMatch && parameterMatch
+        }
+
+      val publicMethods = methods.filter { method =>
+        val mod = method.getModifiers
+        Modifier.isPublic(mod) && !Modifier.isStatic(mod)
+      }
+
+      val extra = publicMethods.flatMap { method =>
+        val value = method.invoke(this).asInstanceOf[MetricLike]
+        if (value == this) {
+          None
+        } else {
+          Some(method.getName -> value)
+        }
+
+      }
+
+      super.symbol2children ++ extra
+    }
+  }
+}
 
 @SerialVersionUID(-32509237409L)
 abstract class Metrics extends MetricLike {
 
 //  def sparkContext: SparkContext = SparkContext.getOrCreate()
 
-  @transient lazy val caseAccessorMapProto: List[(String, Any)] = ReflectionUtils.getCaseAccessorMap(this)
+  def symbol2children: List[(String, Any)] = ReflectionUtils.getCaseAccessorMap(this)
 
   /**
     * slow, should not be used too often
     */
-  def getCaseAccessorMap(useDisplayName: Boolean = true): List[(String, Any)] = {
+  final def namedChildren(useDisplayName: Boolean = true): List[(String, Any)] = {
 
-    if (!useDisplayName) caseAccessorMapProto
+    if (!useDisplayName) symbol2children
     else {
-      caseAccessorMapProto.map {
+      symbol2children.map {
         case (_, v: MetricLike) =>
           val name = v.displayName
           name -> v
@@ -52,8 +85,8 @@ abstract class Metrics extends MetricLike {
 
     def toNestedMap: NestedMap[T] = {
       val result = NestedMap[T]()
-      val caseAccessors = getCaseAccessorMap(useDisplayName)
-      caseAccessors.foreach {
+      val list = namedChildren(useDisplayName)
+      list.foreach {
         case (_name: String, acc: Acc[_]) =>
           fn(acc).foreach(v => result += _name -> Left(v))
 
