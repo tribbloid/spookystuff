@@ -12,15 +12,15 @@ class Lock(
 ) extends LocalCleanable {
 
   import Lock._
-  val resolver = execution.outer
+  val resolver: URIResolver = execution.outer
   import resolver._
 
-  lazy val lockPathStr = execution.absolutePathStr + SUFFIX
-  lazy val lockExecution = Execution(lockPathStr)
+  lazy val lockPathStr: String = execution.absolutePathStr + SUFFIX
+  lazy val lockExecution: resolver.Execution = Execution(lockPathStr)
 
   //  @volatile var _acquired = false
 
-  def acquire() = {
+  def acquire(): String = {
     assertUnlocked(true)
     execution.absolutePathStr
   }
@@ -38,7 +38,7 @@ class Lock(
   ): Unit = {
     var lockExpired = false
 
-    def processLocked(out: Resource[_], e: FileAlreadyExistsException) = {
+    def processLocked(out: Resource[_], e: FileAlreadyExistsException): Unit = {
       val lockedTime = out.getLastModified
       val lockedDuration = System.currentTimeMillis() - lockedTime
 
@@ -74,7 +74,7 @@ class Lock(
     }
   }
 
-  def release() = {
+  def release(): Unit = {
     lockExecution.remove(false)
   }
 

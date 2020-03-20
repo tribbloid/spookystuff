@@ -1,5 +1,6 @@
 package com.tribbloids.spookystuff.row
 
+import com.tribbloids.spookystuff.SpookyContext
 import com.tribbloids.spookystuff.execution._
 import com.tribbloids.spookystuff.extractors._
 import org.apache.spark.ml.dsl.utils.refl.ScalaUDT
@@ -17,7 +18,7 @@ case class SpookySchema(
 
   import org.apache.spark.ml.dsl.utils.refl.ScalaType._
 
-  def spooky = ec.spooky
+  def spooky: SpookyContext = ec.spooky
 
   final def fields: List[Field] = fieldTypes.keys.toList
   final def typedFields: List[TypedField] = fieldTypes.iterator.toList.map(tuple => TypedField(tuple._1, tuple._2))
@@ -38,7 +39,7 @@ case class SpookySchema(
     )
   }
 
-  lazy val structFields = fieldTypes.toSeq
+  lazy val structFields: Seq[StructField] = fieldTypes.toSeq
     .map { tuple =>
       StructField(
         tuple._1.name,
@@ -81,7 +82,7 @@ case class SpookySchema(
       revised
     }
 
-    def includeTyped(typed: TypedField*) = {
+    def includeTyped(typed: TypedField*): Seq[TypedField] = {
       typed.map { t =>
         val resolvedField = resolveField(t.self)
         mergeType(resolvedField, t.dataType)

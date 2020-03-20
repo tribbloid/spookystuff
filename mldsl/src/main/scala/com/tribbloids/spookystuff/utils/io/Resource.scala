@@ -3,7 +3,7 @@ package com.tribbloids.spookystuff.utils.io
 import java.io.{InputStream, OutputStream}
 
 import com.tribbloids.spookystuff.utils.lifespan.LocalCleanable
-import org.apache.spark.ml.dsl.utils.data.EAV
+import org.apache.spark.ml.dsl.utils.data.{EAV, EAVCore}
 
 abstract class Resource[T] extends LocalCleanable {
 
@@ -88,7 +88,7 @@ object Resource extends {
 
   //  implicit def unbox[T](obj: Resource[T]): T = obj.body
 
-  val resourceParser = EAV.Impl.ReflectionParser[Resource[_]]()
+  val resourceParser: EAVCore.ReflectionParser[Resource[_]] = EAV.Impl.ReflectionParser[Resource[_]]()
 
   final val DIR = "directory"
   final val DIR_MIME = "inode/directory; charset=UTF-8"

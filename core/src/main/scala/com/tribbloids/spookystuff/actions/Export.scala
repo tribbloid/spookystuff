@@ -31,7 +31,7 @@ abstract class Export extends Named {
 
   final override def outputNames = Set(this.name)
 
-  final override def skeleton = None //have not impact to driver
+  final override def skeleton: Option[Export.this.type] = None //have not impact to driver
 
   final def doExe(session: Session): Seq[DocOption] = {
     val results = doExeNoName(session)
@@ -121,7 +121,7 @@ case class Snapshot(
     pageOpt.map(v => Seq(v)).getOrElse(Nil)
   }
 
-  override def doInterpolate(pageRow: FetchedRow, schema: SpookySchema) = {
+  override def doInterpolate(pageRow: FetchedRow, schema: SpookySchema): Option[Snapshot.this.type] = {
     this.copy().asInstanceOf[this.type].injectWayback(this.wayback, pageRow, schema)
   }
 }
@@ -161,7 +161,7 @@ case class Screenshot(
     pageOpt.map(v => Seq(v)).getOrElse(Nil)
   }
 
-  override def doInterpolate(pageRow: FetchedRow, schema: SpookySchema) = {
+  override def doInterpolate(pageRow: FetchedRow, schema: SpookySchema): Option[Screenshot.this.type] = {
     this.copy().asInstanceOf[this.type].injectWayback(this.wayback, pageRow, schema)
   }
 }
@@ -222,7 +222,7 @@ case class Wget(
     override val filter: DocFilter = Const.defaultDocumentFilter
 ) extends HttpMethod(uri) {
 
-  def getResolver(session: Session) = {
+  def getResolver(session: Session): OmniResolver = {
 
     val timeout = this.timeout(session).toMillis.toInt
     val hadoopConf = session.spooky.hadoopConf
@@ -316,7 +316,7 @@ case class WpostImpl private[actions] (
     txt + "\n"
   }
 
-  def getResolver(session: Session) = {
+  def getResolver(session: Session): OmniResolver = {
 
     val timeout = this.timeout(session).toMillis.toInt
     val hadoopConf = session.spooky.hadoopConf
