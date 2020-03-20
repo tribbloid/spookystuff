@@ -15,7 +15,7 @@ trait Acc[T <: AccumulatorV2[_, _]] extends MetricLike {
 
   def sparkContext: SparkContext = SparkSession.active.sparkContext
 
-  def self: T
+  val self: T
 
   {
     sparkContext.register(self, displayName)
@@ -37,7 +37,7 @@ object Acc {
       implicit canBuildFrom: CanBuild[_, T]
   ) extends Acc[T] {
 
-    override def self: T = canBuildFrom.newInstance
+    override val self: T = canBuildFrom.newInstance
   }
 
   case class FromV0[V0, T <: AccumulatorV2[_, _]](
@@ -48,7 +48,7 @@ object Acc {
       implicit canBuildFrom: CanBuild[V0, T]
   ) extends Acc[T] {
 
-    override lazy val self: T = canBuildFrom.build(v0)
+    override val self: T = canBuildFrom.build(v0)
   }
 
   trait CanBuild[V0, T <: AccumulatorV2[_, _]] extends Serializable {
