@@ -217,7 +217,7 @@ abstract class SpookyEnvFixture
   override def beforeEach(): Unit = CommonUtils.retry(3, 1000) {
     //    SpookyEnvFixture.cleanDriverInstances()
     spooky._configurations = submodules
-    spooky.spookyMetrics.zero()
+    spooky.spookyMetrics.resetAll()
     spooky.rebroadcast()
   }
 

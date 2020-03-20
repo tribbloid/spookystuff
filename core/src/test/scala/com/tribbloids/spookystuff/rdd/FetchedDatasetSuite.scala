@@ -2,7 +2,7 @@ package com.tribbloids.spookystuff.rdd
 
 import com.tribbloids.spookystuff.actions._
 import com.tribbloids.spookystuff.extractors.impl.Lit
-import com.tribbloids.spookystuff.metrics.Metrics
+import com.tribbloids.spookystuff.metrics.{Acc, Metrics}
 import com.tribbloids.spookystuff.testutils.LocalPathDocsFixture
 import com.tribbloids.spookystuff.testutils.beans.Composite
 import com.tribbloids.spookystuff.{dsl, SpookyEnvFixture}
@@ -36,7 +36,7 @@ class FetchedDatasetSuite extends SpookyEnvFixture with LocalPathDocsFixture {
   //    }
 
   it(s".map should not run preceding transformation multiple times") {
-    val acc = Metrics.accumulator(0)
+    val acc = Acc.create(0)
 
     val set = spooky
       .fetch(
@@ -56,7 +56,7 @@ class FetchedDatasetSuite extends SpookyEnvFixture with LocalPathDocsFixture {
   }
 
   it(s".rdd should not run preceding transformation multiple times") {
-    val acc = Metrics.accumulator(0)
+    val acc = Acc.create(0)
 
     val set = spooky
       .fetch(
@@ -82,7 +82,7 @@ class FetchedDatasetSuite extends SpookyEnvFixture with LocalPathDocsFixture {
   // 2. compare stacktrace of executor thread on both snapshots
   for (sort <- Seq(false, true)) {
     it(s"toDF($sort) should not run preceding transformation multiple times") {
-      val acc = Metrics.accumulator(0)
+      val acc = Acc.create(0)
 
       val set = spooky
         .fetch(
@@ -104,7 +104,7 @@ class FetchedDatasetSuite extends SpookyEnvFixture with LocalPathDocsFixture {
     }
 
     it(s"toJSON($sort) should not run preceding transformation multiple times") {
-      val acc = Metrics.accumulator(0)
+      val acc = Acc.create(0)
 
       val set = spooky
         .fetch(
@@ -126,7 +126,7 @@ class FetchedDatasetSuite extends SpookyEnvFixture with LocalPathDocsFixture {
     }
 
     it(s"toMapRDD($sort) should not run preceding transformation multiple times") {
-      val acc = Metrics.accumulator(0)
+      val acc = Acc.create(0)
 
       val set = spooky
         .fetch(
@@ -237,7 +237,7 @@ class FetchedDatasetSuite extends SpookyEnvFixture with LocalPathDocsFixture {
     ds.count()
 
     assert(ds.spooky.spookyMetrics.pagesFetched.value == 1)
-    ds.spooky.spookyMetrics.zero()
+    ds.spooky.spookyMetrics.resetAll()
 
     ds.wget(
         JSON_URL
@@ -257,7 +257,7 @@ class FetchedDatasetSuite extends SpookyEnvFixture with LocalPathDocsFixture {
     ds.count()
 
     assert(ds.spooky.spookyMetrics.pagesFetched.value == 1)
-    ds.spooky.spookyMetrics.zero()
+    ds.spooky.spookyMetrics.resetAll()
 
     ds.wget(
         JSON_URL
@@ -279,7 +279,7 @@ class FetchedDatasetSuite extends SpookyEnvFixture with LocalPathDocsFixture {
     ds.count()
 
     assert(ds.spooky.spookyMetrics.pagesFetched.value == 1)
-    ds.spooky.spookyMetrics.zero()
+    ds.spooky.spookyMetrics.resetAll()
 
     ds.wget(
         JSON_URL
@@ -301,7 +301,7 @@ class FetchedDatasetSuite extends SpookyEnvFixture with LocalPathDocsFixture {
       .persist()
     ds.count()
 
-    ds.spooky.spookyMetrics.zero()
+    ds.spooky.spookyMetrics.resetAll()
 
     ds.wget(
         JSON_URL

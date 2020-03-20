@@ -1,6 +1,5 @@
 package com.tribbloids.spookystuff.metrics
 
-import com.tribbloids.spookystuff.metrics.Metrics.Acc
 import com.tribbloids.spookystuff.metrics.MetricsSuite.{DummyMetrics, DummyTreeMetrics}
 import com.tribbloids.spookystuff.testutils.{FunSpecx, TestHelper}
 import org.apache.spark.ml.dsl.utils.messaging.MessageWriter

@@ -1,7 +1,7 @@
 package com.tribbloids.spookystuff.utils
 
 import com.tribbloids.spookystuff.SpookyEnvFixture
-import com.tribbloids.spookystuff.metrics.Metrics
+import com.tribbloids.spookystuff.metrics.{Acc, Metrics}
 import com.tribbloids.spookystuff.TestBeans._
 import com.tribbloids.spookystuff.testutils.TestHelper
 import com.tribbloids.spookystuff.utils.lifespan.LifespanContext
@@ -39,8 +39,8 @@ class SpookyViewsSuite extends SpookyEnvFixture {
 
     val src = sc.parallelize(1 to 100).persist()
 
-    val counter = Metrics.accumulator(0)
-    val counter2 = Metrics.accumulator(0)
+    val counter = Acc.create(0)
+    val counter2 = Acc.create(0)
 
     val res1 = src.flatMap(v => Seq(v, v * 2, v * 3))
     val res2 = src.multiPassFlatMap { v =>

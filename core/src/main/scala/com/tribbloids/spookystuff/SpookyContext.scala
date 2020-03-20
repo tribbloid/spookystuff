@@ -157,7 +157,7 @@ case class SpookyContext(
 
   def zeroMetrics(): SpookyContext = {
     metrics.foreach {
-      _.zero()
+      _.resetAll()
     }
     this
   }
