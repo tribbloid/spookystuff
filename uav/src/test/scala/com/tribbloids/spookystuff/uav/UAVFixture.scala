@@ -13,7 +13,7 @@ object UAVFixture {
 
   import com.tribbloids.spookystuff.utils.SpookyViews._
 
-  def cleanSweepLocally() = {
+  def cleanSweepLocally(): Unit = {
     Cleanable.cleanSweepAll {
       case _: Link   => true
       case _: APMSim => true
@@ -21,7 +21,7 @@ object UAVFixture {
     }
   }
 
-  def cleanSweep(sc: SparkContext) = {
+  def cleanSweep(sc: SparkContext): Unit = {
     sc.runEverywhere() { _ =>
       // in production Links will be cleaned up by shutdown hook
 
@@ -50,7 +50,7 @@ trait UAVFixture extends SpookyEnvFixture {
   }
 
   def fleetURIs: List[String]
-  def fleet = fleetURIs.map(v => UAV(Seq(v)))
+  def fleet: List[UAV] = fleetURIs.map(v => UAV(Seq(v)))
 
   //  def parallelism: Int = 3
 

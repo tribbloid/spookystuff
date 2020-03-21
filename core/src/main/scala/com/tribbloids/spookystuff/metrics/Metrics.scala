@@ -15,7 +15,13 @@ object Metrics {
 
   abstract class HasExtraMembers extends Metrics {
 
-    override def symbol2children: List[(String, Any)] = {
+    def initialise(): Unit = {
+
+      //lazy members has to be initialised before shipping
+      extraMembers
+    }
+
+    @transient private lazy val extraMembers: List[(String, MetricLike)] = {
       val methods = this.getClass.getMethods.toList
         .filter { method =>
           val parameterMatch = method.getParameterCount == 0
@@ -26,20 +32,27 @@ object Metrics {
 
       val publicMethods = methods.filter { method =>
         val mod = method.getModifiers
-        Modifier.isPublic(mod) && !Modifier.isStatic(mod)
+        !method.getName.startsWith("copy") && Modifier.isPublic(mod) && !Modifier.isStatic(mod)
       }
 
       val extra = publicMethods.flatMap { method =>
         val value = method.invoke(this).asInstanceOf[MetricLike]
-        if (value == this) {
+        if (value == null)
+          throw new UnsupportedOperationException(s"member `${method.getName}` has not been initialised")
+
+        if (value == this || value == null) {
           None
         } else {
           Some(method.getName -> value)
         }
-
       }
 
-      super.symbol2children ++ extra
+      extra
+    }
+
+    protected override def _symbol2children: List[(String, Any)] = {
+
+      super._symbol2children ++ extraMembers
     }
   }
 }
@@ -49,7 +62,9 @@ abstract class Metrics extends MetricLike {
 
 //  def sparkContext: SparkContext = SparkContext.getOrCreate()
 
-  def symbol2children: List[(String, Any)] = ReflectionUtils.getCaseAccessorMap(this)
+  protected def _symbol2children: List[(String, Any)] = ReflectionUtils.getCaseAccessorMap(this)
+
+  @transient final lazy val symbol2children = _symbol2children
 
   /**
     * slow, should not be used too often
