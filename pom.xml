@@ -112,10 +112,19 @@
 
     <profile>
       <id>spark-2.4-cloudera2</id>
-
       <properties>
         <spark.version>2.4.0.cloudera2</spark.version>
         <version.suffix>.cloudera2</version.suffix>
+      </properties>
+    </profile>
+
+
+    <profile>
+      <id>spark-2.4-cdh6.3.2</id>
+      <properties>
+        <cdh.suffix>cdh6.3.2</cdh.suffix>
+        <platform.suffix>-${cdh.suffix}</platform.suffix>
+        <spark.version>2.4.0-${cdh.suffix}</spark.version>
       </properties>
     </profile>
 
@@ -867,7 +876,7 @@
             <configuration>
               <rules>
                 <requireActiveProfile>
-                  <profiles>spark-2.2,spark-2.3,spark-2.4,spark-2.4-cloudera2</profiles>
+                  <profiles>spark-2.2,spark-2.3,spark-2.4,spark-2.4-cloudera2,spark-2.4-cdh6.3.2</profiles>
                   <all>false</all>
                 </requireActiveProfile>
 <!--                TODO: use custom rules-->
