@@ -11,52 +11,6 @@ import scala.language.implicitConversions
 /**
   * Created by peng on 03/10/15.
   */
-object Metrics {
-
-  abstract class HasExtraMembers extends Metrics {
-
-    def initialise(): Unit = {
-
-      //lazy members has to be initialised before shipping
-      extraMembers
-    }
-
-    @transient private lazy val extraMembers: List[(String, MetricLike)] = {
-      val methods = this.getClass.getMethods.toList
-        .filter { method =>
-          val parameterMatch = method.getParameterCount == 0
-          val returnTypeMatch = classOf[MetricLike].isAssignableFrom(method.getReturnType)
-
-          returnTypeMatch && parameterMatch
-        }
-
-      val publicMethods = methods.filter { method =>
-        val mod = method.getModifiers
-        !method.getName.startsWith("copy") && Modifier.isPublic(mod) && !Modifier.isStatic(mod)
-      }
-
-      val extra = publicMethods.flatMap { method =>
-        val value = method.invoke(this).asInstanceOf[MetricLike]
-        if (value == null)
-          throw new UnsupportedOperationException(s"member `${method.getName}` has not been initialised")
-
-        if (value == this || value == null) {
-          None
-        } else {
-          Some(method.getName -> value)
-        }
-      }
-
-      extra
-    }
-
-    protected override def _symbol2children: List[(String, Any)] = {
-
-      super._symbol2children ++ extraMembers
-    }
-  }
-}
-
 @SerialVersionUID(-32509237409L)
 abstract class Metrics extends MetricLike {
 
@@ -120,7 +74,53 @@ abstract class Metrics extends MetricLike {
   }
 
   object View extends View[Any](v => Some(v.value), true)
+  object View_AccessorName extends View[Any](v => Some(v.value), false)
+}
 
-  def toNestedMap: NestedMap[Any] = View.toNestedMap
-  def toMap: Map[String, Any] = View.toMap
+object Metrics {
+
+  abstract class HasExtraMembers extends Metrics {
+
+    def initialise(): Unit = {
+
+      //lazy members has to be initialised before shipping
+      extraMembers
+    }
+
+    @transient private lazy val extraMembers: List[(String, MetricLike)] = {
+      val methods = this.getClass.getMethods.toList
+        .filter { method =>
+          val parameterMatch = method.getParameterCount == 0
+          val returnTypeMatch = classOf[MetricLike].isAssignableFrom(method.getReturnType)
+
+          returnTypeMatch && parameterMatch
+        }
+
+      val publicMethods = methods.filter { method =>
+        val mod = method.getModifiers
+        !method.getName.startsWith("copy") && Modifier.isPublic(mod) && !Modifier.isStatic(mod)
+      }
+
+      val extra = publicMethods.flatMap { method =>
+        val value = method.invoke(this).asInstanceOf[MetricLike]
+        if (value == null)
+          throw new UnsupportedOperationException(s"member `${method.getName}` has not been initialised")
+
+        if (value == this || value == null) {
+          None
+        } else {
+          Some(method.getName -> value)
+        }
+      }
+
+      extra
+    }
+
+    protected override def _symbol2children: List[(String, Any)] = {
+
+      super._symbol2children ++ extraMembers
+    }
+  }
+
+  implicit def asView(v: Metrics): v.View.type = v.View
 }

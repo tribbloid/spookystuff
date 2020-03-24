@@ -24,7 +24,7 @@ class MetricsSuite extends FunSpecx {
   TestHelper.TestSC
 
   it("can be converted to JSON") {
-    val m = DummyMetrics()
+    val m = DummyMetrics().View
     m.toNestedMap
       .toJSON()
       .shouldBe(
@@ -38,7 +38,7 @@ class MetricsSuite extends FunSpecx {
   }
 
   it("tree can be converted to JSON") {
-    val m = DummyTreeMetrics()
+    val m = DummyTreeMetrics().View_AccessorName
     m.toNestedMap
       .toJSON()
       .shouldBe(
