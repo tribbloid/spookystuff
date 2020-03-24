@@ -117,7 +117,7 @@ trait EAVRelay[I <: EAV] extends MessageRelay[I] with EAVBuilder[I] {
   @Deprecated //use ReflectionParser
   object RuntimeReflectionParser {
     def apply[TT](obj: TT): I = {
-      val scalaType = ScalaType.fromClass[TT](obj.getClass.asInstanceOf[Class[TT]])
+      val scalaType = ScalaType.FromClass[TT](obj.getClass.asInstanceOf[Class[TT]])
       implicit val classTag: ClassTag[TT] = scalaType.asClassTag
 
       ReflectionParser[TT]().apply(obj)

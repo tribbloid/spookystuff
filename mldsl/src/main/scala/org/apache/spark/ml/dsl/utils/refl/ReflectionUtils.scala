@@ -55,7 +55,7 @@ object ReflectionUtils extends ReflectionLock {
   }
 
   def getCaseAccessorMap(v: Product): List[(String, Any)] = {
-    val tt = ScalaType.fromClass(v.getClass)
+    val tt = ScalaType.FromClass(v.getClass)
     val ks = getCaseAccessorFields(tt).map(_._1)
     val vs = v.productIterator.toList
     assert(ks.size == vs.size)

@@ -25,7 +25,7 @@ object GenExtractor extends AutomaticRelay[GenExtractor[_, _]] {
   }
   def fromOptionFn[T, R: TypeTag](self: T => Option[R]): GenExtractor[T, R] = {
 
-    fromOptionFn(self, UnreifiedObjectType.forType[R])
+    fromOptionFn(self, UnreifiedObjectType.summon[R])
   }
 
   trait Leaf[T, +R] extends GenExtractor[T, R] {
@@ -97,8 +97,8 @@ object GenExtractor extends AutomaticRelay[GenExtractor[_, _]] {
 
       //TODO: need to figure out how to implement this kind of pattern matching with unapply API
       val ttg = (
-        ScalaType.fromCatalystType(t1).asTypeTag,
-        ScalaType.fromCatalystType(t2).asTypeTag
+        ScalaType.FromCatalystType(t1).asTypeTag,
+        ScalaType.FromCatalystType(t2).asTypeTag
       ) match {
         case (ttg1: TypeTag[a], ttg2: TypeTag[b]) =>
           implicit val t1 = ttg1
@@ -106,7 +106,7 @@ object GenExtractor extends AutomaticRelay[GenExtractor[_, _]] {
           implicitly[TypeTag[Tuple2[a, b]]]
       }
 
-      UnreifiedObjectType.forType(ttg)
+      UnreifiedObjectType.summon(ttg)
     }
 
     override def resolve(tt: DataType): PartialFunction[T, (R1, R2)] = {
@@ -137,7 +137,7 @@ object GenExtractor extends AutomaticRelay[GenExtractor[_, _]] {
 
   implicit def fromFn[T, R: TypeTag](self: T => R): GenExtractor[T, R] = {
 
-    fromFn(self, UnreifiedObjectType.forType[R])
+    fromFn(self, UnreifiedObjectType.summon[R])
   }
 }
 
@@ -231,7 +231,7 @@ trait GenExtractor[T, +R] extends Product with ReflectionLock with Serializable 
 
   //TODO: extract subroutine and use it to avoid obj creation overhead
   def typed[A: TypeTag]: GenExtractor[T, A] = {
-    implicit val ctg = ScalaType.fromTypeTag[A].asClassTag
+    implicit val ctg = ScalaType.FromTypeTag[A].asClassTag
 
     andOptionFn[A] {
       SpookyUtils.typedOrNone[A]

@@ -182,7 +182,7 @@ case class SpookyContext(
       seq: TraversableOnce[T]
   ): FetchedDataset = {
 
-    implicit val ctg: ClassTag[T] = ScalaType.fromTypeTag[T].asClassTag
+    implicit val ctg: ClassTag[T] = ScalaType.FromTypeTag[T].asClassTag
     this.dsl.rddToFetchedDataset(this.sqlContext.sparkContext.parallelize(seq.toSeq))
   }
   def create[T: TypeTag](
@@ -190,7 +190,7 @@ case class SpookyContext(
       numSlices: Int
   ): FetchedDataset = {
 
-    implicit val ctg: ClassTag[T] = ScalaType.fromTypeTag[T].asClassTag
+    implicit val ctg: ClassTag[T] = ScalaType.FromTypeTag[T].asClassTag
     this.dsl.rddToFetchedDataset(this.sqlContext.sparkContext.parallelize(seq.toSeq, numSlices))
   }
 
@@ -276,7 +276,7 @@ case class SpookyContext(
           }
           new FetchedDataset(
             self,
-            fieldMap = ListMap(Field("_") -> ScalaType.fromTypeTag(ttg).asCatalystType),
+            fieldMap = ListMap(Field("_") -> ScalaType.FromTypeTag(ttg).asCatalystType),
             spooky = getSpookyForRDD
           )
       }

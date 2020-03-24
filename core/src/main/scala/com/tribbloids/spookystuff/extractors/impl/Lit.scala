@@ -31,7 +31,7 @@ case class Lit[T, +R](value: R, dataType: DataType) extends Static[T, R] with ID
 object Lit extends Relay_>>[Lit[_, _]] {
 
   def apply[T: TypeTag](v: T): Lit[FR, T] = {
-    apply[FR, T](v, UnreifiedObjectType.forType[T])
+    apply[FR, T](v, UnreifiedObjectType.summon[T])
   }
 
   def erased[T](v: T): Lit[FR, T] = {

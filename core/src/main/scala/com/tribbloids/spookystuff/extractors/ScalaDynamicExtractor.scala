@@ -15,7 +15,7 @@ case class ScalaDynamic(
 
   import org.apache.spark.ml.dsl.utils.refl.ScalaType._
 
-  def getMethodsByName(dType: DataType): List[MethodSymbol] = locked {
+  def getMethodsByCatalystType(dType: DataType): List[MethodSymbol] = locked {
     val tpe = dType.asTypeTag_casted.tpe
 
     //Java reflection preferred as more battle tested?
@@ -49,7 +49,7 @@ case class ScalaDynamic(
   //2 cases: argDTypesOpt = None: call by .name
   // argDTypesOpt = Some(List()) call by .name()
   def getMethodByScala(baseDType: DataType, argDTypesOpt: Option[List[DataType]]): MethodSymbol = locked {
-    val methods = getMethodsByName(baseDType)
+    val methods = getMethodsByCatalystType(baseDType)
 
     val expectedTypeCombinations: Seq[Option[List[Type]]] =
       getExpectedTypeCombinations(argDTypesOpt)
@@ -92,12 +92,12 @@ case class ScalaDynamic(
     */
   def getMethodByJava(baseDType: DataType, argDTypesOpt: Option[List[DataType]]): Method = {
 
-    val baseClz = baseDType.asTypeTag_casted.asClass
+    val baseClz = baseDType.asClass
 
     val expectedClasssList: Seq[Option[List[Class[_]]]] = argDTypesOpt match {
       case Some(argDTypes) =>
         val classess: List[List[Class[_]]] = argDTypes.map { v =>
-          List(v.asTypeTag_casted.asClass) :+ classOf[Object]
+          List(v.asClass) :+ classOf[Object]
         }
         val cartesian = FlowUtils.cartesianProductList(classess)
         cartesian.map(
@@ -145,7 +145,7 @@ case class ScalaDynamicExtractor[T](
 
   import org.apache.spark.ml.dsl.utils.refl.ScalaType._
 
-  val dynamic = ScalaDynamic(methodName)
+  val dynamic: ScalaDynamic = ScalaDynamic(methodName)
 
   //only used to show TreeNode
   override protected def _args: Seq[GenExtractor[_, _]] = Seq(base) ++ argsOpt.toList.flatten
@@ -154,7 +154,7 @@ case class ScalaDynamicExtractor[T](
   override def resolveType(tt: DataType): DataType = locked {
     val tag: TypeTag[Any] = _resolveTypeTag(tt)
 
-    UnreifiedObjectType.forType(tag)
+    UnreifiedObjectType.summon(tag)
   }
 
   private def _resolveTypeTag(tt: DataType): TypeTag[Any] = locked {

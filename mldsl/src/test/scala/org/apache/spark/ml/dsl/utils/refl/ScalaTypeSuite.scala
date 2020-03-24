@@ -63,7 +63,7 @@ class ScalaTypeSuite extends FunSpecx with PairwiseConversionMixin {
     describe(s"From ${_typeTag}") {
 
       _typeTag.map { ttg =>
-        def vType = ScalaType.fromTypeTag(ttg)
+        def vType = ScalaType.FromTypeTag(ttg)
 
         it("has a mirror") {
           vType.mirror
@@ -88,7 +88,7 @@ class ScalaTypeSuite extends FunSpecx with PairwiseConversionMixin {
     describe(s"From ${_classTag}") {
 
       _classTag.map { v =>
-        def vType = ScalaType.fromClassTag(v)
+        def vType = ScalaType.FromClassTag(v)
 
         it("has a mirror") {
           vType.mirror
@@ -108,22 +108,22 @@ class ScalaTypeSuite extends FunSpecx with PairwiseConversionMixin {
 //        ???
 //      }),
       PairwiseCase(_typeTag, _class, { r: TypeTag[_] =>
-        ScalaType.fromTypeTag(r).asClass
+        ScalaType.FromTypeTag(r).asClass
       }, { r: Class[_] =>
-        ScalaType.fromClass(r).asTypeTag
+        ScalaType.FromClass(r).asTypeTag
       }),
       PairwiseCase(
         _typeTag,
         _class.map[ClassTag[_]](v => ClassTag(v)), { r: TypeTag[_] =>
-          ScalaType.fromTypeTag(r).asClassTag
+          ScalaType.FromTypeTag(r).asClassTag
         }, { r: ClassTag[_] =>
-          ScalaType.fromClassTag(r).asTypeTag
+          ScalaType.FromClassTag(r).asTypeTag
         }
       ),
       PairwiseCase(_typeTag, _catalystType, { r: TypeTag[_] =>
-        ScalaType.fromTypeTag(r).asCatalystType
+        ScalaType.FromTypeTag(r).asCatalystType
       }, { r: DataType =>
-        ScalaType.fromCatalystType(r).asTypeTag_casted
+        ScalaType.FromCatalystType(r).asTypeTag_casted
       })
     ).flatMap(_.bidirCases)
   }

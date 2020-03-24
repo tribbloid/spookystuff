@@ -1,7 +1,5 @@
 package com.tribbloids.spookystuff
 
-import java.io.NotSerializableException
-
 import com.tribbloids.spookystuff.utils.serialization.{AssertSerializable, NOTSerializable}
 import org.apache.spark.ml.dsl.utils.refl.ScalaUDT
 import org.apache.spark.sql.types.SQLUserDefinedType
@@ -14,11 +12,11 @@ object TestBeans {
       val b: T
   ) extends Serializable {
 
-    lazy val c = a + b
+    lazy val c: String = a + b
 
     def fn: T = b
-    def fn(i: T) = "" + b + i
-    def fnBlock(x: T)(y: T, z: T) = "" + b + x + y + z
+    def fn(i: T): String = "" + b + i
+    def fnBlock(x: T)(y: T, z: T): String = "" + b + x + y + z
 
     def fnOpt(x: T): Option[T] = {
       if (x == null) None
@@ -32,7 +30,7 @@ object TestBeans {
     def fnDefault(
         a: T,
         b: String = "b"
-    ) = "" + a + b
+    ): String = "" + a + b
 
     def *=>(k: T): String = "" + k
   }

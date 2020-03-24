@@ -9,7 +9,7 @@ class UnReifiedObjectTypeSuite extends FunSpecx {
 
   it("UnreifiedScalaType.toString") {
 
-    val tt = UnreifiedObjectType.forType(typeTag[Int])
+    val tt = UnreifiedObjectType.summon(typeTag[Int])
     tt.toString.shouldBe(
       "(unreified) ObjectType(int)"
     )

@@ -11,7 +11,7 @@ import scala.language.{existentials, implicitConversions}
   * WARNING: this cannot be completely superceded by ScalaUDT
   * the later has to be abstract and not generic, and discoverable through annotation
   */
-class UnreifiedObjectType[T](implicit val self: ScalaType[T])
+class UnreifiedObjectType[T]()(implicit val self: ScalaType[T])
     extends ObjectType(self.asClass)
     with ScalaType.CatalystTypeMixin[T] {
 
@@ -19,19 +19,21 @@ class UnreifiedObjectType[T](implicit val self: ScalaType[T])
 
 //  override val typeName: String = "(unreified) " + ev.asType
 
-  override lazy val productPrefix = "(unreified) " + super.productPrefix
+  override lazy val productPrefix: String = "(unreified) " + super.productPrefix
 }
 
 object UnreifiedObjectType {
 
-  def forType[T](implicit ttg: TypeTag[T]): DataType = {
+  def summon[T](implicit ttg: TypeTag[T]): DataType = {
     if (ttg == TypeTag.Null) NullType
-    else new UnreifiedObjectType[T]
+    else {
+      new UnreifiedObjectType[T]()(ttg)
+    }
   }
 
   def forRuntimeInstance[T](obj: T): DataType = {
     val clazz: Class[_] = obj.getClass
-    forType(new ScalaType.FromClass(clazz).asTypeTag)
+    summon(ScalaType.FromClass(clazz).asTypeTag)
   }
 
   def reify(tt: DataType): DataType = {

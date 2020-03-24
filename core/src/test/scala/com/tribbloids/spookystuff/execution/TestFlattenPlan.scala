@@ -113,7 +113,7 @@ class TestFlattenPlan extends SpookyEnvFixture {
       )
 
     val t1 = extracted.schema.typedFor('Array).get.dataType.asInstanceOf[UnreifiedObjectType[_]]
-    val t2 = UnreifiedObjectType.forType[Array[Tuple2[String, Int]]].asInstanceOf[UnreifiedObjectType[_]]
+    val t2 = UnreifiedObjectType.summon[Array[Tuple2[String, Int]]].asInstanceOf[UnreifiedObjectType[_]]
     assertTypeEqual(t1, t2)
 
     val flattened = extracted
@@ -140,7 +140,7 @@ class TestFlattenPlan extends SpookyEnvFixture {
       )
 
     val t1 = extracted.schema.typedFor('Array).get.dataType.asInstanceOf[UnreifiedObjectType[_]]
-    val t2 = UnreifiedObjectType.forType[Seq[Tuple2[String, Int]]].asInstanceOf[UnreifiedObjectType[_]]
+    val t2 = UnreifiedObjectType.summon[Seq[Tuple2[String, Int]]].asInstanceOf[UnreifiedObjectType[_]]
     assertTypeEqual(t1, t2)
 
     val flattened = extracted
@@ -167,7 +167,7 @@ class TestFlattenPlan extends SpookyEnvFixture {
       )
 
     val t1 = extracted.schema.typedFor('Array).get.dataType.asInstanceOf[UnreifiedObjectType[_]]
-    val t2 = UnreifiedObjectType.forType[List[Tuple2[String, Int]]].asInstanceOf[UnreifiedObjectType[_]]
+    val t2 = UnreifiedObjectType.summon[List[Tuple2[String, Int]]].asInstanceOf[UnreifiedObjectType[_]]
     assertTypeEqual(t1, t2)
 
     val flattened = extracted

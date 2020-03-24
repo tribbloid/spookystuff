@@ -14,7 +14,7 @@ class ScalaReflectionSpike extends FunSpecx {
   import org.apache.spark.ml.dsl.utils.refl.ScalaType._
 
   lazy val exLit: Lit[FetchedRow, _] = Lit(new Example())
-  lazy val exType: DataType = UnreifiedObjectType.forType[Example]
+  lazy val exType: DataType = UnreifiedObjectType.summon[Example]
 
   it("getMethodsByName should work on overloaded function") {
 
@@ -22,7 +22,7 @@ class ScalaReflectionSpike extends FunSpecx {
       "fn"
     )
 
-    val paramLists = dynamic.getMethodsByName(exType).map(_.paramLists)
+    val paramLists = dynamic.getMethodsByCatalystType(exType).map(_.paramLists)
 
     paramLists
       .mkString("\n")
@@ -33,7 +33,7 @@ class ScalaReflectionSpike extends FunSpecx {
       """.stripMargin
       )
 
-    val returnTypes = dynamic.getMethodsByName(exType).map {
+    val returnTypes = dynamic.getMethodsByCatalystType(exType).map {
       TypeUtils.getParameter_ReturnTypes(_, exType.asTypeTag.tpe)
     }
     returnTypes
@@ -52,7 +52,7 @@ class ScalaReflectionSpike extends FunSpecx {
       "a"
     )
 
-    val paramLists = dynamic.getMethodsByName(exType).map(v => v.paramLists)
+    val paramLists = dynamic.getMethodsByCatalystType(exType).map(v => v.paramLists)
 
     paramLists
       .mkString("\n")
@@ -60,7 +60,7 @@ class ScalaReflectionSpike extends FunSpecx {
         "List()"
       )
 
-    val returnTypes = dynamic.getMethodsByName(exType).map {
+    val returnTypes = dynamic.getMethodsByCatalystType(exType).map {
       TypeUtils.getParameter_ReturnTypes(_, exType.asTypeTag.tpe)
     }
     returnTypes
@@ -78,7 +78,7 @@ class ScalaReflectionSpike extends FunSpecx {
       "c"
     )
 
-    val paramLists = dynamic.getMethodsByName(exType).map(_.paramLists)
+    val paramLists = dynamic.getMethodsByCatalystType(exType).map(_.paramLists)
 
     paramLists
       .mkString("\n")
@@ -86,7 +86,7 @@ class ScalaReflectionSpike extends FunSpecx {
         "List()"
       )
 
-    val returnTypes = dynamic.getMethodsByName(exType).map {
+    val returnTypes = dynamic.getMethodsByCatalystType(exType).map {
       TypeUtils.getParameter_ReturnTypes(_, exType.asTypeTag.tpe)
     }
     returnTypes
@@ -104,7 +104,7 @@ class ScalaReflectionSpike extends FunSpecx {
       "fnDefault"
     )
 
-    val paramLists = dynamic.getMethodsByName(exType).map(_.paramLists)
+    val paramLists = dynamic.getMethodsByCatalystType(exType).map(_.paramLists)
 
     paramLists
       .mkString("\n")
@@ -112,7 +112,7 @@ class ScalaReflectionSpike extends FunSpecx {
         "List(List(value a, value b))"
       )
 
-    val returnTypes = dynamic.getMethodsByName(exType).map {
+    val returnTypes = dynamic.getMethodsByCatalystType(exType).map {
       TypeUtils.getParameter_ReturnTypes(_, exType.asTypeTag.tpe)
     }
     returnTypes
@@ -130,7 +130,7 @@ class ScalaReflectionSpike extends FunSpecx {
       "*=>"
     )
 
-    val paramLists = dynamic.getMethodsByName(exType).map(_.paramLists)
+    val paramLists = dynamic.getMethodsByCatalystType(exType).map(_.paramLists)
 
     paramLists
       .mkString("\n")
@@ -138,7 +138,7 @@ class ScalaReflectionSpike extends FunSpecx {
         "List(List(value k))"
       )
 
-    val returnTypes = dynamic.getMethodsByName(exType).map {
+    val returnTypes = dynamic.getMethodsByCatalystType(exType).map {
       TypeUtils.getParameter_ReturnTypes(_, exType.asTypeTag.tpe)
     }
     returnTypes
@@ -307,5 +307,5 @@ class ScalaReflectionSpike_Generic extends ScalaReflectionSpike {
 
   override lazy val exLit = Lit(new GenericExample[Int]("dummy", 1))
   //  val evi = (ex.dataType)
-  override lazy val exType = UnreifiedObjectType.forType[GenericExample[Int]]
+  override lazy val exType = UnreifiedObjectType.summon[GenericExample[Int]]
 }

@@ -2,14 +2,14 @@ package org.apache.spark.ml.dsl.utils.refl
 
 import java.sql.{Date, Timestamp}
 
+import com.tribbloids.spookystuff.utils.CachingUtils.ConcurrentCache
 import com.tribbloids.spookystuff.utils.serialization.SerDeOverride
 import org.apache.spark.sql.catalyst.ScalaReflection
-import org.apache.spark.sql.catalyst.ScalaReflection.universe
 import org.apache.spark.sql.catalyst.ScalaReflection.universe._
 import org.apache.spark.sql.types._
 
 import scala.collection.Map
-import scala.language.{existentials, implicitConversions}
+import scala.language.{existentials, higherKinds, implicitConversions}
 import scala.reflect.ClassTag
 
 /**
@@ -92,27 +92,29 @@ trait ScalaType[T] extends ReflectionLock with Serializable {
   }
 }
 
-abstract class ScalaType_Level1 {
+sealed abstract class ScalaType_Level1 {
 
-  trait Clz[T] extends ScalaType[T] {
+  trait _Ctg[T] extends ScalaType[T] {
 
-    def _class: Class[T]
+    protected def _classTag: ClassTag[T]
+    @transient final override lazy val asClassTag: ClassTag[T] = _classTag
+
     override lazy val asClass: Class[T] = {
-      _class
+      asClassTag.runtimeClass.asInstanceOf[Class[T]]
     }
 
-    def classLoader = _class.getClassLoader
+    def classLoader: ClassLoader = asClass.getClassLoader
 
-    @transient override lazy val mirror: universe.Mirror = {
+    @transient override lazy val mirror: Mirror = {
       val loader = classLoader
       runtimeMirror(loader)
     }
     //    def mirror = ReflectionUtils.mirrorFactory.get()
 
-    @transient override lazy val asType: universe.Type = locked {
+    @transient override lazy val asType: Type = locked {
       //      val name = _class.getCanonicalName
 
-      val classSymbol = getClassSymbol(_class)
+      val classSymbol = getClassSymbol(asClass)
       val tpe = classSymbol.selfType
       tpe
     }
@@ -137,31 +139,51 @@ abstract class ScalaType_Level1 {
     }
   }
 
-  implicit class FromClass[T](val _class: Class[T]) extends Clz[T]
-  implicit def fromClass[T](implicit v: Class[T]): FromClass[T] = new FromClass(v)
-}
+  protected class FromClassTag[T](val _classTag: ClassTag[T]) extends _Ctg[T]
 
-abstract class ScalaType_Level2 extends ScalaType_Level1 {
+  trait CachedBuilder[I[_]] extends Serializable {
 
-  trait Ctg[T] extends Clz[T] {
+    def createNew[T](v: I[T]): ScalaType[T]
 
-    def _classTag: ClassTag[T]
-    @transient override lazy val asClassTag: ClassTag[T] = {
-      _classTag
-    }
+    protected lazy val cache: ConcurrentCache[I[_], ScalaType[_]] = ConcurrentCache[I[_], ScalaType[_]]()
 
-    def _class: Class[T] = locked {
-      _classTag.runtimeClass.asInstanceOf[Class[T]]
+    final def apply[T](implicit v: I[T]): ScalaType[T] = {
+      cache
+        .getOrElseUpdate(
+          v, {
+            createNew[T](v)
+          }
+        )
+        .asInstanceOf[ScalaType[T]]
     }
   }
-  implicit class FromClassTag[T](val _classTag: ClassTag[T]) extends Ctg[T]
-  implicit def fromClassTag[T](implicit v: ClassTag[T]): FromClassTag[T] = new FromClassTag(v)
+
+  object FromClass extends CachedBuilder[Class] {
+
+    override def createNew[T](v: Class[T]): ScalaType[T] = new FromClassTag(ClassTag(v))
+  }
+
+  //TODO: how to get rid of these boilerplates?
+  implicit def _fromClass[T](v: Class[T]): ScalaType[T] = FromClass(v)
+  implicit def __fromClass[T](implicit v: Class[T]): ScalaType[T] = FromClass(v)
+}
+
+sealed abstract class ScalaType_Level2 extends ScalaType_Level1 {
+
+  object FromClassTag extends CachedBuilder[ClassTag] {
+
+    override def createNew[T](v: ClassTag[T]): ScalaType[T] = new FromClassTag(v)
+  }
+
+  implicit def _fromClassTag[T](v: ClassTag[T]): ScalaType[T] = FromClassTag(v)
+  implicit def __fromClassTag[T](implicit v: ClassTag[T]): ScalaType[T] = FromClassTag(v)
 }
 
 object ScalaType extends ScalaType_Level2 {
 
-  trait Ttg[T] extends ScalaType[T] {}
-  implicit class FromTypeTag[T](@transient val typeTag: TypeTag[T]) extends Ttg[T] {
+  trait _Ttg[T] extends ScalaType[T] {}
+
+  protected class FromTypeTag[T](@transient val typeTag: TypeTag[T]) extends _Ttg[T] {
 
     {
       typeTag_ser
@@ -174,7 +196,14 @@ object ScalaType extends ScalaType_Level2 {
 
     def _typeTag: TypeTag[T] = typeTag_ser.value
   }
-  implicit def fromTypeTag[T](implicit v: TypeTag[T]): FromTypeTag[T] = new FromTypeTag(v)
+
+  object FromTypeTag extends CachedBuilder[TypeTag] {
+
+    override def createNew[T](v: TypeTag[T]): ScalaType[T] = new FromTypeTag[T](v)
+  }
+
+  implicit def _fromTypeTag[T](v: TypeTag[T]): ScalaType[T] = FromTypeTag.apply(v)
+  implicit def __fromTypeTag[T](implicit v: TypeTag[T]): ScalaType[T] = FromTypeTag.apply(v)
 
   def fromType[T](tpe: Type, mirror: Mirror): FromTypeTag[T] = {
 
@@ -192,7 +221,7 @@ object ScalaType extends ScalaType_Level2 {
     }
   }
 
-  object fromCatalystType {
+  object FromCatalystType {
 
     lazy val atomicExamples: Seq[(Any, TypeTag[_])] = {
 
@@ -217,7 +246,7 @@ object ScalaType extends ScalaType_Level2 {
     }
 
     lazy val atomicTypePairs: Seq[(DataType, TypeTag[_])] = atomicExamples.map { v =>
-      ScalaType.fromTypeTag(v._2).tryReify.get -> v._2
+      ScalaType.FromTypeTag(v._2).tryReify.get -> v._2
     }
 
     lazy val atomicTypeMap: Map[DataType, TypeTag[_]] = {
@@ -225,32 +254,33 @@ object ScalaType extends ScalaType_Level2 {
     }
   }
 
-  implicit class fromCatalystType(tt: DataType) extends ReflectionLock {
+  implicit class FromCatalystType(tt: DataType) extends ReflectionLock {
 
     // CatalystType => ScalaType
     // used in ReflectionMixin to determine the exact function to:
     // 1. convert data from CatalystType to canonical Scala Type (and obtain its TypeTag)
     // 2. use the obtained TypeTag to get the specific function implementation and applies to the canonic Scala Type data.
     // 3. get the output TypeTag of the function, use it to generate the output DataType of the new Extraction.
-    def typeTagOpt: Option[TypeTag[_]] = locked {
+    // TODO: should rely on spark impls including Literal, ScalaReflection & CatalystTypeConverters
+    def getTypeTagOpt: Option[TypeTag[_]] = locked {
 
       tt match {
         case NullType =>
           Some(TypeTag.Null)
         case st: ScalaType.CatalystTypeMixin[_] =>
           Some(st.self.asTypeTag)
-        case t if fromCatalystType.atomicTypeMap.contains(t) =>
-          fromCatalystType.atomicTypeMap.get(t)
+        case t if FromCatalystType.atomicTypeMap.contains(t) =>
+          FromCatalystType.atomicTypeMap.get(t)
         case ArrayType(inner, _) =>
-          val innerTagOpt = inner.typeTagOpt
+          val innerTagOpt = inner.getTypeTagOpt
           innerTagOpt.map {
             case at: TypeTag[a] =>
-              implicit val att: universe.TypeTag[a] = at
-              universe.typeTag[Array[a]]
+              implicit val att: TypeTag[a] = at
+              typeTag[Array[a]]
           }
         case MapType(key, value, _) =>
-          val keyTag = key.typeTagOpt
-          val valueTag = value.typeTagOpt
+          val keyTag = key.getTypeTagOpt
+          val valueTag = value.getTypeTagOpt
           val pairs = (keyTag, valueTag) match {
             case (Some(kt), Some(vt)) => Some(kt -> vt)
             case _                    => None
@@ -259,9 +289,9 @@ object ScalaType extends ScalaType_Level2 {
           pairs.map { pair =>
             (pair._1, pair._2) match {
               case (ttg1: TypeTag[a], ttg2: TypeTag[b]) =>
-                implicit val t1: universe.TypeTag[a] = ttg1
-                implicit val t2: universe.TypeTag[b] = ttg2
-                universe.typeTag[Map[a, b]]
+                implicit val t1: TypeTag[a] = ttg1
+                implicit val t2: TypeTag[b] = ttg2
+                typeTag[Map[a, b]]
             }
           }
         case StructType(fields) =>
@@ -279,10 +309,10 @@ object ScalaType extends ScalaType_Level2 {
       }
     }
 
-    def asTypeTag: TypeTag[_] = {
-      typeTagOpt.getOrElse {
+    @transient lazy val asTypeTag: TypeTag[_] = {
+      getTypeTagOpt.getOrElse {
         throw new UnsupportedOperationException(
-          s"cannot convert Catalyst type $tt to Scala type: TypeTag=${tt.typeTagOpt}")
+          s"cannot convert Catalyst type $tt to Scala type: TypeTag=${tt.getTypeTagOpt}")
       }
     }
 
@@ -292,6 +322,14 @@ object ScalaType extends ScalaType_Level2 {
       val result = UnreifiedObjectType.reify(tt)
       result
     }
+
+    @transient lazy val asClassTag: ClassTag[_] = {
+
+      val clazz = org.apache.spark.sql.catalyst.expressions.Literal.default(tt).eval().getClass
+      ClassTag(clazz)
+    }
+
+    def asClass: Class[_] = asClassTag.runtimeClass
 
     def unboxArrayOrMap: DataType = locked {
       tt._unboxArrayOrMapOpt
