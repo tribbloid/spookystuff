@@ -1,6 +1,6 @@
 package com.tribbloids.spookystuff.metrics
 
-import com.tribbloids.spookystuff.metrics.MetricsSuite.{DummyMetrics, DummyTreeMetrics}
+import com.tribbloids.spookystuff.metrics.MetricsSuite.{DummyMetrics, DummyMetrics_HasMembers, DummyTreeMetrics}
 import com.tribbloids.spookystuff.testutils.{FunSpecx, TestHelper}
 import org.apache.spark.ml.dsl.utils.messaging.MessageWriter
 import org.apache.spark.sql.execution.streaming.EventTimeStatsAccum
@@ -17,6 +17,13 @@ object MetricsSuite {
       v3: Acc[EventTimeStatsAccum] = "v3" -> 2L,
       sub: DummyMetrics = DummyMetrics()
   ) extends Metrics
+
+  case class DummyMetrics_HasMembers() extends Metrics.HasExtraMembers {
+
+    lazy val v1: Acc[LongAccumulator] = "v1" -> 0L
+    lazy val v2: Acc[DoubleAccumulator] = "v2" -> 1.0
+
+  }
 }
 
 class MetricsSuite extends FunSpecx {
@@ -24,17 +31,20 @@ class MetricsSuite extends FunSpecx {
   TestHelper.TestSC
 
   it("can be converted to JSON") {
-    val m = DummyMetrics().View
-    m.toNestedMap
-      .toJSON()
-      .shouldBe(
-        """
-          |{
-          |  "v2" : 1.0,
-          |  "v1" : 0
-          |}
+    Seq(DummyMetrics(), DummyMetrics_HasMembers()).foreach { v =>
+      val m = v.View
+      m.toNestedMap
+        .toJSON()
+        .shouldBe(
+          """
+              |{
+              |  "v2" : 1.0,
+              |  "v1" : 0
+              |}
         """.stripMargin
-      )
+        )
+    }
+
   }
 
   it("tree can be converted to JSON") {

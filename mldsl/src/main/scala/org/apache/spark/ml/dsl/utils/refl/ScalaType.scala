@@ -43,7 +43,7 @@ trait ScalaType[T] extends ReflectionLock with Serializable {
     ClassTag(asClass)
   }
 
-  @transient lazy val tryReify: scala.util.Try[DataType] = locked {
+  @transient lazy val tryReify: scala.util.Try[DataType] = {
     TypeUtils
       .tryCatalystTypeFor(asTypeTag)
   }

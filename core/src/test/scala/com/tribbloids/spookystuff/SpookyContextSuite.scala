@@ -73,7 +73,18 @@ class SpookyContextSuite extends SpookyEnvFixture with LocalPathDocsFixture {
 
     rdd2.unsquashedRDD.count()
 
-    assert(rdd1.spooky.spookyMetrics !== rdd2.spooky.spookyMetrics)
+    val seq = Seq(rdd1, rdd2)
+
+    val metrics = seq.map(_.spooky.spookyMetrics)
+
+    metrics
+      .map(_.View.toMap)
+      .reduce { (v1, v2) =>
+        v1 shouldBe v2
+        assert(!v1.eq(v2))
+        v1
+      }
+
     assert(rdd1.spooky.spookyMetrics.pagesFetched.value === 1)
     assert(rdd2.spooky.spookyMetrics.pagesFetched.value === 1)
   }

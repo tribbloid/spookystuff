@@ -1,5 +1,6 @@
 package com.tribbloids.spookystuff.metrics
 
+import com.tribbloids.spookystuff.utils.IDMixin
 import org.apache.spark.SparkContext
 import org.apache.spark.ml.dsl.utils.?
 import org.apache.spark.sql.SparkSession
@@ -12,6 +13,8 @@ import scala.language.{existentials, implicitConversions}
   * a simple wrapper of Spark AccumulatorV2 that automatically register itself & derive name from productPrefix
   */
 trait Acc[T <: AccumulatorV2[_, _]] extends MetricLike {
+
+  override def _id: (String, Any) = displayName -> _self.value
 
   def sparkContext: SparkContext = SparkSession.active.sparkContext
 

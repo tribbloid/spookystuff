@@ -20,6 +20,8 @@ abstract class Metrics extends MetricLike {
 
   @transient final lazy val symbol2children = _symbol2children
 
+  override def _id: (String, List[(String, Any)]) = displayName -> symbol2children
+
   /**
     * slow, should not be used too often
     */
@@ -40,8 +42,8 @@ abstract class Metrics extends MetricLike {
   //Only allowed on Master
   def resetAll(): Unit = {
 
-    this.productIterator.toList.foreach {
-      case acc: Acc[_] =>
+    symbol2children.foreach {
+      case (_, acc: Acc[_]) =>
         acc.reset()
       case _ =>
     }
@@ -106,7 +108,7 @@ object Metrics {
         if (value == null)
           throw new UnsupportedOperationException(s"member `${method.getName}` has not been initialised")
 
-        if (value == this || value == null) {
+        if (value.eq(this) || value == null) {
           None
         } else {
           Some(method.getName -> value)
