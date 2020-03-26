@@ -172,7 +172,7 @@ case class ScalaDynamicExtractor[T](
     val (paramTypes, resultType) = TypeUtils.getParameter_ReturnTypes(scalaMethod, baseTTg.tpe)
 
     val resultScalaType = ScalaType.fromType[Any](resultType, baseTTg.mirror)
-    resultScalaType.typeTag
+    resultScalaType.asTypeTag
   }
 
   override def resolve(tt: DataType): PartialFunction[T, Any] = locked {

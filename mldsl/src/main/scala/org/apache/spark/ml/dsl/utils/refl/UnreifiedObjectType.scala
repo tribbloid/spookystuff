@@ -27,7 +27,7 @@ object UnreifiedObjectType {
   def summon[T](implicit ttg: TypeTag[T]): DataType = {
     if (ttg == TypeTag.Null) NullType
     else {
-      new UnreifiedObjectType[T]()(ttg)
+      new UnreifiedObjectType[T]()
     }
   }
 

@@ -183,7 +183,7 @@ object ScalaType extends ScalaType_Level2 {
 
   trait _Ttg[T] extends ScalaType[T] {}
 
-  protected class FromTypeTag[T](@transient val typeTag: TypeTag[T]) extends _Ttg[T] {
+  protected class FromTypeTag[T](@transient protected val __typeTag: TypeTag[T]) extends _Ttg[T] {
 
     {
       typeTag_ser
@@ -191,7 +191,7 @@ object ScalaType extends ScalaType_Level2 {
 
     lazy val typeTag_ser: SerDeOverride[TypeTag[T]] = {
 
-      SerDeOverride(typeTag, SerDeOverride.Default.javaOverride)
+      SerDeOverride(__typeTag, SerDeOverride.Default.javaOverride)
     }
 
     def _typeTag: TypeTag[T] = typeTag_ser.value
@@ -254,7 +254,7 @@ object ScalaType extends ScalaType_Level2 {
     }
   }
 
-  implicit class FromCatalystType(tt: DataType) extends ReflectionLock {
+  implicit class FromCatalystType(dataType: DataType) extends ReflectionLock {
 
     // CatalystType => ScalaType
     // used in ReflectionMixin to determine the exact function to:
@@ -264,7 +264,7 @@ object ScalaType extends ScalaType_Level2 {
     // TODO: should rely on spark impls including Literal, ScalaReflection & CatalystTypeConverters
     def getTypeTagOpt: Option[TypeTag[_]] = locked {
 
-      tt match {
+      dataType match {
         case NullType =>
           Some(TypeTag.Null)
         case st: ScalaType.CatalystTypeMixin[_] =>
@@ -312,37 +312,42 @@ object ScalaType extends ScalaType_Level2 {
     @transient lazy val asTypeTag: TypeTag[_] = {
       getTypeTagOpt.getOrElse {
         throw new UnsupportedOperationException(
-          s"cannot convert Catalyst type $tt to Scala type: TypeTag=${tt.getTypeTagOpt}")
+          s"cannot convert Catalyst type $dataType to Scala type: TypeTag=${dataType.getTypeTagOpt}")
       }
     }
 
     def asTypeTag_casted[T]: TypeTag[T] = asTypeTag.asInstanceOf[TypeTag[T]]
 
     @transient lazy val reified: DataType = locked {
-      val result = UnreifiedObjectType.reify(tt)
+      val result = UnreifiedObjectType.reify(dataType)
       result
     }
 
     @transient lazy val asClassTag: ClassTag[_] = {
 
-      val clazz = org.apache.spark.sql.catalyst.expressions.Literal.default(tt).eval().getClass
-      ClassTag(clazz)
+      dataType match {
+        case v: CatalystTypeMixin[_] =>
+          v.self.asClassTag
+        case _ =>
+          val clazz = org.apache.spark.sql.catalyst.expressions.Literal.default(dataType).eval().getClass
+          ClassTag(clazz)
+      }
     }
 
     def asClass: Class[_] = asClassTag.runtimeClass
 
     def unboxArrayOrMap: DataType = locked {
-      tt._unboxArrayOrMapOpt
+      dataType._unboxArrayOrMapOpt
         .orElse(
-          tt.reified._unboxArrayOrMapOpt
+          dataType.reified._unboxArrayOrMapOpt
         )
         .getOrElse(
-          throw new UnsupportedOperationException(s"Type $tt is not an Array")
+          throw new UnsupportedOperationException(s"Type $dataType is not an Array")
         )
     }
 
     private[utils] def _unboxArrayOrMapOpt: Option[DataType] = locked {
-      tt match {
+      dataType match {
         case ArrayType(boxed, _) =>
           Some(boxed)
         case MapType(keyType, valueType, valueContainsNull) =>
@@ -358,28 +363,28 @@ object ScalaType extends ScalaType_Level2 {
     }
 
     def filterArray: Option[DataType] = locked {
-      if (tt.reified.isInstanceOf[ArrayType])
-        Some(tt)
+      if (dataType.reified.isInstanceOf[ArrayType])
+        Some(dataType)
       else
         None
     }
 
     def asArray: DataType = locked {
       filterArray.getOrElse {
-        ArrayType(tt)
+        ArrayType(dataType)
       }
     }
 
     def ensureArray: DataType = locked {
       filterArray.getOrElse {
-        throw new UnsupportedOperationException(s"Type $tt is not an Array")
+        throw new UnsupportedOperationException(s"Type $dataType is not an Array")
       }
     }
 
     def =~=(another: DataType): Boolean = {
-      val result = (tt eq another) ||
-        (tt == another) ||
-        (tt.reified == another.reified)
+      val result = (dataType eq another) ||
+        (dataType == another) ||
+        (dataType.reified == another.reified)
 
       result
     }
@@ -390,7 +395,7 @@ object ScalaType extends ScalaType_Level2 {
         result,
         s"""
            |Type not equal:
-           |LEFT:  $tt -> ${tt.reified}
+           |LEFT:  $dataType -> ${dataType.reified}
            |RIGHT: $another -> ${another.reified}
           """.stripMargin
       )
