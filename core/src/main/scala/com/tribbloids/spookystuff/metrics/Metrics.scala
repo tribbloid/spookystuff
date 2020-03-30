@@ -7,6 +7,7 @@ import org.apache.spark.ml.dsl.utils.refl.ReflectionUtils
 import org.apache.spark.util.AccumulatorV2
 
 import scala.language.implicitConversions
+import scala.util.Try
 
 /**
   * Created by peng on 03/10/15.
@@ -104,15 +105,17 @@ object Metrics {
       }
 
       val extra = publicMethods.flatMap { method =>
-        val value = method.invoke(this).asInstanceOf[MetricLike]
-        if (value == null)
-          throw new UnsupportedOperationException(s"member `${method.getName}` has not been initialised")
+        Try {
+          val value = method.invoke(this).asInstanceOf[MetricLike]
+          if (value == null)
+            throw new UnsupportedOperationException(s"member `${method.getName}` has not been initialised")
 
-        if (value.eq(this) || value == null) {
-          None
-        } else {
-          Some(method.getName -> value)
-        }
+          if (value.eq(this) || value == null) {
+            None
+          } else {
+            Some(method.getName -> value)
+          }
+        }.toOption.toSeq.flatten
       }
 
       extra
