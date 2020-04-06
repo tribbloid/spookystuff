@@ -15,8 +15,6 @@ import scala.util.Try
 @SerialVersionUID(-32509237409L)
 abstract class Metrics extends MetricLike {
 
-//  def sparkContext: SparkContext = SparkContext.getOrCreate()
-
   protected def _symbol2children: List[(String, Any)] = ReflectionUtils.getCaseAccessorMap(this)
 
   @transient final lazy val symbol2children = _symbol2children
