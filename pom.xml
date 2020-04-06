@@ -496,6 +496,7 @@
               <id>attach-sources</id>
               <goals>
                 <goal>jar-no-fork</goal>
+                <goal>test-jar-no-fork</goal>
               </goals>
             </execution>
           </executions>
@@ -631,8 +632,9 @@
             </goals>
             <configuration>
               <sources>
-                <source>${project.basedir}/shims/${spark.classifier}-shim/main/scala</source>
                 <source>src/main/python</source>
+
+                <source>${project.basedir}/shims/${spark.classifier}-shim/main/scala</source>
               </sources>
             </configuration>
           </execution>
@@ -646,6 +648,7 @@
             <configuration>
               <sources>
                 <source>src/test/python</source>
+
                 <source>${project.basedir}/shims/${spark.classifier}-shim/test/scala</source>
               </sources>
             </configuration>
