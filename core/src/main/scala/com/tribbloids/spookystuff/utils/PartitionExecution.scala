@@ -42,7 +42,7 @@ case class PartitionExecution[T](
       future
     }
 
-    @transient lazy val get: Array[T] = future.get()
+    def get: Array[T] = future.get()
   }
 }
 

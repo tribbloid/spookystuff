@@ -2,10 +2,10 @@ package com.tribbloids.spookystuff.utils
 
 import java.util.concurrent.ArrayBlockingQueue
 
+import org.apache.spark.SparkContext
 import org.apache.spark.rdd.RDD
 import org.apache.spark.sql.Dataset
 import org.apache.spark.sql.utils.SparkHelper
-import org.apache.spark.{Partition, SparkContext}
 
 import scala.concurrent.{ExecutionContext, Future}
 import scala.util.{Failure, Success, Try}
@@ -18,9 +18,9 @@ case class PreemptiveLocalOps(capacity: Int)(
 
   trait Impl[T] {
 
-    def partitionExes: Seq[PartitionExecution[T]]
+    def partitionFactories: Seq[() => PartitionExecution[T]]
 
-    lazy val partitions: Seq[Partition] = partitionExes.map(_.partition)
+    lazy val wIndex: Seq[(() => PartitionExecution[T], Int)] = partitionFactories.zipWithIndex
 
     def sc: SparkContext
 
@@ -34,8 +34,10 @@ case class PreemptiveLocalOps(capacity: Int)(
 
         sc.setJobGroup(p.groupID, p.description)
 
-        partitionExes.zipWithIndex.foreach {
-          case (exe, ii) =>
+        wIndex.foreach {
+          case (factory, ii) =>
+            val exe = factory()
+
             val jobText = exe.jobTextOvrd.getOrElse(
               s"$ii (preemptive)"
             )
@@ -50,7 +52,7 @@ case class PreemptiveLocalOps(capacity: Int)(
           buffer.put(Failure(e))
       }
 
-      partitionExes.toIterator.map { _ =>
+      wIndex.toIterator.map { _ =>
         val exe = buffer.take().get
         exe.AsArray.get
       }
@@ -66,9 +68,9 @@ case class PreemptiveLocalOps(capacity: Int)(
 
     def sc: SparkContext = self.sparkContext
 
-    override lazy val partitionExes: Seq[PartitionExecution[T]] = {
+    override lazy val partitionFactories: Seq[() => PartitionExecution[T]] = {
 
-      self.partitions.toSeq.map(_.index).map { i =>
+      self.partitions.toSeq.map(_.index).map { i => () =>
         PartitionExecution[T](self, i)
       }
     }
@@ -80,7 +82,7 @@ case class PreemptiveLocalOps(capacity: Int)(
 
     lazy val delegate: ForRDD[T] = ForRDD(self.rdd)
 
-    override def partitionExes: Seq[PartitionExecution[T]] = delegate.partitionExes
+    override def partitionFactories: Seq[() => PartitionExecution[T]] = delegate.partitionFactories
   }
 
 }
