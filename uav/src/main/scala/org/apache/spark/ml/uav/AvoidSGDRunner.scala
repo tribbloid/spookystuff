@@ -77,7 +77,7 @@ case class AvoidSGDRunner(
   }
 
   lazy val conversionMap = Map(conversion: _*)
-  lazy val conversionMap_broadcast = schema.spooky.sparkContext.broadcast(conversionMap)
+  lazy val conversionMap_broadcast = conversionMap
 
   // after this line, for test only
   lazy val pid2Traces_converted: Map[Int, Seq[Trace]] = pid2Traces_resampled.mapValues { v =>

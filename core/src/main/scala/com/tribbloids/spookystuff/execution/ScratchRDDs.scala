@@ -28,7 +28,7 @@ case class ScratchRDDs(
     tempTables: ArrayBuffer[(String, Dataset[_])] = ArrayBuffer(),
     tempRDDs: ArrayBuffer[RDD[_]] = ArrayBuffer(),
     tempDSs: ArrayBuffer[Dataset[_]] = ArrayBuffer(),
-    tempBroadcasts: ArrayBuffer[Broadcast[_]] = ArrayBuffer(),
+    tempBroadcasts: ArrayBuffer[_] = ArrayBuffer(),
     defaultStorageLevel: StorageLevel = StorageLevel.MEMORY_AND_DISK
 ) extends LocalCleanable
     with ShippingMarks {
@@ -52,10 +52,10 @@ case class ScratchRDDs(
 
   def broadcast[T: ClassTag](sc: SparkContext)(
       v: T
-  ): Broadcast[T] = {
-    val result = sc.broadcast(v)
-    tempBroadcasts += result
-    result
+  ): T = {
+
+//    tempBroadcasts += v
+    v
   }
 
   def persistDS(
@@ -123,7 +123,7 @@ case class ScratchRDDs(
     tempRDDs.clear()
 
     tempBroadcasts.foreach { b =>
-      b.destroy()
+//      b.destroy()
     }
     tempBroadcasts.clear()
   }
@@ -136,8 +136,8 @@ case class ScratchRDDs(
     this.copy(
       <+>(other, _.tempTables),
       <+>(other, _.tempRDDs),
-      <+>(other, _.tempDSs),
-      <+>(other, _.tempBroadcasts)
+      <+>(other, _.tempDSs)//,
+//      <+>(other, _.tempBroadcasts)
     )
   }
 

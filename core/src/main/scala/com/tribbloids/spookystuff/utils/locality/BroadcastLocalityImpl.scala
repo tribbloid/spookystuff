@@ -13,10 +13,10 @@ case class BroadcastLocalityImpl[K: ClassTag, V: ClassTag](
     //      val grouped: RDD[(K, Iterable[V])] = self.groupByKey()
     //      val a = grouped.map(_._2.toList).collect()
     val otherMap = rdd2.groupByKey().collectAsMap()
-    val otherMap_broadcast = rdd1.sparkContext.broadcast(otherMap)
+    val otherMap_broadcast = otherMap
 
     val cogrouped: RDD[(K, (V, Iterable[V2]))] = rdd1.mapPartitions { bigItr =>
-      val otherMap = otherMap_broadcast.value
+      val otherMap = otherMap_broadcast
       val result = bigItr.map {
         case (k, itr) =>
           val itr2 = otherMap.getOrElse(k, Nil)

@@ -35,7 +35,7 @@ case class JSprit(
     val solver = JSpritRunner(problem, schema, uavs, rows)
 
     val uav2TraceMap: Map[LinkStatus, Seq[TraceView]] = solver.getUAV2TraceMap
-    val uav2TraceMap_broadcast = schema.spooky.sparkContext.broadcast(uav2TraceMap)
+    val uav2TraceMap_broadcast = uav2TraceMap
 
     val old2NewTraceRDD: RDD[(TraceView, TraceView)] = linkRDD.flatMap { link =>
       val status = link.status()
