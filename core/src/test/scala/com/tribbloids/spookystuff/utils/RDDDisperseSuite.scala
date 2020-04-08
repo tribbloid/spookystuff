@@ -11,7 +11,7 @@ import org.slf4j.LoggerFactory
 import scala.concurrent.{ExecutionContext, ExecutionContextExecutor}
 import scala.util.Random
 
-class RDDDisperseSuite extends SpookyEnvFixture.DescribeJobs with HasEager {
+class RDDDisperseSuite extends SpookyEnvFixture with SparkJobGroupMixin with HasEager {
 
   implicit val concurrentCtx: ExecutionContextExecutor = ExecutionContext.global
 
@@ -20,7 +20,7 @@ class RDDDisperseSuite extends SpookyEnvFixture.DescribeJobs with HasEager {
     val size: Int = Random.nextInt(90000) + 10000
     val data: Range = 1 to size
 
-    val fixedTgtPartRange: Range = 1 to sc.defaultParallelism
+    val fixedTgtPartRange: Range = Range(1, sc.defaultParallelism, Math.sqrt(sc.defaultParallelism).toInt)
 
     val smallNPart: Int = Random.nextInt(10) + fixedTgtPartRange.max
 

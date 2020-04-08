@@ -14,11 +14,13 @@ import scala.util.Try
 
 class SCFunctions(sc: SparkContext) {
 
+  def scLocalProperties: SparkLocalProperties = SparkLocalProperties(sc)
+
   import SpookyViews._
   // Test is rare, how to make sure that it is working
   def withJob[T](description: String = null, groupID: String = null)(fn: => T): T = {
 
-    val old = SparkLocalProperties(sc)
+    val old = scLocalProperties
 
     val _descriptionParts = Seq(old.description, description).flatten(Option(_))
     val _description =

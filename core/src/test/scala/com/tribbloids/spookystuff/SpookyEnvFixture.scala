@@ -116,22 +116,6 @@ object SpookyEnvFixture {
     }
   }
 
-  abstract class DescribeJobs extends SpookyEnvFixture {
-
-    import com.tribbloids.spookystuff.utils.SpookyViews._
-
-    def it[T](description: String)(fn: => T): Unit = {
-
-      val _it = new ItWord
-      _it(description) {
-
-        sc.withJob(description) {
-          fn
-        }
-      }
-
-    }
-  }
 }
 
 abstract class SpookyEnvFixture
