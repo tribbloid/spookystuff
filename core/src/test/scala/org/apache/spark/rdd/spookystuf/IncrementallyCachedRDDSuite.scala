@@ -3,60 +3,71 @@ package org.apache.spark.rdd.spookystuf
 import java.util.concurrent.atomic.AtomicInteger
 
 import com.tribbloids.spookystuff.testutils.TestHelper.TestSC
+import com.tribbloids.spookystuff.utils.PreemptiveLocalOps
 import org.apache.spark.rdd.RDD
-import org.apache.spark.rdd.spookystuf.IncrementallyCachedRDDSuite.Upstream
+import org.apache.spark.rdd.spookystuf.IncrementallyCachedRDDSuite.WithRDD
 import org.apache.spark.util.LongAccumulator
 import org.scalatest.{BeforeAndAfterAll, FunSpec, Suite}
 
-import scala.collection.immutable
+import scala.collection.{immutable, mutable}
+import scala.util.Random
 
 class IncrementallyCachedRDDSuite extends FunSpec with BeforeAndAfterAll {
 
+  val size = 100000
+
   case class Sub(numPartitions: Int) extends FunSpec {
+    override def suiteName: String = numPartitions.toString
+
+    val groundTruth: WithRDD = WithRDD(TestSC.parallelize(1 to size, numPartitions))
 
     it("block cache always compute the entire partition") {
 
-      val u = Upstream(TestSC.parallelize(1 to 100, numPartitions))
+      val u = WithRDD(TestSC.parallelize(1 to size, numPartitions))
+      val sliced = u.cached.getSlice(0, 2)
 
-      u.rdd.persist()
+      val n = sliced.size
 
-      val sliced = u.rdd
-        .mapPartitions { itr =>
-          itr.slice(0, 2)
+      assert(n == numPartitions * 2)
+      assert(u.acc.value == size)
+      assert(u.localAcc.get() <= size)
+    }
+
+    describe("incremental cache") {
+      it("should only cache the necessary part of the partition") {
+
+        val u = WithRDD(TestSC.parallelize(1 to size, numPartitions))
+
+        for (i <- 0 to 9) {
+
+          val sliced = u.incrementallyCached.getSlice(i, i + 2)
+
+          assert(sliced == groundTruth.src.getSlice(i, i + 2))
+
+          assert(sliced.size == numPartitions * 2)
+          assert(u.acc.value == numPartitions * (2 + i))
+          assert(u.localAcc.get() <= numPartitions * (2 + i))
         }
-
-      val n = sliced.count()
-
-      assert(n == numPartitions * 2)
-      assert(u.acc.value == 100)
-      assert(u.localAcc.get() <= 100)
-    }
-
-    it("incremental cache only cache the necessary part of the partition") {
-
-      val u = Upstream(TestSC.parallelize(1 to 100, numPartitions))
-
-//        val rdd2 = rdd
-      val rdd2 = new IncrementallyCachedRDD(u.rdd, 1000, 1000)
-
-      val sliced = rdd2.mapPartitions { itr =>
-        itr.slice(0, 2)
       }
-      val n = sliced.count()
 
-      assert(n == numPartitions * 2)
-      assert(u.acc.value == numPartitions * 2)
-      assert(u.localAcc.get() <= numPartitions * 2)
+      it("... even if using preemptive collection") {
 
-      val sliced2 = rdd2.mapPartitions { itr =>
-        itr.slice(1, 3)
+        val u = WithRDD(TestSC.parallelize(1 to size, numPartitions), { rdd =>
+          PreemptiveLocalOps(8).ForRDD(rdd).toLocalIterator.toList
+        })
+
+        for (i <- 0 to 9) {
+
+          val sliced = u.incrementallyCached.getSlice(i, i + 2)
+
+          assert(sliced == groundTruth.src.getSlice(i, i + 2))
+
+          assert(sliced.size == numPartitions * 2)
+          assert(u.acc.value == numPartitions * (2 + i))
+          assert(u.localAcc.get() <= numPartitions * (2 + i))
+        }
       }
-      val n2 = sliced2.count()
-      assert(n2 == numPartitions * 2)
-      assert(u.acc.value == numPartitions * 3)
-      assert(u.localAcc.get() <= numPartitions * 3)
     }
-
   }
 
   override def nestedSuites: immutable.IndexedSeq[Suite] = immutable.IndexedSeq(
@@ -74,18 +85,49 @@ class IncrementallyCachedRDDSuite extends FunSpec with BeforeAndAfterAll {
 
 object IncrementallyCachedRDDSuite {
 
-  case class Upstream(src: RDD[Int]) {
+  val localAccs = mutable.Map.empty[Long, AtomicInteger]
 
-    val localAcc: AtomicInteger = new AtomicInteger()
+  case class WithRDD(
+      _src: RDD[Int],
+      action: RDD[Int] => List[Int] = _.collect().toList
+  ) {
+
+    val id: Long = Random.nextLong()
+
+    def localAcc: AtomicInteger = localAccs.getOrElseUpdate(id, new AtomicInteger())
 
     val acc = new LongAccumulator()
     TestSC.register(acc)
 
-    val rdd: RDD[Int] = src.map { v =>
+    val rdd: RDD[Int] = _src.map { v =>
       localAcc.getAndIncrement()
       acc add 1
-//      println("!!!!!")
+//      println(v)
       v
+    }
+
+    case class Case(
+        rdd: RDD[Int]
+    ) {
+
+      def outer: WithRDD = WithRDD.this
+
+      def getSlice(from: Int, to: Int): List[Int] = action(
+        rdd
+          .mapPartitions { itr =>
+            itr.slice(from, to)
+          }
+      )
+    }
+
+    lazy val src: Case = Case(_src)
+
+    lazy val cached: Case = Case(rdd.persist())
+
+    lazy val incrementallyCached: Case = {
+      Case(
+        new IncrementallyCachedRDD(rdd, 100, 100)
+      )
     }
   }
 }

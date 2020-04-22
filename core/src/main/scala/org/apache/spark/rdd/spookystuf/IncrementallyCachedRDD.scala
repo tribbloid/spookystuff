@@ -1,5 +1,6 @@
 package org.apache.spark.rdd.spookystuf
 
+import java.util.concurrent.Semaphore
 import java.util.concurrent.atomic.AtomicInteger
 
 import com.tribbloids.spookystuff.utils.CachingUtils
@@ -9,6 +10,7 @@ import org.apache.spark.broadcast.Broadcast
 import org.apache.spark.rdd.RDD
 import org.apache.spark.sql.spookystuf.ExternalAppendOnlyArray
 import org.apache.spark.{Partition, TaskContext}
+import org.slf4j.LoggerFactory
 
 import scala.reflect.ClassTag
 
@@ -31,8 +33,38 @@ class IncrementallyCachedRDD[T: ClassTag](
 
     case class WTask(task: TaskContext) {
 
+      @volatile var _commissionedBy: TaskContext = task
+
+      def recommission(newTask: TaskContext): Unit = {
+
+        semaphore.acquire()
+        newTask.addTaskCompletionListener { _ =>
+          semaphore.release()
+        }
+
+        if (!_commissionedBy.eq(newTask)) {
+
+          val metrics = task.taskMetrics()
+          val activeAccs = metrics.externalAccums
+
+          for (acc <- activeAccs) {
+
+            newTask.registerAccumulator(acc)
+            acc.reset()
+          }
+
+          LoggerFactory
+            .getLogger(this.getClass)
+            .info(s"recommissioning ${task.taskAttemptId()}: ${_commissionedBy
+              .taskAttemptId()} -> ${newTask.taskAttemptId()}, accumulators ${activeAccs.map("#" + _.id).mkString(",")}")
+
+          _commissionedBy = newTask
+        }
+      }
+
+      val semaphore = new Semaphore(1) // cannot be shared by >1 threads
+
       val counter = new AtomicInteger(0)
-      def traversedIndex: Int = counter.get()
 
       val compute: Iterator[T] = firstParent[T].compute(p, task).map { v =>
         counter.getAndIncrement()
@@ -41,7 +73,7 @@ class IncrementallyCachedRDD[T: ClassTag](
 
       def getOrCompute(start: Int): Iterator[T] = {
 
-        cache.getOrComputeIterator(compute, traversedIndex, start)
+        cache.Impl(start).cachedOrComputeIterator(compute, counter.get())
       }
 
       def active: WTask = Option(_activeTask).getOrElse {
@@ -56,44 +88,25 @@ class IncrementallyCachedRDD[T: ClassTag](
 
       def output(start: Int): Iterator[T] = {
 
-        val activeTask = active.task
-        val thisTask = this.task
-
-        if (!this.eq(active)) {
-          val taskMetrics = activeTask.taskMetrics()
-          val activeAccs = taskMetrics.accumulators()
-
-          for (acc <- activeAccs) {
-
-            acc.reset()
-            thisTask.registerAccumulator(acc)
-          }
-        }
-
-        try {
-
-          active.getOrCompute(start)
-        } catch {
-          case _: ArrayIndexOutOfBoundsException =>
-            regenerate()
-
-            getOrCompute(start)
-        }
+        active.recommission(this.task)
+        active.getOrCompute(start)
       }
     }
-
   }
 
-  val existingBroadcast: Broadcast[ConcurrentMap[Partition, Dependency]] = {
+  case class Existing() {
 
-    val v: CachingUtils.ConcurrentMap[Partition, Dependency] = {
+    @transient lazy val self: CachingUtils.ConcurrentMap[Partition, Dependency] = {
 
       CachingUtils.ConcurrentMap()
     }
-
-    sparkContext.broadcast(v)
   }
-  def existing: ConcurrentMap[Partition, Dependency] = existingBroadcast.value
+
+  val existingBroadcast: Broadcast[Existing] = {
+
+    sparkContext.broadcast(Existing())
+  }
+  def existing: ConcurrentMap[Partition, Dependency] = existingBroadcast.value.self
 
   def findDependency(p: Partition): Dependency = {
 
@@ -108,9 +121,6 @@ class IncrementallyCachedRDD[T: ClassTag](
   override def compute(split: Partition, context: TaskContext): Iterator[T] = {
 
     val dep = findDependency(split).WTask(context)
-
-    val oldCtx = dep.task
-    val newCtx = context
 
     dep.output(0) // TODO: start should be customisable
   }

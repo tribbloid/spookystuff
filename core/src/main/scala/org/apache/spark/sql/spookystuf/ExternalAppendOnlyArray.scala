@@ -43,7 +43,7 @@ class ExternalAppendOnlyArray[T](
 
   lazy val ser: SerializerInstance = serializerMgr.getSerializer(ctg, autoPick = true).newInstance()
 
-  def disguise(v: T): UnsafeRow = {
+  protected def disguise(v: T): UnsafeRow = {
 
     val bin = ser.serialize(v).array()
 
@@ -52,7 +52,7 @@ class ExternalAppendOnlyArray[T](
     result
   }
 
-  def reveal(row: UnsafeRow): T = {
+  protected def reveal(row: UnsafeRow): T = {
 
     val result = ser.deserialize[T](ByteBuffer.wrap(row.getBytes))
 
@@ -64,85 +64,113 @@ class ExternalAppendOnlyArray[T](
     delegate.add(row)
   }
 
-  def generateIterator(outputStart: Int = 0): Iterator[T] = {
+  def addIfNew(i: Int, v: T): Unit = this.synchronized {
 
-    val raw = delegate.generateIterator(outputStart)
-
-    raw.map { row =>
-      reveal(row)
-    }
+    if (i > length) add(v)
   }
 
-  /**
-    * @param fallback assumed to be slow, will be avoided whenever possible
-    * @param outputStart of the first returned value
-    * @return
-    */
-  def getOrComputeIterator(
-      fallback: Iterator[T],
-      fallbackTraversed: Int = 0,
-      outputStart: Int = 0
-  ): Iterator[T] = {
+  case class Impl(fromIndex: Int = 0) {
 
-    val offsetCounter = new AtomicInteger(outputStart - fallbackTraversed)
+    def snapshotIterator: Iterator[T] = {
 
-    val cached = generateIterator(outputStart).map { v =>
-      offsetCounter.getAndIncrement()
-      v
-    }
+      if (delegate.isEmpty) Iterator.empty
+      else {
+        val raw = delegate.generateIterator(fromIndex)
 
-    lazy val offsetAfterCacheIsDrained = {
-
-      val _offset = offsetCounter.get()
-
-      if (_offset < 0)
-        throw new ArrayIndexOutOfBoundsException(
-          s"fallback iterator can no longer provide values from ${fallbackTraversed + _offset} ~ $fallbackTraversed"
-        )
-
-      _offset
-    }
-
-    val computed = {
-
-      fallback.slice(offsetCounter.get(), Int.MaxValue).map { v =>
-        offsetAfterCacheIsDrained
-        add(v)
-        v
+        raw.map { row =>
+          val result = reveal(row)
+          result
+        }
       }
     }
 
-    cached ++ computed
-  }
+    case class cachedIterator() extends Iterator[T] {
 
-  //TODO: remove, redundant
-  //    case class GetOrCompute(
-  //                             fallback: Iterator[T],
-  //                             index: Int = 0
-  //                    ) extends Iterator[T] {
-  //
-  //      lazy val cached: Iterator[T] = array.generateIterator(index)
-  //
-  //
-  //
-  //      override def hasNext: Boolean = {
-  //
-  //        cached.hasNext || fallback.hasNext
-  //      }
-  //
-  //      val offset: AtomicInteger = new AtomicInteger(index)
-  //
-  //      override def next(): T = {
-  //
-  //        if (cached.hasNext) {
-  //          offset.getAndIncrement()
-  //          cached.next()
-  //        }
-  //        else {
-  //
-  //        }
-  //      }
-  //    }
+      val consumed = new AtomicInteger(fromIndex) // strictly incremental
+
+      @transient var snapshot: Iterator[T] = _
+      updateSnapshot()
+
+      def updateSnapshot(): Unit = {
+        snapshot = Impl(consumed.get()).snapshotIterator.map { v =>
+          consumed.incrementAndGet()
+//          println(s"cached pointer $v")
+          v
+        }
+      }
+
+      // once reaching the end, cannot become alive again
+      @transient var _hasNext: Boolean = true
+      override def hasNext: Boolean = {
+
+        _hasNext = _hasNext && {
+          consumed.get() < delegate.length
+        }
+
+        _hasNext
+      }
+
+      override def next(): T = {
+
+        if (snapshot.hasNext) snapshot.next()
+        else if (hasNext) {
+          updateSnapshot()
+          snapshot.next()
+        } else {
+          throw new NoSuchElementException("next on empty iterator")
+        }
+      }
+    }
+
+    case class cachedOrComputeIterator(
+        computeIterator: Iterator[T], // can be assumed to be thread exclusive
+        alreadyComputed: Int = 0
+    ) extends Iterator[T] {
+
+      val cached: cachedIterator = cachedIterator()
+
+      val computeConsumed = new AtomicInteger(alreadyComputed)
+
+      val computed: Iterator[T] = computeIterator.map { v =>
+        computeConsumed.incrementAndGet()
+        v
+      }
+
+      def computeFastForward(): Unit = {
+
+        val difference = cached.consumed.get() - computeConsumed.get()
+
+        if (difference < 0)
+          throw new ArrayIndexOutOfBoundsException(
+            s"compute iterator can't go back: from $computeConsumed to ${cached.consumed}"
+          )
+
+        if (difference > 0)
+          computed.drop(difference)
+      }
+
+      lazy val computeFastForwardOnce: Unit = computeFastForward()
+
+      override def hasNext: Boolean = cached.hasNext || {
+        computeFastForwardOnce
+        computed.hasNext
+      }
+
+      override def next(): T = {
+
+        if (cached.hasNext) {
+          cached.next()
+        } else {
+          computeFastForwardOnce
+          val result = computed.next()
+
+          addIfNew(computeConsumed.get(), result)
+
+          result
+        }
+      }
+    }
+  }
 
   def clear(): Unit = {
     delegate.clear()
@@ -156,3 +184,5 @@ class ExternalAppendOnlyArray[T](
     delegate.isEmpty
   }
 }
+
+object ExternalAppendOnlyArray {}
