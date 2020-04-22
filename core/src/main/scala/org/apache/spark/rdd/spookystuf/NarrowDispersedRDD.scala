@@ -1,4 +1,4 @@
-package org.apache.spark.spookystuf.rdd
+package org.apache.spark.rdd.spookystuf
 
 import java.io.Serializable
 import java.util.concurrent.atomic.AtomicInteger
@@ -6,7 +6,7 @@ import java.util.concurrent.atomic.AtomicInteger
 import com.tribbloids.spookystuff.utils.serialization.NOTSerializable
 import org.apache.spark._
 import org.apache.spark.rdd.RDD
-import org.apache.spark.spookystuf.rdd.NarrowDispersedRDD._
+import NarrowDispersedRDD._
 
 import scala.language.existentials
 import scala.reflect.ClassTag

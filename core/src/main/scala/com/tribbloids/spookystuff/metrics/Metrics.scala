@@ -88,6 +88,11 @@ object Metrics {
       extraMembers
     }
 
+    final protected def writeReplace(): Any = {
+      initialise()
+      this
+    }
+
     @transient private lazy val extraMembers: List[(String, MetricLike)] = {
       val methods = this.getClass.getMethods.toList
         .filter { method =>

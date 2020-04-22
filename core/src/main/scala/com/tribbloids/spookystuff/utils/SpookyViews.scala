@@ -5,7 +5,7 @@ import com.tribbloids.spookystuff.row._
 import com.tribbloids.spookystuff.utils.CachingUtils.ConcurrentMap
 import com.tribbloids.spookystuff.utils.locality.PartitionIdPassthrough
 import org.apache.spark.rdd.RDD
-import org.apache.spark.spookystuf.rdd.NarrowDispersedRDD
+import org.apache.spark.rdd.spookystuf.NarrowDispersedRDD
 import org.apache.spark.sql.DataFrame
 import org.apache.spark.storage.{RDDInfo, StorageLevel}
 import org.apache.spark.{HashPartitioner, SparkContext, TaskContext}
