@@ -1,13 +1,12 @@
 package com.tribbloids.spookystuff.metrics
 
-import com.tribbloids.spookystuff.utils.IDMixin
 import org.apache.spark.SparkContext
 import org.apache.spark.ml.dsl.utils.?
 import org.apache.spark.sql.SparkSession
 import org.apache.spark.sql.execution.streaming.EventTimeStatsAccum
 import org.apache.spark.util.{AccumulatorV2, DoubleAccumulator, LongAccumulator}
 
-import scala.language.{existentials, implicitConversions}
+import scala.language.implicitConversions
 
 /**
   * a simple wrapper of Spark AccumulatorV2 that automatically register itself & derive name from productPrefix
@@ -87,7 +86,7 @@ object Acc {
 
   abstract class CanBuild_Level1 extends CanBuild_Level2 {
 
-    case class Long2Stats[IN](implicit ev: IN => Long) extends CanInitialise[IN, EventTimeStatsAccum] {
+    case class Long2Stats[IN]()(implicit ev: IN => Long) extends CanInitialise[IN, EventTimeStatsAccum] {
 
       override def build: EventTimeStatsAccum = new EventTimeStatsAccum()
 
@@ -95,7 +94,7 @@ object Acc {
     }
     implicit def long2Stats[IN](implicit ev: IN => Long): Long2Stats[IN] = Long2Stats()(ev)
 
-    case class Double2Double[IN](implicit ev: IN => Double) extends CanInitialise[IN, DoubleAccumulator] {
+    case class Double2Double[IN]()(implicit ev: IN => Double) extends CanInitialise[IN, DoubleAccumulator] {
       override def build: DoubleAccumulator = new DoubleAccumulator()
 
       override def add(self: DoubleAccumulator, v: IN): Unit = self.add(v)
@@ -105,7 +104,7 @@ object Acc {
 
   abstract class CanBuild_Level0 extends CanBuild_Level1 {
 
-    case class Long2Long[IN](implicit ev: IN => Long) extends CanInitialise[IN, LongAccumulator] {
+    case class Long2Long[IN]()(implicit ev: IN => Long) extends CanInitialise[IN, LongAccumulator] {
 
       override def build: LongAccumulator = new LongAccumulator()
 

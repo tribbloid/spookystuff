@@ -38,7 +38,7 @@ class IncrementallyCachedRDD[T: ClassTag](
       def recommission(newTask: TaskContext): Unit = {
 
         semaphore.acquire()
-        newTask.addTaskCompletionListener { _ =>
+        newTask.addTaskCompletionListener[Unit] { _: TaskContext =>
           semaphore.release()
         }
 
