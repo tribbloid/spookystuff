@@ -36,9 +36,11 @@ object TreeThrowable {
         FlowUtils.stackTracesShowStr(self.getStackTrace)
   }
 
-  sealed trait MonadicUndefined extends Throwable
-
-  object Undefined extends MonadicUndefined
+  /**
+    * Not a real throwable, just a placeholder indicating lack of trials
+    */
+  sealed trait Undefined extends Throwable
+  object Undefined extends Undefined
 
   //  def aggregate(
   //                 fn: Seq[Throwable] => Throwable,
@@ -131,7 +133,7 @@ object TreeThrowable {
     * @return
     */
   def combine(causes: Seq[Throwable], upliftUnary: Boolean = true): Throwable = {
-    val _causes = causes.distinct
+    val _causes = causes.distinct.filterNot(_.isInstanceOf[Undefined])
     if (_causes.isEmpty) Undefined
 
     if (_causes.size == 1 && upliftUnary) {
@@ -141,8 +143,15 @@ object TreeThrowable {
     }
   }
 
+  /**
+    * same as [[combine]], except that any [[Undefined]] detected will cause the output to be also [[Undefined]]
+    * indicating that a lack of trials is the ultimate cause and can be situationally ignored
+    * @param causes
+    * @param upliftUnary not recommended to set to false, should use Wrapper() directly for type safety
+    * @return
+    */
   def monadicCombine(causes: Seq[Throwable], upliftUnary: Boolean = true): Throwable = {
-    val undefined = causes.find(_.isInstanceOf[MonadicUndefined])
+    val undefined = causes.find(_.isInstanceOf[Undefined])
     undefined.getOrElse(
       combine(causes, upliftUnary)
     )
