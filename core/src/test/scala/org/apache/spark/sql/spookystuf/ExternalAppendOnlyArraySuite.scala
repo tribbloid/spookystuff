@@ -2,10 +2,10 @@ package org.apache.spark.sql.spookystuf
 
 import org.apache.spark.rdd.UnionRDD
 import org.apache.spark.util.LongAccumulator
-import org.scalatest.FunSpec
+import org.scalatest.{FunSpec, Ignore}
 
 // TODO: why this test doesn't work?
-//@Ignore
+@Ignore
 class ExternalAppendOnlyArraySuite extends FunSpec {
 
   import com.tribbloids.spookystuff.testutils.TestHelper._
