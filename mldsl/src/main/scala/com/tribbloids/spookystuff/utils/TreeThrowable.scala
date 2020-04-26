@@ -179,7 +179,7 @@ trait TreeThrowable extends Throwable {
       case _                           => Option(cause).toSeq
     }
   }
-  lazy val treeNodeView = TreeNodeView(this)
+  lazy val treeNodeView: TreeNodeView = TreeNodeView(this)
 
   override def getMessage: String = treeNodeView.treeString(verbose = false)
 

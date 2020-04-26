@@ -4,14 +4,13 @@ import java.nio.ByteBuffer
 import java.util.concurrent.atomic.AtomicInteger
 
 import org.apache.spark.SparkEnv
-import org.apache.spark.serializer.{SerializerInstance, SerializerManager}
+import org.apache.spark.serializer.{Serializer, SerializerManager}
 import org.apache.spark.sql.catalyst.expressions.UnsafeRow
 import org.apache.spark.sql.execution.ExternalAppendOnlyUnsafeRowArray
 
 import scala.reflect.ClassTag
 
 /**
-  * NOT thread safe!
   * @param delegate only supports UnsafeRow, adapted
   * @param serializerMgr see below
   * @param ctg used to automatically determine serializer being used
@@ -41,11 +40,11 @@ class ExternalAppendOnlyArray[T](
     )
   }
 
-  lazy val ser: SerializerInstance = serializerMgr.getSerializer(ctg, autoPick = true).newInstance()
+  val ser: Serializer = serializerMgr.getSerializer(ctg, autoPick = true)
 
   protected def disguise(v: T): UnsafeRow = {
 
-    val bin = ser.serialize(v).array()
+    val bin = ser.newInstance().serialize(v).array()
 
     val result = new UnsafeRow()
     result.pointTo(bin, bin.length)
@@ -54,7 +53,7 @@ class ExternalAppendOnlyArray[T](
 
   protected def reveal(row: UnsafeRow): T = {
 
-    val result = ser.deserialize[T](ByteBuffer.wrap(row.getBytes))
+    val result = ser.newInstance().deserialize[T](ByteBuffer.wrap(row.getBytes))
 
     result
   }
@@ -69,6 +68,10 @@ class ExternalAppendOnlyArray[T](
     if (i > length) add(v)
   }
 
+  /**
+    * NOT thread safe
+    * @param fromIndex iterator starts here
+    */
   case class Impl(fromIndex: Int = 0) {
 
     def snapshotIterator: Iterator[T] = {

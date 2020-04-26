@@ -3,7 +3,7 @@ package org.apache.spark.rdd.spookystuf
 import java.util.concurrent.atomic.AtomicInteger
 
 import com.tribbloids.spookystuff.testutils.TestHelper.TestSC
-import com.tribbloids.spookystuff.utils.PreemptiveLocalOps
+import com.tribbloids.spookystuff.utils.{PreemptiveLocalOps, SCFunctions}
 import org.apache.spark.rdd.RDD
 import org.apache.spark.rdd.spookystuf.IncrementallyCachedRDDSuite.WithRDD
 import org.apache.spark.util.LongAccumulator
@@ -40,7 +40,10 @@ class IncrementallyCachedRDDSuite extends FunSpec with BeforeAndAfterAll {
 
         for (i <- 0 to 9) {
 
-          val sliced = u.incrementallyCached.getSlice(i, i + 2)
+          val sliced = SCFunctions.withJob(s"slice $i") {
+
+            u.incrementallyCached.getSlice(i, i + 2)
+          }
 
           assert(sliced == groundTruth.src.getSlice(i, i + 2))
 
@@ -72,7 +75,10 @@ class IncrementallyCachedRDDSuite extends FunSpec with BeforeAndAfterAll {
 
   override def nestedSuites: immutable.IndexedSeq[Suite] = immutable.IndexedSeq(
     Sub(1),
-    Sub(16)
+    Sub(3),
+    Sub(8),
+    Sub(21),
+    Sub(64)
   )
 
 //  override def afterAll(): Unit = {
@@ -97,7 +103,7 @@ object IncrementallyCachedRDDSuite {
     def localAcc: AtomicInteger = localAccs.getOrElseUpdate(id, new AtomicInteger())
 
     val acc = new LongAccumulator()
-    TestSC.register(acc)
+    TestSC.register(acc, "count")
 
     val rdd: RDD[Int] = _src.map { v =>
       localAcc.getAndIncrement()
