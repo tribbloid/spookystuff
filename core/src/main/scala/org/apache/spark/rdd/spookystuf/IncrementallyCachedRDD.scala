@@ -12,10 +12,10 @@ import org.apache.spark.broadcast.Broadcast
 import org.apache.spark.rdd.RDD
 import org.apache.spark.scheduler.TaskLocation
 import org.apache.spark.sql.spookystuf.ExternalAppendOnlyArray
+import org.apache.spark.util.AccumulatorV2
 import org.apache.spark.{OneToOneDependency, Partition, SparkEnv, TaskContext}
 import org.slf4j.LoggerFactory
 
-import scala.collection.mutable
 import scala.reflect.ClassTag
 
 class IncrementallyCachedRDD[T: ClassTag](
@@ -61,30 +61,59 @@ class IncrementallyCachedRDD[T: ClassTag](
 
       @volatile var _commissionedBy: TaskContext = task
 
-      def recommission(newTask: TaskContext): Unit = {
+      lazy val accumulatorMap: Map[Long, AccumulatorV2[_, _]] = {
+
+        val metrics = task.taskMetrics()
+        val activeAccs = metrics.externalAccums
+        Map(activeAccs.map(v => v.id -> v): _*)
+      }
+
+      def recommission(neo: WTask): Unit = {
+
+        val newTask = neo.task
 
         semaphore.acquire()
-        newTask.addTaskCompletionListener[Unit] { _: TaskContext =>
-          semaphore.release()
-        }
 
-        if (!_commissionedBy.eq(newTask)) {
+        val transferAccums = !_commissionedBy.eq(newTask)
 
-          val metrics = task.taskMetrics()
-          val activeAccs = metrics.externalAccums
+        if (transferAccums) {
 
-          for (acc <- activeAccs) {
+          for ((_, acc) <- accumulatorMap) {
 
-            newTask.registerAccumulator(acc) // TODO: still defective, should read from _commissionedBy ?
             acc.reset()
           }
 
           LoggerFactory
             .getLogger(this.getClass)
             .info(s"recommissioning ${task.taskAttemptId()}: ${_commissionedBy
-              .taskAttemptId()} -> ${newTask.taskAttemptId()}, accumulators ${activeAccs.map("#" + _.id).mkString(",")}")
+              .taskAttemptId()} -> ${newTask
+              .taskAttemptId()}, accumulators ${accumulatorMap.keys.map(v => "#" + v).mkString(",")}")
 
           _commissionedBy = newTask
+        }
+
+        newTask.addTaskCompletionListener[Unit] { _: TaskContext =>
+          if (transferAccums) {
+
+            val newAccums = neo.accumulatorMap
+
+            for ((k, newAcc) <- newAccums) {
+
+              accumulatorMap.get(k) match {
+
+                case Some(oldAcc) =>
+                  newAcc.asInstanceOf[AccumulatorV2[Any, Any]].merge(oldAcc.asInstanceOf[AccumulatorV2[Any, Any]])
+                case None =>
+                  LoggerFactory
+                    .getLogger(this.getClass)
+                    .warn(
+                      s"Accumulator ${newAcc.toString()} cannot be found in task ${task.stageId()}/${task.taskAttemptId()}"
+                    )
+              }
+            }
+          }
+
+          semaphore.release()
         }
       }
 
@@ -114,7 +143,7 @@ class IncrementallyCachedRDD[T: ClassTag](
 
       def output(start: Int): Iterator[T] = {
 
-        active.recommission(this.task)
+        active.recommission(this)
         active.getOrCompute(start)
       }
     }

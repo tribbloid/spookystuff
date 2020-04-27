@@ -34,6 +34,7 @@ class IncrementallyCachedRDDSuite extends FunSpec with BeforeAndAfterAll {
     }
 
     describe("incremental cache") {
+
       it("should only cache the necessary part of the partition") {
 
         val u = WithRDD(TestSC.parallelize(1 to size, numPartitions))
