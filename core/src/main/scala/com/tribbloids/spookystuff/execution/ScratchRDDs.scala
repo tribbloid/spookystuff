@@ -7,6 +7,7 @@ import org.apache.spark.broadcast.Broadcast
 import org.apache.spark.rdd.RDD
 import org.apache.spark.sql.Dataset
 import org.apache.spark.storage.StorageLevel
+import org.slf4j.LoggerFactory
 
 import scala.collection.mutable.ArrayBuffer
 import scala.reflect.ClassTag
@@ -18,6 +19,7 @@ import scala.util.Random
 object ScratchRDDs {
   val prefix = "temp_"
 
+  val logger = LoggerFactory.getLogger(this.getClass)
   //TODO: this name should be validated against current DB to ensure that such name doesn't exist
   def tempTableName(): String = {
     prefix + Math.abs(Random.nextInt())
@@ -74,6 +76,7 @@ case class ScratchRDDs(
 
     if (rdd.getStorageLevel == StorageLevel.NONE) {
       tempRDDs += rdd.persist(storageLevel)
+      ScratchRDDs.logger.debug(s"Persisting RDD : ${rdd.id}" )
     }
     rdd
   }
@@ -101,7 +104,9 @@ case class ScratchRDDs(
 
   def dropTempViews(): Unit = {
     tempTables.foreach { tuple =>
+      ScratchRDDs.logger.debug(s"Dropping temperary view : ${tuple._1}")
       tuple._2.sqlContext.dropTempTable(tuple._1)
+      ScratchRDDs.logger.debug(s"Temperary view  ${tuple._1} dropped")
     }
     tempTables.clear()
   }
@@ -110,10 +115,13 @@ case class ScratchRDDs(
       blocking: Boolean = false
   ): Unit = {
 
+    ScratchRDDs.logger.debug("Starting Clean Up Process")
+
     dropTempViews()
 
     tempDSs.foreach { ds =>
       ds.unpersist(blocking)
+      ScratchRDDs.logger.debug(s"Unpersisting temporary dataset ")
     }
     tempDSs.clear()
 
@@ -123,7 +131,9 @@ case class ScratchRDDs(
     tempRDDs.clear()
 
     tempBroadcasts.foreach { b =>
+      ScratchRDDs.logger.debug(s"Destroying broadcast variable : ${b.id}")
       b.destroy()
+      ScratchRDDs.logger.debug(s"Broadcast variable : ${b.id} destroyed")
     }
     tempBroadcasts.clear()
   }
