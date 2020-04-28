@@ -39,7 +39,7 @@ case class PreemptiveLocalOps(capacity: Int)(
             val exe = factory()
 
             val jobText = exe.jobTextOvrd.getOrElse(
-              s"$ii (preemptive)"
+              s"$ii\t/ ${wIndex.size} (preemptive)"
             )
 
             sc.withJob(jobText) {

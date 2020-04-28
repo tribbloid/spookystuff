@@ -7,6 +7,7 @@ import org.apache.spark.SparkEnv
 import org.apache.spark.serializer.{Serializer, SerializerManager}
 import org.apache.spark.sql.catalyst.expressions.UnsafeRow
 import org.apache.spark.sql.execution.ExternalAppendOnlyUnsafeRowArray
+import org.slf4j.LoggerFactory
 
 import scala.reflect.ClassTag
 
@@ -66,6 +67,11 @@ class ExternalAppendOnlyArray[T](
   def addIfNew(i: Int, v: T): Unit = this.synchronized {
 
     if (i == length) add(v)
+    else if (i > length)
+      LoggerFactory
+        .getLogger(this.getClass)
+        .info(s"new value at index $i is out of order and cannot be added")
+
   }
 
   /**
