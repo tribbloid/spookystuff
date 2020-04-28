@@ -6,6 +6,7 @@ import com.tribbloids.spookystuff.testutils.TestHelper.TestSC
 import com.tribbloids.spookystuff.utils.{PreemptiveLocalOps, SCFunctions}
 import org.apache.spark.rdd.RDD
 import org.apache.spark.rdd.spookystuf.IncrementallyCachedRDDSuite.WithRDD
+import org.apache.spark.sql.spookystuf.FastForwardingIterator
 import org.apache.spark.util.LongAccumulator
 import org.scalatest.{BeforeAndAfterAll, FunSpec, Suite}
 
@@ -29,11 +30,11 @@ class IncrementallyCachedRDDSuite extends FunSpec with BeforeAndAfterAll {
       val n = sliced.size
 
       assert(n == numPartitions * 2)
-      assert(u.acc.value == size)
+      assert(u.count.value == size)
       assert(u.localAcc.get() <= size)
     }
 
-    describe("incremental cache") {
+    describe("without fastForward") {
 
       it("should only cache the necessary part of the partition") {
 
@@ -49,7 +50,7 @@ class IncrementallyCachedRDDSuite extends FunSpec with BeforeAndAfterAll {
           assert(sliced == groundTruth.src.getSlice(i, i + 2))
 
           assert(sliced.size == numPartitions * 2)
-          assert(u.acc.value == numPartitions * (2 + i))
+          assert(u.count.value == numPartitions * (2 + i))
           assert(u.localAcc.get() <= numPartitions * (2 + i))
         }
       }
@@ -67,7 +68,51 @@ class IncrementallyCachedRDDSuite extends FunSpec with BeforeAndAfterAll {
           assert(sliced == groundTruth.src.getSlice(i, i + 2))
 
           assert(sliced.size == numPartitions * 2)
-          assert(u.acc.value == numPartitions * (2 + i))
+          assert(u.count.value == numPartitions * (2 + i))
+          assert(u.localAcc.get() <= numPartitions * (2 + i))
+        }
+      }
+    }
+
+    describe("with fastForward") {
+
+      it("should only cache the necessary part of the partition") {
+
+        val u = WithRDD(TestSC.parallelize(1 to size, numPartitions))
+
+        for (i <- 0 to 9) {
+
+          val sliced = SCFunctions.withJob(s"slice $i") {
+
+            u.incrementallyCached.getSlice_fastForward(i, i + 2)
+          }
+
+          assert(u.ffInvoked.value > 0)
+
+          assert(sliced == groundTruth.src.getSlice(i, i + 2))
+
+          assert(sliced.size == numPartitions * 2)
+          assert(u.count.value == numPartitions * (2 + i))
+          assert(u.localAcc.get() <= numPartitions * (2 + i))
+        }
+      }
+
+      it("... even if using preemptive collection") {
+
+        val u = WithRDD(TestSC.parallelize(1 to size, numPartitions), { rdd =>
+          PreemptiveLocalOps(8).ForRDD(rdd).toLocalIterator.toList
+        })
+
+        for (i <- 0 to 9) {
+
+          val sliced = u.incrementallyCached.getSlice_fastForward(i, i + 2)
+
+          assert(u.ffInvoked.value > 0)
+
+          assert(sliced == groundTruth.src.getSlice(i, i + 2))
+
+          assert(sliced.size == numPartitions * 2)
+          assert(u.count.value == numPartitions * (2 + i))
           assert(u.localAcc.get() <= numPartitions * (2 + i))
         }
       }
@@ -103,12 +148,15 @@ object IncrementallyCachedRDDSuite {
 
     def localAcc: AtomicInteger = localAccs.getOrElseUpdate(id, new AtomicInteger())
 
-    val acc = new LongAccumulator()
-    TestSC.register(acc, "count")
+    val count = new LongAccumulator()
+    TestSC.register(count, "count")
+
+    val ffInvoked = new LongAccumulator()
+    TestSC.register(ffInvoked, "ffInvoked")
 
     val rdd: RDD[Int] = _src.map { v =>
       localAcc.getAndIncrement()
-      acc add 1
+      count add 1
 //      println(v)
       v
     }
@@ -123,6 +171,17 @@ object IncrementallyCachedRDDSuite {
         rdd
           .mapPartitions { itr =>
             itr.slice(from, to)
+          }
+      )
+
+      def getSlice_fastForward(from: Int, to: Int): immutable.Seq[Int] = action(
+        rdd
+          .mapPartitions {
+            case itr: FastForwardingIterator[Int] =>
+              ffInvoked.add(1)
+              itr.fastForward(from).slice(0, to - from)
+            case itr =>
+              itr.slice(from, to)
           }
       )
     }

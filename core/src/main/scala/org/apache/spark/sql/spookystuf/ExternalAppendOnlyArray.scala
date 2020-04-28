@@ -65,20 +65,20 @@ class ExternalAppendOnlyArray[T](
 
   def addIfNew(i: Int, v: T): Unit = this.synchronized {
 
-    if (i > length) add(v)
+    if (i == length) add(v)
   }
 
   /**
     * NOT thread safe
-    * @param fromIndex iterator starts here
+    * @param startingFrom iterator starts here
     */
-  case class Impl(fromIndex: Int = 0) {
+  case class Impl(startingFrom: Int = 0) {
 
     def snapshotIterator: Iterator[T] = {
 
       if (delegate.isEmpty) Iterator.empty
       else {
-        val raw = delegate.generateIterator(fromIndex)
+        val raw = delegate.generateIterator(startingFrom)
 
         raw.map { row =>
           val result = reveal(row)
@@ -87,9 +87,9 @@ class ExternalAppendOnlyArray[T](
       }
     }
 
-    case class cachedIterator() extends Iterator[T] {
+    case class cachedIterator() extends FastForwardingIterator[T] {
 
-      val consumed = new AtomicInteger(fromIndex) // strictly incremental
+      val consumed = new AtomicInteger(startingFrom) // strictly incremental
 
       @transient var snapshot: Iterator[T] = _
       updateSnapshot()
@@ -123,23 +123,26 @@ class ExternalAppendOnlyArray[T](
           throw new NoSuchElementException("next on empty iterator")
         }
       }
+
+      override def fastForward(n: Int): FastForwardingIterator[T] = Impl(consumed.get()).cachedIterator()
     }
 
     case class cachedOrComputeIterator(
         computeIterator: Iterator[T], // can be assumed to be thread exclusive
-        alreadyComputed: Int = 0
-    ) extends Iterator[T] {
+        computeStartingFrom: Int = 0
+    ) extends FastForwardingIterator[T] {
 
       val cached: cachedIterator = cachedIterator()
 
-      val computeConsumed = new AtomicInteger(alreadyComputed)
+      val computeConsumed = new AtomicInteger(computeStartingFrom)
+      val overallConsumed = new AtomicInteger(startingFrom)
 
-      val computed: Iterator[T] = computeIterator.map { v =>
+      lazy val computed: Iterator[T] = computeIterator.map { v =>
         computeConsumed.incrementAndGet()
         v
       }
 
-      def computeFastForward(): Unit = {
+      def computeCatchingUp(): Unit = {
 
         val difference = cached.consumed.get() - computeConsumed.get()
 
@@ -152,7 +155,7 @@ class ExternalAppendOnlyArray[T](
           computed.drop(difference)
       }
 
-      lazy val computeFastForwardOnce: Unit = computeFastForward()
+      lazy val computeFastForwardOnce: Unit = computeCatchingUp()
 
       override def hasNext: Boolean = cached.hasNext || {
         computeFastForwardOnce
@@ -161,17 +164,22 @@ class ExternalAppendOnlyArray[T](
 
       override def next(): T = {
 
-        if (cached.hasNext) {
+        val result = if (cached.hasNext) {
           cached.next()
         } else {
           computeFastForwardOnce
           val result = computed.next()
 
-          addIfNew(computeConsumed.get(), result)
+          addIfNew(computeConsumed.get() - 1, result)
 
           result
         }
+        overallConsumed.incrementAndGet()
+        result
       }
+
+      override def fastForward(n: Int): FastForwardingIterator[T] =
+        Impl(overallConsumed.get() + n).cachedOrComputeIterator(computeIterator, computeConsumed.get())
     }
   }
 
