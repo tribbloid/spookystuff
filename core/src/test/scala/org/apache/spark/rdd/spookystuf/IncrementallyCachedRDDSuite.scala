@@ -97,6 +97,27 @@ class IncrementallyCachedRDDSuite extends FunSpec with BeforeAndAfterAll {
         }
       }
 
+      it("... even if the starting index exceeds the length of the cached array") {
+
+        val u = WithRDD(TestSC.parallelize(1 to size, numPartitions))
+
+        for (i <- 0 to 9) {
+
+          val sliced = SCFunctions.withJob(s"slice $i") {
+
+            u.incrementallyCached.getSlice_fastForward(4 * i, 4 * i + 2)
+          }
+
+          assert(u.ffInvoked.value > 0)
+
+          assert(sliced == groundTruth.src.getSlice(4 * i, 4 * i + 2))
+
+          assert(sliced.size == numPartitions * 2)
+          assert(u.count.value == numPartitions * (4 * i + 2))
+          assert(u.localAcc.get() <= numPartitions * (4 * i + 2))
+        }
+      }
+
       it("... even if using preemptive collection") {
 
         val u = WithRDD(TestSC.parallelize(1 to size, numPartitions), { rdd =>

@@ -82,7 +82,7 @@ class ExternalAppendOnlyArray[T](
 
     def snapshotIterator: Iterator[T] = {
 
-      if (delegate.isEmpty) Iterator.empty
+      if (length <= startingFrom) Iterator.empty
       else {
         val raw = delegate.generateIterator(startingFrom)
 
@@ -130,7 +130,7 @@ class ExternalAppendOnlyArray[T](
         }
       }
 
-      override def fastForward(n: Int): FastForwardingIterator[T] = Impl(consumed.get()).cachedIterator()
+      override def fastForward(n: Int): FastForwardingIterator[T] = Impl(consumed.get() + n).cachedIterator()
     }
 
     case class cachedOrComputeIterator(
