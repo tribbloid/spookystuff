@@ -53,7 +53,7 @@ class IncrementallyCachedRDD[T: ClassTag](
       p: Partition
   ) extends NOTSerializable {
 
-    lazy val cache = new ExternalAppendOnlyArray[T](numRowsInMemoryBufferThreshold, numRowsSpillThreshold)
+    lazy val cacheArray = new ExternalAppendOnlyArray[T](numRowsInMemoryBufferThreshold, numRowsSpillThreshold)
 
     @volatile var _activeTask: WTask = _
 
@@ -128,7 +128,7 @@ class IncrementallyCachedRDD[T: ClassTag](
 
       def getOrCompute(start: Int): Iterator[T] = {
 
-        cache.Impl(start).cachedOrComputeIterator(compute, counter.get())
+        cacheArray.Impl(start).cachedOrComputeIterator(compute, counter.get())
       }
 
       def active: WTask = Option(_activeTask).getOrElse {
@@ -143,8 +143,15 @@ class IncrementallyCachedRDD[T: ClassTag](
 
       def output(start: Int): Iterator[T] = {
 
-        active.recommission(this)
-        active.getOrCompute(start)
+        try {
+
+          active.recommission(this)
+          active.getOrCompute(start)
+        } catch {
+          case e: ExternalAppendOnlyArray.CannotComputeException =>
+            regenerate()
+            active.getOrCompute(start)
+        }
       }
     }
   }

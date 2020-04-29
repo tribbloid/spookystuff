@@ -24,6 +24,8 @@ class ExternalAppendOnlyArray[T](
     implicit val ctg: ClassTag[T]
 ) {
 
+  import ExternalAppendOnlyArray._
+
   {
     require(
       ctg.getClass != classOf[UnsafeRow],
@@ -153,7 +155,7 @@ class ExternalAppendOnlyArray[T](
         val difference = cached.consumed.get() - computeConsumed.get()
 
         if (difference < 0)
-          throw new ArrayIndexOutOfBoundsException(
+          throw new CannotComputeException(
             s"compute iterator can't go back: from $computeConsumed to ${cached.consumed}"
           )
 
@@ -202,4 +204,7 @@ class ExternalAppendOnlyArray[T](
   }
 }
 
-object ExternalAppendOnlyArray {}
+object ExternalAppendOnlyArray {
+
+  class CannotComputeException(info: String) extends ArrayIndexOutOfBoundsException(info)
+}
