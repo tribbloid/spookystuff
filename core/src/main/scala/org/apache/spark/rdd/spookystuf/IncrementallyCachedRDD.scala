@@ -119,9 +119,9 @@ class IncrementallyCachedRDD[T: ClassTag](
 
       val semaphore = new Semaphore(1) // cannot be shared by >1 threads
 
-      val counter = new AtomicInteger(0)
+      lazy val counter = new AtomicInteger(0)
 
-      val compute: Iterator[T] = firstParent[T].compute(p, task).map { v =>
+      lazy val compute: Iterator[T] = firstParent[T].compute(p, task).map { v =>
         counter.getAndIncrement()
         v
       }
@@ -149,8 +149,9 @@ class IncrementallyCachedRDD[T: ClassTag](
           active.getOrCompute(start)
         } catch {
           case e: ExternalAppendOnlyArray.CannotComputeException =>
+            LoggerFactory.getLogger(this.getClass).warn(s"recomputing partition ${p.index} as ${e.getMessage}")
             regenerate()
-            active.getOrCompute(start)
+            getOrCompute(start)
         }
       }
     }
