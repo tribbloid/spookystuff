@@ -111,9 +111,9 @@ case class ScratchRDDs(
 
   def dropTempViews(): Unit = {
     tempTables.foreach { tuple =>
-      ScratchRDDs.logger.info(s"Dropping temperary view : ${tuple._1}")
+      ScratchRDDs.logger.info(s"DPLog: Dropping temperary view : ${tuple._1}")
       tuple._2.sqlContext.dropTempTable(tuple._1)
-      ScratchRDDs.logger.info(s"Temperary view  ${tuple._1} dropped")
+      ScratchRDDs.logger.info(s"DPLog: Temperary view  ${tuple._1} dropped")
     }
     tempTables.clear()
   }
@@ -122,33 +122,33 @@ case class ScratchRDDs(
       blocking: Boolean = false
   ): Unit = {
 
-    ScratchRDDs.logger.info("Starting Clean Up Process")
-    ScratchRDDs.logger.info(s"tempRDDs size before cleanup : ${tempRDDs.size}")
-    ScratchRDDs.logger.info(s"tempDSs size before cleanup : ${tempDSs.size}")
+    ScratchRDDs.logger.info("DPLog: Starting Clean Up Process")
+    ScratchRDDs.logger.info(s"DPLog: tempRDDs size before cleanup : ${tempRDDs.size}")
+    ScratchRDDs.logger.info(s"DPLog: tempDSs size before cleanup : ${tempDSs.size}")
 
     dropTempViews()
 
     tempDSs.foreach { ds =>
       ds.unpersist(blocking)
-      ScratchRDDs.logger.info(s"Unpersisting temporary dataset ")
+      ScratchRDDs.logger.info(s"DPLog: Unpersisting temporary dataset ")
     }
     tempDSs.clear()
 
     tempRDDs.foreach { rdd =>
-      ScratchRDDs.logger.info(s"Unpersisting RDD: ${rdd.id} ")
+      ScratchRDDs.logger.info(s"DPLog: Unpersisting RDD: ${rdd.id} ")
       rdd.unpersist(blocking)
     }
     tempRDDs.clear()
 
     tempBroadcasts.foreach { b =>
-      ScratchRDDs.logger.info(s"Destroying broadcast variable : ${b.id}")
+      ScratchRDDs.logger.info(s"DPLog: Destroying broadcast variable : ${b.id}")
       b.destroy()
-      ScratchRDDs.logger.info(s"Broadcast variable : ${b.id} destroyed")
+      ScratchRDDs.logger.info(s"DPLog: Broadcast variable : ${b.id} destroyed")
     }
     tempBroadcasts.clear()
 
-    ScratchRDDs.logger.info(s"tempRDDs size after cleanup : ${tempRDDs.size}")
-    ScratchRDDs.logger.info(s"tempDSs size after cleanup : ${tempDSs.size}")
+    ScratchRDDs.logger.info(s"DPLog: tempRDDs size after cleanup : ${tempRDDs.size}")
+    ScratchRDDs.logger.info(s"DPLog: tempDSs size after cleanup : ${tempDSs.size}")
   }
 
   def <+>[T](b: ScratchRDDs, f: ScratchRDDs => ArrayBuffer[T]): ArrayBuffer[T] = {

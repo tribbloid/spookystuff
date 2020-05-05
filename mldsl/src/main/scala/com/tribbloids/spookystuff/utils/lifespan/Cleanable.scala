@@ -131,7 +131,7 @@ trait Cleanable {
   def chainClean: Seq[Cleanable] = Nil
 
   def clean(silent: Boolean = false): Unit = {
-    Cleanable.logger.info("Clean process started")
+    Cleanable.logger.info("DPLog: Clean process started")
     val chained: Seq[Try[Unit]] = chainClean.map { v =>
       Try {
         v.clean(silent)
@@ -139,7 +139,7 @@ trait Cleanable {
     }
     val self = Try {
       if (!isCleaned) {
-        Cleanable.logger.info(s"Clean process: ${!isCleaned} ")
+        Cleanable.logger.info(s"DPLog: Clean process: ${!isCleaned} ")
         isCleaned = true
         stacktraceAtCleaning = Some(Thread.currentThread().getStackTrace)
         try {
@@ -147,7 +147,7 @@ trait Cleanable {
           if (!silent) logPrefixed("Cleaned")
         } catch {
           case e: Throwable =>
-            Cleanable.logger.error("Clean process failed:" + e.getMessage)
+            Cleanable.logger.error("DPLog: Clean process failed:" + e.getMessage)
             Cleanable.logger.error(e.getStackTrace.mkString("\n"))
             isCleaned = false
             stacktraceAtCleaning = None
