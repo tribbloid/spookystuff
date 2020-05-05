@@ -64,9 +64,11 @@ case class ScratchRDDs(
       ds: Dataset[_],
       storageLevel: StorageLevel = defaultStorageLevel
   ): Unit = {
-
+    ScratchRDDs.logger.info(s"Dropping DS : ${ds}")
     ds.persist(storageLevel)
     tempDSs += ds
+    ScratchRDDs.logger.info(s"tempDSs size : ${tempDSs.size}")
+
   }
 
   def persist[T](
@@ -76,8 +78,13 @@ case class ScratchRDDs(
 
     if (rdd.getStorageLevel == StorageLevel.NONE) {
       tempRDDs += rdd.persist(storageLevel)
-      ScratchRDDs.logger.debug(s"Persisting RDD : ${rdd.id}" )
+      ScratchRDDs.logger.info(s"Persisting RDD : ${rdd.id}" )
     }
+    else {
+      ScratchRDDs.logger.info(s"Not Persisting  RDD  cause of storage level: ${rdd.getStorageLevel}" )
+    }
+
+    ScratchRDDs.logger.info(s"tempRDDs size : ${tempRDDs.size}")
     rdd
   }
 
@@ -104,9 +111,9 @@ case class ScratchRDDs(
 
   def dropTempViews(): Unit = {
     tempTables.foreach { tuple =>
-      ScratchRDDs.logger.debug(s"Dropping temperary view : ${tuple._1}")
+      ScratchRDDs.logger.info(s"Dropping temperary view : ${tuple._1}")
       tuple._2.sqlContext.dropTempTable(tuple._1)
-      ScratchRDDs.logger.debug(s"Temperary view  ${tuple._1} dropped")
+      ScratchRDDs.logger.info(s"Temperary view  ${tuple._1} dropped")
     }
     tempTables.clear()
   }
@@ -115,27 +122,33 @@ case class ScratchRDDs(
       blocking: Boolean = false
   ): Unit = {
 
-    ScratchRDDs.logger.debug("Starting Clean Up Process")
+    ScratchRDDs.logger.info("Starting Clean Up Process")
+    ScratchRDDs.logger.info(s"tempRDDs size before cleanup : ${tempRDDs.size}")
+    ScratchRDDs.logger.info(s"tempDSs size before cleanup : ${tempDSs.size}")
 
     dropTempViews()
 
     tempDSs.foreach { ds =>
       ds.unpersist(blocking)
-      ScratchRDDs.logger.debug(s"Unpersisting temporary dataset ")
+      ScratchRDDs.logger.info(s"Unpersisting temporary dataset ")
     }
     tempDSs.clear()
 
     tempRDDs.foreach { rdd =>
+      ScratchRDDs.logger.info(s"Unpersisting RDD: ${rdd.id} ")
       rdd.unpersist(blocking)
     }
     tempRDDs.clear()
 
     tempBroadcasts.foreach { b =>
-      ScratchRDDs.logger.debug(s"Destroying broadcast variable : ${b.id}")
+      ScratchRDDs.logger.info(s"Destroying broadcast variable : ${b.id}")
       b.destroy()
-      ScratchRDDs.logger.debug(s"Broadcast variable : ${b.id} destroyed")
+      ScratchRDDs.logger.info(s"Broadcast variable : ${b.id} destroyed")
     }
     tempBroadcasts.clear()
+
+    ScratchRDDs.logger.info(s"tempRDDs size after cleanup : ${tempRDDs.size}")
+    ScratchRDDs.logger.info(s"tempDSs size after cleanup : ${tempDSs.size}")
   }
 
   def <+>[T](b: ScratchRDDs, f: ScratchRDDs => ArrayBuffer[T]): ArrayBuffer[T] = {
