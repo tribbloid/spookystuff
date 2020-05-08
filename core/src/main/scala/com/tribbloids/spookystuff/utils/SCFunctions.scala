@@ -17,15 +17,26 @@ class SCFunctions(sc: SparkContext) {
   def scLocalProperties: SparkLocalProperties = SparkLocalProperties(sc)
 
   import SpookyViews._
+
   // Test is rare, how to make sure that it is working
-  def withJob[T](description: String = null, groupID: String = null)(fn: => T): T = {
+  def withJob[T](
+      description: String = null,
+      groupID: String = null,
+      descriptionBreadcrumb: Boolean = true,
+      delimiter: String = " \u2023 "
+  )(fn: => T): T = {
 
     val old = scLocalProperties
 
-    val _descriptionParts = Seq(old.description, description).flatten(Option(_))
+    val _descriptionParts =
+      if (descriptionBreadcrumb)
+        Seq(old.description, description).flatten(Option(_))
+      else
+        Option(description).toSeq
+
     val _description =
       if (_descriptionParts.isEmpty) null
-      else _descriptionParts.mkString(" > ")
+      else _descriptionParts.mkString(delimiter)
 
     val _groupID = Seq(old.groupID, groupID).flatten(Option(_)).lastOption.orNull
 

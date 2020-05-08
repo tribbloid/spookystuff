@@ -66,13 +66,18 @@ class ExternalAppendOnlyArray[T](
     delegate.add(row)
   }
 
+  @volatile var notLogged = true
   def addIfNew(i: Int, v: T): Unit = this.synchronized {
 
     if (i == length) add(v)
-//    else if (i > length)
-//      LoggerFactory
-//        .getLogger(this.getClass)
-//        .info(s"new value at index $i is out of order and cannot be added") TODO: remove, caused excessive logging
+    else if (i > length && notLogged) {
+
+      notLogged = false
+
+      LoggerFactory
+        .getLogger(this.getClass)
+        .info(s"new value at index $i is ahead of length $length and cannot be added")
+    }
 
   }
 

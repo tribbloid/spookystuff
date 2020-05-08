@@ -64,7 +64,7 @@ class IncrementallyCachedRDD[T: ClassTag](
       lazy val accumulatorMap: Map[Long, AccumulatorV2[_, _]] = {
 
         val metrics = task.taskMetrics()
-        val activeAccs = metrics.externalAccums
+        val activeAccs = metrics.accumulators()
         Map(activeAccs.map(v => v.id -> v): _*)
       }
 
