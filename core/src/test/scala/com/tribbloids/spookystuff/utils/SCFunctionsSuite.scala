@@ -20,7 +20,7 @@ class SCFunctionsSuite extends FunSpec with BeforeAndAfterAll {
 
           TestHelper.TestSC.parallelize(1 to 100).map(v => v * v).collect()
 
-          assert(SCFunctions.scLocalProperties.description == "aaa > bbb")
+          assert(SCFunctions.scLocalProperties.description == "aaa \u2023 bbb")
         }
       }
     }
