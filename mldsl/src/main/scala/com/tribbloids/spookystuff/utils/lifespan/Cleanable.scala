@@ -120,6 +120,11 @@ trait Cleanable {
     */
   protected def cleanImpl(): Unit
 
+  protected def dp_pass_cleanImpl(): Unit = {
+    LoggerFactory.getLogger(this.getClass).warn("DPLog: Empty dp_pass_cleanImpl called")
+  }
+
+
   def assertNotCleaned(errorInfo: String): Unit = {
     assert(
       !isCleaned,
@@ -143,11 +148,43 @@ trait Cleanable {
         isCleaned = true
         stacktraceAtCleaning = Some(Thread.currentThread().getStackTrace)
         try {
+          Cleanable.logger.info(s"DPLog: Before cleanImpl process")
           cleanImpl()
           if (!silent) logPrefixed("Cleaned")
         } catch {
           case e: Throwable =>
             Cleanable.logger.error("DPLog: Clean process failed:" + e.getMessage)
+            Cleanable.logger.error(e.getStackTrace.mkString("\n"))
+            isCleaned = false
+            stacktraceAtCleaning = None
+            throw e
+        }
+      }
+    }
+    TreeThrowable.&&&(chained :+ self)
+
+    uncleanedInBatch -= this.trackingNumber
+  }
+
+  def dp_pass_clean(silent: Boolean = false): Unit = {
+    Cleanable.logger.info("DPLog: dp_pass_clean Clean process started  ")
+    val chained: Seq[Try[Unit]] = chainClean.map { v =>
+      Try {
+        v.clean(silent)
+      }
+    }
+    val self = Try {
+      if (!isCleaned) {
+        Cleanable.logger.info(s"DPLog: dp_pass_clean Clean process: ${!isCleaned} ")
+        isCleaned = true
+        stacktraceAtCleaning = Some(Thread.currentThread().getStackTrace)
+        try {
+          Cleanable.logger.info(s"DPLog: dp_pass_clean Before cleanImpl process")
+          dp_pass_cleanImpl()
+          if (!silent) logPrefixed("Cleaned")
+        } catch {
+          case e: Throwable =>
+            Cleanable.logger.error("DPLog: dp_pass_clean Clean process failed:" + e.getMessage)
             Cleanable.logger.error(e.getStackTrace.mkString("\n"))
             isCleaned = false
             stacktraceAtCleaning = None
