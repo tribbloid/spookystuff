@@ -149,7 +149,7 @@ trait Cleanable {
         stacktraceAtCleaning = Some(Thread.currentThread().getStackTrace)
         try {
           Cleanable.logger.info(s"DPLog: Before cleanImpl process")
-          cleanImpl()
+          dp_pass_cleanImpl()
           if (!silent) logPrefixed("Cleaned")
         } catch {
           case e: Throwable =>
