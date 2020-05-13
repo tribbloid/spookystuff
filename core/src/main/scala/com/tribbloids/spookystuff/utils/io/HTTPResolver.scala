@@ -198,8 +198,8 @@ case class HTTPResolver(
       ResourceMetadata.fromUntypedTuples(mapped: _*)
     }
 
-    abstract override def cleanImpl(): Unit = {
-      super.cleanImpl()
+    abstract override def dp_pass_cleanImpl(): Unit = {
+      super.dp_pass_cleanImpl()
       Option(existingResponse).foreach {
         case v: Closeable => v.close()
         case _            =>

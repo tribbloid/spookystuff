@@ -164,6 +164,6 @@ object CleanableSuite {
       id: Option[Long] = Some(Random.nextLong())
   ) extends LocalCleanable {
 
-    override protected def cleanImpl(): Unit = {}
+    override protected def dp_pass_cleanImpl(): Unit = {}
   }
 }

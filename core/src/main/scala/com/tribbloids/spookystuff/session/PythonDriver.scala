@@ -147,7 +147,7 @@ class PythonDriver(
     super.open()
   }
 
-  override def cleanImpl(): Unit = {
+  override def dp_pass_cleanImpl(): Unit = {
     Try {
       CommonUtils.retry(5) {
         try {

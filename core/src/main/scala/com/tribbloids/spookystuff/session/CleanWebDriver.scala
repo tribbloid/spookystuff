@@ -15,7 +15,7 @@ class CleanWebDriver(
     override val _lifespan: Lifespan = Lifespan.TaskOrJVM()
 ) extends Driver {
 
-  override def cleanImpl(): Unit = {
+  override def dp_pass_cleanImpl(): Unit = {
     self.close()
     self.quit()
   }

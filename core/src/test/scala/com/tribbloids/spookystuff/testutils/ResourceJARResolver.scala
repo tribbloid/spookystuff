@@ -52,5 +52,5 @@ case class ResourceJARResolver(
     new URL("file://" + unpacked(resource)) //TODO: change to File(..).getURL?
   }
 
-  override protected def cleanImpl(): Unit = deleteUnpackedRoot()
+  override protected def dp_pass_cleanImpl(): Unit = deleteUnpackedRoot()
 }

@@ -46,8 +46,8 @@ case class APMSim private (
 
   override def driverTemplate: PythonDriver = new PythonDriver(_lifespan = Lifespan.JVM(nameOpt = Some(s"APMSim$iNum")))
 
-  override def cleanImpl() = {
-    super.cleanImpl()
+  override def dp_pass_cleanImpl() = {
+    super.dp_pass_cleanImpl()
     APMSim.existing -= this
   }
 }

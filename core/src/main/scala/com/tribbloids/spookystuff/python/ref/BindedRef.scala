@@ -41,8 +41,8 @@ trait BindedRef extends PyRef with LocalCleanable {
     throw new UnsupportedOperationException("NOT ALLOWED! use PY instead")
   }
 
-  override protected def cleanImpl(): Unit = {
-    super.cleanImpl()
+  override protected def dp_pass_cleanImpl(): Unit = {
+    super.dp_pass_cleanImpl()
     stopDriver()
   }
 }

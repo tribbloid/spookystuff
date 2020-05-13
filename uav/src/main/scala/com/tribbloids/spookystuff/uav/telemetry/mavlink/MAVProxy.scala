@@ -227,7 +227,7 @@ case class MAVProxy(
 //    assert(process_pidOpt.isEmpty)
 //  }
 //
-//  override protected def cleanImpl(): Unit = {
+//  override protected def dp_pass_cleanImpl(): Unit = {
 //    closeProcess()
 //  }
 //}

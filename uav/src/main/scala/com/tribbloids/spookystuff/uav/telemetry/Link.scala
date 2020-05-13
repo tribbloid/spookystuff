@@ -116,7 +116,7 @@ trait Link extends LocalCleanable with ConflictDetection {
   //  }
 
   //finalizer may kick in and invoke it even if its in Link.existing
-  override protected def cleanImpl(): Unit = {
+  override protected def dp_pass_cleanImpl(): Unit = {
 
     val existingOpt = Link.registered.get(uav)
     existingOpt.foreach { v =>

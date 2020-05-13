@@ -140,7 +140,7 @@ class Session(
     }
   }
 
-  override def cleanImpl(): Unit = {
+  override def dp_pass_cleanImpl(): Unit = {
     Option(spooky.spookyConf.webDriverFactory).foreach { factory =>
       factory.release(this)
       spooky.spookyMetrics.webDriverReleased += 1

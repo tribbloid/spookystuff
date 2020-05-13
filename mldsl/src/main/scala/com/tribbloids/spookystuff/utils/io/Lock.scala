@@ -81,7 +81,7 @@ class Lock(
   /**
     * unlock on cleanup
     */
-  override protected def cleanImpl(): Unit = {
+  override protected def dp_pass_cleanImpl(): Unit = {
 
     release()
   }

@@ -106,7 +106,7 @@ class PyBinding(
   /**
     * chain to all bindings with active drivers
     */
-  override protected def cleanImpl(): Unit = {
+  override protected def dp_pass_cleanImpl(): Unit = {
     if (!driver.isCleaned) {
       delOpt.foreach { code =>
         driver.interpret(code, spookyOpt)

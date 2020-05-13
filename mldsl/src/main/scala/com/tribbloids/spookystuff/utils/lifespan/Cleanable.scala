@@ -118,7 +118,9 @@ trait Cleanable {
   /**
     * can only be called once
     */
-  protected def cleanImpl(): Unit
+  protected def cleanImpl(): Unit={
+    LoggerFactory.getLogger(this.getClass).warn("DPLog: Empty cleanImpl called")
+  }
 
   protected def dp_pass_cleanImpl(): Unit = {
     LoggerFactory.getLogger(this.getClass).warn("DPLog: Empty dp_pass_cleanImpl called")

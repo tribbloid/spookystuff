@@ -102,7 +102,7 @@ trait PyRef extends Cleanable {
     _Py(session.pythonDriver, Some(session.spooky))
   }
 
-  override protected def cleanImpl(): Unit = {}
+  override protected def dp_pass_cleanImpl(): Unit = {}
 }
 
 object PyRef {

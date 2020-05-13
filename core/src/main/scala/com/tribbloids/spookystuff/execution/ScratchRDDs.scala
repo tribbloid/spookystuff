@@ -164,7 +164,7 @@ case class ScratchRDDs(
     )
   }
 
-  override protected def cleanImpl(): Unit = {
+  override protected def dp_pass_cleanImpl(): Unit = {
     //    if (!isShipped) clearAll()
     // TODO: right now GC may clean it prematurely, disabled until better solution.
   }

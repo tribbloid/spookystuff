@@ -63,7 +63,7 @@ class TestHelper() extends LocalCleanable {
     cleanBeforeAndAfterLifespan()
   }
 
-  override def cleanImpl(): Unit = {
+  override def dp_pass_cleanImpl(): Unit = {
 
     if (sparkSessionInitialised) {
 

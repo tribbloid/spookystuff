@@ -54,18 +54,18 @@ abstract class Resource[T] extends LocalCleanable {
     result
   }
 
-  //  override def cleanImpl(): Unit = {}
+  //  override def dp_pass_cleanImpl(): Unit = {}
 }
 
 abstract class InputResource extends Resource[InputStream] {
 
-  override def cleanImpl(): Unit =
+  override def dp_pass_cleanImpl(): Unit =
     Option(existingStream)
       .foreach(_.close)
 }
 abstract class OutputResource extends Resource[OutputStream] {
 
-  override def cleanImpl(): Unit =
+  override def dp_pass_cleanImpl(): Unit =
     Option(existingStream)
       .foreach { v =>
         v.flush()

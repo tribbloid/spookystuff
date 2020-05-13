@@ -31,5 +31,5 @@ class FutureInterruptable[T](
     thread.interrupt()
   }
 
-  override def cleanImpl(): Unit = interrupt()
+  override def dp_pass_cleanImpl(): Unit = interrupt()
 }
