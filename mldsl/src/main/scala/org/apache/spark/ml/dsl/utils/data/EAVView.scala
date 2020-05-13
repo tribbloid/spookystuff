@@ -1,5 +1,7 @@
 package org.apache.spark.ml.dsl.utils.data
 
+import scala.util.Try
+
 trait EAVView extends EAV {
 
   lazy val declaredAttrs: List[Attr[_]] = {
@@ -21,17 +23,30 @@ trait EAVView extends EAV {
     }
   }
 
-  lazy val dropUndeclared: EAVCore = dropAll(declaredAttrs)
-
   lazy val withDefaults: EAVCore = {
-    val declaredMap: Seq[(this.Attr[_], Any)] = declaredAttrs.flatMap { k =>
-      k.get.map { v =>
-        k -> v
+    val declaredMap: Seq[(this.Attr[_], Any)] = declaredAttrs.flatMap { attr =>
+      attr.get.map { v =>
+        attr -> v
       }
     }
 
     val declaredEAV = EAV.fromMap(declaredMap)
 
     this :++ declaredEAV
+  }
+
+  /**
+    * this will drop undeclared attrs & convert each name into primary name
+    */
+  lazy val canonical: EAVCore = {
+    val declaredMap = declaredAttrs.flatMap { attr =>
+      Try(attr.explicitValue).toOption.map { v =>
+        attr -> v
+      }
+    }
+
+    val declaredEAV = EAV.fromMap(declaredMap)
+
+    declaredEAV.core
   }
 }

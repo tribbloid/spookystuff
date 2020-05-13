@@ -201,22 +201,20 @@ trait EAV extends Serializable with IDMixin {
 
     final def primaryName: String = primaryNameOverride.getOrElse(objectSimpleName)
 
-    private def _getDefaultV: T = default.getOrElse {
-      throw new UnsupportedOperationException(s"Undefined default value for $primaryName")
-    }
-
-    override lazy val tryGet: Try[T] = {
+    def explicitValue: T = {
       val trials: Seq[() => T] = allNames.map { name =>
         { () =>
           outer.apply(name, nullable).asInstanceOf[T]
         }
-      } ++ Seq(() => _getDefaultV)
-
-      Try {
-        TreeThrowable
-          .|||^(trials)
-          .get
       }
+
+      TreeThrowable
+        .|||^(trials)
+        .get
+    }
+
+    def defaultValue: T = default.getOrElse {
+      throw new UnsupportedOperationException(s"Undefined default value for $primaryName")
     }
 
     def tryGetEnum[EE <: Enumeration](enum: EE)(implicit ev: T <:< String): Try[EE#Value] = {
