@@ -2,12 +2,14 @@ package com.tribbloids.spookystuff.execution
 
 import com.tribbloids.spookystuff.utils.ShippingMarks
 import com.tribbloids.spookystuff.utils.lifespan.LocalCleanable
+import org.apache.hadoop.hive.ql.session.SessionState
 import org.apache.spark.SparkContext
 import org.apache.spark.broadcast.Broadcast
 import org.apache.spark.rdd.RDD
 import org.apache.spark.sql.Dataset
 import org.apache.spark.storage.StorageLevel
 
+import scala.collection.mutable
 import scala.collection.mutable.ArrayBuffer
 import scala.reflect.ClassTag
 import scala.util.Random
@@ -15,9 +17,12 @@ import scala.util.Random
 /**
   * NOT serializable, can only run on driver
   */
+case class SessionRDD(sessionId: String, rddId: Int)
+
 object ScratchRDDs {
   val prefix = "temp_"
 
+  val sessionRDDs = scala.collection.mutable.ListBuffer[SessionRDD]()
   //TODO: this name should be validated against current DB to ensure that such name doesn't exist
   def tempTableName(): String = {
     prefix + Math.abs(Random.nextInt())
@@ -66,12 +71,12 @@ case class ScratchRDDs(
     ds.persist(storageLevel)
     tempDSs += ds
   }
-
   def persist[T](
       rdd: RDD[T],
       storageLevel: StorageLevel = defaultStorageLevel
   ): RDD[T] = {
 
+    ScratchRDDs.sessionRDDs.append(SessionRDD(SessionState.get().getSessionId, rdd.id))
     if (rdd.getStorageLevel == StorageLevel.NONE) {
       tempRDDs += rdd.persist(storageLevel)
     }
@@ -93,6 +98,7 @@ case class ScratchRDDs(
   ): Unit = {
 
     rdd.unpersist(blocking)
+    ScratchRDDs.sessionRDDs --= ScratchRDDs.sessionRDDs.filter(_.rddId ==rdd.id)
     tempRDDs -= rdd
   }
 

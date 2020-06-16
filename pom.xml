@@ -267,7 +267,7 @@
         <artifactId>guava</artifactId>
         <version>16.0.1</version>
       </dependency>
-
+      <!-- https://mvnrepository.com/artifact/org.spark-project.hive/hive-exec -->
       <dependency>
         <groupId>org.apache.commons</groupId>
         <artifactId>commons-compress</artifactId>
@@ -317,6 +317,11 @@
   </dependencyManagement>
 
   <dependencies>
+    <dependency>
+      <groupId>org.spark-project.hive</groupId>
+      <artifactId>hive-exec</artifactId>
+      <version>1.2.1.spark2</version>
+    </dependency>
     <dependency>
       <groupId>org.scala-lang</groupId>
       <artifactId>scala-compiler</artifactId>
