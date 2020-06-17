@@ -126,7 +126,7 @@ object Lifespan {
 
     import Compound._
 
-    val delegateImpl: Seq[Lifespan] = {
+    @transient lazy val delegateInstances: Seq[Lifespan] = {
 
       delegates.flatMap { v =>
         Try {
