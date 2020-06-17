@@ -120,7 +120,11 @@ object Lifespan {
   ) extends Lifespan {
     def this() = this(Nil, None)
 
-    @transient lazy val delegateInstances: Seq[Lifespan] = {
+    {
+      delegateInstances
+    }
+
+    lazy val delegateInstances: Seq[Lifespan] = {
 
       delegates.flatMap { v =>
         Try {
