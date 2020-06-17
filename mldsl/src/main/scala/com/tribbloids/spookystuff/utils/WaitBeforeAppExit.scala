@@ -1,10 +1,10 @@
 package com.tribbloids.spookystuff.utils
 
-import com.tribbloids.spookystuff.utils.lifespan.{Lifespan, LocalCleanable}
+import com.tribbloids.spookystuff.utils.lifespan.{Lifespan, LocalCleanable, SparkLifespan}
 
 object WaitBeforeAppExit extends LocalCleanable {
 
-  override def _lifespan: Lifespan = Lifespan.SparkApp()
+  override def _lifespan: Lifespan = SparkLifespan.App()
 
   @volatile var _waitBeforeExitDuration: Long = -1
 

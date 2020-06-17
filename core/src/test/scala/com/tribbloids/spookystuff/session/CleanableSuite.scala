@@ -2,7 +2,7 @@ package com.tribbloids.spookystuff.session
 
 import com.tribbloids.spookystuff.SpookyEnvFixture
 import com.tribbloids.spookystuff.session.CleanableSuite.DummyCleanable
-import com.tribbloids.spookystuff.utils.lifespan.{Cleanable, Lifespan, LocalCleanable}
+import com.tribbloids.spookystuff.utils.lifespan.{Cleanable, Lifespan, LocalCleanable, SparkLifespan}
 import com.tribbloids.spookystuff.utils.serialization.AssertSerializable
 import com.tribbloids.spookystuff.utils.CommonUtils
 import org.apache.spark.{HashPartitioner, SparkException, TaskContext}
@@ -53,7 +53,7 @@ class CleanableSuite extends SpookyEnvFixture {
 
   it("Lifespan.SparkApp is serializable") {
 
-    AssertSerializable(Lifespan.SparkApp())
+    AssertSerializable(SparkLifespan.App())
 
     //TODO: the following doesn't work in local mode
 //    intercept[SparkException] {

@@ -1,55 +1,29 @@
 package com.tribbloids.spookystuff.utils.lifespan
 
-import com.tribbloids.spookystuff.utils.IDMixin
-import org.apache.spark.SparkContext
-import org.apache.spark.scheduler.{SparkListener, SparkListenerApplicationEnd}
-import org.apache.spark.sql.SparkSession
+import com.tribbloids.spookystuff.utils.{CommonUtils, IDMixin}
+import org.apache.spark.TaskContext
 
 import scala.util.Try
 
 /**
   * Java Deserialization only runs constructor of superclass
   */
+//CAUTION: keep the empty constructor! Kryo deserializer use them to initialize object
 abstract class Lifespan extends IDMixin with Serializable {
 
   {
     init()
   }
   protected def init(): Unit = {
-    ctx //always generate context on construction
+    ctx
+    _id
+    //always generate on construction
 
     if (!Cleanable.uncleaned.contains(_id)) {
-      tpe.addCleanupHook(
-        ctx, { () =>
-          Cleanable.cleanSweep(_id)
-        }
-      )
+      registerHook { () =>
+        Cleanable.cleanSweep(_id)
+      }
     }
-  }
-
-  def tpe: LifespanType
-  def ctxFactory: () => LifespanContext
-
-  @transient lazy val ctx: LifespanContext = ctxFactory()
-
-  //  @transient @volatile var _ctx: LifespanContext = _
-  //  def ctx = this.synchronized {
-  //    if (_ctx == null) {
-  //      updateCtx()
-  //    }
-  //    else {
-  //      _ctx
-  //    }
-  //  }
-  //
-  //  def updateCtx(factory: () => LifespanContext = ctxFactory): LifespanContext = {
-  //    val neo = ctxFactory()
-  //    _ctx = neo
-  //    neo
-  //  }
-
-  def _id: Any = {
-    tpe.getCleanupBatchID(ctx)
   }
 
   def readObject(in: java.io.ObjectInputStream): Unit = {
@@ -57,42 +31,38 @@ abstract class Lifespan extends IDMixin with Serializable {
     init() //redundant?
   }
 
+  val ctxFactory: () => LifespanContext
+  @transient lazy val ctx: LifespanContext = ctxFactory()
+
+  def getBatchID: Any
+  @transient lazy val _id: Any = {
+    getBatchID
+  }
+
+  def registerHook(
+      fn: () => Unit
+  ): Unit
+
   def nameOpt: Option[String]
   override def toString: String = {
     val idStr = Try(_id.toString).getOrElse("[Error]")
     (nameOpt.toSeq ++ Seq(idStr)).mkString(":")
   }
 
-  def isTask: Boolean = tpe == Lifespan.Task
-}
-
-abstract class LifespanType extends Serializable {
-
-  def addCleanupHook(
-      ctx: LifespanContext,
-      fn: () => Unit
-  ): Unit
-
-  def getCleanupBatchID(ctx: LifespanContext): Any
 }
 
 object Lifespan {
 
-  object Task extends LifespanType {
+  abstract class LifespanType extends Serializable with Product {
 
-    private def getTaskContext(ctx: LifespanContext) = ctx.task
+    // default companion class constructor
+    def apply(nameOpt: Option[String] = None, ctxFactory: () => LifespanContext = () => LifespanContext()): Lifespan
+  }
 
-    override def addCleanupHook(ctx: LifespanContext, fn: () => Unit): Unit = {
-      getTaskContext(ctx).addTaskCompletionListener[Unit] { tc =>
-        fn()
-      }
-    }
+  case object Task extends LifespanType {
 
     case class ID(id: Long) extends AnyVal {
       override def toString: String = s"Task-$id"
-    }
-    override def getCleanupBatchID(ctx: LifespanContext): ID = {
-      ID(getTaskContext(ctx).taskAttemptId())
     }
   }
   case class Task(
@@ -101,25 +71,26 @@ object Lifespan {
   ) extends Lifespan {
     def this() = this(None)
 
-    override def tpe: LifespanType = Task
-  }
+    import Task._
 
-  object JVM extends LifespanType {
-    override def addCleanupHook(ctx: LifespanContext, fn: () => Unit): Unit = {
-      try {
-        sys.addShutdownHook {
-          fn()
-        }
-      } catch {
-        case e: IllegalStateException if e.getMessage.contains("Shutdown") =>
+    def task: TaskContext = ctx.task
+
+//    override def tpe: LifespanType = Task
+    override def getBatchID: ID = ID(task.taskAttemptId())
+
+    override def registerHook(fn: () => Unit): Unit = {
+      task.addTaskCompletionListener[Unit] { _ =>
+        fn()
       }
     }
+  }
 
-    case class ID(id: Long) extends AnyVal {
+  case object JVM extends LifespanType {
+
+    val MAX_NUMBER_OF_SHUTDOWN_HOOKS: Int = CommonUtils.numLocalCores
+
+    case class ID(id: Int) extends AnyVal {
       override def toString: String = s"Thread-$id"
-    }
-    override def getCleanupBatchID(ctx: LifespanContext): ID = {
-      ID(ctx.thread.getId)
     }
   }
   case class JVM(
@@ -128,44 +99,24 @@ object Lifespan {
   ) extends Lifespan {
     def this() = this(None)
 
-    override def tpe: LifespanType = JVM
-  }
+    import JVM._
 
-  object SparkApp extends LifespanType {
+    override def getBatchID: ID = ID((ctx.thread.getId % JVM.MAX_NUMBER_OF_SHUTDOWN_HOOKS).toInt)
 
-    {
-      sc
-    }
-
-    lazy val sc: SparkContext = SparkSession.active.sparkContext
-
-    override def addCleanupHook(ctx: LifespanContext, fn: () => Unit): Unit = {
-
-      sc.addSparkListener(new Listener(fn))
-    }
-
-    override def getCleanupBatchID(ctx: LifespanContext): Any = {
-      sc.applicationId
-    }
-
-    class Listener(fn: () => Unit) extends SparkListener with Serializable {
-
-      override def onApplicationEnd(applicationEnd: SparkListenerApplicationEnd): Unit = {
-
-        fn()
+    override def registerHook(fn: () => Unit): Unit =
+      try {
+        sys.addShutdownHook {
+          fn()
+        }
+      } catch {
+        case e: IllegalStateException if e.getMessage.contains("Shutdown") =>
       }
-    }
-  }
-  case class SparkApp(
-      override val nameOpt: Option[String] = None,
-      ctxFactory: () => LifespanContext = () => LifespanContext()
-  ) extends Lifespan {
-    def this() = this(None)
-
-    override def tpe: LifespanType = SparkApp
   }
 
-  //CAUTION: keep the empty constructor! Kryo deserializer use them to initialize object
+  object Compound {
+
+    object ID
+  }
   case class Compound(
       delegates: Seq[LifespanType],
       override val nameOpt: Option[String] = None,
@@ -173,28 +124,20 @@ object Lifespan {
   ) extends Lifespan {
     def this() = this(Nil, None)
 
-    override def tpe: LifespanType = CompoundType
+    import Compound._
 
-    object CompoundType extends LifespanType {
+    val delegateImpl: Seq[Lifespan] = {
 
-      override def addCleanupHook(ctx: LifespanContext, fn: () => Unit): Unit = {
-
-        delegates.foreach { delegate =>
-          try {
-            delegate.addCleanupHook(ctx, fn)
-          } catch {
-            case e: UnsupportedOperationException => // ignore
-          }
-        }
-      }
-
-      override def getCleanupBatchID(ctx: LifespanContext): Any = {
-
-        delegates.toList.map { delegate =>
-          Try(delegate.getCleanupBatchID(ctx)).toOption
-        }
+      delegates.flatMap { v =>
+        Try {
+          v.apply(nameOpt, ctxFactory)
+        }.toOption
       }
     }
+
+    override def getBatchID: Any = ID
+
+    override def registerHook(fn: () => Unit): Unit = {}
   }
 
   def TaskOrJVM(

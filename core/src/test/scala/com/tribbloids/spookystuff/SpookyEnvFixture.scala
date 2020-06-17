@@ -47,7 +47,7 @@ object SpookyEnvFixture {
       .foreach { tuple =>
         val nonLocalDrivers = tuple._2.values
           .filter { v =>
-            v.lifespan.tpe == Lifespan.Task
+            v.lifespan.isInstanceOf[Lifespan.Task]
           }
         Predef.assert(
           nonLocalDrivers.isEmpty,

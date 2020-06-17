@@ -5,16 +5,19 @@ import com.tribbloids.spookystuff.utils.TreeThrowable
 import org.slf4j.LoggerFactory
 
 import scala.reflect.ClassTag
-import scala.util.{Random, Try}
+import scala.util.Try
 
 object Cleanable {
 
-  val uncleaned: ConcurrentMap[Any, ConcurrentMap[Long, Cleanable]] = ConcurrentMap()
+  type TrackingN = Long
+  type InBatchMap = ConcurrentMap[Long, Cleanable]
+
+  val uncleaned: ConcurrentMap[Any, InBatchMap] = ConcurrentMap()
 
   def getByLifespan(
       id: Any,
       condition: Cleanable => Boolean
-  ): (ConcurrentMap[Long, Cleanable], List[Cleanable]) = {
+  ): (InBatchMap, List[Cleanable]) = {
     val batch = uncleaned.getOrElse(id, ConcurrentMap())
     val filtered = batch.values.toList //create deep copy to avoid in-place deletion
       .filter(condition)
@@ -41,7 +44,7 @@ object Cleanable {
   def cleanSweep(
       id: Any,
       condition: Cleanable => Boolean = _ => true
-  ) = {
+  ): Unit = {
 
     val (map, filtered) = getByLifespan(id, condition)
     filtered
@@ -72,25 +75,27 @@ object Cleanable {
   */
 trait Cleanable {
 
+  import Cleanable._
+
   /**
     * taskOrThreadOnCreation is incorrect in withDeadline or threads not created by Spark
     * Override this to correct such problem
     */
   def _lifespan: Lifespan = new Lifespan.JVM()
   final val lifespan = _lifespan
-  final val trackingNumber = Random.nextLong()
+  final val trackingNumber = System.identityHashCode(this).toLong // can be int value
 
   //each can only be cleaned once
   @volatile var isCleaned: Boolean = false
   @volatile var stacktraceAtCleaning: Option[Array[StackTraceElement]] = None
 
-  @transient lazy val uncleanedInBatch: ConcurrentMap[Long, Cleanable] = {
+  @transient lazy val uncleanedInBatch: InBatchMap = {
     // This weird implementation is to mitigate thread-unsafe competition:
     // 2 empty collections being inserted simultaneously
     Cleanable.uncleaned
       .getOrElse(
         lifespan._id, {
-          Cleanable.synchronized {
+          Cleanable.synchronized { // TODO: not necessary? already a ConcurrentMap
             Cleanable.uncleaned
               .getOrElseUpdate(
                 lifespan._id,
