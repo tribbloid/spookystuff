@@ -9,9 +9,7 @@ import org.scalatest.tags.Retryable
 @Retryable
 class TestOAuth extends TestWget {
 
-  import com.tribbloids.spookystuff.dsl._
-
-  override def wget(uri: String) = {
+  override def wget(uri: String): Action = {
     val action: OAuthV2 = OAuthV2(Wget(uri))
     val session = new Session(spooky)
     val effective = action.rewrite(session)
@@ -19,7 +17,7 @@ class TestOAuth extends TestWget {
     action
   }
 
-  override def beforeEach() = {
+  override def beforeEach(): Unit = {
     super.beforeEach()
     spooky.spookyConf.oAuthKeysFactory = () =>
       OAuthKeys(

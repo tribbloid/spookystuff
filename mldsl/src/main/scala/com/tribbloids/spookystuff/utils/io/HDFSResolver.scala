@@ -31,7 +31,7 @@ case class HDFSResolver(
 
   override def toString = s"${this.getClass.getSimpleName}(${_hadoopConf})"
 
-  def ugiOpt = ugiFactory()
+  def ugiOpt: Option[UserGroupInformation] = ugiFactory()
 
   protected def doAsUGI[T](f: => T): T = {
     ugiOpt match {
@@ -54,7 +54,7 @@ case class HDFSResolver(
     }
   }
 
-  override def Execution(pathStr: String) = Execution(new Path(pathStr))
+  override def Execution(pathStr: String): Execution = Execution(new Path(pathStr))
   case class Execution(path: Path) extends super.Execution {
 
     lazy val fs: FileSystem = path.getFileSystem(_hadoopConf) //DON'T close! shared by all in the process
@@ -75,7 +75,7 @@ case class HDFSResolver(
 
     trait HDFSResource[T] extends Resource[T] {
 
-      lazy val status = fs.getFileStatus(path)
+      lazy val status: FileStatus = fs.getFileStatus(path)
 
       override lazy val getURI: String = absolutePathStr
 
@@ -99,7 +99,7 @@ case class HDFSResolver(
 
       override lazy val isAlreadyExisting: Boolean = fs.exists(path)
 
-      override lazy val _md = HDFSResolver.mdParser.apply(status)
+      override lazy val _md: ResourceMetadata = HDFSResolver.mdParser.apply(status)
 
       override lazy val children: Seq[ResourceMetadata] = {
         if (isDirectory) {

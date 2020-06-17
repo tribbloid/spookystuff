@@ -16,7 +16,7 @@ import org.apache.spark.ml.dsl.utils.refl.ScalaUDT
 import org.apache.spark.sql.types.SQLUserDefinedType
 import org.apache.tika.io.TikaInputStream
 import org.apache.tika.metadata.{Metadata, TikaMetadataKeys}
-import org.apache.tika.mime.MimeTypes
+import org.apache.tika.mime.{MimeType, MimeTypes}
 import org.mozilla.universalchardet.UniversalDetector
 
 /**
@@ -81,7 +81,7 @@ case class NoDoc(
   override def updated(
       uid: DocUID = this.uid,
       cacheLevel: DocCacheLevel.Value = this.cacheLevel
-  ) = this.copy(backtrace = uid.backtrace, cacheLevel = cacheLevel).asInstanceOf[this.type]
+  ): NoDoc.this.type = this.copy(backtrace = uid.backtrace, cacheLevel = cacheLevel).asInstanceOf[this.type]
 
   override type RootType = Unit
   override def root: Unit = {}
@@ -108,7 +108,7 @@ case class DocWithError(
   override def updated(
       uid: DocUID = this.uid,
       cacheLevel: DocCacheLevel.Value = this.cacheLevel
-  ) = {
+  ): DocWithError.this.type = {
     this.copy(delegate = delegate.updated(uid, cacheLevel)).asInstanceOf[this.type]
   }
 
@@ -117,7 +117,7 @@ case class DocWithError(
   override type RootType = delegate.RootType
   override def root: Unstructured = delegate.root
 
-  override def metadata = delegate.metadata
+  override def metadata: ResourceMetadata = delegate.metadata
 }
 
 object Doc {
@@ -125,7 +125,7 @@ object Doc {
   val CONTENT_TYPE = "contentType"
   val CSV_FORMAT = "csvFormat"
 
-  val defaultCSVFormat = CSVFormat.DEFAULT
+  val defaultCSVFormat: CSVFormat = CSVFormat.DEFAULT
 }
 @SerialVersionUID(94865098324L)
 @SQLUserDefinedType(udt = classOf[UnstructuredUDT])
@@ -143,7 +143,7 @@ case class Doc(
 ) extends DocOption
     with IDMixin {
 
-  lazy val _id = (uid, uri, declaredContentType, timeMillis, httpStatus.toString)
+  lazy val _id: Any = (uid, uri, declaredContentType, timeMillis, httpStatus.toString)
 
   override def updated(
       uid: DocUID = this.uid,
@@ -234,9 +234,9 @@ case class Doc(
   def charset: Option[CSSQuery] = Option(parsedContentType.getCharset).map(_.name())
   def mimeType: String = parsedContentType.getMimeType
 
-  def contentType = parsedContentType.toString
+  def contentType: CSSQuery = parsedContentType.toString
 
-  def tikaMimeType = MimeTypes.getDefaultMimeTypes.forName(mimeType)
+  def tikaMimeType: MimeType = MimeTypes.getDefaultMimeTypes.forName(mimeType)
   def fileExtensions: Array[String] = tikaMimeType.getExtensions.toArray(Array[String]()).map { str =>
     if (str.startsWith(".")) str.splitAt(1)._2
     else str
