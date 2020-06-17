@@ -28,13 +28,15 @@ class IncrementallyCachedRDD[T: ClassTag](
       Nil // useless, already have overridden getDependencies
     ) {
 
+  import IncrementallyCachedRDD._
+
   /**
     * mimicking DAGScheduler.cacheLocs, but using accumulator as I don't mess with BlockManager
     */
   val cacheLocAccum: MapAccumulator[Int, Seq[TaskLocation]] = MapAccumulator()
   cacheLocAccum.register(sparkContext, Some(this.getClass.getSimpleName))
 
-  @transient var prevWithLocs: RDD[T] = prev.mapPartitions { itr =>
+  @transient var prevWithLocations: RDD[T] = prev.mapPartitions { itr =>
     val pid = TaskContext.get.partitionId
     val bm = SparkEnv.get.blockManager.blockManagerId
     val loc = TaskLocation(bm.host, bm.executorId)
@@ -44,7 +46,7 @@ class IncrementallyCachedRDD[T: ClassTag](
 
   override def getDependencies: Seq[spark.Dependency[_]] = {
 
-    Seq(new OneToOneDependency(prevWithLocs))
+    Seq(new OneToOneDependency(prevWithLocations))
   }
 
   override protected def getPartitions: Array[Partition] = firstParent[T].partitions
@@ -157,15 +159,7 @@ class IncrementallyCachedRDD[T: ClassTag](
     }
   }
 
-  case class Existing() {
-
-    @transient lazy val self: CachingUtils.ConcurrentMap[Partition, Dependency] = {
-
-      CachingUtils.ConcurrentMap()
-    }
-  }
-
-  val existingBroadcast: Broadcast[Existing] = {
+  val existingBroadcast: Broadcast[Existing[Dependency]] = {
 
     sparkContext.broadcast(Existing())
   }
@@ -191,7 +185,7 @@ class IncrementallyCachedRDD[T: ClassTag](
   override def clearDependencies() {
     super.clearDependencies()
     prev = null
-    prevWithLocs = null
+    prevWithLocations = null
   }
 
   override def getPreferredLocations(split: Partition): Seq[String] = {
@@ -215,6 +209,14 @@ class IncrementallyCachedRDD[T: ClassTag](
 }
 
 object IncrementallyCachedRDD {
+
+  case class Existing[T]() {
+
+    @transient lazy val self: CachingUtils.ConcurrentMap[Partition, T] = {
+
+      CachingUtils.ConcurrentMap()
+    }
+  }
 
 //  class IteratorWithCounter[T](private val _self: Iterator[T]) {
 //
