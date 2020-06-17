@@ -10,7 +10,7 @@ import scala.util.Try
 object Cleanable {
 
   type TrackingN = Long
-  type InBatchMap = ConcurrentMap[Long, Cleanable]
+  type InBatchMap = ConcurrentCache[Long, Cleanable]
 
   val uncleaned: ConcurrentMap[Any, InBatchMap] = ConcurrentMap()
 
@@ -89,7 +89,7 @@ trait Cleanable {
   @volatile var isCleaned: Boolean = false
   @volatile var stacktraceAtCleaning: Option[Array[StackTraceElement]] = None
 
-  @transient lazy val uncleanedInBatch: InBatchMap = {
+  def uncleanedInBatch: InBatchMap = {
     // This weird implementation is to mitigate thread-unsafe competition:
     // 2 empty collections being inserted simultaneously
     Cleanable.uncleaned
