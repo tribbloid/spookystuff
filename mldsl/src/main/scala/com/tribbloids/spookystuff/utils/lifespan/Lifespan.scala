@@ -113,18 +113,12 @@ object Lifespan {
       }
   }
 
-  object Compound {
-
-    object ID
-  }
   case class Compound(
       delegates: Seq[LifespanType],
       override val nameOpt: Option[String] = None,
       ctxFactory: () => LifespanContext = () => LifespanContext()
   ) extends Lifespan {
     def this() = this(Nil, None)
-
-    import Compound._
 
     @transient lazy val delegateInstances: Seq[Lifespan] = {
 
@@ -135,9 +129,23 @@ object Lifespan {
       }
     }
 
-    override def getBatchID: Any = ID
+    override def getBatchID: Any = {
 
-    override def registerHook(fn: () => Unit): Unit = {}
+      delegateInstances.toList.map { ii =>
+        Try(ii.getBatchID).toOption
+      }
+    }
+
+    override def registerHook(fn: () => Unit): Unit = {
+
+      delegateInstances.foreach { ii =>
+        try {
+          ii.registerHook(fn)
+        } catch {
+          case e: UnsupportedOperationException => // ignore
+        }
+      }
+    }
   }
 
   def TaskOrJVM(
