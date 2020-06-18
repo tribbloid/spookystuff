@@ -8,20 +8,27 @@ import scala.util.Try
 /**
   * Java Deserialization only runs constructor of superclass
   */
-//CAUTION: keep the empty constructor! Kryo deserializer use them to initialize object
+//CAUTION: keep the empty constructor in subclasses!
+// Without it Kryo deserializer will bypass the hook registration steps in init() when deserializing
 abstract class Lifespan extends IDMixin with Serializable {
 
   {
     init()
   }
+
+  /**
+    * should be triggerd on both creation and deserialization
+    */
   protected def init(): Unit = {
     ctx
-    _id
+    batchIDs
     //always generate on construction
 
-    if (!Cleanable.uncleaned.contains(_id)) {
-      registerHook { () =>
-        Cleanable.cleanSweep(_id)
+    batchIDs.foreach { batchID =>
+      if (!Cleanable.uncleaned.contains(batchID)) {
+        registerHook { () =>
+          Cleanable.cleanSweep(batchID)
+        }
       }
     }
   }
@@ -34,10 +41,9 @@ abstract class Lifespan extends IDMixin with Serializable {
   val ctxFactory: () => LifespanContext
   @transient lazy val ctx: LifespanContext = ctxFactory()
 
-  def getBatchID: Any
-  @transient lazy val _id: Any = {
-    getBatchID
-  }
+  def getBatchIDs: Seq[Any]
+  @transient final lazy val batchIDs = getBatchIDs
+  final protected def _id: Seq[Any] = batchIDs
 
   def registerHook(
       fn: () => Unit
@@ -45,7 +51,7 @@ abstract class Lifespan extends IDMixin with Serializable {
 
   def nameOpt: Option[String]
   override def toString: String = {
-    val idStr = Try(_id.toString).getOrElse("[Error]")
+    val idStr = Try(batchIDs.mkString("/")).getOrElse("[Error]")
     (nameOpt.toSeq ++ Seq(idStr)).mkString(":")
   }
 
@@ -76,7 +82,7 @@ object Lifespan {
     def task: TaskContext = ctx.task
 
 //    override def tpe: LifespanType = Task
-    override def getBatchID: ID = ID(task.taskAttemptId())
+    override def getBatchIDs: Seq[ID] = Seq(ID(task.taskAttemptId()))
 
     override def registerHook(fn: () => Unit): Unit = {
       task.addTaskCompletionListener[Unit] { _ =>
@@ -90,7 +96,7 @@ object Lifespan {
     val MAX_NUMBER_OF_SHUTDOWN_HOOKS: Int = CommonUtils.numLocalCores
 
     case class ID(id: Int) extends AnyVal {
-      override def toString: String = s"Thread-$id"
+      override def toString: String = s"JVM-$id"
     }
   }
   case class JVM(
@@ -101,7 +107,7 @@ object Lifespan {
 
     import JVM._
 
-    override def getBatchID: ID = ID((ctx.thread.getId % JVM.MAX_NUMBER_OF_SHUTDOWN_HOOKS).toInt)
+    override def getBatchIDs = Seq(ID((ctx.thread.getId % JVM.MAX_NUMBER_OF_SHUTDOWN_HOOKS).toInt))
 
     override def registerHook(fn: () => Unit): Unit =
       try {
@@ -113,18 +119,11 @@ object Lifespan {
       }
   }
 
-  case class Compound(
-      delegates: Seq[LifespanType],
-      override val nameOpt: Option[String] = None,
-      ctxFactory: () => LifespanContext = () => LifespanContext()
-  ) extends Lifespan {
-    def this() = this(Nil, None)
+  trait Compound extends Lifespan {
 
-    {
-      delegateInstances
-    }
+    def delegates: List[LifespanType]
 
-    lazy val delegateInstances: Seq[Lifespan] = {
+    @transient lazy val delegateInstances: List[Lifespan] = {
 
       delegates.flatMap { v =>
         Try {
@@ -133,27 +132,20 @@ object Lifespan {
       }
     }
 
-    override def getBatchID: Any = {
+    override def getBatchIDs: Seq[Any] = {
 
-      delegateInstances.toList.map { ii =>
-        Try(ii.getBatchID).toOption
-      }
+      delegateInstances.flatMap(_.batchIDs)
     }
 
-    override def registerHook(fn: () => Unit): Unit = {
-
-      delegateInstances.foreach { ii =>
-        try {
-          ii.registerHook(fn)
-        } catch {
-          case e: UnsupportedOperationException => // ignore
-        }
-      }
-    }
+    override def registerHook(fn: () => Unit): Unit = {}
   }
 
-  def TaskOrJVM(
+  case class TaskOrJVM(
       nameOpt: Option[String] = None,
       ctxFactory: () => LifespanContext = () => LifespanContext()
-  ): Compound = Compound(Seq(Task, JVM), nameOpt, ctxFactory)
+  ) extends Compound {
+    def this() = this(None)
+
+    override lazy val delegates: List[LifespanType] = List(Task, JVM)
+  }
 }

@@ -2,9 +2,9 @@ package com.tribbloids.spookystuff.utils
 
 trait IDMixin {
 
-  def _id: Any
+  protected def _id: Any
 
-  @transient lazy val idChecked = {
+  @transient lazy val idChecked: Any = {
     val id = _id
     val effectiveID = id match {
       case aa: Array[_] => aa.toList

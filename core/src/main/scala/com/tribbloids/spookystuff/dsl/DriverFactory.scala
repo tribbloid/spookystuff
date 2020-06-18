@@ -134,19 +134,19 @@ object DriverFactories {
       delegate: Transient[T]
   ) extends DriverFactory[T] {
 
-    //taskOrThreadID -> (driver, busy)
-    @transient lazy val taskLocals: ConcurrentMap[Any, DriverStatus[T]] = {
+    //taskOrThreadIDs -> (driver, busy)
+    @transient lazy val taskLocals: ConcurrentMap[Seq[Any], DriverStatus[T]] = {
       ConcurrentMap()
     }
 
     override def dispatch(session: Session): T = {
 
       val ls = driverLifespan(session)
-      val taskLocalOpt = taskLocals.get(ls._id)
+      val taskLocalOpt = taskLocals.get(ls.batchIDs)
 
       def newDriver: T = {
         val fresh = delegate.create(session)
-        taskLocals.put(ls._id, new DriverStatus(fresh))
+        taskLocals.put(ls.batchIDs, new DriverStatus(fresh))
         fresh
       }
 
@@ -179,7 +179,7 @@ object DriverFactories {
     override def release(session: Session): Unit = {
 
       val ls = driverLifespan(session)
-      val opt = taskLocals.get(ls._id)
+      val opt = taskLocals.get(ls.batchIDs)
       opt.foreach { status =>
         status.isBusy = false
       }

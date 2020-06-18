@@ -64,11 +64,11 @@ class CleanableSuite extends SpookyEnvFixture {
 //    }
   }
 
-  it("Lifespan._id should be updated after being shipped to a different executor") {
+  it("Lifespan.batchIDs should be updated after being shipped to a different executor") {
 
     val rdd = sc.uuidSeed().mapOncePerCore { _ =>
       val lifespan = Lifespan.Task()
-      val oldID = lifespan._id.asInstanceOf[Lifespan.Task.ID].id
+      val oldID = lifespan.batchIDs.head.asInstanceOf[Lifespan.Task.ID].id
       lifespan -> oldID
     }
 
@@ -80,7 +80,7 @@ class CleanableSuite extends SpookyEnvFixture {
       .map { tuple =>
         val v = tuple._1
         val newID = TaskContext.get().taskAttemptId()
-        Predef.assert(v._id.asInstanceOf[Lifespan.Task.ID].id == newID)
+        Predef.assert(v.batchIDs.head.asInstanceOf[Lifespan.Task.ID].id == newID)
         tuple._2 -> newID
       }
       .collectPerPartition
@@ -93,7 +93,7 @@ class CleanableSuite extends SpookyEnvFixture {
 
     val rdd = sc.uuidSeed().mapOncePerWorker { _ =>
       val lifespan = Lifespan.TaskOrJVM()
-      val oldID = lifespan._id.asInstanceOf[Lifespan.Task.ID].id
+      val oldID = lifespan.batchIDs.head.asInstanceOf[Lifespan.Task.ID].id
       lifespan -> oldID
     }
 
@@ -102,7 +102,7 @@ class CleanableSuite extends SpookyEnvFixture {
     collected
       .foreach { tuple =>
         val v = tuple._1
-        Predef.assert(v._id.isInstanceOf[Lifespan.JVM.ID])
+        Predef.assert(v.batchIDs.head.isInstanceOf[Lifespan.JVM.ID])
       }
   }
 
@@ -111,7 +111,7 @@ class CleanableSuite extends SpookyEnvFixture {
 
     val rdd = sc.uuidSeed().mapOncePerCore { _ =>
       val lifespan = Lifespan.Task()
-      val oldID = lifespan._id.asInstanceOf[Lifespan.Task.ID].id
+      val oldID = lifespan.batchIDs.head.asInstanceOf[Lifespan.Task.ID].id
       lifespan -> oldID
     }
 
@@ -125,7 +125,7 @@ class CleanableSuite extends SpookyEnvFixture {
         val newID = TaskContext.get().taskAttemptId()
         //          val newID2 = v._id
         val newID3 = CommonUtils.withDeadline(10.seconds) {
-          val result = v._id
+          val result = v.batchIDs.head
           //            Predef.assert(v._id == newID2)
           result
         }

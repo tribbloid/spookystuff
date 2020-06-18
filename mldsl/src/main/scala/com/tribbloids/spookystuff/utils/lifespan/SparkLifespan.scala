@@ -7,7 +7,7 @@ import org.apache.spark.sql.SparkSession
 
 trait SparkLifespan extends LifespanType {
 
-  lazy val sc: SparkContext = SparkSession.active.sparkContext
+  @transient lazy val sc: SparkContext = SparkSession.active.sparkContext
 
   {
     sc
@@ -37,7 +37,7 @@ object SparkLifespan {
 
     import App._
 
-    override def getBatchID: ID = ID(sc.applicationId)
+    override def getBatchIDs = Seq(ID(sc.applicationId))
 
     override def registerHook(fn: () => Unit): Unit = {
 

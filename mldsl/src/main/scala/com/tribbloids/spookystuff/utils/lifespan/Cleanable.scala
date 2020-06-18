@@ -14,6 +14,22 @@ object Cleanable {
 
   val uncleaned: ConcurrentMap[Any, InBatchMap] = ConcurrentMap()
 
+  def getOrNew(id: Any): InBatchMap = {
+
+    Cleanable.uncleaned
+      .getOrElse(
+        id, {
+          Cleanable.synchronized { // TODO: not necessary? already a ConcurrentMap
+            Cleanable.uncleaned
+              .getOrElseUpdate(
+                id,
+                ConcurrentMap()
+              )
+          }
+        }
+      )
+  }
+
   def getByLifespan(
       id: Any,
       condition: Cleanable => Boolean
@@ -89,26 +105,20 @@ trait Cleanable {
   @volatile var isCleaned: Boolean = false
   @volatile var stacktraceAtCleaning: Option[Array[StackTraceElement]] = None
 
-  def uncleanedInBatch: InBatchMap = {
+  @transient lazy val uncleanedInBatchs: Seq[InBatchMap] = {
     // This weird implementation is to mitigate thread-unsafe competition:
     // 2 empty collections being inserted simultaneously
-    Cleanable.uncleaned
-      .getOrElse(
-        lifespan._id, {
-          Cleanable.synchronized { // TODO: not necessary? already a ConcurrentMap
-            Cleanable.uncleaned
-              .getOrElseUpdate(
-                lifespan._id,
-                ConcurrentMap()
-              )
-          }
-        }
-      )
+    lifespan.batchIDs.map { id =>
+      Cleanable.getOrNew(id)
+    }
+
   }
 
   {
     logPrefixed("Created")
-    uncleanedInBatch += this.trackingNumber -> this
+    uncleanedInBatchs.foreach { inBatch =>
+      inBatch += this.trackingNumber -> this
+    }
   }
 
   def logPrefix: String = {
@@ -156,7 +166,9 @@ trait Cleanable {
     }
     TreeThrowable.&&&(chained :+ self)
 
-    uncleanedInBatch -= this.trackingNumber
+    uncleanedInBatchs.foreach { inBatch =>
+      inBatch -= this.trackingNumber
+    }
   }
 
   def isSilent(ee: Throwable): Boolean = false
