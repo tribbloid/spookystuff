@@ -56,7 +56,8 @@ class ExternalAppendOnlyArray[T](
 
   protected def reveal(row: UnsafeRow): T = {
 
-    val result = ser.newInstance().deserialize[T](ByteBuffer.wrap(row.getBytes))
+    val buffer = ByteBuffer.wrap(row.getBytes)
+    val result = ser.newInstance().deserialize[T](buffer)
 
     result
   }
