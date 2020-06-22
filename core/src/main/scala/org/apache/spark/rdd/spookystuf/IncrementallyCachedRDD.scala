@@ -19,9 +19,7 @@ import org.slf4j.LoggerFactory
 import scala.reflect.ClassTag
 
 class IncrementallyCachedRDD[T: ClassTag](
-    @transient var prev: RDD[T],
-    numRowsInMemoryBufferThreshold: Int,
-    numRowsSpillThreshold: Int
+    @transient var prev: RDD[T]
 //    storageLevel: StorageLevel
 ) extends RDD[T](
       prev.sparkContext,
@@ -55,7 +53,7 @@ class IncrementallyCachedRDD[T: ClassTag](
       p: Partition
   ) extends NOTSerializable {
 
-    lazy val cacheArray = new ExternalAppendOnlyArray[T](numRowsInMemoryBufferThreshold, numRowsSpillThreshold)
+    lazy val cacheArray = new ExternalAppendOnlyArray[T](s"${this.getClass.getSimpleName}-${p.index}")
 
     @volatile var _activeTask: WTask = _
 
@@ -130,7 +128,7 @@ class IncrementallyCachedRDD[T: ClassTag](
 
       def getOrCompute(start: Int): Iterator[T] = {
 
-        cacheArray.Impl(start).cachedOrComputeIterator(compute, counter.get())
+        cacheArray.StartingFrom(start).cachedOrComputeIterator(compute, counter.get())
       }
 
       def active: WTask = Option(_activeTask).getOrElse {

@@ -16,8 +16,8 @@ import scala.util.Random
 
 class IncrementallyCachedRDDSuite extends FunSpec with BeforeAndAfterAll {
 
-  val size = 1000000
-  val stride = 1000
+  val size = 100000
+  val stride = 10000
   // scale makes all the difference
 
   val fromSeq: Seq[Int] = 0.until(size, stride)
@@ -48,7 +48,7 @@ class IncrementallyCachedRDDSuite extends FunSpec with BeforeAndAfterAll {
     }
   }
 
-  case class SubSuite(
+  case class Child(
       numPartitions: Int
   ) extends FunSpec {
     override def suiteName: String = s"$numPartitions"
@@ -95,10 +95,10 @@ class IncrementallyCachedRDDSuite extends FunSpec with BeforeAndAfterAll {
 
               val sliced = facet.getSlice(from, to)
 
-              assert(sliced == groundTruth.src.getSlice(from, to))
+              assert(sliced === groundTruth.src.getSlice(from, to))
 
-              assert(sliced.size == (to - from))
-              assert(facet.outer.count == numPartitions * to)
+              assert(sliced.size === (to - from))
+              assert(facet.outer.count === numPartitions * to)
             }
           }
 
@@ -108,10 +108,10 @@ class IncrementallyCachedRDDSuite extends FunSpec with BeforeAndAfterAll {
 
               val sliced = facet.getSlice(from, to)
 
-              assert(sliced == groundTruth.src.getSlice(from, to))
+              assert(sliced === groundTruth.src.getSlice(from, to))
 
-              assert(sliced.size == (to - from))
-              assert(facet.outer.count == numPartitions * to)
+              assert(sliced.size === (to - from))
+              assert(facet.outer.count === numPartitions * to)
             }
           }
 
@@ -121,10 +121,10 @@ class IncrementallyCachedRDDSuite extends FunSpec with BeforeAndAfterAll {
 
               val sliced = facet.getSlice(from, to)
 
-              assert(sliced == groundTruth.src.getSlice(from, to))
+              assert(sliced === groundTruth.src.getSlice(from, to))
 
-              assert(sliced.size == (to - from))
-              assert(facet.outer.count == numPartitions * to)
+              assert(sliced.size === (to - from))
+              assert(facet.outer.count === numPartitions * to)
             }
           }
 
@@ -134,11 +134,11 @@ class IncrementallyCachedRDDSuite extends FunSpec with BeforeAndAfterAll {
   }
 
   override def nestedSuites: immutable.IndexedSeq[Suite] = immutable.IndexedSeq(
-    SubSuite(1),
-    SubSuite(3),
-    SubSuite(8),
-    SubSuite(21),
-    SubSuite(64)
+    Child(1),
+    Child(3),
+    Child(8),
+    Child(21),
+    Child(64)
   )
 
 //  override def afterAll(): Unit = {
@@ -226,13 +226,13 @@ object IncrementallyCachedRDDSuite {
 
     lazy val incrementallyCached: Slow = {
       Slow(
-        new IncrementallyCachedRDD(rddWithCounter, 50, 100)
+        new IncrementallyCachedRDD(rddWithCounter)
       )
     }
 
     lazy val incrementallyCached_ff: FastFwd = {
       FastFwd(
-        new IncrementallyCachedRDD(rddWithCounter, 50, 100)
+        new IncrementallyCachedRDD(rddWithCounter)
       )
     }
   }
