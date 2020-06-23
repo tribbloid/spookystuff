@@ -109,6 +109,13 @@
       <groupId>org.mapdb</groupId>
       <artifactId>mapdb</artifactId>
       <version>3.0.8</version>
+      <exclusions>
+<!--        included in Spark as org.lz4:lz4-java:jar:1.4.0:provided-->
+        <exclusion>
+          <groupId>net.jpountz.lz4</groupId>
+          <artifactId>lz4</artifactId>
+        </exclusion>
+      </exclusions>
     </dependency>
 
   </dependencies>

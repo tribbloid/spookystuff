@@ -11,7 +11,7 @@ import org.slf4j.LoggerFactory
 import scala.concurrent.{ExecutionContext, ExecutionContextExecutor}
 import scala.util.Random
 
-class RDDDisperseSuite extends SpookyEnvFixture with SparkJobGroupMixin with HasEager {
+class RDDDisperseSuite extends SpookyEnvFixture with HasEager {
 
   implicit val concurrentCtx: ExecutionContextExecutor = ExecutionContext.global
 

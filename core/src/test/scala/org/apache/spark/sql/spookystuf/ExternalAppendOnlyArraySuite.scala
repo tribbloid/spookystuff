@@ -1,6 +1,7 @@
 package org.apache.spark.sql.spookystuf
 
 import com.tribbloids.spookystuff.testutils.TestHelper
+import com.tribbloids.spookystuff.utils.SparkUISupport
 import org.apache.spark.TaskContext
 import org.apache.spark.rdd.{RDD, UnionRDD}
 import org.apache.spark.util.LongAccumulator
@@ -8,51 +9,52 @@ import org.scalatest.FunSpec
 
 import scala.util.Random
 
-object ExternalAppendOnlyArraySuite {
+object ExternalAppendOnlyArraySuite {}
 
-  val taskSize = 1000
+class ExternalAppendOnlyArraySuite extends FunSpec with SparkUISupport {
 
-  val parallelism: Int = {
-
-    Random.nextInt(TestHelper.TestSC.defaultParallelism - 1) + 1
-
-//    TestHelper.TestSC.defaultParallelism
-
-//    1
-  }
-
-  val numChildren = 10
-
-  val resultSize: Int = parallelism * numChildren * taskSize
-}
-
-class ExternalAppendOnlyArraySuite extends FunSpec {
-
-  import ExternalAppendOnlyArraySuite._
   import com.tribbloids.spookystuff.testutils.TestHelper._
 
   describe("cachedOrComputeIterator") {
 
-    def getRDD: RDD[ExternalAppendOnlyArray[Int]] = {
+    val taskSize = 1000
+
+    val numChildren = 10
+
+    val parallelism: Int = {
+
+      Random.nextInt(TestHelper.TestSC.defaultParallelism - 1) + 1
+
+      //    TestHelper.TestSC.defaultParallelism
+
+      //    1
+    }
+    val resultSize: Int = parallelism * numChildren * taskSize
+
+    def externalArrayRDD: RDD[ExternalAppendOnlyArray[Int]] = {
 
       println(s"=== parallelism = $parallelism ===")
 
-      val rdd: RDD[ExternalAppendOnlyArray[Int]] = TestSC.parallelize(0 until parallelism, parallelism).map { _ =>
-        val taskContext = TaskContext.get()
+      val rdd: RDD[ExternalAppendOnlyArray[Int]] = TestSC
+        .parallelize(0 until parallelism, parallelism)
+        .map { _ =>
+          val taskContext = TaskContext.get()
 
-        val v = new ExternalAppendOnlyArray[Int](s"Test-${taskContext.taskAttemptId()}")
+          val v = new ExternalAppendOnlyArray[Int](s"Test-${taskContext.taskAttemptId()}")
 
-        v
-      }
+          v
+        }
 
-      rdd.persist() //.count()
+      rdd.persist().count() // count() is important in cluster mode as it 'lock' each partition to its location
+
+      Thread.sleep(1000)
 
       rdd
     }
 
     it("can be shared by multiple tasks") {
 
-      val rdd = getRDD
+      val rdd = externalArrayRDD
 
       val computed = new LongAccumulator()
       TestSC.register(computed)
@@ -60,7 +62,7 @@ class ExternalAppendOnlyArraySuite extends FunSpec {
       val result = (1 to numChildren).flatMap { i =>
         println(s"=== $i ===")
 
-        val result = rdd
+        val result: Array[Int] = rdd
           .mapPartitions { p =>
             val externalArray = p.next()
 
@@ -69,13 +71,13 @@ class ExternalAppendOnlyArraySuite extends FunSpec {
               v
             }
 
-            val itr = externalArray.StartingFrom().cachedOrComputeIterator(computeItr)
+            val itr = externalArray.StartingFrom().CachedOrComputeIterator(computeItr)
 
             itr.slice(0, taskSize)
           }
           .collect()
 
-        assert(computed.value <= parallelism * taskSize)
+        assert(computed.value <= parallelism * taskSize * TestHelper.numWorkers)
 
         result
       }
@@ -86,7 +88,7 @@ class ExternalAppendOnlyArraySuite extends FunSpec {
 
     it("... even if they are executed concurrently") {
 
-      val rdd = getRDD
+      val rdd = externalArrayRDD
 
       val computed = new LongAccumulator()
       TestSC.register(computed)
@@ -95,12 +97,14 @@ class ExternalAppendOnlyArraySuite extends FunSpec {
         rdd
           .mapPartitions { p =>
             /**
-              * the purpose of this line is to avoid no thread other than the first one to use its iterator and fast-forward
+              * the purpose of this line is to avoid no children other than the first one to compute
+              * others always read cached values without racing
               * 1: -> -> -> ->
               * 2: C  C  C
               * 3: C  C
               */
-            Thread.sleep(i * 1000)
+            // TODO: this setting still can't guarantee 100% of the time when parallelism is high, ignored at the moment
+            Thread.sleep(i * 2000)
             val externalArray = p.next()
 
             val computeItr = (1 to taskSize).iterator.map { v =>
@@ -108,7 +112,7 @@ class ExternalAppendOnlyArraySuite extends FunSpec {
               v
             }
 
-            val itr = externalArray.StartingFrom().cachedOrComputeIterator(computeItr)
+            val itr = externalArray.StartingFrom().CachedOrComputeIterator(computeItr)
 
             itr.slice(0, taskSize)
           }
@@ -118,7 +122,7 @@ class ExternalAppendOnlyArraySuite extends FunSpec {
 
       val result = combined.collect().toSeq
 
-      assert(computed.value == parallelism * taskSize)
+      assert(computed.value <= parallelism * taskSize * TestHelper.numWorkers) // 2 computers cannot share the same ExternalArray
 
       assert(result.size === resultSize)
 //      assert(result == Seq(1 to numChildren).flatMap(i => 1 to 1000))
@@ -126,7 +130,7 @@ class ExternalAppendOnlyArraySuite extends FunSpec {
 
     it("race condition will not cause duplicated values") {
 
-      val rdd = getRDD
+      val rdd = externalArrayRDD
 
       val computed = new LongAccumulator()
       TestSC.register(computed)
@@ -141,7 +145,7 @@ class ExternalAppendOnlyArraySuite extends FunSpec {
               v
             }
 
-            val itr = externalArray.StartingFrom().cachedOrComputeIterator(computeItr)
+            val itr = externalArray.StartingFrom().CachedOrComputeIterator(computeItr)
 
             itr.slice(0, taskSize)
           }

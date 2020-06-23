@@ -265,6 +265,8 @@ abstract class TestHelper extends LocalCleanable {
 
   lazy val TestSparkSession: SparkSession = {
 
+    require(lifespan.ctx.taskAttemptID.isEmpty, "SparkSession cannot be initialised on executor")
+
     val builder = SparkSession.builder
       .config(TestSparkConf)
 

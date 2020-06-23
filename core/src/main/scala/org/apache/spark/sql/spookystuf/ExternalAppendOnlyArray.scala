@@ -1,13 +1,13 @@
 package org.apache.spark.sql.spookystuf
 
-import java.io.IOException
+import java.io.{File, IOException}
 import java.nio.ByteBuffer
 import java.util.UUID
 import java.util.concurrent.atomic.AtomicInteger
 
-import com.tribbloids.spookystuff.utils.CachingUtils.ConcurrentCache
 import com.tribbloids.spookystuff.utils.ThreadLocal
-import com.tribbloids.spookystuff.utils.lifespan.{Cleanable, Lifespan}
+import com.tribbloids.spookystuff.utils.lifespan.{Lifespan, LocalCleanable}
+import com.tribbloids.spookystuff.utils.serialization.NOTSerializable
 import org.apache.spark.serializer.{SerializerInstance, SerializerManager}
 import org.apache.spark.sql.catalyst.InternalRow
 import org.apache.spark.{serializer, SparkEnv}
@@ -25,27 +25,42 @@ import scala.reflect.ClassTag
   */
 class ExternalAppendOnlyArray[T](
     val name: String,
-    val serializerMgr: SerializerManager = SparkEnv.get.serializerManager,
     override val _lifespan: Lifespan = Lifespan.JVM()
 )(
     implicit val ctg: ClassTag[T]
-) extends Cleanable {
+) extends Serializable
+    with LocalCleanable {
 
   import ExternalAppendOnlyArray._
 
   val id = s"$name-${UUID.randomUUID()}"
 
-  {
-    if (existing.contains(id)) sys.error("same ID already existed")
-    existing += id -> this
+  val dbTempFile: File = {
+
+    val file = File.createTempFile("mapdb", s"-$id")
+    file.delete()
+    file.deleteOnExit()
+    file
   }
 
-  val db: DB = DBMaker
-    .tempFileDB()
-    .fileMmapEnableIfSupported()
-    .make()
+//  {
+//    if (existing.contains(id)) sys.error("same ID already existed")
+//    existing += id -> this
+//  }
 
-  @transient object SerDe extends GroupSerializerObjectArray[T] {
+  @transient lazy val db: DB = {
+    val result = DBMaker
+      .fileDB(dbTempFile)
+      .fileMmapEnableIfSupported()
+      .fileDeleteAfterClose()
+      .make()
+
+    result
+  }
+
+  @transient case object SerDe extends GroupSerializerObjectArray[T] {
+
+    val serializerMgr: SerializerManager = SparkEnv.get.serializerManager
 
     object SparkSerDe {
 
@@ -86,15 +101,13 @@ class ExternalAppendOnlyArray[T](
     }
   }
 
-  val backbone: IndexTreeList[T] = {
+  @transient lazy val backbone: IndexTreeList[T] = {
 
-    val list = db.indexTreeList(id, SerDe).create()
+    val treeList = db.indexTreeList(id, SerDe).createOrOpen()
 
-    list.listIterator()
+    require(treeList.isThreadSafe)
 
-    require(list.isThreadSafe)
-
-    list
+    treeList
   }
 
   {
@@ -138,11 +151,11 @@ class ExternalAppendOnlyArray[T](
     */
   case class StartingFrom(index: Int = 0) {
 
-    case class cachedIterator() extends FastForwardingIterator[T] {
+    case class CachedIterator() extends FastForwardingIterator[T] with NOTSerializable {
 
       val consumed = new AtomicInteger(index) // strictly incremental, index of the next pointer
 
-      override def fastForward(n: Int): FastForwardingIterator[T] = StartingFrom(consumed.get() + n).cachedIterator()
+      override def fastForward(n: Int): FastForwardingIterator[T] = StartingFrom(consumed.get() + n).CachedIterator()
 
       override def hasNext: Boolean = {
         consumed.get() < backbone.size()
@@ -162,12 +175,13 @@ class ExternalAppendOnlyArray[T](
     }
 
     // TODO: this should be another class
-    case class cachedOrComputeIterator(
+    case class CachedOrComputeIterator(
         computeIterator: Iterator[T], // can be assumed to be thread exclusive
         computeStartingFrom: Int = 0
-    ) extends FastForwardingIterator[T] {
+    ) extends FastForwardingIterator[T]
+        with NOTSerializable {
 
-      val cached: cachedIterator = cachedIterator()
+      val cached: CachedIterator = CachedIterator()
 
       val computeConsumed = new AtomicInteger(computeStartingFrom)
       val overallConsumed = new AtomicInteger(index)
@@ -194,7 +208,7 @@ class ExternalAppendOnlyArray[T](
         computeCatchingUp()
       }
 
-      override def hasNext: Boolean = ExternalAppendOnlyArray.this.synchronized {
+      override def hasNext: Boolean = {
         cached.hasNext || {
           computeCachingUpOnce
           computed.hasNext
@@ -208,6 +222,7 @@ class ExternalAppendOnlyArray[T](
         } else {
           computeCachingUpOnce
           val result = computed.next()
+//          println("compute:" + result)
 
           addIfNew(computeConsumed.get() - 1, result)
           cached.skip()
@@ -219,7 +234,7 @@ class ExternalAppendOnlyArray[T](
       }
 
       override def fastForward(n: Int): FastForwardingIterator[T] =
-        StartingFrom(overallConsumed.get() + n).cachedOrComputeIterator(computeIterator, computeConsumed.get())
+        StartingFrom(overallConsumed.get() + n).CachedOrComputeIterator(computeIterator, computeConsumed.get())
     }
   }
 
@@ -245,6 +260,6 @@ object ExternalAppendOnlyArray {
 
   class CannotComputeException(info: String) extends ArrayIndexOutOfBoundsException(info)
 
-  val existing: ConcurrentCache[String, ExternalAppendOnlyArray[_]] = ConcurrentCache()
+//  val existing: ConcurrentCache[String, ExternalAppendOnlyArray[_]] = ConcurrentCache()
 
 }

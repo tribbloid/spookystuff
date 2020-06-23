@@ -128,7 +128,7 @@ class IncrementallyCachedRDD[T: ClassTag](
 
       def getOrCompute(start: Int): Iterator[T] = {
 
-        cacheArray.StartingFrom(start).cachedOrComputeIterator(compute, counter.get())
+        cacheArray.StartingFrom(start).CachedOrComputeIterator(compute, counter.get())
       }
 
       def active: WTask = Option(_activeTask).getOrElse {

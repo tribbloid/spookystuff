@@ -140,10 +140,10 @@ class CleanableSuite extends SpookyEnvFixture {
 
   it("can get all created Cleanables") {
 
-    runTest(i => DummyCleanable(i))
+    verify(i => DummyCleanable(i))
   }
 
-  private def runTest(getDummy: Int => Unit) = {
+  private def verify(getDummy: Int => Unit) = {
     val ss = 1 to 10
     for (_ <- 1 to 10) {
       sc.parallelize(ss).foreach {
@@ -166,7 +166,7 @@ class CleanableSuite extends SpookyEnvFixture {
 
   it("can get all created Cleanables even their hashcodes may overlap") {
 
-    runTest(i => DummyCleanable(i, None))
+    verify(i => DummyCleanable(i, None))
   }
 }
 

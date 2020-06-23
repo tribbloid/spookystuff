@@ -3,24 +3,29 @@ package org.apache.spark.rdd.spookystuf
 import java.util.concurrent.atomic.AtomicInteger
 
 import com.tribbloids.spookystuff.testutils.TestHelper.TestSC
-import com.tribbloids.spookystuff.utils.PreemptiveLocalOps
+import com.tribbloids.spookystuff.utils.{PreemptiveLocalOps, SparkUISupport}
 import org.apache.spark.rdd.RDD
-import org.apache.spark.rdd.spookystuf.IncrementallyCachedRDDSuite.WithRDD
 import org.apache.spark.sql.spookystuf.FastForwardingIterator
 import org.apache.spark.util.LongAccumulator
 import org.scalatest.{BeforeAndAfterAll, FunSpec, Suite}
 
-import scala.collection.mutable
-import scala.collection.immutable
+import scala.collection.{immutable, mutable}
 import scala.util.Random
 
 class IncrementallyCachedRDDSuite extends FunSpec with BeforeAndAfterAll {
 
-  val size = 100000
-  val stride = 10000
+  import IncrementallyCachedRDDSuite._
+
+  val datasetSize = 10000
+  val stride = 1000
+
+  val overlap: Int = stride * 2
+
+  val skip: Int = stride / 2
+
   // scale makes all the difference
 
-  val fromSeq: Seq[Int] = 0.until(size, stride)
+  val fromSeq: Seq[Int] = 0.to(datasetSize, stride)
 
   val commonRanges: Seq[(Int, Int)] = {
 
@@ -30,7 +35,6 @@ class IncrementallyCachedRDDSuite extends FunSpec with BeforeAndAfterAll {
     }
   }
 
-  val overlap = 2000
   val overlappingRanges: Seq[(Int, Int)] = {
 
     fromSeq.map { from =>
@@ -39,7 +43,6 @@ class IncrementallyCachedRDDSuite extends FunSpec with BeforeAndAfterAll {
     }
   }
 
-  val skip = 500
   val skippingRanges: Seq[(Int, Int)] = {
 
     fromSeq.map { from =>
@@ -50,85 +53,75 @@ class IncrementallyCachedRDDSuite extends FunSpec with BeforeAndAfterAll {
 
   case class Child(
       numPartitions: Int
-  ) extends FunSpec {
+  ) extends FunSpec
+      with SparkUISupport {
     override def suiteName: String = s"$numPartitions"
 
-    val groundTruth: WithRDD = WithRDD(TestSC.parallelize(1 to size, numPartitions))
+    val src: RDD[Int] = TestSC.parallelize(1 to datasetSize, numPartitions)
+
+    val groundTruth: WithRDD = WithRDD(src)
 
     it("block cache always compute the entire partition") {
 
-      val u = WithRDD(TestSC.parallelize(1 to size, numPartitions))
+      val u = WithRDD(src)
       val sliced = u.cached.getSlice(0, 2)
 
       val n = sliced.size
 
       assert(n == numPartitions * 2)
-      assert(u.globalCounter.value == size)
-      assert(u.localCounter.get() <= size)
+      assert(u.globalCounter.value == datasetSize)
+      assert(u.localCounter.get() <= datasetSize)
     }
 
-    val facets: Seq[(WithRDD#Facet, String)] = {
+    val fixtures: Seq[Fixture] = {
 
-      val collect = WithRDD(TestSC.parallelize(1 to size, numPartitions))
+      def collect = WithRDD(src)
 
-      val localItr = WithRDD(
-        TestSC.parallelize(1 to size, numPartitions), { rdd =>
+      def localItr = WithRDD(
+        src, { rdd =>
           PreemptiveLocalOps(8).ForRDD(rdd).toLocalIterator.toList
         }
       )
 
       Seq(
-        collect.incrementallyCached -> "collect",
-        collect.incrementallyCached_ff -> "collect w/ fast-forward",
-        localItr.incrementallyCached -> "preemptive toLocalIterator",
-        localItr.incrementallyCached_ff -> "preemptive toLocalIterator w/ fast-forward"
+        fixture(collect.incrementallyCached, "collect"),
+        fixture(collect.incrementallyCached_ff, "collect w/ fast-forward"),
+        fixture(localItr.incrementallyCached, "preemptive toLocalIterator"),
+        fixture(localItr.incrementallyCached_ff, "preemptive toLocalIterator w/ fast-forward")
       )
     }
 
-    facets.foreach {
-      case (facet, name) =>
-        describe(name) {
+    fixtures.foreach { fixture =>
+      describe(fixture.name) {
 
-          it("should compute & cache necessary slice of the partition") {
+        def onRanges(seq: Seq[(Int, Int)]): Unit = {
 
-            for ((from, to) <- commonRanges) {
+          val facet = fixture.facet()
 
-              val sliced = facet.getSlice(from, to)
+          for ((from, to) <- seq) {
 
-              assert(sliced === groundTruth.src.getSlice(from, to))
+            val sliced = facet.getSlice(from, to)
 
-              assert(sliced.size === (to - from))
-              assert(facet.outer.count === numPartitions * to)
-            }
+            assert(sliced === groundTruth.src.getSlice(from, to))
+            assert(facet.outer.count === Math.min(numPartitions * to, datasetSize))
           }
-
-          it("... if slices are overlapping") {
-
-            for ((from, to) <- overlappingRanges) {
-
-              val sliced = facet.getSlice(from, to)
-
-              assert(sliced === groundTruth.src.getSlice(from, to))
-
-              assert(sliced.size === (to - from))
-              assert(facet.outer.count === numPartitions * to)
-            }
-          }
-
-          it("... if slices have gaps") {
-
-            for ((from, to) <- skippingRanges) {
-
-              val sliced = facet.getSlice(from, to)
-
-              assert(sliced === groundTruth.src.getSlice(from, to))
-
-              assert(sliced.size === (to - from))
-              assert(facet.outer.count === numPartitions * to)
-            }
-          }
-
         }
+
+        it("should compute & cache necessary slice of the partition") {
+
+          onRanges(commonRanges)
+        }
+
+        it("... if slices are overlapping") {
+
+          onRanges(overlappingRanges)
+        }
+
+        it("... if slices have gaps") {
+
+          onRanges(skippingRanges)
+        }
+      }
     }
 
   }
@@ -160,7 +153,7 @@ object IncrementallyCachedRDDSuite {
 
     val id: Long = Random.nextLong()
 
-    def localCounter: AtomicInteger = localAccs.getOrElseUpdate(id, new AtomicInteger())
+    val localCounter: AtomicInteger = localAccs.getOrElseUpdate(id, new AtomicInteger())
 
     val globalCounter = new LongAccumulator()
     TestSC.register(globalCounter, "count")
@@ -204,7 +197,7 @@ object IncrementallyCachedRDDSuite {
       )
     }
 
-    case class FastFwd(
+    case class Fast(
         rdd: RDD[Int]
     ) extends Facet {
 
@@ -230,10 +223,20 @@ object IncrementallyCachedRDDSuite {
       )
     }
 
-    lazy val incrementallyCached_ff: FastFwd = {
-      FastFwd(
+    lazy val incrementallyCached_ff: Fast = {
+      Fast(
         new IncrementallyCachedRDD(rddWithCounter)
       )
     }
   }
+
+  case class Fixture(
+      facet: () => WithRDD#Facet,
+      name: String
+  )
+
+  def fixture(
+      facet: => WithRDD#Facet,
+      name: String
+  ): Fixture = Fixture(() => facet, name)
 }

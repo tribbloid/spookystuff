@@ -9,7 +9,7 @@ import com.tribbloids.spookystuff.row.{SpookySchema, SquashedFetchedRow, TypedFi
 import com.tribbloids.spookystuff.session.{CleanWebDriver, Driver}
 import com.tribbloids.spookystuff.testutils.{FunSpecx, RemoteDocsFixture, TestHelper}
 import com.tribbloids.spookystuff.utils.lifespan.{Cleanable, Lifespan}
-import com.tribbloids.spookystuff.utils.{CommonConst, CommonUtils, RetryFixedInterval}
+import com.tribbloids.spookystuff.utils.{CommonConst, CommonUtils, RetryFixedInterval, SparkUISupport}
 import org.apache.spark.SparkContext
 import org.apache.spark.sql.SQLContext
 import org.jutils.jprocesses.JProcesses
@@ -124,7 +124,8 @@ abstract class SpookyEnvFixture
     with RemoteDocsFixture
     with BeforeAndAfterEach
     with BeforeAndAfterAll
-    with Retries {
+    with Retries
+    with SparkUISupport {
 
   val exitingPIDs: Set[String] = SpookyEnvFixture.getProcesses.map(_.getPid).toSet
 

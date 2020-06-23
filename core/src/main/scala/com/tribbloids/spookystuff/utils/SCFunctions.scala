@@ -12,7 +12,7 @@ import scala.concurrent.{Await, ExecutionContext, Future}
 import scala.reflect.ClassTag
 import scala.util.Try
 
-class SCFunctions(sc: SparkContext) {
+case class SCFunctions(sc: SparkContext) {
 
   def scLocalProperties: SparkLocalProperties = SparkLocalProperties(sc)
 
