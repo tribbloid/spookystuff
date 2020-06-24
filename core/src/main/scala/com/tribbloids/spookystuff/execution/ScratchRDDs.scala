@@ -8,6 +8,7 @@ import org.apache.spark.rdd.RDD
 import org.apache.spark.sql.Dataset
 import org.apache.spark.storage.StorageLevel
 
+import scala.collection.mutable
 import scala.collection.mutable.ArrayBuffer
 import scala.reflect.ClassTag
 import scala.util.Random
@@ -21,6 +22,61 @@ object ScratchRDDs {
   //TODO: this name should be validated against current DB to ensure that such name doesn't exist
   def tempTableName(): String = {
     prefix + Math.abs(Random.nextInt())
+  }
+
+  type ScopeID = String
+
+  case class Contextual(
+      root: ScratchRDDs
+  ) {
+
+    val children: mutable.HashMap[Set[ScopeID], ScratchRDDs] = mutable.HashMap.empty
+
+    @transient var activeScopes: Set[ScopeID] = Set.empty
+
+    case class InScope(scopeIDs: Set[ScopeID] = activeScopes) {
+
+      def get: ScratchRDDs = {
+
+        if (scopeIDs.isEmpty) root
+        else {
+          children.getOrElseUpdate(
+            scopeIDs, {
+              ScratchRDDs(defaultStorageLevel = root.defaultStorageLevel)
+            }
+          )
+        }
+
+      }
+
+      def filter: Seq[(Set[ScopeID], ScratchRDDs)] = {
+
+        if (scopeIDs.isEmpty) Seq(Set.empty[ScopeID] -> root)
+        else {
+
+          children.filterKeys { ids =>
+            ids.intersect(scopeIDs).nonEmpty
+          }.toSeq
+        }
+
+      }
+
+      def clearAll(): Unit = {
+
+        val filtered = filter
+
+        filtered.foreach {
+          case (k, v) =>
+            v.clearAll()
+        }
+
+        filter.foreach {
+          case (k, _) =>
+            children.remove(k)
+        }
+      }
+    }
+
   }
 }
 
@@ -128,11 +184,11 @@ case class ScratchRDDs(
     tempBroadcasts.clear()
   }
 
-  def <+>[T](b: ScratchRDDs, f: ScratchRDDs => ArrayBuffer[T]): ArrayBuffer[T] = {
+  protected def <+>[T](b: ScratchRDDs, f: ScratchRDDs => ArrayBuffer[T]): ArrayBuffer[T] = {
     f(this) ++ f(b)
   }
 
-  def ++(other: ScratchRDDs) = {
+  def ++(other: ScratchRDDs): ScratchRDDs = {
     this.copy(
       <+>(other, _.tempTables),
       <+>(other, _.tempRDDs),
