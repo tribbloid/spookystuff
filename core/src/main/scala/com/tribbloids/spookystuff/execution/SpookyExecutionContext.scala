@@ -13,18 +13,13 @@ case class SpookyExecutionContext(
     @transient scratchRDDs: ScratchRDDs = ScratchRDDs()
 ) {
 
-  def :++(b: SpookyExecutionContext) = {
+  def :++(b: SpookyExecutionContext): SpookyExecutionContext = {
     //    assert(this.spooky == b.spooky,
     //      "cannot merge execution plans due to diverging SpookyContext")
 
-    import scratchRDDs._
     val bb = b.scratchRDDs
     this.copy(
-      scratchRDDs = ScratchRDDs(
-        tempTables = <+>(bb, _.tempTables),
-        tempRDDs = <+>(bb, _.tempRDDs),
-        tempDSs = <+>(bb, _.tempDSs)
-      )
+      scratchRDDs = scratchRDDs :++ bb
     )
   }
 

@@ -188,7 +188,7 @@ case class ScratchRDDs(
     f(this) ++ f(b)
   }
 
-  def ++(other: ScratchRDDs): ScratchRDDs = {
+  def :++(other: ScratchRDDs): ScratchRDDs = {
     this.copy(
       <+>(other, _.tempTables),
       <+>(other, _.tempRDDs),
