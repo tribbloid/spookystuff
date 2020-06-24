@@ -10,6 +10,7 @@ import org.apache.spark.storage.StorageLevel
 
 import scala.collection.mutable
 import scala.collection.mutable.ArrayBuffer
+import scala.language.implicitConversions
 import scala.reflect.ClassTag
 import scala.util.Random
 
@@ -26,15 +27,20 @@ object ScratchRDDs {
 
   type ScopeID = String
 
-  case class Contextual(
+  case class Scoped(
       root: ScratchRDDs
   ) {
 
     val children: mutable.HashMap[Set[ScopeID], ScratchRDDs] = mutable.HashMap.empty
 
-    @transient var activeScopes: Set[ScopeID] = Set.empty
+    @transient var activeScopeIDs: Set[ScopeID] = Set.empty
 
-    case class InScope(scopeIDs: Set[ScopeID] = activeScopes) {
+    def setActive(scopes: ScopeID*): Unit = {
+
+      activeScopeIDs = scopes.toSet
+    }
+
+    case class InScope(scopeIDs: Set[ScopeID]) {
 
       def get: ScratchRDDs = {
 
@@ -61,13 +67,13 @@ object ScratchRDDs {
 
       }
 
-      def clearAll(): Unit = {
+      def clearAll(blocking: Boolean = false): Unit = {
 
         val filtered = filter
 
         filtered.foreach {
-          case (k, v) =>
-            v.clearAll()
+          case (_, v) =>
+            v.clearAll(blocking)
         }
 
         filter.foreach {
@@ -77,7 +83,39 @@ object ScratchRDDs {
       }
     }
 
+    def active: InScope = InScope(activeScopeIDs)
+
+    def clearAll(blocking: Boolean = false): Unit = {
+
+      children.foreach {
+        case (_, v) =>
+          v.clearAll(blocking)
+      }
+
+      children.clear()
+
+      root.clearAll(blocking)
+    }
+
+    def :++(that: Scoped): Scoped = {
+      val result = Scoped(this.root :++ that.root)
+
+      val keys = this.children.keySet ++ that.children.keySet
+
+      for (key <- keys) {
+
+        result.children += key -> (this.children.get(key).toSeq ++ that.children.get(key)).reduce(_ :++ _)
+      }
+
+      result
+    }
   }
+
+  object Scoped {
+
+    implicit def fromRoot(v: ScratchRDDs): Scoped = Scoped(v)
+  }
+
 }
 
 case class ScratchRDDs(
@@ -188,12 +226,12 @@ case class ScratchRDDs(
     f(this) ++ f(b)
   }
 
-  def :++(other: ScratchRDDs): ScratchRDDs = {
+  def :++(that: ScratchRDDs): ScratchRDDs = {
     this.copy(
-      <+>(other, _.tempTables),
-      <+>(other, _.tempRDDs),
-      <+>(other, _.tempDSs),
-      <+>(other, _.tempBroadcasts)
+      <+>(that, _.tempTables),
+      <+>(that, _.tempRDDs),
+      <+>(that, _.tempDSs),
+      <+>(that, _.tempBroadcasts)
     )
   }
 

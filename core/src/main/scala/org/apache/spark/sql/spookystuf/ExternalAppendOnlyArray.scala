@@ -103,7 +103,9 @@ class ExternalAppendOnlyArray[T](
 
   @transient lazy val backbone: IndexTreeList[T] = {
 
-    val treeList = db.indexTreeList(id, SerDe).createOrOpen()
+    val treeList = db
+      .indexTreeList(id, SerDe)
+      .createOrOpen()
 
     require(treeList.isThreadSafe)
 

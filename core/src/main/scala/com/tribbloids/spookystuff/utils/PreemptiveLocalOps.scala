@@ -18,9 +18,11 @@ case class PreemptiveLocalOps(capacity: Int)(
 
   trait Impl[T] {
 
-    def partitionFactories: Seq[() => PartitionExecution[T]]
+    def partitionIterator: Iterator[PartitionExecution[T]]
 
-    lazy val wIndex: Seq[(() => PartitionExecution[T], Int)] = partitionFactories.zipWithIndex
+    lazy val wIndex: Iterator[(PartitionExecution[T], Int)] = partitionIterator.zipWithIndex
+
+    def numPartitions: Int
 
     def sc: SparkContext
 
@@ -36,7 +38,7 @@ case class PreemptiveLocalOps(capacity: Int)(
 
         wIndex.foreach {
           case (factory, ii) =>
-            val exe = factory()
+            val exe = factory
 
             val jobText = exe.jobTextOvrd.getOrElse(
               s"$ii\t/ ${wIndex.size} (preemptive)"
@@ -68,21 +70,25 @@ case class PreemptiveLocalOps(capacity: Int)(
 
     def sc: SparkContext = self.sparkContext
 
-    override lazy val partitionFactories: Seq[() => PartitionExecution[T]] = {
+    override lazy val partitionIterator: Iterator[PartitionExecution[T]] = {
 
-      self.partitions.toSeq.map(_.index).map { i => () =>
+      self.partitions.iterator.map(_.index).map { i =>
         PartitionExecution[T](self, i)
       }
     }
+
+    override def numPartitions: Int = self.partitions.length
   }
 
   case class ForDataset[T](self: Dataset[T]) extends Impl[T] {
 
     def sc: SparkContext = self.sparkSession.sparkContext
 
-    lazy val delegate: ForRDD[T] = ForRDD(self.rdd)
+    lazy val delegate: ForRDD[T] = ForRDD(self.rdd) // TODO: should use internal RDD for smaller serialization size
 
-    override def partitionFactories: Seq[() => PartitionExecution[T]] = delegate.partitionFactories
+    override def partitionIterator: Iterator[PartitionExecution[T]] = delegate.partitionIterator
+
+    override def numPartitions: Int = delegate.numPartitions
   }
 
 }

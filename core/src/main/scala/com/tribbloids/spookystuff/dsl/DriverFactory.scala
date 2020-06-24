@@ -254,7 +254,7 @@ object DriverFactories {
       val sc = spooky.sparkContext
       val localURI = getLocalURI(spooky)
 
-      def localURITry = PhantomJS.verifyExe(localURI)
+      def localURITry: Try[String] = PhantomJS.verifyExe(localURI)
 
       if (localURITry.isFailure) {
         val remoteURI = getRemoteURI(spooky)
