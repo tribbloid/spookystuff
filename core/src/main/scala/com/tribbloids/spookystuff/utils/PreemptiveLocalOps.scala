@@ -41,7 +41,7 @@ case class PreemptiveLocalOps(capacity: Int)(
             val exe = factory
 
             val jobText = exe.jobTextOvrd.getOrElse(
-              s"$ii\t/ ${wIndex.size} (preemptive)"
+              s"$ii\t/ $numPartitions (preemptive)"
             )
 
             sc.withJob(jobText) {
@@ -54,7 +54,7 @@ case class PreemptiveLocalOps(capacity: Int)(
           buffer.put(Failure(e))
       }
 
-      wIndex.toIterator.map { _ =>
+      wIndex.map { _ =>
         val exe = buffer.take().get
         exe.AsArray.get
       }
