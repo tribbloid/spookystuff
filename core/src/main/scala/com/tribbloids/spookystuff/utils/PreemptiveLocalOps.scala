@@ -1,6 +1,7 @@
 package com.tribbloids.spookystuff.utils
 
 import java.util.concurrent.ArrayBlockingQueue
+import java.util.concurrent.atomic.AtomicInteger
 
 import org.apache.spark.SparkContext
 import org.apache.spark.rdd.RDD
@@ -22,7 +23,9 @@ case class PreemptiveLocalOps(capacity: Int)(
 
     lazy val wIndex: Iterator[(PartitionExecution[T], Int)] = partitionIterator.zipWithIndex
 
-    def numPartitions: Int
+    def numPartitionsOpt: Option[Int]
+
+    lazy val numPartitionsStr: String = numPartitionsOpt.map("" + _).getOrElse("(Unknown)")
 
     def sc: SparkContext
 
@@ -32,32 +35,45 @@ case class PreemptiveLocalOps(capacity: Int)(
 
       val p = SparkLocalProperties(sc)
 
+      @volatile var isFinished = false
+      val traversed = new AtomicInteger(0)
+
       Future {
 
         sc.setJobGroup(p.groupID, p.description)
 
         wIndex.foreach {
           case (factory, ii) =>
+            traversed.incrementAndGet()
+
             val exe = factory
 
             val jobText = exe.jobTextOvrd.getOrElse(
-              s"$ii\t/ $numPartitions (preemptive)"
+              s"$ii\t/ $numPartitionsStr (preemptive)"
             )
 
             sc.withJob(jobText) {
-              buffer.put(Success(exe)) // may be blocking due to capacity
-              exe.AsArray.start // non-blocking
+              buffer.put( // may be blocking due to capacity
+                Success(exe.AsArray.start) // non-blocking
+              )
             }
         }
+        isFinished = true
+
       }.onFailure {
         case e: Throwable =>
           buffer.put(Failure(e))
       }
 
-      wIndex.map { _ =>
-        val exe = buffer.take().get
-        exe.AsArray.get
-      }
+      Iterator
+        .from(0)
+        .takeWhile { i =>
+          (!isFinished) || (i < traversed.get())
+        }
+        .map { _ =>
+          val exe = buffer.take().get
+          exe.AsArray.get
+        }
     }
 
     def toLocalIterator: Iterator[T] = {
@@ -77,7 +93,7 @@ case class PreemptiveLocalOps(capacity: Int)(
       }
     }
 
-    override def numPartitions: Int = self.partitions.length
+    override def numPartitionsOpt: Option[Int] = Some(self.partitions.length)
   }
 
   case class ForDataset[T](self: Dataset[T]) extends Impl[T] {
@@ -88,7 +104,6 @@ case class PreemptiveLocalOps(capacity: Int)(
 
     override def partitionIterator: Iterator[PartitionExecution[T]] = delegate.partitionIterator
 
-    override def numPartitions: Int = delegate.numPartitions
+    override def numPartitionsOpt: Option[Int] = delegate.numPartitionsOpt
   }
-
 }
