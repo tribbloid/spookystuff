@@ -4,6 +4,7 @@ import com.tribbloids.spookystuff.testutils.TestHelper
 import com.tribbloids.spookystuff.utils.SparkUISupport
 import org.apache.spark.TaskContext
 import org.apache.spark.rdd.{RDD, UnionRDD}
+import org.apache.spark.storage.StorageLevel
 import org.apache.spark.util.LongAccumulator
 import org.scalatest.FunSpec
 
@@ -40,7 +41,8 @@ class ExternalAppendOnlyArraySuite extends FunSpec with SparkUISupport {
         .map { _ =>
           val taskContext = TaskContext.get()
 
-          val v = new ExternalAppendOnlyArray[Int](s"Test-${taskContext.taskAttemptId()}")
+          val v =
+            new ExternalAppendOnlyArray[Int](s"Test-${taskContext.taskAttemptId()}", StorageLevel.MEMORY_AND_DISK_SER)
 
           v
         }

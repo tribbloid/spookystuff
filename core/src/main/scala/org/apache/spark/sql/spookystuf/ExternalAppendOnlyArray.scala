@@ -1,7 +1,6 @@
 package org.apache.spark.sql.spookystuf
 
-import java.io.{File, IOException}
-import java.nio.ByteBuffer
+import java.io.File
 import java.util.UUID
 import java.util.concurrent.atomic.AtomicInteger
 
@@ -9,7 +8,7 @@ import com.tribbloids.spookystuff.utils.ThreadLocal
 import com.tribbloids.spookystuff.utils.lifespan.{Lifespan, LocalCleanable}
 import com.tribbloids.spookystuff.utils.serialization.NOTSerializable
 import org.apache.spark.serializer.{SerializerInstance, SerializerManager}
-import org.apache.spark.sql.catalyst.InternalRow
+import org.apache.spark.storage.StorageLevel
 import org.apache.spark.{serializer, SparkEnv}
 import org.mapdb._
 import org.mapdb.serializer.GroupSerializerObjectArray
@@ -25,11 +24,15 @@ import scala.reflect.ClassTag
   */
 class ExternalAppendOnlyArray[T](
     val name: String,
+    storageLevel: StorageLevel,
     override val _lifespan: Lifespan = Lifespan.JVM()
 )(
     implicit val ctg: ClassTag[T]
 ) extends Serializable
     with LocalCleanable {
+
+  val INCREMENT = 4096
+  val INCREMENT_LARGE = 65536
 
   import ExternalAppendOnlyArray._
 
@@ -48,14 +51,55 @@ class ExternalAppendOnlyArray[T](
 //    existing += id -> this
 //  }
 
-  @transient lazy val db: DB = {
-    val result = DBMaker
-      .fileDB(dbTempFile)
-      .fileMmapEnableIfSupported()
-      .fileDeleteAfterClose()
-      .make()
+  @transient lazy val mapDB: DB = {
+    val result = storageLevel match {
+      case StorageLevel.MEMORY_AND_DISK_SER =>
+        DBMaker
+          .fileDB(dbTempFile)
+          .fileMmapEnableIfSupported()
+          .fileDeleteAfterClose()
+          //
+          .allocateStartSize(INCREMENT_LARGE)
+          .allocateIncrement(INCREMENT_LARGE)
+          .make()
+
+      case StorageLevel.DISK_ONLY =>
+        DBMaker
+          .fileDB(dbTempFile)
+          .fileMmapEnableIfSupported()
+          .fileDeleteAfterClose()
+          //
+          .allocateStartSize(INCREMENT)
+          .allocateIncrement(INCREMENT)
+          .make()
+
+      case StorageLevel.MEMORY_ONLY =>
+        DBMaker
+          .heapDB()
+          .allocateStartSize(INCREMENT)
+          .allocateIncrement(INCREMENT)
+          .make()
+
+      case StorageLevel.MEMORY_ONLY_SER =>
+        DBMaker
+          .memoryDB()
+          .allocateStartSize(INCREMENT_LARGE)
+          .allocateIncrement(INCREMENT_LARGE)
+          .make()
+
+      case StorageLevel.OFF_HEAP =>
+        DBMaker
+          .memoryDirectDB()
+          .allocateStartSize(INCREMENT_LARGE)
+          .allocateIncrement(INCREMENT_LARGE)
+          .make()
+
+      case _ =>
+        throw new UnsupportedOperationException("Unsupported StorageLevel")
+    }
 
     result
+    // TODO: add more StorageLevels
   }
 
   @transient case object SerDe extends GroupSerializerObjectArray[T] {
@@ -88,35 +132,23 @@ class ExternalAppendOnlyArray[T](
 
     override def deserialize(input: DataInput2, available: Int): T = {
 
-      if (available == 0) {
+      val stream = SparkSerDe.instance.deserializeStream(
+        DataInputToStream(input)
+      )
 
-        throw new IOException("zero byte")
-
-      } else {
-
-        val result = SparkSerDe.instance.deserialize[T](ByteBuffer.wrap(input.internalByteArray()))
-
-        result
-      }
+      stream.readObject[T]()
     }
   }
 
   @transient lazy val backbone: IndexTreeList[T] = {
 
-    val treeList = db
+    val treeList = mapDB
       .indexTreeList(id, SerDe)
       .createOrOpen()
 
     require(treeList.isThreadSafe)
 
     treeList
-  }
-
-  {
-    require(
-      !classOf[InternalRow].isAssignableFrom(ctg.getClass),
-      "cannot store InternalRow, use UnsafeRow to enable faster serializer"
-    )
   }
 
   def add(v: T): Unit = {
@@ -254,7 +286,7 @@ class ExternalAppendOnlyArray[T](
   override protected def cleanImpl(): Unit = {
 
     backbone.clear()
-    db.close()
+    mapDB.close()
   }
 }
 
