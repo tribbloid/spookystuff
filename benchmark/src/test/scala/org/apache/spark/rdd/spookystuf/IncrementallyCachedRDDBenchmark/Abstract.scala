@@ -92,7 +92,7 @@ abstract class Abstract extends FunSpec with BeforeAndAfterEach {
     }
   }
 
-  lazy val serializer: Serializer = SparkEnv.get.serializer
+  lazy val serializerFactory: () => Serializer = () => SparkEnv.get.serializer
 
   for (i <- 1 to 3) {
     describe(i.toString) {
@@ -117,7 +117,7 @@ abstract class Abstract extends FunSpec with BeforeAndAfterEach {
       // TODO: this is too slow at the moment
       it("incremental cache") {
 
-        val _rdd = IncrementallyCachedRDD(getRDD, storageLevel, serializer)
+        val _rdd = IncrementallyCachedRDD(getRDD, storageLevel, serializerFactory)
 
         stopwatch {
 

@@ -114,7 +114,9 @@ object IncrementallyCachedRDDSuites {
       Fast(
         IncrementallyCachedRDD(
           rddWithCounter,
-          serializer = new UnsafeRowSerializer(1)
+          serializerFactory = { () =>
+            new UnsafeRowSerializer(1)
+          }
         )
       )
     }

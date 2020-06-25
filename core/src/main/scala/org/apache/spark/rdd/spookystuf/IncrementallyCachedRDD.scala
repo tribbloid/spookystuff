@@ -23,7 +23,7 @@ import scala.reflect.ClassTag
 case class IncrementallyCachedRDD[T: ClassTag](
     @transient var prev: RDD[T],
     storageLevel: StorageLevel = StorageLevel.MEMORY_AND_DISK_SER,
-    serializer: Serializer = SparkEnv.get.serializer
+    serializerFactory: () => Serializer = () => SparkEnv.get.serializer
 ) extends RDD[T](
       prev.sparkContext,
       Nil // useless, already have overridden getDependencies
@@ -59,7 +59,7 @@ case class IncrementallyCachedRDD[T: ClassTag](
     val cacheArray = new ExternalAppendOnlyArray[T](
       s"${this.getClass.getSimpleName}-${p.index}",
       storageLevel,
-      serializer
+      serializerFactory
     )
 
     @volatile var _activeTask: WTask = _

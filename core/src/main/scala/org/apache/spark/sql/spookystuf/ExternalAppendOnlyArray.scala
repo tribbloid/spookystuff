@@ -7,6 +7,7 @@ import java.util.concurrent.atomic.AtomicInteger
 import com.tribbloids.spookystuff.utils.ThreadLocal
 import com.tribbloids.spookystuff.utils.lifespan.{Lifespan, LocalCleanable}
 import com.tribbloids.spookystuff.utils.serialization.NOTSerializable
+import org.apache.spark.serializer
 import org.apache.spark.serializer.SerializerInstance
 import org.apache.spark.storage.StorageLevel
 import org.mapdb._
@@ -19,12 +20,12 @@ import scala.reflect.ClassTag
   * WARNING: scraped on job completion, if you want it to keep it across multiple tasks you need to
   * launch a job with `spark.task.cpus = 0`
   * @param ctag used to automatically determine serializer being used
-  * @tparam T affects ctg which is used to determine which serializer to use
+  * @tparam T affects ctg which is used in Ser/De
   */
 class ExternalAppendOnlyArray[T](
     val name: String,
     val storageLevel: StorageLevel,
-    val serializer: org.apache.spark.serializer.Serializer,
+    val serializerFactory: () => serializer.Serializer,
     override val _lifespan: Lifespan = Lifespan.JVM()
 )(
     implicit val ctag: ClassTag[T]
@@ -106,8 +107,10 @@ class ExternalAppendOnlyArray[T](
 
     object SparkSerDe {
 
+      val serDe: serializer.Serializer = serializerFactory()
+
       val factory: ThreadLocal[SerializerInstance] = ThreadLocal { _ =>
-        serializer.newInstance()
+        serDe.newInstance()
       }
 
       def instance: SerializerInstance = {

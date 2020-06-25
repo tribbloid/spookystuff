@@ -14,5 +14,5 @@ class Disk_UnsafeRows extends Disk {
     }
   }
 
-  override lazy val serializer = new UnsafeRowSerializer(4)
+  override lazy val serializerFactory: () => UnsafeRowSerializer = () => new UnsafeRowSerializer(4)
 }

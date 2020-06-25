@@ -45,7 +45,7 @@ class ExternalAppendOnlyArraySuite extends FunSpec with SparkUISupport {
             new ExternalAppendOnlyArray[Int](
               s"Test-${taskContext.taskAttemptId()}",
               StorageLevel.MEMORY_AND_DISK_SER,
-              SparkEnv.get.serializer
+              () => SparkEnv.get.serializer
             )
 
           v
