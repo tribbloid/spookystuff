@@ -1,15 +1,14 @@
 package org.apache.spark.sql.spookystuf
 
-import java.io.{Closeable, DataInput, EOFException, File, InputStream}
+import java.io._
 import java.util.UUID
 import java.util.concurrent.atomic.AtomicInteger
 
 import com.tribbloids.spookystuff.utils.ThreadLocal
 import com.tribbloids.spookystuff.utils.lifespan.{Lifespan, LocalCleanable}
 import com.tribbloids.spookystuff.utils.serialization.NOTSerializable
-import org.apache.spark.serializer.{SerializerInstance, SerializerManager}
+import org.apache.spark.serializer.SerializerInstance
 import org.apache.spark.storage.StorageLevel
-import org.apache.spark.{serializer, SparkEnv}
 import org.mapdb._
 import org.mapdb.serializer.GroupSerializerObjectArray
 import org.slf4j.LoggerFactory
@@ -19,15 +18,16 @@ import scala.reflect.ClassTag
 /**
   * WARNING: scraped on job completion, if you want it to keep it across multiple tasks you need to
   * launch a job with `spark.task.cpus = 0`
-  * @param ctg used to automatically determine serializer being used
+  * @param ctag used to automatically determine serializer being used
   * @tparam T affects ctg which is used to determine which serializer to use
   */
 class ExternalAppendOnlyArray[T](
     val name: String,
-    storageLevel: StorageLevel,
+    val storageLevel: StorageLevel,
+    val serializer: org.apache.spark.serializer.Serializer,
     override val _lifespan: Lifespan = Lifespan.JVM()
 )(
-    implicit val ctg: ClassTag[T]
+    implicit val ctag: ClassTag[T]
 ) extends Serializable
     with LocalCleanable {
 
@@ -104,14 +104,10 @@ class ExternalAppendOnlyArray[T](
 
   @transient case object SerDe extends GroupSerializerObjectArray[T] {
 
-    val serializerMgr: SerializerManager = SparkEnv.get.serializerManager
-
     object SparkSerDe {
 
-      val ser: serializer.Serializer = serializerMgr.getSerializer(ctg, autoPick = true)
-
       val factory: ThreadLocal[SerializerInstance] = ThreadLocal { _ =>
-        ser.newInstance()
+        serializer.newInstance()
       }
 
       def instance: SerializerInstance = {
@@ -125,7 +121,7 @@ class ExternalAppendOnlyArray[T](
 
       val stream = SparkSerDe.instance.serializeStream(out)
 
-      stream.writeObject(value)
+      stream.writeValue(value)
 
       stream.flush()
     }
@@ -136,7 +132,7 @@ class ExternalAppendOnlyArray[T](
         DataInput2AsStream(input)
       )
 
-      stream.readObject[T]()
+      stream.readValue[T]()
     }
   }
 

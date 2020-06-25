@@ -11,6 +11,7 @@ import org.apache.spark
 import org.apache.spark.broadcast.Broadcast
 import org.apache.spark.rdd.RDD
 import org.apache.spark.scheduler.TaskLocation
+import org.apache.spark.serializer.Serializer
 import org.apache.spark.sql.spookystuf.ExternalAppendOnlyArray
 import org.apache.spark.storage.StorageLevel
 import org.apache.spark.util.AccumulatorV2
@@ -21,7 +22,8 @@ import scala.reflect.ClassTag
 
 case class IncrementallyCachedRDD[T: ClassTag](
     @transient var prev: RDD[T],
-    storageLevel: StorageLevel = StorageLevel.MEMORY_AND_DISK_SER
+    storageLevel: StorageLevel = StorageLevel.MEMORY_AND_DISK_SER,
+    serializer: Serializer = SparkEnv.get.serializer
 ) extends RDD[T](
       prev.sparkContext,
       Nil // useless, already have overridden getDependencies
@@ -56,7 +58,8 @@ case class IncrementallyCachedRDD[T: ClassTag](
 
     val cacheArray = new ExternalAppendOnlyArray[T](
       s"${this.getClass.getSimpleName}-${p.index}",
-      storageLevel
+      storageLevel,
+      serializer
     )
 
     @volatile var _activeTask: WTask = _

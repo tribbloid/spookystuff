@@ -7,6 +7,7 @@ import com.tribbloids.spookystuff.testutils.TestHelper.TestSC
 import com.tribbloids.spookystuff.utils.{PreemptiveLocalOps, SparkUISupport}
 import org.apache.spark.rdd.RDD
 import org.apache.spark.sql.catalyst.InternalRow
+import org.apache.spark.sql.execution.UnsafeRowSerializer
 import org.apache.spark.sql.spookystuf.FastForwardingIterator
 import org.apache.spark.util.LongAccumulator
 import org.scalatest.{BeforeAndAfterAll, FunSpec}
@@ -108,6 +109,15 @@ object IncrementallyCachedRDDSuites {
         IncrementallyCachedRDD(rddWithCounter)
       )
     }
+
+    lazy val incrementallyCached_unsafeRow: Fast = {
+      Fast(
+        IncrementallyCachedRDD(
+          rddWithCounter,
+          serializer = new UnsafeRowSerializer(1)
+        )
+      )
+    }
   }
 
   case class Fixture(
@@ -192,10 +202,10 @@ object IncrementallyCachedRDDSuites {
 
       def useCollect_InternalRow: WithRDD[InternalRow] = {
 
-        val df = src.toDF().queryExecution.toRdd
+        val internalRows = src.toDF().queryExecution.toRdd
 
         WithRDD(
-          df, { rdd =>
+          internalRows, { rdd =>
             rdd
               .map(v => v.getInt(0))
               .collect()
@@ -211,7 +221,11 @@ object IncrementallyCachedRDDSuites {
         fixture(useToLocalItr.incrementallyCached_ff, "preemptive toLocalIterator w/ fast-forward"),
         fixture(
           useCollect_InternalRow.incrementallyCached_ff,
-          "collet InternalRows w/ fast-forward"
+          "InternalRows"
+        ),
+        fixture(
+          useCollect_InternalRow.incrementallyCached_unsafeRow,
+          "InternalRows with UnsafeRowSerializer"
         )
       )
     }
