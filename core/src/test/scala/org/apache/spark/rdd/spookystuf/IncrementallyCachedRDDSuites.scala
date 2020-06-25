@@ -21,7 +21,7 @@ object IncrementallyCachedRDDSuites {
 
   case class WithRDD[T](
       self: RDD[T],
-      collector: RDD[T] => List[Any] = { v: RDD[T] =>
+      renderFn: RDD[T] => List[Any] = { v: RDD[T] =>
         v.collect().toList
       }
   ) {
@@ -31,7 +31,6 @@ object IncrementallyCachedRDDSuites {
     val id: Long = Random.nextLong()
 
     val localCounter: AtomicInteger = localAccs.getOrElseUpdate(id, new AtomicInteger())
-
     val globalCounter = new LongAccumulator()
     TestSC.register(globalCounter, "count")
 
@@ -59,14 +58,18 @@ object IncrementallyCachedRDDSuites {
 
       def outer: WithRDD[T] = WithRDD.this
 
+      def rdd: RDD[T]
+
       def getSlice(from: Int, to: Int): List[Any]
+
+      def render(): List[Any] = renderFn(rdd)
     }
 
     case class Slow(
         rdd: RDD[T]
     ) extends Facet {
 
-      def getSlice(from: Int, to: Int): List[Any] = collector(
+      def getSlice(from: Int, to: Int): List[Any] = renderFn(
         rdd
           .mapPartitions { itr =>
             itr.slice(from, to)
@@ -78,7 +81,7 @@ object IncrementallyCachedRDDSuites {
         rdd: RDD[T]
     ) extends Facet {
 
-      def getSlice(from: Int, to: Int): List[Any] = collector(
+      def getSlice(from: Int, to: Int): List[Any] = renderFn(
         rdd
           .mapPartitions {
             case itr: FastForwardingIterator[T] =>
@@ -96,13 +99,13 @@ object IncrementallyCachedRDDSuites {
 
     lazy val incrementallyCached: Slow = {
       Slow(
-        new IncrementallyCachedRDD(rddWithCounter)
+        IncrementallyCachedRDD(rddWithCounter)
       )
     }
 
     lazy val incrementallyCached_ff: Fast = {
       Fast(
-        new IncrementallyCachedRDD(rddWithCounter)
+        IncrementallyCachedRDD(rddWithCounter)
       )
     }
   }
@@ -121,7 +124,7 @@ object IncrementallyCachedRDDSuites {
 
   import TestHelper.TestSQL.implicits._
 
-  val datasetSize = 10000
+  val datasetSize = 5000
   val stride = 1000
 
   val overlap: Int = stride * 2
@@ -174,8 +177,7 @@ object IncrementallyCachedRDDSuites {
       val n = sliced.size
 
       assert(n == numPartitions * 2)
-      assert(u.globalCounter.value == datasetSize)
-      assert(u.localCounter.get() <= datasetSize)
+      assert(u.count == datasetSize)
     }
 
     val fixtures: Seq[Fixture] = {
@@ -207,16 +209,31 @@ object IncrementallyCachedRDDSuites {
         fixture(useCollect.incrementallyCached_ff, "collect w/ fast-forward"),
         fixture(useToLocalItr.incrementallyCached, "preemptive toLocalIterator"),
         fixture(useToLocalItr.incrementallyCached_ff, "preemptive toLocalIterator w/ fast-forward"),
-        fixture(useCollect_InternalRow.incrementallyCached_ff,
-                "collet InternalRows w/ fast-forward",
-                verifyData = false)
+        fixture(
+          useCollect_InternalRow.incrementallyCached_ff,
+          "collet InternalRows w/ fast-forward"
+        )
       )
     }
 
     fixtures.foreach { fixture =>
       describe(fixture.name) {
 
-        def onRanges(seq: Seq[(Int, Int)]): Unit = {
+        it("should behave identically to RDD persist on collect") {
+
+          val facet = fixture.facet()
+
+          for (_ <- fromSeq) {
+
+            val list = facet.render()
+
+            assert(list === groundTruth.src.render())
+
+            assert(facet.outer.count === datasetSize)
+          }
+        }
+
+        def specOnRanges(seq: Seq[(Int, Int)]): Unit = {
 
           val facet = fixture.facet()
 
@@ -226,23 +243,24 @@ object IncrementallyCachedRDDSuites {
 
             if (fixture.verifyData)
               assert(sliced === groundTruth.src.getSlice(from, to))
+
             assert(facet.outer.count === Math.min(numPartitions * to, datasetSize))
           }
         }
 
-        it("should compute & cache necessary slice of the partition") {
+        it("should compute subset of the partition") {
 
-          onRanges(commonRanges)
+          specOnRanges(commonRanges)
         }
 
         it("... if slices are overlapping") {
 
-          onRanges(overlappingRanges)
+          specOnRanges(overlappingRanges)
         }
 
         it("... if slices have gaps") {
 
-          onRanges(skippingRanges)
+          specOnRanges(skippingRanges)
         }
       }
     }

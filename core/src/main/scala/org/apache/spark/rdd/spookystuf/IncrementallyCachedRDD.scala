@@ -19,7 +19,7 @@ import org.slf4j.LoggerFactory
 
 import scala.reflect.ClassTag
 
-class IncrementallyCachedRDD[T: ClassTag](
+case class IncrementallyCachedRDD[T: ClassTag](
     @transient var prev: RDD[T],
     storageLevel: StorageLevel = StorageLevel.MEMORY_AND_DISK_SER
 ) extends RDD[T](
@@ -54,7 +54,10 @@ class IncrementallyCachedRDD[T: ClassTag](
       p: Partition
   ) extends NOTSerializable {
 
-    lazy val cacheArray = new ExternalAppendOnlyArray[T](s"${this.getClass.getSimpleName}-${p.index}", storageLevel)
+    val cacheArray = new ExternalAppendOnlyArray[T](
+      s"${this.getClass.getSimpleName}-${p.index}",
+      storageLevel
+    )
 
     @volatile var _activeTask: WTask = _
 
@@ -120,9 +123,9 @@ class IncrementallyCachedRDD[T: ClassTag](
 
       val semaphore = new Semaphore(1) // cannot be shared by >1 threads
 
-      lazy val counter = new AtomicInteger(0)
+      val counter = new AtomicInteger(0)
 
-      lazy val compute: Iterator[T] = firstParent[T].compute(p, task).map { v =>
+      val compute: Iterator[T] = firstParent[T].compute(p, task).map { v =>
         counter.getAndIncrement()
         v
       }
@@ -162,12 +165,12 @@ class IncrementallyCachedRDD[T: ClassTag](
 
     sparkContext.broadcast(Existing())
   }
-  def existing: ConcurrentMap[Partition, Dependency] = existingBroadcast.value.self
+  def existing: ConcurrentMap[Int, Dependency] = existingBroadcast.value.self
 
   def findDependency(p: Partition): Dependency = {
 
     val result = existing.getOrElseUpdate(
-      p,
+      p.index,
       Dependency(p)
     )
 
@@ -211,7 +214,7 @@ object IncrementallyCachedRDD {
 
   case class Existing[T]() {
 
-    @transient lazy val self: CachingUtils.ConcurrentMap[Partition, T] = {
+    @transient lazy val self: CachingUtils.ConcurrentMap[Int, T] = {
 
       CachingUtils.ConcurrentMap()
     }

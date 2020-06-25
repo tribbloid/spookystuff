@@ -1,6 +1,6 @@
 package org.apache.spark.sql.spookystuf
 
-import java.io.File
+import java.io.{Closeable, DataInput, EOFException, File, InputStream}
 import java.util.UUID
 import java.util.concurrent.atomic.AtomicInteger
 
@@ -133,7 +133,7 @@ class ExternalAppendOnlyArray[T](
     override def deserialize(input: DataInput2, available: Int): T = {
 
       val stream = SparkSerDe.instance.deserializeStream(
-        DataInputToStream(input)
+        DataInput2AsStream(input)
       )
 
       stream.readObject[T]()
@@ -249,7 +249,7 @@ class ExternalAppendOnlyArray[T](
         }
       }
 
-      override def next(): T = ExternalAppendOnlyArray.this.synchronized {
+      override def next(): T = this.synchronized {
 
         val result = if (cached.hasNext) {
           cached.next()
@@ -295,5 +295,56 @@ object ExternalAppendOnlyArray {
   class CannotComputeException(info: String) extends ArrayIndexOutOfBoundsException(info)
 
 //  val existing: ConcurrentCache[String, ExternalAppendOnlyArray[_]] = ConcurrentCache()
+
+  /**
+    * Wraps [[DataInput]] into [[InputStream]]
+    * see https://github.com/jankotek/mapdb/issues/971
+    */
+  case class DataInput2AsStream(in: DataInput2) extends InputStream {
+
+    override def read(b: Array[Byte], off: Int, len: Int): Int = {
+
+      val srcArray = in.internalByteArray()
+
+      val _len =
+        if (srcArray != null) Math.min(srcArray.length, len)
+        else len
+
+      try {
+        in.readFully(b, off, _len)
+        _len
+      } catch {
+
+        // inefficient way
+        case _: ArrayIndexOutOfBoundsException =>
+          (off until (off + len)).foreach { i =>
+            try {
+
+              val next = in.readByte()
+              b.update(i, next)
+            } catch {
+              case _: EOFException | _: ArrayIndexOutOfBoundsException =>
+                return i
+            }
+          }
+          len
+      }
+    }
+
+    override def skip(n: Long): Long = {
+      val _n = Math.min(n, Integer.MAX_VALUE)
+      //$DELAY$
+      in.skipBytes(_n.toInt)
+    }
+
+    override def close(): Unit = {
+      in match {
+        case closeable: Closeable => closeable.close()
+        case _                    =>
+      }
+    }
+
+    override def read: Int = in.readUnsignedByte
+  }
 
 }

@@ -137,7 +137,7 @@ class ExternalAppendOnlyArraySuite extends FunSpec with SparkUISupport {
       val computed = new LongAccumulator()
       TestSC.register(computed)
 
-      val children = (1 to numChildren).map { i =>
+      val children = (1 to numChildren).map { _ =>
         rdd
           .mapPartitions { p =>
             val externalArray = p.next()
