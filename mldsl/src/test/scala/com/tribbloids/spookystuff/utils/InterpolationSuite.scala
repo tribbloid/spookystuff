@@ -4,12 +4,74 @@ import org.scalatest.FunSpec
 
 class InterpolationSuite extends FunSpec {
 
-  val ii: Interpolation = Interpolation.`$`
+  it("interpolate can use common character as delimiter") {
+
+    val original = "ORA'{TEST}"
+    val interpolated = Interpolation.`'`(original) { v =>
+      "Replaced"
+    }
+    assert(interpolated == "ORAReplaced")
+  }
+
+  it("interpolate can use special regex character as delimiter") {
+
+    val original = "ORA${TEST}"
+    val interpolated = Interpolation.`$`(original) { v =>
+      "Replaced"
+    }
+    assert(interpolated == "ORAReplaced")
+  }
+
+  val special: Seq[String] = Seq(
+    "$",
+    "\\$",
+    "\\\\$"
+  )
+
+  it("interpolate should ignore string that contains delimiter without bracket") {
+
+    special.foreach { ss =>
+      val original = s"ORA${ss}TEST"
+      val interpolated = Interpolation.`$`(original) { v =>
+        "Replaced"
+      }
+      assert(interpolated == original)
+    }
+
+    special.foreach { ss =>
+      val original = s"ORA$ss"
+      val interpolated = Interpolation.`$`(original) { v =>
+        "Replaced"
+      }
+      assert(interpolated == original)
+    }
+  }
+
+  it("interpolate should allow delimiter to be escaped") {
+
+    special.foreach { ss =>
+      val original = "ORA" + ss + "${TEST}"
+      val interpolated = Interpolation.`$`(original) { v =>
+        "Replaced"
+      }
+      assert(interpolated == original.replaceAllLiterally("$$", "$"))
+    }
+
+    special.foreach { ss =>
+      val original = s"ORA" + ss + "${}"
+      val interpolated = Interpolation.`$`(original) { v =>
+        "Replaced"
+      }
+      assert(interpolated == original.replaceAllLiterally("$$", "$"))
+    }
+  }
+
+  val i_$ : Interpolation = Interpolation.`$`
 
   it("can interpolate delimited field") {
 
     assert(
-      ii.apply("abc${def}ghi") { s =>
+      i_$.apply("abc${def}ghi") { s =>
         s + "0"
       } == "abcdef0ghi"
     )
@@ -18,7 +80,7 @@ class InterpolationSuite extends FunSpec {
   it("can avoid escaped char") {
 
     assert(
-      ii.apply("abc$${def}ghi") { s =>
+      i_$.apply("abc$${def}ghi") { s =>
         s + "0"
       } == "abc${def}ghi"
     )
@@ -26,7 +88,7 @@ class InterpolationSuite extends FunSpec {
 
   it("can avoid continuous escaped chars") {
     assert(
-      ii.apply("abc$$$$$${def}ghi") { s =>
+      i_$.apply("abc$$$$$${def}ghi") { s =>
         s + "0"
       } == "abc$$${def}ghi"
     )
@@ -34,7 +96,7 @@ class InterpolationSuite extends FunSpec {
 
   it("can identify delimiter after continuous escaped chars") {
     assert(
-      ii.apply("abc$$$$${def}ghi") { s =>
+      i_$.apply("abc$$$$${def}ghi") { s =>
         s + "0"
       } == "abc$$def0ghi"
     )
