@@ -57,16 +57,14 @@ object FlowUtils {
   }
 
   def getBreakpointInfo(
-      filterAnon: Boolean = true,
+      filterAnon: Boolean = false, // TODO: should be removed, not a good idea
       filterInitializer: Boolean = true,
-      filterLazyCompute: Boolean = true,
-      filterDefaultRelay: Boolean = true,
-      exclude: Seq[Class[_]] = Nil
+      filterLazyCompute: Boolean = true
   ): Array[StackTraceElement] = {
     val stackTraceElements: Array[StackTraceElement] = Thread.currentThread().getStackTrace
     var effectiveElements = breakpointInfoFilter(stackTraceElements)
 
-    if (filterAnon) effectiveElements = effectiveElements.filter(v => !(v.getMethodName.contains('$')))
+    if (filterAnon) effectiveElements = effectiveElements.filter(v => !v.getMethodName.contains('$'))
     if (filterInitializer) effectiveElements = effectiveElements.filter(v => !(v.getMethodName == INIT))
     if (filterLazyCompute) effectiveElements = effectiveElements.filter(v => !v.getMethodName.endsWith(LZYCOMPUTE))
 
@@ -78,7 +76,7 @@ object FlowUtils {
       exclude: Seq[Class[_]] = Nil
   ) {
 
-    lazy val bpInfo = {
+    lazy val breakpointInfo: Array[StackTraceElement] = {
       val bp = FlowUtils.getBreakpointInfo()
       val filteredIndex = bp.toSeq.indexWhere(
         { element =>
@@ -91,35 +89,35 @@ object FlowUtils {
       bp.slice(filteredIndex, Int.MaxValue)
     }
 
-    def showStr = {
-      stackTracesShowStr(bpInfo)
+    def showStr: String = {
+      stackTracesShowStr(breakpointInfo)
     }
 
-    def fnName = {
-      val bp = bpInfo.head
+    def fnName: String = {
+      val bp = breakpointInfo.head
       assert(!bp.isNativeMethod, "can only get fnName in def & lazy val blocks")
       bp.getMethodName
     }
   }
 
-  def liftCamelCase(str: String) = str.head.toUpper.toString + str.substring(1)
-  def toCamelCase(str: String) = str.head.toLower.toString + str.substring(1)
+  def liftCamelCase(str: String): String = str.head.toUpper.toString + str.substring(1)
+  def toCamelCase(str: String): String = str.head.toLower.toString + str.substring(1)
 
-  def indent(text: String, str: String = "\t") = {
+  def indent(text: String, str: String = "\t"): String = {
     text.split('\n').filter(_.nonEmpty).map(str + _).mkString("\n")
   }
 
-  lazy val defaultJavaSerializer = {
+  lazy val defaultJavaSerializer: JavaSerializer = {
     val conf = new SparkConf()
     new JavaSerializer(conf)
   }
 
-  lazy val defaultKryoSerializer = {
+  lazy val defaultKryoSerializer: KryoSerializer = {
     val conf = new SparkConf()
     new KryoSerializer(conf)
   }
 
-  def isSerializable(v: Class[_]) = {
+  def isSerializable(v: Class[_]): Boolean = {
 
     classOf[java.io.Serializable].isAssignableFrom(v) ||
     v.isPrimitive ||

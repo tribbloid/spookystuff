@@ -184,90 +184,60 @@ class ExternalAppendOnlyArray[T](
     */
   case class StartingFrom(index: Int = 0) {
 
-    case class CachedIterator() extends FastForwardingIterator[T] with NOTSerializable {
+    case class CachedIterator() extends FastForwardingIterator[T] with ConsumedIterator with NOTSerializable {
 
-      val consumed = new AtomicInteger(index) // strictly incremental, index of the next pointer
+      lazy val _offset = new AtomicInteger(index) // strictly incremental, index of the next pointer
+      override def offset: Int = _offset.get()
 
-      override def fastForward(n: Int): FastForwardingIterator[T] = StartingFrom(consumed.get() + n).CachedIterator()
+      override def drop(n: Int): this.type = {
+        _offset.addAndGet(n)
+        this
+      }
 
       override def hasNext: Boolean = {
-        consumed.get() < backbone.size()
+        offset < backbone.size()
       }
 
       override def next(): T = {
 
-        val result = backbone.get(consumed.get())
-        skip()
+        val result = backbone.get(offset)
+        _offset.incrementAndGet()
         result
-      }
-
-      def skip(): Int = {
-
-        consumed.incrementAndGet()
       }
     }
 
-    // TODO: this should be another class
     case class CachedOrComputeIterator(
-        computeIterator: Iterator[T], // can be assumed to be thread exclusive
-        computeStartingFrom: Int = 0
-    ) extends FastForwardingIterator[T]
+        computeIterator: Iterator[T] with ConsumedIterator
+    ) extends FallbackIterator[T]
         with NOTSerializable {
 
-      val cached: CachedIterator = CachedIterator()
+      @volatile override var primary: Iterator[T] with ConsumedIterator = CachedIterator()
 
-      val computeConsumed = new AtomicInteger(computeStartingFrom)
-      val overallConsumed = new AtomicInteger(index)
+      override lazy val backup: Iterator[T] with ConsumedIterator = {
+        new FastForwardingIterator[T] with ConsumedIterator {
 
-      lazy val computed: Iterator[T] = computeIterator.map { v =>
-        computeConsumed.incrementAndGet()
-        v
-      }
+          override def offset: Int = computeIterator.offset
 
-      def computeCatchingUp(): Unit = {
+          override def hasNext: Boolean = computeIterator.hasNext
 
-        val difference = cached.consumed.get() - computeConsumed.get()
+          override def next(): T = {
 
-        if (difference < 0)
-          throw new CannotComputeException(
-            s"compute iterator can't go back: from $computeConsumed to ${cached.consumed}"
-          )
+            val result = synchronized {
+              computeIterator.next()
+            }
 
-        if (difference > 0)
-          computed.drop(difference)
-      }
+            //          if (computeIterator.offset > primary.offset)
+            addIfNew(computeIterator.offset - 1, result)
 
-      lazy val computeCachingUpOnce: Unit = {
-        computeCatchingUp()
-      }
+            result
+          }
 
-      override def hasNext: Boolean = {
-        cached.hasNext || {
-          computeCachingUpOnce
-          computed.hasNext
+          override def drop(n: Int): this.type = {
+            computeIterator.drop(n)
+            this
+          }
         }
       }
-
-      override def next(): T = this.synchronized {
-
-        val result = if (cached.hasNext) {
-          cached.next()
-        } else {
-          computeCachingUpOnce
-          val result = computed.next()
-//          println("compute:" + result)
-
-          addIfNew(computeConsumed.get() - 1, result)
-          cached.skip()
-          result
-        }
-        overallConsumed.incrementAndGet()
-
-        result
-      }
-
-      override def fastForward(n: Int): FastForwardingIterator[T] =
-        StartingFrom(overallConsumed.get() + n).CachedOrComputeIterator(computeIterator, computeConsumed.get())
     }
   }
 

@@ -1,10 +1,10 @@
 package org.apache.spark.rdd.spookystuf
 
-import java.util.concurrent.atomic.AtomicInteger
+import java.util.concurrent.atomic.AtomicLong
 
 import com.tribbloids.spookystuff.testutils.TestHelper
 import com.tribbloids.spookystuff.testutils.TestHelper.TestSC
-import com.tribbloids.spookystuff.utils.{PreemptiveLocalOps, SparkUISupport}
+import com.tribbloids.spookystuff.utils.{PreemptiveLocalOps, SparkUISupport, Stopwatch}
 import org.apache.spark.rdd.RDD
 import org.apache.spark.sql.catalyst.InternalRow
 import org.apache.spark.sql.execution.UnsafeRowSerializer
@@ -18,7 +18,42 @@ import scala.util.Random
 
 object IncrementallyCachedRDDSuites {
 
-  val localAccs = mutable.Map.empty[Long, AtomicInteger]
+  val datasetSize = 40000
+  val stride = 1000
+
+  val overlap: Int = stride * 2
+
+  val skip: Int = stride / 2
+
+  // scale makes all the difference
+
+  val fromSeq: Seq[Int] = 0.to(datasetSize / 4, stride)
+
+  val commonRanges: Seq[(Int, Int)] = {
+
+    fromSeq.map { from =>
+      val to = from + stride - 1
+      from -> to
+    }
+  }
+
+  val overlappingRanges: Seq[(Int, Int)] = {
+
+    fromSeq.map { from =>
+      val to = from + stride + overlap - 1
+      from -> to
+    }
+  }
+
+  val skippingRanges: Seq[(Int, Int)] = {
+
+    fromSeq.map { from =>
+      val to = from + stride - skip - 1
+      from -> to
+    }
+  }
+
+  val localCounters = mutable.Map.empty[Long, AtomicLong]
 
   case class WithRDD[T](
       self: RDD[T],
@@ -31,7 +66,7 @@ object IncrementallyCachedRDDSuites {
 
     val id: Long = Random.nextLong()
 
-    val localCounter: AtomicInteger = localAccs.getOrElseUpdate(id, new AtomicInteger())
+    val localCounter: AtomicLong = localCounters.getOrElseUpdate(id, new AtomicLong())
     val globalCounter = new LongAccumulator()
     TestSC.register(globalCounter, "count")
 
@@ -46,7 +81,7 @@ object IncrementallyCachedRDDSuites {
     }
 
     val ffInvoked = new LongAccumulator()
-    TestSC.register(ffInvoked, "ffInvoked")
+    TestSC.register(ffInvoked, "Fast forward invoked")
 
     val rddWithCounter: RDD[T] = self.map { v =>
       localCounter.getAndIncrement()
@@ -87,7 +122,7 @@ object IncrementallyCachedRDDSuites {
           .mapPartitions {
             case itr: FastForwardingIterator[T] =>
               ffInvoked.add(1)
-              itr.fastForward(from).slice(0, to - from)
+              itr.drop(from).slice(0, to - from)
             case itr =>
               itr.slice(from, to)
           }
@@ -135,41 +170,6 @@ object IncrementallyCachedRDDSuites {
   ): Fixture = Fixture(() => facet, name, verifyData)
 
   import TestHelper.TestSQL.implicits._
-
-  val datasetSize = 5000
-  val stride = 1000
-
-  val overlap: Int = stride * 2
-
-  val skip: Int = stride / 2
-
-  // scale makes all the difference
-
-  val fromSeq: Seq[Int] = 0.to(datasetSize, stride)
-
-  val commonRanges: Seq[(Int, Int)] = {
-
-    fromSeq.map { from =>
-      val to = from + stride - 1
-      from -> to
-    }
-  }
-
-  val overlappingRanges: Seq[(Int, Int)] = {
-
-    fromSeq.map { from =>
-      val to = from + stride + overlap - 1
-      from -> to
-    }
-  }
-
-  val skippingRanges: Seq[(Int, Int)] = {
-
-    fromSeq.map { from =>
-      val to = from + stride - skip - 1
-      from -> to
-    }
-  }
 
   case class Child(
       numPartitions: Int
@@ -235,13 +235,19 @@ object IncrementallyCachedRDDSuites {
     fixtures.foreach { fixture =>
       describe(fixture.name) {
 
+        val stopwatch = Stopwatch()
+
         it("should behave identically to RDD persist on collect") {
 
           val facet = fixture.facet()
 
-          for (_ <- fromSeq) {
+          for (_ <- 0 to 3) {
+
+            stopwatch.reset()
 
             val list = facet.render()
+
+            println(s"rendering takes ${stopwatch.split}ms")
 
             assert(list === groundTruth.src.render())
 
@@ -255,7 +261,11 @@ object IncrementallyCachedRDDSuites {
 
           for ((from, to) <- seq) {
 
+            stopwatch.reset()
+
             val sliced = facet.getSlice(from, to)
+
+            println(s"$from to $to takes ${stopwatch.split}ms")
 
             if (fixture.verifyData)
               assert(sliced === groundTruth.src.getSlice(from, to))

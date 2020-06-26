@@ -12,7 +12,7 @@ import org.apache.spark.broadcast.Broadcast
 import org.apache.spark.rdd.RDD
 import org.apache.spark.scheduler.TaskLocation
 import org.apache.spark.serializer.Serializer
-import org.apache.spark.sql.spookystuf.ExternalAppendOnlyArray
+import org.apache.spark.sql.spookystuf.{ConsumedIterator, ExternalAppendOnlyArray}
 import org.apache.spark.storage.StorageLevel
 import org.apache.spark.util.AccumulatorV2
 import org.apache.spark.{OneToOneDependency, Partition, SparkEnv, TaskContext}
@@ -135,7 +135,11 @@ case class IncrementallyCachedRDD[T: ClassTag](
 
       def getOrCompute(start: Int): Iterator[T] = {
 
-        cacheArray.StartingFrom(start).CachedOrComputeIterator(compute, counter.get())
+        cacheArray
+          .StartingFrom(start)
+          .CachedOrComputeIterator(
+            ConsumedIterator.Wrap(compute, counter.get())
+          )
       }
 
       def active: WTask = Option(_activeTask).getOrElse {

@@ -82,6 +82,7 @@ class ExternalAppendOnlyArraySuite extends FunSpec with SparkUISupport {
             itr.slice(0, taskSize)
           }
           .collect()
+        Thread.sleep(1000)
 
         assert(computed.value <= parallelism * taskSize * TestHelper.numWorkers)
 

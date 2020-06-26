@@ -11,9 +11,9 @@ class FlowUtilsSuite extends FunSuite {
     FlowUtils.getBreakpointInfo()
   }
 
-  lazy val caller2 = caller()
+  lazy val caller2: Array[StackTraceElement] = caller()
 
-  val caller3 = caller2
+  val caller3: Array[StackTraceElement] = caller2
 
   def defaultParamCaller(
       c: Array[StackTraceElement] = caller2
