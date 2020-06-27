@@ -2,13 +2,14 @@ package org.apache.spark.rdd.spookystuf
 
 import java.util.concurrent.atomic.AtomicLong
 
+import com.tribbloids.spookystuff.dsl.Samplers
 import com.tribbloids.spookystuff.testutils.TestHelper
 import com.tribbloids.spookystuff.testutils.TestHelper.TestSC
 import com.tribbloids.spookystuff.utils.{PreemptiveLocalOps, SparkUISupport, Stopwatch}
 import org.apache.spark.rdd.RDD
 import org.apache.spark.sql.catalyst.InternalRow
 import org.apache.spark.sql.execution.UnsafeRowSerializer
-import org.apache.spark.sql.spookystuf.FastForwardingIterator
+import org.apache.spark.storage.StorageLevel
 import org.apache.spark.util.LongAccumulator
 import org.scalatest.{BeforeAndAfterAll, FunSpec}
 
@@ -18,8 +19,8 @@ import scala.util.Random
 
 object IncrementallyCachedRDDSuites {
 
-  val datasetSize = 40000
-  val stride = 1000
+  val datasetSize = 1000
+  val stride = 100
 
   val overlap: Int = stride * 2
 
@@ -163,11 +164,11 @@ object IncrementallyCachedRDDSuites {
       verifyData: Boolean = true
   )
 
-  def fixture[T](
-      facet: => WithRDD[T]#Facet,
-      name: String,
-      verifyData: Boolean = true
-  ): Fixture = Fixture(() => facet, name, verifyData)
+//  def fixture[T](
+//      facet: => WithRDD[T]#Facet,
+//      name: String,
+//      verifyData: Boolean = true
+//  ): Fixture = Fixture(() => facet, name, verifyData)
 
   import TestHelper.TestSQL.implicits._
 
@@ -175,9 +176,24 @@ object IncrementallyCachedRDDSuites {
       numPartitions: Int
   ) extends FunSpec
       with SparkUISupport {
+
+    TestHelper.enableCheckpoint
+
     override def suiteName: String = s"$numPartitions"
 
     val src: RDD[Int] = TestSC.parallelize(1 to datasetSize, numPartitions)
+
+    val rowSrc: RDD[InternalRow] = src.toDF().queryExecution.toRdd
+
+    val persistedSrc: RDD[Int] = {
+      src.map(identity).persist(StorageLevel.DISK_ONLY)
+    }
+
+    val checkpointedSrc: RDD[Int] = {
+      val result = src.map(identity)
+      result.checkpoint()
+      result
+    }
 
     val groundTruth: WithRDD[Int] = WithRDD(src)
 
@@ -202,12 +218,10 @@ object IncrementallyCachedRDDSuites {
         }
       )
 
-      def useCollect_InternalRow: WithRDD[InternalRow] = {
-
-        val internalRows = src.toDF().queryExecution.toRdd
+      def onInternalRows: WithRDD[InternalRow] = {
 
         WithRDD(
-          internalRows, { rdd =>
+          rowSrc, { rdd =>
             rdd
               .map(v => v.getInt(0))
               .collect()
@@ -216,19 +230,25 @@ object IncrementallyCachedRDDSuites {
         )
       }
 
+      def onPersisted = WithRDD(persistedSrc)
+
+      def onCheckpointed = WithRDD(checkpointedSrc)
+
       Seq(
-        fixture(useCollect.incrementallyCached, "collect"),
-        fixture(useCollect.incrementallyCached_ff, "collect w/ fast-forward"),
-        fixture(useToLocalItr.incrementallyCached, "preemptive toLocalIterator"),
-        fixture(useToLocalItr.incrementallyCached_ff, "preemptive toLocalIterator w/ fast-forward"),
-        fixture(
-          useCollect_InternalRow.incrementallyCached_ff,
+        Fixture(() => useCollect.incrementallyCached, "collect"),
+        Fixture(() => useCollect.incrementallyCached_ff, "collect with fast-forward"),
+        Fixture(() => useToLocalItr.incrementallyCached, "preemptive toLocalIterator"),
+        Fixture(() => useToLocalItr.incrementallyCached_ff, "preemptive toLocalIterator with fast-forward"),
+        Fixture(
+          () => onInternalRows.incrementallyCached_ff,
           "InternalRows"
         ),
-        fixture(
-          useCollect_InternalRow.incrementallyCached_unsafeRow,
+        Fixture(
+          () => onInternalRows.incrementallyCached_unsafeRow,
           "InternalRows with UnsafeRowSerializer"
-        )
+        ),
+        Fixture(() => onPersisted.incrementallyCached_ff, "persisted RDD"),
+        Fixture(() => onCheckpointed.incrementallyCached_ff, "checkpointed RDD")
       )
     }
 
@@ -267,8 +287,12 @@ object IncrementallyCachedRDDSuites {
 
             println(s"$from to $to takes ${stopwatch.split}ms")
 
+            val slicedGD = groundTruth.src.getSlice(from, to)
+
+            assert(sliced.size == slicedGD.size)
+
             if (fixture.verifyData)
-              assert(sliced === groundTruth.src.getSlice(from, to))
+              assert(sliced === slicedGD)
 
             assert(facet.outer.count === Math.min(numPartitions * to, datasetSize))
           }
@@ -298,11 +322,12 @@ class IncrementallyCachedRDDSuites extends FunSpec with BeforeAndAfterAll {
   import IncrementallyCachedRDDSuites._
 
   override def nestedSuites: immutable.IndexedSeq[Child] = immutable.IndexedSeq(
-    Child(1),
-    Child(3),
-    Child(8),
-    Child(21),
-    Child(64)
+    Child(
+      Samplers.withReplacement(1 to TestSC.defaultParallelism).get
+    ),
+    Child(
+      Samplers.withReplacement(TestSC.defaultParallelism to 64).get
+    )
   )
 
 //  override def afterAll(): Unit = {

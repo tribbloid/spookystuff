@@ -1,4 +1,4 @@
-package org.apache.spark.sql.spookystuf
+package org.apache.spark.rdd.spookystuf
 
 trait FastForwardingIterator[T] extends Iterator[T] {
 

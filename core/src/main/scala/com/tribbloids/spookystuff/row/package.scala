@@ -8,7 +8,7 @@ package object row {
 
   type Data = Map[Field, Any] //TODO: change to SQL Row
 
-  implicit val Data = Map
+  implicit val Data: Map.type = Map
 
   type SquashedFetchedRDD = RDD[SquashedFetchedRow]
 

@@ -1,4 +1,4 @@
-package org.apache.spark.sql.spookystuf
+package org.apache.spark.rdd.spookystuf
 
 import java.io._
 import java.util.UUID
@@ -32,7 +32,7 @@ class ExternalAppendOnlyArray[T](
 ) extends Serializable
     with LocalCleanable {
 
-  val INCREMENT = 4096
+  val INCREMENT = 1024
   val INCREMENT_LARGE = 65536
 
   import ExternalAppendOnlyArray._
@@ -166,6 +166,8 @@ class ExternalAppendOnlyArray[T](
   def addIfNew(i: Int, v: T): Unit = synchronized {
 
     if (i == length) {
+//      println(s"add $i")
+
       add(v)
     } else if (i > length && notLogged) {
 
@@ -173,9 +175,8 @@ class ExternalAppendOnlyArray[T](
 
       LoggerFactory
         .getLogger(this.getClass)
-        .info(s"new value at index $i is ahead of length $length and cannot be added")
+        .warn(s"new value at index $i is ahead of length $length and cannot be added")
     }
-
   }
 
   /**
@@ -214,20 +215,18 @@ class ExternalAppendOnlyArray[T](
       @volatile override var primary: Iterator[T] with ConsumedIterator = CachedIterator()
 
       override lazy val backup: Iterator[T] with ConsumedIterator = {
-        new FastForwardingIterator[T] with ConsumedIterator {
+        object ComputeAndAddIterator extends FastForwardingIterator[T] with ConsumedIterator {
 
           override def offset: Int = computeIterator.offset
 
           override def hasNext: Boolean = computeIterator.hasNext
 
-          override def next(): T = {
+          override def next(): T = ExternalAppendOnlyArray.this.synchronized {
+            val currentOffset = computeIterator.offset
+            val result = computeIterator.next()
 
-            val result = synchronized {
-              computeIterator.next()
-            }
-
-            //          if (computeIterator.offset > primary.offset)
-            addIfNew(computeIterator.offset - 1, result)
+            //          if (currentOffset > primary.offset)
+            addIfNew(currentOffset, result)
 
             result
           }
@@ -237,6 +236,8 @@ class ExternalAppendOnlyArray[T](
             this
           }
         }
+
+        ComputeAndAddIterator
       }
     }
   }

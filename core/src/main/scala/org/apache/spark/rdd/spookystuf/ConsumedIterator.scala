@@ -1,4 +1,4 @@
-package org.apache.spark.sql.spookystuf
+package org.apache.spark.rdd.spookystuf
 
 import java.util.concurrent.atomic.AtomicInteger
 
@@ -7,6 +7,9 @@ import scala.language.implicitConversions
 trait ConsumedIterator {
   self: Iterator[_] =>
 
+  /**
+    * pointer to the next value
+    */
   def offset: Int
 }
 

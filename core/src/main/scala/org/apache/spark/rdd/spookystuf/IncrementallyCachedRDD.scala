@@ -1,18 +1,17 @@
 package org.apache.spark.rdd.spookystuf
 
 import java.util.concurrent.Semaphore
-import java.util.concurrent.atomic.AtomicInteger
 
-import com.tribbloids.spookystuff.utils.CachingUtils
+import com.tribbloids.spookystuff.utils.{CachingUtils, IDMixin}
 import com.tribbloids.spookystuff.utils.CachingUtils.ConcurrentMap
 import com.tribbloids.spookystuff.utils.accumulator.MapAccumulator
 import com.tribbloids.spookystuff.utils.serialization.NOTSerializable
 import org.apache.spark
 import org.apache.spark.broadcast.Broadcast
+import org.apache.spark.internal.Logging
 import org.apache.spark.rdd.RDD
 import org.apache.spark.scheduler.TaskLocation
 import org.apache.spark.serializer.Serializer
-import org.apache.spark.sql.spookystuf.{ConsumedIterator, ExternalAppendOnlyArray}
 import org.apache.spark.storage.StorageLevel
 import org.apache.spark.util.AccumulatorV2
 import org.apache.spark.{OneToOneDependency, Partition, SparkEnv, TaskContext}
@@ -27,7 +26,8 @@ case class IncrementallyCachedRDD[T: ClassTag](
 ) extends RDD[T](
       prev.sparkContext,
       Nil // useless, already have overridden getDependencies
-    ) {
+    )
+    with Logging {
 
   import IncrementallyCachedRDD._
 
@@ -62,22 +62,28 @@ case class IncrementallyCachedRDD[T: ClassTag](
       serializerFactory
     )
 
-    @volatile var _activeTask: WTask = _
+    @volatile var _activeTask: InTask = _
 
-    case class WTask(task: TaskContext) {
+    case class InTask(taskContext: TaskContext) extends IDMixin {
 
-      @volatile var _commissionedBy: TaskContext = task
+      {
+        if (_activeTask == null) _activeTask = this
+      }
+
+      override protected lazy val _id: Any = taskContext.taskAttemptId()
+
+      @volatile var _commissionedBy: TaskContext = taskContext
 
       lazy val accumulatorMap: Map[Long, AccumulatorV2[_, _]] = {
 
-        val metrics = task.taskMetrics()
+        val metrics = taskContext.taskMetrics()
         val activeAccs = metrics.accumulators()
         Map(activeAccs.map(v => v.id -> v): _*)
       }
 
-      def recommission(neo: WTask): Unit = {
+      def recommission(neo: InTask): Unit = {
 
-        val newTask = neo.task
+        val newTask = neo.taskContext
 
         semaphore.acquire()
 
@@ -90,11 +96,9 @@ case class IncrementallyCachedRDD[T: ClassTag](
             acc.reset()
           }
 
-          LoggerFactory
-            .getLogger(this.getClass)
-            .info(s"recommissioning ${task.taskAttemptId()}: ${_commissionedBy
-              .taskAttemptId()} -> ${newTask
-              .taskAttemptId()}, accumulators ${accumulatorMap.keys.map(v => "#" + v).mkString(",")}")
+          logInfo(s"recommissioning ${taskContext.taskAttemptId()}: ${_commissionedBy
+            .taskAttemptId()} -> ${newTask
+            .taskAttemptId()}, accumulators ${accumulatorMap.keys.map(v => "#" + v).mkString(",")}")
 
           _commissionedBy = newTask
         }
@@ -111,11 +115,9 @@ case class IncrementallyCachedRDD[T: ClassTag](
                 case Some(oldAcc) =>
                   newAcc.asInstanceOf[AccumulatorV2[Any, Any]].merge(oldAcc.asInstanceOf[AccumulatorV2[Any, Any]])
                 case None =>
-                  LoggerFactory
-                    .getLogger(this.getClass)
-                    .warn(
-                      s"Accumulator ${newAcc.toString()} cannot be found in task ${task.stageId()}/${task.taskAttemptId()}"
-                    )
+                  logWarning(
+                    s"Accumulator ${newAcc.toString()} cannot be found in task ${taskContext.stageId()}/${taskContext.taskAttemptId()}"
+                  )
               }
             }
           }
@@ -124,46 +126,83 @@ case class IncrementallyCachedRDD[T: ClassTag](
         }
       }
 
-      val semaphore = new Semaphore(1) // cannot be shared by >1 threads
+      lazy val semaphore = new Semaphore(1) // cannot be shared by >1 threads
 
-      val counter = new AtomicInteger(0)
+      lazy val compute: ConsumedIterator.Wrap[T] = {
 
-      val compute: Iterator[T] = firstParent[T].compute(p, task).map { v =>
-        counter.getAndIncrement()
-        v
+        val raw = firstParent[T].compute(p, taskContext)
+        ConsumedIterator.wrap(raw)
       }
 
-      def getOrCompute(start: Int): Iterator[T] = {
-
-        cacheArray
-          .StartingFrom(start)
-          .CachedOrComputeIterator(
-            ConsumedIterator.Wrap(compute, counter.get())
-          )
-      }
-
-      def active: WTask = Option(_activeTask).getOrElse {
-        regenerate()
+      def active: InTask = Option(_activeTask).getOrElse {
+        activate()
         this
       }
 
-      def regenerate(): Unit = {
+      def activate(): Unit = {
 
+        logWarning(
+          s"regenerating partition ${p.index} : ${_activeTask.taskContext.taskAttemptId()} -> ${taskContext.taskAttemptId()}")
         _activeTask = this
       }
 
       def output(start: Int): Iterator[T] = {
 
-        try {
-
+        val result = try {
           active.recommission(this)
-          active.getOrCompute(start)
+
+          cacheArray
+            .StartingFrom(start)
+            .CachedOrComputeIterator {
+
+              object ActiveOrRegeneratedIterator extends FallbackIterator[T] {
+
+                @volatile override var primary: Iterator[T] with ConsumedIterator = active.compute
+
+                override lazy val backup: Iterator[T] with ConsumedIterator = {
+                  val result = InTask.this.compute
+
+                  activate()
+
+                  result
+                }
+
+                override protected def _primaryHasNext: Option[Boolean] = {
+
+                  try {
+                    Some(primary.hasNext)
+                  } catch {
+                    case e: Throwable =>
+                      logError(s"Partition ${p.index} from ${active.taskContext} is broken, recomputing: $e")
+                      logDebug("", e)
+
+                      None
+                  }
+
+                }
+              }
+
+              ActiveOrRegeneratedIterator
+
+            }
+
         } catch {
           case e: ExternalAppendOnlyArray.CannotComputeException =>
-            LoggerFactory.getLogger(this.getClass).warn(s"recomputing partition ${p.index} as ${e.getMessage}")
-            regenerate()
-            getOrCompute(start)
+            logError(s"Partition ${p.index} from ${active.taskContext} cannot be used, recomputing: $e")
+            logDebug("", e)
+
+            val result = cacheArray
+              .StartingFrom(start)
+              .CachedOrComputeIterator(
+                this.compute
+              )
+
+            activate()
+
+            result
         }
+
+        result
       }
     }
   }
@@ -186,7 +225,7 @@ case class IncrementallyCachedRDD[T: ClassTag](
 
   override def compute(split: Partition, context: TaskContext): Iterator[T] = {
 
-    val dep = findDependency(split).WTask(context)
+    val dep = findDependency(split).InTask(context)
 
     dep.output(0) // TODO: start should be customisable
   }
@@ -226,15 +265,4 @@ object IncrementallyCachedRDD {
       CachingUtils.ConcurrentMap()
     }
   }
-
-//  class IteratorWithCounter[T](private val _self: Iterator[T]) {
-//
-//    val counter = new AtomicInteger(0)
-//    def traversedIndex: Int = counter.get()
-//
-//    val self: Iterator[T] = _self.map { v =>
-//      counter.getAndIncrement()
-//      v
-//    }
-//  }
 }

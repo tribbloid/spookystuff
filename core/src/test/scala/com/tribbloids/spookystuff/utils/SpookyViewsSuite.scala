@@ -208,68 +208,6 @@ class SpookyViewsSuite extends SpookyEnvFixture {
     }
   }
 
-  it("interpolate can use common character as delimiter") {
-
-    val original = "ORA'{TEST}"
-    val interpolated = Interpolation.`'`(original) { v =>
-      "Replaced"
-    }
-    assert(interpolated == "ORAReplaced")
-  }
-
-  it("interpolate can use special regex character as delimiter") {
-
-    val original = "ORA${TEST}"
-    val interpolated = Interpolation.`$`(original) { v =>
-      "Replaced"
-    }
-    assert(interpolated == "ORAReplaced")
-  }
-
-  val special: Seq[String] = Seq(
-    "$",
-    "\\$",
-    "\\\\$"
-  )
-
-  it("interpolate should ignore string that contains delimiter without bracket") {
-
-    special.foreach { ss =>
-      val original = s"ORA${ss}TEST"
-      val interpolated = Interpolation.`$`(original) { v =>
-        "Replaced"
-      }
-      assert(interpolated == original)
-    }
-
-    special.foreach { ss =>
-      val original = s"ORA$ss"
-      val interpolated = Interpolation.`$`(original) { v =>
-        "Replaced"
-      }
-      assert(interpolated == original)
-    }
-  }
-
-  it("interpolate should allow delimiter to be escaped") {
-
-    special.foreach { ss =>
-      val original = "ORA" + ss + "${TEST}"
-      val interpolated = Interpolation.`$`(original) { v =>
-        "Replaced"
-      }
-      assert(interpolated == original)
-    }
-
-    special.foreach { ss =>
-      val original = s"ORA" + ss + "${}"
-      val interpolated = Interpolation.`$`(original) { v =>
-        "Replaced"
-      }
-      assert(interpolated == original)
-    }
-  }
-
   //  test("1") {
   //    println(Seq("abc", "def", 3, 4, 2.3).filterByType[String].get)
   //    println(Seq("abc", "def", 3, 4, 2.3).filterByType[Integer].get)
