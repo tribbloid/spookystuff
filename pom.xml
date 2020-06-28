@@ -33,6 +33,7 @@
   </scm>
 
   <modules>
+    <module>test-resources</module>
     <module>mldsl</module>
     <module>core</module>
     <module>integration</module>
@@ -428,20 +429,6 @@
           <version>1.5.0</version>
         </plugin>
 
-        <!-- Generate test jar too -->
-        <plugin>
-          <groupId>org.apache.maven.plugins</groupId>
-          <artifactId>maven-jar-plugin</artifactId>
-          <version>3.0.2</version>
-          <executions>
-            <execution>
-              <goals>
-                <goal>test-jar</goal>
-              </goals>
-            </execution>
-          </executions>
-        </plugin>
-
         <plugin>
           <groupId>org.apache.maven.plugins</groupId>
           <artifactId>maven-assembly-plugin</artifactId>
@@ -482,6 +469,21 @@
           <groupId>org.sonatype.plugins</groupId>
           <artifactId>nexus-staging-maven-plugin</artifactId>
           <version>1.6.6</version>
+        </plugin>
+
+
+        <!-- Generate test jar too -->
+        <plugin>
+          <groupId>org.apache.maven.plugins</groupId>
+          <artifactId>maven-jar-plugin</artifactId>
+          <version>3.0.2</version>
+          <executions>
+            <execution>
+              <goals>
+                <goal>test-jar</goal>
+              </goals>
+            </execution>
+          </executions>
         </plugin>
 
         <plugin>
@@ -698,7 +700,7 @@
       <plugin>
         <groupId>net.alchim31.maven</groupId>
         <artifactId>scala-maven-plugin</artifactId>
-        <version>3.3.1</version>
+        <version>4.4.0</version>
         <executions>
 
           <execution>
@@ -724,10 +726,15 @@
           </execution>
           <execution>
             <id>attach-scaladocs</id>
-            <phase>verify</phase>
             <goals>
               <goal>doc-jar</goal>
             </goals>
+            <configuration>
+              <args>
+<!--                see https://github.com/dmlc/xgboost/issues/4000-->
+                <arg>-nobootcp</arg>
+              </args>
+            </configuration>
           </execution>
         </executions>
         <configuration>
@@ -815,6 +822,20 @@
           </excludes>
           <compilerArgs>-Xlint</compilerArgs>
         </configuration>
+      </plugin>
+
+      <plugin>
+        <groupId>org.apache.maven.plugins</groupId>
+        <artifactId>maven-source-plugin</artifactId>
+      </plugin>
+      <plugin>
+        <groupId>org.apache.maven.plugins</groupId>
+        <artifactId>maven-javadoc-plugin</artifactId>
+      </plugin>
+
+      <plugin>
+        <groupId>org.apache.maven.plugins</groupId>
+        <artifactId>maven-jar-plugin</artifactId>
       </plugin>
 
       <plugin>

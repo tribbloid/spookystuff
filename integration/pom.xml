@@ -18,6 +18,12 @@
       <version>${project.version}</version>
     </dependency>
 
+    <dependency>
+      <groupId>com.tribbloids.spookystuff</groupId>
+      <artifactId>spookystuff-test-resources</artifactId>
+      <version>${project.version}</version>
+      <scope>test</scope>
+    </dependency>
 
     <dependency>
       <groupId>com.tribbloids.spookystuff</groupId>
@@ -26,6 +32,7 @@
       <type>test-jar</type>
       <scope>test</scope>
     </dependency>
+
     <dependency>
       <groupId>com.tribbloids.spookystuff</groupId>
       <artifactId>spookystuff-core</artifactId>
@@ -33,6 +40,7 @@
       <type>test-jar</type>
       <scope>test</scope>
     </dependency>
+
   </dependencies>
 
   <build>
