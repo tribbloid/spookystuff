@@ -741,7 +741,6 @@
           <scalaVersion>${scala.version}</scalaVersion>
           <scalaCompatVersion>${scala.binary.version}</scalaCompatVersion>
           <recompileMode>incremental</recompileMode>
-          <useZincServer>true</useZincServer>
           <!--https://tpolecat.github.io/2017/04/25/scalac-flags.html-->
           <args>
             <arg>-target:jvm-${java.version}</arg>
