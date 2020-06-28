@@ -2,10 +2,11 @@ package org.apache.spark.rdd.spookystuf
 
 import java.util.concurrent.Semaphore
 
-import com.tribbloids.spookystuff.utils.{CachingUtils, IDMixin}
 import com.tribbloids.spookystuff.utils.CachingUtils.ConcurrentMap
 import com.tribbloids.spookystuff.utils.accumulator.MapAccumulator
+import com.tribbloids.spookystuff.utils.lifespan.{Lifespan, LocalCleanable}
 import com.tribbloids.spookystuff.utils.serialization.NOTSerializable
+import com.tribbloids.spookystuff.utils.{CachingUtils, IDMixin}
 import org.apache.spark
 import org.apache.spark.broadcast.Broadcast
 import org.apache.spark.internal.Logging
@@ -15,7 +16,6 @@ import org.apache.spark.serializer.Serializer
 import org.apache.spark.storage.StorageLevel
 import org.apache.spark.util.AccumulatorV2
 import org.apache.spark.{OneToOneDependency, Partition, SparkEnv, TaskContext}
-import org.slf4j.LoggerFactory
 
 import scala.reflect.ClassTag
 
@@ -62,28 +62,31 @@ case class IncrementallyCachedRDD[T: ClassTag](
       serializerFactory
     )
 
-    @volatile var _activeTask: InTask = _
+    @volatile var _active: InTask = _
 
-    case class InTask(taskContext: TaskContext) extends IDMixin {
+    case class InTask(self: TaskContext) extends LocalCleanable with IDMixin {
 
-      {
-        if (_activeTask == null) _activeTask = this
-      }
+//      {
+//        if (_activeTask == null) _activeTask = this
+//      }
 
-      override protected lazy val _id: Any = taskContext.taskAttemptId()
+      override protected lazy val _id: Any = self.taskAttemptId()
 
-      @volatile var _commissionedBy: TaskContext = taskContext
+      lazy val uncleanSelf: UncleanTaskContext = UncleanTaskContext(self)
+
+      lazy val semaphore = new Semaphore(1) // cannot be shared by >1 threads
+      @volatile var _commissionedBy: TaskContext = self
 
       lazy val accumulatorMap: Map[Long, AccumulatorV2[_, _]] = {
 
-        val metrics = taskContext.taskMetrics()
+        val metrics = self.taskMetrics()
         val activeAccs = metrics.accumulators()
         Map(activeAccs.map(v => v.id -> v): _*)
       }
 
       def recommission(neo: InTask): Unit = {
 
-        val newTask = neo.taskContext
+        val newTask = neo.self
 
         semaphore.acquire()
 
@@ -96,7 +99,7 @@ case class IncrementallyCachedRDD[T: ClassTag](
             acc.reset()
           }
 
-          logInfo(s"recommissioning ${taskContext.taskAttemptId()}: ${_commissionedBy
+          logDebug(s"recommissioning ${self.taskAttemptId()}: ${_commissionedBy
             .taskAttemptId()} -> ${newTask
             .taskAttemptId()}, accumulators ${accumulatorMap.keys.map(v => "#" + v).mkString(",")}")
 
@@ -115,8 +118,8 @@ case class IncrementallyCachedRDD[T: ClassTag](
                 case Some(oldAcc) =>
                   newAcc.asInstanceOf[AccumulatorV2[Any, Any]].merge(oldAcc.asInstanceOf[AccumulatorV2[Any, Any]])
                 case None =>
-                  logWarning(
-                    s"Accumulator ${newAcc.toString()} cannot be found in task ${taskContext.stageId()}/${taskContext.taskAttemptId()}"
+                  logDebug(
+                    s"Accumulator ${newAcc.toString()} cannot be found in task ${self.stageId()}/${self.taskAttemptId()}"
                   )
               }
             }
@@ -126,24 +129,36 @@ case class IncrementallyCachedRDD[T: ClassTag](
         }
       }
 
-      lazy val semaphore = new Semaphore(1) // cannot be shared by >1 threads
-
       lazy val compute: ConsumedIterator.Wrap[T] = {
 
-        val raw = firstParent[T].compute(p, taskContext)
+        val raw = firstParent[T].compute(p, uncleanSelf)
         ConsumedIterator.wrap(raw)
       }
 
-      def active: InTask = Option(_activeTask).getOrElse {
-        activate()
-        this
+      def active: InTask = Dependency.this.synchronized {
+        Option(_active).getOrElse {
+          activateThis()
+          this
+        }
       }
 
-      def activate(): Unit = {
+      def activateThis(): Unit = Dependency.this.synchronized {
 
-        logWarning(
-          s"regenerating partition ${p.index} : ${_activeTask.taskContext.taskAttemptId()} -> ${taskContext.taskAttemptId()}")
-        _activeTask = this
+        if (_active != this) {
+
+          Option(_active).foreach { v =>
+            v.clean()
+          }
+
+          Option(_active).foreach { aa =>
+            logWarning(
+              s"regenerating partition ${p.index} : ${aa.self.taskAttemptId()} -> ${self.taskAttemptId()}"
+            )
+          }
+
+          _active = this
+        }
+
       }
 
       def output(start: Int): Iterator[T] = {
@@ -155,6 +170,7 @@ case class IncrementallyCachedRDD[T: ClassTag](
             .StartingFrom(start)
             .CachedOrComputeIterator {
 
+              // TODO: this consistently fails if checkpointed partition was missing, and there is no way to test it
               object ActiveOrRegeneratedIterator extends FallbackIterator[T] {
 
                 @volatile override var primary: Iterator[T] with ConsumedIterator = active.compute
@@ -162,7 +178,7 @@ case class IncrementallyCachedRDD[T: ClassTag](
                 override lazy val backup: Iterator[T] with ConsumedIterator = {
                   val result = InTask.this.compute
 
-                  activate()
+                  activateThis()
 
                   result
                 }
@@ -173,7 +189,7 @@ case class IncrementallyCachedRDD[T: ClassTag](
                     Some(primary.hasNext)
                   } catch {
                     case e: Throwable =>
-                      logError(s"Partition ${p.index} from ${active.taskContext} is broken, recomputing: $e")
+                      logError(s"Partition ${p.index} from ${active.self} is broken, recomputing: $e")
                       logDebug("", e)
 
                       None
@@ -188,7 +204,7 @@ case class IncrementallyCachedRDD[T: ClassTag](
 
         } catch {
           case e: ExternalAppendOnlyArray.CannotComputeException =>
-            logError(s"Partition ${p.index} from ${active.taskContext} cannot be used, recomputing: $e")
+            logError(s"Partition ${p.index} from ${active.self} cannot be used, recomputing: $e")
             logDebug("", e)
 
             val result = cacheArray
@@ -197,12 +213,23 @@ case class IncrementallyCachedRDD[T: ClassTag](
                 this.compute
               )
 
-            activate()
+            activateThis()
 
             result
         }
 
         result
+      }
+
+      override def _lifespan: Lifespan = Lifespan.JVM()
+
+      /**
+        * can only be called once
+        */
+      override protected def cleanImpl(): Unit = {
+
+        _commissionedBy = null
+        uncleanSelf.close()
       }
     }
   }
@@ -232,6 +259,11 @@ case class IncrementallyCachedRDD[T: ClassTag](
 
   override def clearDependencies() {
     super.clearDependencies()
+
+//    this.foreachPartition { itr =>
+//      // clean UncleanTaskContext on each executor!!
+//    }
+
     prev = null
     prevWithLocations = null
   }

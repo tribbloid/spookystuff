@@ -1,7 +1,6 @@
 package org.apache.spark.rdd.spookystuf
 
 import org.apache.spark.rdd.spookystuf.ExternalAppendOnlyArray.CannotComputeException
-import org.slf4j.LoggerFactory
 
 trait FallbackIterator[T] extends FastForwardingIterator[T] with ConsumedIterator {
 
@@ -29,11 +28,12 @@ trait FallbackIterator[T] extends FastForwardingIterator[T] with ConsumedIterato
         backup
       }
 
-    LoggerFactory
-      .getLogger(this.getClass)
-      .info(
-        s"Synchronising back up iterator ${backup.getClass.getSimpleName} that is $difference steps behind"
-      )
+//    LoggerFactory
+//      .getLogger(this.getClass)
+//      .info(
+//        s"Synchronising back up iterator ${backup.getClass.getSimpleName} that is $difference steps behind"
+//      )
+
     useBackup = true
     primary = ConsumedIterator.empty
 
@@ -91,7 +91,7 @@ trait FallbackIterator[T] extends FastForwardingIterator[T] with ConsumedIterato
     result
   }
 
-  final override def drop(n: Int): this.type = {
+  final override protected def fastForward(n: Int): this.type = {
 
     primaryHasNext match {
       case Some(_) =>

@@ -150,14 +150,6 @@ class ExternalAppendOnlyArray[T](
     treeList
   }
 
-  def add(v: T): Unit = {
-    backbone.add(v)
-  }
-
-  def set(i: Int, v: T): Unit = {
-    backbone.set(i, v)
-  }
-
   def length: Int = {
     backbone.size()
   }
@@ -168,14 +160,17 @@ class ExternalAppendOnlyArray[T](
     if (i == length) {
 //      println(s"add $i")
 
-      add(v)
-    } else if (i > length && notLogged) {
+      backbone.add(v)
+    } else if (i > length) {
 
-      notLogged = false
+      if (notLogged) {
 
-      LoggerFactory
-        .getLogger(this.getClass)
-        .warn(s"new value at index $i is ahead of length $length and cannot be added")
+        notLogged = false
+
+        LoggerFactory
+          .getLogger(this.getClass)
+          .warn(s"new value at index $i is ahead of length $length and cannot be added")
+      }
     }
   }
 
@@ -190,7 +185,7 @@ class ExternalAppendOnlyArray[T](
       lazy val _offset = new AtomicInteger(index) // strictly incremental, index of the next pointer
       override def offset: Int = _offset.get()
 
-      override def drop(n: Int): this.type = {
+      override protected def fastForward(n: Int): this.type = {
         _offset.addAndGet(n)
         this
       }
@@ -231,7 +226,7 @@ class ExternalAppendOnlyArray[T](
             result
           }
 
-          override def drop(n: Int): this.type = {
+          override protected def fastForward(n: Int): this.type = {
             computeIterator.drop(n)
             this
           }

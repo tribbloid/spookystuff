@@ -19,8 +19,11 @@ import scala.util.Random
 
 object IncrementallyCachedRDDSuites {
 
-  val datasetSize = 1000
-  val stride = 100
+//  val datasetSize = 1000
+//  val stride = 100
+
+  val datasetSize = 10000
+  val stride = 1000
 
   val overlap: Int = stride * 2
 
