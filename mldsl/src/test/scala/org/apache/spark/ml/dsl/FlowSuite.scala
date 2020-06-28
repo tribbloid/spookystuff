@@ -4,6 +4,7 @@ import com.tribbloids.spookystuff.testutils.TestHelper
 import org.apache.spark.ml.feature._
 import org.apache.spark.mllib.feature
 import org.apache.spark.ml.linalg.{Vector => MLVector}
+import org.apache.spark.sql.DataFrame
 import org.apache.spark.sql.expressions.UserDefinedFunction
 import org.apache.spark.sql.functions._
 
@@ -30,7 +31,7 @@ class FlowSuite extends AbstractFlowSuite {
   import FlowComponent._
   import FlowSuite._
 
-  val training = TestHelper.TestSQL
+  val training: DataFrame = TestHelper.TestSQL
     .createDataFrame(
       Seq(
         (0L, "a b c d e spark", 1.0),
@@ -211,15 +212,15 @@ class FlowSuite extends AbstractFlowSuite {
     transformed.show(false)
   }
 
-  val validPart = (
+  val validPart: Flow = (
     Flow('input)
       >-> new Tokenizer() -> TOKEN
       >-> tf -> TF
   )
 
-  val validPart2 = Flow('label) >>> new OneHotEncoder() -> "label_one_hot"
-  val irrelevantPart = Flow('dummy) >>> new OneHotEncoder() -> "dummy_one_hot"
-  val typeInconsistentPart = Flow('label) >>> new Tokenizer() -> "label_cannot_be_tokenized"
+  val validPart2: Flow = Flow('label) >>> new OneHotEncoder() -> "label_one_hot"
+  val irrelevantPart: Flow = Flow('dummy) >>> new OneHotEncoder() -> "dummy_one_hot"
+  val typeInconsistentPart: Flow = Flow('label) >>> new Tokenizer() -> "label_cannot_be_tokenized"
 
   it("If adaptation = IgnoreIrrelevant, Flow can build a full pipeline given a valid schema evidence") {
 

@@ -14,7 +14,7 @@ abstract class UDFTransformerLike extends Transformer with HasOutputCol with Dyn
 
   def udfImpl: UserDefinedFunction
 
-  def setUDFSafely(_udfImpl: UserDefinedFunction) = {
+  def setUDFSafely(_udfImpl: UserDefinedFunction): UDFTransformerLike.this.type = {
     _udfImpl.inputTypes.toSeq.flatten.foreach { dataType =>
       assert(!dataType.isInstanceOf[VectorUDT], s"UDF input type ${classOf[VectorUDT].getCanonicalName} is obsolete!")
     }
@@ -44,7 +44,7 @@ abstract class UDFTransformerLike extends Transformer with HasOutputCol with Dyn
 
 object UDFTransformer extends DefaultParamsReadable[UDFTransformer] {
 
-  def apply(udf: UserDefinedFunction) = new UDFTransformer().setUDFSafely(udf)
+  def apply(udf: UserDefinedFunction): UDFTransformer = new UDFTransformer().setUDFSafely(udf)
 
   override def load(path: String): UDFTransformer = super.load(path)
 }
