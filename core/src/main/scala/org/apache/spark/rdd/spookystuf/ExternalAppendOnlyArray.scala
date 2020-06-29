@@ -135,7 +135,11 @@ class ExternalAppendOnlyArray[T](
         DataInput2AsStream(input)
       )
 
-      stream.readValue[T]()
+      val result = stream.readValue[T]()
+
+//      require(result != null, "deserialization failed, value cannot be null")
+
+      result
     }
   }
 
@@ -270,10 +274,15 @@ object ExternalAppendOnlyArray {
     override def read(b: Array[Byte], off: Int, len: Int): Int = {
 
       val srcArray = in.internalByteArray()
+      val srcBuffer = in.internalByteBuffer()
 
       val _len =
         if (srcArray != null) Math.min(srcArray.length, len)
+        else if (srcBuffer != null) Math.min(srcBuffer.remaining(), len)
         else len
+
+      val pos = in.getPos
+//      val pos2Opt = Option(in.internalByteBuffer()).map(_.position())
 
       try {
         in.readFully(b, off, _len)
@@ -281,14 +290,20 @@ object ExternalAppendOnlyArray {
       } catch {
 
         // inefficient way
-        case _: ArrayIndexOutOfBoundsException =>
+        case e: RuntimeException =>
+//          Option(in.internalByteBuffer()).foreach { v =>
+//            v.rewind()
+//            v.position(pos2Opt.get)
+//          } // no need, always 0
+          in.setPos(pos)
+
           (off until (off + len)).foreach { i =>
             try {
 
               val next = in.readByte()
               b.update(i, next)
             } catch {
-              case _: EOFException | _: ArrayIndexOutOfBoundsException =>
+              case _: EOFException | _: RuntimeException =>
                 return i
             }
           }
