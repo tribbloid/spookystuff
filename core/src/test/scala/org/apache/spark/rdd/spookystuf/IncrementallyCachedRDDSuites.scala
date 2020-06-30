@@ -269,12 +269,20 @@ object IncrementallyCachedRDDSuites {
             stopwatch.reset()
 
             val list = facet.render()
-
             println(s"rendering takes ${stopwatch.split}ms")
 
             assert(list === groundTruth.src.render())
-
             assert(facet.outer.count === datasetSize)
+
+          }
+
+          {
+            facet.rdd.unpersist()
+
+            val list = facet.render()
+
+            assert(list === groundTruth.src.render())
+            assert(facet.outer.count === datasetSize * 2)
           }
         }
 

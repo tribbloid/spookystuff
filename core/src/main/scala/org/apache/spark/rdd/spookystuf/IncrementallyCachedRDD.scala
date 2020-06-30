@@ -2,10 +2,8 @@ package org.apache.spark.rdd.spookystuf
 
 import java.util.concurrent.Semaphore
 
-import com.tribbloids.spookystuff.utils.CachingUtils.ConcurrentMap
 import com.tribbloids.spookystuff.utils.accumulator.MapAccumulator
 import com.tribbloids.spookystuff.utils.lifespan.{Lifespan, LocalCleanable}
-import com.tribbloids.spookystuff.utils.serialization.NOTSerializable
 import com.tribbloids.spookystuff.utils.{CachingUtils, IDMixin}
 import org.apache.spark
 import org.apache.spark.broadcast.Broadcast
@@ -17,11 +15,12 @@ import org.apache.spark.storage.StorageLevel
 import org.apache.spark.util.AccumulatorV2
 import org.apache.spark.{OneToOneDependency, Partition, SparkEnv, TaskContext}
 
+import scala.collection.mutable
 import scala.reflect.ClassTag
 
 case class IncrementallyCachedRDD[T: ClassTag](
     @transient var prev: RDD[T],
-    storageLevel: StorageLevel = StorageLevel.MEMORY_AND_DISK_SER,
+    incrementalStorageLevel: StorageLevel = StorageLevel.MEMORY_AND_DISK_SER,
     serializerFactory: () => Serializer = () => SparkEnv.get.serializer
 ) extends RDD[T](
       prev.sparkContext,
@@ -54,17 +53,18 @@ case class IncrementallyCachedRDD[T: ClassTag](
 
   case class Dependency(
       p: Partition
-  ) extends NOTSerializable {
+  ) extends LocalCleanable {
 
     val cacheArray = new ExternalAppendOnlyArray[T](
       s"${this.getClass.getSimpleName}-${p.index}",
-      storageLevel,
+      incrementalStorageLevel,
       serializerFactory
     )
 
     @volatile var _active: InTask = _
+    lazy val semaphore = new Semaphore(1) // cannot be shared by >1 threads
 
-    case class InTask(self: TaskContext) extends LocalCleanable with IDMixin {
+    case class InTask(self: TaskContext) extends IDMixin {
 
 //      {
 //        if (_activeTask == null) _activeTask = this
@@ -74,8 +74,7 @@ case class IncrementallyCachedRDD[T: ClassTag](
 
       lazy val uncleanSelf: UncleanTaskContext = UncleanTaskContext(self)
 
-      lazy val semaphore = new Semaphore(1) // cannot be shared by >1 threads
-      @volatile var _commissionedBy: TaskContext = self
+      val _commissionedBy: mutable.Set[InTask] = mutable.Set(this)
 
       lazy val accumulatorMap: Map[Long, AccumulatorV2[_, _]] = {
 
@@ -84,13 +83,17 @@ case class IncrementallyCachedRDD[T: ClassTag](
         Map(activeAccs.map(v => v.id -> v): _*)
       }
 
-      def recommission(neo: InTask): Unit = {
+      def recommission(that: InTask): Unit = {
 
-        val newTask = neo.self
+        val newTask = that.self
 
         semaphore.acquire()
 
-        val transferAccums = !_commissionedBy.eq(newTask)
+        that.self.addTaskCompletionListener { v =>
+          semaphore.release()
+        }
+
+        val transferAccums = !_commissionedBy.contains(that)
 
         if (transferAccums) {
 
@@ -99,17 +102,16 @@ case class IncrementallyCachedRDD[T: ClassTag](
             acc.reset()
           }
 
-          logDebug(s"recommissioning ${self.taskAttemptId()}: ${_commissionedBy
-            .taskAttemptId()} -> ${newTask
+          logDebug(s"recommissioning ${self.taskAttemptId()}: -> ${newTask
             .taskAttemptId()}, accumulators ${accumulatorMap.keys.map(v => "#" + v).mkString(",")}")
 
-          _commissionedBy = newTask
+          _commissionedBy += that
         }
 
         newTask.addTaskCompletionListener[Unit] { _: TaskContext =>
           if (transferAccums) {
 
-            val newAccums = neo.accumulatorMap
+            val newAccums = that.accumulatorMap
 
             for ((k, newAcc) <- newAccums) {
 
@@ -125,11 +127,13 @@ case class IncrementallyCachedRDD[T: ClassTag](
             }
           }
 
-          semaphore.release()
         }
       }
 
+      // can only be used once, otherwise have to recreate from self task instead of active one
       lazy val compute: ConsumedIterator.Wrap[T] = {
+
+        activateThis()
 
         val raw = firstParent[T].compute(p, uncleanSelf)
         ConsumedIterator.wrap(raw)
@@ -147,7 +151,7 @@ case class IncrementallyCachedRDD[T: ClassTag](
         if (_active != this) {
 
           Option(_active).foreach { v =>
-            v.clean()
+            v.uncleanSelf.close()
           }
 
           Option(_active).foreach { aa =>
@@ -158,10 +162,9 @@ case class IncrementallyCachedRDD[T: ClassTag](
 
           _active = this
         }
-
       }
 
-      def output(start: Int): Iterator[T] = {
+      def cachedOrCompute(start: Int = 0): Iterator[T] = {
 
         val result = try {
           active.recommission(this)
@@ -176,11 +179,7 @@ case class IncrementallyCachedRDD[T: ClassTag](
                 @volatile override var primary: Iterator[T] with ConsumedIterator = active.compute
 
                 override lazy val backup: Iterator[T] with ConsumedIterator = {
-                  val result = InTask.this.compute
-
-                  activateThis()
-
-                  result
+                  InTask.this.compute
                 }
 
                 override protected def _primaryHasNext: Option[Boolean] = {
@@ -209,9 +208,9 @@ case class IncrementallyCachedRDD[T: ClassTag](
 
             val result = cacheArray
               .StartingFrom(start)
-              .CachedOrComputeIterator(
-                this.compute
-              )
+              .CachedOrComputeIterator {
+                InTask.this.compute
+              }
 
             activateThis()
 
@@ -221,16 +220,20 @@ case class IncrementallyCachedRDD[T: ClassTag](
         result
       }
 
-      override def _lifespan: Lifespan = Lifespan.JVM()
+    }
 
-      /**
-        * can only be called once
-        */
-      override protected def cleanImpl(): Unit = {
+    override def _lifespan: Lifespan = Lifespan.JVM()
 
-        _commissionedBy = null
-        uncleanSelf.close()
+    /**
+      * can only be called once
+      */
+    override protected def cleanImpl(): Unit = {
+
+      Option(_active).foreach { v =>
+        v.uncleanSelf.close()
       }
+
+      cacheArray.clean()
     }
   }
 
@@ -238,11 +241,11 @@ case class IncrementallyCachedRDD[T: ClassTag](
 
     sparkContext.broadcast(Existing())
   }
-  def existing: ConcurrentMap[Int, Dependency] = existingBroadcast.value.self
+  def existing: Existing[Dependency] = existingBroadcast.value
 
   def findDependency(p: Partition): Dependency = {
 
-    val result = existing.getOrElseUpdate(
+    val result = existing.map.getOrElseUpdate(
       p.index,
       Dependency(p)
     )
@@ -254,15 +257,11 @@ case class IncrementallyCachedRDD[T: ClassTag](
 
     val dep = findDependency(split).InTask(context)
 
-    dep.output(0) // TODO: start should be customisable
+    dep.cachedOrCompute() // TODO: start should be customisable
   }
 
   override def clearDependencies() {
     super.clearDependencies()
-
-//    this.foreachPartition { itr =>
-//      // clean UncleanTaskContext on each executor!!
-//    }
 
     prev = null
     prevWithLocations = null
@@ -286,15 +285,38 @@ case class IncrementallyCachedRDD[T: ClassTag](
 
     result
   }
+
+  override def unpersist(blocking: Boolean): this.type = {
+
+    super.unpersist(blocking)
+
+    this.foreachPartition { v =>
+      existing.cleanAll()
+    }
+
+    this
+  }
 }
 
 object IncrementallyCachedRDD {
 
-  case class Existing[T]() {
+  case class Existing[T <: LocalCleanable]() {
 
-    @transient lazy val self: CachingUtils.ConcurrentMap[Int, T] = {
+    @transient lazy val map: CachingUtils.ConcurrentMap[Int, T] = {
 
       CachingUtils.ConcurrentMap()
+    }
+
+    def cleanAll(): this.type = synchronized {
+
+      map.foreach {
+        case (k, v) =>
+          v.clean()
+      }
+
+      map.clear()
+
+      this
     }
   }
 }
