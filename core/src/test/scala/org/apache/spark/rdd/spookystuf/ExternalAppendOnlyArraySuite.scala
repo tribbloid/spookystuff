@@ -77,7 +77,7 @@ class ExternalAppendOnlyArraySuite extends FunSpec with SparkUISupport {
                 v
               }
 
-              val itr = externalArray.StartingFrom().CachedOrComputeIterator(computeItr)
+              val itr = externalArray.StartingFrom().CachedOrComputeIterator(() => computeItr)
 
               itr.slice(0, taskSize)
             }
@@ -119,7 +119,7 @@ class ExternalAppendOnlyArraySuite extends FunSpec with SparkUISupport {
                 v
               }
 
-              val itr = externalArray.StartingFrom().CachedOrComputeIterator(computeItr)
+              val itr = externalArray.StartingFrom().CachedOrComputeIterator(() => computeItr)
 
               itr.slice(0, taskSize)
             }
@@ -152,7 +152,7 @@ class ExternalAppendOnlyArraySuite extends FunSpec with SparkUISupport {
                 v
               }
 
-              val itr = externalArray.StartingFrom().CachedOrComputeIterator(computeItr)
+              val itr = externalArray.StartingFrom().CachedOrComputeIterator(() => computeItr)
 
               itr.slice(0, taskSize)
             }

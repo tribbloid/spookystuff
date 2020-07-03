@@ -145,6 +145,8 @@ class ExternalAppendOnlyArray[T](
 
   @transient lazy val backbone: IndexTreeList[T] = {
 
+//    println(s"new backbone in ${TaskContext.get().taskAttemptId()}!")
+
     val treeList = mapDB
       .indexTreeList(id, SerDe)
       .createOrOpen()
@@ -178,23 +180,38 @@ class ExternalAppendOnlyArray[T](
     }
   }
 
+  def sanity(): Unit = {
+
+    if (isCleaned ||
+        mapDB.isClosed) {
+
+      throw new UnsupportedOperationException("External storage is closed")
+    }
+  }
+
   /**
     * NOT thread safe
     * @param index iterator starts here
     */
   case class StartingFrom(index: Int = 0) {
 
-    case class CachedIterator() extends FastForwardingIterator[T] with ConsumedIterator with NOTSerializable {
+    {
+      sanity()
+    }
 
-      lazy val _offset = new AtomicInteger(index) // strictly incremental, index of the next pointer
+    case object CachedIterator extends FastForwardingIterator[T] with ConsumedIterator with NOTSerializable {
+
+      protected val _offset = new AtomicInteger(index) // strictly incremental, index of the next pointer
       override def offset: Int = _offset.get()
 
       override protected def fastForward(n: Int): this.type = {
+
         _offset.addAndGet(n)
         this
       }
 
       override def hasNext: Boolean = {
+
         offset < backbone.size()
       }
 
@@ -207,42 +224,60 @@ class ExternalAppendOnlyArray[T](
     }
 
     case class CachedOrComputeIterator(
-        computeIterator: Iterator[T] with ConsumedIterator
+        doCompute: () => Iterator[T] with ConsumedIterator
     ) extends FallbackIterator[T]
         with NOTSerializable {
 
-      @volatile override var primary: Iterator[T] with ConsumedIterator = CachedIterator()
+      def outer: ExternalAppendOnlyArray[T] = ExternalAppendOnlyArray.this
 
-      override lazy val backup: Iterator[T] with ConsumedIterator = {
-        object ComputeAndAddIterator extends FastForwardingIterator[T] with ConsumedIterator {
+      override def getPrimary: Iterator[T] with ConsumedIterator = {
 
-          override def offset: Int = computeIterator.offset
+        CachedIterator
+      }
 
-          override def hasNext: Boolean = computeIterator.hasNext
+      case object ComputeAndAppendIterator
+          extends FastForwardingIterator[T]
+          with ConsumedIterator
+          with NOTSerializable {
 
-          override def next(): T = ExternalAppendOnlyArray.this.synchronized {
-            val currentOffset = computeIterator.offset
-            val result = computeIterator.next()
+        lazy val computeIterator: Iterator[T] with ConsumedIterator = {
 
-            //          if (currentOffset > primary.offset)
-            addIfNew(currentOffset, result)
-
-            result
-          }
-
-          override protected def fastForward(n: Int): this.type = {
-            computeIterator.drop(n)
-            this
-          }
+          doCompute()
         }
 
-        ComputeAndAddIterator
+        override def offset: Int = {
+
+          computeIterator.offset
+        }
+
+        override def hasNext: Boolean = {
+
+          computeIterator.hasNext
+        }
+
+        override def next(): T = ExternalAppendOnlyArray.this.synchronized {
+
+          val currentOffset = computeIterator.offset
+          val result = computeIterator.next()
+
+          //          if (currentOffset > primary.offset)
+          addIfNew(currentOffset, result)
+
+          result
+        }
+
+        override protected def fastForward(n: Int): this.type = {
+
+          computeIterator.drop(n)
+          this
+        }
+      }
+
+      override def getBackup: Iterator[T] with ConsumedIterator = {
+
+        ComputeAndAppendIterator
       }
     }
-  }
-
-  def clear(): Unit = {
-    backbone.clear()
   }
 
   def isEmpty: Boolean = {

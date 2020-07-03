@@ -14,6 +14,7 @@ import org.apache.spark.util.LongAccumulator
 import org.scalatest.{BeforeAndAfterAll, FunSpec}
 
 import scala.collection.{immutable, mutable}
+import scala.languageFeature.existentials
 import scala.reflect.ClassTag
 import scala.util.Random
 
@@ -260,30 +261,68 @@ object IncrementallyCachedRDDSuites {
 
         val stopwatch = Stopwatch()
 
-        it("should behave identically to RDD persist on collect") {
+        describe("should behave identically to RDD.persist") {
 
-          val facet = fixture.facet()
+          it("on collect") {
+            val facet = fixture.facet()
 
-          for (_ <- 0 to 3) {
+            for (_ <- 0 to 3) {
 
-            stopwatch.reset()
+              stopwatch.reset()
 
-            val list = facet.render()
-            println(s"rendering takes ${stopwatch.split}ms")
+              val list = facet.render()
+              println(s"rendering takes ${stopwatch.split}ms")
 
-            assert(list === groundTruth.src.render())
-            assert(facet.outer.count === datasetSize)
+              assert(list === groundTruth.src.render())
+              assert(facet.outer.count === datasetSize)
 
+            }
+
+            {
+              facet.rdd.unpersist()
+
+              val list = facet.render()
+
+              assert(list === groundTruth.src.render())
+              assert(facet.outer.count === datasetSize * 2)
+            }
           }
 
-          {
-            facet.rdd.unpersist()
+          it("on checkpoint") {
+            val facet = fixture.facet()
 
-            val list = facet.render()
+            for (_ <- 0 to 3) {
 
-            assert(list === groundTruth.src.render())
-            assert(facet.outer.count === datasetSize * 2)
+              stopwatch.reset()
+
+              val downstream = facet.rdd.map { v =>
+                "" + v
+              }
+
+              downstream.checkpoint()
+              downstream.count()
+
+              println(s"checkpointing takes ${stopwatch.split}ms")
+
+              assert(facet.outer.count === datasetSize)
+
+            }
+
+            {
+
+              facet.rdd.unpersist()
+
+              val downstream = facet.rdd.map { v =>
+                "" + v
+              }
+
+              downstream.checkpoint()
+              downstream.count()
+
+              assert(facet.outer.count === datasetSize * 2)
+            }
           }
+
         }
 
         def specOnRanges(seq: Seq[(Int, Int)]): Unit = {

@@ -1,31 +1,54 @@
 package org.apache.spark.rdd.spookystuf
 
 import org.apache.spark.rdd.spookystuf.ExternalAppendOnlyArray.CannotComputeException
+import org.slf4j.LoggerFactory
 
+import scala.util.Try
+
+/**
+  * use primary until it is drained or broken, then use backup
+  * if primary cannot be created then use backup directly
+  * will discard primary immediately once backup is taking over
+  * @tparam T type of element
+  */
 trait FallbackIterator[T] extends FastForwardingIterator[T] with ConsumedIterator {
 
-  // use primary until it is drained, then use fallback
-  //  and will discard primary immediately
-  var primary: Iterator[T] with ConsumedIterator
-  def backup: Iterator[T] with ConsumedIterator
+  def getPrimary: Iterator[T] with ConsumedIterator
+  def getBackup: Iterator[T] with ConsumedIterator
 
-  @transient var useBackup = false
+  @transient @volatile final protected var _primary: Iterator[T] with ConsumedIterator = {
+    try {
+      getPrimary
+    } catch {
+      case e: Throwable =>
+        val logger = LoggerFactory.getLogger(this.getClass)
+
+        logger.error(
+          s"Primary iterator ${_primary} cannot be created: ${e}"
+        )
+        logger.debug("", e)
+        ConsumedIterator.empty
+    }
+  }
+
+  final protected lazy val _backup: Iterator[T] with ConsumedIterator = getBackup
+  @volatile var useBackup = false
 
   lazy val fallbackCachingUpOnce: Iterator[T] = {
 
-    val difference = primary.offset - backup.offset
+    val difference = _primary.offset - _backup.offset
 
     val result =
       if (difference < 0)
         throw new CannotComputeException(
-          s"fallback iterator can't go back: from ${backup.offset} to ${primary.offset}"
+          s"fallback iterator cannot go back: from ${_backup.offset} to ${_primary.offset}"
         )
       else if (difference > 0) {
 
-        backup.drop(difference)
+        _backup.drop(difference)
 
       } else {
-        backup
+        _backup
       }
 
 //    LoggerFactory
@@ -35,16 +58,16 @@ trait FallbackIterator[T] extends FastForwardingIterator[T] with ConsumedIterato
 //      )
 
     useBackup = true
-    primary = ConsumedIterator.empty
+    _primary = null
 
     result
   }
 
   final override def offset: Int = {
     if (useBackup) {
-      backup.offset
+      _backup.offset
     } else {
-      primary.offset
+      _primary.offset
     }
   }
 
@@ -57,10 +80,17 @@ trait FallbackIterator[T] extends FastForwardingIterator[T] with ConsumedIterato
   protected def _primaryHasNext: Option[Boolean] = {
 
     try {
-      if (primary.hasNext) Some(true)
+      if (_primary.hasNext) Some(true)
       else None
     } catch {
-      case _: Throwable =>
+      case e: Throwable =>
+        val logger = LoggerFactory.getLogger(this.getClass)
+
+        logger.error(
+          s"Primary iterator ${_primary} is broken at ${_primary.offset}: ${e}"
+        )
+        logger.debug("", e)
+
         None
     }
   }
@@ -81,7 +111,7 @@ trait FallbackIterator[T] extends FastForwardingIterator[T] with ConsumedIterato
 
     val result = primaryHasNext match {
       case Some(true) =>
-        primary.next()
+        _primary.next()
       case Some(false) =>
         throw new UnsupportedOperationException("primary iterator has no more element")
       case None =>
@@ -95,9 +125,9 @@ trait FallbackIterator[T] extends FastForwardingIterator[T] with ConsumedIterato
 
     primaryHasNext match {
       case Some(_) =>
-        primary.drop(n)
+        _primary.drop(n)
       case None =>
-        backup.drop(n)
+        _backup.drop(n)
     }
 
     this

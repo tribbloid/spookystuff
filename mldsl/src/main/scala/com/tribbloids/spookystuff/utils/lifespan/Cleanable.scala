@@ -102,7 +102,11 @@ trait Cleanable {
   final val trackingNumber = System.identityHashCode(this).toLong // can be int value
 
   //each can only be cleaned once
-  @volatile var isCleaned: Boolean = false
+  @volatile protected var _isCleaned: Boolean = false
+  def isCleaned: Boolean = synchronized {
+    _isCleaned
+  }
+
   @volatile var stacktraceAtCleaning: Option[Array[StackTraceElement]] = None
 
   @transient lazy val uncleanedInBatchs: Seq[InBatchMap] = {
@@ -149,21 +153,23 @@ trait Cleanable {
         v.clean(silent)
       }
     }
-    val self = Try {
-      if (!isCleaned) {
-        isCleaned = true
-        stacktraceAtCleaning = Some(Thread.currentThread().getStackTrace)
-        try {
-          cleanImpl()
-          if (!silent) logPrefixed("Cleaned")
-        } catch {
-          case e: Throwable =>
-            isCleaned = false
-            stacktraceAtCleaning = None
-            throw e
+    val self = synchronized {
+      Try {
+        if (!isCleaned) {
+          stacktraceAtCleaning = Some(Thread.currentThread().getStackTrace)
+          try {
+            cleanImpl()
+            _isCleaned = true
+            if (!silent) logPrefixed("Cleaned")
+          } catch {
+            case e: Throwable =>
+              stacktraceAtCleaning = None
+              throw e
+          }
         }
       }
     }
+
     TreeThrowable.&&&(chained :+ self)
 
     uncleanedInBatchs.foreach { inBatch =>
