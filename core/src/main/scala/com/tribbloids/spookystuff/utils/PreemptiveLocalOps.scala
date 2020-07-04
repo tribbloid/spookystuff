@@ -1,7 +1,7 @@
 package com.tribbloids.spookystuff.utils
 
+import java.io.EOFException
 import java.util.concurrent.ArrayBlockingQueue
-import java.util.concurrent.atomic.AtomicInteger
 
 import org.apache.spark.SparkContext
 import org.apache.spark.rdd.RDD
@@ -11,10 +11,16 @@ import org.apache.spark.sql.utils.SparkHelper
 import scala.concurrent.{ExecutionContext, Future}
 import scala.util.{Failure, Success, Try}
 
+object PreemptiveLocalOps {
+
+  object EOFMark extends EOFException()
+}
+
 case class PreemptiveLocalOps(capacity: Int)(
     implicit exeCtx: ExecutionContext = PartitionExecution.exeCtx
 ) {
 
+  import PreemptiveLocalOps._
   import SpookyViews._
 
   trait Impl[T] {
@@ -35,17 +41,12 @@ case class PreemptiveLocalOps(capacity: Int)(
 
       val p = SparkLocalProperties(sc)
 
-      @volatile var isFinished = false
-      val traversed = new AtomicInteger(0)
-
       Future {
 
         sc.setJobGroup(p.groupID, p.description)
 
         wIndex.foreach {
           case (factory, ii) =>
-            traversed.incrementAndGet()
-
             val exe = factory
 
             val jobText = exe.jobTextOvrd.getOrElse(
@@ -53,27 +54,35 @@ case class PreemptiveLocalOps(capacity: Int)(
             )
 
             sc.withJob(jobText) {
+              exe.AsArray.start // non-blocking
               buffer.put( // may be blocking due to capacity
-                Success(exe.AsArray.start) // non-blocking
-              )
+                Success(exe))
             }
         }
-        isFinished = true
+
+        buffer.put(
+          Failure(EOFMark)
+        )
 
       }.onFailure {
         case e: Throwable =>
           buffer.put(Failure(e))
       }
 
-      Iterator
+      val result = Iterator
         .from(0)
-        .takeWhile { i =>
-          (!isFinished) || (i < traversed.get())
-        }
         .map { _ =>
-          val exe = buffer.take().get
-          exe.AsArray.get
+          buffer.take()
         }
+        .takeWhile {
+          case Failure(EOFMark) => false
+          case _                => true
+        }
+        .map { trial =>
+          trial.get.AsArray.get
+        }
+
+      result
     }
 
     def toLocalIterator: Iterator[T] = {

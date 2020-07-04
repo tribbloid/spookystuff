@@ -3,8 +3,6 @@ package org.apache.spark.rdd.spookystuf
 import org.apache.spark.rdd.spookystuf.ExternalAppendOnlyArray.CannotComputeException
 import org.slf4j.LoggerFactory
 
-import scala.util.Try
-
 /**
   * use primary until it is drained or broken, then use backup
   * if primary cannot be created then use backup directly
@@ -87,7 +85,7 @@ trait FallbackIterator[T] extends FastForwardingIterator[T] with ConsumedIterato
         val logger = LoggerFactory.getLogger(this.getClass)
 
         logger.error(
-          s"Primary iterator ${_primary} is broken at ${_primary.offset}: ${e}"
+          s"Primary iterator ${_primary} is broken at ${_primary.offset}: $e"
         )
         logger.debug("", e)
 
