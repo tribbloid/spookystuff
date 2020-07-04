@@ -87,7 +87,7 @@ case class IncrementallyCachedRDD[T: ClassTag](
 
       def recommission(that: InTask): Unit = {
 
-        val newTask = that.self
+        val thatTask = that.self
 
         semaphore.acquire()
 
@@ -95,23 +95,23 @@ case class IncrementallyCachedRDD[T: ClassTag](
           semaphore.release()
         }
 
-        val transferAccums = !_commissionedBy.contains(that)
+        val needToTransferAccums = !_commissionedBy.contains(that)
 
-        if (transferAccums) {
+        if (needToTransferAccums) {
 
           for ((_, acc) <- accumulatorMap) {
 
             acc.reset()
           }
 
-          logDebug(s"recommissioning ${self.taskAttemptId()}: -> ${newTask
+          logDebug(s"recommissioning ${self.taskAttemptId()}: -> ${thatTask
             .taskAttemptId()}, accumulators ${accumulatorMap.keys.map(v => "#" + v).mkString(",")}")
 
           _commissionedBy += that
         }
 
-        newTask.addTaskCompletionListener[Unit] { _: TaskContext =>
-          if (transferAccums) {
+        thatTask.addTaskCompletionListener[Unit] { _: TaskContext =>
+          if (needToTransferAccums) {
 
             val newAccums = that.accumulatorMap
 
@@ -135,10 +135,10 @@ case class IncrementallyCachedRDD[T: ClassTag](
       // can only be used once, otherwise have to recreate from self task instead of active one
       lazy val compute: LazyVar[ConsumedIterator.Wrap[T]] = LazyVar {
 
+        activate()
+
         val raw = firstParent[T].compute(p, uncleanSelf)
         val result = ConsumedIterator.wrap(raw)
-
-        activateThis()
 
         result
       }
@@ -148,14 +148,14 @@ case class IncrementallyCachedRDD[T: ClassTag](
         compute.regenerate
       }
 
-      def active: InTask = Dependency.this.synchronized {
+      def getActive: InTask = Dependency.this.synchronized {
         Option(_active).getOrElse {
-          activateThis()
+          activate()
           this
         }
       }
 
-      def activateThis(): Unit = Dependency.this.synchronized {
+      def activate(): Unit = Dependency.this.synchronized {
 
         if (_active != this) {
 
@@ -177,12 +177,12 @@ case class IncrementallyCachedRDD[T: ClassTag](
 
         cacheArray.sanity()
 
-        active.recommission(this)
+        getActive.recommission(this)
 
         val cacheOrComputeActive = cacheArray
           .StartingFrom(start)
           .CachedOrComputeIterator { () =>
-            active.compute.value
+            getActive.compute.value
           }
 
         object CacheOrComputeActiveOrComputeFromScratch extends FallbackIterator[T] {
@@ -198,7 +198,7 @@ case class IncrementallyCachedRDD[T: ClassTag](
               Some(_primary.hasNext)
             } catch {
               case e: Throwable =>
-                logError(s"Partition ${p.index} from ${active.self} is broken, recomputing: $e")
+                logError(s"Partition ${p.index} from ${getActive.self} is broken, recomputing: $e")
                 logDebug("", e)
 
                 None
