@@ -3,6 +3,7 @@ package org.apache.spark.ml.dsl
 import org.apache.spark.ml.dsl.utils.messaging.MessageReader
 import org.apache.spark.ml.dsl.utils.{FallbackJSONSerializer, FlowUtils}
 import org.apache.spark.ml.param.{Param, Params}
+import org.json4s.Formats
 
 import scala.language.{dynamics, implicitConversions}
 import scala.reflect.ClassTag
@@ -57,7 +58,7 @@ trait DynamicParamsMixin extends Params with Dynamic {
 
     val reader = new MessageReader[T]() {
 
-      override def formats = super.formats + FallbackJSONSerializer
+      override def formats: Formats = super.formats + FallbackJSONSerializer
     }
 
     val result = reader.Param(this, name, doc)

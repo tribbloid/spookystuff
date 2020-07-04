@@ -57,7 +57,7 @@ object FlowUtils {
   }
 
   def getBreakpointInfo(
-      filterAnon: Boolean = false, // TODO: should be removed, not a good idea
+      filterAnon: Boolean = true,
       filterInitializer: Boolean = true,
       filterLazyCompute: Boolean = true
   ): Array[StackTraceElement] = {
@@ -65,6 +65,8 @@ object FlowUtils {
     var effectiveElements = breakpointInfoFilter(stackTraceElements)
 
     if (filterAnon) effectiveElements = effectiveElements.filter(v => !v.getMethodName.contains('$'))
+    // TODO: this impl needs improvement
+
     if (filterInitializer) effectiveElements = effectiveElements.filter(v => !(v.getMethodName == INIT))
     if (filterLazyCompute) effectiveElements = effectiveElements.filter(v => !v.getMethodName.endsWith(LZYCOMPUTE))
 
