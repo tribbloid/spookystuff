@@ -16,12 +16,42 @@ import scala.util.{Failure, Success, Try}
 
 abstract class TestHelper extends LocalCleanable {
 
-  val properties = new Properties()
+  val properties: Properties = {
 
-  val S3Path: Option[String] = Option(properties.getProperty("S3Path"))
+    val properties = new Properties()
 
-  val AWSAccessKeyId: Option[String] = Option(properties.getProperty("AWSAccessKeyId"))
-  val AWSSecretKey: Option[String] = Option(properties.getProperty("AWSSecretKey"))
+    Try {
+      properties.load(ClassLoader.getSystemResourceAsStream(".rootkey.csv"))
+    }.recoverWith {
+        case _: Throwable =>
+          Try {
+            properties.load(ClassLoader.getSystemResourceAsStream("rootkey.csv"))
+          }
+      }
+      .getOrElse {
+        println("rootkey.csv is missing")
+      }
+
+    properties
+  }
+
+  def getProperty(key: String): Option[String] = {
+
+    val result = Option(properties.getProperty(key))
+    result match {
+      case Some(v) =>
+        println(s"[Test property] $key \t -> $v")
+      case None =>
+        println(s"[Test property] $key \t is undefined")
+    }
+    result
+
+  }
+
+  val S3Path: Option[String] = getProperty("S3Path")
+
+  val AWSAccessKeyId: Option[String] = getProperty("AWSAccessKeyId")
+  val AWSSecretKey: Option[String] = getProperty("AWSSecretKey")
 
   def SPARK_HOME: String = System.getenv("SPARK_HOME")
 
@@ -38,18 +68,6 @@ abstract class TestHelper extends LocalCleanable {
 
   {
     CommonUtils.debugCPResource()
-
-    Try {
-      properties.load(ClassLoader.getSystemResourceAsStream(".rootkey.csv"))
-    }.recoverWith {
-        case _: Throwable =>
-          Try {
-            properties.load(ClassLoader.getSystemResourceAsStream("rootkey.csv"))
-          }
-      }
-      .getOrElse {
-        println("rootkey.csv is missing")
-      }
 
     if (S3Path.isDefined) println("Test on AWS S3 with credentials provided by rootkey.csv")
 
@@ -102,7 +120,7 @@ abstract class TestHelper extends LocalCleanable {
   }
 
   lazy val numCores: Int = {
-    val cap = Option(properties.getProperty("MaxCores"))
+    val cap = getProperty("MaxCores")
       .map(_.toInt)
       .getOrElse(MAX_CORES)
     var n = Math.min(
@@ -117,8 +135,8 @@ abstract class TestHelper extends LocalCleanable {
   lazy val clusterSize_numCoresPerWorker_Opt: Option[(Int, Int)] = {
 
     val tuple = (
-      Option(properties.getProperty("ClusterSize")).map(_.toInt),
-      Option(properties.getProperty("NumCoresPerWorker")).map(_.toInt)
+      getProperty("ClusterSize").map(_.toInt),
+      getProperty("NumCoresPerWorker").map(_.toInt)
     )
 
     Option(SPARK_HOME)
@@ -150,7 +168,7 @@ abstract class TestHelper extends LocalCleanable {
   def numCoresPerWorkerOpt: Option[Int] = clusterSize_numCoresPerWorker_Opt.map(_._2)
 
   def maxFailures: Int = {
-    Option(properties.getProperty("MaxFailures")).map(_.toInt).getOrElse(1)
+    getProperty("MaxFailures").map(_.toInt).getOrElse(1)
   }
 
   def numWorkers: Int = clusterSizeOpt.getOrElse(1)
