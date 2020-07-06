@@ -91,7 +91,7 @@ case class IncrementallyCachedRDD[T: ClassTag](
 
         semaphore.acquire()
 
-        that.self.addTaskCompletionListener { v =>
+        that.self.addTaskCompletionListener[Unit] { _: TaskContext =>
           semaphore.release()
         }
 
