@@ -19,6 +19,10 @@ case class PartitionExecution[T](
 
   lazy val partition: Partition = rdd.partitions(partitionID)
 
+  override lazy val toString: String = {
+    s"$partitionID - RDD ${rdd.id}"
+  }
+
   case object AsArray {
 
     def start: PartitionExecution.this.type = {

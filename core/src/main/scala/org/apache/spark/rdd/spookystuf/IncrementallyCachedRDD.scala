@@ -5,7 +5,7 @@ import java.util.concurrent.Semaphore
 import com.tribbloids.spookystuff.utils.CachingUtils.ConcurrentMap
 import com.tribbloids.spookystuff.utils.accumulator.MapAccumulator
 import com.tribbloids.spookystuff.utils.lifespan.{Lifespan, LocalCleanable}
-import com.tribbloids.spookystuff.utils.{CachingUtils, IDMixin}
+import com.tribbloids.spookystuff.utils.{CachingUtils, IDMixin, SCFunctions}
 import org.apache.spark
 import org.apache.spark.broadcast.Broadcast
 import org.apache.spark.internal.Logging
@@ -304,16 +304,21 @@ case class IncrementallyCachedRDD[T: ClassTag](
   protected def unpersistIncremental(): Array[Boolean] = {
     import com.tribbloids.spookystuff.utils.SpookyViews._
 
-    logInfo(s"Cleaning incremental caches of RDD ${this.id}")
+    val info = s"(Incremental cache cleanup - RDD $id)"
 
-    this
-      .mapOncePerWorker { v =>
-        logInfo(s"Cleaning incremental cache of RDD $id")
-        val result = existing.cleanUp()
+    logInfo(info)
 
-        result
-      }
-      .collect()
+    SCFunctions(sparkContext).withJob(info) {
+
+      this
+        .mapOncePerWorker { v =>
+          logInfo(info)
+          val result = existing.cleanUp()
+
+          result
+        }
+        .collect()
+    }
   }
 }
 
@@ -353,3 +358,4 @@ object IncrementallyCachedRDD {
     }
   }
 }
+$

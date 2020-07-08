@@ -5,8 +5,9 @@ import java.util.concurrent.ArrayBlockingQueue
 
 import org.apache.spark.SparkContext
 import org.apache.spark.rdd.RDD
-import org.apache.spark.sql.Dataset
+import org.apache.spark.sql.{Dataset, SparkSession}
 import org.apache.spark.sql.utils.SparkHelper
+import org.slf4j.LoggerFactory
 
 import scala.concurrent.{ExecutionContext, Future}
 import scala.util.{Failure, Success, Try}
@@ -41,17 +42,22 @@ case class PreemptiveLocalOps(capacity: Int)(
 
       val p = SparkLocalProperties(sc)
 
+      val activeSpark = SparkSession.active
+
       Future {
 
+        SparkSession.setActiveSession(activeSpark)
         sc.setJobGroup(p.groupID, p.description)
 
         wIndex.foreach {
-          case (factory, ii) =>
-            val exe = factory
+          case (partitionExecution, ii) =>
+            val exe = partitionExecution
 
             val jobText = exe.jobTextOvrd.getOrElse(
               s"$ii\t/ $numPartitionsStr (preemptive)"
             )
+
+            LoggerFactory.getLogger(this.getClass).info(s"Scheduling [$exe] $jobText")
 
             sc.withJob(jobText) {
               exe.AsArray.start // non-blocking
@@ -79,7 +85,12 @@ case class PreemptiveLocalOps(capacity: Int)(
           case _                => true
         }
         .map { trial =>
-          trial.get.AsArray.get
+          val exe = trial.get
+
+          LoggerFactory.getLogger(this.getClass).info(s"Collecting: [$exe]")
+          val array = exe.AsArray.get
+          LoggerFactory.getLogger(this.getClass).info(s"Job done  : [$exe]")
+          array
         }
 
       result
