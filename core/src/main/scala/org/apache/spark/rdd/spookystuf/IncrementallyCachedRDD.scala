@@ -358,4 +358,3 @@ object IncrementallyCachedRDD {
     }
   }
 }
-$
