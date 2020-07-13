@@ -27,6 +27,8 @@ object ScratchRDDs {
 
   type ScopeID = String
 
+  type InScope = Scoped#InScope
+
   case class Scoped(
       root: ScratchRDDs
   ) {

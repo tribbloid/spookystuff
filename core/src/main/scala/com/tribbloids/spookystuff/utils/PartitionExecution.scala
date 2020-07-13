@@ -23,14 +23,15 @@ case class PartitionExecution[T](
     s"$partitionID - RDD ${rdd.id}"
   }
 
+  def onStart(): Unit = {}
+
+  def onCompletion(): Unit = {}
+
   case object AsArray {
 
-    def start: PartitionExecution.this.type = {
-      AsArray.future
-      PartitionExecution.this
-    }
-
     @transient lazy val future: FutureAction[Array[T]] = {
+
+      onStart()
 
       var result: Array[T] = null
 
@@ -46,7 +47,18 @@ case class PartitionExecution[T](
       future
     }
 
-    def get: Array[T] = future.get()
+    def start: PartitionExecution.this.type = {
+      future
+      PartitionExecution.this
+    }
+
+    def get: Array[T] = {
+
+      val result = future.get()
+
+      onCompletion()
+      result
+    }
   }
 }
 

@@ -57,9 +57,8 @@ case class PreemptiveLocalOps(capacity: Int)(
               s"$ii\t/ $numPartitionsStr (preemptive)"
             )
 
-            LoggerFactory.getLogger(this.getClass).info(s"Scheduling [$exe] $jobText")
-
             sc.withJob(jobText) {
+              LoggerFactory.getLogger(this.getClass).info(s"Submitting:\t [$exe]\t\t- $jobText")
               exe.AsArray.start // non-blocking
               buffer.put( // may be blocking due to capacity
                 Success(exe))
@@ -87,9 +86,8 @@ case class PreemptiveLocalOps(capacity: Int)(
         .map { trial =>
           val exe = trial.get
 
-          LoggerFactory.getLogger(this.getClass).info(s"Collecting: [$exe]")
           val array = exe.AsArray.get
-          LoggerFactory.getLogger(this.getClass).info(s"Job done  : [$exe]")
+          LoggerFactory.getLogger(this.getClass).info(s"Collected :\t [$exe]")
           array
         }
 
