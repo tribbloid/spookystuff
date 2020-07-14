@@ -143,7 +143,7 @@ case class IncrementallyCachedRDD[T: ClassTag](
 
           override def getPrimary: Iterator[T] with ConsumedIterator = cacheOrComputeActive
 
-          override def getBackup: Iterator[T] with ConsumedIterator = selfCommissioned.compute
+          override def getBackup: Iterator[T] with ConsumedIterator = selfCommissioned.recompute
 
           override protected def _primaryHasNext: Option[Boolean] = {
 
