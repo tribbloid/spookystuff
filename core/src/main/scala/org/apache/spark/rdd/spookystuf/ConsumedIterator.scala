@@ -11,6 +11,10 @@ trait ConsumedIterator {
     * pointer to the next value
     */
   def offset: Int
+
+  lazy val trackingNumber: Int = System.identityHashCode(this)
+
+  override lazy val toString: String = s"${this.getClass.getSimpleName}@${trackingNumber}"
 }
 
 object ConsumedIterator {

@@ -1,5 +1,6 @@
 package org.apache.spark.rdd.spookystuf
 
+import com.tribbloids.spookystuff.utils.lifespan.LifespanContext
 import org.apache.spark.rdd.spookystuf.ExternalAppendOnlyArray.CannotComputeException
 import org.slf4j.LoggerFactory
 
@@ -29,24 +30,26 @@ trait FallbackIterator[T] extends FastForwardingIterator[T] with ConsumedIterato
     }
   }
 
-  final protected lazy val _backup: Iterator[T] with ConsumedIterator = getBackup
   @volatile var useBackup = false
 
-  lazy val fallbackCachingUpOnce: Iterator[T] = {
+  @transient final protected lazy val _backup: Iterator[T] with ConsumedIterator = {
 
-    val difference = _primary.offset - _backup.offset
+    val raw = getBackup
+
+    val difference = _primary.offset - raw.offset
 
     val result =
       if (difference < 0)
         throw new CannotComputeException(
-          s"fallback iterator cannot go back: from ${_backup.offset} to ${_primary.offset}"
+          LifespanContext().toString + "\n" +
+            s"In ${this.getClass}, backup ${raw} cannot go back: from ${raw.offset} to ${_primary.offset}"
         )
       else if (difference > 0) {
 
-        _backup.drop(difference)
+        raw.drop(difference)
 
       } else {
-        _backup
+        raw
       }
 
 //    LoggerFactory
@@ -56,7 +59,7 @@ trait FallbackIterator[T] extends FastForwardingIterator[T] with ConsumedIterato
 //      )
 
     useBackup = true
-    _primary = null
+//    _primary = null
 
     result
   }
@@ -102,7 +105,7 @@ trait FallbackIterator[T] extends FastForwardingIterator[T] with ConsumedIterato
 
   final override def hasNext: Boolean = {
     primaryHasNext.getOrElse {
-      fallbackCachingUpOnce.hasNext
+      _backup.hasNext
     }
   }
 
@@ -114,7 +117,7 @@ trait FallbackIterator[T] extends FastForwardingIterator[T] with ConsumedIterato
       case Some(false) =>
         throw new UnsupportedOperationException("primary iterator has no more element")
       case None =>
-        fallbackCachingUpOnce.next()
+        _backup.next()
     }
 
     result

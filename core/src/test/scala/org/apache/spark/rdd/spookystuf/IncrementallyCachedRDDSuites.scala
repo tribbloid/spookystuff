@@ -339,7 +339,7 @@ object IncrementallyCachedRDDSuites {
 
             val slicedGD = groundTruth.src.getSlice(from, to)
 
-            assert(sliced.size == slicedGD.size)
+            assert(sliced.size === slicedGD.size)
 
             if (fixture.verifyData)
               assert(sliced === slicedGD)

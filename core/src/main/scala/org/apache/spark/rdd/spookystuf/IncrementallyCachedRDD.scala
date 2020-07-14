@@ -4,7 +4,7 @@ import java.util.concurrent.Semaphore
 
 import com.tribbloids.spookystuff.utils.CachingUtils.ConcurrentMap
 import com.tribbloids.spookystuff.utils.accumulator.MapAccumulator
-import com.tribbloids.spookystuff.utils.lifespan.{Lifespan, LocalCleanable}
+import com.tribbloids.spookystuff.utils.lifespan.{Lifespan, LifespanContext, LocalCleanable}
 import com.tribbloids.spookystuff.utils.{CachingUtils, IDMixin, SCFunctions}
 import org.apache.spark
 import org.apache.spark.broadcast.Broadcast
@@ -143,7 +143,12 @@ case class IncrementallyCachedRDD[T: ClassTag](
 
           override def getPrimary: Iterator[T] with ConsumedIterator = cacheOrComputeActive
 
-          override def getBackup: Iterator[T] with ConsumedIterator = selfCommissioned.recompute
+          override def getBackup: Iterator[T] with ConsumedIterator = {
+
+            val recompute = selfCommissioned.recompute
+
+            recompute
+          }
 
           override protected def _primaryHasNext: Option[Boolean] = {
 
@@ -166,11 +171,23 @@ case class IncrementallyCachedRDD[T: ClassTag](
         }
 
         CacheOrComputeActiveOrComputeFromScratch
-
       }
     }
 
-    case class Commissioned(from: InTask, by: InTask) {
+    object Commissioned {
+
+      lazy val existing: ConcurrentMap[(InTask, InTask), Commissioned] = ConcurrentMap()
+
+      def apply(from: InTask, by: InTask): Commissioned = {
+
+        existing.getOrElseUpdate(from -> by, {
+
+          new Commissioned(from, by)
+        })
+      }
+    }
+
+    class Commissioned(from: InTask, by: InTask) {
 
       def fromTask: TaskContext = from.taskCtx
 
@@ -228,9 +245,8 @@ case class IncrementallyCachedRDD[T: ClassTag](
 
       // compute from scratch using current task instead of commissioned one, always succeed
       def recompute: ConsumedIterator.Wrap[T] = {
-        val result = from.doCompute.regenerate
+        from.doCompute.regenerate
 
-        result
       }
     }
 
