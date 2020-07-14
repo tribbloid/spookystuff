@@ -85,8 +85,8 @@ trait FallbackIterator[T] extends FastForwardingIterator[T] with ConsumedIterato
         val logger = LoggerFactory.getLogger(this.getClass)
 
         logger.error(
-          s"Primary iterator ${_primary} is broken at ${_primary.offset}, falling back to use ${_backup.getClass.getSimpleName}\n" +
-            s"Cause: $e"
+          s"Primary iterator ${_primary} is broken at ${_primary.offset}, falling back to use ${_backup.getClass}\n" +
+            s"caused by $e"
         )
         logger.debug("", e)
 

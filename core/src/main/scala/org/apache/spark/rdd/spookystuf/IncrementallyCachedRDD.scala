@@ -58,97 +58,31 @@ case class IncrementallyCachedRDD[T: ClassTag](
       p: Partition
   ) extends LocalCleanable {
 
-    val cacheArray = new ExternalAppendOnlyArray[T](
+    val externalCacheArray = new ExternalAppendOnlyArray[T](
       s"${this.getClass.getSimpleName}-${p.index}",
       incrementalStorageLevel,
       serializerFactory
     )
 
     @volatile var _active: InTask = _
-    lazy val semaphore = new Semaphore(1) // cannot be shared by >1 threads
 
-    case class InTask(self: TaskContext) extends IDMixin {
+    case class InTask(taskCtx: TaskContext) extends IDMixin {
 
-//      {
-//        if (_activeTask == null) _activeTask = this
-//      }
+      //      {
+      //        if (_activeTask == null) _activeTask = this
+      //      }
 
-      override protected lazy val _id: Any = self.taskAttemptId()
+      lazy val semaphore = new Semaphore(1) // cannot be shared by >1 threads
 
-      lazy val uncleanSelf: UncleanTaskContext = UncleanTaskContext(self)
+      override protected lazy val _id: Any = taskCtx.taskAttemptId()
 
-      val _commissionedBy: mutable.Set[InTask] = mutable.Set(this)
+      lazy val uncleanTask: UncleanTaskContext = UncleanTaskContext(taskCtx)
 
       lazy val accumulatorMap: Map[Long, AccumulatorV2[_, _]] = {
 
-        val metrics = self.taskMetrics()
+        val metrics = taskCtx.taskMetrics()
         val activeAccs = metrics.accumulators()
         Map(activeAccs.map(v => v.id -> v): _*)
-      }
-
-      def recommission(that: InTask): Unit = {
-
-        val thatTask = that.self
-
-        semaphore.acquire()
-
-        that.self.addTaskCompletionListener[Unit] { _: TaskContext =>
-          semaphore.release()
-        }
-
-        val needToTransferAccums = !_commissionedBy.contains(that)
-
-        if (needToTransferAccums) {
-
-          for ((_, acc) <- accumulatorMap) {
-
-            acc.reset()
-          }
-
-          logDebug(s"recommissioning ${self.taskAttemptId()}: -> ${thatTask
-            .taskAttemptId()}, accumulators ${accumulatorMap.keys.map(v => "#" + v).mkString(",")}")
-
-          _commissionedBy += that
-        }
-
-        thatTask.addTaskCompletionListener[Unit] { _: TaskContext =>
-          if (needToTransferAccums) {
-
-            val newAccums = that.accumulatorMap
-
-            for ((k, newAcc) <- newAccums) {
-
-              accumulatorMap.get(k) match {
-
-                case Some(oldAcc) =>
-                  newAcc.asInstanceOf[AccumulatorV2[Any, Any]].merge(oldAcc.asInstanceOf[AccumulatorV2[Any, Any]])
-                case None =>
-                  logDebug(
-                    s"Accumulator ${newAcc.toString()} cannot be found in task ${self.stageId()}/${self.taskAttemptId()}"
-                  )
-              }
-            }
-          }
-
-        }
-      }
-
-      // can only be used once, otherwise have to recreate from self task instead of active one
-      lazy val compute: LazyVar[ConsumedIterator.Wrap[T]] = LazyVar {
-
-        activate()
-
-        val raw = firstParent[T].compute(p, uncleanSelf)
-        val result = ConsumedIterator.wrap(raw)
-
-        result
-      }
-
-      // compute from scratch using current task instead of commissioned one, always succeed
-      def recompute: ConsumedIterator.Wrap[T] = {
-        val result = compute.regenerate
-
-        result
       }
 
       def getActive: InTask = Dependency.this.synchronized {
@@ -163,12 +97,12 @@ case class IncrementallyCachedRDD[T: ClassTag](
         if (_active != this) {
 
           Option(_active).foreach { v =>
-            v.uncleanSelf.close()
+            v.uncleanTask.close()
           }
 
           Option(_active).foreach { aa =>
             logWarning(
-              s"regenerating partition ${p.index} : ${aa.self.taskAttemptId()} -> ${self.taskAttemptId()}"
+              s"regenerating partition ${p.index} : ${aa.taskCtx.taskAttemptId()} -> ${taskCtx.taskAttemptId()}"
             )
           }
 
@@ -176,23 +110,40 @@ case class IncrementallyCachedRDD[T: ClassTag](
         }
       }
 
+      // can only be used once, otherwise have to recreate from self task instead of active one
+      lazy val doCompute: LazyVar[ConsumedIterator.Wrap[T]] = LazyVar {
+
+        activate()
+
+        val raw = firstParent[T].compute(p, uncleanTask)
+        val result = ConsumedIterator.wrap(raw)
+
+        result
+      }
+
+      val _commissionHistory: mutable.Set[InTask] = mutable.Set(this)
+
+      def commissionedBy(by: InTask): Commissioned = Commissioned(this, by)
+      lazy val selfCommissioned: Commissioned = commissionedBy(this)
+
       def cachedOrCompute(start: Int = 0): Iterator[T] = {
 
-        cacheArray.sanity()
+        externalCacheArray.sanity()
 
-        getActive.recommission(this)
+        val active = getActive
+        val commissioned = active.commissionedBy(this)
 
-        val cacheOrComputeActive = cacheArray
+        val cacheOrComputeActive = externalCacheArray
           .StartingFrom(start)
           .CachedOrComputeIterator { () =>
-            getActive.compute.value
+            commissioned.compute
           }
 
         object CacheOrComputeActiveOrComputeFromScratch extends FallbackIterator[T] {
 
           override def getPrimary: Iterator[T] with ConsumedIterator = cacheOrComputeActive
 
-          override def getBackup: Iterator[T] with ConsumedIterator = InTask.this.recompute
+          override def getBackup: Iterator[T] with ConsumedIterator = selfCommissioned.compute
 
           override protected def _primaryHasNext: Option[Boolean] = {
 
@@ -202,10 +153,10 @@ case class IncrementallyCachedRDD[T: ClassTag](
             } catch {
               case e: Throwable =>
                 logError(
-                  s"Partition ${p.index} in task ${getActive.self
-                    .taskAttemptId()} - stage ${getActive.self
-                    .stageId()} is broken at ${_primary.offset}, falling back to use ${_backup.getClass.getSimpleName}\n" +
-                    s"Cause: $e"
+                  s"Partition ${p.index} in task ${active.taskCtx
+                    .taskAttemptId()} - stage ${active.taskCtx
+                    .stageId()} is broken at ${_primary.offset}, falling back to use ${_backup.getClass}\n" +
+                    s"cause by $e"
                 )
                 logDebug("", e)
 
@@ -217,7 +168,70 @@ case class IncrementallyCachedRDD[T: ClassTag](
         CacheOrComputeActiveOrComputeFromScratch
 
       }
+    }
 
+    case class Commissioned(from: InTask, by: InTask) {
+
+      def fromTask: TaskContext = from.taskCtx
+
+      lazy val semaphoreAcquiredOnce: Unit =
+        from.semaphore.acquire()
+
+      {
+        semaphoreAcquiredOnce
+
+        val byTask = by.taskCtx
+
+        by.taskCtx.addTaskCompletionListener[Unit] { _: TaskContext =>
+          from.semaphore.release()
+        }
+
+        val needToTransferAccums = !from._commissionHistory.contains(by)
+
+        if (needToTransferAccums) {
+
+          for ((_, acc) <- from.accumulatorMap) {
+
+            acc.reset()
+          }
+
+          logDebug(s"recommissioning ${fromTask.taskAttemptId()}: -> ${byTask
+            .taskAttemptId()}, accumulators ${from.accumulatorMap.keys.map(v => "#" + v).mkString(",")}")
+
+          from._commissionHistory += by
+        }
+
+        byTask.addTaskCompletionListener[Unit] { _: TaskContext =>
+          if (needToTransferAccums) {
+
+            val newAccums = by.accumulatorMap
+
+            for ((k, newAcc) <- newAccums) {
+
+              from.accumulatorMap.get(k) match {
+
+                case Some(oldAcc) =>
+                  newAcc.asInstanceOf[AccumulatorV2[Any, Any]].merge(oldAcc.asInstanceOf[AccumulatorV2[Any, Any]])
+                case None =>
+                  logDebug(
+                    s"Accumulator ${newAcc.toString()} cannot be found in task ${fromTask
+                      .stageId()}/${fromTask.taskAttemptId()}"
+                  )
+              }
+            }
+          }
+
+        }
+      }
+
+      def compute: ConsumedIterator.Wrap[T] = from.doCompute.value
+
+      // compute from scratch using current task instead of commissioned one, always succeed
+      def recompute: ConsumedIterator.Wrap[T] = {
+        val result = from.doCompute.regenerate
+
+        result
+      }
     }
 
     override def _lifespan: Lifespan = Lifespan.JVM()
@@ -228,10 +242,10 @@ case class IncrementallyCachedRDD[T: ClassTag](
     override protected def cleanImpl(): Unit = {
 
       Option(_active).foreach { v =>
-        v.uncleanSelf.close()
+        v.uncleanTask.close()
       }
 
-      cacheArray.clean()
+      externalCacheArray.clean()
     }
   }
 
@@ -262,9 +276,9 @@ case class IncrementallyCachedRDD[T: ClassTag](
 
       try {
 
-        val dep = findDependency(split).InTask(context)
+        val inTask = findDependency(split).InTask(context)
 
-        return dep.cachedOrCompute() // TODO: start should be customisable
+        return inTask.cachedOrCompute() // TODO: start should be customisable
       } catch {
         case e: Throwable =>
           existing.map -= split.index
