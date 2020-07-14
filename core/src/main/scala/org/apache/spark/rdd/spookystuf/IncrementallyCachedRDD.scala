@@ -4,7 +4,7 @@ import java.util.concurrent.Semaphore
 
 import com.tribbloids.spookystuff.utils.CachingUtils.ConcurrentMap
 import com.tribbloids.spookystuff.utils.accumulator.MapAccumulator
-import com.tribbloids.spookystuff.utils.lifespan.{Lifespan, LifespanContext, LocalCleanable}
+import com.tribbloids.spookystuff.utils.lifespan.{Lifespan, LocalCleanable}
 import com.tribbloids.spookystuff.utils.{CachingUtils, IDMixin, SCFunctions}
 import org.apache.spark
 import org.apache.spark.broadcast.Broadcast
@@ -32,6 +32,7 @@ case class IncrementallyCachedRDD[T: ClassTag](
     with Logging {
 
   import IncrementallyCachedRDD._
+  import com.tribbloids.spookystuff.utils.SpookyViews._
 
   /**
     * mimicking DAGScheduler.cacheLocs, but using accumulator as I don't mess with BlockManager
@@ -180,10 +181,13 @@ case class IncrementallyCachedRDD[T: ClassTag](
 
       def apply(from: InTask, by: InTask): Commissioned = {
 
-        existing.getOrElseUpdate(from -> by, {
+        val result = existing.getOrElseUpdateSynchronously(from -> by) {
 
           new Commissioned(from, by)
-        })
+        }
+        result.initializeOnce
+
+        result
       }
     }
 
@@ -194,7 +198,7 @@ case class IncrementallyCachedRDD[T: ClassTag](
       lazy val semaphoreAcquiredOnce: Unit =
         from.semaphore.acquire()
 
-      {
+      lazy val initializeOnce: Unit = {
         semaphoreAcquiredOnce
 
         val byTask = by.taskCtx
@@ -265,22 +269,20 @@ case class IncrementallyCachedRDD[T: ClassTag](
     }
   }
 
-  val existingBroadcast: Broadcast[Existing[Dependency]] = {
+  val existingBroadcast: Broadcast[ExistingOnWorkers[Dependency]] = {
 
-    sparkContext.broadcast(Existing(this.id))
+    sparkContext.broadcast(ExistingOnWorkers(this.id))
   }
-  def existing: Existing[Dependency] = existingBroadcast.value
+  def existing: ExistingOnWorkers[Dependency] = existingBroadcast.value
 
   def findDependency(p: Partition): Dependency = this.synchronized {
 
-    val result = existing.map.getOrElseUpdate(
-      p.index, {
-        val taskContext = TaskContext.get()
+    val result = existing.self.getOrElseUpdateSynchronously(p.index) {
+      val taskContext = TaskContext.get()
 
-        logDebug(s"new Dependency ${p.index} in task ${taskContext.taskAttemptId()}")
-        Dependency(p)
-      }
-    )
+      logDebug(s"new Dependency ${p.index} in task ${taskContext.taskAttemptId()}")
+      Dependency(p)
+    }
 
     result
   }
@@ -297,7 +299,7 @@ case class IncrementallyCachedRDD[T: ClassTag](
         return inTask.cachedOrCompute() // TODO: start should be customisable
       } catch {
         case e: Throwable =>
-          existing.map -= split.index
+          existing.self -= split.index
       }
     }
 
@@ -362,7 +364,7 @@ case class IncrementallyCachedRDD[T: ClassTag](
 
 object IncrementallyCachedRDD {
 
-  case class Existing[T <: LocalCleanable](id: Int) extends Logging {
+  case class ExistingOnWorkers[T <: LocalCleanable](id: Int) extends Logging {
 
     @transient lazy val _map: CachingUtils.ConcurrentMap[Int, T] = {
 
@@ -371,7 +373,7 @@ object IncrementallyCachedRDD {
 
     def cleanUp(): Boolean = synchronized {
 
-      val map = this.map
+      val map = this.self
 
       if (map.nonEmpty) {
 
@@ -390,7 +392,7 @@ object IncrementallyCachedRDD {
       true
     }
 
-    def map: ConcurrentMap[Int, T] = {
+    def self: ConcurrentMap[Int, T] = {
 
       _map
     }

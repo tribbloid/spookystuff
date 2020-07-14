@@ -9,6 +9,8 @@ import scala.util.Try
 
 object Cleanable {
 
+  import com.tribbloids.spookystuff.utils.CommonViews._
+
   type TrackingN = Long
   type InBatchMap = ConcurrentCache[Long, Cleanable]
 
@@ -16,18 +18,10 @@ object Cleanable {
 
   def getOrNew(id: Any): InBatchMap = {
 
-    Cleanable.uncleaned
-      .getOrElse(
-        id, {
-          Cleanable.synchronized { // TODO: not necessary? already a ConcurrentMap
-            Cleanable.uncleaned
-              .getOrElseUpdate(
-                id,
-                ConcurrentMap()
-              )
-          }
-        }
-      )
+    uncleaned.getOrElseUpdateSynchronously(id) {
+
+      ConcurrentMap()
+    }
   }
 
   def getByLifespan(

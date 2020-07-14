@@ -2,7 +2,7 @@ package com.tribbloids.spookystuff.utils
 
 import java.security.PrivilegedAction
 
-import scala.collection.GenTraversableOnce
+import scala.collection.{mutable, GenTraversableOnce}
 import scala.reflect.ClassTag
 
 abstract class CommonViews {
@@ -28,6 +28,20 @@ abstract class CommonViews {
       var result = 0L
       for (x <- self) result += 1
       result
+    }
+  }
+
+  implicit class MutableMapView[K, V](self: mutable.Map[K, V]) {
+
+    def getOrElseUpdateSynchronously(key: K)(value: => V): V = {
+
+      self.getOrElse(
+        key, {
+          self.synchronized {
+            self.getOrElseUpdate(key, value)
+          }
+        }
+      )
     }
   }
 }

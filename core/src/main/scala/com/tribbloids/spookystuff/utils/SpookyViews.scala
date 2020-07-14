@@ -1,8 +1,6 @@
 package com.tribbloids.spookystuff.utils
 
 import com.tribbloids.spookystuff.execution.ScratchRDDs
-import com.tribbloids.spookystuff.row._
-import com.tribbloids.spookystuff.utils.CachingUtils.ConcurrentMap
 import com.tribbloids.spookystuff.utils.locality.PartitionIdPassthrough
 import org.apache.spark.rdd.RDD
 import org.apache.spark.rdd.spookystuf.NarrowDispersedRDD
@@ -10,9 +8,8 @@ import org.apache.spark.sql.DataFrame
 import org.apache.spark.storage.{RDDInfo, StorageLevel}
 import org.apache.spark.{HashPartitioner, SparkContext, TaskContext}
 
-import scala.collection.generic.CanBuildFrom
+import scala.collection.{mutable, Map}
 import scala.collection.immutable.ListMap
-import scala.collection.{Map, TraversableLike}
 import scala.reflect.ClassTag
 import scala.util.Random
 
@@ -20,26 +17,9 @@ import scala.util.Random
   * Created by peng on 11/7/14.
   * implicit conversions in this package are used for development only
   */
-object SpookyViewsSingleton {
+abstract class SpookyViews extends SpookyViews_Imp0 {
 
-  val SPARK_JOB_DESCRIPTION = "spark.job.description"
-  val SPARK_JOB_GROUP_ID = "spark.jobGroup.id"
-  val SPARK_JOB_INTERRUPT_ON_CANCEL = "spark.job.interruptOnCancel"
-  val RDD_SCOPE_KEY = "spark.rdd.scope"
-  val RDD_SCOPE_NO_OVERRIDE_KEY = "spark.rdd.scope.noOverride"
-
-  // (stageID -> threadID) -> isExecuted
-  val perCoreMark: ConcurrentMap[(Int, Long), Boolean] = ConcurrentMap()
-  // stageID -> isExecuted
-  val perWorkerMark: ConcurrentMap[Int, Boolean] = ConcurrentMap()
-
-  // large enough such that all idle threads has a chance to pick up >1 partition
-  val REPLICATING_FACTOR = 16
-}
-
-abstract class SpookyViews extends CommonViews {
-
-  import SpookyViewsSingleton._
+  import com.tribbloids.spookystuff.SpookyViewsConst._
 
   implicit class SparkContextView(self: SparkContext) extends SCFunctions(self)
 
@@ -345,123 +325,6 @@ abstract class SpookyViews extends CommonViews {
     //          result
     //      }
     //    }
-  }
-  implicit class MapView[K, V](self: scala.collection.Map[K, V]) {
-
-    assert(self != null)
-
-    def getTyped[T: ClassTag](key: K): Option[T] = self.get(key) match {
-
-      case Some(res) =>
-        res match {
-          case r: T => Some(r)
-          case _    => None
-        }
-      case _ => None
-    }
-
-    def flattenByKey(
-        key: K,
-        sampler: Sampler[Any]
-    ): Seq[(Map[K, Any], Int)] = {
-
-      val valueOption: Option[V] = self.get(key)
-
-      val values: Iterable[(Any, Int)] = valueOption.toIterable.flatMap(SpookyUtils.asIterable[Any]).zipWithIndex
-      val sampled = sampler(values)
-
-      val cleaned = self - key
-      val result = sampled.toSeq.map(
-        tuple => (cleaned + (key -> tuple._1)) -> tuple._2
-      )
-
-      result
-    }
-
-    def canonizeKeysToColumnNames: scala.collection.Map[String, V] = self.map(
-      tuple => {
-        val keyName: String = tuple._1 match {
-          case symbol: scala.Symbol =>
-            symbol.name //TODO: remove, this feature should no longer work after dataframe integration
-          case _ =>
-            tuple._1.toString
-        }
-        (SpookyUtils.canonizeColumnName(keyName), tuple._2)
-      }
-    )
-
-    def sortBy[B: Ordering](fn: ((K, V)) => B): ListMap[K, V] = {
-      val tuples = self.toList.sortBy(fn)
-      ListMap(tuples: _*)
-    }
-  }
-
-  implicit class TraversableLikeView[A, Repr](self: TraversableLike[A, Repr])(implicit ctg: ClassTag[A]) {
-
-    def filterByType[B: ClassTag]: FilterByType[B] = new FilterByType[B]
-
-    class FilterByType[B: ClassTag] {
-
-      def get[That](implicit bf: CanBuildFrom[Repr, B, That]): That = {
-        self.flatMap { v =>
-          SpookyUtils.typedOrNone[B](v)
-        }(bf)
-
-        //        self.collect {case v: B => v} //TODO: switch to this after stop 2.10 support
-      }
-    }
-
-    def mapToRDD[B: ClassTag](sc: SparkContext, local: Boolean = false, sliceOpt: Option[Int] = None)(
-        f: A => B
-    ): RDD[B] = {
-      if (local) {
-        sc.parallelize(
-          self.toSeq.map(
-            f
-          ),
-          sliceOpt.getOrElse(sc.defaultParallelism)
-        )
-      } else {
-        sc.parallelize(
-            self.toSeq,
-            sliceOpt.getOrElse(sc.defaultParallelism)
-          )
-          .map(
-            f
-          )
-      }
-    }
-  }
-
-  implicit class ArrayView[A](self: Array[A]) {
-
-    def filterByType[B <: A: ClassTag]: Array[B] = {
-      self.flatMap { v =>
-        SpookyUtils.typedOrNone[B](v)
-      }
-
-      //      self.collect {case v: B => v} //TODO: switch to this after stop 2.10 support
-    }
-
-    def flattenByIndex(
-        i: Int,
-        sampler: Sampler[Any]
-    ): Seq[(Array[Any], Int)] = {
-
-      val valueOption: Option[A] =
-        if (self.indices contains i) Some(self.apply(i))
-        else None
-
-      val values: Iterable[(Any, Int)] = valueOption.toIterable.flatMap(SpookyUtils.asIterable[Any]).zipWithIndex
-      val sampled = sampler(values)
-
-      val result: Seq[(Array[Any], Int)] = sampled.toSeq.map { tuple =>
-        val updated = self.updated(i, tuple._1)
-        updated -> tuple._2
-      }
-
-      result
-    }
   }
 
   implicit class DataFrameView(val self: DataFrame) {

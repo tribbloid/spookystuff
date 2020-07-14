@@ -2,6 +2,7 @@ package com.tribbloids.spookystuff.utils
 
 import java.util.UUID
 
+import com.tribbloids.spookystuff.SpookyViewsConst
 import org.apache.spark.SparkContext
 import org.apache.spark.rdd.RDD
 import org.apache.spark.sql.utils.SparkHelper
@@ -131,7 +132,7 @@ case class SCFunctions(sc: SparkContext) {
         None
       }
 
-    val n = sc.defaultParallelism * SpookyViewsSingleton.REPLICATING_FACTOR
+    val n = sc.defaultParallelism * SpookyViewsConst.REPLICATING_FACTOR
     val onExecutors = uuidSeed(Some(n))
       .mapOncePerWorker { f }
       .collect()
