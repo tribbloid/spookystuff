@@ -1,8 +1,9 @@
 package com.tribbloids.spookystuff.utils.lifespan
 
-import com.tribbloids.spookystuff.utils.{CommonUtils, IDMixin}
-import org.apache.spark.{SparkEnv, TaskContext}
+import com.tribbloids.spookystuff.utils.IDMixin
+import org.apache.spark.sql.utils.SparkHelper
 import org.apache.spark.storage.BlockManagerId
+import org.apache.spark.{SparkEnv, TaskContext}
 
 object LifespanContext {}
 
@@ -53,7 +54,7 @@ case class LifespanContext(
     }
     .getOrElse("")
 
-  val taskLocationStr: Option[String] = CommonUtils.taskLocationStrOpt
+  val taskLocationStr: Option[String] = SparkHelper.taskLocationStrOpt
 
   override def toString: String =
     if (taskStr.isEmpty || threadStr.contains(taskStr)) {

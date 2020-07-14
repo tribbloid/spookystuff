@@ -4,6 +4,7 @@ import java.util.UUID
 
 import org.apache.spark.SparkContext
 import org.apache.spark.rdd.RDD
+import org.apache.spark.sql.utils.SparkHelper
 import org.slf4j.LoggerFactory
 
 import scala.collection.immutable
@@ -143,7 +144,7 @@ case class SCFunctions(sc: SparkContext) {
 
   def allTaskLocationStrs: Seq[String] = {
     runEverywhere(alsoOnDriver = false) { _ =>
-      SpookyUtils.taskLocationStrOpt.get
+      SparkHelper.taskLocationStrOpt.get
     }
   }
 

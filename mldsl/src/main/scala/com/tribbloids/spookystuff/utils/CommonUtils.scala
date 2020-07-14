@@ -1,6 +1,6 @@
 package com.tribbloids.spookystuff.utils
 
-import java.io.{File, InputStream}
+import java.io.{File, InputStream, PrintWriter, StringWriter}
 import java.net.URL
 
 import org.apache.spark.SparkEnv
@@ -153,37 +153,6 @@ abstract class CommonUtils {
     Option(SparkEnv.get).map(v => v.blockManager.blockManagerId)
   }
 
-  private val useTaskLocationStrV2: Boolean =
-    try { // some classloaders won't load org.apache.spark.package$ by default, hence the bypass
-      org.apache.spark.SPARK_VERSION.substring(0, 3).toDouble >= 1.6
-    } catch {
-      case e: Throwable =>
-        true
-    }
-
-  /**
-    * From doc of org.apache.spark.scheduler.TaskLocation
-    * Create a TaskLocation from a string returned by getPreferredLocations.
-    * These strings have the form executor_[hostname]_[executorid], [hostname], or
-    * hdfs_cache_[hostname], depending on whether the location is cached.
-    * def apply(str: String): TaskLocation
-    * ...
-    * Not sure if it will change in future Spark releases
-    */
-  def taskLocationStrOpt: Option[String] = {
-
-    blockManagerIDOpt.map { bmID =>
-      val hostPort = bmID.hostPort
-
-      if (useTaskLocationStrV2) {
-        val executorID = bmID.executorId
-        s"executor_${hostPort}_$executorID"
-      } else {
-        hostPort
-      }
-    }
-  }
-
   def toStrNullSafe(v: Any): String = "" + v
 
   def tryParseBoolean(str: => String): Try[Boolean] = {
@@ -219,6 +188,18 @@ abstract class CommonUtils {
       case (k, v) => k -> v.head._2
     }
     ListMap(proto2: _*)
+  }
+
+  // copied from org.apache.spark.util.Utils
+  def stacktraceStr(e: Throwable): String = {
+    if (e == null) {
+      ""
+    } else {
+      // Use e.printStackTrace here because e.getStackTrace doesn't include the cause
+      val stringWriter = new StringWriter()
+      e.printStackTrace(new PrintWriter(stringWriter))
+      stringWriter.toString
+    }
   }
 }
 

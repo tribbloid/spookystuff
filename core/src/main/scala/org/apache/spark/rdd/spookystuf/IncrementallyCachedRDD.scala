@@ -13,6 +13,7 @@ import org.apache.spark.ml.dsl.utils.LazyVar
 import org.apache.spark.rdd.RDD
 import org.apache.spark.scheduler.TaskLocation
 import org.apache.spark.serializer.Serializer
+import org.apache.spark.sql.utils.SparkHelper
 import org.apache.spark.storage.StorageLevel
 import org.apache.spark.util.AccumulatorV2
 import org.apache.spark.{OneToOneDependency, Partition, SparkEnv, TaskContext}
@@ -40,8 +41,8 @@ case class IncrementallyCachedRDD[T: ClassTag](
 
   @transient var prevWithLocations: RDD[T] = prev.mapPartitions { itr =>
     val pid = TaskContext.get.partitionId
-    val bm = SparkEnv.get.blockManager.blockManagerId
-    val loc = TaskLocation(bm.host, bm.executorId)
+    val loc = SparkHelper.taskLocationOpt.get
+
     cacheLocAccum.add(pid -> Seq(loc))
     itr
   }
@@ -145,7 +146,9 @@ case class IncrementallyCachedRDD[T: ClassTag](
 
       // compute from scratch using current task instead of commissioned one, always succeed
       def recompute: ConsumedIterator.Wrap[T] = {
-        compute.regenerate
+        val result = compute.regenerate
+
+        result
       }
 
       def getActive: InTask = Dependency.this.synchronized {
@@ -198,7 +201,12 @@ case class IncrementallyCachedRDD[T: ClassTag](
               Some(_primary.hasNext)
             } catch {
               case e: Throwable =>
-                logError(s"Partition ${p.index} from ${getActive.self} is broken, recomputing: $e")
+                logError(
+                  s"Partition ${p.index} in task ${getActive.self
+                    .taskAttemptId()} - stage ${getActive.self
+                    .stageId()} is broken at ${_primary.offset}, falling back to use ${_backup.getClass.getSimpleName}\n" +
+                    s"Cause: $e"
+                )
                 logDebug("", e)
 
                 None
@@ -304,7 +312,7 @@ case class IncrementallyCachedRDD[T: ClassTag](
   protected def unpersistIncremental(): Array[Boolean] = {
     import com.tribbloids.spookystuff.utils.SpookyViews._
 
-    val info = s"(Incremental cache cleanup - RDD $id)"
+    val info = s"Incremental cache cleanup - RDD $id"
 
     logInfo(info)
 
@@ -312,7 +320,7 @@ case class IncrementallyCachedRDD[T: ClassTag](
 
       this
         .mapOncePerWorker { v =>
-          logInfo(info)
+          logInfo(info + s" - executor ${SparkHelper.taskLocationStrOpt.getOrElse("??")}")
           val result = existing.cleanUp()
 
           result

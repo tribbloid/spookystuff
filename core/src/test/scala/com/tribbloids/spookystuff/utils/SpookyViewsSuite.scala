@@ -1,12 +1,13 @@
 package com.tribbloids.spookystuff.utils
 
 import com.tribbloids.spookystuff.SpookyEnvFixture
-import com.tribbloids.spookystuff.metrics.{Acc, Metrics}
 import com.tribbloids.spookystuff.TestBeans._
+import com.tribbloids.spookystuff.metrics.Acc
 import com.tribbloids.spookystuff.testutils.TestHelper
 import com.tribbloids.spookystuff.utils.lifespan.LifespanContext
 import com.tribbloids.spookystuff.utils.locality.PartitionIdPassthrough
 import org.apache.spark.rdd.RDD
+import org.apache.spark.sql.utils.SparkHelper
 
 import scala.util.Random
 
@@ -201,7 +202,7 @@ class SpookyViewsSuite extends SpookyEnvFixture {
       //TODO: this RDD is extremely partitioned, can we use coalesce to reduce it?
       val conditions = created
         .map { tuple =>
-          tuple._2 == SpookyUtils.taskLocationStrOpt.get
+          tuple._2 == SparkHelper.taskLocationStrOpt.get
         }
         .collect()
       assert(conditions.count(identity) == 100)

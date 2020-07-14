@@ -22,7 +22,7 @@ trait FallbackIterator[T] extends FastForwardingIterator[T] with ConsumedIterato
         val logger = LoggerFactory.getLogger(this.getClass)
 
         logger.error(
-          s"Primary iterator ${_primary} cannot be created: ${e}"
+          s"Primary iterator ${_primary} cannot be created: $e"
         )
         logger.debug("", e)
         ConsumedIterator.empty
@@ -85,7 +85,8 @@ trait FallbackIterator[T] extends FastForwardingIterator[T] with ConsumedIterato
         val logger = LoggerFactory.getLogger(this.getClass)
 
         logger.error(
-          s"Primary iterator ${_primary} is broken at ${_primary.offset}: $e"
+          s"Primary iterator ${_primary} is broken at ${_primary.offset}, falling back to use ${_backup.getClass.getSimpleName}\n" +
+            s"Cause: $e"
         )
         logger.debug("", e)
 

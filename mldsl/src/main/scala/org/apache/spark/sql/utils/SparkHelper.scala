@@ -1,13 +1,13 @@
 package org.apache.spark.sql.utils
 
-import java.io.{PrintWriter, StringWriter}
-
-import org.apache.spark.{RangePartitioner, SparkContext}
+import com.tribbloids.spookystuff.utils.CommonUtils
 import org.apache.spark.rdd.RDD
-import org.apache.spark.sql.{DataFrame, SQLContext}
+import org.apache.spark.scheduler.TaskLocation
 import org.apache.spark.sql.catalyst.InternalRow
 import org.apache.spark.sql.types.StructType
+import org.apache.spark.sql.{DataFrame, SQLContext}
 import org.apache.spark.util.CollectionsUtils
+import org.apache.spark.{RangePartitioner, SparkContext, SparkEnv}
 
 import scala.reflect.ClassTag
 
@@ -22,18 +22,6 @@ object SparkHelper {
   //    val service = Option(user.getRealUser).getOrElse(user)
   //    service
   //  }
-
-  // copied from org.apache.spark.util.Utils
-  def exceptionString(e: Throwable): String = {
-    if (e == null) {
-      ""
-    } else {
-      // Use e.printStackTrace here because e.getStackTrace doesn't include the cause
-      val stringWriter = new StringWriter()
-      e.printStackTrace(new PrintWriter(stringWriter))
-      stringWriter.toString
-    }
-  }
 
   def internalCreateDF(
       sql: SQLContext,
@@ -52,5 +40,30 @@ object SparkHelper {
 
   def withScope[T](sc: SparkContext)(fn: => T): T = {
     sc.withScope(fn)
+  }
+
+  def taskLocationOpt: Option[TaskLocation] = {
+
+    val blockManagerIDOpt = CommonUtils.blockManagerIDOpt
+
+    blockManagerIDOpt.map { bmID =>
+      TaskLocation(bmID.host, bmID.executorId)
+    }
+  }
+
+  /**
+    * From doc of org.apache.spark.scheduler.TaskLocation
+    * Create a TaskLocation from a string returned by getPreferredLocations.
+    * These strings have the form executor_[hostname]_[executorid], [hostname], or
+    * hdfs_cache_[hostname], depending on whether the location is cached.
+    * def apply(str: String): TaskLocation
+    * ...
+    * Not sure if it will change in future Spark releases
+    */
+  def taskLocationStrOpt: Option[String] = {
+
+    taskLocationOpt.map {
+      _.toString
+    }
   }
 }
