@@ -44,7 +44,7 @@
 
   <properties>
 
-    <revision.base>0.6.1</revision.base>
+    <revision.base>0.6.2</revision.base>
     <!--    https://maven.apache.org/maven-ci-friendly.html-->
     <revision>${revision.base}-SNAPSHOT</revision>
 

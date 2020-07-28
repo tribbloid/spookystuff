@@ -1,10 +1,8 @@
 package com.tribbloids.spookystuff.testutils
 
-object TestJARResolver extends ResourceJARResolver("testutils")
-
 trait LocalPathDocsFixture extends RemoteDocsFixture {
 
-  import TestJARResolver._
+  import TestDocsResolver._
 
   override def HTML_URL: String = unpacked("testutils/files/Wikipedia.html")
   override def JSON_URL: String = unpacked("testutils/files/tribbloid.json")
