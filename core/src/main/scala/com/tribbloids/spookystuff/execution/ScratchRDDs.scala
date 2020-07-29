@@ -224,7 +224,7 @@ case class ScratchRDDs(
     tempBroadcasts.clear()
   }
 
-  protected def <+>[T](b: ScratchRDDs, f: ScratchRDDs => ArrayBuffer[T]): ArrayBuffer[T] = {
+   def <+>[T](b: ScratchRDDs, f: ScratchRDDs => ArrayBuffer[T]): ArrayBuffer[T] = {
     f(this) ++ f(b)
   }
 
