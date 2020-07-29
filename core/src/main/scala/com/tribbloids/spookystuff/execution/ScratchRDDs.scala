@@ -8,7 +8,9 @@ import org.apache.spark.rdd.RDD
 import org.apache.spark.sql.Dataset
 import org.apache.spark.storage.StorageLevel
 
+import scala.collection.mutable
 import scala.collection.mutable.ArrayBuffer
+import scala.language.implicitConversions
 import scala.reflect.ClassTag
 import scala.util.Random
 
@@ -22,6 +24,100 @@ object ScratchRDDs {
   def tempTableName(): String = {
     prefix + Math.abs(Random.nextInt())
   }
+
+  type ScopeID = String
+
+  type InScope = Scoped#InScope
+
+  case class Scoped(
+      root: ScratchRDDs
+  ) {
+
+    val children: mutable.HashMap[Set[ScopeID], ScratchRDDs] = mutable.HashMap.empty
+
+    @transient var activeScopeIDs: Set[ScopeID] = Set.empty
+
+    def setActive(scopes: ScopeID*): Unit = {
+
+      activeScopeIDs = scopes.toSet
+    }
+
+    case class InScope(scopeIDs: Set[ScopeID]) {
+
+      def get: ScratchRDDs = {
+
+        if (scopeIDs.isEmpty) root
+        else {
+          children.getOrElseUpdate(
+            scopeIDs, {
+              ScratchRDDs(defaultStorageLevel = root.defaultStorageLevel)
+            }
+          )
+        }
+
+      }
+
+      def filter: Seq[(Set[ScopeID], ScratchRDDs)] = {
+
+        if (scopeIDs.isEmpty) Seq(Set.empty[ScopeID] -> root)
+        else {
+
+          children.filterKeys { ids =>
+            ids.intersect(scopeIDs).nonEmpty
+          }.toSeq
+        }
+
+      }
+
+      def clearAll(blocking: Boolean = false): Unit = {
+
+        val filtered = filter
+
+        filtered.foreach {
+          case (_, v) =>
+            v.clearAll(blocking)
+        }
+
+        filter.foreach {
+          case (k, _) =>
+            children.remove(k)
+        }
+      }
+    }
+
+    def active: InScope = InScope(activeScopeIDs)
+
+    def clearAll(blocking: Boolean = false): Unit = {
+
+      children.foreach {
+        case (_, v) =>
+          v.clearAll(blocking)
+      }
+
+      children.clear()
+
+      root.clearAll(blocking)
+    }
+
+    def :++(that: Scoped): Scoped = {
+      val result = Scoped(this.root :++ that.root)
+
+      val keys = this.children.keySet ++ that.children.keySet
+
+      for (key <- keys) {
+
+        result.children += key -> (this.children.get(key).toSeq ++ that.children.get(key)).reduce(_ :++ _)
+      }
+
+      result
+    }
+  }
+
+  object Scoped {
+
+    implicit def fromRoot(v: ScratchRDDs): Scoped = Scoped(v)
+  }
+
 }
 
 case class ScratchRDDs(
@@ -128,16 +224,16 @@ case class ScratchRDDs(
     tempBroadcasts.clear()
   }
 
-  def <+>[T](b: ScratchRDDs, f: ScratchRDDs => ArrayBuffer[T]): ArrayBuffer[T] = {
+  protected def <+>[T](b: ScratchRDDs, f: ScratchRDDs => ArrayBuffer[T]): ArrayBuffer[T] = {
     f(this) ++ f(b)
   }
 
-  def ++(other: ScratchRDDs) = {
+  def :++(that: ScratchRDDs): ScratchRDDs = {
     this.copy(
-      <+>(other, _.tempTables),
-      <+>(other, _.tempRDDs),
-      <+>(other, _.tempDSs),
-      <+>(other, _.tempBroadcasts)
+      <+>(that, _.tempTables),
+      <+>(that, _.tempRDDs),
+      <+>(that, _.tempDSs),
+      <+>(that, _.tempBroadcasts)
     )
   }
 
