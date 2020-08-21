@@ -1,0 +1,119 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<project xmlns="http://maven.apache.org/POM/4.0.0"
+         xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+         xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 http://maven.apache.org/xsd/maven-4.0.0.xsd">
+
+  <modelVersion>4.0.0</modelVersion>
+
+<!--  now a top level project-->
+<!--  until https://stackoverflow.com/questions/63865005/non-readable-pom-home-rof-m2-repository-com-where-does-this-path-come-from is solved-->
+  <groupId>com.tribbloids.spookystuff</groupId>
+  <artifactId>repackaged-selenium-bundle</artifactId>
+  <version>${revision}</version>
+
+  <properties>
+    <selenium.version>3.8.1</selenium.version>
+    <!--    <selenium.version>3.141.59</selenium.version>-->
+
+    <revision>${selenium.version}</revision>
+
+  </properties>
+
+  <dependencies>
+
+    <!-- https://mvnrepository.com/artifact/org.seleniumhq.selenium/selenium-api -->
+    <dependency>
+      <groupId>org.seleniumhq.selenium</groupId>
+      <artifactId>selenium-api</artifactId>
+      <version>${selenium.version}</version>
+    </dependency>
+    <dependency>
+      <groupId>org.seleniumhq.selenium</groupId>
+      <artifactId>selenium-support</artifactId>
+      <version>${selenium.version}</version>
+    </dependency>
+
+    <dependency>
+      <groupId>com.codeborne</groupId>
+      <artifactId>phantomjsdriver</artifactId>
+      <version>1.4.4</version>
+    </dependency>
+    <dependency>
+      <groupId>org.seleniumhq.selenium</groupId>
+      <artifactId>htmlunit-driver</artifactId>
+      <version>2.28.5</version>
+    </dependency>
+
+  </dependencies>
+
+  <build>
+    <plugins>
+
+      <plugin>
+        <groupId>org.apache.maven.plugins</groupId>
+        <artifactId>maven-shade-plugin</artifactId>
+        <executions>
+          <execution>
+            <phase>package</phase>
+            <goals>
+              <goal>shade</goal>
+            </goals>
+
+            <configuration>
+              <!--              <createSourcesJar>true</createSourcesJar>-->
+              <!--              TODO: enable later-->
+
+              <createDependencyReducedPom>true</createDependencyReducedPom>
+              <dependencyReducedPomLocation>${project.build.directory}/dependency-reduced-pom.xml</dependencyReducedPomLocation>
+              <!--              <generateUniqueDependencyReducedPom>true</generateUniqueDependencyReducedPom>-->
+
+              <keepDependenciesWithProvidedScope>false</keepDependenciesWithProvidedScope>
+              <promoteTransitiveDependencies>false</promoteTransitiveDependencies>
+
+              <!--              <shadedClassifierName>${spark.classifier}</shadedClassifierName>-->
+              <relocations>
+                <relocation>
+                  <pattern>com.google.common</pattern>
+                  <shadedPattern>com.tribbloids.spookystuff.repackaged.com.google.common</shadedPattern>
+                </relocation>
+              </relocations>
+
+              <filters>
+                <filter>
+                  <artifact>*:*</artifact>
+                  <excludes>
+                    <exclude>META-INF/*.SF</exclude>
+                    <exclude>META-INF/*.DSA</exclude>
+                    <exclude>META-INF/*.RSA</exclude>
+                    <exclude>META-INF/services/javax.*</exclude>
+                  </excludes>
+                </filter>
+              </filters>
+              <!--              <finalName>${project.artifactId}-${project.version}</finalName>-->
+            </configuration>
+          </execution>
+        </executions>
+      </plugin>
+
+      <plugin>
+        <groupId>org.codehaus.mojo</groupId>
+        <artifactId>flatten-maven-plugin</artifactId>
+        <executions>
+
+          <!--          see https://github.com/mojohaus/flatten-maven-plugin/issues/100-->
+          <!--          and https://stackoverflow.com/questions/52552329/use-maven-flatten-plugin-and-maven-shade-plugin-at-the-same-time-->
+          <!--          and https://issues.apache.org/jira/browse/MSHADE-323-->
+          <execution>
+            <id>flatten.shaded</id>
+            <phase>package</phase>
+            <goals>
+              <goal>flatten</goal>
+            </goals>
+          </execution>
+        </executions>
+      </plugin>
+
+    </plugins>
+  </build>
+
+</project>

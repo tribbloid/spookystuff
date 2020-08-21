@@ -7,7 +7,12 @@ FWDIR="$(cd "`dirname "$0"`"/..; pwd)"
 
 source "${CRDIR}/.mvn-common.sh"
 
-mkdir -p logs
-mvn dependency:tree --batch-mode --errors -f "$FWDIR"/pom.xml -Puav -Pdist "$@" > "$FWDIR"/logs/mvnTree_"$DATE".log
+mvn --version
 
-exec mvn clean install --errors -T 8 -f "$FWDIR"/pom.xml -Pdist "$@"
+mvn clean install --errors -f "$FWDIR"/repackaged/selenium-bundle/pom.xml "$@"
+"${CRDIR}/tree.sh" "$@"
+
+#see https://intoli.com/blog/exit-on-errors-in-bash-scripts/
+set -e
+
+mvn clean install --errors -f "$FWDIR"/pom.xml -Pdist "$@"

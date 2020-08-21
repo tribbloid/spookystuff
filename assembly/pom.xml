@@ -116,7 +116,7 @@
               <relocations>
                 <relocation>
                   <pattern>org.apache.http</pattern>
-                  <shadedPattern>org.spookystuff-project.apache.http</shadedPattern>
+                  <shadedPattern>spookystuff-project.org.apache.http</shadedPattern>
                 </relocation>
               </relocations>
             </configuration>

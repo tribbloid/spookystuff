@@ -61,15 +61,15 @@
     <spark.assembly.version>${spark.binary.version}</spark.assembly.version>
     <spark.classifier>spark${spark.binary.version}</spark.classifier>
 
-    <selenium.version>2.53.1</selenium.version>
-<!--    <selenium.version>3.141.59</selenium.version>-->
+    <selenium.version>3.8.1</selenium.version>
+    <!--    <selenium.version>3.141.59</selenium.version>-->
 
     <protobuf.version>2.5.0</protobuf.version>
 
     <cxf.version>3.0.16</cxf.version>
     <jackson.version>2.9.10</jackson.version>
 
-<!--    <jmh.version>1.21</jmh.version>-->
+    <!--    <jmh.version>1.21</jmh.version>-->
 
     <!--<failsafe.version>2.18</failsafe.version>-->
   </properties>
@@ -194,38 +194,29 @@
         <enabled>false</enabled>
       </snapshots>
     </repository>
-    <repository>
-      <id>typesafe</id>
-      <name>typesafe - releases</name>
-      <url>http://repo.typesafe.com/typesafe/releases/</url>
-      <snapshots>
-        <enabled>false</enabled>
-      </snapshots>
-    </repository>
-    <repository>
-      <id>typesafe-ivy</id>
-      <name>Typesafe - ivy - releases</name>
-      <url>http://repo.typesafe.com/typesafe/maven-ivy-releases/</url>
-      <snapshots>
-        <enabled>false</enabled>
-      </snapshots>
-    </repository>
+    <!--    following 2 are 404-->
+    <!--    <repository>-->
+    <!--      <id>typesafe</id>-->
+    <!--      <name>typesafe - releases</name>-->
+    <!--      <url>http://repo.typesafe.com/typesafe/releases/</url>-->
+    <!--      <snapshots>-->
+    <!--        <enabled>false</enabled>-->
+    <!--      </snapshots>-->
+    <!--    </repository>-->
+    <!--    <repository>-->
+    <!--      <id>typesafe-ivy</id>-->
+    <!--      <name>Typesafe - ivy - releases</name>-->
+    <!--      <url>http://repo.typesafe.com/typesafe/maven-ivy-releases/</url>-->
+    <!--      <snapshots>-->
+    <!--        <enabled>false</enabled>-->
+    <!--      </snapshots>-->
+    <!--    </repository>-->
     <repository>
       <id>oss.sonatype.org</id>
       <name>sonatype snapshots</name>
       <url>https://oss.sonatype.org/content/repositories/snapshots</url>
     </repository>
-    <!--<repository>-->
-    <!--<id>IESL Releases</id>-->
-    <!--<name>IESL Repo</name>-->
-    <!--<url>https://dev-iesl.cs.umass.edu/nexus/content/groups/public</url>-->
-    <!--<snapshots>-->
-    <!--<enabled>false</enabled>-->
-    <!--</snapshots>-->
-    <!--<releases>-->
-    <!--<enabled>true</enabled>-->
-    <!--</releases>-->
-    <!--</repository>-->
+
     <!--<repository>-->
     <!--<id>clojars.org</id>-->
     <!--<url>http://clojars.org/repo</url>-->
@@ -234,18 +225,6 @@
     <!--<id>DataNucleus_Repos2</id>-->
     <!--<name>DataNucleus Repository</name>-->
     <!--<url>http://www.datanucleus.org/downloads/maven2</url>-->
-    <!--</repository>-->
-
-    <!--<repository>-->
-    <!--<id>maven.oracle.com</id>-->
-    <!--<releases>-->
-    <!--<enabled>true</enabled>-->
-    <!--</releases>-->
-    <!--<snapshots>-->
-    <!--<enabled>false</enabled>-->
-    <!--</snapshots>-->
-    <!--<url>https://maven.oracle.com</url>-->
-    <!--<layout>default</layout>-->
     <!--</repository>-->
 
     <repository>
@@ -464,7 +443,7 @@
         <plugin>
           <groupId>org.apache.maven.plugins</groupId>
           <artifactId>maven-shade-plugin</artifactId>
-          <version>3.1.0</version>
+          <version>3.2.4</version>
         </plugin>
         <plugin>
           <groupId>org.apache.maven.plugins</groupId>
@@ -580,6 +559,12 @@
         <!--</executions>-->
         <!--</plugin>-->
 
+        <plugin>
+          <groupId>org.codehaus.mojo</groupId>
+          <artifactId>flatten-maven-plugin</artifactId>
+          <version>1.2.5</version>
+        </plugin>
+
       </plugins>
     </pluginManagement>
 
@@ -588,16 +573,8 @@
       <plugin>
         <groupId>org.codehaus.mojo</groupId>
         <artifactId>flatten-maven-plugin</artifactId>
-        <version>1.1.0</version>
         <executions>
-          <!-- enable flattening -->
-          <execution>
-            <id>flatten</id>
-            <phase>process-resources</phase>
-            <goals>
-              <goal>flatten</goal>
-            </goals>
-          </execution>
+
           <!-- ensure proper cleanup -->
           <execution>
             <id>flatten.clean</id>
@@ -606,6 +583,25 @@
               <goal>clean</goal>
             </goals>
           </execution>
+
+          <!-- enable flattening -->
+          <execution>
+            <id>flatten</id>
+            <phase>process-resources</phase>
+            <goals>
+              <goal>flatten</goal>
+            </goals>
+          </execution>
+
+<!--          see https://github.com/mojohaus/flatten-maven-plugin/issues/100-->
+<!--          and https://stackoverflow.com/questions/52552329/use-maven-flatten-plugin-and-maven-shade-plugin-at-the-same-time-->
+<!--          <execution>-->
+<!--            <id>flatten.shaded</id>-->
+<!--            <phase>package</phase>-->
+<!--            <goals>-->
+<!--              <goal>flatten</goal>-->
+<!--            </goals>-->
+<!--          </execution>-->
         </executions>
       </plugin>
 
@@ -742,7 +738,7 @@
             </goals>
             <configuration>
               <args>
-<!--                see https://github.com/dmlc/xgboost/issues/4000-->
+                <!--                see https://github.com/dmlc/xgboost/issues/4000-->
                 <arg>-nobootcp</arg>
               </args>
             </configuration>
@@ -909,16 +905,15 @@
                   <profiles>spark-2.2,spark-2.3,spark-2.4,spark-2.4-cloudera2</profiles>
                   <all>false</all>
                 </requireActiveProfile>
-
-<!--                TODO: use custom rules-->
-<!--                <requireActiveProfile>-->
-<!--                  <profiles>spark-2.2,scala-2.12</profiles>-->
-<!--                  <all>false</all>-->
-<!--                </requireActiveProfile>-->
-<!--                <requireActiveProfile>-->
-<!--                  <profiles>spark-2.3,scala-2.12</profiles>-->
-<!--                  <all>false</all>-->
-<!--                </requireActiveProfile>-->
+                <!--                TODO: use custom rules-->
+                <!--                <requireActiveProfile>-->
+                <!--                  <profiles>spark-2.2,scala-2.12</profiles>-->
+                <!--                  <all>false</all>-->
+                <!--                </requireActiveProfile>-->
+                <!--                <requireActiveProfile>-->
+                <!--                  <profiles>spark-2.3,scala-2.12</profiles>-->
+                <!--                  <all>false</all>-->
+                <!--                </requireActiveProfile>-->
               </rules>
               <fail>true</fail>
             </configuration>
