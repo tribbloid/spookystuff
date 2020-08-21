@@ -10,7 +10,7 @@ future==0.17.1
 lxml==4.3.0               # via pymavlink
 mavproxy==1.6.4
 monotonic==1.5
-psutil==5.5.0             # via dronekit-sitl
+psutil==5.6.6             # via dronekit-sitl
 pymavlink==2.3.4
 pyserial==3.4             # via mavproxy
 simplejson==3.16.0

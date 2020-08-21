@@ -87,6 +87,8 @@ trait Cleanable {
 
   import Cleanable._
 
+  @transient object CleanStateLock
+
   /**
     * taskOrThreadOnCreation is incorrect in withDeadline or threads not created by Spark
     * Override this to correct such problem
@@ -97,7 +99,7 @@ trait Cleanable {
 
   //each can only be cleaned once
   @volatile protected var _isCleaned: Boolean = false
-  def isCleaned: Boolean = synchronized {
+  def isCleaned: Boolean = CleanStateLock.synchronized {
     _isCleaned
   }
 
@@ -147,7 +149,7 @@ trait Cleanable {
         v.clean(silent)
       }
     }
-    val self = synchronized {
+    val self = CleanStateLock.synchronized {
       Try {
         if (!isCleaned) {
           stacktraceAtCleaning = Some(Thread.currentThread().getStackTrace)

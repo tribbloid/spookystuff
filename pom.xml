@@ -47,6 +47,7 @@
     <revision.base>0.6.2</revision.base>
     <!--    https://maven.apache.org/maven-ci-friendly.html-->
     <revision>${revision.base}-SNAPSHOT</revision>
+    <version.suffix/>
 
     <project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
     <project.reporting.outputEncoding>UTF-8</project.reporting.outputEncoding>
@@ -60,7 +61,8 @@
     <spark.assembly.version>${spark.binary.version}</spark.assembly.version>
     <spark.classifier>spark${spark.binary.version}</spark.classifier>
 
-    <version.suffix/>
+    <selenium.version>2.53.1</selenium.version>
+<!--    <selenium.version>3.141.59</selenium.version>-->
 
     <protobuf.version>2.5.0</protobuf.version>
 
@@ -263,6 +265,7 @@
       </dependency>
 
       <!--DON'T DELETE! guava has too many versions and a ground truth has to be setup.-->
+<!--      TODO: add back! before this package wreck havoc of hadoop-->
       <dependency>
         <groupId>com.google.guava</groupId>
         <artifactId>guava</artifactId>
@@ -292,7 +295,6 @@
         <version>${cxf.version}</version>
       </dependency>
 
-
       <dependency>
         <groupId>com.fasterxml.jackson.core</groupId>
         <artifactId>jackson-core</artifactId>
@@ -301,7 +303,7 @@
       <dependency>
         <groupId>com.fasterxml.jackson.core</groupId>
         <artifactId>jackson-databind</artifactId>
-        <version>${jackson.version}</version>
+        <version>${jackson.version}.5</version>
       </dependency>
       <dependency>
         <groupId>com.fasterxml.jackson.core</groupId>
@@ -360,7 +362,7 @@
     <dependency>
       <groupId>org.jprocesses</groupId>
       <artifactId>jProcesses</artifactId>
-      <version>1.6.2</version>
+      <version>1.6.5</version>
       <scope>test</scope>
     </dependency>
 

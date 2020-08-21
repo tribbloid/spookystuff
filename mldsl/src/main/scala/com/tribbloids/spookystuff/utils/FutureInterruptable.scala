@@ -21,7 +21,7 @@ class FutureInterruptable[T](
 
   @volatile var thread: Thread = _
 
-  val future = Future {
+  val future: Future[T] = Future {
     thread = Thread.currentThread()
     f()
   }(executor)

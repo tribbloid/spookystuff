@@ -24,9 +24,11 @@ trait Suitex {
         superSet: Boolean = false
     ): Unit = {
 
-      var a: List[String] = str
+      val rows = str
         .split("\n")
         .toList
+
+      var a: List[String] = rows
         .filterNot(_.replaceAllLiterally(" ", "").isEmpty)
         .map(v => ("|" + v).trim.stripPrefix("|"))
       if (sort) a = a.sorted
@@ -34,7 +36,7 @@ trait Suitex {
 
       Option(gd) match {
         case None =>
-          println(AssertionErrorObject(a, null).actualInfo)
+          println(AssertionErrorObject(rows, null).actualInfo)
         case Some(_gd) =>
           var b = _gd
             .split("\n")

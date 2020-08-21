@@ -190,6 +190,8 @@ class PythonDriver(
     s"$logPrefix $effectiveLine"
   }
 
+  @transient object IntpLock
+
   private def _interpret(code: String,
                          spookyOpt: Option[SpookyContext] = None,
                          detectError: Boolean = true): Array[String] = {
@@ -199,7 +201,7 @@ class PythonDriver(
 
     val rows = try {
       // DO NOT DELETE! some Python Drivers are accessed by many threads (e.g. ProxyManager)
-      val output = this.synchronized {
+      val output = IntpLock.synchronized {
         this.sendAndGetResult(code)
       }
       output
@@ -308,7 +310,7 @@ class PythonDriver(
   def interpret(
       code: String,
       spookyOpt: Option[SpookyContext] = None
-  ): Array[String] = this.synchronized {
+  ): Array[String] = IntpLock.synchronized {
     val _pendingImports = pendingImports.mkString("\n")
     val _pendingCode = pendingLines.mkString("\n")
     val allCode = _pendingCode + "\n" + code
@@ -328,7 +330,7 @@ class PythonDriver(
       code: String,
       resultVarOpt: Option[String] = None,
       spookyOpt: Option[SpookyContext] = None
-  ): (Seq[String], Option[String]) = this.synchronized {
+  ): (Seq[String], Option[String]) = IntpLock.synchronized {
     resultVarOpt match {
       case None =>
         val _code =
@@ -384,11 +386,11 @@ class PythonDriver(
     result._2
   }
 
-  def lazyInterpret(code: String): Unit = this.synchronized {
+  def lazyInterpret(code: String): Unit = IntpLock.synchronized {
     pendingLines += code
   }
 
-  def batchImport(codes: Seq[String]): Unit = this.synchronized {
+  def batchImport(codes: Seq[String]): Unit = IntpLock.synchronized {
     val effectiveCodes = ArrayBuffer[String]()
     codes
       .map(_.trim)
