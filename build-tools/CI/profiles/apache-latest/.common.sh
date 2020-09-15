@@ -1,6 +1,6 @@
 #!/usr/bin/env bash
 
-SPARK_NAME="${SPARK:-spark-2.4.6}"
+SPARK_NAME="${SPARK:-spark-2.4.7}"
 SPARK_DIR_ROOT="$HOME/.ci/spark-dist"
 
 SPARK_DIR_NAME="$SPARK_NAME"-bin-hadoop2.7-scala-2.12
