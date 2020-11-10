@@ -3,7 +3,7 @@
 SPARK_NAME="${SPARK:-spark-2.4.7}"
 SPARK_DIR_ROOT="$HOME/.ci/spark-dist"
 
-SPARK_DIR_NAME="$SPARK_NAME"-bin-hadoop2.7-scala-2.12
+SPARK_DIR_NAME="$SPARK_NAME"-bin-hadoop2.7-scala2.12
 
 # Download Spark
 wget -N https://spookystuff.s3.amazonaws.com/"$SPARK_NAME"/"$SPARK_DIR_NAME".tgz -P "$SPARK_DIR_ROOT"
