@@ -58,6 +58,20 @@ class ExternalAppendOnlyArraySuite extends FunSpec with SparkUISupport {
 
     describe(parallelism.toString) {
 
+      def delayToEliminateRacing(i: Int) = {
+
+        /**
+         * the purpose of this line is to avoid no children other than the first one to compute
+         * others always read cached values without racing
+         * 1: -> -> -> ->
+         * 2: C  C  C
+         * 3: C  C
+         */
+        // TODO: this setting still can't guarantee 100% of the time when parallelism is high, ignored at the moment
+
+        Thread.sleep(i * 200)
+      }
+
       it("can be shared by multiple tasks") {
 
         val rdd = externalArrayRDD
@@ -70,6 +84,8 @@ class ExternalAppendOnlyArraySuite extends FunSpec with SparkUISupport {
 
           val result: Array[Int] = rdd
             .mapPartitions { p =>
+              delayToEliminateRacing(i)
+
               val externalArray = p.next()
 
               val computeItr = (1 to taskSize).iterator.map { v =>
@@ -82,6 +98,7 @@ class ExternalAppendOnlyArraySuite extends FunSpec with SparkUISupport {
               itr.slice(0, taskSize)
             }
             .collect()
+
           Thread.sleep(1000)
 
           assert(computed.value <= parallelism * taskSize * TestHelper.numWorkers)
@@ -103,15 +120,8 @@ class ExternalAppendOnlyArraySuite extends FunSpec with SparkUISupport {
         val children = (1 to numChildren).map { i =>
           rdd
             .mapPartitions { p =>
-              /**
-                * the purpose of this line is to avoid no children other than the first one to compute
-                * others always read cached values without racing
-                * 1: -> -> -> ->
-                * 2: C  C  C
-                * 3: C  C
-                */
-              // TODO: this setting still can't guarantee 100% of the time when parallelism is high, ignored at the moment
-              Thread.sleep(i * 2000)
+              delayToEliminateRacing(i)
+
               val externalArray = p.next()
 
               val computeItr = (1 to taskSize).iterator.map { v =>

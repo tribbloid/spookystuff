@@ -51,6 +51,7 @@ abstract class URIResolver extends Serializable {
     result
   }
 
+  @Deprecated // TODO: broken, need better abstraction
   def lockAccessDuring[T](pathStr: String)(f: String => T): T = {
     val lock = new Lock(Execution(pathStr))
     val path = lock.acquire()
