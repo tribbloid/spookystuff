@@ -8,7 +8,7 @@ import org.apache.hadoop.security.UserGroupInformation
   */
 class HDFSResolverSuite extends LocalResolverSuite {
 
-  @transient override lazy val resolver = HDFSResolver(new Configuration())
+  @transient override lazy val resolver: URIResolver = HDFSResolver(new Configuration())
   @transient override lazy val schemaPrefix = "file:"
 
   val nonExistingSchemePath = "file:/non-existing/not-a-file.txt"
@@ -24,7 +24,7 @@ class HDFSResolverSuite extends LocalResolverSuite {
     assert(abs == nonExistingSchemePath)
   }
 
-  val resolverWithUser = HDFSResolver(
+  val resolverWithUser: HDFSResolver = HDFSResolver(
     new Configuration(),
     () => Some(UserGroupInformation.createUserForTesting("dummy", Array.empty))
   )
@@ -36,7 +36,7 @@ class HDFSResolverSuite extends LocalResolverSuite {
     user.shouldBe("dummy")
   }
 
-  it("can override login GUI on executors") {
+  it("can override login UGI on executors") {
     val resolver = this.resolverWithUser
     val HTML_URL = this.HTML_URL
     val users = sc

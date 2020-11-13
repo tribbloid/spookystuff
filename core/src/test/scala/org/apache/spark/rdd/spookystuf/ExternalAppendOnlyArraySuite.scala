@@ -58,18 +58,18 @@ class ExternalAppendOnlyArraySuite extends FunSpec with SparkUISupport {
 
     describe(parallelism.toString) {
 
-      def delayToEliminateRacing(i: Int) = {
+      def delayToEliminateRacing(i: Int): Unit = {
 
         /**
-         * the purpose of this line is to avoid no children other than the first one to compute
-         * others always read cached values without racing
-         * 1: -> -> -> ->
-         * 2: C  C  C
-         * 3: C  C
-         */
+          * the purpose of this line is to avoid no children other than the first one to compute
+          * others always read cached values without racing
+          * 1: C1 C2 C3 C4
+          * 2: -> C1 C2 C3
+          * 3: -> -> C1 C2
+          */
         // TODO: this setting still can't guarantee 100% of the time when parallelism is high, ignored at the moment
 
-        Thread.sleep(i * 200)
+        Thread.sleep(i * 2000)
       }
 
       it("can be shared by multiple tasks") {

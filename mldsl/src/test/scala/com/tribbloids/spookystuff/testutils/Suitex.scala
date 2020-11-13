@@ -160,15 +160,15 @@ trait Suitex {
     lazy val actualInfo: String = s"=============================== $ACTUAL ================================\n" +
       actual.mkString("\n") + "\n"
 
-    override def toString: String = {
+    override lazy val toString: String = {
       val toBePrinted =
         s"\n=============================== $EXPECTED ================================\n" +
           expected.mkString("\n") + "\n" +
           actualInfo
 
-      println(toBePrinted)
-
       s"""
+         |$toBePrinted
+         |
          |"
          |${actual.mkString("\n")}
          |" did not equal "
@@ -202,10 +202,6 @@ trait Suitex {
     def shouldBe(expected: (K, V)*): Unit = {
       this.shouldBe(Map(expected: _*))
     }
-  }
-
-  def printSplitter(name: String): Unit = {
-    println(s"======================================= $name ===================================")
   }
 
   def bypass(f: => Unit): Unit = {}
