@@ -69,7 +69,7 @@ class ExternalAppendOnlyArraySuite extends FunSpec with SparkUISupport {
           */
         // TODO: this setting still can't guarantee 100% of the time when parallelism is high, ignored at the moment
 
-        Thread.sleep(i * 2000)
+        Thread.sleep(i * 10000)
       }
 
       it("can be shared by multiple tasks") {
