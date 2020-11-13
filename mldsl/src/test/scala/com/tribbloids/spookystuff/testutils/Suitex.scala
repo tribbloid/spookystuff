@@ -157,24 +157,25 @@ trait Suitex {
   //TODO: update to be on par with scalatest supported by IDE
   case class AssertionErrorObject(actual: List[String], expected: List[String]) {
 
-    lazy val actualInfo: String = s"=============================== $ACTUAL ================================\n" +
-      actual.mkString("\n") + "\n"
+    lazy val actualStr: String = actual.mkString("\n")
+    lazy val actualInfo: String = s"\n=============================== $ACTUAL ================================\n\n" +
+      actualStr
+
+    lazy val expectedStr: String = expected.mkString("\n")
+    lazy val expectedInfo: String = s"\n=============================== $EXPECTED ================================\n\n" +
+      expectedStr
 
     override lazy val toString: String = {
-      val toBePrinted =
-        s"\n=============================== $EXPECTED ================================\n" +
-          expected.mkString("\n") + "\n" +
-          actualInfo
 
-      s"""
-         |$toBePrinted
-         |
+      val result = s"""
          |"
-         |${actual.mkString("\n")}
+         |$actualInfo
          |" did not equal "
-         |${expected.mkString("\n")}
+         |$expectedInfo
          |"
-      """.trim.stripMargin
+      """.stripMargin.split('\n').filter(_.nonEmpty).mkString("\n")
+
+      result
     }
   }
 
