@@ -25,22 +25,7 @@ case class MapPlan(
       mapFn
     }
   }
-}
 
-object OptimizedMapPlan {
-
-  def apply(
-      child: ExecutionPlan,
-      rowMapperFactory: RowMapperFactory
-  ) = {
-
-    child match {
-      case plan: ExplorePlan if !plan.isCached =>
-        plan.copy(rowMapperFactories = plan.rowMapperFactories :+ rowMapperFactory)
-      case _ =>
-        MapPlan(child, rowMapperFactory)
-    }
-  }
 }
 
 object MapPlan {
@@ -52,6 +37,19 @@ object MapPlan {
   }
 
   type RowMapperFactory = (SpookySchema => RowMapper)
+
+  def optimised(
+      child: ExecutionPlan,
+      rowMapperFactory: RowMapperFactory
+  ): UnaryPlan = {
+
+    child match {
+      case plan: ExplorePlan if !plan.isCached =>
+        plan.copy(rowMapperFactories = plan.rowMapperFactories :+ rowMapperFactory)
+      case _ =>
+        MapPlan(child, rowMapperFactory)
+    }
+  }
 
   /**
     * extract parts of each Page and insert into their respective context

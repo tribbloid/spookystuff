@@ -100,7 +100,3 @@ abstract class ExecutionPlan(
   ) = scratchRDDs.persist(rdd, storageLevel)
 
 }
-
-abstract class UnaryPlan(
-    val child: ExecutionPlan
-) extends ExecutionPlan(Seq(child)) {}

@@ -246,13 +246,13 @@ case class FetchedDataset(
 
   // IMPORTANT: DO NOT discard type parameter! otherwise arguments' type will be coerced into Any!
   def extract[T](exs: Extractor[T]*): FetchedDataset = {
-    OptimizedMapPlan(plan, MapPlan.Extract(exs))
+    MapPlan.optimised(plan, MapPlan.Extract(exs))
   }
 
   def select[T](exprs: Extractor[T]*) = extract(exprs: _*)
 
   def remove(fields: Field*): FetchedDataset = {
-    OptimizedMapPlan(plan, MapPlan.Remove(fields))
+    MapPlan.optimised(plan, MapPlan.Remove(fields))
   }
 
   def removeWeaks(): FetchedDataset = this.remove(fields.filter(_.isWeak): _*)
@@ -294,7 +294,7 @@ case class FetchedDataset(
       .map(_.ex.typed[String])
       .getOrElse(_pageEx.defaultFileExtension)
 
-    OptimizedMapPlan(plan, MapPlan.SavePages(path.ex.typed[String], _extensionEx, _pageEx, overwrite))
+    MapPlan.optimised(plan, MapPlan.SavePages(path.ex.typed[String], _extensionEx, _pageEx, overwrite))
   }
 
   def flatten(
@@ -313,7 +313,7 @@ case class FetchedDataset(
         ff -> this.extract(ex)
     }
 
-    OptimizedMapPlan(extracted.plan, MapPlan.Flatten(on, ordinalField, sampler, isLeft))
+    MapPlan.optimised(extracted.plan, MapPlan.Flatten(on, ordinalField, sampler, isLeft))
   }
 
   /**

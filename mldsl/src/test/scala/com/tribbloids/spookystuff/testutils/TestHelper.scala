@@ -168,7 +168,7 @@ abstract class TestHelper extends LocalCleanable {
   def numCoresPerWorkerOpt: Option[Int] = clusterSize_numCoresPerWorker_Opt.map(_._2)
 
   def maxFailures: Int = {
-    getProperty("MaxFailures").map(_.toInt).getOrElse(1)
+    getProperty("MaxFailures").map(_.toInt).getOrElse(4)
   }
 
   def numWorkers: Int = clusterSizeOpt.getOrElse(1)

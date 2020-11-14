@@ -91,6 +91,8 @@ object ClusterRetry {
   }
 }
 
+// TODO: this retry mechanism use Spark scheduler to re-run the partition and is very inefficient
+//  Re-implement using multi-pass!
 final case class ClusterRetry(
     override val children: Trace
 )(
