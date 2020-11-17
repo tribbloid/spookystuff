@@ -4,9 +4,9 @@ import java.io._
 import java.util.UUID
 import java.util.concurrent.atomic.AtomicInteger
 
-import com.tribbloids.spookystuff.utils.ThreadLocal
 import com.tribbloids.spookystuff.utils.lifespan.{Lifespan, LocalCleanable}
 import com.tribbloids.spookystuff.utils.serialization.NOTSerializable
+import com.tribbloids.spookystuff.utils.{CachingUtils, CommonConst, CommonUtils, ThreadLocal}
 import org.apache.spark.serializer
 import org.apache.spark.serializer.SerializerInstance
 import org.apache.spark.storage.StorageLevel
@@ -22,53 +22,72 @@ import scala.reflect.ClassTag
   * @param ctag used to automatically determine serializer being used
   * @tparam T affects ctg which is used in Ser/De
   */
-class ExternalAppendOnlyArray[T](
-    val name: String,
-    val storageLevel: StorageLevel,
-    val serializerFactory: () => serializer.Serializer,
+class ExternalAppendOnlyArray[T] private[spookystuff] (
+    id: String,
+    storageLevel: StorageLevel,
+    serializerFactory: () => serializer.Serializer,
     override val _lifespan: Lifespan = Lifespan.JVM()
 )(
     implicit val ctag: ClassTag[T]
-) extends Serializable
-    with LocalCleanable {
+) extends LocalCleanable {
 
   val INCREMENT = 1024
   val INCREMENT_LARGE = 65536
 
   import ExternalAppendOnlyArray._
 
-  val id = s"$name-${UUID.randomUUID()}"
-
-  val dbTempFile: File = {
-
-    val file = File.createTempFile("mapdb", s"-$id")
-    file.delete()
-    file.deleteOnExit()
-    file
-  }
+  val filePath: String = CommonUtils.\\\(
+    rootPath,
+    processID,
+    id
+  )
 
   {
-    LoggerFactory.getLogger(this.getClass).info(s"created for $id -> ${dbTempFile.getAbsolutePath}")
+    if (existing.contains(id)) {
+
+      throw new IllegalStateException("same ID already existed")
+    }
+    LoggerFactory.getLogger(this.getClass).debug(s"created for ID $id -> $filePath")
+  }
+
+  @transient lazy val file: File = {
+
+    val result = new File(filePath)
+
+    if (!result.exists()) result.getParentFile.mkdirs()
+
+    result.deleteOnExit()
+
+    result
   }
 
   @transient lazy val mapDB: DB = {
+
+    def fileDBMaker = {
+
+      lazy val basic = DBMaker
+        .fileDB(file)
+//        .fileChannelEnable()
+        .fileDeleteAfterClose()
+      //        .transactionEnable()
+
+      lazy val mmap = basic
+        .fileMmapEnableIfSupported()
+//        .fileMmapPreclearDisable()
+//        .cleanerHackEnable()
+
+      mmap
+    }
+
     val result = storageLevel match {
       case StorageLevel.MEMORY_AND_DISK_SER =>
-        DBMaker
-          .fileDB(dbTempFile)
-          .fileMmapEnableIfSupported()
-          .fileDeleteAfterClose()
-          //
+        fileDBMaker
           .allocateStartSize(INCREMENT_LARGE)
           .allocateIncrement(INCREMENT_LARGE)
           .make()
 
       case StorageLevel.DISK_ONLY =>
-        DBMaker
-          .fileDB(dbTempFile)
-          .fileMmapEnableIfSupported()
-          .fileDeleteAfterClose()
-          //
+        fileDBMaker
           .allocateStartSize(INCREMENT)
           .allocateIncrement(INCREMENT)
           .make()
@@ -97,6 +116,8 @@ class ExternalAppendOnlyArray[T](
       case _ =>
         throw new UnsupportedOperationException("Unsupported StorageLevel")
     }
+
+    result.checkThreadSafe()
 
     result
     // TODO: add more StorageLevels
@@ -136,15 +157,16 @@ class ExternalAppendOnlyArray[T](
 
       val result = stream.readValue[T]()
 
-//      require(result != null, "deserialization failed, value cannot be null")
+      //      require(result != null, "deserialization failed, value cannot be null")
 
       result
     }
   }
 
-  @transient lazy val backbone: IndexTreeList[T] = {
+  // tree list is not the fastest for this task
+  @transient lazy val list: IndexTreeList[T] = {
 
-//    println(s"new backbone in ${TaskContext.get().taskAttemptId()}!")
+    //    println(s"new backbone in ${TaskContext.get().taskAttemptId()}!")
 
     val treeList = mapDB
       .indexTreeList(id, SerDe)
@@ -156,16 +178,16 @@ class ExternalAppendOnlyArray[T](
   }
 
   def length: Int = {
-    backbone.size()
+    list.size()
   }
 
   @volatile var notLogged = true
   def addIfNew(i: Int, v: T): Unit = synchronized {
 
     if (i == length) {
-//      println(s"add $i")
+      //      println(s"add $i")
 
-      backbone.add(v)
+      list.add(v)
     } else if (i > length) {
 
       if (notLogged) {
@@ -181,10 +203,12 @@ class ExternalAppendOnlyArray[T](
 
   def sanity(): Unit = {
 
-    if (isCleaned ||
-        mapDB.isClosed) {
+    if (isCleaned) {
 
-      throw new UnsupportedOperationException("External storage is closed")
+      throw new IllegalStateException("Already scrapped for ID $id")
+    } else if (mapDB.isClosed) {
+
+      throw new IllegalStateException(s"External storage is closed for ID $id")
     }
   }
 
@@ -211,12 +235,12 @@ class ExternalAppendOnlyArray[T](
 
       override def hasNext: Boolean = {
 
-        offset < backbone.size()
+        offset < list.size()
       }
 
       override def next(): T = {
 
-        val result = backbone.get(offset)
+        val result = list.get(offset)
         _offset.incrementAndGet()
         result
       }
@@ -280,85 +304,71 @@ class ExternalAppendOnlyArray[T](
   }
 
   def isEmpty: Boolean = {
-    backbone.isEmpty
+    list.isEmpty
   }
 
   /**
     * can only be called once
     */
-  override protected def cleanImpl(): Unit = {
+  override protected def cleanImpl(): Unit = ExternalAppendOnlyArray.existing.synchronized {
 
-    backbone.clear()
+    val id = this.id
+
+    list.clear()
     mapDB.close()
+    file.delete()
+
+    LoggerFactory.getLogger(this.getClass).debug(s"scrapped for ID $id -> ${file.getPath}")
+
+    ExternalAppendOnlyArray.existing -= id
   }
 }
 
 object ExternalAppendOnlyArray {
 
-  class CannotComputeException(info: String) extends ArrayIndexOutOfBoundsException(info)
+  val INCREMENT = 1024
+  val INCREMENT_LARGE = 65536
 
-//  val existing: ConcurrentCache[String, ExternalAppendOnlyArray[_]] = ConcurrentCache()
+  val rootPath: String = CommonUtils.\\\(
+    CommonConst.ROOT_TEMP_DIR,
+    classOf[ExternalAppendOnlyArray[_]].getSimpleName
+  )
 
-  /**
-    * Wraps [[DataInput]] into [[InputStream]]
-    * see https://github.com/jankotek/mapdb/issues/971
-    */
-  case class DataInput2AsStream(in: DataInput2) extends InputStream {
+  val processID: String = UUID.randomUUID().toString
 
-    override def read(b: Array[Byte], off: Int, len: Int): Int = {
+  val existing: CachingUtils.ConcurrentCache[String, ExternalAppendOnlyArray[_]] = CachingUtils.ConcurrentCache()
 
-      val srcArray = in.internalByteArray()
-      val srcBuffer = in.internalByteBuffer()
+  def apply[T: ClassTag](
+      id: String,
+      storageLevel: StorageLevel,
+      serializerFactory: () => serializer.Serializer
+  ): ExternalAppendOnlyArray[T] = existing.synchronized {
 
-      val _len =
-        if (srcArray != null) Math.min(srcArray.length, len)
-        else if (srcBuffer != null) Math.min(srcBuffer.remaining(), len)
-        else len
+    val result = new ExternalAppendOnlyArray[T](id, storageLevel, serializerFactory)
 
-      val pos = in.getPos
-//      val pos2Opt = Option(in.internalByteBuffer()).map(_.position())
+    existing.put(id, result)
 
-      try {
-        in.readFully(b, off, _len)
-        _len
-      } catch {
-
-        // inefficient way
-        case e: RuntimeException =>
-//          Option(in.internalByteBuffer()).foreach { v =>
-//            v.rewind()
-//            v.position(pos2Opt.get)
-//          } // no need, always 0
-          in.setPos(pos)
-
-          (off until (off + len)).foreach { i =>
-            try {
-
-              val next = in.readByte()
-              b.update(i, next)
-            } catch {
-              case _: EOFException | _: RuntimeException =>
-                return i
-            }
-          }
-          len
-      }
-    }
-
-    override def skip(n: Long): Long = {
-      val _n = Math.min(n, Integer.MAX_VALUE)
-      //$DELAY$
-      in.skipBytes(_n.toInt)
-    }
-
-    override def close(): Unit = {
-      in match {
-        case closeable: Closeable => closeable.close()
-        case _                    =>
-      }
-    }
-
-    override def read: Int = in.readUnsignedByte
+    result
   }
+
+  case class LocalRef[T: ClassTag](
+      id: String,
+      storageLevel: StorageLevel,
+      serializerFactory: () => serializer.Serializer
+  ) extends Serializable {
+
+    @transient lazy val get: ExternalAppendOnlyArray[T] = {
+
+      existing
+        .getOrElseUpdate(
+          id, {
+            ExternalAppendOnlyArray(id, storageLevel, serializerFactory)
+          }
+        )
+        .asInstanceOf[ExternalAppendOnlyArray[T]]
+    }
+  }
+
+  class CannotComputeException(info: String) extends ArrayIndexOutOfBoundsException(info)
 
 }

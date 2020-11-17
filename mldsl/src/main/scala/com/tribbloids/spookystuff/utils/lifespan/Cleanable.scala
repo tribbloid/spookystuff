@@ -1,5 +1,7 @@
 package com.tribbloids.spookystuff.utils.lifespan
 
+import java.io.Closeable
+
 import com.tribbloids.spookystuff.utils.CachingUtils._
 import com.tribbloids.spookystuff.utils.TreeThrowable
 import org.slf4j.LoggerFactory
@@ -83,7 +85,7 @@ object Cleanable {
   * finalizer helps but is not always reliable
   * can be serializable, but in which case implementation has to allow deserialized copy on a different machine to be cleanable as well.
   */
-trait Cleanable {
+trait Cleanable extends Closeable {
 
   import Cleanable._
 
@@ -194,4 +196,6 @@ trait Cleanable {
   }
 
   override protected def finalize(): Unit = tryClean()
+
+  final override def close(): Unit = clean()
 }

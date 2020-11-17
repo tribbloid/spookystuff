@@ -109,7 +109,7 @@ object LocalResolver extends URIResolver {
               remove(false)
               file.createNewFile()
             case (false, _) =>
-              file.getParentFile.mkdirs()
+              if (!file.exists()) file.getParentFile.mkdirs()
               file.createNewFile()
           }
 

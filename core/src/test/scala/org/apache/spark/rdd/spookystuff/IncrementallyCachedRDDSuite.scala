@@ -52,12 +52,12 @@ abstract class IncrementallyCachedRDDSuite[T](
 
       val facet = getFacet
 
-      for (_ <- 0 to 3) {
+      for (i <- 0 until 3) {
 
         stopwatch.reset()
 
         val result = fn(facet)
-        println(s"rendering takes ${stopwatch.split}ms")
+        println(s"[$i] rendering takes ${stopwatch.split}ms")
 
         val gtResult = fn(subject.groundTruth)
 
@@ -67,12 +67,22 @@ abstract class IncrementallyCachedRDDSuite[T](
       }
 
       {
-        facet.target.unpersist()
+
+        def doClear(): Unit = {
+          facet.target match {
+            case rdd: IncrementallyCachedRDD[_] => rdd.clearIncrementalCache()
+            case _                              =>
+          }
+        }
+
+        doClear()
 
         val list = facet.render()
 
         assert(list === subject.groundTruth.render())
         assert(facet.subject.count === datasetSize * 2)
+
+        doClear()
       }
     }
 
@@ -246,13 +256,6 @@ object IncrementallyCachedRDDSuite {
     val ffInvoked = new LongAccumulator()
     TestSC.register(ffInvoked, "Fast forward invoked")
 
-    val rddWithCounter: RDD[T] = source.map { v =>
-      localCounter.getAndIncrement()
-      globalCounter add 1
-      //      println(v)
-      v
-    }
-
     trait Facet {
 
       final def subject: TestSubject[T] = TestSubject.this
@@ -290,6 +293,13 @@ object IncrementallyCachedRDDSuite {
               itr.slice(from, to)
           }
       )
+    }
+
+    lazy val rddWithCounter: RDD[T] = source.map { v =>
+      localCounter.getAndIncrement()
+      globalCounter add 1
+      //      println(v)
+      v
     }
 
     lazy val groundTruth: Slow = Slow(source)

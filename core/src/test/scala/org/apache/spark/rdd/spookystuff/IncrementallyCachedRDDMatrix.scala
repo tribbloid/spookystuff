@@ -18,7 +18,7 @@ class IncrementallyCachedRDDMatrix extends FunSpec with BeforeAndAfterAll {
 
   val nPartitions = Seq(
     Samplers.withReplacement(1 to TestSC.defaultParallelism).get,
-    Samplers.withReplacement(TestSC.defaultParallelism to 64).get
+    Samplers.withReplacement((TestSC.defaultParallelism + 1) to 64).get
   )
 
   override def nestedSuites: immutable.IndexedSeq[IncrementallyCachedRDDSuite[_]] = {

@@ -39,24 +39,24 @@ trait FallbackIterator[T] extends FastForwardingIterator[T] with ConsumedIterato
     val difference = _primary.offset - raw.offset
 
     val result =
-      if (difference < 0)
+      if (difference < 0) {
         throw new CannotComputeException(
           LifespanContext().toString + "\n" +
-            s"In ${this.getClass}, backup ${raw} cannot go back: from ${raw.offset} to ${_primary.offset}"
+            s"In ${this.getClass}, backup $raw cannot go back: from ${raw.offset} to ${_primary.offset}"
         )
-      else if (difference > 0) {
+      } else if (difference > 0) {
+
+        LoggerFactory
+          .getLogger(this.getClass)
+          .info(
+            s"Fallback to use ${raw.getClass.getSimpleName} that is $difference steps behind"
+          )
 
         raw.drop(difference)
 
       } else {
         raw
       }
-
-//    LoggerFactory
-//      .getLogger(this.getClass)
-//      .info(
-//        s"Synchronising back up iterator ${backup.getClass.getSimpleName} that is $difference steps behind"
-//      )
 
     useBackup = true
 //    _primary = null
@@ -72,12 +72,6 @@ trait FallbackIterator[T] extends FastForwardingIterator[T] with ConsumedIterato
     }
   }
 
-  /**
-    * @return has 3 values:
-    * - Some(true): use primary as it still has more item
-    * - Some(false): terminate immediately
-    * - None: backup should take over
-    */
   protected def _primaryHasNext: Option[Boolean] = {
 
     try {
@@ -87,8 +81,8 @@ trait FallbackIterator[T] extends FastForwardingIterator[T] with ConsumedIterato
       case e: Throwable =>
         val logger = LoggerFactory.getLogger(this.getClass)
 
-        logger.error(
-          s"Primary iterator ${_primary} is broken at ${_primary.offset}, falling back to use ${_backup.getClass}\n" +
+        logger.warn(
+          s"Primary iterator ${_primary} is broken at ${_primary.offset}, fallback to use ${_backup.getClass}\n" +
             s"caused by $e"
         )
         logger.debug("", e)
@@ -97,6 +91,12 @@ trait FallbackIterator[T] extends FastForwardingIterator[T] with ConsumedIterato
     }
   }
 
+  /**
+   * @return has 3 values:
+   * - Some(true): use primary as it still has more item
+   * - Some(false): terminate immediately
+   * - None: backup should take over
+   */
   final protected def primaryHasNext: Option[Boolean] = {
 
     if (useBackup) None

@@ -3,6 +3,7 @@ package com.tribbloids.spookystuff.utils
 import org.apache.spark.ml.dsl.utils.FlowUtils
 import org.slf4j.LoggerFactory
 
+import scala.util.control.ControlThrowable
 import scala.util.{Failure, Success, Try}
 
 /**
@@ -10,14 +11,14 @@ import scala.util.{Failure, Success, Try}
   */
 class BypassingRule {
 
-  def apply(e: Throwable) = {
+  def apply(e: Throwable): BypassingThrowable = {
     e match {
-      case ee: Exception => ee
-      case _             => new Exception(e)
+      case ee: BypassingThrowable => ee
+      case _             => new BypassingThrowable(e)
     }
   }
 
-  class Exception(cause: Throwable) extends RuntimeException("Bypassing: " + this.getClass.getSimpleName, cause)
+  class BypassingThrowable(cause: Throwable) extends Throwable("Bypassing: " + this.getClass.getSimpleName, cause)
 
   def mapException[T](f: => T): T = {
     try {
@@ -38,7 +39,7 @@ object RetryFixedInterval {
       interval: Long = 0L,
       silent: Boolean = false,
       callerStr: String = null
-  ) =
+  ): Retry =
     Retry(n, { _ =>
       interval
     }, silent, callerStr)
@@ -51,7 +52,7 @@ object RetryExponentialBackoff {
       longestInterval: Long = 0L,
       silent: Boolean = false,
       callerStr: String = null
-  ) =
+  ): Retry =
     Retry(n, { n =>
       (longestInterval / Math.pow(2, n - 2)).asInstanceOf[Long]
     }, silent, callerStr)
@@ -66,12 +67,12 @@ case class Retry(
     showStr: String = null
 ) {
 
-  def apply[T](fn: => T) = {
+  def apply[T](fn: => T): T = {
 
     new RetryImpl[T](() => fn).get(this)
   }
 
-  def getImpl[T](fn: => T) = {
+  def getImpl[T](fn: => T): RetryImpl[T] = {
     new RetryImpl[T](() => fn, this)
   }
 }
@@ -107,15 +108,17 @@ case class RetryImpl[T](
     Try { fn() } match {
       case Success(x) =>
         x
-      case Failure(e: NoRetry.Exception) =>
+      case Failure(cc: ControlThrowable) =>
+        throw cc // Instances of `Throwable` subclasses marked in this way should not normally be caught.
+      case Failure(e: NoRetry.BypassingThrowable) =>
         throw e.getCause
       case Failure(e) if n > 1 =>
-        if (!(silent || e.isInstanceOf[Silent.Exception])) {
+        if (!(silent || e.isInstanceOf[Silent.BypassingThrowable])) {
           val logger = LoggerFactory.getLogger(this.getClass)
           logger.warn(
-            s"Retrying locally on ${e.getClass.getSimpleName} in ${interval.toDouble / 1000} second(s)... ${n - 1} time(s) left" +
+            s"Retrying locally on `${e.getClass.getSimpleName}` in ${interval.toDouble / 1000} second(s)... ${n - 1} time(s) left" +
               "\t@ " + _callerShowStr +
-              "\n" + e.getMessage
+              "\n" + e.getClass.getCanonicalName + ": " + e.getMessage
           )
           logger.debug("\t\\-->", e)
         }
@@ -129,7 +132,7 @@ case class RetryImpl[T](
   def map[T2](g: Try[T] => T2): RetryImpl[T2] = {
 
     val effectiveG: Try[T] => T2 = {
-      case Failure(ee: NoRetry.Exception) =>
+      case Failure(ee: NoRetry.BypassingThrowable) =>
         NoRetry.mapException {
           g(Failure[T](ee.getCause))
         }

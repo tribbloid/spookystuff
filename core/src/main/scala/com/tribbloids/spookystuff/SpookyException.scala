@@ -28,7 +28,7 @@ import com.tribbloids.spookystuff.utils.TreeThrowable
 //  }
 //}
 
-trait SpookyException extends TreeThrowable {
+trait SpookyException extends Exception with TreeThrowable {
 
   def cause: Throwable = null
 

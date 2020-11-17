@@ -2,10 +2,11 @@ package org.apache.spark.rdd.spookystuff
 
 import java.util.concurrent.Semaphore
 
-import com.tribbloids.spookystuff.utils.CachingUtils.ConcurrentMap
+import com.tribbloids.spookystuff.utils.CachingUtils.{ConcurrentCache, ConcurrentMap}
 import com.tribbloids.spookystuff.utils.accumulator.MapAccumulator
-import com.tribbloids.spookystuff.utils.lifespan.{Lifespan, LocalCleanable}
-import com.tribbloids.spookystuff.utils.{CachingUtils, IDMixin, SCFunctions}
+import com.tribbloids.spookystuff.utils.lifespan.{Cleanable, Lifespan, LocalCleanable}
+import com.tribbloids.spookystuff.utils.serialization.NOTSerializable
+import com.tribbloids.spookystuff.utils.{CachingUtils, IDMixin, RetryExponentialBackoff, SCFunctions}
 import org.apache.spark
 import org.apache.spark.broadcast.Broadcast
 import org.apache.spark.internal.Logging
@@ -56,11 +57,12 @@ case class IncrementallyCachedRDD[T: ClassTag](
   override protected def getPartitions: Array[Partition] = firstParent[T].partitions
 
   case class Dependency(
-      p: Partition
+      p: Partition,
+      taskID: Long
   ) extends LocalCleanable {
 
-    val externalCacheArray = new ExternalAppendOnlyArray[T](
-      s"${this.getClass.getSimpleName}-${p.index}",
+    lazy val externalCacheArray = ExternalAppendOnlyArray[T](
+      s"${this.getClass.getSimpleName}-$id-${p.index}-$taskID",
       incrementalStorageLevel,
       serializerFactory
     )
@@ -69,7 +71,7 @@ case class IncrementallyCachedRDD[T: ClassTag](
 
     case class InTask(taskCtx: TaskContext) extends IDMixin {
 
-      //      {
+      //      {'
       //        if (_activeTask == null) _activeTask = this
       //      }
 
@@ -161,7 +163,7 @@ case class IncrementallyCachedRDD[T: ClassTag](
                 logError(
                   s"Partition ${p.index} in task ${active.taskCtx
                     .taskAttemptId()} - stage ${active.taskCtx
-                    .stageId()} is broken at ${_primary.offset}, falling back to use ${_backup.getClass}\n" +
+                    .stageId()} is broken at ${_primary.offset}, fallback to use ${_backup.getClass}\n" +
                     s"cause by $e"
                 )
                 logDebug("", e)
@@ -269,19 +271,26 @@ case class IncrementallyCachedRDD[T: ClassTag](
     }
   }
 
-  val existingBroadcast: Broadcast[ExistingOnWorkers[Dependency]] = {
+  val depCacheLocalRef: Broadcast[DepCache[Dependency]] = {
 
-    sparkContext.broadcast(ExistingOnWorkers(this.id))
+    sparkContext.broadcast(DepCache[Dependency](this.id))
   }
-  def existing: ExistingOnWorkers[Dependency] = existingBroadcast.value
 
-  def findDependency(p: Partition): Dependency = this.synchronized {
+  private def depCache: DepCache[Dependency] = {
+    depCacheLocalRef.value
+  }
 
-    val result = existing.self.getOrElseUpdateSynchronously(p.index) {
+  def findDependency(p: Partition): Dependency = {
+
+    val depCache = this.depCache
+
+    val result = depCache.getOrCreate(p.index) {
+
       val taskContext = TaskContext.get()
+      val taskID = taskContext.taskAttemptId()
 
-      logDebug(s"new Dependency ${p.index} in task ${taskContext.taskAttemptId()}")
-      Dependency(p)
+      logDebug(s"new Dependency ${p.index} in task $taskID")
+      Dependency(p, taskID)
     }
 
     result
@@ -289,17 +298,31 @@ case class IncrementallyCachedRDD[T: ClassTag](
 
   override def compute(split: Partition, context: TaskContext): Iterator[T] = {
 
-    while (true) {
+    RetryExponentialBackoff(3, 1000) {
       // unpersistIncremental relies on scheduler and may not execute immediately, in this case
 
       try {
 
-        val inTask = findDependency(split).InTask(context)
+        val dependency = {
 
-        return inTask.cachedOrCompute() // TODO: start should be customisable
+          var result = findDependency(split)
+          if (result.externalCacheArray.isCleaned) {
+
+            depCache.drop(split.index)
+            result = findDependency(split)
+          }
+          result
+        }
+
+
+        val inTask = findDependency(split).InTask(context)
+        val result = inTask.cachedOrCompute() // TODO: start should be customisable
+        return result
       } catch {
-        case e: Throwable =>
-          existing.self -= split.index
+        case e: Exception =>
+          depCache.drop(split.index)
+
+          throw e
       }
     }
 
@@ -334,67 +357,84 @@ case class IncrementallyCachedRDD[T: ClassTag](
 
   override def unpersist(blocking: Boolean): this.type = {
 
-    super.unpersist(blocking)
-
-    unpersistIncremental()
-
-    this
+    throw new UnsupportedOperationException(
+      s"${this.getClass.getSimpleName} cannot be unpersisted, please use clearIncrementalCache() instead"
+    )
   }
 
-  protected def unpersistIncremental(): Array[Boolean] = {
+  def clearIncrementalCache(): Array[Boolean] = {
     import com.tribbloids.spookystuff.utils.SpookyViews._
 
     val info = s"Incremental cache cleanup - RDD $id"
 
     logInfo(info)
 
-    SCFunctions(sparkContext).withJob(info) {
+   val result =  SCFunctions(sparkContext).withJob(info) {
 
       this
         .mapOncePerWorker { v =>
           logInfo(info + s" - executor ${SparkHelper.taskLocationStrOpt.getOrElse("??")}")
-          val result = existing.cleanUp()
+          val result = depCache.cleanUp()
 
           result
         }
         .collect()
     }
+
+    depCacheLocalRef.unpersist()
+
+    result
   }
 }
 
 object IncrementallyCachedRDD {
 
-  case class ExistingOnWorkers[T <: LocalCleanable](id: Int) extends Logging {
+  import com.tribbloids.spookystuff.utils.CommonViews._
 
-    @transient lazy val _map: CachingUtils.ConcurrentMap[Int, T] = {
+  case class DepCache[T <: Cleanable](
+      rddID: Int
+  ) {
 
+    @transient lazy val existing: CachingUtils.ConcurrentMap[Int, T] =
       CachingUtils.ConcurrentMap()
+
+    def getOrCreate(id: Int)(create: => T): T = {
+
+      existing.getOrElseUpdateSynchronously(id) {
+
+        create
+      }
     }
 
-    def cleanUp(): Boolean = synchronized {
+    def drop(id: Int): this.type = {
 
-      val map = this.self
+      existing.get(id).foreach { v =>
+        v.clean()
+      }
+
+      existing -= id
+
+      this
+    }
+
+    def cleanUp(): Boolean = existing.synchronized {
+
+      val map = existing
 
       if (map.nonEmpty) {
 
-        val values = map.values.toList
+        val keys = map.keys
 
-        map.clear()
-
-        values.foreach { v =>
-          v.clean()
+        keys.foreach { k =>
+          drop(k)
         }
+
         //TODO: This will render all CachedIterators to be broken and force all
         // CacheOrComputeActiveOrComputeFromScratch to use the last resort
         // is it possible to improve?
       }
 
       true
-    }
-
-    def self: ConcurrentMap[Int, T] = {
-
-      _map
     }
   }
 }
