@@ -1,7 +1,7 @@
-package org.apache.spark.rdd.spookystuf
+package org.apache.spark.rdd.spookystuff
 
 import com.tribbloids.spookystuff.utils.lifespan.LifespanContext
-import org.apache.spark.rdd.spookystuf.ExternalAppendOnlyArray.CannotComputeException
+import org.apache.spark.rdd.spookystuff.ExternalAppendOnlyArray.CannotComputeException
 import org.slf4j.LoggerFactory
 
 /**

@@ -1,4 +1,4 @@
-package org.apache.spark.rdd.spookystuf
+package org.apache.spark.rdd.spookystuff
 
 import com.tribbloids.spookystuff.testutils.TestHelper
 import com.tribbloids.spookystuff.utils.SparkUISupport

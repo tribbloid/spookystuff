@@ -1,10 +1,10 @@
-package org.apache.spark.rdd.spookystuf.IncrementallyCachedRDDBenchmark
+package org.apache.spark.rdd.spookystuff.IncrementallyCachedRDDBenchmark
 
 import com.tribbloids.spookystuff.testutils.TestHelper
 import com.tribbloids.spookystuff.utils.Stopwatch
 import org.apache.spark.SparkEnv
 import org.apache.spark.rdd.RDD
-import org.apache.spark.rdd.spookystuf.IncrementallyCachedRDD
+import org.apache.spark.rdd.spookystuff.IncrementallyCachedRDD
 import org.apache.spark.serializer.Serializer
 import org.apache.spark.sql.catalyst.InternalRow
 import org.apache.spark.storage.StorageLevel

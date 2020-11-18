@@ -1,10 +1,10 @@
-package org.apache.spark.rdd.spookystuf
+package org.apache.spark.rdd.spookystuff
 
 import com.tribbloids.spookystuff.dsl.Samplers
 import com.tribbloids.spookystuff.testutils.TestHelper.TestSC
 import com.tribbloids.spookystuff.utils.PreemptiveLocalOps
 import org.apache.spark.rdd.RDD
-import org.apache.spark.rdd.spookystuf.IncrementallyCachedRDDSuite.TestSubject
+import org.apache.spark.rdd.spookystuff.IncrementallyCachedRDDSuite.TestSubject
 import org.apache.spark.sql.catalyst.InternalRow
 import org.apache.spark.storage.StorageLevel
 import org.scalatest.{BeforeAndAfterAll, FunSpec}

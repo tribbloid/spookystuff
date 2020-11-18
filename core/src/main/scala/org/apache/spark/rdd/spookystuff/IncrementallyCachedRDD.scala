@@ -1,4 +1,4 @@
-package org.apache.spark.rdd.spookystuf
+package org.apache.spark.rdd.spookystuff
 
 import java.util.concurrent.Semaphore
 

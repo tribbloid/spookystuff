@@ -1,4 +1,4 @@
-package org.apache.spark.rdd.spookystuf
+package org.apache.spark.rdd.spookystuff
 
 import java.util.concurrent.atomic.AtomicLong
 
@@ -23,7 +23,7 @@ abstract class IncrementallyCachedRDDSuite[T](
 
   TestHelper.enableCheckpoint
 
-  import org.apache.spark.rdd.spookystuf.IncrementallyCachedRDDSuite._
+  import org.apache.spark.rdd.spookystuff.IncrementallyCachedRDDSuite._
 
   override def suiteName: String = productPrefix + " - " + numPartitions
 

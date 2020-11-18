@@ -1,4 +1,4 @@
-package org.apache.spark.rdd.spookystuf.IncrementallyCachedRDDBenchmark
+package org.apache.spark.rdd.spookystuff.IncrementallyCachedRDDBenchmark
 import org.apache.spark.rdd.RDD
 import org.apache.spark.sql.execution.UnsafeRowSerializer
 
