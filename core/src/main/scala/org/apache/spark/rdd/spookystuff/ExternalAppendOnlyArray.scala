@@ -47,10 +47,9 @@ class ExternalAppendOnlyArray[T](
     file
   }
 
-//  {
-//    if (existing.contains(id)) sys.error("same ID already existed")
-//    existing += id -> this
-//  }
+  {
+    LoggerFactory.getLogger(this.getClass).info(s"created for $id -> ${dbTempFile.getAbsolutePath}")
+  }
 
   @transient lazy val mapDB: DB = {
     val result = storageLevel match {
