@@ -257,7 +257,7 @@ class TestTrace_PhantomJS extends SpookyEnvFixture with FunSpecx {
   }
 
   //TODO: put in IT?
-  it("visit should handle corsera") {
+  ignore("visit should handle corsera") {
     val results = (
       Visit("https://www.coursera.org/yale") ::
         Snapshot() :: Nil
