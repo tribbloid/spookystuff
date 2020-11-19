@@ -67,7 +67,7 @@ class ExternalAppendOnlyArray[T] private[spookystuff] (
 
       lazy val basic = DBMaker
         .fileDB(file)
-        .fileChannelEnable()
+//        .fileChannelEnable()
         .fileDeleteAfterClose()
       //        .transactionEnable()
 
