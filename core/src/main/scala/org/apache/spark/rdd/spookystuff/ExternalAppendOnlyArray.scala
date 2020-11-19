@@ -73,8 +73,8 @@ class ExternalAppendOnlyArray[T] private[spookystuff] (
 
       lazy val mmap = basic
         .fileMmapEnableIfSupported()
-//        .fileMmapPreclearDisable()
-//        .cleanerHackEnable()
+        .fileMmapPreclearDisable()
+        .cleanerHackEnable()
 
       mmap
     }
