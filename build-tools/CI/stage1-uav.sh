@@ -7,5 +7,5 @@ set -e
 # shellcheck source=profiles/stable/.common.sh
 source "${CRDIR}/profiles/${1}/.common.sh"
 
-"$CRDIR"/../mvn-install.sh "${MVN_PROFILES[@]}" -Puav && \
+"$CRDIR"/../mvn-install.sh "${MVN_PROFILES[@]}" -Puav --batch-mode && \
 exec "$CRDIR"/../test.sh "${MVN_PROFILES[@]}" -Puav -pl uav
