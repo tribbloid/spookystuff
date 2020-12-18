@@ -7,7 +7,6 @@ SPARK_DIR_NAME="$SPARK_NAME"-bin-hadoop2.7-scala2.12
 
 # Download Spark
 wget -N https://spookystuff.s3.amazonaws.com/"$SPARK_NAME"/"$SPARK_DIR_NAME".tgz -P "$SPARK_DIR_ROOT"
-# TODO: change to /tmp
 tar -xzf "$SPARK_DIR_ROOT/$SPARK_DIR_NAME".tgz -C "$SPARK_DIR_ROOT"
 
 export SPARK_HOME="$SPARK_DIR_ROOT/$SPARK_DIR_NAME"

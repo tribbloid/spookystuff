@@ -11,4 +11,4 @@ tar -xzf "$SPARK_DIR_ROOT/$SPARK_DIR_NAME".tgz -C "$SPARK_DIR_ROOT"
 
 export SPARK_HOME="$SPARK_DIR_ROOT/$SPARK_DIR_NAME"
 
-export MVN_PROFILES=("-Pscala-suffix" "-Pspark-2.4")
+export MVN_PROFILES=("-Pscala-suffix" "-Pspark-2.4" "-Pscala-2.11")
