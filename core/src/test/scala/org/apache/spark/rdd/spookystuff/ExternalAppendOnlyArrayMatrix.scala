@@ -9,12 +9,15 @@ class ExternalAppendOnlyArrayMatrix extends FunSpec {
 
   import com.tribbloids.spookystuff.testutils.TestHelper._
 
+  val p1: Int = Random.shuffle(1 to TestSC.defaultParallelism).head
+  val p2: Int = Random.shuffle((1 + TestSC.defaultParallelism) to (TestSC.defaultParallelism * 4)).head
+
   override val nestedSuites: immutable.IndexedSeq[Suite] = {
 
     immutable.IndexedSeq(
-      ExternalAppendOnlyArraySuite(Random.nextInt(TestSC.defaultParallelism - 2) + 2),
+      ExternalAppendOnlyArraySuite(p1),
 //      ExternalAppendOnlyArraySuite(TestSC.defaultParallelism),
-      ExternalAppendOnlyArraySuite(Random.nextInt(TestSC.defaultParallelism - 1) + 1 + TestSC.defaultParallelism)
+      ExternalAppendOnlyArraySuite(p2)
     )
   }
 }
