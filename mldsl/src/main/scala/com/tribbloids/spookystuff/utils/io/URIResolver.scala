@@ -1,5 +1,6 @@
 package com.tribbloids.spookystuff.utils.io
 
+import com.tribbloids.spookystuff.utils.io.lock.{Lock, LockExpired}
 import com.tribbloids.spookystuff.utils.lifespan.LocalCleanable
 import com.tribbloids.spookystuff.utils.{CommonUtils, Retry}
 import org.apache.commons.io.IOUtils
@@ -50,6 +51,9 @@ abstract class URIResolver extends Serializable {
     result
   }
 
+  /**
+    * ensure sequential access, doesn't work on non-existing path
+    */
   def lock[T](pathStr: String)(fn: URIExecution => T): T = {
     val exe = Execution(pathStr)
 
@@ -57,12 +61,15 @@ abstract class URIResolver extends Serializable {
     lock.during(fn)
   }
 
-  /**
-    * ensure sequential access
-    *
-    */
-  //  def lockAccessDuring[T](pathStr: String)(f: String => T): T = {f(pathStr)}
+  def unsupported(op: String): Nothing = {
+    throw new UnsupportedOperationException(
+      s"Implementation doesn't support ${this.getClass.getSimpleName}.$op operation"
+    )
+  }
 
+  /**
+    * all implementations must be stateless
+    */
   trait Execution extends LocalCleanable {
 
     def outer: URIResolver = URIResolver.this
@@ -98,18 +105,18 @@ abstract class URIResolver extends Serializable {
 
     final def createNew(): Unit = create_simple()
 
-    lazy val mark = Array.empty[Byte]
+    def zeroByte = Array.empty[Byte]
 
     private def create_simple(): Unit = {
 
       try {
         this.output(WriteMode.CreateOnly) { out =>
-          out.stream.write(mark)
+          out.stream.write(zeroByte)
         }
 
         this.input { in =>
           val v = IOUtils.toByteArray(in.stream)
-          require(v.toSeq == mark.toSeq)
+          require(v.toSeq == zeroByte.toSeq)
         }
       } catch {
         case e: Throwable =>
@@ -132,7 +139,7 @@ abstract class URIResolver extends Serializable {
       // TODO: not working in any FS! why?
 
       touchSession.output(WriteMode.CreateOnly) { out =>
-        out.stream.write(mark)
+        out.stream.write(zeroByte)
       }
 
       try {
@@ -140,7 +147,7 @@ abstract class URIResolver extends Serializable {
 
         this.input { in =>
           val v = IOUtils.toByteArray(in.stream)
-          require(v.toSeq == mark.toSeq)
+          require(v.toSeq == zeroByte.toSeq)
         }
 
         this.output(WriteMode.Overwrite) { out =>
@@ -199,7 +206,7 @@ object URIResolver {
     )
 
     val expired: LockExpired = LockExpired(
-      ignoreAfter = 30 -> TimeUnit.SECONDS,
+      unlockAfter = 30 -> TimeUnit.SECONDS,
       deleteAfter = 1 -> TimeUnit.HOURS
     )
   }

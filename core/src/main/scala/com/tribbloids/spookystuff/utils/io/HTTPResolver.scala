@@ -128,7 +128,7 @@ case class HTTPResolver(
 
     override def absolutePathStr: String = pathStr
 
-    override def input[T](fn: InputResource => T) = {
+    override def input[T](fn: InputResource => T): T = {
 
       val uri = HttpUtils.uri(pathStr)
       val ir = new InputResource with HttpResource[InputStream] {
@@ -136,9 +136,9 @@ case class HTTPResolver(
 
         override protected def createStream: InputStream = entity.getContent
 
-        override lazy val isExisting: Boolean = {
-          getStatusCode.exists(_.toString.startsWith("2"))
-        }
+//        override lazy val isExisting: Boolean = {
+//          getStatusCode.exists(_.toString.startsWith("2"))
+//        }
       }
       try {
         fn(ir)
@@ -156,19 +156,20 @@ case class HTTPResolver(
     }
 
     override def _delete(mustExist: Boolean): Unit = {
-      ???
+      unsupported("delete")
     }
 
     override def output[T](mode: WriteMode)(fn: OutputResource => T): T = {
-      ???
+      unsupported("output")
     }
 
-    override def moveTo(target: String): Unit = ???
+    override def moveTo(target: String): Unit =
+      unsupported("move")
 
 //    override def mkDirs(): Unit = ???
   }
 
-  trait HttpResource[T] extends Resource[T] {
+  trait HttpResource[T] extends Resource[T] with MimeTypeMixin {
 
     def request: HttpUriRequest
 

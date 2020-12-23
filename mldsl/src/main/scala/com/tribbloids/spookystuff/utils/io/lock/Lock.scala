@@ -1,8 +1,11 @@
-package com.tribbloids.spookystuff.utils.io
+package com.tribbloids.spookystuff.utils.io.lock
 
+import com.tribbloids.spookystuff.utils.io.{URIExecution, URIResolver}
 import com.tribbloids.spookystuff.utils.lifespan.{Lifespan, LocalCleanable}
-import com.tribbloids.spookystuff.utils.{BypassingRule, CachingUtils, CommonUtils, TreeThrowable}
+import com.tribbloids.spookystuff.utils.{BypassingRule, CachingUtils, CommonUtils}
 
+import java.io.FileNotFoundException
+import java.nio.file.NoSuchFileException
 import java.util.UUID
 
 /**
@@ -22,36 +25,53 @@ case class Lock(
   val resolver: URIResolver = source.outer
   def absolutePathStr: String = source.absolutePathStr
 
-//  def getOriginal: resolver.Execution = resolver.Execution(absolutePathStr)
-//  lazy val original: resolver.Execution = getOriginal
-
   val id: UUID = UUID.randomUUID()
 
   private case object Moved {
 
-    private case object PathStrs {
+    case object PathStrs {
 
       lazy val dir: String = source.absolutePathStr + LOCK
 
-      lazy val file: String = CommonUtils.\\\(dir, id + LOCKED)
-//      lazy val file: String = CommonUtils.\\\(dir, LOCKED)
+      lazy val locked: String = CommonUtils.\\\(dir, id + LOCKED)
+
+      lazy val old: String = CommonUtils.\\\(dir, id + OLD)
     }
 
-    lazy val target: resolver.Execution = resolver.Execution(PathStrs.file)
+    lazy val locked: resolver.Execution = resolver.Execution(PathStrs.locked)
+
+//    lazy val old: resolver.Execution = resolver.Execution(PathStrs.old)
   }
 
   def acquire(): URIExecution = {
 
-    source.moveTo(Moved.target.absolutePathStr)
+    try {
+      source.moveTo(Moved.locked.absolutePathStr)
+    } catch {
+      case ee @ (_: FileNotFoundException | _: NoSuchFileException) =>
+        val canBeUnlocked = expired.scanForUnlocking(source)
+
+        canBeUnlocked match {
+          case Some(v) =>
+            v.exe.moveTo(Moved.locked.absolutePathStr)
+          case None =>
+            throw ee
+        }
+    }
+
     logAcquire(source)
-    Moved.target
+    Moved.locked
   }
 
   def release(): Unit = {
 
-    logRelease(Moved.target)
-    Moved.target.moveTo(source.absolutePathStr)
-    //      moved.clean()
+    logRelease(Moved.locked)
+
+    if (source.isExisting) {
+      source.moveTo(Moved.PathStrs.old)
+    }
+
+    Moved.locked.moveTo(source.absolutePathStr)
   }
 
   def duringOnce[T](fn: URIExecution => T): T = {
@@ -59,7 +79,7 @@ case class Lock(
     try {
       fn(acquired)
     } catch {
-      case e: LockError => //TODO: remove, pointless
+      case e: CanReattempt =>
         throw e
       case e @ _ =>
         throw BypassingRule.NoRetry(e)
@@ -80,8 +100,7 @@ case class Lock(
     */
   override protected def cleanImpl(): Unit = {
 
-//    ByLockFile.release()
-    release()
+    if (Moved.locked.isExisting) release()
   }
 
   def logAcquire(execution: URIExecution): Unit = {
@@ -106,13 +125,8 @@ object Lock {
 
   final val LOCKED: String = ".locked"
 
-  class LockError(
-      override val simpleMsg: String = "",
-      val cause: Throwable = null
-  ) extends Exception
-      with TreeThrowable {
+  final val OLD: String = ".old"
 
-    override def getCause: Throwable = cause
-  }
+  trait CanReattempt extends Exception
 
 }

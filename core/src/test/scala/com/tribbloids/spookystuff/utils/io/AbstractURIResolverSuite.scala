@@ -59,8 +59,8 @@ abstract class AbstractURIResolverSuite extends FunSpecx with LocalPathDocsFixtu
   lazy val existingFile: TempResource = temp \ "a-file.txt"
   lazy val nonExistingFile: TempResource = temp \ "not-a-file.txt"
 
-  lazy val nonExistingDir: TempResource = temp \ "non-existing"
-  lazy val nonExistingSubFile: TempResource = nonExistingDir \ " not-a-file.txt"
+  lazy val dir: TempResource = temp \ "dir"
+  lazy val nonExistingSubFile: TempResource = dir \ " not-a-file.txt"
 
   object Absolute {
 
@@ -199,13 +199,13 @@ abstract class AbstractURIResolverSuite extends FunSpecx with LocalPathDocsFixtu
 
     it("can automatically create missing directory") {
 
-      nonExistingDir.requireVoid {
+      dir.requireVoid {
 
         resolver.output(nonExistingSubFile.pathStr, WriteMode.CreateOnly) { out =>
           out.stream
         }
 
-        resolver.input(nonExistingDir.pathStr) { in =>
+        resolver.input(dir.pathStr) { in =>
           assert(in.isExisting)
         }
       }
@@ -533,10 +533,24 @@ abstract class AbstractURIResolverSuite extends FunSpecx with LocalPathDocsFixtu
         assert(errors.isEmpty, errors.mkString("\n"))
       }
 
-      it("can guarantee sequential access") {
+      it("can guarantee sequential access to file") {
         existingFile.requireRandomContent() {
 
           doTest(existingFile.absolutePathStr)
+        }
+      }
+
+      it("... and empty directory") {
+
+        dir.requireEmptyDir {
+          doTest(dir.absolutePathStr)
+        }
+      }
+
+      it("... and non empty directory") {
+
+        nonExistingSubFile.requireRandomContent() {
+          doTest(dir.absolutePathStr)
         }
       }
 

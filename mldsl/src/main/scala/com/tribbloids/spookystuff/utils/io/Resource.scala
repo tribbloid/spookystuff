@@ -1,10 +1,11 @@
 package com.tribbloids.spookystuff.utils.io
 
 import java.io.{InputStream, OutputStream}
-
 import com.tribbloids.spookystuff.utils.lifespan.LocalCleanable
 import org.apache.spark.ml.dsl.utils.LazyVar
 import org.apache.spark.ml.dsl.utils.data.{EAV, EAVCore}
+
+import scala.util.Try
 
 abstract class Resource[T] extends LocalCleanable {
 
@@ -18,11 +19,10 @@ abstract class Resource[T] extends LocalCleanable {
   def stream: T = _stream.value
 
   def getURI: String
-  def getPath: String = getURI
 
   def getName: String
 
-  def getType: String = UNKNOWN
+  def getType: String
   final lazy val isDirectory: Boolean = getType == DIR
 
   def getContentType: String
@@ -31,7 +31,7 @@ abstract class Resource[T] extends LocalCleanable {
 
   def getLastModified: Long
 
-  def isExisting: Boolean
+  final def isExisting: Boolean = Try(getType).isSuccess
 
   protected def _metadata: ResourceMetadata
 
@@ -84,8 +84,15 @@ object Resource extends {
 
   final val DIR = "directory"
   final val FILE = "file"
+  final val SYMLINK = "symlink"
 
-  final val DIR_MIME = "inode/directory; charset=UTF-8"
+  def mimeIsDir(mime: String): Boolean = {
+
+    val effective = mime.split('/').last.split(';').head.trim.toLowerCase
+
+    effective == DIR || effective == "dir"
+  }
+
+  final val DIR_MIME_OUT = "inode/directory; charset=UTF-8"
   final val UNKNOWN = "unknown"
-
 }

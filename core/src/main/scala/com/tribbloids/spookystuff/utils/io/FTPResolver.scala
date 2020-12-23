@@ -1,12 +1,10 @@
 package com.tribbloids.spookystuff.utils.io
 
+import com.tribbloids.spookystuff.utils.Retry
+import com.tribbloids.spookystuff.utils.http.HttpUtils
+
 import java.io.{InputStream, OutputStream}
 import java.net.{URI, URLConnection}
-
-import com.tribbloids.spookystuff.utils.http.HttpUtils
-import com.tribbloids.spookystuff.utils.Retry
-
-import scala.util.Try
 
 object FTPResolver {
 
@@ -41,7 +39,7 @@ case class FTPResolver(
     val uri: URI = HttpUtils.uri(pathStr)
     val _conn: URLConnection = input2Connection(uri)
 
-    trait FTPResource[T] extends Resource[T] {
+    trait FTPResource[T] extends Resource[T] with MimeTypeMixin {
 
       lazy val conn: URLConnection = {
         _conn.connect()
@@ -57,8 +55,6 @@ case class FTPResolver(
       override lazy val getLength: Long = conn.getContentLengthLong
 
       override lazy val getLastModified: Long = conn.getLastModified
-
-      override def isExisting: Boolean = Try { conn }.isSuccess
 
       override lazy val _metadata: ResourceMetadata = {
         val map = conn.getHeaderFields.asScala.toMap
@@ -80,6 +76,7 @@ case class FTPResolver(
         override def createStream: InputStream = {
           conn.getInputStream
         }
+
       }
       try {
         fn(in)
@@ -103,11 +100,15 @@ case class FTPResolver(
     }
 
     override def _delete(mustExist: Boolean): Unit = {
-      ???
+
+      unsupported("delete")
       //TODO: not supported by java library! should switch to a more professional one like org.apache.commons.net.ftp.FTPClient
     }
 
-    override def moveTo(target: String): Unit = ???
+    override def moveTo(target: String): Unit = {
+
+      unsupported("move")
+    }
 
 //    override def mkDirs(): Unit = ???
   }

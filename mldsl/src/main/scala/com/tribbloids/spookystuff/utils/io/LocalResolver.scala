@@ -40,11 +40,13 @@ case class LocalResolver(
       override lazy val getType: String = {
         if (Files.isDirectory(path)) DIR
         else if (Files.isRegularFile(path)) FILE
-        else UNKNOWN
+        else if (Files.exists(path)) UNKNOWN
+        else throw new NoSuchFileException(s"File $path doesn't exist")
+
       }
 
       override lazy val getContentType: String = {
-        if (isDirectory) DIR_MIME
+        if (isDirectory) DIR_MIME_OUT
         else Files.probeContentType(path)
       }
 
@@ -56,8 +58,6 @@ case class LocalResolver(
         // TODO: use Files.getFileAttributeView
         mdParser(file)
       }
-
-      override lazy val isExisting: Boolean = Files.exists(path)
 
       override lazy val children: Seq[Execution] = {
         if (isDirectory) {
@@ -139,7 +139,7 @@ case class LocalResolver(
 
     override def moveTo(target: String): Unit = {
 
-      val newFile = new File(target).getAbsoluteFile
+      val newFile = new File(target).getAbsoluteFile // TODO: this is the only usage of Java old IO
       newFile.getParentFile.mkdirs()
 
       Files.move(file.toPath, newFile.toPath, StandardCopyOption.ATOMIC_MOVE)

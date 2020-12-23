@@ -43,6 +43,16 @@ case class TempResource(
     result
   }
 
+  def requireEmptyDir[T](fn: => T): T = deleteBeforeAndAfter {
+
+    val subExe = resolver.Execution(CommonUtils.\\\(execution.absolutePathStr, "Random" + Random.nextLong()))
+
+    subExe.createNew()
+    subExe.delete(false)
+    val result = fn
+    result
+  }
+
   def requireRandomContent[T](length: Int = defaultRandomFileSize)(fn: => T): T = deleteBeforeAndAfter {
     execution.output(WriteMode.CreateOnly) { out =>
       val bytes = Array.ofDim[Byte](length)

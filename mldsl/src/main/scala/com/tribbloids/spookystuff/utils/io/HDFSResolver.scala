@@ -77,11 +77,7 @@ case class HDFSResolver(
 
     trait HDFSResource[T] extends Resource[T] {
 
-      lazy val tryStatus: Try[FileStatus] = Try {
-        fc.getFileStatus(path)
-      }
-
-      def status: FileStatus = tryStatus.get
+      def status: FileStatus = fc.getFileStatus(path)
 
       override lazy val getURI: String = absolutePathStr
 
@@ -89,21 +85,19 @@ case class HDFSResolver(
 
       override lazy val getType: String = {
         if (status.isDirectory) DIR
-        else if (status.isFile) "file"
-        else if (status.isSymlink) "symlink"
+        else if (status.isFile) FILE
+        else if (status.isSymlink) SYMLINK
         else UNKNOWN
       }
 
       override lazy val getContentType: String = {
-        if (isDirectory) DIR_MIME
+        if (isDirectory) DIR_MIME_OUT
         else null
       }
 
       override lazy val getLength: Long = status.getLen
 
       override lazy val getLastModified: Long = status.getModificationTime
-
-      override lazy val isExisting: Boolean = tryStatus.isSuccess
 
       override lazy val _metadata: ResourceMetadata = HDFSResolver.mdParser.apply(status)
 
