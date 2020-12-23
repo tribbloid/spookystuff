@@ -58,10 +58,6 @@ case class HDFSResolver(
   override def Execution(pathStr: String): Execution = Execution(new Path(pathStr))
   case class Execution(path: Path) extends super.Execution {
 
-//    lazy val fs: LazyVar[FileSystem] = LazyVar {
-//      path.getFileSystem(_hadoopConf) //DON'T close! shared by all in the process
-//    }
-
     lazy val fc: FileContext = FileContext.getFileContext(path.toUri, _hadoopConf)
 
     override lazy val absolutePathStr: String = doAsUGI {

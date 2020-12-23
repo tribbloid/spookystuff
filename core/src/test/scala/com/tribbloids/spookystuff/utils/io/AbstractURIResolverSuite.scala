@@ -536,14 +536,14 @@ abstract class AbstractURIResolverSuite extends FunSpecx with LocalPathDocsFixtu
       it("can guarantee sequential access") {
         existingFile.requireRandomContent() {
 
-          doTest(existingFile.pathStr)
+          doTest(existingFile.absolutePathStr)
         }
       }
 
       ignore("... even for non existing path") {
         nonExistingFile.requireVoid {
 
-          doTest(nonExistingFile.pathStr)
+          doTest(nonExistingFile.absolutePathStr)
         }
       }
 

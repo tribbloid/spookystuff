@@ -12,7 +12,7 @@ import java.util.UUID
 case class Lock(
     source: URIExecution,
     expired: LockExpired = URIResolver.default.expired, // TODO: use it!
-    override val _lifespan: Lifespan = Lifespan.JVM()
+    override val _lifespan: Lifespan = Lifespan.TaskOrJVM()
 ) extends LocalCleanable {
 
   import Lock._
