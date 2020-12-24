@@ -1,7 +1,7 @@
 package com.tribbloids.spookystuff.utils.io
 
 import com.tribbloids.spookystuff.testutils.{FunSpecx, LocalPathDocsFixture, TestHelper}
-import com.tribbloids.spookystuff.utils.CommonConst
+import com.tribbloids.spookystuff.utils.{CommonConst, SparkUISupport}
 import com.tribbloids.spookystuff.utils.io.AbstractURIResolverSuite.SequentialCheck
 import com.tribbloids.spookystuff.utils.serialization.AssertSerializable
 import org.apache.commons.io.IOUtils
@@ -44,7 +44,7 @@ object AbstractURIResolverSuite {
 /**
   * Created by peng on 07/10/15.
   */
-abstract class AbstractURIResolverSuite extends FunSpecx with LocalPathDocsFixture {
+abstract class AbstractURIResolverSuite extends FunSpecx with LocalPathDocsFixture with SparkUISupport {
 
   @transient val resolver: URIResolver
   @transient val schemaPrefix: String

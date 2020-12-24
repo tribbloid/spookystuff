@@ -10,7 +10,7 @@ trait LockLike extends NOTSerializable {
 
   import LockLike._
 
-  val id: UUID = UUID.randomUUID()
+  lazy val id: UUID = UUID.randomUUID()
 
   def source: URIExecution
 

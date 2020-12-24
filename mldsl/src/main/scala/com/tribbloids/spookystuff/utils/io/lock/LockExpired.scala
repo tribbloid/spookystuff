@@ -27,11 +27,16 @@ case class LockExpired(
   protected def _scanForUnlocking(vs: Seq[URIExecution]): Option[Finding] = {
 
     val findings = vs.flatMap { v =>
-      try {
-        Some(Finding(v))
-      } catch {
-        case _: FileNotFoundException => None
-        case _: NoSuchFileException   => None
+      if (v.isExisting) {
+
+        try {
+          Some(Finding(v))
+        } catch {
+          case _: FileNotFoundException => None
+          case _: NoSuchFileException   => None
+        }
+      } else {
+        None
       }
     }
 

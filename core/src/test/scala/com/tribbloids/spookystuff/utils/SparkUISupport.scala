@@ -9,7 +9,7 @@ trait SparkUISupport extends Suite {
 
   protected abstract override def runTest(testName: String, args: org.scalatest.Args): Status = {
 
-    lazy val fullText = s"[${this.suiteName}] $testName]"
+    lazy val fullText = s"[${this.suiteName}] $testName"
 
     SCFunctions(TestHelper.TestSC).withJob(fullText, SparkUISupport.serID.getAndIncrement().toString) {
 
