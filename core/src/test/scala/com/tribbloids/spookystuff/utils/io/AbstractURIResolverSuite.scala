@@ -502,132 +502,130 @@ abstract class AbstractURIResolverSuite extends FunSpecx with LocalPathDocsFixtu
     }
   }
 
-  testLock()
+  describe("Lock") {
 
-  def testLock(): Unit = {
+    def doTest(
+        url: String
+    ): Unit = {
 
-    describe("Lock") {
+      val rdd = sc.parallelize(1 to numWrites, numWrites)
 
-      def doTest(
-          url: String
-      ): Unit = {
+      val resolver: URIResolver = this.resolver
 
+      val ss = SequentialCheck(sc)
+      val errors = rdd
+        .map { i =>
+          resolver.lock(url) { _ =>
+            val r1 = ss.acquire().failed.toOption.toSeq
+            Thread.sleep(Random.nextInt(10))
+            val r2 = ss.release().failed.toOption.toSeq
+            r1 ++ r2
+          }
+        }
+        .collect()
+        .flatten
+        .toSeq
+
+      assert(errors.isEmpty, errors.mkString("\n"))
+    }
+
+    it("can guarantee sequential access to existing file") {
+      existingFile.requireRandomContent() {
+
+        doTest(existingFile.absolutePathStr)
+      }
+    }
+
+    it("... and empty directory") {
+
+      dir.requireEmptyDir {
+        doTest(dir.absolutePathStr)
+      }
+    }
+
+    it("... and non empty directory") {
+
+      nonExistingSubFile.requireRandomContent() {
+        doTest(dir.absolutePathStr)
+      }
+    }
+
+    ignore("... even for non existing path") {
+      nonExistingFile.requireVoid {
+
+        doTest(nonExistingFile.absolutePathStr)
+      }
+    }
+
+    def doTestIO(
+        url: String,
+        groundTruth: Seq[Byte]
+    ): Unit = {
+
+      try {
         val rdd = sc.parallelize(1 to numWrites, numWrites)
 
         val resolver: URIResolver = this.resolver
 
-        val ss = SequentialCheck(sc)
-        val errors = rdd
-          .map { i =>
-            resolver.lock(url) { _ =>
-              val r1 = ss.acquire().failed.toOption.toSeq
-              Thread.sleep(Random.nextInt(10))
-              val r2 = ss.release().failed.toOption.toSeq
-              r1 ++ r2
+        rdd.foreach { _ =>
+          resolver.lock(url) { exe =>
+            val bytes: Array[Byte] = exe.input { in =>
+              if (in.isExisting) IOUtils.toByteArray(in.stream)
+              else Array.empty
+            }
+
+            val lastByte: Byte = bytes.toSeq.lastOption.getOrElse(0)
+
+            val withExtra = bytes :+ (lastByte + 1).byteValue()
+
+            //            println(s"write ${bytes.length} => ${withExtra.length}")
+
+            exe.output(WriteMode.Overwrite) { out =>
+              val stream = out.stream
+              stream.write(withExtra)
             }
           }
-          .collect()
-          .flatten
+        }
+
+        Thread.sleep(2000)
+
+        val bytes = resolver
+          .input(url) { in =>
+            IOUtils.toByteArray(in.stream)
+          }
           .toSeq
 
-        assert(errors.isEmpty, errors.mkString("\n"))
+        assert(
+          s"${bytes.size} elements:\n ${bytes.mkString(" ")}" ===
+            s"${groundTruth.size} elements:\n ${groundTruth.mkString(" ")}"
+        )
+        assert(bytes.length === groundTruth.size)
+
+      } finally {
+
+        resolver.execute(url).delete(false)
       }
+    }
 
-      it("can guarantee sequential access to existing file") {
-        existingFile.requireRandomContent() {
+    it("can guarantee sequential read and write to existing file") {
+      existingFile.requireEmptyFile {
 
-          doTest(existingFile.absolutePathStr)
+        existingFile.execution.output(WriteMode.Overwrite) { out =>
+          out.stream.write(Array(10.byteValue()))
         }
+
+        val groundTruth = (10 to numWrites + 10).map(_.byteValue())
+        doTestIO(existingFile.execution.absolutePathStr, groundTruth)
       }
+    }
 
-      it("... and empty directory") {
+    ignore("... and on non-existing file") {
+      nonExistingFile.requireVoid {
 
-        dir.requireEmptyDir {
-          doTest(dir.absolutePathStr)
-        }
-      }
-
-      it("... and non empty directory") {
-
-        nonExistingSubFile.requireRandomContent() {
-          doTest(dir.absolutePathStr)
-        }
-      }
-
-      ignore("... even for non existing path") {
-        nonExistingFile.requireVoid {
-
-          doTest(nonExistingFile.absolutePathStr)
-        }
-      }
-
-      def doTestIO(
-          url: String,
-          groundTruth: Seq[Byte]
-      ): Unit = {
-
-        try {
-          val rdd = sc.parallelize(1 to numWrites, numWrites)
-
-          val resolver: URIResolver = this.resolver
-
-          rdd.foreach { _ =>
-            resolver.lock(url) { exe =>
-              val bytes: Array[Byte] = exe.input { in =>
-                if (in.isExisting) IOUtils.toByteArray(in.stream)
-                else Array.empty
-              }
-
-              val lastByte: Byte = bytes.toSeq.lastOption.getOrElse(0)
-
-              val withExtra = bytes :+ (lastByte + 1).byteValue()
-
-              //            println(s"write ${bytes.length} => ${withExtra.length}")
-
-              exe.output(WriteMode.Overwrite) { out =>
-                val stream = out.stream
-                stream.write(withExtra)
-              }
-            }
-          }
-
-          val bytes = resolver
-            .input(url) { in =>
-              IOUtils.toByteArray(in.stream)
-            }
-            .toSeq
-
-          assert(
-            s"${bytes.size} elements:\n ${bytes.mkString(" ")}" ===
-              s"${groundTruth.size} elements:\n ${groundTruth.mkString(" ")}"
-          )
-          assert(bytes.length === groundTruth.size)
-
-        } finally {
-
-          resolver.execute(url).delete(false)
-        }
-      }
-
-      it("can guarantee sequential read and write to existing file") {
-        existingFile.requireEmptyFile {
-
-          existingFile.execution.output(WriteMode.Overwrite) { out =>
-            out.stream.write(Array(10.byteValue()))
-          }
-
-          val groundTruth = (10 to numWrites + 10).map(_.byteValue())
-          doTestIO(existingFile.execution.absolutePathStr, groundTruth)
-        }
-      }
-
-      ignore("... and on non-existing file") {
-        nonExistingFile.requireVoid {
-
-          val groundTruth = (1 to numWrites).map(_.byteValue())
-          doTestIO(nonExistingFile.execution.absolutePathStr, groundTruth)
-        }
+        val groundTruth = (1 to numWrites).map(_.byteValue())
+        doTestIO(nonExistingFile.execution.absolutePathStr, groundTruth)
       }
     }
   }
+
 }
