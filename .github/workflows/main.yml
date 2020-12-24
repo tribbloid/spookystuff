@@ -27,4 +27,4 @@ jobs:
         echo test, and deploy your project.
     - name: Run CI-apache-stable
       run: |
-        ./build-tools/CI-apache-stable.sh
+        ./build-tools/CI-apache-latest.sh
