@@ -155,7 +155,7 @@ abstract class AbstractURIResolverSuite extends FunSpecx with LocalPathDocsFixtu
 
       existingFile.requireEmptyFile {
 
-        val session = resolver.Execution(existingFile.pathStr)
+        val session = resolver.execute(existingFile.pathStr)
 
         var vs1 = session.input(accessorVs)
 
@@ -248,7 +248,7 @@ abstract class AbstractURIResolverSuite extends FunSpecx with LocalPathDocsFixtu
         existingFile.requireRandomContent(16) {
           nonExistingFile.requireVoid {
 
-            resolver.Execution(existingFile.pathStr).copyTo(nonExistingFile.pathStr, WriteMode.CreateOnly)
+            resolver.execute(existingFile.pathStr).copyTo(nonExistingFile.pathStr, WriteMode.CreateOnly)
 
             val copied = resolver.input(nonExistingFile.pathStr)(_.getLength == 16)
             assert(copied)
@@ -260,7 +260,7 @@ abstract class AbstractURIResolverSuite extends FunSpecx with LocalPathDocsFixtu
         existingFile.requireRandomContent(16) {
           nonExistingFile.requireRandomContent(16) {
 
-            resolver.Execution(existingFile.pathStr).copyTo(nonExistingFile.pathStr, WriteMode.Overwrite)
+            resolver.execute(existingFile.pathStr).copyTo(nonExistingFile.pathStr, WriteMode.Overwrite)
 
             val copied = resolver.input(nonExistingFile.pathStr)(_.getLength == 16)
             assert(copied)
@@ -360,7 +360,7 @@ abstract class AbstractURIResolverSuite extends FunSpecx with LocalPathDocsFixtu
           resolver.retry {
 
             resolver
-              .Execution(pathStr)
+              .execute(pathStr)
               .moveTo(pathStr + ".moved")
 
             val r1 = ss.acquire().failed.toOption.toSeq
@@ -368,7 +368,7 @@ abstract class AbstractURIResolverSuite extends FunSpecx with LocalPathDocsFixtu
             val r2 = ss.release().failed.toOption.toSeq
 
             resolver
-              .Execution(pathStr + ".moved")
+              .execute(pathStr + ".moved")
               .moveTo(pathStr)
 
             r1 ++ r2
@@ -397,7 +397,7 @@ abstract class AbstractURIResolverSuite extends FunSpecx with LocalPathDocsFixtu
           resolver.retry {
 
             resolver
-              .Execution(pathStr)
+              .execute(pathStr)
               .moveTo(pathStr + i + ".moved")
 
             val r1 = ss.acquire().failed.toOption.toSeq
@@ -405,7 +405,7 @@ abstract class AbstractURIResolverSuite extends FunSpecx with LocalPathDocsFixtu
             val r2 = ss.release().failed.toOption.toSeq
 
             resolver
-              .Execution(pathStr + i + ".moved")
+              .execute(pathStr + i + ".moved")
               .moveTo(pathStr)
 
             r1 ++ r2
@@ -433,7 +433,7 @@ abstract class AbstractURIResolverSuite extends FunSpecx with LocalPathDocsFixtu
           resolver.retry {
 
             val src = resolver
-              .Execution(pathStr + s"${Random.nextLong()}")
+              .execute(pathStr + s"${Random.nextLong()}")
 
             try {
 
@@ -453,7 +453,7 @@ abstract class AbstractURIResolverSuite extends FunSpecx with LocalPathDocsFixtu
             val r2 = ss.release().failed.toOption.toSeq
 
             resolver
-              .Execution(pathStr + ".moved")
+              .execute(pathStr + ".moved")
               .delete(false)
 
             r1 ++ r2
@@ -480,7 +480,7 @@ abstract class AbstractURIResolverSuite extends FunSpecx with LocalPathDocsFixtu
         .map { i =>
           resolver.retry {
             resolver
-              .Execution(pathStr)
+              .execute(pathStr)
               .createNew()
 
             val r1 = ss.acquire().failed.toOption.toSeq
@@ -488,7 +488,7 @@ abstract class AbstractURIResolverSuite extends FunSpecx with LocalPathDocsFixtu
             val r2 = ss.release().failed.toOption.toSeq
 
             resolver
-              .Execution(pathStr)
+              .execute(pathStr)
               .delete()
 
             r1 ++ r2
@@ -605,7 +605,7 @@ abstract class AbstractURIResolverSuite extends FunSpecx with LocalPathDocsFixtu
 
         } finally {
 
-          resolver.Execution(url).delete(false)
+          resolver.execute(url).delete(false)
         }
       }
 

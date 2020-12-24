@@ -2,7 +2,7 @@ package com.tribbloids.spookystuff.utils.io
 
 import com.tribbloids.spookystuff.utils.io.lock.{Lock, LockExpired}
 import com.tribbloids.spookystuff.utils.lifespan.LocalCleanable
-import com.tribbloids.spookystuff.utils.{CommonUtils, Retry}
+import com.tribbloids.spookystuff.utils.{CachingUtils, CommonUtils, Retry}
 import org.apache.commons.io.IOUtils
 
 import java.io._
@@ -19,22 +19,33 @@ import scala.util.Random
  */
 abstract class URIResolver extends Serializable {
 
-  def Execution(pathStr: String): this.Execution
+  import CachingUtils.MapView
+
+  type Execution <: AbstractExecution
+
+  @transient lazy val cache: CachingUtils.ConcurrentCache[String, Execution] = CachingUtils.ConcurrentCache()
+
+  final def execute(pathStr: String): Execution = {
+
+    cache.getOrUpdateSync(pathStr)(newExecution(pathStr))
+  }
+
+  def newExecution(pathStr: String): Execution
 
   def retry: Retry = URIResolver.default.retry
   def lockExpireAfter: Duration = URIResolver.defaultLockExpireAfter
 
   final def input[T](pathStr: String)(f: InputResource => T): T = {
-    val exe = Execution(pathStr)
+    val exe = execute(pathStr)
     exe.input(f)
   }
 
   final def output[T](pathStr: String, mode: WriteMode)(f: OutputResource => T): T = {
-    val exe = Execution(pathStr)
+    val exe = execute(pathStr)
     exe.output(mode)(f)
   }
 
-  final def toAbsolute(pathStr: String): String = Execution(pathStr).absolutePathStr
+  final def toAbsolute(pathStr: String): String = execute(pathStr).absolutePathStr
 
   final def isAbsolute(pathStr: String): Boolean = {
     toAbsolute(pathStr) == pathStr
@@ -55,7 +66,7 @@ abstract class URIResolver extends Serializable {
     * ensure sequential access, doesn't work on non-existing path
     */
   def lock[T](pathStr: String)(fn: URIExecution => T): T = {
-    val exe = Execution(pathStr)
+    val exe = execute(pathStr)
 
     val lock = new Lock(exe)
     lock.during(fn)
@@ -70,7 +81,7 @@ abstract class URIResolver extends Serializable {
   /**
     * all implementations must be stateless
     */
-  trait Execution extends LocalCleanable {
+  trait AbstractExecution extends LocalCleanable {
 
     def outer: URIResolver = URIResolver.this
 
@@ -94,7 +105,7 @@ abstract class URIResolver extends Serializable {
 
     final def copyTo(target: String, mode: WriteMode): Unit = {
 
-      val tgtSession = outer.Execution(target)
+      val tgtSession = outer.execute(target)
 
       this.input { in =>
         tgtSession.output(mode) { out =>
@@ -132,7 +143,7 @@ abstract class URIResolver extends Serializable {
 
         val touchPathStr = this.absolutePathStr + URIResolver.TOUCH
 
-        outer.Execution(touchPathStr)
+        outer.execute(touchPathStr)
       }
 
       // this convoluted way of creating file is to ensure that atomic contract can be engaged
@@ -203,6 +214,7 @@ object URIResolver {
         (10000.doubleValue() / Math.pow(1.2, n - 2)).asInstanceOf[Long] + Random.nextInt(1000).longValue()
       },
       silent = true
+//      silent = false
     )
 
     val expired: LockExpired = LockExpired(

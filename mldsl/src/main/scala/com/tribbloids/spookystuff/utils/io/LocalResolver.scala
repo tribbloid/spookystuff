@@ -12,10 +12,10 @@ case class LocalResolver(
 
   @transient lazy val mdParser: ResourceMetadata.ReflectionParser[File] = ResourceMetadata.ReflectionParser[File]()
 
-  override def Execution(pathStr: String): Execution = {
+  override def newExecution(pathStr: String): Execution = {
     Execution(Paths.get(pathStr))
   }
-  case class Execution(path: Path) extends super.Execution {
+  case class Execution(path: Path) extends super.AbstractExecution {
 
     import Resource._
 
@@ -68,7 +68,7 @@ case class LocalResolver(
             .asScala
             .toSeq
             .map { subPath =>
-              Execution(subPath)
+              execute(subPath.toString)
             }
         } else Nil
       }

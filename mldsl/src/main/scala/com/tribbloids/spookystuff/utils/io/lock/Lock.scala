@@ -1,12 +1,11 @@
 package com.tribbloids.spookystuff.utils.io.lock
 
+import com.tribbloids.spookystuff.utils.BypassingRule
 import com.tribbloids.spookystuff.utils.io.{URIExecution, URIResolver}
 import com.tribbloids.spookystuff.utils.lifespan.{Lifespan, LocalCleanable}
-import com.tribbloids.spookystuff.utils.{BypassingRule, CachingUtils, CommonUtils}
 
 import java.io.FileNotFoundException
 import java.nio.file.NoSuchFileException
-import java.util.UUID
 
 /**
   * Deprecated: Doesn't work for HDFSResolver (and future resolvers for other file systems)!
@@ -16,32 +15,12 @@ case class Lock(
     source: URIExecution,
     expired: LockExpired = URIResolver.default.expired, // TODO: use it!
     override val _lifespan: Lifespan = Lifespan.TaskOrJVM()
-) extends LocalCleanable {
+) extends LockLike
+    with LocalCleanable {
 
   import Lock._
 
   @volatile var acquiredTimestamp: Long = -1
-
-  val resolver: URIResolver = source.outer
-  def absolutePathStr: String = source.absolutePathStr
-
-  val id: UUID = UUID.randomUUID()
-
-  private case object Moved {
-
-    case object PathStrs {
-
-      lazy val dir: String = source.absolutePathStr + LOCK
-
-      lazy val locked: String = CommonUtils.\\\(dir, id + LOCKED)
-
-      lazy val old: String = CommonUtils.\\\(dir, id + OLD)
-    }
-
-    lazy val locked: resolver.Execution = resolver.Execution(PathStrs.locked)
-
-//    lazy val old: resolver.Execution = resolver.Execution(PathStrs.old)
-  }
 
   def acquire(): URIExecution = {
 
@@ -49,7 +28,7 @@ case class Lock(
       source.moveTo(Moved.locked.absolutePathStr)
     } catch {
       case ee @ (_: FileNotFoundException | _: NoSuchFileException) =>
-        val canBeUnlocked = expired.scanForUnlocking(source)
+        val canBeUnlocked = expired.scanForUnlocking(Moved.dir)
 
         canBeUnlocked match {
           case Some(v) =>
@@ -68,7 +47,7 @@ case class Lock(
     logRelease(Moved.locked)
 
     if (source.isExisting) {
-      source.moveTo(Moved.PathStrs.old)
+      source.moveTo(PathStrs.old)
     }
 
     Moved.locked.moveTo(source.absolutePathStr)
@@ -105,13 +84,13 @@ case class Lock(
 
   def logAcquire(execution: URIExecution): Unit = {
 
-    Lock.acquired += execution -> System.currentTimeMillis()
+//    Lock.acquired += execution -> System.currentTimeMillis()
 
     this.logPrefixed(s"=== ACQUIRED!: ${execution.absolutePathStr}")
   }
 
   def logRelease(execution: URIExecution): Unit = {
-    Lock.acquired -= execution
+//    Lock.acquired -= execution
 
     this.logPrefixed(s"=== RELEASED! ${execution.absolutePathStr}")
   }
@@ -119,13 +98,7 @@ case class Lock(
 
 object Lock {
 
-  val acquired: CachingUtils.ConcurrentCache[URIExecution, Long] = CachingUtils.ConcurrentCache()
-
-  final val LOCK: String = ".lock"
-
-  final val LOCKED: String = ".locked"
-
-  final val OLD: String = ".old"
+//  val acquired: CachingUtils.ConcurrentCache[URIExecution, Long] = CachingUtils.ConcurrentCache()
 
   trait CanReattempt extends Exception
 

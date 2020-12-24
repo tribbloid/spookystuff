@@ -55,8 +55,8 @@ case class HDFSResolver(
     }
   }
 
-  override def Execution(pathStr: String): Execution = Execution(new Path(pathStr))
-  case class Execution(path: Path) extends super.Execution {
+  override def newExecution(pathStr: String): Execution = Execution(new Path(pathStr))
+  case class Execution(path: Path) extends super.AbstractExecution {
 
     lazy val fc: FileContext = FileContext.getFileContext(path.toUri, _hadoopConf)
 
@@ -117,7 +117,7 @@ case class HDFSResolver(
           }
 
           children.map { status =>
-            Execution(status.getPath)
+            execute(status.getPath.toString)
           }
         } else Nil
       }

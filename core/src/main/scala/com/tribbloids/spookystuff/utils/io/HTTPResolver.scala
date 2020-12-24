@@ -123,8 +123,8 @@ case class HTTPResolver(
 //    currentHost.toURI + currentReq.getURI
 //  }
 
-  override def Execution(pathStr: String) = new Execution(pathStr)
-  case class Execution(pathStr: String) extends super.Execution {
+  override def newExecution(pathStr: String) = new Execution(pathStr)
+  case class Execution(pathStr: String) extends super.AbstractExecution {
 
     override def absolutePathStr: String = pathStr
 

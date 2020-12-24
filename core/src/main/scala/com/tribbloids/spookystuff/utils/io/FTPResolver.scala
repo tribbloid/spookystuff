@@ -31,8 +31,8 @@ case class FTPResolver(
 
   import scala.collection.JavaConverters._
 
-  override def Execution(pathStr: String): Execution = new Execution(pathStr)
-  case class Execution(pathStr: String) extends super.Execution {
+  override def newExecution(pathStr: String): Execution = new Execution(pathStr)
+  case class Execution(pathStr: String) extends super.AbstractExecution {
 
     override def absolutePathStr: String = pathStr
 

@@ -9,10 +9,7 @@ import java.nio.file.NoSuchFileException
 case class WaitForUnlock(
     source: URIExecution,
     expired: LockExpired = URIResolver.default.expired
-) {
-
-  val resolver: URIResolver = source.outer
-  def absolutePathStr: String = source.absolutePathStr
+) extends LockLike {
 
   def unlockIfPossible(): Unit = {
 
@@ -22,7 +19,7 @@ case class WaitForUnlock(
       }
     } catch {
       case ee @ (_: FileNotFoundException | _: NoSuchFileException) =>
-        val canBeUnlocked = expired.scanForUnlocking(source)
+        val canBeUnlocked = expired.scanForUnlocking(Moved.dir)
 
         canBeUnlocked match {
           case Some(v) =>

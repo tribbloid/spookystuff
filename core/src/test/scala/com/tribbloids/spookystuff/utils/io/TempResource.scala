@@ -12,12 +12,12 @@ case class TempResource(
 
   import TempResource._
 
-  lazy val execution: resolver.Execution = resolver.Execution(pathStr)
+  lazy val execution: resolver.AbstractExecution = resolver.execute(pathStr)
   def absolutePathStr: String = execution.absolutePathStr
 
 //  def absolutePathStr: String = session.absolutePathStr
 
-  lazy val executions: Seq[URIResolver#Execution] = {
+  lazy val executions: Seq[URIResolver#AbstractExecution] = {
     Seq(execution)
   }
 
@@ -45,7 +45,7 @@ case class TempResource(
 
   def requireEmptyDir[T](fn: => T): T = deleteBeforeAndAfter {
 
-    val subExe = resolver.Execution(CommonUtils.\\\(execution.absolutePathStr, "Random" + Random.nextLong()))
+    val subExe = resolver.execute(CommonUtils.\\\(execution.absolutePathStr, "Random" + Random.nextLong()))
 
     subExe.createNew()
     subExe.delete(false)

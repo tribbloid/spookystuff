@@ -48,21 +48,19 @@ case class LockExpired(
     latest
   }
 
-  def scanForUnlocking(file: URIExecution): Option[Finding] = {
+  def scanForUnlocking(lockDir: URIExecution): Option[Finding] = {
 
-    try {
-      val lockDir = file.outer.Execution(file.absolutePathStr + Lock.LOCK)
-
-      val files = lockDir.input { in =>
-        in.children
-      }
-
-      val lockedFiles: Seq[URIExecution] = files.filter { file =>
-        file.absolutePathStr.split('.').lastOption.contains(Lock.LOCKED)
-      }
-
-      _scanForUnlocking(lockedFiles)
+    val files = lockDir.input { in =>
+      in.children
     }
+
+    val lockedFiles: Seq[URIExecution] = files.filter { file =>
+      file.absolutePathStr.split('.').lastOption.contains(LockLike.LOCKED)
+    }
+
+    val result = _scanForUnlocking(lockedFiles)
+
+    result
   }
 }
 

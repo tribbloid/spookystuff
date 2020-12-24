@@ -198,7 +198,7 @@ object DriverFactories {
     final def DEFAULT_PATH: String = System.getProperty("user.home") \\ ".spookystuff" \\ "phantomjs"
 
     def verifyExe(pathStr: String): Try[String] = Try {
-      val isExists = LocalResolver.Execution(pathStr).satisfy { v =>
+      val isExists = LocalResolver.execute(pathStr).satisfy { v =>
         v.getLength >= 1024 * 1024 * 60
       }
       assert(isExists, s"PhantomJS executable at $pathStr doesn't exist")
