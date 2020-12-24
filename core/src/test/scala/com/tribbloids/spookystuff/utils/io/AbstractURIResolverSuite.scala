@@ -533,7 +533,7 @@ abstract class AbstractURIResolverSuite extends FunSpecx with LocalPathDocsFixtu
         assert(errors.isEmpty, errors.mkString("\n"))
       }
 
-      it("can guarantee sequential access to file") {
+      it("can guarantee sequential access to existing file") {
         existingFile.requireRandomContent() {
 
           doTest(existingFile.absolutePathStr)
@@ -609,7 +609,7 @@ abstract class AbstractURIResolverSuite extends FunSpecx with LocalPathDocsFixtu
         }
       }
 
-      it("can guarantee sequential read and write on existing file") {
+      it("can guarantee sequential read and write to existing file") {
         existingFile.requireEmptyFile {
 
           existingFile.execution.output(WriteMode.Overwrite) { out =>
