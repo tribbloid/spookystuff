@@ -231,10 +231,10 @@ case class Doc(
       TikaMetadataXMLElement(raw, effectiveCharset, mimeType, uri)
     }
   }
-  def charset: Option[CSSQuery] = Option(parsedContentType.getCharset).map(_.name())
+  def charset: Option[String] = Option(parsedContentType.getCharset).map(_.name())
   def mimeType: String = parsedContentType.getMimeType
 
-  def contentType: CSSQuery = parsedContentType.toString
+  def contentType: String = parsedContentType.toString
 
   def tikaMimeType: MimeType = MimeTypes.getDefaultMimeTypes.forName(mimeType)
   def fileExtensions: Array[String] = tikaMimeType.getExtensions.toArray(Array[String]()).map { str =>

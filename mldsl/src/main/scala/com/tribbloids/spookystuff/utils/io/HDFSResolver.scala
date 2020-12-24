@@ -99,7 +99,9 @@ case class HDFSResolver(
 
       override lazy val getLastModified: Long = status.getModificationTime
 
-      override lazy val _metadata: ResourceMetadata = HDFSResolver.mdParser.apply(status)
+      override lazy val _metadata: ResourceMetadata = {
+        HDFSResolver.mdParser.apply(status)
+      }
 
       override lazy val children: Seq[Execution] = {
         if (isDirectory) {

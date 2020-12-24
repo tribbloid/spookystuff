@@ -82,10 +82,14 @@ trait EAVRelay[I <: EAV] extends MessageRelay[I] with EAVBuilder[I] {
     @transient lazy val validGetters: Array[(String, Method)] = {
 
       val methods = clazz.getMethods
+
       val _methods = methods.filter { m =>
         (m.getParameterTypes.length == 0) &&
         FlowUtils.isSerializable(m.getReturnType)
       }
+//      val _methods = methods.filter { m =>
+//        m.getParameterTypes.length == 0
+//      }
       val commonGetters = _methods
         .filter { m =>
           m.getName.startsWith("get")
