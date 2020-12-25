@@ -7,10 +7,6 @@ import com.tribbloids.spookystuff.utils.lifespan.{Lifespan, LocalCleanable}
 import java.io.FileNotFoundException
 import java.nio.file.NoSuchFileException
 
-/**
-  * Deprecated: Doesn't work for HDFSResolver (and future resolvers for other file systems)!
-  * use [[Snapshot]] instead
-  */
 case class Lock(
     source: URIExecution,
     expired: LockExpired = URIResolver.default.expired, // TODO: use it!
@@ -22,7 +18,7 @@ case class Lock(
 
   @volatile var acquiredTimestamp: Long = -1
 
-  def acquire(): URIExecution = {
+  protected def acquire(): URIExecution = {
 
     try {
       source.moveTo(Moved.locked.absolutePathStr)
@@ -42,7 +38,7 @@ case class Lock(
     Moved.locked
   }
 
-  def release(): Unit = {
+  protected def release(): Unit = {
 
     logRelease(Moved.locked)
 
@@ -53,7 +49,7 @@ case class Lock(
     Moved.locked.moveTo(source.absolutePathStr)
   }
 
-  def duringOnce[T](fn: URIExecution => T): T = {
+  protected def duringOnce[T](fn: URIExecution => T): T = {
     val acquired = acquire()
     try {
       fn(acquired)
@@ -68,7 +64,7 @@ case class Lock(
     }
   }
 
-  final def during[T](fn: URIExecution => T): T = {
+  final def during[T](fn: URIExecution => T): T = source.synchronized {
     resolver.retry {
       duringOnce(fn)
     }

@@ -113,9 +113,9 @@ case class SpookyContext(
       SerDeOverride(this.sqlContext.sparkContext.hadoopConfiguration)
     )
   }
-  def hadoopConf: SerDeOverride[Configuration] = broadcastedHadoopConf.value
+  def hadoopConf: Configuration = broadcastedHadoopConf.value.value
 
-  def pathResolver: HDFSResolver = HDFSResolver(hadoopConf)
+  def pathResolver: HDFSResolver = HDFSResolver(() => hadoopConf) // TODO: should be @transient lazy val?
 
   var broadcastedConfigurations: Broadcast[Submodules[AbstractConf]] = {
     sqlContext.sparkContext.broadcast(

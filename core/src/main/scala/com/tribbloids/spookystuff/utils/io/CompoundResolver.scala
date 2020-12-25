@@ -1,18 +1,18 @@
 package com.tribbloids.spookystuff.utils.io
 
-import java.net.URI
-
 import com.tribbloids.spookystuff.session.WebProxySetting
 import com.tribbloids.spookystuff.utils.http._
-import com.tribbloids.spookystuff.utils.serialization.{NOTSerializable, SerDeOverride}
+import com.tribbloids.spookystuff.utils.serialization.NOTSerializable
 import org.apache.hadoop.conf.Configuration
 import org.apache.http.client.methods.HttpRequestBase
+
+import java.net.URI
 
 trait CompoundResolver extends URIResolver {
 
   def getImpl(pathStr: String): URIResolver
 
-  override def newExecution(pathStr: String) = new Execution(pathStr)
+  override def newExecution(pathStr: String): Execution = Execution(pathStr)
   case class Execution(pathStr: String) extends super.AbstractExecution {
 
     lazy val impl: URIExecution = getImpl(pathStr).execute(pathStr)
@@ -37,11 +37,11 @@ trait CompoundResolver extends URIResolver {
 }
 
 class FSResolver(
-    hadoopConf: SerDeOverride[Configuration],
+    hadoopConfFactory: () => Configuration,
     timeoutMillis: Int
 ) extends CompoundResolver {
 
-  lazy val hdfs: HDFSResolver = HDFSResolver(hadoopConf)
+  lazy val hdfs: HDFSResolver = HDFSResolver(hadoopConfFactory)
 
   lazy val ftp: FTPResolver = FTPResolver(timeoutMillis)
 
@@ -61,11 +61,11 @@ class FSResolver(
 }
 
 class OmniResolver(
-    hadoopConf: SerDeOverride[Configuration],
+    hadoopConfFactory: () => Configuration,
     timeoutMillis: Int,
     webProxy: WebProxySetting,
     input2Http: URI => HttpRequestBase
-) extends FSResolver(hadoopConf, timeoutMillis)
+) extends FSResolver(hadoopConfFactory, timeoutMillis)
     with NOTSerializable {
 
   override def getImpl(uri: String): URIResolver = {

@@ -17,7 +17,7 @@ class HDFSResolverSpike extends FunSpec {
 //    conf.set(FTPFileSystem.FS_FTP_PASSWORD_PREFIX + "mirror.csclub.uwaterloo.ca", "")
 
     val resolvers: Seq[URIResolver] = Seq(
-      HDFSResolver(conf),
+      HDFSResolver(() => conf),
       FTPResolver(5000)
     )
 

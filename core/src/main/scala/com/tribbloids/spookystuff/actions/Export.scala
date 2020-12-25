@@ -229,7 +229,7 @@ case class Wget(
     val proxy = session.spooky.spookyConf.webProxy()
 
     val resolver = new OmniResolver(
-      hadoopConf,
+      () => hadoopConf,
       timeout,
       proxy, { uri =>
         val headers = session.spooky.spookyConf.httpHeadersFactory()
@@ -323,7 +323,7 @@ case class WpostImpl private[actions] (
     val proxy = session.spooky.spookyConf.webProxy()
 
     val resolver = new OmniResolver(
-      hadoopConf,
+      () => hadoopConf,
       timeout,
       proxy, { uri: URI =>
         val headers = session.spooky.spookyConf.httpHeadersFactory()

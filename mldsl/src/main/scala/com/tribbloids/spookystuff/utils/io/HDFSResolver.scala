@@ -1,6 +1,5 @@
 package com.tribbloids.spookystuff.utils.io
 
-import com.tribbloids.spookystuff.utils.serialization.SerDeOverride
 import com.tribbloids.spookystuff.utils.{CommonUtils, Retry}
 import org.apache.hadoop.conf.Configuration
 import org.apache.hadoop.fs._
@@ -17,7 +16,7 @@ import scala.util.{Success, Try}
   * Created by peng on 17/05/17.
   */
 case class HDFSResolver(
-    hadoopConf: SerDeOverride[Configuration],
+    hadoopConfFactory: () => Configuration,
     ugiFactory: () => Option[UserGroupInformation] = HDFSResolver.noUGIFactory,
     override val retry: Retry = URIResolver.default.retry
 ) extends URIResolver {
@@ -25,7 +24,7 @@ case class HDFSResolver(
   import Resource._
 
   def _hadoopConf: Configuration = {
-    hadoopConf.value
+    hadoopConfFactory()
   }
 
   override def toString = s"${this.getClass.getSimpleName}(${_hadoopConf})"
@@ -204,9 +203,9 @@ case class HDFSResolver(
 //      fs.mkdirs(path)
 //    }
 
-    override def cleanImpl(): Unit = {
+//    override def cleanImpl(): Unit = {
 //      fs.peek.foreach(_.close())
-    }
+//    }
   }
 }
 

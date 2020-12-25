@@ -3,12 +3,22 @@ package com.tribbloids.spookystuff.utils.io
 import org.apache.hadoop.conf.Configuration
 import org.apache.hadoop.security.UserGroupInformation
 
+object HDFSResolverSuite {
+
+  val conf = new Configuration()
+}
+
 /**
   * Created by peng on 07/10/15.
   */
 class HDFSResolverSuite extends AbstractURIResolverSuite {
 
-  override val resolver: HDFSResolver = HDFSResolver(new Configuration())
+  override val resolver: HDFSResolver = HDFSResolver(() => HDFSResolverSuite.conf)
+
+  val resolverWithUGI: HDFSResolver = HDFSResolver(
+    () => HDFSResolverSuite.conf,
+    () => Some(UserGroupInformation.createUserForTesting("dummy", Array.empty))
+  )
 
   @transient override lazy val schemaPrefix = "file:"
 
@@ -24,11 +34,6 @@ class HDFSResolverSuite extends AbstractURIResolverSuite {
     val abs = resolver.toAbsolute(nonExistingScheme2Path)
     assert(abs == nonExistingSchemePath)
   }
-
-  val resolverWithUGI: HDFSResolver = HDFSResolver(
-    new Configuration(),
-    () => Some(UserGroupInformation.createUserForTesting("dummy", Array.empty))
-  )
 
   it("can override login UGI") {
     val user: String = resolverWithUGI.input(HTML_URL) { is =>
