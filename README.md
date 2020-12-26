@@ -13,7 +13,7 @@ SpookyStuff is the fastest big data collection engine in history, with a speed r
 
 | branch \ profile | scala-2.11 | scala-2.12
 |---|---|---|
-| main | [ ![Codeship Status for tribbloid/spookystuff](https://codeship.com/projects/1e149120-3c19-0134-3b13-56d3c23905f3/status?branch=master)](https://codeship.com/projects/166836) | ![CI](https://github.com/tribbloid/spookystuff/workflows/CI/badge.svg) |
+| master | [ ![Codeship Status for tribbloid/spookystuff](https://codeship.com/projects/1e149120-3c19-0134-3b13-56d3c23905f3/status?branch=master)](https://codeship.com/projects/166836) | ![CI](https://github.com/tribbloid/spookystuff/workflows/CI/badge.svg) |
 
 [![Join the chat at https://gitter.im/tribbloid/spookystuff](https://badges.gitter.im/Join%20Chat.svg)](https://gitter.im/tribbloid/spookystuff?utm_source=badge&utm_medium=badge&utm_campaign=pr-badge&utm_content=badge)
 
@@ -27,7 +27,7 @@ SpookyStuff-UAV *(alpha component)*
 
 | branch \ profile | scala-2.11 | scala-2.12
 |---|---|---|
-| main | [![Build Status](https://semaphoreci.com/api/v1/tribbloid/spookystuff/branches/master/badge.svg)](https://semaphoreci.com/tribbloid/spookystuff) | - |
+| master | [![Build Status](https://semaphoreci.com/api/v1/tribbloid/spookystuff/branches/master/badge.svg)](https://semaphoreci.com/tribbloid/spookystuff) | - |
 
 [![Join the chat at https://gitter.im/spookystuff-UAV/Lobby](https://badges.gitter.im/spookystuff-UAV/Lobby.svg)](https://gitter.im/spookystuff-UAV/Lobby?utm_source=badge&utm_medium=badge&utm_campaign=pr-badge&utm_content=badge)
 
