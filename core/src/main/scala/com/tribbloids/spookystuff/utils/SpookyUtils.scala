@@ -116,7 +116,7 @@ These special characters are often called "metacharacters".
     val array = try {
       Array[B](v.asInstanceOf[B])
     } catch {
-      case e: Throwable =>
+      case e: Exception =>
         Array[B]()
     }
     array.headOption

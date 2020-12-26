@@ -1,8 +1,8 @@
 package com.tribbloids.spookystuff.execution
 
 import com.tribbloids.spookystuff.actions._
-import com.tribbloids.spookystuff.dsl.{GenPartitioner, GenPartitionerLike}
-import com.tribbloids.spookystuff.row.{BeaconRDD, DataRow, SquashedFetchedRDD, SquashedFetchedRow}
+import com.tribbloids.spookystuff.dsl.GenPartitioner
+import com.tribbloids.spookystuff.row.{DataRow, SquashedFetchedRDD, SquashedFetchedRow}
 import org.apache.spark.rdd.RDD
 
 /**

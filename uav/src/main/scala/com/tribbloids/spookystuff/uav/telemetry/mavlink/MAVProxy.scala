@@ -124,13 +124,13 @@ case class MAVProxy(
 //      p.destroy()
 //    }
 //      .recoverWith {
-//        case e: Throwable =>
+//        case e: Exception =>
 //          Try {
 //            p.destroyForcibly()
 //          }
 //      }
 //      .recover {
-//        case e: Throwable =>
+//        case e: Exception =>
 //          if (pid > -1) {
 //            Runtime.getRuntime.exec("kill -SIGINT " + pid)
 //          }

@@ -49,7 +49,7 @@ case class Nested[T: ClassTag](
         try {
           fn(v)
         } catch {
-          case e: Throwable =>
+          case e: Exception =>
             //            v match {
             //              case product: Product =>
             //                expandProduct(product)

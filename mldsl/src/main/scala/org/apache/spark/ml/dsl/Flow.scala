@@ -697,7 +697,7 @@ trait FlowComponent extends MayHaveHeads with MayHaveTails {
             }
             true
           } catch {
-            case e: Throwable =>
+            case e: Exception =>
               effectiveAdaptation match {
                 case _: SchemaAdaptations.FailOnInconsistentSchema =>
                   throw e
@@ -894,28 +894,24 @@ trait FlowComponent extends MayHaveHeads with MayHaveTails {
       showPrefix: Boolean
   ): String = {
 
-    try {
-      val prettyColl = coll.mapValues { v =>
-        StepVisualWrapper(v, showID, showInputs, showOutput, showPrefix)
-      }
+    val prettyColl = coll.mapValues { v =>
+      StepVisualWrapper(v, showID, showInputs, showOutput, showPrefix)
+    }
 
-      val vertices: Set[StepVisualWrapper] = prettyColl.values.toSet
-      val edges: List[(StepVisualWrapper, StepVisualWrapper)] = prettyColl.values.toList.flatMap { v =>
-        v.self.usageIDs.map(prettyColl).map(vv => v -> vv)
-      }
-      val graph: Graph[StepVisualWrapper] = Graph[StepVisualWrapper](vertices = vertices, edges = edges)
+    val vertices: Set[StepVisualWrapper] = prettyColl.values.toSet
+    val edges: List[(StepVisualWrapper, StepVisualWrapper)] = prettyColl.values.toList.flatMap { v =>
+      v.self.usageIDs.map(prettyColl).map(vv => v -> vv)
+    }
+    val graph: Graph[StepVisualWrapper] = Graph[StepVisualWrapper](vertices = vertices, edges = edges)
 
-      val forwardStr = GraphLayout.renderGraph(graph, layoutPrefs = layoutPrefs)
-      if (forward) forwardStr
-      else {
-        forwardStr
-          .split('\n')
-          .reverse
-          .mkString("\n")
-          .map(flipChar)
-      }
-    } catch {
-      case e: Throwable => "[Only supported on Scala 2.10]"
+    val forwardStr = GraphLayout.renderGraph(graph, layoutPrefs = layoutPrefs)
+    if (forward) forwardStr
+    else {
+      forwardStr
+        .split('\n')
+        .reverse
+        .mkString("\n")
+        .map(flipChar)
     }
   }
 
@@ -927,7 +923,7 @@ trait FlowComponent extends MayHaveHeads with MayHaveTails {
       forward: Boolean = true,
       asciiArt: Boolean = false,
       compactionOpt: Option[PathCompaction] = Some(Flow.DEFAULT_COMPACTION)
-  ) = {
+  ): String = {
     compactionOpt.foreach(this.propagateCols)
 
     if (!asciiArt) {

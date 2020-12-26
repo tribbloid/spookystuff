@@ -40,7 +40,7 @@ abstract class Export extends Named {
         try {
           filter.apply(doc -> session)
         } catch {
-          case e: Throwable =>
+          case e: Exception =>
             val message = getSessionExceptionMessage(session, Some(doc))
             val wrapped = DocWithError(doc, message, e)
 

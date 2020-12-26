@@ -164,7 +164,7 @@ class PythonDriver(
         } catch {
           case e: TimeoutException =>
             throw BypassingRule.Silent(e)
-          case e: Throwable =>
+          case e: Exception =>
             throw e
         }
       }
@@ -209,7 +209,7 @@ class PythonDriver(
           removePrompts
         )
     } catch {
-      case e: Throwable =>
+      case e: Exception =>
         spookyOpt.foreach(
           _.spookyMetrics.pythonInterpretationError += 1
         )

@@ -12,7 +12,7 @@ case class MapPlan(
     rowMapperFactory: RowMapperFactory
 ) extends UnaryPlan(child) {
 
-  @transient lazy val mapFn = {
+  @transient lazy val mapFn: MapPlan.RowMapper = {
     rowMapperFactory.apply(child.schema)
   }
 
@@ -59,14 +59,14 @@ object MapPlan {
     */
   case class Extract(exs: Seq[Extractor[_]])(val childSchema: SpookySchema) extends RowMapper {
 
-    val resolver = childSchema.newResolver
-    val _exs = resolver.include(exs: _*)
+    val resolver: childSchema.Resolver = childSchema.newResolver
+    val _exs: Seq[Resolved[Any]] = resolver.include(exs: _*)
 
     override val schema: SpookySchema = {
       resolver.build
     }
 
-    override def apply(v: SquashedFetchedRow) = {
+    override def apply(v: SquashedFetchedRow): SquashedFetchedRow = {
       v.WSchema(schema).extract(_exs: _*)
     }
   }
@@ -81,7 +81,7 @@ object MapPlan {
 
     import org.apache.spark.ml.dsl.utils.refl.ScalaType._
 
-    val resolver = childSchema.newResolver
+    val resolver: childSchema.Resolver = childSchema.newResolver
 
     val _on: TypedField = {
       val flattenType = Get(onField).resolveType(childSchema).unboxArrayOrMap
@@ -90,7 +90,7 @@ object MapPlan {
       resolver.includeTyped(tf).head
     }
 
-    val effectiveOrdinalField = Option(ordinalField) match {
+    val effectiveOrdinalField: Field = Option(ordinalField) match {
       case Some(ff) =>
         ff.copy(isOrdinal = true)
       case None =>
@@ -99,9 +99,9 @@ object MapPlan {
 
     val _ordinal: TypedField = resolver.includeTyped(TypedField(effectiveOrdinalField, ArrayType(IntegerType))).head
 
-    override val schema = resolver.build
+    override val schema: SpookySchema = resolver.build
 
-    override def apply(v: SquashedFetchedRow) =
+    override def apply(v: SquashedFetchedRow): SquashedFetchedRow =
       v.flattenData(onField, effectiveOrdinalField, isLeft, sampler)
   }
 
@@ -110,9 +110,9 @@ object MapPlan {
   )(val childSchema: SpookySchema)
       extends RowMapper {
 
-    override val schema = childSchema -- toBeRemoved
+    override val schema: SpookySchema = childSchema -- toBeRemoved
 
-    override def apply(v: SquashedFetchedRow) = v.remove(toBeRemoved: _*)
+    override def apply(v: SquashedFetchedRow): SquashedFetchedRow = v.remove(toBeRemoved: _*)
   }
 
   case class SavePages(
@@ -129,7 +129,7 @@ object MapPlan {
     val _path: Resolved[String] = resolver.include(path).head
     val _pageExpr: Resolved[Doc] = resolver.include(page).head
 
-    override val schema = childSchema
+    override val schema: SpookySchema = childSchema
 
     override def apply(v: SquashedFetchedRow): SquashedFetchedRow = {
       val wSchema = v.WSchema(schema)

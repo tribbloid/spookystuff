@@ -80,7 +80,7 @@ trait Link extends LocalCleanable with ConflictDetection {
 
       this
     } catch {
-      case e: Throwable =>
+      case e: Exception =>
         this.clean()
         throw e
     }
@@ -194,7 +194,7 @@ trait Link extends LocalCleanable with ConflictDetection {
           connectIfNot()
           fn
         } catch {
-          case e: Throwable =>
+          case e: Exception =>
             disconnect()
             val sanityTrials = Seq(Failure[Unit](e)) ++
               Seq(Try(detectConflicts())) ++
@@ -204,7 +204,7 @@ trait Link extends LocalCleanable with ConflictDetection {
                 TreeThrowable.&&&(sanityTrials)
                 e
               } catch {
-                case ee: Throwable =>
+                case ee: Exception =>
                   ee
               }
             }
@@ -213,7 +213,7 @@ trait Link extends LocalCleanable with ConflictDetection {
         }
       }
     } catch {
-      case e: Throwable =>
+      case e: Exception =>
         lastFailureOpt = Some(e -> System.currentTimeMillis())
         throw e
     }

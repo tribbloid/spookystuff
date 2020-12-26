@@ -19,7 +19,7 @@ trait FallbackIterator[T] extends FastForwardingIterator[T] with ConsumedIterato
     try {
       getPrimary
     } catch {
-      case e: Throwable =>
+      case e: Exception =>
         val logger = LoggerFactory.getLogger(this.getClass)
 
         logger.error(
@@ -78,7 +78,7 @@ trait FallbackIterator[T] extends FastForwardingIterator[T] with ConsumedIterato
       if (_primary.hasNext) Some(true)
       else None
     } catch {
-      case e: Throwable =>
+      case e: Exception =>
         val logger = LoggerFactory.getLogger(this.getClass)
 
         logger.warn(
@@ -92,11 +92,11 @@ trait FallbackIterator[T] extends FastForwardingIterator[T] with ConsumedIterato
   }
 
   /**
-   * @return has 3 values:
-   * - Some(true): use primary as it still has more item
-   * - Some(false): terminate immediately
-   * - None: backup should take over
-   */
+    * @return has 3 values:
+    * - Some(true): use primary as it still has more item
+    * - Some(false): terminate immediately
+    * - None: backup should take over
+    */
   final protected def primaryHasNext: Option[Boolean] = {
 
     if (useBackup) None

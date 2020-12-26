@@ -59,7 +59,7 @@ case class IncrementallyCachedRDD[T: ClassTag](
       taskID: Long
   ) extends LocalCleanable {
 
-    lazy val externalCacheArray = ExternalAppendOnlyArray[T](
+    lazy val externalCacheArray: ExternalAppendOnlyArray[T] = ExternalAppendOnlyArray[T](
       s"${this.getClass.getSimpleName}-$id-${p.index}-$taskID",
       incrementalStorageLevel,
       serializerFactory
@@ -157,7 +157,7 @@ case class IncrementallyCachedRDD[T: ClassTag](
             try {
               Some(_primary.hasNext)
             } catch {
-              case e: Throwable =>
+              case e: Exception =>
                 logError(
                   s"Partition ${p.index} in task ${active.taskCtx
                     .taskAttemptId()} - stage ${active.taskCtx

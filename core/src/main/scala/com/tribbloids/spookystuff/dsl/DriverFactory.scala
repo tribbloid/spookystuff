@@ -16,7 +16,6 @@ limitations under the License.
 package com.tribbloids.spookystuff.dsl
 
 import java.io.File
-
 import com.gargoylesoftware.htmlunit.BrowserVersion
 import com.tribbloids.spookystuff.SpookyContext
 import com.tribbloids.spookystuff.session.{PythonDriver, _}
@@ -33,7 +32,7 @@ import org.openqa.selenium.remote.{BrowserType, CapabilityType, DesiredCapabilit
 import org.openqa.selenium.{Capabilities, Platform, Proxy}
 import org.slf4j.LoggerFactory
 
-import scala.util.Try
+import scala.util.{Failure, Success, Try}
 
 //local to TaskID, if not exist, local to ThreadID
 //for every new driver created, add a taskCompletion listener that salvage it.
@@ -163,7 +162,7 @@ object DriverFactories {
               status.isBusy = true
               status.self
             } catch {
-              case e: Throwable =>
+              case e: Exception =>
                 recreateDriver
             }
           } else {
@@ -227,7 +226,7 @@ object DriverFactories {
         //        spooky.sparkContext.clearFiles()
         _deployGlobally(spooky)
       } catch {
-        case e: Throwable =>
+        case e: Exception =>
           //          spooky.sparkContext.clearFiles()
           throw new UnsupportedOperationException(
             s"${this.getClass.getSimpleName} cannot find resource for deployment, " +
@@ -256,26 +255,27 @@ object DriverFactories {
 
       def localURITry: Try[String] = PhantomJS.verifyExe(localURI)
 
-      if (localURITry.isFailure) {
-        val remoteURI = getRemoteURI(spooky)
+      localURITry match {
+        case Failure(_) =>
+          val remoteURI = getRemoteURI(spooky)
 
-        LoggerFactory.getLogger(this.getClass).info(s"Downloading PhantomJS from Internet ($remoteURI)")
+          LoggerFactory.getLogger(this.getClass).info(s"Downloading PhantomJS from Internet ($remoteURI)")
 
-        sc.addFile(remoteURI)
-        val fileName = PhantomJS.uri2fileName(remoteURI)
+          sc.addFile(remoteURI)
+          val fileName = PhantomJS.uri2fileName(remoteURI)
 
-        copySparkFile2Local(fileName, localURI)
-      }
+          copySparkFile2Local(fileName, localURI)
+        case Success(_localURI) =>
+          val _localFileName = PhantomJS.uri2fileName(_localURI)
 
-      val _localURI = localURITry.get
-      val _localFileName = PhantomJS.uri2fileName(_localURI)
+          Try {
+            SparkFiles.get(_localFileName)
+          }.recover {
+            case e: Exception =>
+              sc.addFile(_localURI)
+              LoggerFactory.getLogger(this.getClass).info(s"PhantomJS Deployed to $localURI")
+          }
 
-      Try {
-        SparkFiles.get(_localFileName)
-      }.recover {
-        case e: Throwable =>
-          sc.addFile(_localURI)
-          LoggerFactory.getLogger(this.getClass).info(s"PhantomJS Deployed to $localURI")
       }
     }
 

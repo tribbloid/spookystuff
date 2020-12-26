@@ -16,7 +16,7 @@ import scala.language.implicitConversions
   * NOT serializable: expected to be constructed on Executors
   */
 class ExploreRunner(
-    val itr: Iterator[(TraceView, Open_Visited)], //TODO: change to TraceViewView,
+    val itr: Iterator[(TraceView, Open_Visited)], //TODO: change to TraceView,
     val impl: ExploreAlgorithm.Impl,
     val keyBy: Trace => Any
 ) extends NOTSerializable {

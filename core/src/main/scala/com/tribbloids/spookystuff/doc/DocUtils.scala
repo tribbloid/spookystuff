@@ -20,7 +20,7 @@ object DocUtils {
       spooky.spookyMetrics.DFSReadSuccess += 1
       result
     } catch {
-      case e: Throwable =>
+      case e: Exception =>
         spooky.spookyMetrics.DFSReadFailure += 1
         val ex = new DFSReadException(pathStr, e)
         ex.setStackTrace(e.getStackTrace)
@@ -41,7 +41,7 @@ object DocUtils {
       spooky.spookyMetrics.DFSWriteSuccess += 1
       result
     } catch {
-      case e: Throwable =>
+      case e: Exception =>
         spooky.spookyMetrics.DFSWriteFailure += 1
         val ex = new DFSWriteException(pathStr, e)
         ex.setStackTrace(e.getStackTrace)

@@ -131,7 +131,7 @@ abstract class ActionLike extends Product with Serializable with Verbose {
           spooky.spookyMetrics.fetchFromRemoteSuccess += 1
           result
         } catch {
-          case e: Throwable =>
+          case e: Exception =>
             spooky.spookyMetrics.fetchFromRemoteFailure += 1
             throw e
         }

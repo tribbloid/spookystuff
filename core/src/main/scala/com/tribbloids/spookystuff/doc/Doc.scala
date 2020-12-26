@@ -274,7 +274,7 @@ case class Doc(
       val fos = try {
         fs.create(fullPath, overwrite)
       } catch {
-        case e: Throwable =>
+        case e: Exception =>
           val altPath = new Path(path + "-" + UUID.randomUUID())
           fs.create(altPath, overwrite)
       }

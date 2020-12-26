@@ -11,7 +11,7 @@ import com.tribbloids.spookystuff.extractors.impl.Get
 import com.tribbloids.spookystuff.row.{Field, _}
 import com.tribbloids.spookystuff.utils.SpookyViews
 import com.tribbloids.spookystuff.{Const, SpookyContext}
-import org.apache.spark.TaskContext
+import org.apache.spark.{SparkContext, TaskContext}
 import org.apache.spark.ml.dsl.utils.refl.ScalaType
 import org.apache.spark.rdd.RDD
 import org.apache.spark.sql.DataFrame
@@ -65,18 +65,18 @@ case class FetchedDataset(
     this
   }
 
-  def sparkContext = plan.spooky.sparkContext
+  def sparkContext: SparkContext = plan.spooky.sparkContext
   def storageLevel: StorageLevel = plan.storageLevel
-  def storageLevel_=(lv: StorageLevel) = {
+  def storageLevel_=(lv: StorageLevel): Unit = {
     plan.storageLevel = lv
   }
-  def isCached = plan.isCached
+  def isCached: Boolean = plan.isCached
 
   def squashedRDD: SquashedFetchedRDD = {
     plan.broadcastAndRDD()
   }
 
-  def rdd = unsquashedRDD
+  def rdd: RDD[FR] = unsquashedRDD
   def unsquashedRDD: RDD[FetchedRow] = this.squashedRDD.flatMap(
     v => v.WSchema(schema).unsquash
   )
@@ -95,16 +95,16 @@ case class FetchedDataset(
     }
   }
 
-  def partitionRDD = rdd.mapPartitions { ii =>
+  def partitionRDD: RDD[(Int, Seq[FR])] = rdd.mapPartitions { ii =>
     Iterator(TaskContext.get().partitionId() -> ii.toSeq)
   }
-  def partitionSizeRDD = rdd.mapPartitions { ii =>
+  def partitionSizeRDD: RDD[(Int, Int)] = rdd.mapPartitions { ii =>
     Iterator(TaskContext.get().partitionId() -> ii.size)
   }
 
-  def spooky = plan.spooky
-  def schema = plan.schema
-  def fields = schema.fields
+  def spooky: SpookyContext = plan.spooky
+  def schema: SpookySchema = plan.schema
+  def fields: List[Field] = schema.fields
 
   def dataRDDSorted: RDD[DataRow] = {
 
@@ -220,7 +220,7 @@ case class FetchedDataset(
   //      result
   //    }
 
-  def newResolver = schema.newResolver
+  def newResolver: SpookySchema#Resolver = schema.newResolver
 
   def toStringRDD(
       ex: Extractor[Any],
@@ -249,7 +249,7 @@ case class FetchedDataset(
     MapPlan.optimised(plan, MapPlan.Extract(exs))
   }
 
-  def select[T](exprs: Extractor[T]*) = extract(exprs: _*)
+  def select[T](exprs: Extractor[T]*): FetchedDataset = extract(exprs: _*)
 
   def remove(fields: Field*): FetchedDataset = {
     MapPlan.optimised(plan, MapPlan.Remove(fields))
@@ -336,13 +336,13 @@ case class FetchedDataset(
       ordinalField: Field = null,
       sampler: Sampler[Any] = spooky.spookyConf.defaultFlattenSampler,
       isLeft: Boolean = true
-  )(exprs: Extractor[Any]*) = flatExtract(on, isLeft, ordinalField, sampler)(exprs: _*)
+  )(exprs: Extractor[Any]*): FetchedDataset = flatExtract(on, isLeft, ordinalField, sampler)(exprs: _*)
 
   //TODO: test
   def agg(exprs: Seq[FetchedRow => Any], reducer: RowReducer): FetchedDataset = AggPlan(plan, exprs, reducer)
   def distinctBy(exprs: FetchedRow => Any*): FetchedDataset = agg(exprs, (v1, v2) => v1)
 
-  protected def _defaultCooldown(v: Option[Duration]) = {
+  protected def _defaultCooldown(v: Option[Duration]): Trace = {
     val _delay: Trace = v.map { dd =>
       Delay(dd)
     }.toList
@@ -353,7 +353,7 @@ case class FetchedDataset(
       cooldown: Option[Duration] = None,
       filter: DocFilter = Const.defaultDocumentFilter,
       on: Col[String] = Get(Const.defaultJoinField)
-  ) = {
+  ): Set[Trace] = {
 
     val _cooldown: Duration = cooldown.getOrElse(Const.Interaction.delayMin)
     val result = (
@@ -368,7 +368,7 @@ case class FetchedDataset(
       cooldown: Option[Duration] = None,
       filter: DocFilter = Const.defaultDocumentFilter,
       on: Col[String] = Get(Const.defaultJoinField)
-  ) = {
+  ): Set[Trace] = {
 
     val _delay: Trace = _defaultCooldown(cooldown)
 

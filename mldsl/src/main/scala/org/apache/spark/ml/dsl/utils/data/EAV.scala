@@ -239,7 +239,7 @@ trait EAV extends Serializable with IDMixin {
       tryGet
         .map(v => ev(v).toInt)
         .recoverWith {
-          case _: Throwable =>
+          case _: Exception =>
             tryGetBoolean
               .map {
                 case true  => 1

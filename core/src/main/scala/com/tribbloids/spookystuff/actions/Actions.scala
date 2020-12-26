@@ -4,7 +4,7 @@ import com.tribbloids.spookystuff.row.{FetchedRow, SpookySchema}
 
 abstract class Actions(override val children: Trace) extends ActionLike {
 
-  override final def outputNames = {
+  override final def outputNames: Set[String] = {
     val names = children.map(_.outputNames)
     names.reduceLeftOption(_ ++ _).getOrElse(Set())
   }
@@ -34,5 +34,5 @@ object Actions {
     else seq.flatten
   }
 
-  def empty = Nil
+  def empty: Nil.type = Nil
 }

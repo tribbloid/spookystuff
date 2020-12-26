@@ -135,7 +135,7 @@ class Session(
         LoggerFactory.getLogger(this.getClass).debug(s"Python driver doesn't exist, creating ... $n time(s) left")
         getOrProvisionPythonDriver
         withDriversDuring(f, n - 1)
-      case e: Throwable =>
+      case e: Exception =>
         throw e
     }
   }

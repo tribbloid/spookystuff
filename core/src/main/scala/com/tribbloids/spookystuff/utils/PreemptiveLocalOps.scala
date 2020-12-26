@@ -69,8 +69,8 @@ case class PreemptiveLocalOps(capacity: Int)(
           Failure(EOFMark)
         )
 
-      }.onFailure {
-        case e: Throwable =>
+      }.failed.foreach {
+        case e: Exception =>
           buffer.put(Failure(e))
       }
 

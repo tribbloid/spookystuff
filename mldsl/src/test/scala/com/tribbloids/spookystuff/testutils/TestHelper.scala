@@ -23,7 +23,7 @@ abstract class TestHelper extends LocalCleanable {
     Try {
       properties.load(ClassLoader.getSystemResourceAsStream(".rootkey.csv"))
     }.recoverWith {
-        case _: Throwable =>
+        case _: Exception =>
           Try {
             properties.load(ClassLoader.getSystemResourceAsStream("rootkey.csv"))
           }
@@ -373,7 +373,7 @@ abstract class TestHelper extends LocalCleanable {
             ee.getMessage.contains("com.esotericsoftware.kryo.KryoException"),
             "should be triggered by KryoException, but the message doesn't indicate that:\n" + ee.getMessage
           )
-        case e: Throwable =>
+        case e: Exception =>
           throw new AssertionError(s"Expecting SparkException, but ${e.getClass.getSimpleName} was thrown", e)
       }
     }

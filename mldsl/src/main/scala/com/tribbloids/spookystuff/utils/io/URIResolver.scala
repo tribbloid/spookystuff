@@ -130,7 +130,7 @@ abstract class URIResolver extends Serializable {
           require(v.toSeq == zeroByte.toSeq)
         }
       } catch {
-        case e: Throwable =>
+        case e: Exception =>
           this.delete(false)
           throw e
       }
@@ -166,7 +166,7 @@ abstract class URIResolver extends Serializable {
         }
 
       } catch {
-        case e: Throwable =>
+        case e: Exception =>
           touchSession.delete(false)
           throw e
       } finally {

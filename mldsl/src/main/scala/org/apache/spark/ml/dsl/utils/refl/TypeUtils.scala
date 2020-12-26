@@ -30,7 +30,7 @@ object TypeUtils extends ReflectionLock {
         }
       }
       .recoverWith {
-        case e: Throwable =>
+        case e: Exception =>
           Failure(
             new SparkException(
               s"Cannot find catalyst type for $ttg",

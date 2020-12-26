@@ -43,7 +43,7 @@ trait Action extends ActionLike {
     val results = try {
       exe(session)
     } catch {
-      case e: Throwable =>
+      case e: Exception =>
         val message: String = getSessionExceptionMessage(session)
 
         val ex = e match {
@@ -91,7 +91,7 @@ trait Action extends ActionLike {
               val rawPage = ErrorScreenshot.exe(session).head.asInstanceOf[Doc]
               message += "\nScreenshot: " + this.errorDump(message, rawPage, session.spooky)
             } catch {
-              case e: Throwable =>
+              case e: Exception =>
                 LoggerFactory.getLogger(this.getClass).error("Cannot take screenshot on ActionError:", e)
             }
           }
@@ -117,12 +117,12 @@ trait Action extends ActionLike {
       page.errorDump(spooky)
       "saved to: " + page.saved.last
     } catch {
-      case e: Throwable =>
+      case e: Exception =>
         try {
           page.errorDumpLocally(spooky)
           "DFS inaccessible.........saved to: " + page.saved.last
         } catch {
-          case e: Throwable =>
+          case e: Exception =>
             "all file systems inaccessible.........not saved"
         }
     }

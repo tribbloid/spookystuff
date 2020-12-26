@@ -115,7 +115,7 @@ trait Suitex {
               )
             }
           } catch {
-            case e: Throwable =>
+            case e: Exception =>
               throw new AssertionError("" + AssertionErrorObject(a, b), e)
           }
       }
@@ -211,7 +211,7 @@ trait Suitex {
   //    super.intercept{
   //      try f
   //      catch {
-  //        case e: Throwable =>
+  //        case e: Exception =>
   //          println("Attempt to intercept:")
   //          e.printStackTrace()
   //          throw e

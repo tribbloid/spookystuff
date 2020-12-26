@@ -15,7 +15,7 @@ class BypassingRule {
     try {
       f
     } catch {
-      case e: Throwable => throw apply(e)
+      case e: Exception => throw apply(e)
     }
   }
 }

@@ -100,7 +100,8 @@ final case class ClusterRetry(
     override val cacheEmptyOutput: DocCacheLevel.Value
 ) extends Block(children) {
 
-  override def skeleton = Some(ClusterRetry(this.trunkSeq)(retries, cacheEmptyOutput).asInstanceOf[this.type])
+  override def skeleton: Option[ClusterRetry.this.type] =
+    Some(ClusterRetry(this.trunkSeq)(retries, cacheEmptyOutput).asInstanceOf[this.type])
 
   override def doExeNoUID(session: Session): Seq[DocOption] = {
 
@@ -111,7 +112,7 @@ final case class ClusterRetry(
         pages ++= action.exe(session)
       }
     } catch {
-      case e: Throwable =>
+      case e: Exception =>
         val logger = LoggerFactory.getLogger(this.getClass)
         //avoid endless retry if tcOpt is missing
         val timesLeft = retries - session.taskContextOpt.map(_.attemptNumber()).getOrElse(Int.MaxValue)
@@ -157,7 +158,8 @@ final case class LocalRetry(
     override val cacheEmptyOutput: DocCacheLevel.Value
 ) extends Block(children) {
 
-  override def skeleton = Some(LocalRetry(this.trunkSeq)(retries, cacheEmptyOutput).asInstanceOf[this.type])
+  override def skeleton: Option[LocalRetry.this.type] =
+    Some(LocalRetry(this.trunkSeq)(retries, cacheEmptyOutput).asInstanceOf[this.type])
 
   override def doExeNoUID(session: Session): Seq[DocOption] = {
 
@@ -168,7 +170,7 @@ final case class LocalRetry(
         pages ++= action.exe(session)
       }
     } catch {
-      case e: Throwable =>
+      case e: Exception =>
         CommonUtils.retry(retries)({
           val retriedPages = new ArrayBuffer[DocOption]()
 
@@ -215,7 +217,7 @@ final case class Loop(
 
   assert(limit > 0)
 
-  override def skeleton = Some(this.copy(children = this.trunkSeq).asInstanceOf[this.type])
+  override def skeleton: Option[Loop.this.type] = Some(this.copy(children = this.trunkSeq).asInstanceOf[this.type])
 
   override def doExeNoUID(session: Session): Seq[DocOption] = {
 
@@ -228,7 +230,7 @@ final case class Loop(
         }
       }
     } catch {
-      case e: Throwable =>
+      case e: Exception =>
         LoggerFactory.getLogger(this.getClass).info("Aborted on exception: " + e)
     }
 
@@ -301,7 +303,7 @@ final case class If(
     ifFalse: Trace
 ) extends Block(ifTrue ++ ifFalse) {
 
-  override def skeleton =
+  override def skeleton: Option[If.this.type] =
     Some(this.copy(ifTrue = ifTrue.flatMap(_.skeleton), ifFalse = ifFalse.flatMap(_.skeleton)).asInstanceOf[this.type])
 
   override def doExeNoUID(session: Session): Seq[DocOption] = {
@@ -359,7 +361,7 @@ case class OAuthV2(self: Wget) extends Block(List(self)) with Driverless {
   //    }
   //  }
 
-  override def skeleton = Some(this)
+  override def skeleton: Option[OAuthV2.this.type] = Some(this)
 
   override def doInterpolate(pageRow: FetchedRow, schema: SpookySchema): Option[this.type] =
     self.interpolate(pageRow, schema).map { v =>
@@ -376,7 +378,7 @@ case class OAuthV2(self: Wget) extends Block(List(self)) with Driverless {
 
 final case class AndThen(self: Action, f: Seq[DocOption] => Seq[DocOption]) extends Block(List(self)) {
 
-  override def skeleton = Some(this)
+  override def skeleton: Option[AndThen.this.type] = Some(this)
 
   override def doExeNoUID(session: Session): Seq[DocOption] = {
     f(self.exe(session))

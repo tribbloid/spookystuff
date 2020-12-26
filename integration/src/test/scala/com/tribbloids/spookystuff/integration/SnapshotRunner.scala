@@ -40,7 +40,7 @@ object SnapshotRunner extends SpookyEnvFixture.EnvBase {
               val Array(first, last) = uri.split(SPLITTER)
               first + "id_" + SPLITTER_MIN + last
             } catch {
-              case e: Throwable =>
+              case e: Exception =>
                 throw new UnsupportedOperationException(s"malformed URI: $uri", e)
             }
           }

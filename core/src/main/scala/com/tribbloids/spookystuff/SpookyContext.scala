@@ -60,7 +60,7 @@ case class SpookyContext(
     try {
       deployDrivers()
     } catch {
-      case e: Throwable =>
+      case e: Exception =>
         LoggerFactory.getLogger(this.getClass).error("Driver deployment fail on SpookyContext initialization", e)
     }
   }

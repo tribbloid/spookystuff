@@ -70,7 +70,7 @@ case class AbstractNamedStage[+T <: PipelineStage](
     val in = try {
       inputs
     } catch {
-      case e: Throwable =>
+      case e: Exception =>
         Seq("Pending...")
     }
 
@@ -81,7 +81,7 @@ case class AbstractNamedStage[+T <: PipelineStage](
     val out = try {
       outputOpt
     } catch {
-      case e: Throwable =>
+      case e: Exception =>
         Some("Pending...")
     }
 

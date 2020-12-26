@@ -22,7 +22,7 @@ case class Broadcasted[T: ClassTag](
     try {
       broadcasted.destroy()
     } catch {
-      case e: Throwable =>
+      case e: Exception =>
         LoggerFactory.getLogger(this.getClass).error("broadcast cannot be destroyed", e)
     }
     broadcasted = sc.broadcast(v)

@@ -187,7 +187,7 @@ trait Cleanable extends Closeable {
     try {
       clean(silent)
     } catch {
-      case e: Throwable =>
+      case e: Exception =>
         val ee = e
         if (!isSilent(ee))
           LoggerFactory

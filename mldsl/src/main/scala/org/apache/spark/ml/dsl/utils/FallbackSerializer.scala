@@ -66,7 +66,7 @@ abstract class FallbackSerializer(
 
           Some(JString(str))
         } catch {
-          case e: Throwable =>
+          case e: Exception =>
             None
         }
       //        }

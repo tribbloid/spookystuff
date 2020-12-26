@@ -38,19 +38,19 @@ case class HDFSResolver(
       case Some(ugi) if ugi == UserGroupInformation.getCurrentUser =>
         f
       case Some(ugi) =>
-        try {
-          ugi.doAs {
-            new PrivilegedAction[T] {
-              override def run(): T = {
-                f
-              }
+//        try {
+        ugi.doAs {
+          new PrivilegedAction[T] {
+            override def run(): T = {
+              f
             }
           }
-        } catch {
-          case e: Throwable =>
-            // UGI.doAs wraps any exception in PrivilegedActionException, should be unwrapped and thrown
-            throw CommonUtils.unboxException[PrivilegedActionException](e)
         }
+//        } catch {
+//          case e: Throwable =>
+//            // UGI.doAs wraps any exception in PrivilegedActionException, should be unwrapped and thrown
+//            throw CommonUtils.unboxException[PrivilegedActionException](e)
+//        }
     }
   }
 

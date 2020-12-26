@@ -150,7 +150,7 @@ case class HTTPResolver(
       //        val cause = e.getCause
       //        if (cause.isInstanceOf[RedirectException]) NoDoc(List(this)) //TODO: is it a reasonable exception? don't think so
       //        else throw e
-      //      case e: Throwable =>
+      //      case e: Exception =>
       //        throw e
       //    }
     }
