@@ -66,6 +66,9 @@ pom.xml.flatten
 #pytest
 **/.pytest_cache
 
+#conda
+**/conda/.env
+
 #apm sitl state files
 uav/**/eeprom.bin
 uav/**/*.DAT
