@@ -12,9 +12,6 @@ object CachingUtils {
   //  type MapCache[K, V] = mutable.WeakHashMap[K, V]
   //  def MapCache[K, V]() = new mutable.WeakHashMap[K, V]()
 
-  // TODO: switching to https://github.com/blemale/scaffeine if faster?
-  type ConcurrentCache[K, V] = scala.collection.concurrent.Map[K, V]
-
   /**
     * <p><b>Warning:</b> DO NOT use .weakKeys()!. Otherwise, the resulting map will use identity ({@code ==})
     * comparison to determine equality of keys, which is a technical violation of the {@link Map}
@@ -23,15 +20,35 @@ object CachingUtils {
     * @throws IllegalStateException if the key strength was already set
     * @see WeakReference
     */
+  type ConcurrentCache[K, V] = scala.collection.concurrent.Map[K, V]
   def ConcurrentCache[K, V](): ConcurrentCache[K, V] = {
-    CacheBuilder
+
+    // TODO: switching to https://github.com/blemale/scaffeine if faster?
+    val base = CacheBuilder
+      .newBuilder()
+      .concurrencyLevel(CommonUtils.numLocalCores)
+      .weakValues()
+      .build[Object, Object]()
+      .asMap()
+
+    val asScala = base.asScala
+
+    asScala.asInstanceOf[ConcurrentCache[K, V]]
+  }
+
+  type ConcurrentSoftCache[K, V] = scala.collection.concurrent.Map[K, V]
+  def ConcurrentSoftCache[K, V](): ConcurrentCache[K, V] = {
+
+    val base = CacheBuilder
       .newBuilder()
       .concurrencyLevel(CommonUtils.numLocalCores)
       .softValues()
       .build[Object, Object]()
       .asMap()
-      .asScala
-      .asInstanceOf[ConcurrentCache[K, V]]
+
+    val asScala = base.asScala
+
+    asScala.asInstanceOf[ConcurrentCache[K, V]]
   }
 
   type ConcurrentMap[K, V] = scala.collection.concurrent.Map[K, V]
