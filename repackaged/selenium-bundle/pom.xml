@@ -52,6 +52,7 @@
       <plugin>
         <groupId>org.apache.maven.plugins</groupId>
         <artifactId>maven-shade-plugin</artifactId>
+        <version>3.2.4</version>
         <executions>
           <execution>
             <phase>package</phase>
@@ -95,23 +96,23 @@
         </executions>
       </plugin>
 
-      <plugin>
-        <groupId>org.codehaus.mojo</groupId>
-        <artifactId>flatten-maven-plugin</artifactId>
-        <executions>
+<!--      <plugin>-->
+<!--        <groupId>org.codehaus.mojo</groupId>-->
+<!--        <artifactId>flatten-maven-plugin</artifactId>-->
+<!--        <executions>-->
 
-          <!--          see https://github.com/mojohaus/flatten-maven-plugin/issues/100-->
-          <!--          and https://stackoverflow.com/questions/52552329/use-maven-flatten-plugin-and-maven-shade-plugin-at-the-same-time-->
-          <!--          and https://issues.apache.org/jira/browse/MSHADE-323-->
-          <execution>
-            <id>flatten.shaded</id>
-            <phase>package</phase>
-            <goals>
-              <goal>flatten</goal>
-            </goals>
-          </execution>
-        </executions>
-      </plugin>
+<!--          &lt;!&ndash;          see https://github.com/mojohaus/flatten-maven-plugin/issues/100&ndash;&gt;-->
+<!--          &lt;!&ndash;          and https://stackoverflow.com/questions/52552329/use-maven-flatten-plugin-and-maven-shade-plugin-at-the-same-time&ndash;&gt;-->
+<!--          &lt;!&ndash;          and https://issues.apache.org/jira/browse/MSHADE-323&ndash;&gt;-->
+<!--          <execution>-->
+<!--            <id>flatten.shaded</id>-->
+<!--            <phase>package</phase>-->
+<!--            <goals>-->
+<!--              <goal>flatten</goal>-->
+<!--            </goals>-->
+<!--          </execution>-->
+<!--        </executions>-->
+<!--      </plugin>-->
 
     </plugins>
   </build>
