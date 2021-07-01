@@ -7,7 +7,7 @@ import org.apache.spark.sql.catalyst.InternalRow
 import org.apache.spark.sql.types.StructType
 import org.apache.spark.sql.{DataFrame, SQLContext}
 import org.apache.spark.util.CollectionsUtils
-import org.apache.spark.{RangePartitioner, SparkContext, SparkEnv}
+import org.apache.spark.{RangePartitioner, SparkContext}
 
 import scala.reflect.ClassTag
 

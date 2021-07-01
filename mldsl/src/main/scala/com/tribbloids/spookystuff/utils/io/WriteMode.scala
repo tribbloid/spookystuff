@@ -2,7 +2,7 @@ package com.tribbloids.spookystuff.utils.io
 
 object WriteMode extends Enumeration {
 
-  abstract class Effective extends WriteMode
+  sealed abstract class Effective extends WriteMode
 
   object CreateOnly extends Effective
   object Overwrite extends Effective

@@ -38,7 +38,7 @@ case class WaitForUnlock(
     } catch {
       case e: Lock.CanReattempt =>
         throw e
-      case e @ _ =>
+      case e: Throwable =>
         throw BypassingRule.NoRetry(e)
     }
   }

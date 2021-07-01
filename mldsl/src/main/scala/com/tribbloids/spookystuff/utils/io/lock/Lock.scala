@@ -56,7 +56,7 @@ case class Lock(
     } catch {
       case e: CanReattempt =>
         throw e
-      case e @ _ =>
+      case e: Throwable =>
         throw BypassingRule.NoRetry(e)
     } finally {
 

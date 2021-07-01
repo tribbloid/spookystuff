@@ -6,8 +6,6 @@ import org.apache.spark.SparkConf
 import org.apache.spark.serializer.JavaSerializer
 import org.apache.spark.sql.types._
 
-import scala.language.{existentials, implicitConversions}
-
 /**
   *  A Scala TypeTag-based UDT, by default it doesn't compress object
   *  ideally it should compress object into InternalRow.

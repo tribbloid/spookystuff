@@ -252,7 +252,7 @@
       </dependency>
 
       <!--DON'T DELETE! guava has too many versions and a ground truth has to be setup.-->
-<!--      TODO: add back! before this package wreck havoc of hadoop-->
+      <!--      TODO: add back! before this package wreck havoc of hadoop-->
       <dependency>
         <groupId>com.google.guava</groupId>
         <artifactId>guava</artifactId>
@@ -592,15 +592,15 @@
             </goals>
           </execution>
 
-<!--          see https://github.com/mojohaus/flatten-maven-plugin/issues/100-->
-<!--          and https://stackoverflow.com/questions/52552329/use-maven-flatten-plugin-and-maven-shade-plugin-at-the-same-time-->
-<!--          <execution>-->
-<!--            <id>flatten.shaded</id>-->
-<!--            <phase>package</phase>-->
-<!--            <goals>-->
-<!--              <goal>flatten</goal>-->
-<!--            </goals>-->
-<!--          </execution>-->
+          <!--          see https://github.com/mojohaus/flatten-maven-plugin/issues/100-->
+          <!--          and https://stackoverflow.com/questions/52552329/use-maven-flatten-plugin-and-maven-shade-plugin-at-the-same-time-->
+          <!--          <execution>-->
+          <!--            <id>flatten.shaded</id>-->
+          <!--            <phase>package</phase>-->
+          <!--            <goals>-->
+          <!--              <goal>flatten</goal>-->
+          <!--            </goals>-->
+          <!--          </execution>-->
         </executions>
       </plugin>
 
@@ -797,8 +797,11 @@
       <plugin>
         <groupId>org.scalatest</groupId>
         <artifactId>scalatest-maven-plugin</artifactId>
-        <version>2.0.0</version>
+        <version>2.0.2</version>
         <configuration>
+          <reportsDirectory>${project.build.directory}/test-results/scalatest</reportsDirectory>
+          <junitxml>.</junitxml>
+
           <tagsToExclude>
             com.tribbloids.spookystuff.testutils.Unstable,
             com.tribbloids.spookystuff.testutils.LocalOnly
@@ -904,15 +907,11 @@
                   <profiles>spark-2.2,spark-2.3,spark-2.4,spark-2.4-cloudera2</profiles>
                   <all>false</all>
                 </requireActiveProfile>
-                <!--                TODO: use custom rules-->
-                <!--                <requireActiveProfile>-->
-                <!--                  <profiles>spark-2.2,scala-2.12</profiles>-->
-                <!--                  <all>false</all>-->
-                <!--                </requireActiveProfile>-->
-                <!--                <requireActiveProfile>-->
-                <!--                  <profiles>spark-2.3,scala-2.12</profiles>-->
-                <!--                  <all>false</all>-->
-                <!--                </requireActiveProfile>-->
+
+                <requireActiveProfile>
+                  <profiles>scala-2.11,scala-2.12</profiles>
+                  <all>false</all>
+                </requireActiveProfile>
               </rules>
               <fail>true</fail>
             </configuration>

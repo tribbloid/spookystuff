@@ -3,8 +3,6 @@ package org.apache.spark.ml.dsl.utils.refl
 import org.apache.spark.sql.catalyst.ScalaReflection.universe._
 import org.apache.spark.sql.types._
 
-import scala.language.{existentials, implicitConversions}
-
 /**
   * Can only exist in DataRowSchema & extractor to remember ScalaType
   * Not allowed to be used in DataFrame schema

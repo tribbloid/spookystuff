@@ -43,16 +43,16 @@ object TypeUtils extends ReflectionLock {
     * @param t if t is already an option won't yeild Option[ Option[_] ] again
     * @return
     */
-  private def selfAndOptionTypeIfNotAlready(t: TypeTag[_]): Seq[TypeTag[_]] = locked {
-    t match {
-      case at: TypeTag[a] =>
-        if (at.tpe <:< typeOf[Option[_]]) Seq[TypeTag[_]](at)
-        else {
-          implicit val att: TypeTag[a] = at
-          Seq[TypeTag[_]](at, typeTag[Option[a]])
-        }
-    }
-  }
+//  private def selfAndOptionTypeIfNotAlready(t: TypeTag[_]): Seq[TypeTag[_]] = locked {
+//    t match {
+//      case at: TypeTag[a] =>
+//        if (at.tpe <:< typeOf[Option[_]]) Seq[TypeTag[_]](at)
+//        else {
+//          implicit val att: TypeTag[a] = at
+//          Seq[TypeTag[_]](at, typeTag[Option[a]])
+//        }
+//    }
+//  }
 
   def getParameter_ReturnTypes(
       symbol: MethodSymbol,
