@@ -4,16 +4,21 @@
          xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 http://maven.apache.org/xsd/maven-4.0.0.xsd">
     <modelVersion>4.0.0</modelVersion>
 
-    <groupId>com.schedule1.datapassport</groupId>
-    <artifactId>datapassports</artifactId>
-  <packaging>pom</packaging>
-    <name>datapassport</name>
-    <url>https://github.com/tribbloid/spookystuff</url>
+    <groupId>com.tribbloids.spookystuff</groupId>
+    <artifactId>spookystuff</artifactId>
+    <version>${revision}</version>
+
+    <packaging>pom</packaging>
+    <name>spookystuff</name>
+    <description>Scalable Query Engine for Data Acquisition based on Apache Spark</description>
+    <url>http://tribbloid.github.io/spookystuff/</url>
 
     <modules>
+        <module>test-resources</module>
+        <module>mldsl</module>
         <module>core</module>
-        <module>spark</module>
-        <module>generator</module>
+        <module>integration</module>
+        <module>example</module>
         <module>assembly</module>
     </modules>
 
