@@ -34,11 +34,12 @@ SpookyStuff-UAV *(alpha component)*
 Powered by
 -----------
 
-|                                                              |                                                              |                                                              |
-| :----------------------------------------------------------: | :----------------------------------------------------------: | :----------------------------------------------------------: |
-| Apache Spark<br />![Apache Spark](http://spark.apache.org/images/spark-logo.png) | Selenium<br />![Selenium](http://docs.seleniumhq.org/images/big-logo.png) | JSoup<br />![JSoup](https://s.appbrain.com/static/202106032105621/blob/sdk-logos/jsoup.png) |
-| Apache Tika<br />![Apache Tika](http://tika.apache.org/tika.png) | Apache Maven<br />![Apache Maven](https://maven.apache.org/images/maven-logo-black-on-white.png) |                                                              |
-| [Yourkit Java Profiler](https://www.yourkit.com/java/profiler) <br />![Yourkit](https://www.yourkit.com/images/yklogo.png) | PhantomJS/GhostDriver<br />![PhantomJS](http://phantomjs.org/img/phantomjs-logo.png) | MAVLink<br />![MAVLink](https://mavlink.io/assets/site/logo_mavlink_small.png) |
+|      |                                                              |                                                              |                                                              |
+| ---- | :----------------------------------------------------------: | :----------------------------------------------------------: | :----------------------------------------------------------: |
+| Core | Apache Spark<br />![Apache Spark](http://spark.apache.org/images/spark-logo.png) | Apache Maven<br />![Apache Maven](https://maven.apache.org/images/maven-logo-black-on-white.png) | JSoup<br />![JSoup](https://s.appbrain.com/static/202106032105621/blob/sdk-logos/jsoup.png) |
+|      | Apache Tika<br />![Apache Tika](http://tika.apache.org/tika.png) |                                                              |                                                              |
+| Web  | [Yourkit Java Profiler](https://www.yourkit.com/java/profiler) <br />![Yourkit](https://www.yourkit.com/images/yklogo.png) | PhantomJS/GhostDriver<br />![PhantomJS](http://phantomjs.org/img/phantomjs-logo.png) | Selenium<br />![Selenium](http://docs.seleniumhq.org/images/big-logo.png) |
+| UAV  | MAVLink<br />![MAVLink](https://mavlink.io/assets/site/logo_mavlink_small.png) |                                                              |                                                              |
 
 
 
