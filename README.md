@@ -41,8 +41,6 @@ Powered by
 | Web  | [Yourkit Java Profiler](https://www.yourkit.com/java/profiler) <br />![Yourkit](https://www.yourkit.com/images/yklogo.png) | PhantomJS/GhostDriver<br />![PhantomJS](http://phantomjs.org/img/phantomjs-logo.png) | Selenium<br />![Selenium](http://docs.seleniumhq.org/images/big-logo.png) |
 | UAV  | MAVLink<br />![MAVLink](https://mavlink.io/assets/site/logo_mavlink_small.png) |                                                              |                                                              |
 
-
-
 License
 -----------
 
