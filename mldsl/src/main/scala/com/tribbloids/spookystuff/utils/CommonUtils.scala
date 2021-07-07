@@ -4,7 +4,7 @@ import java.io.{File, InputStream, PrintWriter, StringWriter}
 import java.net.URL
 
 import org.apache.spark.SparkEnv
-import org.apache.spark.ml.dsl.utils.FlowUtils
+import org.apache.spark.ml.dsl.utils.DSLUtils
 import org.apache.spark.storage.BlockManagerId
 import org.slf4j.LoggerFactory
 
@@ -54,7 +54,7 @@ abstract class CommonUtils {
   def retry: Retry.FixedInterval.type = Retry.FixedInterval
 
   protected def _callerShowStr: String = {
-    val result = FlowUtils
+    val result = DSLUtils
       .Caller(
         exclude = Seq(classOf[CommonUtils])
       )

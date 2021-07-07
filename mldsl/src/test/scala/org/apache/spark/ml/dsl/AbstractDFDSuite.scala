@@ -12,7 +12,7 @@ import scala.util.matching.Regex
 /**
   * Created by peng on 18/04/16.
   */
-abstract class AbstractFlowSuite extends FunSpecx with BeforeAndAfterAll {
+abstract class AbstractDFDSuite extends FunSpecx with BeforeAndAfterAll {
 
   implicit class StringView(str: String) extends super.TestStringView(str) {
 
@@ -80,13 +80,13 @@ abstract class AbstractFlowSuite extends FunSpecx with BeforeAndAfterAll {
 }
 
 trait UsePruneDownPath {
-  self: AbstractFlowSuite =>
+  self: AbstractDFDSuite =>
 
   override def compaction = Compactions.PruneDownPath
 }
 
 trait UsePruneDownPathKeepRoot {
-  self: AbstractFlowSuite =>
+  self: AbstractDFDSuite =>
 
   override def compaction = Compactions.PruneDownPathKeepRoot
 }

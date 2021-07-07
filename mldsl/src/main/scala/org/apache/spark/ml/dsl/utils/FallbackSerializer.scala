@@ -12,7 +12,7 @@ object FallbackSerializer {}
 
 // fallback mechanism that works for any java object
 abstract class FallbackSerializer(
-    sparkSerializer: org.apache.spark.serializer.Serializer = FlowUtils.defaultJavaSerializer
+    sparkSerializer: org.apache.spark.serializer.Serializer = DSLUtils.defaultJavaSerializer
 ) extends Serializer[Any] {
 
   val VID = -47597349821L

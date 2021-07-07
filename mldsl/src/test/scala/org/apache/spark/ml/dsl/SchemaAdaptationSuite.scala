@@ -1,11 +1,11 @@
 package org.apache.spark.ml.dsl
 
-import org.apache.spark.ml.dsl.utils.FlowUtils
+import org.apache.spark.ml.dsl.utils.DSLUtils
 
 /**
   * Created by peng on 09/05/16.
   */
-class SchemaAdaptationSuite extends AbstractFlowSuite {
+class SchemaAdaptationSuite extends AbstractDFDSuite {
 
   it("cartesianProduct should work on list") {
     val before: List[List[String]] = List(
@@ -13,7 +13,7 @@ class SchemaAdaptationSuite extends AbstractFlowSuite {
       List("1", "2", "3"),
       List("x", "y", "z")
     )
-    val after = FlowUtils.cartesianProductList(before)
+    val after = DSLUtils.cartesianProductList(before)
 
     after
       .mkString("\n")
@@ -52,7 +52,7 @@ class SchemaAdaptationSuite extends AbstractFlowSuite {
 
   it("cartesianProduct should work on empty list") {
     val before: List[Set[String]] = List()
-    val after = FlowUtils.cartesianProductSet(before).toList.sortBy(_.toString())
+    val after = DSLUtils.cartesianProductSet(before).toList.sortBy(_.toString())
 
     after
       .mkString("\n")
@@ -69,7 +69,7 @@ class SchemaAdaptationSuite extends AbstractFlowSuite {
       Set("1", "2", "3"),
       Set()
     )
-    val after = FlowUtils.cartesianProductSet(before).toList.sortBy(_.toString())
+    val after = DSLUtils.cartesianProductSet(before).toList.sortBy(_.toString())
 
     after.mkString("\n").shouldBe("")
   }

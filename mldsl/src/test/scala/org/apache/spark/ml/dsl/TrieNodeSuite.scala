@@ -3,7 +3,7 @@ package org.apache.spark.ml.dsl
 /**
   * Created by peng on 23/04/16.
   */
-class TrieNodeSuite extends AbstractFlowSuite {
+class TrieNodeSuite extends AbstractDFDSuite {
 
   it("compact can merge single child parents") {
     val map = Seq(

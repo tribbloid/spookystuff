@@ -3,7 +3,7 @@ package com.tribbloids.spookystuff.extractors
 import java.lang.reflect.Method
 
 import com.tribbloids.spookystuff.extractors.impl.Lit
-import org.apache.spark.ml.dsl.utils.FlowUtils
+import org.apache.spark.ml.dsl.utils.DSLUtils
 import org.apache.spark.ml.dsl.utils.refl.{ReflectionLock, ScalaType, TypeUtils, UnreifiedObjectType}
 import org.apache.spark.sql.catalyst.ScalaReflection.universe._
 
@@ -36,7 +36,7 @@ case class ScalaDynamic(
         val tpess = dTypes.map { v =>
           List(v.asTypeTag_casted.tpe)
         }
-        val cartesian = FlowUtils.cartesianProductList(tpess)
+        val cartesian = DSLUtils.cartesianProductList(tpess)
         cartesian.map(
           v => Some(v)
         )
@@ -99,7 +99,7 @@ case class ScalaDynamic(
         val classess: List[List[Class[_]]] = argDTypes.map { v =>
           List(v.asClass) :+ classOf[Object]
         }
-        val cartesian = FlowUtils.cartesianProductList(classess)
+        val cartesian = DSLUtils.cartesianProductList(classess)
         cartesian.map(
           v => Some(v)
         )

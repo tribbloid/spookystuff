@@ -1,7 +1,7 @@
 package com.tribbloids.spookystuff.utils
 
 import com.tribbloids.spookystuff.utils.TreeThrowable.ExceptionWithCauses
-import org.apache.spark.ml.dsl.utils.FlowUtils
+import org.apache.spark.ml.dsl.utils.DSLUtils
 import org.apache.spark.sql.catalyst.trees.TreeNode
 
 import scala.util.{Failure, Success, Try}
@@ -33,7 +33,7 @@ object TreeThrowable {
 
     override def verboseString: String =
       simpleString + "\n" +
-        FlowUtils.stackTracesShowStr(self.getStackTrace)
+        DSLUtils.stackTracesShowStr(self.getStackTrace)
   }
 
   /**

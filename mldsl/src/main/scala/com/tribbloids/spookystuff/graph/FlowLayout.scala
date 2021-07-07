@@ -16,65 +16,54 @@ trait FlowLayout[D <: Domain] extends Layout[D] {
 
     trait OperandLike[+M <: _Module] extends super.OperandLike[M] {
 
-      lazy val `>>` = core.Ops(FromLeft, FromRight)
-      lazy val `<<` = core.Ops(FromRight, FromLeft)
+      lazy val RightOps: Core[M]#Ops = core.Ops(FromLeft, FromRight)
+      lazy val LeftOps: Core[M]#Ops = core.Ops(FromRight, FromLeft)
 
       // undirected
 
       def union(another: Operand[_]): Operand[GG] = {
-        `>>`.union(another.core)
+        RightOps.union(another.core)
       }
 
-      final def U(another: Operand[_]) = union(another)
+      final def U(another: Operand[_]): Operand[GG] = union(another)
 
-      final def ||(another: Operand[_]) = union(another)
+      final def ||(another: Operand[_]): Operand[GG] = union(another)
 
       // left > right
 
-      def merge_>(right: OperandLike[_]): Operand[GG] = `>>`.merge(right.core)
+      def compose_>(right: OperandLike[_]): Operand[GG] = RightOps.compose(right.core)
 
-      //    def merge(right: Interface) = merge_>(right)
-      final def >>>(right: OperandLike[_]) = merge_>(right)
+      final def :>>(right: OperandLike[_]): Operand[GG] = compose_>(right)
 
-      final def >(right: OperandLike[_]) = merge_>(right)
+//      final def >(right: OperandLike[_]) = merge_>(right)
 
       //TODO: fast-forward handling: if right is reused for many times,
       // ensure that only the part that doesn't overlap with this got duplicated (conditional duplicate)
-      def rebase_>(right: OperandLike[_]): Operand[_Module] = `>>`.rebase(right.core)
+      def mapHead_>(right: OperandLike[_]): Operand[_Module] = RightOps.mapHead(right.core)
 
-//      final def rebase(right: OperandLike[_]) = rebase_>(right)
-
-      final def >=>(right: OperandLike[_]) = rebase_>(right)
+      final def :=>>(right: OperandLike[_]): Operand[_Module] = mapHead_>(right)
 
       //this is really kind of ambiguous
-      def commit_>(right: OperandLike[_]): Operand[_Module] = `>>`.commit(right.core)
+      def append_>(right: OperandLike[_]): Operand[_Module] = RightOps.append(right.core)
 
-//      final def commit(right: OperandLike[_]) = commit_>(right)
-
-      final def >->(right: OperandLike[_]) = commit_>(right)
+      final def :->(right: OperandLike[_]): Operand[_Module] = append_>(right)
 
       // left < right
       //TODO: follow :>> & <<: convention
 
-      def merge_<(left: OperandLike[_]): Operand[GG] = `<<`.merge(left.core)
+      def compose_<(left: OperandLike[_]): Operand[GG] = LeftOps.compose(left.core)
 
-//      final def egrem(prev: OperandLike[_]) = prev.merge_<(this)
+      final def <<:(left: OperandLike[_]): Operand[GG] = compose_<(left)
 
-      final def <<<(prev: OperandLike[_]) = prev.merge_<(this)
+//      final def <(prev: OperandLike[_]) = prev.merge_<(this)
 
-      final def <(prev: OperandLike[_]) = prev.merge_<(this)
+      def mapHead_<(left: OperandLike[_]): Operand[_Module] = LeftOps.mapHead(left.core)
 
-      def rebase_<(left: OperandLike[_]): Operand[_Module] = `<<`.rebase(left.core)
+      final def <<=:(left: OperandLike[_]): Operand[_Module] = mapHead_<(left)
 
-//      final def esaber(prev: OperandLike[_]) = prev.rebase_<(this)
+      def append_<(left: OperandLike[_]): Operand[_Module] = LeftOps.append(left.core)
 
-      final def <=<(prev: OperandLike[_]) = prev.rebase_<(this)
-
-      def commit_<(left: OperandLike[_]): Operand[_Module] = `<<`.commit(left.core)
-
-//      final def timmoc(left: OperandLike[_]) = left.commit_<(this)
-
-      final def <-<(left: OperandLike[_]) = left.commit_<(this)
+      final def <-:(left: OperandLike[_]): Operand[_Module] = append_<(left)
     }
   }
 }

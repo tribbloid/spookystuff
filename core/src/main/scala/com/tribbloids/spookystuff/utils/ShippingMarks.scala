@@ -1,6 +1,6 @@
 package com.tribbloids.spookystuff.utils
 
-import org.apache.spark.ml.dsl.utils.FlowUtils
+import org.apache.spark.ml.dsl.utils.DSLUtils
 
 trait ShippingMarks extends Serializable {
 
@@ -24,7 +24,7 @@ trait ShippingMarks extends Serializable {
   def notShipped = !isShipped
 
   def requireNotShipped() = {
-    def methodName = FlowUtils.Caller().fnName
+    def methodName = DSLUtils.Caller().fnName
 
     require(notShipped, s"method $methodName can only be used on Spark driver, it is disabled after shipping")
   }

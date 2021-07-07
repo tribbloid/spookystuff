@@ -76,7 +76,7 @@ trait PyRef extends Cleanable {
 
   def pyClassName: String = pyClassNameParts.mkString(".").stripSuffix("$")
   def simpleClassName = pyClassNameParts.last
-  def varNamePrefix = FlowUtils.toCamelCase(simpleClassName)
+  def varNamePrefix = DSLUtils.toCamelCase(simpleClassName)
   def packageName = pyClassNameParts.slice(0, pyClassNameParts.length - 1).mkString(".")
 
   override def chainClean: Seq[Cleanable] = bindings

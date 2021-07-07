@@ -63,7 +63,7 @@ class FlowLayoutSuite extends FunSpecx {
       val f1: Op = Some("ABC")
       val f2: Op = Some("DEF")
 
-      val linked = f1 >>> f2
+      val linked = f1 :>> f2
       linked.visualise().showStr() shouldBe
         """
           |>>- -->
@@ -118,7 +118,7 @@ class FlowLayoutSuite extends FunSpecx {
       val e1: Op = Edge(Some("edge"))
       val f2: Op = Some("DEF")
 
-      val linked = f1 >>> e1 >>> f2
+      val linked = f1 :>> e1 :>> f2
       linked.visualise().showStr() shouldBe
         """
           |>>- -->
@@ -139,7 +139,7 @@ class FlowLayoutSuite extends FunSpecx {
       val f1: Op = Edge(Some("ABC"))
       val f2: Op = Edge(Some("DEF"))
 
-      val linked = f1 >>> f2
+      val linked = f1 :>> f2
       linked.visualise().showStr() shouldBe
         """
           |>>- -->
@@ -156,7 +156,7 @@ class FlowLayoutSuite extends FunSpecx {
 
       val node: Op = Some("ABC")
 
-      val linked = node >>> node
+      val linked = node :>> node
       linked.visualise().showStr() shouldBe
         """
           |>>- -->
@@ -201,7 +201,7 @@ class FlowLayoutSuite extends FunSpecx {
       val node: Op = Some("ABC")
       val edge: Op = Edge(Some("loop"))
 
-      val n1 = node >>> edge
+      val n1 = node :>> edge
       n1.visualise().showStr() shouldBe
         """
           |>>- -->
@@ -212,7 +212,7 @@ class FlowLayoutSuite extends FunSpecx {
           |v (TAIL-<<) [ loop ]
         """.stripMargin
 
-      val linked = n1 >>> node
+      val linked = n1 :>> node
       linked.visualise().showStr() shouldBe
         """
           |>>- -->
@@ -254,9 +254,9 @@ class FlowLayoutSuite extends FunSpecx {
 
     it("edge-node >>> itself") {
 
-      val edge_node: Op = Edge(Some("loop")) >>> Node(Some("ABC"))
+      val edge_node: Op = Edge(Some("loop")) :>> Node(Some("ABC"))
 
-      val linked = edge_node >>> edge_node
+      val linked = edge_node :>> edge_node
       linked.visualise().showStr(asciiArt = true) shouldBe
         """
           | ┌──────────────────┐ ┌───────────────┐
@@ -282,9 +282,9 @@ class FlowLayoutSuite extends FunSpecx {
 
     it("(2 edges >- node ) >>> itself") {
 
-      val edges_node = (Edge(Some("loop1")) U Edge(Some("loop2"))) >>> Node(Some("ABC"))
+      val edges_node = (Edge(Some("loop1")) U Edge(Some("loop2"))) :>> Node(Some("ABC"))
 
-      val linked = edges_node >>> edges_node
+      val linked = edges_node :>> edges_node
       linked.visualise().showStr(asciiArt = true) shouldBe
         """
           | ┌───────────────────┐ ┌───────────────────┐ ┌───────────────┐
@@ -317,7 +317,9 @@ class FlowLayoutSuite extends FunSpecx {
       val n2: Op = Some("B")
       val n3: Op = Some("C")
 
-      (n1 >>> n2 <<< n3).visualise().showStr() shouldBe
+      val rr = (n1 :>> n2 <<: n3)
+
+      rr.visualise().showStr() shouldBe
         """
           |>>- -->
           |v (TAIL>>-) [ ∅ ]
@@ -332,6 +334,38 @@ class FlowLayoutSuite extends FunSpecx {
           |      +- B
           |         +- v (HEAD) [ ∅ ]
       """.stripMargin
+
+      rr.visualise()
+        .showStr(true)
+        .shouldBe(
+          """
+            | ┌───────────────┐ ┌───────────────┐
+            | │(TAIL>>-) [ ∅ ]│ │(TAIL-<<) [ ∅ ]│
+            | └────────┬──────┘ └───┬───────────┘
+            |          │            │            
+            |          v            v            
+            |        ┌───┐        ┌───┐          
+            |        │ A │        │ C │          
+            |        └─┬─┘        └──┬┘          
+            |          │             │           
+            |          v             v           
+            |       ┌─────┐       ┌─────┐        
+            |       │[ ∅ ]│       │[ ∅ ]│        
+            |       └──┬──┘       └──┬──┘        
+            |          │             │           
+            |          └─────┐ ┌─────┘           
+            |                │ │                 
+            |                v v                 
+            |              ┌─────┐               
+            |              │  B  │               
+            |              └───┬─┘               
+            |                  │                 
+            |                  v                 
+            |           ┌────────────┐           
+            |           │(HEAD) [ ∅ ]│           
+            |           └────────────┘           
+            |""".stripMargin
+        )
     }
   }
 }

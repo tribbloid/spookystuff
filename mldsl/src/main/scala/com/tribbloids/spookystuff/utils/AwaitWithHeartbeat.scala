@@ -2,7 +2,7 @@ package com.tribbloids.spookystuff.utils
 
 import java.util.concurrent.Executors
 
-import org.apache.spark.ml.dsl.utils.FlowUtils
+import org.apache.spark.ml.dsl.utils.DSLUtils
 import org.slf4j.LoggerFactory
 
 import scala.concurrent.duration._
@@ -19,7 +19,7 @@ case class AwaitWithHeartbeat(
 )(callbackOpt: Option[Int => Unit] = None) {
 
   protected lazy val _callerShowStr = {
-    val result = FlowUtils
+    val result = DSLUtils
       .Caller(
         exclude = Seq(classOf[CommonUtils], classOf[AwaitWithHeartbeat])
       )

@@ -5,26 +5,26 @@ import org.apache.spark.ml.feature._
 /**
   * Created by peng on 27/04/16.
   */
-class RebaseSuite extends AbstractFlowSuite {
+class MapHeadSuite extends AbstractDFDSuite {
 
-  import FlowComponent._
+  import DFDComponent._
 
-  it("rebase_> Source doesn't work") {
-    intercept[AssertionError] {
-      'input >=> new Tokenizer() >=> 'dummy
+  it("mapHead_> Source doesn't work") {
+    intercept[IllegalArgumentException] {
+      'input :=>> new Tokenizer() :=>> 'dummy
     }
   }
 
-  it("rebase_< Source doesn't work") {
-    intercept[AssertionError] {
-      'input <=< new Tokenizer() <=< 'dummy
+  it("mapHead_< Source doesn't work") {
+    intercept[IllegalArgumentException] {
+      'input <<=: new Tokenizer() <<=: 'dummy
     }
   }
 
-  it("rebase_> can append to 2 heads") {
+  it("mapHead_> can append to 2 heads") {
     val flow = (
       ('input1 U 'input2)
-        >=> new VectorAssembler()
+        :=>> new VectorAssembler()
     )
 
     flow
@@ -42,11 +42,11 @@ class RebaseSuite extends AbstractFlowSuite {
       )
   }
 
-  it("rebase_< can append to 2 heads") {
+  it("mapHead_< can append to 2 heads") {
 
     val flow = (
       new VectorAssembler()
-        <=< ('input1 U 'input2)
+        <<=: ('input1 U 'input2)
     )
 
     flow
@@ -64,16 +64,16 @@ class RebaseSuite extends AbstractFlowSuite {
       )
   }
 
-  it("rebase_> can generate 2 stage replicas and append to 2 selected") {
+  it("mapHead_> can generate 2 stage replicas and append to 2 selected") {
 
     val flow = (
       (
         'input
-          >>> new Tokenizer()
-          >>> new StopWordsRemover()
+          :>> new Tokenizer()
+          :>> new StopWordsRemover()
       ).from("Tokenizer")
         .and("StopWordsRemover")
-        >=> new NGram()
+        :=>> new NGram()
     )
 
     flow
@@ -92,16 +92,16 @@ class RebaseSuite extends AbstractFlowSuite {
       )
   }
 
-  it("rebase_< can generate 2 stage replicas and append to 2 selected") {
+  it("mapHead_< can generate 2 stage replicas and append to 2 selected") {
 
     val flow = (
       new NGram()
-        <=< (
-          new StopWordsRemover()
-            <<< new Tokenizer()
-            <<< 'input
-        ).from("Tokenizer")
-          .and("StopWordsRemover")
+        <<=: (
+        new StopWordsRemover()
+          <<: new Tokenizer()
+          <<: 'input
+      ).from("Tokenizer")
+        .and("StopWordsRemover")
     )
 
     flow
@@ -120,17 +120,17 @@ class RebaseSuite extends AbstractFlowSuite {
       )
   }
 
-  it("rebase_> can generate 2 stage replicas and append to 2 heads") {
+  it("mapHead_> can generate 2 stage replicas and append to 2 heads") {
 
     val flow = (
       (
         'input
-          >>> new Tokenizer()
-          >>> new StopWordsRemover()
+          :>> new Tokenizer()
+          :>> new StopWordsRemover()
       ).from("Tokenizer")
         .and("StopWordsRemover")
-        >=> new NGram()
-        >=> new HashingTF()
+        :=>> new NGram()
+        :=>> new HashingTF()
     )
 
     flow
@@ -151,17 +151,17 @@ class RebaseSuite extends AbstractFlowSuite {
       )
   }
 
-  it("rebase_< can generate 2 stage replicas and append to 2 heads") {
+  it("mapHead_< can generate 2 stage replicas and append to 2 heads") {
 
     val flow = (
       new HashingTF()
-        <=< new NGram()
-        <=< (
-          new StopWordsRemover()
-            <<< new Tokenizer()
-            <<< 'input
-        ).from("Tokenizer")
-          .and("StopWordsRemover")
+        <<=: new NGram()
+        <<=: (
+        new StopWordsRemover()
+          <<: new Tokenizer()
+          <<: 'input
+      ).from("Tokenizer")
+        .and("StopWordsRemover")
     )
 
     flow
@@ -182,14 +182,14 @@ class RebaseSuite extends AbstractFlowSuite {
       )
   }
 
-  it("rebase_> won't remove Source of downstream if it's in tails of both side") {
+  it("mapHead_> won't remove Source of downstream if it's in tails of both side") {
 
-    val dummy: FlowComponent = 'dummy
-    val down = dummy >-> new VectorAssembler() <-< dummy
+    val dummy: DFDComponent = 'dummy
+    val down = dummy :-> new VectorAssembler() <-: dummy
 
     val flow = (
       'input
-        >=> down
+        :=>> down
     )
 
     flow
@@ -204,13 +204,13 @@ class RebaseSuite extends AbstractFlowSuite {
       )
   }
 
-  it("rebase_< won't remove Source of downstream if it's in tails of both side") {
+  it("mapHead_< won't remove Source of downstream if it's in tails of both side") {
 
-    val dummy: FlowComponent = 'dummy
-    val down = dummy >-> new VectorAssembler() <-< dummy
+    val dummy: DFDComponent = 'dummy
+    val down = dummy :-> new VectorAssembler() <-: dummy
 
     val flow =
-      down <=<
+      down <<=:
         'input
 
     flow
@@ -226,6 +226,6 @@ class RebaseSuite extends AbstractFlowSuite {
   }
 }
 
-class RebaseSuite_PruneDownPath extends RebaseSuite with UsePruneDownPath
+class MapHeadSuite_PruneDownPath extends MapHeadSuite with UsePruneDownPath
 
-class RebaseSuite_PruneDownPathKeepRoot extends RebaseSuite with UsePruneDownPathKeepRoot
+class MapHeadSuite_PruneDownPathKeepRoot extends MapHeadSuite with UsePruneDownPathKeepRoot

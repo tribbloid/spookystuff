@@ -1,5 +1,6 @@
 package com.tribbloids.spookystuff.parsing
 
+import com.tribbloids.spookystuff.graph.Module
 import com.tribbloids.spookystuff.parsing.FSMParserGraph.Layout._
 
 import scala.language.implicitConversions
@@ -36,10 +37,10 @@ object FSMParserDSL extends DSL {
 
       val topWithEntry = top match {
         case FINISH => FINISH
-        case _      => top.entry >>> top
+        case _      => top.entry :>> top
       }
 
-      val core = (base >>> topWithEntry).core
+      val core = (base :>> topWithEntry).core
       new Operand(core, base.entry.self)
     }
 
@@ -47,12 +48,14 @@ object FSMParserDSL extends DSL {
 
       val base = this
 
-      val topWithEntry = top match {
+      val topWithEntry: Operand[Module[FSMParserGraph]] = top match {
         case FINISH => FINISH
-        case _      => top <<< top.entry
+        case _ =>
+          top.entry.<<:(top)
+//          top <<: (top.entry) TODO: why this doesn't work?
       }
 
-      val core = (topWithEntry <<< base).core
+      val core = (topWithEntry <<: base).core
       new Operand(core, base.entry.self)
     }
 
@@ -102,7 +105,7 @@ object FSMParserDSL extends DSL {
 
       val pruned = this.core.copy(tails = prunedTails)
 
-      (root >>> create(pruned) <<< root).core
+      (root :>> create(pruned) <<: root).core
     }
 
     lazy val initialFState: FState = {

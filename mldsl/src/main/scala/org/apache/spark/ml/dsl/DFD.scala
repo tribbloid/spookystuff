@@ -3,7 +3,7 @@ package org.apache.spark.ml.dsl
 import com.github.mdr.ascii.graph.Graph
 import com.github.mdr.ascii.layout.GraphLayout
 import com.github.mdr.ascii.layout.prefs.LayoutPrefsImpl
-import org.apache.spark.ml.dsl.utils.FlowUtils
+import org.apache.spark.ml.dsl.utils.DSLUtils
 import org.apache.spark.ml.dsl.utils.messaging.{MessageAPI_<<, MessageRelay}
 import org.apache.spark.ml.{Pipeline, PipelineModel, PipelineStage, Transformer}
 import org.apache.spark.sql.catalyst.expressions.NamedExpression
@@ -60,8 +60,8 @@ trait StepGraph {
     val from = coll(fromID)
     val to = coll(toID)
 
-    assert(from != PASSTHROUGH)
-    assert(to != PASSTHROUGH)
+    require(from != PASSTHROUGH)
+    require(to != PASSTHROUGH)
 
     val updatedFrom = from.wth(usageIDs = from.usageIDs + toID)
     val updatedTo = to.wth(dependencyIDs = to.dependencyIDs :+ fromID)
@@ -115,7 +115,7 @@ trait StepGraph {
     result
   }
 
-  def UU(another: StepMap[String, StepLike]) = unionImpl(another)
+  def UU(another: StepMap[String, StepLike]): StepMap[String, StepLike] = unionImpl(another)
 
   implicit def stepsToView(steps: StepMap[String, StepLike]): StepMapView = new StepMapView(steps)
 }
@@ -157,7 +157,7 @@ trait MayHaveTails extends StepGraph {
     case PASSTHROUGH => Nil
   }
 
-  final def canConnectFromLeft = leftIntakes.nonEmpty || leftTails.contains(PASSTHROUGH)
+  final def canConnectFromLeft: Boolean = leftIntakes.nonEmpty || leftTails.contains(PASSTHROUGH)
 
   def rightTailIDs: Seq[String]
   final lazy val rightTails = rightTailIDs.map(coll)
@@ -178,17 +178,17 @@ trait MayHaveTails extends StepGraph {
     case PASSTHROUGH => Nil
   }
 
-  final def canConnectFromRight = rightIntakes.nonEmpty || rightTails.contains(PASSTHROUGH)
+  final def canConnectFromRight: Boolean = rightIntakes.nonEmpty || rightTails.contains(PASSTHROUGH)
 
-  def tailIDs = leftTailIDs ++ rightTailIDs
-  def tails = leftTails ++ rightTails
+  def tailIDs: Seq[String] = leftTailIDs ++ rightTailIDs
+  def tails: Seq[StepLike] = leftTails ++ rightTails
 }
 
 trait MayHaveHeads extends StepGraph {
 
   def headIDs: Seq[String]
   def fromIDs: Seq[String] = headIDs
-  def headExists = headIDs.nonEmpty
+  def headExists: Boolean = headIDs.nonEmpty
 
   final lazy val heads = headIDs.map(coll)
   final lazy val PASSTHROUGHOutput: Option[Connector] = heads.find(_ == PASSTHROUGH) map (_.asInstanceOf[Connector])
@@ -196,22 +196,22 @@ trait MayHaveHeads extends StepGraph {
   //all heads must have outIDs
 
   //TODO: separate outlet (head with outIDs) with head, which should simply denotes end of a pipe
-  heads.foreach(v => assert(v.canBeHead))
+  heads.foreach(v => require(v.canBeHead))
 
   protected def checkConnectivity_>(fromIDs: Seq[String], right: MayHaveTails): Unit = {
     val froms: Seq[StepLike] = fromIDs.map(coll)
-    assert(froms.nonEmpty, "has no from")
-    assert(right.canConnectFromLeft, "has no left intake")
+    require(froms.nonEmpty, "has no from")
+    require(right.canConnectFromLeft, "has no left intake")
   }
 
   protected def checkConnectivity_<(fromIDs: Seq[String], left: MayHaveTails): Unit = {
     val froms = fromIDs.map(coll)
-    assert(froms.nonEmpty, "has no from")
-    assert(left.canConnectFromRight, "has no right intake")
+    require(froms.nonEmpty, "has no from")
+    require(left.canConnectFromRight, "has no right intake")
   }
 }
 
-object FlowComponent {
+object DFDComponent {
 
   implicit def pipelineStageToStep(v: PipelineStage): Step = {
     val namedStage = NamedStage(
@@ -271,12 +271,12 @@ object FlowComponent {
     Source(name)
   }
 
-  def declare(flows: Flow*) = {
+  def declare(flows: DFD*): DFD = {
     flows.reduce(_ union _)
   }
 }
 
-trait FlowComponent extends MayHaveHeads with MayHaveTails {
+trait DFDComponent extends MayHaveHeads with MayHaveTails {
 
   //validations
   {
@@ -297,7 +297,7 @@ trait FlowComponent extends MayHaveHeads with MayHaveTails {
   //     |
   //     "~> right <~
   //           |
-  def mergeImpl_>(fromIDs: Seq[String], right: FlowComponent): Flow = {
+  def composeImpl_>(fromIDs: Seq[String], right: DFDComponent): DFD = {
     checkConnectivity_>(fromIDs, right)
     val effectiveFromIDs = fromIDs.map(coll).filter(_ != PASSTHROUGH).map(_.id)
     val toIDs = right.leftIntakes.map(_.id)
@@ -339,7 +339,7 @@ trait FlowComponent extends MayHaveHeads with MayHaveTails {
       this.headIDs
     }
 
-    val result = new Flow(
+    val result = new DFD(
       newSteps,
       leftTailIDs = newLeftTailIDs,
       rightTailIDs = newRightTailIDs,
@@ -355,7 +355,7 @@ trait FlowComponent extends MayHaveHeads with MayHaveTails {
   //           |
   // ~> left <~
   //     |
-  def mergeImpl_<(fromIDs: Seq[String], left: FlowComponent): Flow = {
+  def composeImpl_<(fromIDs: Seq[String], left: DFDComponent): DFD = {
     checkConnectivity_<(fromIDs, left)
     val effectiveFromIDs = fromIDs.map(coll).filter(_ != PASSTHROUGH).map(_.id)
     val toIDs = left.rightIntakes.map(_.id)
@@ -398,7 +398,7 @@ trait FlowComponent extends MayHaveHeads with MayHaveTails {
       this.headIDs
     }
 
-    val result = new Flow(
+    val result = new DFD(
       newSteps,
       leftTailIDs = newLeftTailIDs,
       rightTailIDs = newRightTailIDs,
@@ -409,45 +409,43 @@ trait FlowComponent extends MayHaveHeads with MayHaveTails {
     result
   }
 
-  def merge_>(right: FlowComponent): Flow = mergeImpl_>(this.fromIDs, right)
-  def merge(right: FlowComponent) = merge_>(right)
-  def >>>(right: FlowComponent) = merge_>(right)
-  def >(right: FlowComponent) = merge_>(right)
-
-  def merge_<(left: FlowComponent): Flow = mergeImpl_<(this.fromIDs, left)
-  def egrem(prev: FlowComponent) = prev.merge_<(this)
-  def <<<(prev: FlowComponent) = prev.merge_<(this)
-  def <(prev: FlowComponent) = prev.merge_<(this)
-
-  def replicate(suffix: String = ""): FlowComponent
+  def compose_>(right: DFDComponent): DFD = composeImpl_>(this.fromIDs, right)
+  def compose(right: DFDComponent): DFD = compose_>(right)
+  def :>>(right: DFDComponent): DFD = compose_>(right)
+//  def >(right: FlowComponent) = compose_>(right)
 
   //TODO: fast-forward handling: if right is reused for many times, ensure that only the part that doesn't overlap with this got duplicated (conditional duplicate)
-  def rebase_>(right: FlowComponent): Flow = {
+  def mapHead_>(right: DFDComponent): DFD = {
 
     //    checkConnectivity_>(fromIDs, right)
-    val rebasedFirst: Flow = this.mergeImpl_>(Seq(fromIDs.head), right)
+    val firstResult: DFD = this.composeImpl_>(Seq(fromIDs.head), right)
 
-    this.fromIDs.slice(1, Int.MaxValue).foldLeft(rebasedFirst) { (flow, id) =>
-      flow.mergeImpl_>(Seq(id), right.replicate())
+    this.fromIDs.slice(1, Int.MaxValue).foldLeft(firstResult) { (flow, id) =>
+      flow.composeImpl_>(Seq(id), right.replicate())
     }
   }
-  def rebase(right: FlowComponent) = rebase_>(right)
-  def >=>(right: FlowComponent) = rebase_>(right)
+  def mapHead(right: DFDComponent): DFD = mapHead_>(right)
+  def :=>>(right: DFDComponent): DFD = mapHead_>(right)
 
-  def rebase_<(left: FlowComponent): Flow = {
+  def compose_<(left: DFDComponent): DFD = composeImpl_<(this.fromIDs, left)
+  def <<:(left: DFDComponent): DFD = compose_<(left)
+//  def <(left: FlowComponent) = compose_<(left)
+
+  def replicate(suffix: String = ""): DFDComponent
+
+  def mapHead_<(left: DFDComponent): DFD = {
 
     //    checkConnectivity_<(fromIDs, left)
-    val rebasedFirst: Flow = this.mergeImpl_<(Seq(fromIDs.head), left)
+    val firstResult: DFD = this.composeImpl_<(Seq(fromIDs.head), left)
 
-    this.fromIDs.slice(1, Int.MaxValue).foldLeft(rebasedFirst) { (flow, id) =>
-      flow.mergeImpl_<(Seq(id), left.replicate())
+    this.fromIDs.slice(1, Int.MaxValue).foldLeft(firstResult) { (flow, id) =>
+      flow.composeImpl_<(Seq(id), left.replicate())
     }
   }
-  def esaber(prev: FlowComponent) = prev.rebase_<(this)
-  def <=<(prev: FlowComponent) = prev.rebase_<(this)
+  def <<=:(prev: DFDComponent): DFD = mapHead_<(prev)
 
-  def union(another: FlowComponent): Flow = {
-    val result = Flow(
+  def union(another: DFDComponent): DFD = {
+    val result = DFD(
       coll = this.coll UU another.coll,
       leftTailIDs = (this.leftTailIDs ++ another.leftTailIDs).distinct,
       rightTailIDs = (this.rightTailIDs ++ another.rightTailIDs).distinct,
@@ -456,33 +454,32 @@ trait FlowComponent extends MayHaveHeads with MayHaveTails {
     result.validateOnSources()
     result
   }
-  def U(another: FlowComponent) = union(another)
+  def U(another: DFDComponent): DFD = union(another)
 
-  def commit_>(right: FlowComponent): Flow = {
+  def append_>(right: DFDComponent): DFD = {
     val intakes = right.leftIntakes
-    assert(intakes.size <= 1, "non-linear right operand, please use merge_>, rebase_> or union instead")
+    require(intakes.size <= 1, "non-linear right operand, please use compose_>, mapHead_> or union instead")
     intakes.headOption match {
       case Some(intake) =>
-        this.rebase_>(right)
+        this.mapHead_>(right)
       case _ =>
         this.union(right)
     }
   }
-  def commit(right: FlowComponent) = commit_>(right)
-  def >->(right: FlowComponent) = commit_>(right)
+  def append(right: DFDComponent): DFD = append_>(right)
+  def :->(right: DFDComponent): DFD = append_>(right)
 
-  def commit_<(left: FlowComponent): Flow = {
+  def append_<(left: DFDComponent): DFD = {
     val intakes = left.rightIntakes
-    assert(intakes.size <= 1, "non-linear left operand, please use merge_<, rebase_< or union instead")
+    require(intakes.size <= 1, "non-linear left operand, please use compose_<, mapHead_< or union instead")
     intakes.headOption match {
       case Some(step) =>
-        this.rebase_<(left)
+        this.mapHead_<(left)
       case _ =>
         this.union(left)
     }
   }
-  def timmoc(left: FlowComponent) = left.commit_<(this)
-  def <-<(left: FlowComponent) = left.commit_<(this)
+  def <-:(left: DFDComponent): DFD = append_<(left)
 
   case class StepVisualWrapper(
       override val self: StepLike,
@@ -495,10 +492,10 @@ trait FlowComponent extends MayHaveHeads with MayHaveTails {
     def prefixes: Seq[String] =
       if (showPrefix) {
         val buffer = ArrayBuffer[String]()
-        if (FlowComponent.this.headIDs contains self.id) buffer += "HEAD"
+        if (DFDComponent.this.headIDs contains self.id) buffer += "HEAD"
         //      else {
-        val isLeftTail = FlowComponent.this.leftTailIDs contains self.id
-        val isRightTail = FlowComponent.this.rightTailIDs contains self.id
+        val isLeftTail = DFDComponent.this.leftTailIDs contains self.id
+        val isRightTail = DFDComponent.this.rightTailIDs contains self.id
         if (isLeftTail && isRightTail) buffer += "TAIL"
         else {
           if (isLeftTail) buffer += "TAIL>"
@@ -508,7 +505,7 @@ trait FlowComponent extends MayHaveHeads with MayHaveTails {
         buffer
       } else Nil
 
-    override def toString = prefixes.map("(" + _ + ")").mkString("") + " " + {
+    override def toString: String = prefixes.map("(" + _ + ")").mkString("") + " " + {
       self match {
         case v: Step      => v.stage.show(showID, showInputs, showOutput)
         case v: Connector => "[" + v.id + "]"
@@ -525,7 +522,7 @@ trait FlowComponent extends MayHaveHeads with MayHaveTails {
   ) extends StepTreeNode[ForwardNode] {
 
     //    def prefix = if (this.children.nonEmpty) "v "
-    def prefix =
+    def prefix: String =
       if (this.children.nonEmpty) "> "
       else "> "
 
@@ -536,7 +533,7 @@ trait FlowComponent extends MayHaveHeads with MayHaveTails {
     override lazy val children: Seq[ForwardNode] = {
       self.usageIDs
         .map { id =>
-          FlowComponent.this.coll(id)
+          DFDComponent.this.coll(id)
         }
         .toList
         .sortBy(_.name)
@@ -554,7 +551,7 @@ trait FlowComponent extends MayHaveHeads with MayHaveTails {
   ) extends StepTreeNode[BackwardNode] {
 
     //    def prefix = if (this.children.nonEmpty) "^ "
-    def prefix =
+    def prefix: String =
       if (this.children.nonEmpty) "< "
       else "< "
 
@@ -565,7 +562,7 @@ trait FlowComponent extends MayHaveHeads with MayHaveTails {
     override lazy val children: Seq[BackwardNode] = {
       self.dependencyIDs
         .map { id =>
-          FlowComponent.this.coll(id)
+          DFDComponent.this.coll(id)
         }
         .map(v => BackwardNode(wrapper.copy(v)))
     }
@@ -599,12 +596,12 @@ trait FlowComponent extends MayHaveHeads with MayHaveTails {
 
     val lookup = compaction(ids_MultiPartNames.values.toSet)
     val compactNames = lookup.values.toSeq
-    assert(compactNames.size == compactNames.distinct.size)
+    require(compactNames.size == compactNames.distinct.size)
 
     val ids_compactNames = ids_MultiPartNames.mapValues(lookup)
     val ids_disambiguatedNames = disambiguateNames(ids_compactNames)
     val disambiguatedNames = ids_disambiguatedNames.values.toSeq
-    assert(disambiguatedNames.size == disambiguatedNames.distinct.size)
+    require(disambiguatedNames.size == disambiguatedNames.distinct.size)
 
     val ids_cols = ids_disambiguatedNames.mapValues(_.mkString("$"))
 
@@ -627,9 +624,9 @@ trait FlowComponent extends MayHaveHeads with MayHaveTails {
   // it only append steps that has all dependencies in the list
   // it is fast and can be used whenever a new Flow is constructed and has typed sources.
   def buildStagesImpl[T <: PipelineStage](
-      compaction: PathCompaction = Flow.DEFAULT_COMPACTION,
+      compaction: PathCompaction = DFD.DEFAULT_COMPACTION,
       fieldsEvidenceOpt: Option[Array[StructField]] = None, //set this to make pipeline adaptive to df being transformed.
-      adaptation: SchemaAdaptation = Flow.DEFAULT_SCHEMA_ADAPTATION
+      adaptation: SchemaAdaptation = DFD.DEFAULT_SCHEMA_ADAPTATION
   ): Pipeline = {
     propagateCols(compaction)
 
@@ -751,7 +748,7 @@ trait FlowComponent extends MayHaveHeads with MayHaveTails {
         )
     }
 
-    assert(
+    require(
       warehouse.isEmpty,
       "Cyclic pipeline stage dependency:\n" + warehouse.values.map(_.stage).mkString("\n")
     )
@@ -760,11 +757,11 @@ trait FlowComponent extends MayHaveHeads with MayHaveTails {
   }
 
   def build(
-      compaction: PathCompaction = Flow.DEFAULT_COMPACTION,
+      compaction: PathCompaction = DFD.DEFAULT_COMPACTION,
       fieldsEvidence: Array[StructField] = null, //set this to make pipeline adaptive to df being transformed.
       schemaEvidence: StructType = null, //set this to make pipeline adaptive to df being transformed.
       dfEvidence: DataFrame = null, //set this to make pipeline adaptive to df being transformed.
-      adaptation: SchemaAdaptation = Flow.DEFAULT_SCHEMA_ADAPTATION
+      adaptation: SchemaAdaptation = DFD.DEFAULT_SCHEMA_ADAPTATION
   ): Pipeline = {
 
     buildStagesImpl[PipelineStage](
@@ -781,15 +778,15 @@ trait FlowComponent extends MayHaveHeads with MayHaveTails {
   }
 
   def buildModel(
-      compaction: PathCompaction = Flow.DEFAULT_COMPACTION,
+      compaction: PathCompaction = DFD.DEFAULT_COMPACTION,
       fieldsEvidence: Array[StructField] = null, //set this to make pipeline adaptive to df being transformed.
       schemaEvidence: StructType = null, //set this to make pipeline adaptive to df being transformed.
       dfEvidence: DataFrame = null, //set this to make pipeline adaptive to df being transformed.
-      adaptation: SchemaAdaptation = Flow.DEFAULT_SCHEMA_ADAPTATION
+      adaptation: SchemaAdaptation = DFD.DEFAULT_SCHEMA_ADAPTATION
   ): PipelineModel = {
 
     coll.foreach {
-      case (_, v: Step) => assert(v.stage.stage.isInstanceOf[Transformer])
+      case (_, v: Step) => require(v.stage.stage.isInstanceOf[Transformer])
       case _            =>
     }
 
@@ -816,9 +813,9 @@ trait FlowComponent extends MayHaveHeads with MayHaveTails {
     this
       .replicate()
       .buildStagesImpl[PipelineStage](
-        Flow.COMPACTION_FOR_TYPECHECK,
+        DFD.COMPACTION_FOR_TYPECHECK,
         fieldsEvidenceOpt = Some(fieldsEvidence),
-        adaptation = Flow.SCHEMA_ADAPTATION_FOR_TYPECHECK
+        adaptation = DFD.SCHEMA_ADAPTATION_FOR_TYPECHECK
       )
   }
 
@@ -831,7 +828,7 @@ trait FlowComponent extends MayHaveHeads with MayHaveTails {
       }
       .toList
 
-    val cartesian: Set[List[StructField]] = FlowUtils.cartesianProductSet(fields)
+    val cartesian: Set[List[StructField]] = DSLUtils.cartesianProductSet(fields)
     val schemas = cartesian.map(v => new StructType(v.toArray))
     schemas.foreach { schema =>
       if (schema.fields.nonEmpty) validateOnSchema(schema.fields)
@@ -887,11 +884,11 @@ trait FlowComponent extends MayHaveHeads with MayHaveTails {
 
   protected final val layoutPrefs = LayoutPrefsImpl(unicode = true, explicitAsciiBends = false)
   def showASCIIArt(
-      forward: Boolean,
-      showID: Boolean,
-      showInputs: Boolean,
-      showOutput: Boolean,
-      showPrefix: Boolean
+      showID: Boolean = true,
+      showInputs: Boolean = true,
+      showOutput: Boolean = true,
+      showPrefix: Boolean = true,
+      forward: Boolean = true,
   ): String = {
 
     val prettyColl = coll.mapValues { v =>
@@ -922,7 +919,7 @@ trait FlowComponent extends MayHaveHeads with MayHaveTails {
       showPrefix: Boolean = true,
       forward: Boolean = true,
       asciiArt: Boolean = false,
-      compactionOpt: Option[PathCompaction] = Some(Flow.DEFAULT_COMPACTION)
+      compactionOpt: Option[PathCompaction] = Some(DFD.DEFAULT_COMPACTION)
   ): String = {
     compactionOpt.foreach(this.propagateCols)
 
@@ -936,12 +933,12 @@ trait FlowComponent extends MayHaveHeads with MayHaveTails {
         showBackwardTree(this.heads, showID, showInputs, showOutput, showPrefix)
       }
     } else {
-      showASCIIArt(forward, showID, showInputs, showOutput, showPrefix)
+      showASCIIArt(showID, showInputs, showOutput, showPrefix, forward)
     }
   }
 }
 
-object Flow extends MessageRelay[Flow] {
+object DFD extends MessageRelay[DFD] {
 
   final val DEFAULT_COMPACTION: PathCompaction = Compactions.PruneDownPath
   final val DEFAULT_SCHEMA_ADAPTATION: SchemaAdaptation = SchemaAdaptations.FailFast
@@ -954,9 +951,9 @@ object Flow extends MessageRelay[Flow] {
   def apply(s: Symbol): Source = s
   def apply(s: StructField): Source = s
 
-  override def toMessage_>>(flow: Flow): M = {
+  override def toMessage_>>(flow: DFD): M = {
 
-    flow.propagateCols(Flow.DEFAULT_COMPACTION)
+    flow.propagateCols(DFD.DEFAULT_COMPACTION)
 
     val steps: Seq[Step] = flow.coll.values.collect {
       case st: Step => st
@@ -997,7 +994,7 @@ object Flow extends MessageRelay[Flow] {
 
     implicit def stepsToView(steps: StepMap[String, StepLike]): StepMapView = new StepMapView(steps)
 
-    override def toProto_<< : Flow = {
+    override def toProto_<< : DFD = {
 
       val steps = declarations.stage.map(_.toProto_<<)
       var buffer: StepMap[String, StepLike] = StepMap(steps.map(v => v.id -> v): _*)
@@ -1019,7 +1016,7 @@ object Flow extends MessageRelay[Flow] {
       val leftTailIDs = flowLines.filter(_.`@direction`.exists(_ == FORWARD_LEFT)).flatMap(_.flowLine.map(_.id))
       val rightTailIDs = flowLines.filter(_.`@direction`.exists(_ == FORWARD_RIGHT)).flatMap(_.flowLine.map(_.id))
 
-      Flow(
+      DFD(
         buffer,
         leftTailIDs = leftTailIDs,
         rightTailIDs = rightTailIDs,
@@ -1142,17 +1139,17 @@ object Flow extends MessageRelay[Flow] {
   * @param headIDs
   * @param fromIDsOpt
   */
-case class Flow(
+case class DFD(
     coll: StepMap[String, StepLike],
     leftTailIDs: Seq[String],
     rightTailIDs: Seq[String],
     headIDs: Seq[String],
     fromIDsOpt: Option[Seq[String]] = None //overrriden by using "from" function
-) extends FlowComponent {
+) extends DFDComponent {
 
-  override def fromIDs = fromIDsOpt.getOrElse(headIDs)
+  override def fromIDs: Seq[String] = fromIDsOpt.getOrElse(headIDs)
 
-  lazy val stages = coll.values
+  lazy val stages: Array[PipelineStage] = coll.values
     .collect {
       case st: Step =>
         st.stage.stage
@@ -1160,29 +1157,29 @@ case class Flow(
     .toArray
     .distinct
 
-  def from(name: String) = {
+  def from(name: String): DFD = {
     val newFromIDs = coll.values.filter(_.name == name).map(_.id).toSeq
     this.copy(
       fromIDsOpt = Some(newFromIDs)
     )
   }
-  def >-(name: String) = from(name)
+  def :>-(name: String): DFD = from(name)
 
-  def and(name: String) = {
+  def and(name: String): DFD = {
     val newFromIDs = coll.values.filter(_.name == name).map(_.id).toSeq
     this.copy(
       fromIDsOpt = Some(this.fromIDs ++ newFromIDs)
     )
   }
-  def <>-(name: String) = and(name)
+  def :&&(name: String): DFD = and(name)
 
-  def replicate(suffix: String = ""): Flow = {
+  def replicate(suffix: String = ""): DFD = {
 
     val idConversion = mutable.Map[String, String]()
 
     val newSteps: StepMap[String, StepLike] = replicateColl(suffix = suffix, idConversion = idConversion)
 
-    new Flow(
+    new DFD(
       newSteps,
       leftTailIDs.map(idConversion),
       rightTailIDs.map(idConversion),

@@ -6,7 +6,7 @@ import com.tribbloids.spookystuff.utils.lifespan.Lifespan
 import com.tribbloids.spookystuff.utils.{BypassingRule, CommonUtils, SpookyUtils}
 import com.tribbloids.spookystuff.{PyException, PyInterpretationException, SpookyContext}
 import org.apache.commons.io.FileUtils
-import org.apache.spark.ml.dsl.utils.FlowUtils
+import org.apache.spark.ml.dsl.utils.DSLUtils
 import org.slf4j.LoggerFactory
 
 import scala.collection.mutable
@@ -120,7 +120,7 @@ class PythonDriver(
     if (this.historyLines.isEmpty) None
     else {
       val combined = "\n" + this.historyLines.mkString("\n").stripPrefix("\n")
-      val indentedCode = FlowUtils.indent(combined)
+      val indentedCode = DSLUtils.indent(combined)
 
       Some(indentedCode)
     }
@@ -194,7 +194,7 @@ class PythonDriver(
   private def _interpret(code: String,
                          spookyOpt: Option[SpookyContext] = None,
                          detectError: Boolean = true): Array[String] = {
-    val indentedCode = FlowUtils.indent(code)
+    val indentedCode = DSLUtils.indent(code)
 
     LoggerFactory.getLogger(this.getClass).debug(s">>> $logPrefix INPUT >>>\n" + indentedCode)
 
@@ -269,7 +269,7 @@ class PythonDriver(
          |$preamble
          |
          |try:
-         |${FlowUtils.indent(code)}
+         |${DSLUtils.indent(code)}
          |except Exception as e:
          |    print('$ERROR_HEADER')
          |    raise
@@ -283,7 +283,7 @@ class PythonDriver(
       case Some(i) =>
         val split = rows.splitAt(i._2)
         val e = PyInterpretationException(
-          FlowUtils.indent(
+          DSLUtils.indent(
             s"""
                |$preamble
                |

@@ -5,10 +5,10 @@ import org.scalatest.FunSuite
 /**
   * Created by peng on 10/04/16.
   */
-class FlowUtilsSuite extends FunSuite {
+class DSLUtilsSuite extends FunSuite {
 
   def caller(): Array[StackTraceElement] = {
-    FlowUtils.getBreakpointInfo()
+    DSLUtils.getBreakpointInfo()
   }
 
   lazy val caller2: Array[StackTraceElement] = caller()

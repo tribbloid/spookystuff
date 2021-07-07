@@ -97,84 +97,98 @@ class FSMParserDSLSuite extends FunSpecx {
     }
   }
 
-  it("can form non-linear graph") {
+  describe("can form non-linear graph") {
 
-    val p = P_*('P') :~> (P('1') U P('2')) :~> FINISH
-    p.visualise()
-      .ASCIIArt()
-      .shouldBe(
-        """
-          | ╔═══════════════╗ ╔═══════════════╗
-          | ║(TAIL>>-) [ ∅ ]║ ║(TAIL-<<) [ ∅ ]║
-          | ╚══════════════╤╝ ╚═══════╤═══════╝
-          |                │          │
-          |                │ ┌────────┘
-          |                │ │
-          |                v v
-          |              ╔═════╗
-          |              ║ROOT ║
-          |              ╚═══╤═╝
-          |                  │
-          |                  v
-          |          ╔══════════════╗
-          |          ║[ 'P' [0...] ]║
-          |          ╚══════╤═══════╝
-          |                 │
-          |                 v
-          |              ╔═════╗
-          |              ║ --- ║
-          |              ╚═╤═╤═╝
-          |                │ │
-          |         ┌──────┘ └──────┐
-          |         │               │
-          |         v               v
-          |   ╔═══════════╗   ╔═══════════╗
-          |   ║[ '1' [0] ]║   ║[ '2' [0] ]║
-          |   ╚═════╤═════╝   ╚═════╤═════╝
-          |         │               │
-          |         └───────┐ ┌─────┘
-          |                 │ │
-          |                 v v
-          |              ╔══════╗
-          |              ║FINISH║
-          |              ╚═══╤══╝
-          |                  │
-          |                  v
-          |           ╔════════════╗
-          |           ║(HEAD) [ ∅ ]║
-          |           ╚════════════╝
+    def validate(p: Operand[FSMParserGraph.Layout.GG]): Unit = {
+      p.visualise()
+        .ASCIIArt()
+        .shouldBe(
+          """
+            | ╔═══════════════╗ ╔═══════════════╗
+            | ║(TAIL>>-) [ ∅ ]║ ║(TAIL-<<) [ ∅ ]║
+            | ╚══════════════╤╝ ╚═══════╤═══════╝
+            |                │          │
+            |                │ ┌────────┘
+            |                │ │
+            |                v v
+            |              ╔═════╗
+            |              ║ROOT ║
+            |              ╚═══╤═╝
+            |                  │
+            |                  v
+            |          ╔══════════════╗
+            |          ║[ 'P' [0...] ]║
+            |          ╚══════╤═══════╝
+            |                 │
+            |                 v
+            |              ╔═════╗
+            |              ║ --- ║
+            |              ╚═╤═╤═╝
+            |                │ │
+            |         ┌──────┘ └──────┐
+            |         │               │
+            |         v               v
+            |   ╔═══════════╗   ╔═══════════╗
+            |   ║[ '1' [0] ]║   ║[ '2' [0] ]║
+            |   ╚═════╤═════╝   ╚═════╤═════╝
+            |         │               │
+            |         └───────┐ ┌─────┘
+            |                 │ │
+            |                 v v
+            |              ╔══════╗
+            |              ║FINISH║
+            |              ╚═══╤══╝
+            |                  │
+            |                  v
+            |           ╔════════════╗
+            |           ║(HEAD) [ ∅ ]║
+            |           ╚════════════╝
         """.stripMargin
-      )
-
-    {
-      p.parse("P123")
-        .ioMapToString
-        .shouldBe(
-          """
-            |P	-> P
-            |1	-> 1
-            |""".stripMargin
         )
-    }
 
-    {
-      p.parse("P213")
-        .ioMapToString
-        .shouldBe(
-          """
-            |P	-> P
-            |2	-> 2
-            |""".stripMargin
-        )
-    }
-
-    Seq(
-      "Q1",
-      "P3"
-    ).foreach { ii =>
-      intercept[ParsingError] {
-        println(p.parse(ii).ioMapToString)
+      {
+        p.parse("P123")
+          .ioMapToString
+          .shouldBe(
+            """
+              |P	-> P
+              |1	-> 1
+              |""".stripMargin
+          )
       }
+
+      {
+        p.parse("P213")
+          .ioMapToString
+          .shouldBe(
+            """
+              |P	-> P
+              |2	-> 2
+              |""".stripMargin
+          )
+      }
+
+      Seq(
+        "Q1",
+        "P3"
+      ).foreach { ii =>
+        intercept[ParsingError] {
+          println(p.parse(ii).ioMapToString)
+        }
+      }
+
+    }
+
+    it(":~>") {
+
+      val p = P_*('P') :~> (P('1') U P('2')) :~> FINISH
+      validate(p)
+    }
+
+    it("<~:") {
+
+      val p = FINISH <~: (P('1') U P('2')) <~: P_*('P')
+      validate(p)
     }
   }
 

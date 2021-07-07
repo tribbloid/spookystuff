@@ -3,7 +3,7 @@ package org.apache.spark.ml.dsl
 /**
   * Created by peng on 27/04/16.
   */
-class CompactionSuite extends AbstractFlowSuite {
+class CompactionSuite extends AbstractDFDSuite {
 
   val s1: Array[Seq[String]] =
     """

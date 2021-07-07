@@ -1,6 +1,6 @@
 package org.apache.spark.ml.dsl.utils
 
-import org.apache.spark.ml.dsl.AbstractFlowSuite
+import org.apache.spark.ml.dsl.AbstractDFDSuite
 import org.json4s.Formats
 
 object XMLWeakDeserializerSuite {
@@ -39,7 +39,7 @@ object XMLWeakDeserializerSuite {
   )
 }
 
-class XMLWeakDeserializerSuite extends AbstractFlowSuite {
+class XMLWeakDeserializerSuite extends AbstractDFDSuite {
 
   implicit val formats: Formats = XMLFormats.defaultFormats
 

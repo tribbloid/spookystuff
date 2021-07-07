@@ -8,7 +8,7 @@ import org.apache.spark.sql.DataFrame
 import org.apache.spark.sql.expressions.UserDefinedFunction
 import org.apache.spark.sql.functions._
 
-object FlowSuite {
+object DFDSuite {
 
   val TOKEN: String = "token"
   val STEMMED: String = "stemmed"
@@ -26,10 +26,10 @@ object FlowSuite {
   }
 }
 
-class FlowSuite extends AbstractFlowSuite {
+class DFDSuite extends AbstractDFDSuite {
 
-  import FlowComponent._
-  import FlowSuite._
+  import DFDComponent._
+  import DFDSuite._
 
   val training: DataFrame = TestHelper.TestSQL
     .createDataFrame(
@@ -51,15 +51,15 @@ class FlowSuite extends AbstractFlowSuite {
     .toDF("id", "input", "label")
 
   it("Flow can build Pipeline") {
-    val part1 = (Flow('input)
-      >-> new Tokenizer() -> TOKEN
-      >-> stemming -> STEMMED
-      >-> tf -> TF
-      >-> new IDF() -> FlowSuite.IDF
-      >- STEMMED <>- TF >>> UDFTransformer(zipping) -> TF_ZIPPED)
+    val part1 = (DFD('input)
+      :-> new Tokenizer() -> TOKEN
+      :-> stemming -> STEMMED
+      :-> tf -> TF
+      :-> new IDF() -> DFDSuite.IDF
+      :>- STEMMED :&& TF :>> UDFTransformer(zipping) -> TF_ZIPPED)
 
     val flow = part1
-      .from(STEMMED) <>- FlowSuite.IDF >>> UDFTransformer(zipping) -> IDF_ZIPPED
+      .from(STEMMED) :&& DFDSuite.IDF :>> UDFTransformer(zipping) -> IDF_ZIPPED
 
     println(flow.show(showID = false, compactionOpt = compactionOpt))
 
@@ -83,13 +83,13 @@ class FlowSuite extends AbstractFlowSuite {
 
   it("Pipeline can be visualized as ASCII art") {
     val flow = (
-      Flow('input)
-        >-> new Tokenizer() -> TOKEN
-        >-> stemming -> STEMMED
-        >-> tf -> TF
-        >-> new IDF() -> FlowSuite.IDF
-        >- STEMMED <>- TF >>> UDFTransformer(zipping) -> TF_ZIPPED
-    ).from(STEMMED) <>- FlowSuite.IDF >>> UDFTransformer(zipping) -> IDF_ZIPPED
+      DFD('input)
+        :-> new Tokenizer() -> TOKEN
+        :-> stemming -> STEMMED
+        :-> tf -> TF
+        :-> new IDF() -> DFDSuite.IDF
+        :>- STEMMED :&& TF :>> UDFTransformer(zipping) -> TF_ZIPPED
+    ).from(STEMMED) :&& DFDSuite.IDF :>> UDFTransformer(zipping) -> IDF_ZIPPED
 
     flow
       .show(showID = false, showInputs = false, asciiArt = true)
@@ -132,13 +132,13 @@ class FlowSuite extends AbstractFlowSuite {
 
   it("Pipeline can be visualized as ASCII art backwards") {
     val flow = (
-      Flow('input)
-        >-> new Tokenizer() -> TOKEN
-        >-> stemming -> STEMMED
-        >-> tf -> TF
-        >-> new IDF() -> FlowSuite.IDF
-        >- STEMMED <>- TF >>> UDFTransformer(zipping) -> TF_ZIPPED
-    ).from(STEMMED) <>- FlowSuite.IDF >>> UDFTransformer(zipping) -> IDF_ZIPPED
+      DFD('input)
+        :-> new Tokenizer() -> TOKEN
+        :-> stemming -> STEMMED
+        :-> tf -> TF
+        :-> new IDF() -> DFDSuite.IDF
+        :>- STEMMED :&& TF :>> UDFTransformer(zipping) -> TF_ZIPPED
+    ).from(STEMMED) :&& DFDSuite.IDF :>> UDFTransformer(zipping) -> IDF_ZIPPED
 
     flow
       .show(showID = false, forward = false, asciiArt = true)
@@ -183,11 +183,11 @@ class FlowSuite extends AbstractFlowSuite {
 
   it("Flow can build PipelineModel") {
     val model = (
-      Flow('input)
-        >-> new Tokenizer() -> TOKEN
-        >-> stemming -> STEMMED
-        >-> tf -> TF
-        >- STEMMED <>- TF >>> UDFTransformer(zipping) -> TF_ZIPPED
+      DFD('input)
+        :-> new Tokenizer() -> TOKEN
+        :-> stemming -> STEMMED
+        :-> tf -> TF
+        :>- STEMMED :&& TF :>> UDFTransformer(zipping) -> TF_ZIPPED
     ).buildModel()
 
     val stages = model.stages
@@ -208,19 +208,19 @@ class FlowSuite extends AbstractFlowSuite {
     transformed.show(false)
   }
 
-  val validPart: Flow = (
-    Flow('input)
-      >-> new Tokenizer() -> TOKEN
-      >-> tf -> TF
+  val validPart: DFD = (
+    DFD('input)
+      :-> new Tokenizer() -> TOKEN
+      :-> tf -> TF
   )
 
-  val validPart2: Flow = Flow('label) >>> new OneHotEncoder() -> "label_one_hot"
-  val irrelevantPart: Flow = Flow('dummy) >>> new OneHotEncoder() -> "dummy_one_hot"
-  val typeInconsistentPart: Flow = Flow('label) >>> new Tokenizer() -> "label_cannot_be_tokenized"
+  val validPart2: DFD = DFD('label) :>> new OneHotEncoder() -> "label_one_hot"
+  val irrelevantPart: DFD = DFD('dummy) :>> new OneHotEncoder() -> "dummy_one_hot"
+  val typeInconsistentPart: DFD = DFD('label) :>> new Tokenizer() -> "label_cannot_be_tokenized"
 
   it("If adaptation = IgnoreIrrelevant, Flow can build a full pipeline given a valid schema evidence") {
 
-    val complete = ((validPart U validPart2) >>> new VectorAssembler())
+    val complete = ((validPart U validPart2) :>> new VectorAssembler())
       .build(
         dfEvidence = training,
         adaptation = SchemaAdaptations.IgnoreIrrelevant
@@ -240,7 +240,7 @@ class FlowSuite extends AbstractFlowSuite {
 
   it("If adaptation = IgnoreIrrelevant, Flow can build an incomplete pipeline when some of the sources are missing") {
 
-    val incomplete = ((validPart U irrelevantPart) >>> new VectorAssembler())
+    val incomplete = ((validPart U irrelevantPart) :>> new VectorAssembler())
       .build(
         dfEvidence = training,
         adaptation = SchemaAdaptations.IgnoreIrrelevant
@@ -259,7 +259,7 @@ class FlowSuite extends AbstractFlowSuite {
   it(
     "If adaptation = IgnoreIrrelevant, Flow can build an incomplete pipeline when some of the sources have inconsistent type") {
 
-    val incomplete = ((validPart U typeInconsistentPart) >>> new VectorAssembler())
+    val incomplete = ((validPart U typeInconsistentPart) :>> new VectorAssembler())
       .build(
         dfEvidence = training,
         adaptation = SchemaAdaptations.IgnoreIrrelevant
@@ -278,7 +278,7 @@ class FlowSuite extends AbstractFlowSuite {
   it(
     "If adaptation = IgnoreIrrelevant_TypeUnsafe, Flow can still build a full pipeline when some of the sources have inconsistent type") {
 
-    val incomplete = ((validPart U typeInconsistentPart) >>> new VectorAssembler())
+    val incomplete = ((validPart U typeInconsistentPart) :>> new VectorAssembler())
       .build(
         dfEvidence = training,
         adaptation = SchemaAdaptations.IgnoreIrrelevant_TypeUnsafe
@@ -298,7 +298,7 @@ class FlowSuite extends AbstractFlowSuite {
 
   it("If adaptation = Force, Flow can still build a full pipeline when some of the sources are missing") {
 
-    val forced = ((validPart U irrelevantPart) >>> new VectorAssembler())
+    val forced = ((validPart U irrelevantPart) :>> new VectorAssembler())
       .build(
         dfEvidence = training,
         adaptation = SchemaAdaptations.Force
@@ -318,7 +318,7 @@ class FlowSuite extends AbstractFlowSuite {
 
   it("If adaptation = Force, Flow can still build a full pipeline when some of the sources have inconsistent type") {
 
-    val forced = ((validPart U typeInconsistentPart) >>> new VectorAssembler())
+    val forced = ((validPart U typeInconsistentPart) :>> new VectorAssembler())
       .build(
         dfEvidence = training,
         adaptation = SchemaAdaptations.Force
@@ -339,7 +339,7 @@ class FlowSuite extends AbstractFlowSuite {
   it("If adaption = FailFast, throw an exception when some of the sources are missing") {
 
     intercept[IllegalArgumentException](
-      ((validPart U irrelevantPart) >>> new VectorAssembler())
+      ((validPart U irrelevantPart) :>> new VectorAssembler())
         .build(
           dfEvidence = training,
           adaptation = SchemaAdaptations.FailFast
@@ -350,7 +350,7 @@ class FlowSuite extends AbstractFlowSuite {
   it("If adaption = FailFast, throw an exception when some of the sources have inconsistent type") {
 
     intercept[IllegalArgumentException](
-      ((validPart U typeInconsistentPart) >>> new VectorAssembler())
+      ((validPart U typeInconsistentPart) :>> new VectorAssembler())
         .build(
           dfEvidence = training,
           adaptation = SchemaAdaptations.FailFast
@@ -361,7 +361,7 @@ class FlowSuite extends AbstractFlowSuite {
   it(
     "If adaptation = FailFast_TypeUnsafe, Flow can still build a full pipeline when some of the sources have inconsistent type") {
 
-    val incomplete = ((validPart U typeInconsistentPart) >>> new VectorAssembler())
+    val incomplete = ((validPart U typeInconsistentPart) :>> new VectorAssembler())
       .build(
         dfEvidence = training,
         adaptation = SchemaAdaptations.FailFast_TypeUnsafe
@@ -382,7 +382,7 @@ class FlowSuite extends AbstractFlowSuite {
   it(
     "If adaption = IgnoreIrrelevant_ValidateSchema, Flow can build an incomplete pipeline when some of the sources are missing") {
 
-    val incomplete = ((validPart U irrelevantPart) >>> new VectorAssembler())
+    val incomplete = ((validPart U irrelevantPart) :>> new VectorAssembler())
       .build(
         dfEvidence = training,
         adaptation = SchemaAdaptations.IgnoreIrrelevant_ValidateSchema
@@ -402,7 +402,7 @@ class FlowSuite extends AbstractFlowSuite {
     "If adaption = IgnoreIrrelevant_ValidateSchema, throw an exception when some of the sources have inconsistent type") {
 
     intercept[IllegalArgumentException](
-      ((validPart U typeInconsistentPart) >>> new VectorAssembler())
+      ((validPart U typeInconsistentPart) :>> new VectorAssembler())
         .build(
           dfEvidence = training,
           adaptation = SchemaAdaptations.IgnoreIrrelevant_ValidateSchema

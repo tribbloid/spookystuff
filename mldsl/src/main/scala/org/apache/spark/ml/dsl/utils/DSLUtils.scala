@@ -3,7 +3,7 @@ package org.apache.spark.ml.dsl.utils
 import org.apache.spark.SparkConf
 import org.apache.spark.serializer.{JavaSerializer, KryoSerializer}
 
-object FlowUtils {
+object DSLUtils {
 
   def cartesianProductSet[T](xss: Seq[Set[T]]): Set[List[T]] = xss match {
     case Nil => Set(Nil)
@@ -79,7 +79,7 @@ object FlowUtils {
   ) {
 
     lazy val breakpointInfo: Array[StackTraceElement] = {
-      val bp = FlowUtils.getBreakpointInfo()
+      val bp = DSLUtils.getBreakpointInfo()
       val filteredIndex = bp.toSeq.indexWhere(
         { element =>
           !exclude.exists { v =>

@@ -3,7 +3,7 @@ package org.apache.spark.ml.dsl.utils.data
 import java.lang.reflect.{InvocationTargetException, Method}
 
 import com.tribbloids.spookystuff.utils.TreeThrowable
-import org.apache.spark.ml.dsl.utils.FlowUtils
+import org.apache.spark.ml.dsl.utils.DSLUtils
 import org.apache.spark.ml.dsl.utils.messaging.{MessageRelay, MessageWriter, Nested, Registry}
 import org.apache.spark.ml.dsl.utils.refl.ScalaType
 import org.json4s
@@ -85,7 +85,7 @@ trait EAVRelay[I <: EAV] extends MessageRelay[I] with EAVBuilder[I] {
 
       val _methods = methods.filter { m =>
         (m.getParameterTypes.length == 0) &&
-        FlowUtils.isSerializable(m.getReturnType)
+        DSLUtils.isSerializable(m.getReturnType)
       }
 //      val _methods = methods.filter { m =>
 //        m.getParameterTypes.length == 0

@@ -176,12 +176,12 @@ trait Layout[D <: Domain] extends Algebra.Sugars[D] {
         )
       }
 
-      def merge(top: Core[_]): Core[GG] = {
+      def compose(top: Core[_]): Core[GG] = {
 
         _mergeImpl(top, top.tails(topFacet))
       }
 
-      def rebase(top: Core[_]): Core[_Module] = {
+      def mapHead(top: Core[_]): Core[_Module] = {
 
         val topTails: Seq[Element.Edge[D]] = top.tails(baseFacet).seq
         val rotatorFactory = idAlgebra.rotatorFactory()
@@ -194,13 +194,13 @@ trait Layout[D <: Domain] extends Algebra.Sugars[D] {
       }
 
       //this is really kind of ambiguous, remove it?
-      def commit(top: Core[_]): Core[_Module] = {
+      def append(top: Core[_]): Core[_Module] = {
 
         val intakes = top.tails
         assert(intakes.size <= 1, "non-linear right operand, please use merge, rebase or union instead")
         intakes.headOption match {
           case Some(intake) =>
-            this.rebase(top)
+            this.mapHead(top)
           case _ =>
             this.union(top)
         }

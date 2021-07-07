@@ -59,7 +59,7 @@ class MessageWriter[M](
           MessageWriter(vv).getMemberStr(start, sep, end, indentFn, recursion + 1)
         }
         .map { str =>
-          FlowUtils.indent(str, indentStr)
+          DSLUtils.indent(str, indentStr)
         }
     }
 
@@ -69,7 +69,7 @@ class MessageWriter[M](
           MessageWriter(vv).getMemberStr(start, sep, end, indentFn, recursion + 1)
         }
         .mapValues { str =>
-          FlowUtils.indent(str, indentStr)
+          DSLUtils.indent(str, indentStr)
         }
     }
 

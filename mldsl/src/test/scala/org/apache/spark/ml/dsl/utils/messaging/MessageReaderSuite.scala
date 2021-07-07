@@ -2,11 +2,11 @@ package org.apache.spark.ml.dsl.utils.messaging
 
 import java.util.Date
 
-import org.apache.spark.ml.dsl.AbstractFlowSuite
+import org.apache.spark.ml.dsl.AbstractDFDSuite
 import org.apache.spark.ml.dsl.utils.messaging.TestBeans._
 import org.json4s.MappingException
 
-class MessageReaderSuite extends AbstractFlowSuite {
+class MessageReaderSuite extends AbstractDFDSuite {
 
   //TODO: disabled before FallbackSerializer is really put to use
   ignore("SerializingParam[Function1] should work") {

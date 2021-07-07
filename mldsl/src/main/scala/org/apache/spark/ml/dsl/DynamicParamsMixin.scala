@@ -1,7 +1,7 @@
 package org.apache.spark.ml.dsl
 
 import org.apache.spark.ml.dsl.utils.messaging.MessageReader
-import org.apache.spark.ml.dsl.utils.{FallbackJSONSerializer, FlowUtils}
+import org.apache.spark.ml.dsl.utils.{DSLUtils, FallbackJSONSerializer}
 import org.apache.spark.ml.param.{Param, Params}
 import org.json4s.Formats
 
@@ -23,7 +23,7 @@ trait DynamicParamsMixin extends Params with Dynamic {
 
       val fieldName = methodName.stripPrefix("set")
       val fieldOption =
-        this.params.find(v => (v.name == fieldName) || (FlowUtils.liftCamelCase(v.name) == fieldName))
+        this.params.find(v => (v.name == fieldName) || (DSLUtils.liftCamelCase(v.name) == fieldName))
 
       fieldOption match {
         case Some(field) =>
@@ -38,7 +38,7 @@ trait DynamicParamsMixin extends Params with Dynamic {
   }
 
   protected def Param[T: ClassTag](
-      name: String = FlowUtils.Caller().fnName,
+      name: String = DSLUtils.Caller().fnName,
       doc: String = "Pending ...",
       default: T = null
   ): Param[T] = {
@@ -51,7 +51,7 @@ trait DynamicParamsMixin extends Params with Dynamic {
   }
 
   protected def GenericParam[T: Manifest](
-      name: String = FlowUtils.Caller().fnName,
+      name: String = DSLUtils.Caller().fnName,
       doc: String = "Pending ...",
       default: T = null
   ): Param[T] = {

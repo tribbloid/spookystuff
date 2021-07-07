@@ -16,7 +16,7 @@ import scala.util.Try
 /**
   * Created by peng on 24/04/16.
   */
-trait StepLike extends FlowComponent {
+trait StepLike extends DFDComponent {
 
   def id: String
   def name: String
