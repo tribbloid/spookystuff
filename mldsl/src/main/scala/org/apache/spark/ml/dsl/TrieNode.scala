@@ -15,8 +15,8 @@ object TrieNode {
       depth: Int = 0
   ): Seq[TrieNode[K, Option[V]]] = {
 
-    val grouped = map.groupBy(_._1.head) //TODO: how to keep order?
-    val result = grouped.toSeq.map { triplet =>
+    val grouped = map.groupBy(_._1.head).toSeq.sortBy(v => "" + v._1)
+    val result = grouped.map { triplet =>
       val key = prefix ++ Seq(triplet._1)
       val value = map.toMap.get(Seq(triplet._1))
       val children = buildChildren[K, V](

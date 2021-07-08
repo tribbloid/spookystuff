@@ -6,7 +6,7 @@ package org.apache.spark.ml.dsl
 class TrieNodeSuite extends AbstractDFDSuite {
 
   it("compact can merge single child parents") {
-    val map = Seq(
+    val map: Seq[(Seq[String], String)] = Seq(
       "A",
       "AB",
       "ABC",
@@ -24,34 +24,34 @@ class TrieNodeSuite extends AbstractDFDSuite {
 
     trie
       .toString()
-      .treeNodeShouldBe(
+      .shouldBe(
         """
         |TrieNode 0
-        |:- TrieNode [A], A, 1
-        |:  +- TrieNode [A, B], AB, 2
-        |:     +- TrieNode [A, B, C], ABC, 3
-        |:        +- TrieNode [A, B, C, D], ABCD, 4
-        |:           :- TrieNode [A, B, C, D, E], ABCDE, 5
-        |:           +- TrieNode [A, B, C, D, F], ABCDF, 5
-        |+- TrieNode [1], 1, 1
-        |   +- TrieNode [1, 2], 12, 2
-        |      :- TrieNode [1, 2, 3], 123, 3
-        |      +- TrieNode [1, 2, 4], 124, 3
+        |:- TrieNode [1], 1, 1
+        |:  +- TrieNode [1, 2], 12, 2
+        |:     :- TrieNode [1, 2, 3], 123, 3
+        |:     +- TrieNode [1, 2, 4], 124, 3
+        |+- TrieNode [A], A, 1
+        |   +- TrieNode [A, B], AB, 2
+        |      +- TrieNode [A, B, C], ABC, 3
+        |         +- TrieNode [A, B, C, D], ABCD, 4
+        |            :- TrieNode [A, B, C, D, E], ABCDE, 5
+        |            +- TrieNode [A, B, C, D, F], ABCDF, 5
       """.stripMargin
       )
 
     trie.compact
       .rebuildDepth()
       .toString()
-      .treeNodeShouldBe(
+      .shouldBe(
         """
         |TrieNode 0
-        |:- TrieNode [A, B, C, D], ABCD, 1
-        |:  :- TrieNode [A, B, C, D, E], ABCDE, 2
-        |:  +- TrieNode [A, B, C, D, F], ABCDF, 2
-        |+- TrieNode [1, 2], 12, 1
-        |   :- TrieNode [1, 2, 3], 123, 2
-        |   +- TrieNode [1, 2, 4], 124, 2
+        |:- TrieNode [1, 2], 12, 1
+        |:  :- TrieNode [1, 2, 3], 123, 2
+        |:  +- TrieNode [1, 2, 4], 124, 2
+        |+- TrieNode [A, B, C, D], ABCD, 1
+        |   :- TrieNode [A, B, C, D, E], ABCDE, 2
+        |   +- TrieNode [A, B, C, D, F], ABCDF, 2
       """.stripMargin
       )
   }
@@ -75,38 +75,38 @@ class TrieNodeSuite extends AbstractDFDSuite {
 
     trie
       .toString()
-      .treeNodeShouldBe(
+      .shouldBe(
         """
         |TrieNode 0
-        |:- TrieNode [A], A, 1
-        |:  +- TrieNode [A, B], AB, 2
-        |:     +- TrieNode [A, B, C], ABC, 3
-        |:        +- TrieNode [A, B, C, D], ABCD, 4
-        |:           :- TrieNode [A, B, C, D, E], ABCDE, 5
-        |:           +- TrieNode [A, B, C, D, F], ABCDF, 5
-        |+- TrieNode [1], 1, 1
-        |   +- TrieNode [1, 2], 12, 2
-        |      :- TrieNode [1, 2, 3], 123, 3
-        |      +- TrieNode [1, 2, 4], 124, 3
+        |:- TrieNode [1], 1, 1
+        |:  +- TrieNode [1, 2], 12, 2
+        |:     :- TrieNode [1, 2, 3], 123, 3
+        |:     +- TrieNode [1, 2, 4], 124, 3
+        |+- TrieNode [A], A, 1
+        |   +- TrieNode [A, B], AB, 2
+        |      +- TrieNode [A, B, C], ABC, 3
+        |         +- TrieNode [A, B, C, D], ABCD, 4
+        |            :- TrieNode [A, B, C, D, E], ABCDE, 5
+        |            +- TrieNode [A, B, C, D, F], ABCDF, 5
       """.stripMargin
       )
 
     trie.pruneUp
       .rebuildDepth()
       .toString()
-      .treeNodeShouldBe(
+      .shouldBe(
         """
         |TrieNode 0
-        |:- TrieNode [A], A, 1
-        |:  +- TrieNode [A], AB, 2
-        |:     +- TrieNode [A], ABC, 3
-        |:        +- TrieNode [A], ABCD, 4
-        |:           :- TrieNode [A, E], ABCDE, 5
-        |:           +- TrieNode [A, F], ABCDF, 5
-        |+- TrieNode [1], 1, 1
-        |   +- TrieNode [1], 12, 2
-        |      :- TrieNode [1, 3], 123, 3
-        |      +- TrieNode [1, 4], 124, 3
+        |:- TrieNode [1], 1, 1
+        |:  +- TrieNode [1], 12, 2
+        |:     :- TrieNode [1, 3], 123, 3
+        |:     +- TrieNode [1, 4], 124, 3
+        |+- TrieNode [A], A, 1
+        |   +- TrieNode [A], AB, 2
+        |      +- TrieNode [A], ABC, 3
+        |         +- TrieNode [A], ABCD, 4
+        |            :- TrieNode [A, E], ABCDE, 5
+        |            +- TrieNode [A, F], ABCDF, 5
       """.stripMargin
       )
   }

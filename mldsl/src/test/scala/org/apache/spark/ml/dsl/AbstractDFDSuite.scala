@@ -4,7 +4,6 @@ import com.tribbloids.spookystuff.testutils.{FunSpecx, TestHelper}
 import org.apache.spark.ml.PipelineStage
 import org.apache.spark.ml.param.shared.{HasInputCol, HasInputCols, HasOutputCol}
 import org.scalatest.BeforeAndAfterAll
-import org.scalatest.exceptions.TestFailedException
 
 import scala.util.matching.Regex
 
@@ -15,24 +14,27 @@ abstract class AbstractDFDSuite extends FunSpecx with BeforeAndAfterAll {
 
   implicit class StringView(str: String) extends super.TestStringView(str) {
 
-    def treeNodeShouldBe(groundTruth: String = null): Unit = {
+    def treeNodeShouldBe(
+        groundTruth: String = null,
+        sort: Boolean = false
+    ): Unit = {
       val compactedGT = Option(groundTruth).map(compactGroundTruth).orNull
-      try {
-        this.shouldBe(compactedGT)
-      } catch {
-        case e @ (_: TestFailedException | _: AssertionError) =>
-          val correctedGT = compactedGT
-            .replaceAllLiterally("+- ", " ")
-            .replaceAllLiterally(":- ", " ")
-            .replaceAllLiterally(":  ", " ")
-          //this is for Spark 1.5
-          try {
-            this.shouldBe(correctedGT)
-          } catch {
-            case _: Throwable =>
-              throw e
-          }
-      }
+//      try {
+      this.shouldBe(compactedGT, sort = sort)
+//      } catch {
+//        case e @ (_: TestFailedException | _: AssertionError) =>
+//          val correctedGT = compactedGT
+//            .replaceAllLiterally("+- ", " ")
+//            .replaceAllLiterally(":- ", " ")
+//            .replaceAllLiterally(":  ", " ")
+//          //this is for Spark 1.5
+//          try {
+//            this.shouldBe(correctedGT, sort = sort)
+//          } catch {
+//            case _: Throwable =>
+//              throw e
+//          }
+//      }
     }
   }
 

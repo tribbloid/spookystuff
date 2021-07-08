@@ -883,12 +883,13 @@ trait DFDComponent extends MayHaveHeads with MayHaveTails {
   }
 
   protected final val layoutPrefs = LayoutPrefsImpl(unicode = true, explicitAsciiBends = false)
+
   def showASCIIArt(
       showID: Boolean = true,
       showInputs: Boolean = true,
       showOutput: Boolean = true,
       showPrefix: Boolean = true,
-      forward: Boolean = true,
+      forward: Boolean = true
   ): String = {
 
     val prettyColl = coll.mapValues { v =>
