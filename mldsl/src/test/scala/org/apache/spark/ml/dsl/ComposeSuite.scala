@@ -117,7 +117,7 @@ class ComposeSuite extends AbstractDFDSuite {
         |> ForwardNode (<TAIL) [input$Tokenizer] > HashingTF > [input$Tokenizer$HashingTF]
         |+- > ForwardNode (HEAD)(TAIL>) [input$Tokenizer$HashingTF] > VectorAssembler > [input$Tokenizer$HashingTF$VectorAssembler]
       """.stripMargin)
-    flow.show(showID = false, compactionOpt = compactionOpt, asciiArt = true).treeNodeShouldBe()
+//    flow.show(showID = false, compactionOpt = compactionOpt, asciiArt = true).treeNodeShouldBe()
   }
 
   it("result of compose_< can be the first operand of compose_>") {
@@ -130,18 +130,18 @@ class ComposeSuite extends AbstractDFDSuite {
       .show(showID = false, compactionOpt = compactionOpt)
       .treeNodeShouldBe(
         """
-        |\ left >
-        |> ForwardNode (TAIL>) [input$Tokenizer] > HashingTF > [input$Tokenizer$HashingTF]
-        |+- > ForwardNode (HEAD)(<TAIL) [input$Tokenizer$HashingTF] > VectorAssembler > [input$Tokenizer$HashingTF$VectorAssembler]
-        |/ right <
-        |> ForwardNode (HEAD)(<TAIL) [input$Tokenizer$HashingTF] > VectorAssembler > [input$Tokenizer$HashingTF$VectorAssembler]
-        |> ForwardNode (<TAIL) [input]
-        |+- > ForwardNode  [input] > Tokenizer > [input$Tokenizer]
-        |   +- > ForwardNode (TAIL>) [input$Tokenizer] > HashingTF > [input$Tokenizer$HashingTF]
-        |      +- > ForwardNode (HEAD)(<TAIL) [input$Tokenizer$HashingTF] > VectorAssembler > [input$Tokenizer$HashingTF$VectorAssembler]
+          |\ left >
+          |> ForwardNode (HEAD)(TAIL>) [input$VectorAssembler$Tokenizer] > HashingTF > [input$VectorAssembler$Tokenizer$HashingTF]
+          |> ForwardNode (TAIL>) [input]
+          |+- > ForwardNode (<TAIL) [input] > VectorAssembler > [input$VectorAssembler]
+          |   +- > ForwardNode  [input$VectorAssembler] > Tokenizer > [input$VectorAssembler$Tokenizer]
+          |      +- > ForwardNode (HEAD)(TAIL>) [input$VectorAssembler$Tokenizer] > HashingTF > [input$VectorAssembler$Tokenizer$HashingTF]
+          |/ right <
+          |> ForwardNode (<TAIL) [input] > VectorAssembler > [input$VectorAssembler]
+          |+- > ForwardNode  [input$VectorAssembler] > Tokenizer > [input$VectorAssembler$Tokenizer]
+          |   +- > ForwardNode (HEAD)(TAIL>) [input$VectorAssembler$Tokenizer] > HashingTF > [input$VectorAssembler$Tokenizer$HashingTF]
       """.stripMargin
       )
-    flow.show(showID = false, compactionOpt = compactionOpt, asciiArt = true).treeNodeShouldBe()
   }
 
   it("A compose_> (PASSTHROUGH || Stage) rebase_> B is associative") {
@@ -216,8 +216,8 @@ class ComposeSuite extends AbstractDFDSuite {
 
     val flow = (
       'input
-        :-> new Tokenizer()
-        :=>> (
+        :>> new Tokenizer()
+        :>> (
           PASSTHROUGH
             U new StopWordsRemover()
         )
@@ -247,13 +247,12 @@ class ComposeSuite extends AbstractDFDSuite {
 
     val flow = (
       new VectorAssembler()
-        <<: new HashingTF()
-        <<=: (
+        <<: (
         PASSTHROUGH
           U new StopWordsRemover()
       )
-        <<=: new Tokenizer()
-        <-: 'input
+        <<: new Tokenizer()
+        <<: 'input
     )
 
     flow
@@ -261,16 +260,40 @@ class ComposeSuite extends AbstractDFDSuite {
       .treeNodeShouldBe(
         """
         |\ left >
-        |> ForwardNode (HEAD)(TAIL>) [input$Tokenizer$StopWordsRemover$HashingTF] > VectorAssembler > [input$Tokenizer$StopWordsRemover$HashingTF$VectorAssembler]
+        |> ForwardNode (HEAD)(TAIL>) [input$Tokenizer,input$Tokenizer$StopWordsRemover] > VectorAssembler > [input$Tokenizer$VectorAssembler]
         |/ right <
         |> ForwardNode (<TAIL) [input]
         |+- > ForwardNode  [input] > Tokenizer > [input$Tokenizer]
-        |   :- > ForwardNode  [input$Tokenizer] > HashingTF > [input$Tokenizer$HashingTF]
-        |   :  +- > ForwardNode (HEAD) [input$Tokenizer$HashingTF] > VectorAssembler > [input$Tokenizer$HashingTF$VectorAssembler]
-        |   +- > ForwardNode  [input$Tokenizer] > StopWordsRemover > [input$Tokenizer$StopWordsRemover]
-        |      +- > ForwardNode  [input$Tokenizer$StopWordsRemover] > HashingTF > [input$Tokenizer$StopWordsRemover$HashingTF]
-        |         +- > ForwardNode (HEAD)(TAIL>) [input$Tokenizer$StopWordsRemover$HashingTF] > VectorAssembler > [input$Tokenizer$StopWordsRemover$HashingTF$VectorAssembler]
+        |   :- > ForwardNode  [input$Tokenizer] > StopWordsRemover > [input$Tokenizer$StopWordsRemover]
+        |   :  +- > ForwardNode (HEAD)(TAIL>) [input$Tokenizer,input$Tokenizer$StopWordsRemover] > VectorAssembler > [input$Tokenizer$VectorAssembler]
+        |   +- > ForwardNode (HEAD)(TAIL>) [input$Tokenizer,input$Tokenizer$StopWordsRemover] > VectorAssembler > [input$Tokenizer$VectorAssembler]
       """.stripMargin
+      )
+
+    flow
+      .show(showID = false, asciiArt = true)
+      .shouldBe(
+        """
+        |                                 ┌───────────────┐
+        |                                 │(<TAIL) [input]│
+        |                                 └───────┬───────┘
+        |                                         │
+        |                                         v
+        |                       ┌──────────────────────────────────┐
+        |                       │ [input] > Tokenizer > [Tokenizer]│
+        |                       └────────────┬──────────┬──────────┘
+        |                                    │          │
+        |                                    │          └────────────────────────┐
+        |                                    v                                   │
+        |         ┌────────────────────────────────────────────────────┐         │
+        |         │ [Tokenizer] > StopWordsRemover > [StopWordsRemover]│         │
+        |         └──────────────────┬─────────────────────────────────┘         │
+        |                            │                                           │
+        |                            v                                           v
+        | ┌────────────────────────────────────────────────────────────────────────────────┐
+        | │(HEAD)(TAIL>) [Tokenizer,StopWordsRemover] > VectorAssembler > [VectorAssembler]│
+        | └────────────────────────────────────────────────────────────────────────────────┘
+        |""".stripMargin
       )
   }
 
@@ -382,7 +405,7 @@ class ComposeSuite extends AbstractDFDSuite {
   //
   //  }
 
-  it("Merge works when operand2 is type consistent") {
+  it("Compose works when operand2 is type consistent") {
 
     val flow = (
       'input.string
@@ -390,10 +413,21 @@ class ComposeSuite extends AbstractDFDSuite {
         :>> new StopWordsRemover()
     )
 
-    flow.show(showID = false, compactionOpt = compactionOpt).treeNodeShouldBe()
+    flow
+      .show(showID = false, compactionOpt = compactionOpt)
+      .treeNodeShouldBe(
+        """
+        |\ left >
+        |> ForwardNode (TAIL>) [input]
+        |+- > ForwardNode  [input] > Tokenizer > [input$Tokenizer]
+        |   +- > ForwardNode (HEAD)(<TAIL) [input$Tokenizer] > StopWordsRemover > [input$Tokenizer$StopWordsRemover]
+        |/ right <
+        |> ForwardNode (HEAD)(<TAIL) [input$Tokenizer] > StopWordsRemover > [input$Tokenizer$StopWordsRemover]
+        |""".stripMargin
+      )
   }
 
-  it("Merge throws an exception when operand2 is type inconsistent with output of operand1 as a Source") {
+  it("Compose throws an exception when operand2 is type inconsistent with output of operand1 as a Source") {
 
     intercept[IllegalArgumentException] {
       (
@@ -403,7 +437,7 @@ class ComposeSuite extends AbstractDFDSuite {
     }
   }
 
-  it("Merge throws an exception when operand2 is type inconsistent with output of operand1 as a Flow") {
+  it("Compose throws an exception when operand2 is type inconsistent with output of operand1 as a Flow") {
 
     intercept[IllegalArgumentException] {
       (

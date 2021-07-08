@@ -33,7 +33,15 @@ class UDFTransformerSuite extends FunSpecx {
 
   it("transformer can add new column") {
     val end = arch.transform(src)
-    end.collect().mkString("\n").shouldBe()
+    end
+      .collect()
+      .mkString("\n")
+      .shouldBe(
+        """
+        |[Reza$,25,WrappedArray(reza$),WrappedArray(reza)]
+        |[Holden$,25,WrappedArray(holden$),WrappedArray(holden)]
+        |""".stripMargin
+      )
     //    end.show(false)
   }
 }

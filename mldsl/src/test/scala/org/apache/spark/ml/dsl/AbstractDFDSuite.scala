@@ -6,7 +6,6 @@ import org.apache.spark.ml.param.shared.{HasInputCol, HasInputCols, HasOutputCol
 import org.scalatest.BeforeAndAfterAll
 import org.scalatest.exceptions.TestFailedException
 
-import scala.util.Try
 import scala.util.matching.Regex
 
 /**
@@ -18,24 +17,29 @@ abstract class AbstractDFDSuite extends FunSpecx with BeforeAndAfterAll {
 
     def treeNodeShouldBe(groundTruth: String = null): Unit = {
       val compactedGT = Option(groundTruth).map(compactGroundTruth).orNull
-      Try {
+      try {
         this.shouldBe(compactedGT)
-      }.recover {
-        case (_: TestFailedException | _: AssertionError) =>
+      } catch {
+        case e @ (_: TestFailedException | _: AssertionError) =>
           val correctedGT = compactedGT
-            .replaceAll("+- ", " ")
-            .replaceAll(":- ", " ")
-            .replaceAll(":  ", " ")
+            .replaceAllLiterally("+- ", " ")
+            .replaceAllLiterally(":- ", " ")
+            .replaceAllLiterally(":  ", " ")
           //this is for Spark 1.5
-          this.shouldBe(correctedGT)
+          try {
+            this.shouldBe(correctedGT)
+          } catch {
+            case _: Throwable =>
+              throw e
+          }
       }
     }
   }
 
   def compaction: PathCompaction = Compactions.DoNotCompact
-  lazy val compactionOpt = Some(compaction)
+  lazy val compactionOpt: Some[PathCompaction] = Some(compaction)
 
-  def compactGroundTruth(str: String) = {
+  def compactGroundTruth(str: String): String = {
 
     val regex: Regex = "(?<=[\\[\\,])[\\w\\$]*(?=[\\]\\,])".r
     val matches = regex.findAllIn(str).toList
@@ -82,11 +86,11 @@ abstract class AbstractDFDSuite extends FunSpecx with BeforeAndAfterAll {
 trait UsePruneDownPath {
   self: AbstractDFDSuite =>
 
-  override def compaction = Compactions.PruneDownPath
+  override def compaction: Compactions.PruneDownPath.type = Compactions.PruneDownPath
 }
 
 trait UsePruneDownPathKeepRoot {
   self: AbstractDFDSuite =>
 
-  override def compaction = Compactions.PruneDownPathKeepRoot
+  override def compaction: Compactions.PruneDownPathKeepRoot.type = Compactions.PruneDownPathKeepRoot
 }

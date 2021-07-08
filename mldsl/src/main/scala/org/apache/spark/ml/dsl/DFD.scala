@@ -846,7 +846,7 @@ trait DFDComponent extends MayHaveHeads with MayHaveTails {
       .map { tail =>
         val prettyTail = StepVisualWrapper(tail, showID, showInputs, showOutput, showPrefix)
         val treeNode = ForwardNode(prettyTail)
-        treeNode.treeString
+        treeNode.treeString(verbose = false)
       }
       .mkString("")
   }
@@ -862,7 +862,7 @@ trait DFDComponent extends MayHaveHeads with MayHaveTails {
       .map { head =>
         val prettyHead = StepVisualWrapper(head, showID, showInputs, showOutput, showPrefix)
         val treeNode = BackwardNode(prettyHead)
-        treeNode.treeString
+        treeNode.treeString(verbose = false)
       }
       .mkString("")
   }
@@ -1144,7 +1144,7 @@ case class DFD(
     leftTailIDs: Seq[String],
     rightTailIDs: Seq[String],
     headIDs: Seq[String],
-    fromIDsOpt: Option[Seq[String]] = None //overrriden by using "from" function
+    fromIDsOpt: Option[Seq[String]] = None //overrridden by using "from" function
 ) extends DFDComponent {
 
   override def fromIDs: Seq[String] = fromIDsOpt.getOrElse(headIDs)
