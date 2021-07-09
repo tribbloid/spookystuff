@@ -10,7 +10,7 @@ import org.apache.spark.sql.functions._
 
 object DFDSuite {
 
-  val TOKEN: String = "token"
+  val TOKEN = 'token
   val STEMMED: String = "stemmed"
   val TF: String = "tf"
   val IDF: String = "idf"
@@ -30,6 +30,8 @@ class DFDSuite extends AbstractDFDSuite {
 
   import DFDComponent._
   import DFDSuite._
+
+  override lazy val compactionOpt: Some[PathCompaction] = Some(Compactions.PruneDownPath)
 
   val training: DataFrame = TestHelper.TestSQL
     .createDataFrame(
@@ -51,17 +53,57 @@ class DFDSuite extends AbstractDFDSuite {
     .toDF("id", "input", "label")
 
   it("Flow can build Pipeline") {
-    val part1 = (DFD('input)
-      :-> new Tokenizer() -> TOKEN
-      :-> stemming -> STEMMED
-      :-> tf -> TF
-      :-> new IDF() -> DFDSuite.IDF
-      :>- STEMMED :&& TF :>> UDFTransformer(zipping) -> TF_ZIPPED)
+    val part1 = (
+      DFD('input)
+        :-> new Tokenizer() -> TOKEN
+        :-> stemming -> STEMMED
+        :-> tf -> TF
+        :-> new IDF() -> DFDSuite.IDF
+        :>- STEMMED :&& TF :>> UDFTransformer(zipping) -> TF_ZIPPED
+    )
 
     val flow = part1
       .from(STEMMED) :&& DFDSuite.IDF :>> UDFTransformer(zipping) -> IDF_ZIPPED
 
-    println(flow.show(showID = false, compactionOpt = compactionOpt))
+    flow
+      .show(showID = false, compactionOpt = compactionOpt, asciiArt = true)
+      .shouldBe(
+        """
+          |                                            ┌───────────────┐
+          |                                            │(TAIL>) [input]│
+          |                                            └────────┬──────┘
+          |                                                     │
+          |                                                     v
+          |                                       ┌──────────────────────────┐
+          |                                       │ [input] > token > [token]│
+          |                                       └─────────────┬────────────┘
+          |                                                     │
+          |                                                     v
+          |                                     ┌──────────────────────────────┐
+          |                                     │ [token] > stemmed > [stemmed]│
+          |                                     └───────┬───────────────┬─────┬┘
+          |                                             │               │     │
+          |                               ┌─────────────┘               │     │
+          |                               │                             │     │
+          |                               v                             │     │
+          |                   ┌──────────────────────┐                  │     │
+          |                   │ [stemmed] > tf > [tf]│                  │     │
+          |                   └─────┬─────────┬──────┘                  │     │
+          |                         │         │                         │     │
+          |                         │         │                         └─────┼───────────────┐
+          |                         │         │   ┌───────────────────────────┘               │
+          |                         │         └───┼───────────────────────────────────┐       │
+          |                         v             │                                   │       │
+          |               ┌───────────────────┐   │                                   │       │
+          |               │ [tf] > idf > [idf]│   │                                   │       │
+          |               └────┬──────────────┘   │                                   │       │
+          |                    │                  │                                   │       │
+          |                    v                  v                                   v       v
+          | ┌───────────────────────────────────────────────────────┐ ┌─────────────────────────────────────────────┐
+          | │(HEAD)(<TAIL) [stemmed,idf] > idf_zipped > [idf_zipped]│ │(HEAD) [stemmed,tf] > tf_zipped > [tf_zipped]│
+          | └───────────────────────────────────────────────────────┘ └─────────────────────────────────────────────┘
+          |""".stripMargin
+      )
 
     val pipeline = flow.build()
 
@@ -79,6 +121,9 @@ class DFDSuite extends AbstractDFDSuite {
         |(UDFTransformer,stemmed|idf,idf_zipped)
       """.stripMargin
       )
+
+//    val outDF = pipeline.fit(training).transform(training)
+//    outDF.show()
   }
 
   it("Pipeline can be visualized as ASCII art") {
