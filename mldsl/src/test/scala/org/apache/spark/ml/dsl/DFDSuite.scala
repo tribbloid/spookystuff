@@ -31,7 +31,7 @@ class DFDSuite extends AbstractDFDSuite {
   import DFDComponent._
   import DFDSuite._
 
-  override lazy val compactionOpt: Some[PathCompaction] = Some(Compactions.PruneDownPath)
+  override def compaction: PathCompaction = Compactions.PruneDownPath
 
   val training: DataFrame = TestHelper.TestSQL
     .createDataFrame(
@@ -52,78 +52,199 @@ class DFDSuite extends AbstractDFDSuite {
       ))
     .toDF("id", "input", "label")
 
-  it("Flow can build Pipeline") {
-    val part1 = (
-      DFD('input)
-        :-> new Tokenizer() -> TOKEN
-        :-> stemming -> STEMMED
-        :-> tf -> TF
-        :-> new IDF() -> DFDSuite.IDF
-        :>- STEMMED :&& TF :>> UDFTransformer(zipping) -> TF_ZIPPED
-    )
+  describe("Flow can build Pipeline") {
 
-    val flow = part1
-      .from(STEMMED) :&& DFDSuite.IDF :>> UDFTransformer(zipping) -> IDF_ZIPPED
+    it("1") {
 
-    flow
-      .show(showID = false, compactionOpt = compactionOpt, asciiArt = true)
-      .shouldBe(
-        """
-          |                                            ┌───────────────┐
-          |                                            │(TAIL>) [input]│
-          |                                            └────────┬──────┘
-          |                                                     │
-          |                                                     v
-          |                                       ┌──────────────────────────┐
-          |                                       │ [input] > token > [token]│
-          |                                       └─────────────┬────────────┘
-          |                                                     │
-          |                                                     v
-          |                                     ┌──────────────────────────────┐
-          |                                     │ [token] > stemmed > [stemmed]│
-          |                                     └───────┬───────────────┬─────┬┘
-          |                                             │               │     │
-          |                               ┌─────────────┘               │     │
-          |                               │                             │     │
-          |                               v                             │     │
-          |                   ┌──────────────────────┐                  │     │
-          |                   │ [stemmed] > tf > [tf]│                  │     │
-          |                   └─────┬─────────┬──────┘                  │     │
-          |                         │         │                         │     │
-          |                         │         │                         └─────┼───────────────┐
-          |                         │         │   ┌───────────────────────────┘               │
-          |                         │         └───┼───────────────────────────────────┐       │
-          |                         v             │                                   │       │
-          |               ┌───────────────────┐   │                                   │       │
-          |               │ [tf] > idf > [idf]│   │                                   │       │
-          |               └────┬──────────────┘   │                                   │       │
-          |                    │                  │                                   │       │
-          |                    v                  v                                   v       v
-          | ┌───────────────────────────────────────────────────────┐ ┌─────────────────────────────────────────────┐
-          | │(HEAD)(<TAIL) [stemmed,idf] > idf_zipped > [idf_zipped]│ │(HEAD) [stemmed,tf] > tf_zipped > [tf_zipped]│
-          | └───────────────────────────────────────────────────────┘ └─────────────────────────────────────────────┘
-          |""".stripMargin
+      val flow = {
+        val s1 = DFD('input) :>> new Tokenizer()
+
+        val s2 = (
+          PASSTHROUGH
+            U new StopWordsRemover()
+        )
+
+        val s3 = s1 :>> s2
+
+        s3 :>> new VectorAssembler()
+      }
+
+      flow
+        .visualise(showID = false, compactionOpt = compactionOpt, asciiArt = true)
+        .shouldBe(
+          """
+            |                                 ┌───────────────┐
+            |                                 │(TAIL>) [input]│
+            |                                 └───────┬───────┘
+            |                                         │
+            |                                         v
+            |                       ┌──────────────────────────────────┐
+            |                       │ [input] > Tokenizer > [Tokenizer]│
+            |                       └────────────┬──────────┬──────────┘
+            |                                    │          │
+            |                                    │          └────────────────────────┐
+            |                                    v                                   │
+            |         ┌────────────────────────────────────────────────────┐         │
+            |         │ [Tokenizer] > StopWordsRemover > [StopWordsRemover]│         │
+            |         └──────────────────┬─────────────────────────────────┘         │
+            |                            │                                           │
+            |                            v                                           v
+            | ┌────────────────────────────────────────────────────────────────────────────────┐
+            | │(HEAD)(<TAIL) [Tokenizer,StopWordsRemover] > VectorAssembler > [VectorAssembler]│
+            | └────────────────────────────────────────────────────────────────────────────────┘
+            |""".stripMargin
+        )
+    }
+
+    it("2") {
+
+      val f1 =
+        DFD('input) :>> new Tokenizer() :>>
+          //           (
+//            PASSTHROUGH
+//              U new StopWordsRemover()
+//          )
+          new StopWordsRemover()
+
+      val f2 = {
+        val hh = PASSTHROUGH U
+          (
+            new HashingTF()
+              :>> new IDF()
+          )
+
+        val rr = (
+          PASSTHROUGH U
+            (
+              new HashingTF()
+                :>> new IDF()
+            )
+        ) :>> UDFTransformer(zipping)
+
+        rr
+      }
+
+      val flow = f1 :>> f2
+
+      flow
+        .visualise(showID = false, compactionOpt = compactionOpt, asciiArt = true)
+        .shouldBe(
+          """
+            |                                                                                      ┌───────────────┐
+            |                                                                                      │(TAIL>) [input]│
+            |                                                                                      └────────┬──────┘
+            |                                                                                               │
+            |                                                                                               v
+            |                                                                             ┌──────────────────────────────────┐
+            |                                                                             │ [input] > Tokenizer > [Tokenizer]│
+            |                                                                             └────────┬────────┬────────┬───────┘
+            |                                                                                      │        │        │
+            |                                                            ┌─────────────────────────┘        │        └──────────────────────────────────────────────────────────────────┐
+            |                                                            │                                  └────────────────────────────────────┐                                      │
+            |                                                            v                                                                       │                                      │
+            |                                 ┌────────────────────────────────────────────────────┐                                             │                                      │
+            |                                 │ [Tokenizer] > StopWordsRemover > [StopWordsRemover]│                                             │                                      │
+            |                                 └────────────┬──────────────────────┬────────────────┘                                             │                                      │
+            |                                              │                      │                                                              │                                      │
+            |                                              │                      └──────────────────────┐                                       │                                      │
+            |                                              v                                             │                                       v                                      │
+            |              ┌──────────────────────────────────────────────────────────────┐              │              ┌────────────────────────────────────────────────┐              │
+            |              │ [StopWordsRemover] > HashingTF > [StopWordsRemover$HashingTF]│              │              │ [Tokenizer] > HashingTF > [Tokenizer$HashingTF]│              │
+            |              └───────────────────────────────┬──────────────────────────────┘              │              └────────────────────────┬───────────────────────┘              │
+            |                                              │                                             │                                       │                                      │
+            |                                              v                                             │                                       v                                      │
+            |               ┌────────────────────────────────────────────────────────────┐               │               ┌──────────────────────────────────────────────┐               │
+            |               │ [StopWordsRemover$HashingTF] > IDF > [StopWordsRemover$IDF]│               │               │ [Tokenizer$HashingTF] > IDF > [Tokenizer$IDF]│               │
+            |               └─────────────────────┬──────────────────────────────────────┘               │               └────────────────────────────┬─────────────────┘               │
+            |                                     │                                                      │                                            │                                 │
+            |                                     v                                                      v                                            v                                 v
+            | ┌──────────────────────────────────────────────────────────────────────────────────────────────────────────┐ ┌──────────────────────────────────────────────────────────────────────────────┐
+            | │(HEAD)(<TAIL) [StopWordsRemover$IDF,StopWordsRemover] > UDFTransformer > [StopWordsRemover$UDFTransformer]│ │(HEAD) [Tokenizer$IDF,Tokenizer] > UDFTransformer > [Tokenizer$UDFTransformer]│
+            | └──────────────────────────────────────────────────────────────────────────────────────────────────────────┘ └──────────────────────────────────────────────────────────────────────────────┘
+            |""".stripMargin
+        )
+
+//      flow.replicate()
+//
+//      flow.stages.head.id
+//      flow.stages.head.uid
+
+      flow.build().fit(training).transform(training)
+    }
+
+    it("3") {
+
+      val part1 = (
+        DFD('input)
+          :-> new Tokenizer() -> TOKEN
+          :-> stemming -> STEMMED
+          :-> tf -> TF
+          :-> new IDF() -> DFDSuite.IDF
+          :>- STEMMED :&& TF :>> UDFTransformer(zipping) -> TF_ZIPPED
       )
 
-    val pipeline = flow.build()
+      val flow = part1
+        .from(STEMMED) :&& DFDSuite.IDF :>> UDFTransformer(zipping) -> IDF_ZIPPED
 
-    val stages = pipeline.getStages
-    val input_output = getInputsOutputs(stages)
-    input_output
-      .mkString("\n")
-      .shouldBe(
-        """
-        |(Tokenizer,input,token)
-        |(StopWordsRemover,token,stemmed)
-        |(HashingTF,stemmed,tf)
-        |(UDFTransformer,stemmed|tf,tf_zipped)
-        |(IDF,tf,idf)
-        |(UDFTransformer,stemmed|idf,idf_zipped)
+      val pipeline = flow.build()
+      val outDF = pipeline.fit(training).transform(training)
+      outDF.show()
+
+      flow
+        .visualise(showID = false, compactionOpt = compactionOpt, asciiArt = true)
+        .shouldBe(
+          """
+            |                                            ┌───────────────┐
+            |                                            │(TAIL>) [input]│
+            |                                            └────────┬──────┘
+            |                                                     │
+            |                                                     v
+            |                                       ┌──────────────────────────┐
+            |                                       │ [input] > token > [token]│
+            |                                       └─────────────┬────────────┘
+            |                                                     │
+            |                                                     v
+            |                                     ┌──────────────────────────────┐
+            |                                     │ [token] > stemmed > [stemmed]│
+            |                                     └───────┬───────────────┬─────┬┘
+            |                                             │               │     │
+            |                               ┌─────────────┘               │     │
+            |                               │                             │     │
+            |                               v                             │     │
+            |                   ┌──────────────────────┐                  │     │
+            |                   │ [stemmed] > tf > [tf]│                  │     │
+            |                   └─────┬─────────┬──────┘                  │     │
+            |                         │         │                         │     │
+            |                         │         │                         └─────┼───────────────┐
+            |                         │         │   ┌───────────────────────────┘               │
+            |                         │         └───┼───────────────────────────────────┐       │
+            |                         v             │                                   │       │
+            |               ┌───────────────────┐   │                                   │       │
+            |               │ [tf] > idf > [idf]│   │                                   │       │
+            |               └────┬──────────────┘   │                                   │       │
+            |                    │                  │                                   │       │
+            |                    v                  v                                   v       v
+            | ┌───────────────────────────────────────────────────────┐ ┌─────────────────────────────────────────────┐
+            | │(HEAD)(<TAIL) [stemmed,idf] > idf_zipped > [idf_zipped]│ │(HEAD) [stemmed,tf] > tf_zipped > [tf_zipped]│
+            | └───────────────────────────────────────────────────────┘ └─────────────────────────────────────────────┘
+            |""".stripMargin
+        )
+
+      val stages = pipeline.getStages
+      val input_output = getInputsOutputs(stages)
+      input_output
+        .mkString("\n")
+        .shouldBe(
+          """
+            |(Tokenizer,input,token)
+            |(StopWordsRemover,token,stemmed)
+            |(HashingTF,stemmed,tf)
+            |(UDFTransformer,stemmed|tf,tf_zipped)
+            |(IDF,tf,idf)
+            |(UDFTransformer,stemmed|idf,idf_zipped)
       """.stripMargin
-      )
-
-//    val outDF = pipeline.fit(training).transform(training)
-//    outDF.show()
+        )
+    }
   }
 
   it("Pipeline can be visualized as ASCII art") {
@@ -137,7 +258,7 @@ class DFDSuite extends AbstractDFDSuite {
     ).from(STEMMED) :&& DFDSuite.IDF :>> UDFTransformer(zipping) -> IDF_ZIPPED
 
     flow
-      .show(showID = false, showInputs = false, asciiArt = true)
+      .visualise(showID = false, showInputs = false, asciiArt = true)
       .shouldBe(
         """
         |                             ┌───────────────┐
@@ -186,7 +307,7 @@ class DFDSuite extends AbstractDFDSuite {
     ).from(STEMMED) :&& DFDSuite.IDF :>> UDFTransformer(zipping) -> IDF_ZIPPED
 
     flow
-      .show(showID = false, forward = false, asciiArt = true)
+      .visualise(showID = false, isForward = false, asciiArt = true)
       .shouldBe(
         """
         | ┌───────────────────────────────────────────────────────┐ ┌─────────────────────────────────────────────┐

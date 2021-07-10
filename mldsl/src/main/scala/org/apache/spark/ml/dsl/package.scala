@@ -8,8 +8,8 @@ import scala.collection.mutable
   */
 package object dsl {
 
-  type NamedStage = AbstractNamedStage[PipelineStage]
-  val NamedStage: AbstractNamedStage.type = AbstractNamedStage
+  type NamedStage = StageWName[PipelineStage]
+  val NamedStage: StageWName.type = StageWName
 
   type StepMap[A, B] = ListMap[A, B]
   val StepMap: ListMap.type = ListMap

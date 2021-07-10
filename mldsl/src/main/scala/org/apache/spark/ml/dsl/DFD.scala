@@ -103,7 +103,7 @@ trait StepGraph {
     coll.remove1(id)
   }
 
-  protected def unionImpl(coll2: StepMap[String, StepLike]): StepMap[String, StepLike] = {
+  def unionImpl(coll2: StepMap[String, StepLike]): StepMap[String, StepLike] = {
     val allSteps = coll ++ coll2
     val result: StepMap[String, StepLike] = StepMap[String, StepLike](allSteps.mapValues { step =>
       val id = step.id
@@ -114,8 +114,6 @@ trait StepGraph {
     }.toSeq: _*)
     result
   }
-
-  def UU(another: StepMap[String, StepLike]): StepMap[String, StepLike] = unionImpl(another)
 
   implicit def stepsToView(steps: StepMap[String, StepLike]): StepMapView = new StepMapView(steps)
 }
@@ -153,7 +151,7 @@ trait MayHaveTails extends StepGraph {
     case tail: Step =>
       Seq(tail)
     case source: Source =>
-      source.usageIDs.map(coll).map(_.asInstanceOf[Step])
+      source.usageIDList.map(coll).map(_.asInstanceOf[Step])
     case PASSTHROUGH => Nil
   }
 
@@ -174,7 +172,7 @@ trait MayHaveTails extends StepGraph {
     case tail: Step =>
       Seq(tail)
     case source: Source =>
-      source.usageIDs.map(coll).map(_.asInstanceOf[Step])
+      source.usageIDList.map(coll).map(_.asInstanceOf[Step])
     case PASSTHROUGH => Nil
   }
 
@@ -274,6 +272,21 @@ object DFDComponent {
   def declare(flows: DFD*): DFD = {
     flows.reduce(_ union _)
   }
+
+  final val mirrorImgs = List(
+    'v' -> '^',
+    '┌' -> '└',
+    '┘' -> '┐',
+    '┬' -> '┴'
+  )
+
+  protected def flipChar(char: Char): Char = {
+    mirrorImgs.find(_._1 == char).map(_._2).getOrElse {
+      mirrorImgs.find(_._2 == char).map(_._1).getOrElse {
+        char
+      }
+    }
+  }
 }
 
 trait DFDComponent extends MayHaveHeads with MayHaveTails {
@@ -325,7 +338,7 @@ trait DFDComponent extends MayHaveHeads with MayHaveTails {
     val newTailIDs = newLeftTailIDs ++ newRightTailIDs
     val obsoleteIDs = (right.leftConnectors ++ this.PASSTHROUGHOutput)
       .filterNot(v => newTailIDs.contains(v.id))
-      .map(_.id) //if in the new TailIDs, cannot be deleted which causes not found error.
+      .map(_.id) // if in the new TailIDs, cannot be deleted which causes not found error.
 
     val allSteps = (coll ++ right.coll).remove(obsoleteIDs: _*)
     val newSteps = allSteps.connectAll(effectiveFromIDs, toIDs)
@@ -446,7 +459,7 @@ trait DFDComponent extends MayHaveHeads with MayHaveTails {
 
   def union(another: DFDComponent): DFD = {
     val result = DFD(
-      coll = this.coll UU another.coll,
+      coll = this.coll unionImpl another.coll,
       leftTailIDs = (this.leftTailIDs ++ another.leftTailIDs).distinct,
       rightTailIDs = (this.rightTailIDs ++ another.rightTailIDs).distinct,
       headIDs = (this.headIDs ++ another.headIDs).distinct
@@ -531,12 +544,10 @@ trait DFDComponent extends MayHaveHeads with MayHaveTails {
     override val self: StepLike = wrapper.self
 
     override lazy val children: Seq[ForwardNode] = {
-      self.usageIDs
+      self.usageIDList
         .map { id =>
           DFDComponent.this.coll(id)
         }
-        .toList
-        .sortBy(_.name)
         .map { v =>
           ForwardNode(
             wrapper.copy(
@@ -786,8 +797,9 @@ trait DFDComponent extends MayHaveHeads with MayHaveTails {
   ): PipelineModel = {
 
     coll.foreach {
-      case (_, v: Step) => require(v.stage.stage.isInstanceOf[Transformer])
-      case _            =>
+      case (_, v: Step) =>
+        require(v.stage.stage.isInstanceOf[Transformer], s"${v} is not a model or transformer")
+      case _ =>
     }
 
     val pipeline = buildStagesImpl[Transformer](
@@ -835,106 +847,94 @@ trait DFDComponent extends MayHaveHeads with MayHaveTails {
     }
   }
 
-  def showForwardTree(
-      tails: Seq[StepLike],
-      showID: Boolean,
-      showInputs: Boolean,
-      showOutput: Boolean,
-      showPrefix: Boolean
-  ): String = {
-    tails
-      .map { tail =>
-        val prettyTail = StepVisualWrapper(tail, showID, showInputs, showOutput, showPrefix)
-        val treeNode = ForwardNode(prettyTail)
-        treeNode.treeString(verbose = false)
+  object Visualise {}
+
+  case class Visualise(
+      showID: Boolean = true,
+      showInputs: Boolean = true,
+      showOutput: Boolean = true,
+      showPrefix: Boolean = true,
+      compactionOpt: Option[PathCompaction] = Some(DFD.DEFAULT_COMPACTION)
+  ) {
+
+    val doCompactionOnce: Unit = {
+      compactionOpt.foreach(DFDComponent.this.propagateCols)
+    }
+
+    def forwardTree(
+        tails: Seq[StepLike]
+    ): String = {
+      tails
+        .map { tail =>
+          val prettyTail = StepVisualWrapper(tail, showID, showInputs, showOutput, showPrefix)
+          val treeNode = ForwardNode(prettyTail)
+          treeNode.treeString(verbose = false)
+        }
+        .mkString("")
+    }
+
+    def backwardTree(
+        heads: Seq[StepLike]
+    ): String = {
+      heads
+        .map { head =>
+          val prettyHead = StepVisualWrapper(head, showID, showInputs, showOutput, showPrefix)
+          val treeNode = BackwardNode(prettyHead)
+          treeNode.treeString(verbose = false)
+        }
+        .mkString("")
+    }
+
+    def asciiArt(isForward: Boolean = true): String = {
+
+      val prettyColl = coll.mapValues { v =>
+        StepVisualWrapper(v, showID, showInputs, showOutput, showPrefix)
       }
-      .mkString("")
-  }
 
-  def showBackwardTree(
-      heads: Seq[StepLike],
-      showID: Boolean,
-      showInputs: Boolean,
-      showOutput: Boolean,
-      showPrefix: Boolean
-  ): String = {
-    heads
-      .map { head =>
-        val prettyHead = StepVisualWrapper(head, showID, showInputs, showOutput, showPrefix)
-        val treeNode = BackwardNode(prettyHead)
-        treeNode.treeString(verbose = false)
+      val vertices: Set[StepVisualWrapper] = prettyColl.values.toSet
+      val edges: List[(StepVisualWrapper, StepVisualWrapper)] = prettyColl.values.toList.flatMap { v =>
+        v.self.usageIDList.map(prettyColl).map(vv => v -> vv)
       }
-      .mkString("")
-  }
+      val graph: Graph[StepVisualWrapper] = Graph[StepVisualWrapper](vertices = vertices, edges = edges)
 
-  protected final val mirrorImgs = List(
-    'v' -> '^',
-    '┌' -> '└',
-    '┘' -> '┐',
-    '┬' -> '┴'
-  )
-
-  protected def flipChar(char: Char): Char = {
-    mirrorImgs.find(_._1 == char).map(_._2).getOrElse {
-      mirrorImgs.find(_._2 == char).map(_._1).getOrElse {
-        char
+      val forwardStr = GraphLayout.renderGraph(graph, layoutPrefs = layoutPrefs)
+      if (isForward) forwardStr
+      else {
+        forwardStr
+          .split('\n')
+          .reverse
+          .mkString("\n")
+          .map(DFDComponent.flipChar)
       }
     }
   }
 
   protected final val layoutPrefs = LayoutPrefsImpl(unicode = true, explicitAsciiBends = false)
 
-  def showASCIIArt(
+  def visualise(
       showID: Boolean = true,
       showInputs: Boolean = true,
       showOutput: Boolean = true,
       showPrefix: Boolean = true,
-      forward: Boolean = true
-  ): String = {
-
-    val prettyColl = coll.mapValues { v =>
-      StepVisualWrapper(v, showID, showInputs, showOutput, showPrefix)
-    }
-
-    val vertices: Set[StepVisualWrapper] = prettyColl.values.toSet
-    val edges: List[(StepVisualWrapper, StepVisualWrapper)] = prettyColl.values.toList.flatMap { v =>
-      v.self.usageIDs.map(prettyColl).map(vv => v -> vv)
-    }
-    val graph: Graph[StepVisualWrapper] = Graph[StepVisualWrapper](vertices = vertices, edges = edges)
-
-    val forwardStr = GraphLayout.renderGraph(graph, layoutPrefs = layoutPrefs)
-    if (forward) forwardStr
-    else {
-      forwardStr
-        .split('\n')
-        .reverse
-        .mkString("\n")
-        .map(flipChar)
-    }
-  }
-
-  def show(
-      showID: Boolean = true,
-      showInputs: Boolean = true,
-      showOutput: Boolean = true,
-      showPrefix: Boolean = true,
-      forward: Boolean = true,
+      isForward: Boolean = true,
       asciiArt: Boolean = false,
       compactionOpt: Option[PathCompaction] = Some(DFD.DEFAULT_COMPACTION)
   ): String = {
-    compactionOpt.foreach(this.propagateCols)
+//    compactionOpt.foreach(this.propagateCols)
+
+    val viz = Visualise(showID, showInputs, showOutput, showPrefix, compactionOpt)
 
     if (!asciiArt) {
-      if (forward) {
+      if (isForward) {
 
-        "\\ left >\n" + showForwardTree(leftTails, showID, showInputs, showOutput, showPrefix) +
-          "/ right <\n" + showForwardTree(rightTails, showID, showInputs, showOutput, showPrefix)
+        "\\ left >\n" + viz.forwardTree(leftTails) +
+          "/ right <\n" + viz.forwardTree(rightTails)
       } else {
 
-        showBackwardTree(this.heads, showID, showInputs, showOutput, showPrefix)
+        viz.backwardTree(this.heads)
       }
     } else {
-      showASCIIArt(showID, showInputs, showOutput, showPrefix, forward)
+      viz.asciiArt(isForward)
     }
   }
 }

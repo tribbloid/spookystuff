@@ -28,7 +28,7 @@ class MapHeadSuite extends AbstractDFDSuite {
     )
 
     flow
-      .show(showID = false, compactionOpt = compactionOpt)
+      .visualise(showID = false, compactionOpt = compactionOpt)
       .treeNodeShouldBe(
         """
         |\ left >
@@ -50,7 +50,7 @@ class MapHeadSuite extends AbstractDFDSuite {
     )
 
     flow
-      .show(showID = false, compactionOpt = compactionOpt)
+      .visualise(showID = false, compactionOpt = compactionOpt)
       .treeNodeShouldBe(
         """
         |\ left >
@@ -77,7 +77,7 @@ class MapHeadSuite extends AbstractDFDSuite {
     )
 
     flow
-      .show(showID = false, compactionOpt = compactionOpt)
+      .visualise(showID = false, compactionOpt = compactionOpt)
       .treeNodeShouldBe(
         """
         |\ left >
@@ -105,7 +105,7 @@ class MapHeadSuite extends AbstractDFDSuite {
     )
 
     flow
-      .show(showID = false, compactionOpt = compactionOpt)
+      .visualise(showID = false, compactionOpt = compactionOpt)
       .treeNodeShouldBe(
         """
         |\ left >
@@ -134,7 +134,7 @@ class MapHeadSuite extends AbstractDFDSuite {
     )
 
     flow
-      .show(showID = false, compactionOpt = compactionOpt)
+      .visualise(showID = false, compactionOpt = compactionOpt)
       .treeNodeShouldBe(
         """
         |\ left >
@@ -165,7 +165,7 @@ class MapHeadSuite extends AbstractDFDSuite {
     )
 
     flow
-      .show(showID = false, compactionOpt = compactionOpt)
+      .visualise(showID = false, compactionOpt = compactionOpt)
       .treeNodeShouldBe(
         """
         |\ left >
@@ -193,7 +193,7 @@ class MapHeadSuite extends AbstractDFDSuite {
     )
 
     flow
-      .show(showID = false, compactionOpt = compactionOpt, forward = false)
+      .visualise(showID = false, compactionOpt = compactionOpt, isForward = false)
       .treeNodeShouldBe(
         """
         |< BackwardNode (HEAD) [dummy,dummy,input] > VectorAssembler > [VectorAssembler]
@@ -214,7 +214,7 @@ class MapHeadSuite extends AbstractDFDSuite {
         'input
 
     flow
-      .show(showID = false, compactionOpt = compactionOpt, forward = false)
+      .visualise(showID = false, compactionOpt = compactionOpt, isForward = false)
       .treeNodeShouldBe(
         """
         |< BackwardNode (HEAD) [dummy,dummy,input] > VectorAssembler > [VectorAssembler]

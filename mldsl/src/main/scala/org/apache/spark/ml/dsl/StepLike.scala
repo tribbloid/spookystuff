@@ -30,6 +30,8 @@ trait StepLike extends DFDComponent {
 
   //unlike inIDs, sequence of outIDs & parameter types (if not InputCol(s)) are not important
   def usageIDs: Set[String]
+  final def usageIDList: List[String] = usageIDs.toList.sortBy(v => "" + v)
+
   def canBeHead: Boolean
 
   if (!canBeHead) assert(usageIDs.isEmpty)
@@ -65,7 +67,6 @@ object Step extends MessageRelay[Step] {
     )
 
     M(
-      id,
       stage.name,
       stage.tags,
       stage.outputColOverride,
@@ -76,7 +77,6 @@ object Step extends MessageRelay[Step] {
   }
 
   case class M(
-      id: String,
       name: String,
       tag: Set[String],
       forceOutput: Option[String],
@@ -95,8 +95,7 @@ object Step extends MessageRelay[Step] {
         instance,
         name,
         tag,
-        forceOutput,
-        id
+        forceOutput
       )
 
       Step(stage)
@@ -173,17 +172,16 @@ case class Step(
 
   override def replicate(suffix: String = ""): Step = {
     val replica = stage.replicate
-    val newStage = replica.copy(name = replica.name + suffix, outputColOverride = replica.outputColOverride.map(_ + ""))
 
     val result = this.copy(
-      stage = newStage
+      stage = replica
     )
     this.replicas += result
     result
   }
 
-  def id = stage.id
-  def name = stage.name
+  def id: String = stage.uid
+  def name: String = stage.name
 
   def recursiveReplicas: Set[Step] = {
     val set = this.replicas.toSet
@@ -226,7 +224,7 @@ case class Source(
 
   override def replicate(suffix: String = ""): Source = this
 
-  def id = name
+  def id: String = name
 
   override def wth(inputIDs: Seq[String], outputIDs: Set[String]): Source = {
     this.copy(
@@ -234,7 +232,7 @@ case class Source(
     )
   }
 
-  override def toString = "'" + name
+  override def toString: String = "'" + name
 }
 
 case object PASSTHROUGH extends Connector {

@@ -39,7 +39,7 @@ abstract class AbstractDFDSuite extends FunSpecx with BeforeAndAfterAll {
   }
 
   def compaction: PathCompaction = Compactions.DoNotCompact
-  lazy val compactionOpt: Some[PathCompaction] = Some(compaction)
+  final lazy val compactionOpt: Some[PathCompaction] = Some(compaction)
 
   def compactGroundTruth(str: String): String = {
 

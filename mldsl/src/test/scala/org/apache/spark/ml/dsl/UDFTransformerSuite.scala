@@ -1,7 +1,7 @@
 package org.apache.spark.ml.dsl
 
 import com.tribbloids.spookystuff.testutils.{FunSpecx, TestHelper}
-import org.apache.spark.ml.feature.Tokenizer
+import org.apache.spark.ml.feature.{IDF, Tokenizer}
 import org.apache.spark.sql.functions._
 
 case class User(
@@ -24,14 +24,14 @@ class UDFTransformerSuite extends FunSpecx {
   val arch = UDFTransformer().setUDFSafely(stemming).setInputCols(Array("name_token")).setOutputCol("name_stemmed")
   val src = tokenizer.transform(df1)
 
-  it("transformer has consistent schema") {
+  it("has consistent schema") {
     val end = arch.transform(src)
     val endSchema = end.schema
     val endSchema2 = arch.transformSchema(src.schema)
     assert(endSchema.toString() == endSchema2.toString())
   }
 
-  it("transformer can add new column") {
+  it("can add new column") {
     val end = arch.transform(src)
     end
       .collect()
@@ -44,4 +44,5 @@ class UDFTransformerSuite extends FunSpecx {
       )
     //    end.show(false)
   }
+
 }

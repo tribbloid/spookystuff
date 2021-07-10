@@ -20,7 +20,7 @@ class AppendSuite extends AbstractDFDSuite {
     )
 
     flow
-      .show(showID = false, compactionOpt = compactionOpt)
+      .visualise(showID = false, compactionOpt = compactionOpt)
       .treeNodeShouldBe(
         """
         |\ left >
@@ -40,7 +40,7 @@ class AppendSuite extends AbstractDFDSuite {
     val flow = input :-> new VectorAssembler() <-: input
 
     flow
-      .show(showID = false, forward = false, compactionOpt = compactionOpt)
+      .visualise(showID = false, isForward = false, compactionOpt = compactionOpt)
       .treeNodeShouldBe(
         """
         |< BackwardNode (HEAD) [input,input] > VectorAssembler > [input$VectorAssembler]
@@ -54,32 +54,32 @@ class AppendSuite extends AbstractDFDSuite {
     val flow1 = 'input :-> new Tokenizer() :-> 'dummy // resolve to rebase then union
     val flow2 = 'input :-> (new Tokenizer() :-> 'dummy) // resolve to union then rebase
     flow1
-      .show(showID = false, compactionOpt = compactionOpt)
-      .treeNodeShouldBe(flow2.show(showID = false, compactionOpt = compactionOpt))
+      .visualise(showID = false, compactionOpt = compactionOpt)
+      .treeNodeShouldBe(flow2.visualise(showID = false, compactionOpt = compactionOpt))
   }
 
   it("A <-: B <-: Source is associative") {
     val flow1 = 'dummy <-: new Tokenizer() <-: 'input
     val flow2 = 'dummy <-: (new Tokenizer() <-: 'input)
     flow1
-      .show(showID = false, compactionOpt = compactionOpt)
-      .treeNodeShouldBe(flow2.show(showID = false, compactionOpt = compactionOpt))
+      .visualise(showID = false, compactionOpt = compactionOpt)
+      .treeNodeShouldBe(flow2.visualise(showID = false, compactionOpt = compactionOpt))
   }
 
   it("A :-> B :-> detached Stage is associative") {
     val flow1 = 'input :-> new Tokenizer() :-> new NGram() // resolve to rebase then union
     val flow2 = 'input :-> (new Tokenizer() :-> new NGram()) // resolve to union then rebase
     flow1
-      .show(showID = false, compactionOpt = compactionOpt)
-      .treeNodeShouldBe(flow2.show(showID = false, compactionOpt = compactionOpt))
+      .visualise(showID = false, compactionOpt = compactionOpt)
+      .treeNodeShouldBe(flow2.visualise(showID = false, compactionOpt = compactionOpt))
   }
 
   it("A <-: B <-: detached Stage is associative") {
     val flow1 = new NGram() <-: new Tokenizer() <-: 'input
     val flow2 = new NGram() <-: (new Tokenizer() <-: 'input)
     flow1
-      .show(showID = false, compactionOpt = compactionOpt)
-      .treeNodeShouldBe(flow2.show(showID = false, compactionOpt = compactionOpt))
+      .visualise(showID = false, compactionOpt = compactionOpt)
+      .treeNodeShouldBe(flow2.visualise(showID = false, compactionOpt = compactionOpt))
   }
 
   it(":-> Stage is cast to rebase") {
@@ -95,7 +95,7 @@ class AppendSuite extends AbstractDFDSuite {
     )
 
     flow
-      .show(showID = false, compactionOpt = compactionOpt)
+      .visualise(showID = false, compactionOpt = compactionOpt)
       .treeNodeShouldBe(
         """
         |\ left >
@@ -121,7 +121,7 @@ class AppendSuite extends AbstractDFDSuite {
     )
 
     flow
-      .show(showID = false, compactionOpt = compactionOpt)
+      .visualise(showID = false, compactionOpt = compactionOpt)
       .treeNodeShouldBe(
         """
         |\ left >
@@ -142,7 +142,7 @@ class AppendSuite extends AbstractDFDSuite {
   it(":-> Source is cast to union") {
     val flow = 'input :-> new Tokenizer() :-> 'dummy
     flow
-      .show(showID = false, compactionOpt = compactionOpt)
+      .visualise(showID = false, compactionOpt = compactionOpt)
       .treeNodeShouldBe(
         """
         |\ left >
@@ -159,7 +159,7 @@ class AppendSuite extends AbstractDFDSuite {
   it("<-: Source is cast to union") {
     val flow = 'dummy <-: new Tokenizer() <-: 'input
     flow
-      .show(showID = false, compactionOpt = compactionOpt)
+      .visualise(showID = false, compactionOpt = compactionOpt)
       .treeNodeShouldBe(
         """
         |\ left >

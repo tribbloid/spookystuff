@@ -22,9 +22,9 @@ class ComposeSuite extends AbstractDFDSuite {
     val flow = 'input :>> new Tokenizer() :>> PASSTHROUGH
     val flow2 = 'input :>> new Tokenizer()
     flow
-      .show(showID = false, compactionOpt = compactionOpt)
+      .visualise(showID = false, compactionOpt = compactionOpt)
       .treeNodeShouldBe(
-        flow2.show(showID = false, compactionOpt = compactionOpt)
+        flow2.visualise(showID = false, compactionOpt = compactionOpt)
       )
   }
 
@@ -32,9 +32,9 @@ class ComposeSuite extends AbstractDFDSuite {
     val flow1 = 'input :>> (PASSTHROUGH :>> new Tokenizer())
     val flow2 = 'input :>> new Tokenizer()
     flow1
-      .show(showID = false, compactionOpt = compactionOpt)
+      .visualise(showID = false, compactionOpt = compactionOpt)
       .treeNodeShouldBe(
-        flow2.show(showID = false, compactionOpt = compactionOpt)
+        flow2.visualise(showID = false, compactionOpt = compactionOpt)
       )
   }
 
@@ -49,7 +49,7 @@ class ComposeSuite extends AbstractDFDSuite {
         :=>> new HashingTF()
     )
     flow
-      .show(showID = false, compactionOpt = compactionOpt)
+      .visualise(showID = false, compactionOpt = compactionOpt)
       .treeNodeShouldBe(
         """
         |\ left >
@@ -92,9 +92,9 @@ class ComposeSuite extends AbstractDFDSuite {
     //    )
 
     flow1
-      .show(showID = false, compactionOpt = compactionOpt)
+      .visualise(showID = false, compactionOpt = compactionOpt)
       .treeNodeShouldBe(
-        flow2.show(showID = false, compactionOpt = compactionOpt)
+        flow2.visualise(showID = false, compactionOpt = compactionOpt)
       )
   }
 
@@ -104,7 +104,7 @@ class ComposeSuite extends AbstractDFDSuite {
     )
 
     flow
-      .show(showID = false, compactionOpt = compactionOpt)
+      .visualise(showID = false, compactionOpt = compactionOpt)
       .treeNodeShouldBe(
         """
         |\ left >
@@ -127,7 +127,7 @@ class ComposeSuite extends AbstractDFDSuite {
     )
 
     flow
-      .show(showID = false, compactionOpt = compactionOpt)
+      .visualise(showID = false, compactionOpt = compactionOpt)
       .treeNodeShouldBe(
         """
           |\ left >
@@ -163,9 +163,9 @@ class ComposeSuite extends AbstractDFDSuite {
     )
 
     flow1
-      .show(showID = false, compactionOpt = compactionOpt)
+      .visualise(showID = false, compactionOpt = compactionOpt)
       .treeNodeShouldBe(
-        flow2.show(showID = false, compactionOpt = compactionOpt)
+        flow2.visualise(showID = false, compactionOpt = compactionOpt)
       )
   }
 
@@ -176,7 +176,7 @@ class ComposeSuite extends AbstractDFDSuite {
     )
 
     flow
-      .show(showID = false)
+      .visualise(showID = false)
       .treeNodeShouldBe(
         """
         |\ left >
@@ -198,7 +198,7 @@ class ComposeSuite extends AbstractDFDSuite {
     )
 
     flow
-      .show(showID = false)
+      .visualise(showID = false)
       .treeNodeShouldBe(
         """
         |\ left >
@@ -226,7 +226,7 @@ class ComposeSuite extends AbstractDFDSuite {
     )
 
     flow
-      .show(showID = false, compactionOpt = compactionOpt)
+      .visualise(showID = false, compactionOpt = compactionOpt)
       .treeNodeShouldBe(
         """
         |\ left >
@@ -256,7 +256,7 @@ class ComposeSuite extends AbstractDFDSuite {
     )
 
     flow
-      .show(showID = false, compactionOpt = compactionOpt)
+      .visualise(showID = false, compactionOpt = compactionOpt)
       .treeNodeShouldBe(
         """
         |\ left >
@@ -271,7 +271,7 @@ class ComposeSuite extends AbstractDFDSuite {
       )
 
     flow
-      .show(showID = false, asciiArt = true)
+      .visualise(showID = false, asciiArt = true)
       .shouldBe(
         """
         |                                 ┌───────────────┐
@@ -305,7 +305,7 @@ class ComposeSuite extends AbstractDFDSuite {
     )
 
     flow
-      .show(showID = false, compactionOpt = compactionOpt)
+      .visualise(showID = false, compactionOpt = compactionOpt)
       .treeNodeShouldBe(
         """
         |\ left >
@@ -330,7 +330,7 @@ class ComposeSuite extends AbstractDFDSuite {
     )
 
     flow
-      .show(showID = false, compactionOpt = compactionOpt)
+      .visualise(showID = false, compactionOpt = compactionOpt)
       .treeNodeShouldBe(
         """
         |\ left >
@@ -356,7 +356,7 @@ class ComposeSuite extends AbstractDFDSuite {
     )
 
     flow
-      .show(showID = false, compactionOpt = compactionOpt)
+      .visualise(showID = false, compactionOpt = compactionOpt)
       .treeNodeShouldBe(
         """
         |\ left >
@@ -376,7 +376,7 @@ class ComposeSuite extends AbstractDFDSuite {
       'input
 
     flow
-      .show(showID = false, compactionOpt = compactionOpt)
+      .visualise(showID = false, compactionOpt = compactionOpt)
       .treeNodeShouldBe(
         """
         |\ left >
@@ -414,7 +414,7 @@ class ComposeSuite extends AbstractDFDSuite {
     )
 
     flow
-      .show(showID = false, compactionOpt = compactionOpt)
+      .visualise(showID = false, compactionOpt = compactionOpt)
       .treeNodeShouldBe(
         """
         |\ left >

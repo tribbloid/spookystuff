@@ -59,6 +59,8 @@ case class UDFTransformer(
     with HasInputCols
     with DefaultParamsWritable {
 
+  def this() = this(Identifiable.randomUID("udf"))
+
   lazy val UDF: Param[UserDefinedFunction] = GenericParam[UserDefinedFunction]()
   def udfImpl: UserDefinedFunction = UDF
 

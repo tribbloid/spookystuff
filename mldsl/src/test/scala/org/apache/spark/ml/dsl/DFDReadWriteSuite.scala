@@ -67,9 +67,9 @@ class DFDReadWriteSuite extends AbstractDFDSuite {
     val flow2 = DFD.fromJSON(prettyJSON)
 
     flow
-      .show()
+      .visualise()
       .shouldBe(
-        flow2.show()
+        flow2.visualise()
       )
   }
 
@@ -93,9 +93,9 @@ class DFDReadWriteSuite extends AbstractDFDSuite {
     val flow2 = DFD.fromXML(prettyXML)
 
     flow
-      .show()
+      .visualise()
       .shouldBe(
-        flow2.show()
+        flow2.visualise()
       )
   }
 }

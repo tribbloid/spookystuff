@@ -1,6 +1,8 @@
 package org.apache.spark.ml.dsl.utils
 
 import org.apache.spark.SparkConf
+import org.apache.spark.ml.PipelineStage
+import org.apache.spark.ml.param.ParamMap
 import org.apache.spark.serializer.{JavaSerializer, KryoSerializer}
 
 object DSLUtils {
@@ -124,5 +126,19 @@ object DSLUtils {
     classOf[java.io.Serializable].isAssignableFrom(v) ||
     v.isPrimitive ||
     v.isArray
+  }
+
+  def replicateStage[T <: PipelineStage](v: T): T = { // with different UID
+
+    val withNewUID = v.getClass.getConstructor().newInstance()
+    val oldSeq = v.paramMap.toSeq
+
+    val newMap = new ParamMap()
+    oldSeq.foreach { v =>
+      newMap.put(withNewUID.getParam(v.param.name), v.value)
+    }
+
+    val converted = withNewUID.copy(newMap).asInstanceOf[T]
+    converted
   }
 }
