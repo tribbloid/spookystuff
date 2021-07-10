@@ -20,11 +20,9 @@ object StaticGraph {
   trait Builder[D <: Domain] extends Algebra.Sugars[D] {
 
     type GG <: StaticGraph[D]
-    protected def getCtg(implicit ev: ClassTag[GG]) = ev
+    protected def getCtg(implicit ev: ClassTag[GG]): ClassTag[GG] = ev
     implicit def ctg: ClassTag[GG]
     final lazy val _ctg = ctg
-
-//    implicit val algebra: Algebra[D]
 
     def fromSeq(
         nodes: Seq[_NodeLike],
@@ -49,7 +47,7 @@ object StaticGraph {
       * @param edge_+ binary operation to combine data from 2 edges
       * @return merged graph -> mappings that converts evicted edges to created edges
       */
-    def serial(
+    def compose(
         base: (GG, _Heads),
         top: (GG, _Tails),
         node_+ : CommonTypes.Binary[NodeData] = nodeAlgebra.+,

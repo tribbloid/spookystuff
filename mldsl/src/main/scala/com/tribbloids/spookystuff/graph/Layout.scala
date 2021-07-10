@@ -156,9 +156,9 @@ trait Layout[D <: Domain] extends Algebra.Sugars[D] {
 
       //      def checkConnectivity(top: DSLView, topTails: _Tails): DSLView = {}
 
-      def _mergeImpl(top: Core[_], topTails: _Tails): Core[GG] = {
+      def _composeImpl(top: Core[_], topTails: _Tails): Core[GG] = {
 
-        val (newGraph, conversion) = defaultGraphBuilder.serial(
+        val (newGraph, conversion) = defaultGraphBuilder.compose(
           baseM._graph -> baseM.from,
           top._graph -> topTails
         )
@@ -178,7 +178,7 @@ trait Layout[D <: Domain] extends Algebra.Sugars[D] {
 
       def compose(top: Core[_]): Core[GG] = {
 
-        _mergeImpl(top, top.tails(topFacet))
+        _composeImpl(top, top.tails(topFacet))
       }
 
       def mapHead(top: Core[_]): Core[_Module] = {
@@ -189,7 +189,7 @@ trait Layout[D <: Domain] extends Algebra.Sugars[D] {
         topTails.foldLeft(baseM: Core[_Module]) { (self, edge) =>
           val tail = Tails(Seq(edge))
           val rotator = rotatorFactory()
-          self.Ops(topFacet, baseFacet)._mergeImpl(top.replicate(DataAlgebra.Mutator.identity[D])(rotator), tail)
+          self.Ops(topFacet, baseFacet)._composeImpl(top.replicate(DataAlgebra.Mutator.identity[D])(rotator), tail)
         }
       }
 
