@@ -151,7 +151,7 @@ trait MayHaveTails extends StepGraph {
     case tail: Step =>
       Seq(tail)
     case source: Source =>
-      source.usageIDList.map(coll).map(_.asInstanceOf[Step])
+      source.usageIDs.map(coll).map(_.asInstanceOf[Step])
     case PASSTHROUGH => Nil
   }
 
@@ -172,7 +172,7 @@ trait MayHaveTails extends StepGraph {
     case tail: Step =>
       Seq(tail)
     case source: Source =>
-      source.usageIDList.map(coll).map(_.asInstanceOf[Step])
+      source.usageIDs.map(coll).map(_.asInstanceOf[Step])
     case PASSTHROUGH => Nil
   }
 
@@ -535,7 +535,7 @@ trait DFDComponent extends MayHaveHeads with MayHaveTails {
   ) extends StepTreeNode[ForwardNode] {
 
     //    def prefix = if (this.children.nonEmpty) "v "
-    def prefix: String =
+    lazy val prefix: String =
       if (this.children.nonEmpty) "> "
       else "> "
 
@@ -544,10 +544,12 @@ trait DFDComponent extends MayHaveHeads with MayHaveTails {
     override val self: StepLike = wrapper.self
 
     override lazy val children: Seq[ForwardNode] = {
-      self.usageIDList
+      self.usageIDs
         .map { id =>
           DFDComponent.this.coll(id)
         }
+        .toList
+        .sortBy(v => "" + v.name)
         .map { v =>
           ForwardNode(
             wrapper.copy(
@@ -893,7 +895,7 @@ trait DFDComponent extends MayHaveHeads with MayHaveTails {
 
       val vertices: Set[StepVisualWrapper] = prettyColl.values.toSet
       val edges: List[(StepVisualWrapper, StepVisualWrapper)] = prettyColl.values.toList.flatMap { v =>
-        v.self.usageIDList.map(prettyColl).map(vv => v -> vv)
+        v.self.usageIDs.map(prettyColl).map(vv => v -> vv)
       }
       val graph: Graph[StepVisualWrapper] = Graph[StepVisualWrapper](vertices = vertices, edges = edges)
 

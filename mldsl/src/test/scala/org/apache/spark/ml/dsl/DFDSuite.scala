@@ -101,9 +101,9 @@ class DFDSuite extends AbstractDFDSuite {
       val f1 =
         DFD('input) :>> new Tokenizer() :>>
           //           (
-//            PASSTHROUGH
-//              U new StopWordsRemover()
-//          )
+          //            PASSTHROUGH
+          //              U new StopWordsRemover()
+          //          )
           new StopWordsRemover()
 
       val f2 = {
@@ -130,44 +130,42 @@ class DFDSuite extends AbstractDFDSuite {
         .visualise(showID = false, compactionOpt = compactionOpt, asciiArt = true)
         .shouldBe(
           """
-            |                                                                                      ┌───────────────┐
-            |                                                                                      │(TAIL>) [input]│
-            |                                                                                      └────────┬──────┘
-            |                                                                                               │
-            |                                                                                               v
-            |                                                                             ┌──────────────────────────────────┐
-            |                                                                             │ [input] > Tokenizer > [Tokenizer]│
-            |                                                                             └────────┬────────┬────────┬───────┘
-            |                                                                                      │        │        │
-            |                                                            ┌─────────────────────────┘        │        └──────────────────────────────────────────────────────────────────┐
-            |                                                            │                                  └────────────────────────────────────┐                                      │
-            |                                                            v                                                                       │                                      │
-            |                                 ┌────────────────────────────────────────────────────┐                                             │                                      │
-            |                                 │ [Tokenizer] > StopWordsRemover > [StopWordsRemover]│                                             │                                      │
-            |                                 └────────────┬──────────────────────┬────────────────┘                                             │                                      │
-            |                                              │                      │                                                              │                                      │
-            |                                              │                      └──────────────────────┐                                       │                                      │
-            |                                              v                                             │                                       v                                      │
-            |              ┌──────────────────────────────────────────────────────────────┐              │              ┌────────────────────────────────────────────────┐              │
-            |              │ [StopWordsRemover] > HashingTF > [StopWordsRemover$HashingTF]│              │              │ [Tokenizer] > HashingTF > [Tokenizer$HashingTF]│              │
-            |              └───────────────────────────────┬──────────────────────────────┘              │              └────────────────────────┬───────────────────────┘              │
-            |                                              │                                             │                                       │                                      │
-            |                                              v                                             │                                       v                                      │
-            |               ┌────────────────────────────────────────────────────────────┐               │               ┌──────────────────────────────────────────────┐               │
-            |               │ [StopWordsRemover$HashingTF] > IDF > [StopWordsRemover$IDF]│               │               │ [Tokenizer$HashingTF] > IDF > [Tokenizer$IDF]│               │
-            |               └─────────────────────┬──────────────────────────────────────┘               │               └────────────────────────────┬─────────────────┘               │
-            |                                     │                                                      │                                            │                                 │
-            |                                     v                                                      v                                            v                                 v
-            | ┌──────────────────────────────────────────────────────────────────────────────────────────────────────────┐ ┌──────────────────────────────────────────────────────────────────────────────┐
-            | │(HEAD)(<TAIL) [StopWordsRemover$IDF,StopWordsRemover] > UDFTransformer > [StopWordsRemover$UDFTransformer]│ │(HEAD) [Tokenizer$IDF,Tokenizer] > UDFTransformer > [Tokenizer$UDFTransformer]│
-            | └──────────────────────────────────────────────────────────────────────────────────────────────────────────┘ └──────────────────────────────────────────────────────────────────────────────┘
+            |                             ┌───────────────┐
+            |                             │(TAIL>) [input]│
+            |                             └───────┬───────┘
+            |                                     │
+            |                                     v
+            |                   ┌──────────────────────────────────┐
+            |                   │ [input] > Tokenizer > [Tokenizer]│
+            |                   └─────────────────┬────────────────┘
+            |                                     │
+            |                                     v
+            |          ┌────────────────────────────────────────────────────┐
+            |          │ [Tokenizer] > StopWordsRemover > [StopWordsRemover]│
+            |          └────────────────────┬──────────────┬────────────────┘
+            |                               │              │
+            |                               │              └───────────┐
+            |                               v                          │
+            |        ┌─────────────────────────────────────────────┐   │
+            |        │ [StopWordsRemover] > HashingTF > [HashingTF]│   │
+            |        └────────────────────┬────────────────────────┘   │
+            |                             │                    ┌───────┘
+            |                             v                    │
+            |               ┌──────────────────────────┐       │
+            |               │ [HashingTF] > IDF > [IDF]│       │
+            |               └──────────┬───────────────┘       │
+            |                          │                       │
+            |                          v                       v
+            | ┌────────────────────────────────────────────────────────────────────────┐
+            | │(HEAD)(<TAIL) [StopWordsRemover,IDF] > UDFTransformer > [UDFTransformer]│
+            | └────────────────────────────────────────────────────────────────────────┘
             |""".stripMargin
         )
 
-//      flow.replicate()
-//
-//      flow.stages.head.id
-//      flow.stages.head.uid
+      //      flow.replicate()
+      //
+      //      flow.stages.head.id
+      //      flow.stages.head.uid
 
       flow.build().fit(training).transform(training)
     }
@@ -246,105 +244,106 @@ class DFDSuite extends AbstractDFDSuite {
         )
     }
   }
+  describe("Flow can be visualized with no input") {
+    it("1") {
+      val flow = (
+        DFD('input)
+          :-> new Tokenizer() -> TOKEN
+          :-> stemming -> STEMMED
+          :-> tf -> TF
+          :-> new IDF() -> DFDSuite.IDF
+          :>- STEMMED :&& TF :>> UDFTransformer(zipping) -> TF_ZIPPED
+      ).from(STEMMED) :&& DFDSuite.IDF :>> UDFTransformer(zipping) -> IDF_ZIPPED
 
-  it("Pipeline can be visualized as ASCII art") {
-    val flow = (
-      DFD('input)
-        :-> new Tokenizer() -> TOKEN
-        :-> stemming -> STEMMED
-        :-> tf -> TF
-        :-> new IDF() -> DFDSuite.IDF
-        :>- STEMMED :&& TF :>> UDFTransformer(zipping) -> TF_ZIPPED
-    ).from(STEMMED) :&& DFDSuite.IDF :>> UDFTransformer(zipping) -> IDF_ZIPPED
-
-    flow
-      .visualise(showID = false, showInputs = false, asciiArt = true)
-      .shouldBe(
-        """
-        |                             ┌───────────────┐
-        |                             │(TAIL>) [input]│
-        |                             └───────┬───────┘
-        |                                     │
-        |                                     v
-        |                            ┌────────────────┐
-        |                            │ token > [token]│
-        |                            └────────┬───────┘
-        |                                     │
-        |                                     v
-        |                          ┌────────────────────┐
-        |                          │ stemmed > [stemmed]│
-        |                          └─────┬───────┬─┬────┘
-        |                                │       │ │
-        |                    ┌───────────┘       │ └─────────────────┐
-        |                    │       ┌───────────┘                   │
-        |                    v       │                               │
-        |              ┌──────────┐  │                               │
-        |              │ tf > [tf]│  │                               │
-        |              └───┬───┬──┘  │                               │
-        |                  │   │     │                               │
-        |                  │   └─────┼─────────────────────────┐     │
-        |                  v         │                         │     │
-        |           ┌────────────┐   │                         │     │
-        |           │ idf > [idf]│   │                         │     │
-        |           └───┬────────┘   │                         │     │
-        |               │            │                         │     │
-        |               v            v                         v     v
-        | ┌───────────────────────────────────────┐ ┌──────────────────────────────┐
-        | │(HEAD)(<TAIL) idf_zipped > [idf_zipped]│ │(HEAD) tf_zipped > [tf_zipped]│
-        | └───────────────────────────────────────┘ └──────────────────────────────┘
+      flow
+        .visualise(showID = false, showInputs = false, asciiArt = true)
+        .shouldBe(
+          """
+            |                             ┌───────────────┐
+            |                             │(TAIL>) [input]│
+            |                             └───────┬───────┘
+            |                                     │
+            |                                     v
+            |                            ┌────────────────┐
+            |                            │ token > [token]│
+            |                            └────────┬───────┘
+            |                                     │
+            |                                     v
+            |                          ┌────────────────────┐
+            |                          │ stemmed > [stemmed]│
+            |                          └─────┬───────┬─┬────┘
+            |                                │       │ │
+            |                    ┌───────────┘       │ └─────────────────┐
+            |                    │       ┌───────────┘                   │
+            |                    v       │                               │
+            |              ┌──────────┐  │                               │
+            |              │ tf > [tf]│  │                               │
+            |              └───┬───┬──┘  │                               │
+            |                  │   │     │                               │
+            |                  │   └─────┼─────────────────────────┐     │
+            |                  v         │                         │     │
+            |           ┌────────────┐   │                         │     │
+            |           │ idf > [idf]│   │                         │     │
+            |           └───┬────────┘   │                         │     │
+            |               │            │                         │     │
+            |               v            v                         v     v
+            | ┌───────────────────────────────────────┐ ┌──────────────────────────────┐
+            | │(HEAD)(<TAIL) idf_zipped > [idf_zipped]│ │(HEAD) tf_zipped > [tf_zipped]│
+            | └───────────────────────────────────────┘ └──────────────────────────────┘
       """.stripMargin
-      )
-  }
+        )
+    }
 
-  it("Pipeline can be visualized as ASCII art backwards") {
-    val flow = (
-      DFD('input)
-        :-> new Tokenizer() -> TOKEN
-        :-> stemming -> STEMMED
-        :-> tf -> TF
-        :-> new IDF() -> DFDSuite.IDF
-        :>- STEMMED :&& TF :>> UDFTransformer(zipping) -> TF_ZIPPED
-    ).from(STEMMED) :&& DFDSuite.IDF :>> UDFTransformer(zipping) -> IDF_ZIPPED
+    it("2") {
+      val flow = (
+        DFD('input)
+          :-> new Tokenizer() -> TOKEN
+          :-> stemming -> STEMMED
+          :-> tf -> TF
+          :-> new IDF() -> DFDSuite.IDF
+          :>- STEMMED :&& TF :>> UDFTransformer(zipping) -> TF_ZIPPED
+      ).from(STEMMED) :&& DFDSuite.IDF :>> UDFTransformer(zipping) -> IDF_ZIPPED
 
-    flow
-      .visualise(showID = false, isForward = false, asciiArt = true)
-      .shouldBe(
-        """
-        | ┌───────────────────────────────────────────────────────┐ ┌─────────────────────────────────────────────┐
-        | │(HEAD)(<TAIL) [stemmed,idf] > idf_zipped > [idf_zipped]│ │(HEAD) [stemmed,tf] > tf_zipped > [tf_zipped]│
-        | └───────────────────────────────────────────────────────┘ └─────────────────────────────────────────────┘
-        |                    ^                  ^                                   ^       ^
-        |                    │                  │                                   │       │
-        |               ┌────┴──────────────┐   │                                   │       │
-        |               │ [tf] > idf > [idf]│   │                                   │       │
-        |               └───────────────────┘   │                                   │       │
-        |                         ^             │                                   │       │
-        |                         │         ┌───┼───────────────────────────────────┘       │
-        |                         │         │   └───────────────────────────┐               │
-        |                         │         │                         ┌─────┼───────────────┘
-        |                         │         │                         │     │
-        |                   ┌─────┴─────────┴──────┐                  │     │
-        |                   │ [stemmed] > tf > [tf]│                  │     │
-        |                   └──────────────────────┘                  │     │
-        |                               ^                             │     │
-        |                               │                             │     │
-        |                               └─────────────┐               │     │
-        |                                             │               │     │
-        |                                     ┌───────┴───────────────┴─────┴┐
-        |                                     │ [token] > stemmed > [stemmed]│
-        |                                     └──────────────────────────────┘
-        |                                                     ^
-        |                                                     │
-        |                                       ┌─────────────┴────────────┐
-        |                                       │ [input] > token > [token]│
-        |                                       └──────────────────────────┘
-        |                                                     ^
-        |                                                     │
-        |                                            ┌────────┴──────┐
-        |                                            │(TAIL>) [input]│
-        |                                            └───────────────┘
+      flow
+        .visualise(showID = false, isForward = false, asciiArt = true)
+        .shouldBe(
+          """
+            | ┌───────────────────────────────────────────────────────┐ ┌─────────────────────────────────────────────┐
+            | │(HEAD)(<TAIL) [stemmed,idf] > idf_zipped > [idf_zipped]│ │(HEAD) [stemmed,tf] > tf_zipped > [tf_zipped]│
+            | └───────────────────────────────────────────────────────┘ └─────────────────────────────────────────────┘
+            |                    ^                  ^                                   ^       ^
+            |                    │                  │                                   │       │
+            |               ┌────┴──────────────┐   │                                   │       │
+            |               │ [tf] > idf > [idf]│   │                                   │       │
+            |               └───────────────────┘   │                                   │       │
+            |                         ^             │                                   │       │
+            |                         │         ┌───┼───────────────────────────────────┘       │
+            |                         │         │   └───────────────────────────┐               │
+            |                         │         │                         ┌─────┼───────────────┘
+            |                         │         │                         │     │
+            |                   ┌─────┴─────────┴──────┐                  │     │
+            |                   │ [stemmed] > tf > [tf]│                  │     │
+            |                   └──────────────────────┘                  │     │
+            |                               ^                             │     │
+            |                               │                             │     │
+            |                               └─────────────┐               │     │
+            |                                             │               │     │
+            |                                     ┌───────┴───────────────┴─────┴┐
+            |                                     │ [token] > stemmed > [stemmed]│
+            |                                     └──────────────────────────────┘
+            |                                                     ^
+            |                                                     │
+            |                                       ┌─────────────┴────────────┐
+            |                                       │ [input] > token > [token]│
+            |                                       └──────────────────────────┘
+            |                                                     ^
+            |                                                     │
+            |                                            ┌────────┴──────┐
+            |                                            │(TAIL>) [input]│
+            |                                            └───────────────┘
       """.stripMargin
-      )
+        )
+    }
   }
 
   it("Flow can build PipelineModel") {
@@ -362,10 +361,10 @@ class DFDSuite extends AbstractDFDSuite {
       .mkString("\n")
       .shouldBe(
         """
-        |(Tokenizer,input,token)
-        |(StopWordsRemover,token,stemmed)
-        |(HashingTF,stemmed,tf)
-        |(UDFTransformer,stemmed|tf,tf_zipped)
+          |(Tokenizer,input,token)
+          |(StopWordsRemover,token,stemmed)
+          |(HashingTF,stemmed,tf)
+          |(UDFTransformer,stemmed|tf,tf_zipped)
       """.stripMargin
       )
 
@@ -396,10 +395,10 @@ class DFDSuite extends AbstractDFDSuite {
       .mkString("\n")
       .shouldBe(
         """
-        |(Tokenizer,input,token)
-        |(HashingTF,token,tf)
-        |(OneHotEncoder,label,label_one_hot)
-        |(VectorAssembler,tf|label_one_hot,VectorAssembler)
+          |(Tokenizer,input,token)
+          |(HashingTF,token,tf)
+          |(OneHotEncoder,label,label_one_hot)
+          |(VectorAssembler,tf|label_one_hot,VectorAssembler)
       """.stripMargin
       )
   }
@@ -416,8 +415,8 @@ class DFDSuite extends AbstractDFDSuite {
       .mkString("\n")
       .shouldBe(
         """
-        |(Tokenizer,input,token)
-        |(HashingTF,token,tf)
+          |(Tokenizer,input,token)
+          |(HashingTF,token,tf)
       """.stripMargin
       )
   }
@@ -435,8 +434,8 @@ class DFDSuite extends AbstractDFDSuite {
       .mkString("\n")
       .shouldBe(
         """
-        |(Tokenizer,input,token)
-        |(HashingTF,token,tf)
+          |(Tokenizer,input,token)
+          |(HashingTF,token,tf)
       """.stripMargin
       )
   }
@@ -454,10 +453,10 @@ class DFDSuite extends AbstractDFDSuite {
       .mkString("\n")
       .shouldBe(
         """
-        |(Tokenizer,input,token)
-        |(HashingTF,token,tf)
-        |(Tokenizer,label,label_cannot_be_tokenized)
-        |(VectorAssembler,tf|label_cannot_be_tokenized,VectorAssembler)
+          |(Tokenizer,input,token)
+          |(HashingTF,token,tf)
+          |(Tokenizer,label,label_cannot_be_tokenized)
+          |(VectorAssembler,tf|label_cannot_be_tokenized,VectorAssembler)
       """.stripMargin
       )
   }
@@ -474,10 +473,10 @@ class DFDSuite extends AbstractDFDSuite {
       .mkString("\n")
       .shouldBe(
         """
-        |(Tokenizer,input,token)
-        |(HashingTF,token,tf)
-        |(OneHotEncoder,dummy,dummy_one_hot)
-        |(VectorAssembler,tf|dummy_one_hot,VectorAssembler)
+          |(Tokenizer,input,token)
+          |(HashingTF,token,tf)
+          |(OneHotEncoder,dummy,dummy_one_hot)
+          |(VectorAssembler,tf|dummy_one_hot,VectorAssembler)
       """.stripMargin
       )
   }
@@ -494,10 +493,10 @@ class DFDSuite extends AbstractDFDSuite {
       .mkString("\n")
       .shouldBe(
         """
-        |(Tokenizer,input,token)
-        |(HashingTF,token,tf)
-        |(Tokenizer,label,label_cannot_be_tokenized)
-        |(VectorAssembler,tf|label_cannot_be_tokenized,VectorAssembler)
+          |(Tokenizer,input,token)
+          |(HashingTF,token,tf)
+          |(Tokenizer,label,label_cannot_be_tokenized)
+          |(VectorAssembler,tf|label_cannot_be_tokenized,VectorAssembler)
       """.stripMargin
       )
   }
@@ -537,10 +536,10 @@ class DFDSuite extends AbstractDFDSuite {
       .mkString("\n")
       .shouldBe(
         """
-        |(Tokenizer,input,token)
-        |(HashingTF,token,tf)
-        |(Tokenizer,label,label_cannot_be_tokenized)
-        |(VectorAssembler,tf|label_cannot_be_tokenized,VectorAssembler)
+          |(Tokenizer,input,token)
+          |(HashingTF,token,tf)
+          |(Tokenizer,label,label_cannot_be_tokenized)
+          |(VectorAssembler,tf|label_cannot_be_tokenized,VectorAssembler)
       """.stripMargin
       )
   }
@@ -558,8 +557,8 @@ class DFDSuite extends AbstractDFDSuite {
       .mkString("\n")
       .shouldBe(
         """
-        |(Tokenizer,input,token)
-        |(HashingTF,token,tf)
+          |(Tokenizer,input,token)
+          |(HashingTF,token,tf)
       """.stripMargin
       )
   }

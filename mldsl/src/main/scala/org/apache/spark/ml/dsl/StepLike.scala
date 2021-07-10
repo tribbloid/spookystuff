@@ -30,7 +30,6 @@ trait StepLike extends DFDComponent {
 
   //unlike inIDs, sequence of outIDs & parameter types (if not InputCol(s)) are not important
   def usageIDs: Set[String]
-  final def usageIDList: List[String] = usageIDs.toList.sortBy(v => "" + v)
 
   def canBeHead: Boolean
 
