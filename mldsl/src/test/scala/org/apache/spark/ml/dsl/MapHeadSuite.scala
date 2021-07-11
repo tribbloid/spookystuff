@@ -71,8 +71,7 @@ class MapHeadSuite extends AbstractDFDSuite {
         'input
           :>> new Tokenizer()
           :>> new StopWordsRemover()
-      ).from("Tokenizer")
-        .and("StopWordsRemover")
+      ).setHead("Tokenizer", "StopWordsRemover")
         :=>> new NGram()
     )
 
@@ -100,8 +99,7 @@ class MapHeadSuite extends AbstractDFDSuite {
         new StopWordsRemover()
           <<: new Tokenizer()
           <<: 'input
-      ).from("Tokenizer")
-        .and("StopWordsRemover")
+      ).setHead("Tokenizer", "StopWordsRemover")
     )
 
     flow
@@ -127,8 +125,7 @@ class MapHeadSuite extends AbstractDFDSuite {
         'input
           :>> new Tokenizer()
           :>> new StopWordsRemover()
-      ).from("Tokenizer")
-        .and("StopWordsRemover")
+      ).setHead("Tokenizer", "StopWordsRemover")
         :=>> new NGram()
         :=>> new HashingTF()
     )
@@ -160,8 +157,7 @@ class MapHeadSuite extends AbstractDFDSuite {
         new StopWordsRemover()
           <<: new Tokenizer()
           <<: 'input
-      ).from("Tokenizer")
-        .and("StopWordsRemover")
+      ).setHead("Tokenizer", "StopWordsRemover")
     )
 
     flow

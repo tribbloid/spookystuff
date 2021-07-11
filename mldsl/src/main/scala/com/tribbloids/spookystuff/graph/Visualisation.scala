@@ -12,9 +12,9 @@ import scala.collection.mutable
 case class Visualisation[D <: Domain](
     core: Layout[D]#Core[Module[D]],
     format: Format[D]
-) extends Algebra.Sugars[D] {
+) extends GraphAlgebra.Sugars[D] {
 
-  final override def algebra: Algebra[D] = core.algebra
+  final override def algebra: GraphAlgebra[D] = core.algebra
 
   trait Impl {
 

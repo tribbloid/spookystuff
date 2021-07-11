@@ -89,8 +89,7 @@ class AppendSuite extends AbstractDFDSuite {
         'input
           :-> new Tokenizer()
           :-> new StopWordsRemover()
-      ).from("Tokenizer")
-        .and("StopWordsRemover")
+      ).setHead("Tokenizer", "StopWordsRemover")
         :-> new NGram()
     )
 
@@ -112,13 +111,10 @@ class AppendSuite extends AbstractDFDSuite {
 
   it("<-: Stage is cast to rebase") {
 
-    val flow = (
-      new SQLTransformer() <-:
-        new NGram() <-: (
-        new StopWordsRemover() <-: new Tokenizer() <-: 'input
-      ).from("Tokenizer")
-        .and("StopWordsRemover")
-    )
+    val flow = new SQLTransformer() <-:
+      new NGram() <-: (
+      new StopWordsRemover() <-: new Tokenizer() <-: 'input
+    ).setHead("Tokenizer", "StopWordsRemover")
 
     flow
       .visualise(showID = false, compactionOpt = compactionOpt)

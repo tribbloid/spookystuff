@@ -28,7 +28,7 @@ object Element {
       from_to: (T#ID, T#ID)
       //      tt: EdgeType = EdgeType.`->`,
   )(
-      implicit val algebra: Algebra[T]
+      implicit val algebra: GraphAlgebra[T]
   ) extends Element[T] {
 
     def from: ID = from_to._1
@@ -109,7 +109,7 @@ object Element {
       data: T#NodeData,
       _id: T#ID
   )(
-      implicit val algebra: Algebra[T]
+      implicit val algebra: GraphAlgebra[T]
   ) extends NodeLike[T] {
 
     override def _replicate(m: DataMutator)(
@@ -134,7 +134,7 @@ object Element {
       val outbound: mutable.LinkedHashSet[D#ID] = mutable.LinkedHashSet.empty[D#ID]
   ) extends NodeLike[D] {
 
-    override def algebra: Algebra[D] = node.algebra
+    override def algebra: GraphAlgebra[D] = node.algebra
 
     override protected def _replicate(m: DataMutator)(
         implicit

@@ -21,13 +21,15 @@ class DFDReadWriteSuite extends AbstractDFDSuite {
 //  def sc: SparkContext = TestHelper.TestSpark
 
   it("Pipeline can be saved and loaded") {
-    val flow = (DFD('input)
-      :-> new Tokenizer() -> TOKEN
-      :-> stemming -> STEMMED
-      :-> tf -> TF
-      :-> new IDF() -> IDF
-      :>- STEMMED :&& TF :>> UDFTransformer(zipping) -> TF_ZIPPED)
-      .from(STEMMED) :&& IDF :>> UDFTransformer(zipping) -> IDF_ZIPPED
+    val flow = (
+      (
+        DFD('input)
+          :-> new Tokenizer() -> TOKEN
+          :-> stemming -> STEMMED
+          :-> tf -> TF
+          :-> new IDF() -> IDF
+      ).setHead(STEMMED, TF) :>> UDFTransformer(zipping) -> TF_ZIPPED
+    ).setHead(STEMMED, IDF) :>> UDFTransformer(zipping) -> IDF_ZIPPED
 
     val pipeline: Pipeline = flow.build()
 
@@ -39,11 +41,13 @@ class DFDReadWriteSuite extends AbstractDFDSuite {
 
   it("PipelineModel can be saved and loaded") {
     val model = (
-      DFD('input)
-        :-> new Tokenizer() -> TOKEN
-        :-> stemming -> STEMMED
-        :-> tf -> TF
-        :>- STEMMED :&& TF :>> UDFTransformer(zipping) -> TF_ZIPPED
+      (
+        DFD('input)
+          :-> new Tokenizer() -> TOKEN
+          :-> stemming -> STEMMED
+          :-> tf -> TF
+      ).setHead(STEMMED, TF)
+        :>> UDFTransformer(zipping) -> TF_ZIPPED
     ).buildModel()
 
     model.write.overwrite().save(pipelinePath)

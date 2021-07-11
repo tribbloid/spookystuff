@@ -17,7 +17,7 @@ trait FSMParserGraph extends Domain {
   override type EdgeData = Option[Rule]
 }
 
-object FSMParserGraph extends Algebra[FSMParserGraph] {
+object FSMParserGraph extends GraphAlgebra[FSMParserGraph] {
 
   override def idAlgebra: IDAlgebra.UUIDAlgebra.type = IDAlgebra.UUIDAlgebra
 

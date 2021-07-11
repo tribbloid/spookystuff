@@ -1,15 +1,15 @@
 package com.tribbloids.spookystuff.graph
 
-trait Algebra[T <: Domain] extends Algebra.TypeSugars[T] {
+trait GraphAlgebra[T <: Domain] extends GraphAlgebra.TypeSugars[T] {
 
-  implicit def algebra: Algebra[T] = this
+  implicit def algebra: GraphAlgebra[T] = this
 
   def idAlgebra: IDAlgebra[ID, NodeData, EdgeData]
   def nodeAlgebra: DataAlgebra[NodeData]
   def edgeAlgebra: DataAlgebra[EdgeData]
 
-  trait _Sugars extends Algebra.Sugars[T] {
-    override implicit val algebra = Algebra.this
+  trait _Sugars extends GraphAlgebra.Sugars[T] {
+    override implicit val algebra: GraphAlgebra[T] = GraphAlgebra.this
   }
   object _Sugars extends _Sugars
 
@@ -26,7 +26,7 @@ trait Algebra[T <: Domain] extends Algebra.TypeSugars[T] {
       id: Option[ID] = None
   ): _Node = {
     val _id = id.getOrElse {
-      Algebra.this.idAlgebra.fromNodeData(info)
+      GraphAlgebra.this.idAlgebra.fromNodeData(info)
     }
 
     if (_id != idAlgebra.DANGLING)
@@ -49,7 +49,7 @@ trait Algebra[T <: Domain] extends Algebra.TypeSugars[T] {
   }
 }
 
-object Algebra {
+object GraphAlgebra {
 
   trait TypeSugars[D <: Domain] {
 
@@ -72,15 +72,13 @@ object Algebra {
 
     final type _Edge = Element.Edge[D]
 
-    final type _ShowFormat = Visualisation.Format[D]
-    final def _ShowFormat: Visualisation.Format.type = Visualisation.Format
-
-//    final type _ElementView = ElementView[D]
+    final type _VizFormat = Visualisation.Format[D]
+    final def _vizFormat: Visualisation.Format.type = Visualisation.Format
   }
 
   trait Sugars[D <: Domain] extends TypeSugars[D] {
 
-    implicit def algebra: Algebra[D]
+    implicit def algebra: GraphAlgebra[D]
 
     def idAlgebra: IDAlgebra[ID, NodeData, EdgeData] = algebra.idAlgebra
     def nodeAlgebra: DataAlgebra[NodeData] = algebra.nodeAlgebra

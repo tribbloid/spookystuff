@@ -7,10 +7,10 @@ import com.tribbloids.spookystuff.utils.CachingUtils.ConcurrentMap
 
 import scala.language.{higherKinds, implicitConversions}
 
-trait Layout[D <: Domain] extends Algebra.Sugars[D] {
+trait Layout[D <: Domain] extends GraphAlgebra.Sugars[D] {
 
   val defaultGraphBuilder: StaticGraph.Builder[D]
-  final override val algebra: Algebra[D] = defaultGraphBuilder.algebra
+  final override val algebra: GraphAlgebra[D] = defaultGraphBuilder.algebra
 
   type GG = defaultGraphBuilder.GG
 
@@ -379,7 +379,7 @@ trait Layout[D <: Domain] extends Algebra.Sugars[D] {
       def visualise(format: Visualisation.Format[D] = defaultFormat): Visualisation[D] =
         Visualisation[D](output, format)
 
-      def from(filter: EdgeFilter[D]): Operand[M] = {
+      def setHead(filter: EdgeFilter[D]): Operand[M] = {
         val newFrom: _Heads = Heads[D](filter(core._graph))
         create(
           core.copy(
@@ -387,20 +387,19 @@ trait Layout[D <: Domain] extends Algebra.Sugars[D] {
           ))
       }
 
-      //TODO: these symbols are lame
-      final def >-[N >: M <: _Module](filter: EdgeFilter[D]): Operand[M] = from(filter)
+      final def :-|[N >: M <: _Module](filter: EdgeFilter[D]): Operand[M] = setHead(filter)
 
       //TODO: should be part of EdgeFilter
-      def and(filter: EdgeFilter[D]): Operand[M] = {
-        val newFrom = Heads[D](filter(core._graph))
-        val mergedFrom = Heads[D](core.from.seq ++ newFrom.seq)
-        create(
-          core.copy(
-            fromOverride = Some(mergedFrom)
-          ))
-      }
-
-      final def <>-(filter: EdgeFilter[D]): Operand[M] = and(filter)
+//      def and(filter: EdgeFilter[D]): Operand[M] = {
+//        val newFrom = Heads[D](filter(core._graph))
+//        val mergedFrom = Heads[D](core.from.seq ++ newFrom.seq)
+//        create(
+//          core.copy(
+//            fromOverride = Some(mergedFrom)
+//          ))
+//      }
+//
+//      final def <>-(filter: EdgeFilter[D]): Operand[M] = and(filter)
 
       def replicate(m: DataMutator = DataAlgebra.Mutator.identity)(implicit idRotator: Rotator[ID]): Operand[M] = {
         create(
@@ -417,12 +416,12 @@ trait Layout[D <: Domain] extends Algebra.Sugars[D] {
 
     sealed trait Implicits_Level1 {
 
-      implicit def Edge(v: EdgeData): Operand[_Edge] = DSL.this.Edge(v)
+      implicit def createEdge(v: EdgeData): Operand[_Edge] = DSL.this.Edge(v)
     }
 
     object Implicits extends Implicits_Level1 {
 
-      implicit def Node(v: NodeData): Operand[_Node] = DSL.this.Node(v)
+      implicit def createNode(v: NodeData): Operand[_Node] = DSL.this.Node(v)
     }
   }
 

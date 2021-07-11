@@ -12,7 +12,7 @@ trait SimpleFlowGraph extends Domain {
   override type EdgeData = Option[String]
 }
 
-object SimpleFlowGraph extends Algebra[SimpleFlowGraph] {
+object SimpleFlowGraph extends GraphAlgebra[SimpleFlowGraph] {
 
   override def idAlgebra: IDAlgebra[graph.example.SimpleFlowGraph.ID,
                                     graph.example.SimpleFlowGraph.NodeData,

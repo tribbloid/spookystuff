@@ -173,16 +173,17 @@ class DFDSuite extends AbstractDFDSuite {
     it("3") {
 
       val part1 = (
-        DFD('input)
-          :-> new Tokenizer() -> TOKEN
-          :-> stemming -> STEMMED
-          :-> tf -> TF
-          :-> new IDF() -> DFDSuite.IDF
-          :>- STEMMED :&& TF :>> UDFTransformer(zipping) -> TF_ZIPPED
+        (
+          DFD('input)
+            :-> new Tokenizer() -> TOKEN
+            :-> stemming -> STEMMED
+            :-> tf -> TF
+            :-> new IDF() -> DFDSuite.IDF
+        ).setHead(STEMMED, TF) :>> UDFTransformer(zipping) -> TF_ZIPPED
       )
 
       val flow = part1
-        .from(STEMMED) :&& DFDSuite.IDF :>> UDFTransformer(zipping) -> IDF_ZIPPED
+        .setHead(STEMMED, DFDSuite.IDF) :>> UDFTransformer(zipping) -> IDF_ZIPPED
 
       val pipeline = flow.build()
       val outDF = pipeline.fit(training).transform(training)
@@ -247,13 +248,15 @@ class DFDSuite extends AbstractDFDSuite {
   describe("Flow can be visualized with no input") {
     it("1") {
       val flow = (
-        DFD('input)
-          :-> new Tokenizer() -> TOKEN
-          :-> stemming -> STEMMED
-          :-> tf -> TF
-          :-> new IDF() -> DFDSuite.IDF
-          :>- STEMMED :&& TF :>> UDFTransformer(zipping) -> TF_ZIPPED
-      ).from(STEMMED) :&& DFDSuite.IDF :>> UDFTransformer(zipping) -> IDF_ZIPPED
+        (
+          DFD('input)
+            :-> new Tokenizer() -> TOKEN
+            :-> stemming -> STEMMED
+            :-> tf -> TF
+            :-> new IDF() -> DFDSuite.IDF
+        ).setHead(STEMMED, TF)
+          :>> UDFTransformer(zipping) -> TF_ZIPPED
+      ).setHead(STEMMED, IDF) :>> UDFTransformer(zipping) -> IDF_ZIPPED
 
       flow
         .visualise(showID = false, showInputs = false, asciiArt = true)
@@ -296,13 +299,14 @@ class DFDSuite extends AbstractDFDSuite {
 
     it("2") {
       val flow = (
-        DFD('input)
-          :-> new Tokenizer() -> TOKEN
-          :-> stemming -> STEMMED
-          :-> tf -> TF
-          :-> new IDF() -> DFDSuite.IDF
-          :>- STEMMED :&& TF :>> UDFTransformer(zipping) -> TF_ZIPPED
-      ).from(STEMMED) :&& DFDSuite.IDF :>> UDFTransformer(zipping) -> IDF_ZIPPED
+        (
+          DFD('input)
+            :-> new Tokenizer() -> TOKEN
+            :-> stemming -> STEMMED
+            :-> tf -> TF
+            :-> new IDF() -> DFDSuite.IDF
+        ).setHead(STEMMED, TF) :>> UDFTransformer(zipping) -> TF_ZIPPED
+      ).setHead(STEMMED, DFDSuite.IDF) :>> UDFTransformer(zipping) -> IDF_ZIPPED
 
       flow
         .visualise(showID = false, isForward = false, asciiArt = true)
@@ -348,11 +352,13 @@ class DFDSuite extends AbstractDFDSuite {
 
   it("Flow can build PipelineModel") {
     val model = (
-      DFD('input)
-        :-> new Tokenizer() -> TOKEN
-        :-> stemming -> STEMMED
-        :-> tf -> TF
-        :>- STEMMED :&& TF :>> UDFTransformer(zipping) -> TF_ZIPPED
+      (
+        DFD('input)
+          :-> new Tokenizer() -> TOKEN
+          :-> stemming -> STEMMED
+          :-> tf -> TF
+      ).setHead(STEMMED, TF)
+        :>> UDFTransformer(zipping) -> TF_ZIPPED
     ).buildModel()
 
     val stages = model.stages

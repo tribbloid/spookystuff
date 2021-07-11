@@ -15,10 +15,10 @@ object ElementView {
   }
 }
 
-trait ElementView[D <: Domain] extends Algebra.Sugars[D] with IDMixin {
+trait ElementView[D <: Domain] extends GraphAlgebra.Sugars[D] with IDMixin {
 
   val core: Layout[D]#Core[_]
-  override final def algebra: Algebra[D] = core.algebra
+  override final def algebra: GraphAlgebra[D] = core.algebra
 
   def element: _Element
 
@@ -71,7 +71,7 @@ trait ElementView[D <: Domain] extends Algebra.Sugars[D] with IDMixin {
   }
 
   case class WFormat(
-      format: _ShowFormat
+      format: _VizFormat
   ) {
 
     def outer: ElementView[D] = ElementView.this

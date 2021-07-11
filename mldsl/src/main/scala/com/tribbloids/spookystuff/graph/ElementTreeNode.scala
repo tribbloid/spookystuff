@@ -7,11 +7,11 @@ import scala.language.implicitConversions
 // technically only StaticGraph is required, DSL is optional, but whatever
 //TODO: not optimized, children are repeatedly created when calling .path
 //TODO: use mapChildren to recursively get TreeNode[(Seq[String] -> Tree)] efficiently
-trait ElementTreeNode[D <: Domain] extends TreeNode[ElementTreeNode[D]] with Algebra.Sugars[D] {
+trait ElementTreeNode[D <: Domain] extends TreeNode[ElementTreeNode[D]] with GraphAlgebra.Sugars[D] {
 
   def viewWFormat: ElementView[D]#WFormat
   final def view: ElementView[D] = viewWFormat.outer
-  final override def algebra: Algebra[D] = view.core.algebra
+  final override def algebra: GraphAlgebra[D] = view.core.algebra
 
   def visited: Set[_Element]
 

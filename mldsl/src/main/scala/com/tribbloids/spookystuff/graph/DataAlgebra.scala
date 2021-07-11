@@ -8,7 +8,7 @@ trait DataAlgebra[T] {
 
   object Monadic extends DataAlgebra[Option[T]] {
 
-    override val eye = None
+    override val eye: None.type = None
 
     override def +(v1: Option[T], v2: Option[T]): Option[T] = {
       (v1, v2) match {

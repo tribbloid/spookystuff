@@ -1160,21 +1160,16 @@ case class DFD(
     .toArray
     .distinct
 
-  def from(name: String): DFD = {
-    val newFromIDs = coll.values.filter(_.name == name).map(_.id).toSeq
+  def setHead(names: String*): DFD = {
+    val newFromIDs = names.flatMap { name =>
+      coll.values.filter(v => v.name == name).map(_.id).toSeq
+    }
+
     this.copy(
       fromIDsOpt = Some(newFromIDs)
     )
   }
-  def :>-(name: String): DFD = from(name)
-
-  def and(name: String): DFD = {
-    val newFromIDs = coll.values.filter(_.name == name).map(_.id).toSeq
-    this.copy(
-      fromIDsOpt = Some(this.fromIDs ++ newFromIDs)
-    )
-  }
-  def :&&(name: String): DFD = and(name)
+  def :-|(name: String): DFD = setHead(name) // TODO: remove, shouldn't be in the same level
 
   def replicate(suffix: String = ""): DFD = {
 
