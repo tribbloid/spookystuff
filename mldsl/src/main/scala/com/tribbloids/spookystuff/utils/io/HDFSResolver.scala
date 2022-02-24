@@ -1,13 +1,13 @@
 package com.tribbloids.spookystuff.utils.io
 
-import com.tribbloids.spookystuff.utils.{CommonUtils, Retry}
+import com.tribbloids.spookystuff.utils.Retry
 import org.apache.hadoop.conf.Configuration
 import org.apache.hadoop.fs._
 import org.apache.hadoop.fs.permission.FsPermission
 import org.apache.hadoop.security.UserGroupInformation
 
 import java.io.{InputStream, OutputStream}
-import java.security.{PrivilegedAction, PrivilegedActionException}
+import java.security.PrivilegedAction
 import java.util
 import scala.collection.mutable.ArrayBuffer
 import scala.util.{Success, Try}

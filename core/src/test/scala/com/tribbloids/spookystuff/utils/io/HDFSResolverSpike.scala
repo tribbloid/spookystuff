@@ -3,7 +3,7 @@ package com.tribbloids.spookystuff.utils.io
 import com.tribbloids.spookystuff.testutils.TestHelper
 import org.apache.hadoop.conf.Configuration
 import org.apache.hadoop.fs.ftp.FTPFileSystem
-import org.apache.hadoop.fs.{FileSystem, Path}
+import org.apache.hadoop.fs.{FileContext, FileSystem, Path}
 import org.scalatest.{FunSpec, Ignore}
 
 @Ignore
@@ -42,7 +42,11 @@ class HDFSResolverSpike extends FunSpec {
 
     val url = "ftp://mirror.csclub.uwaterloo.ca/apache/"
     val path = new Path(url)
-    val fs: FileSystem = path.getFileSystem(conf)
+    val fs: FileSystem = FileSystem.get(path.toUri, conf)
+
+    val fs2 = path.getFileSystem(conf)
+
+    val ctx = FileContext.getFileContext(path.toUri, conf) // TODO: this line break
 
     val list = fs.listFiles(path, false)
     while (list.hasNext) {

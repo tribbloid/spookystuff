@@ -1,9 +1,9 @@
 package com.tribbloids.spookystuff.utils.io
 
-import com.tribbloids.spookystuff.testutils.{FunSpecx, LocalPathDocsFixture, TestHelper}
-import com.tribbloids.spookystuff.utils.{CommonConst, SparkUISupport}
+import com.tribbloids.spookystuff.testutils.{FunSpecx, TestHelper}
 import com.tribbloids.spookystuff.utils.io.AbstractURIResolverSuite.SequentialCheck
 import com.tribbloids.spookystuff.utils.serialization.AssertSerializable
+import com.tribbloids.spookystuff.utils.{CommonConst, CommonUtils, SparkUISupport}
 import org.apache.commons.io.IOUtils
 import org.apache.spark.SparkContext
 import org.apache.spark.broadcast.Broadcast
@@ -44,12 +44,14 @@ object AbstractURIResolverSuite {
 /**
   * Created by peng on 07/10/15.
   */
-abstract class AbstractURIResolverSuite extends FunSpecx with LocalPathDocsFixture with SparkUISupport {
+abstract class AbstractURIResolverSuite extends FunSpecx with SparkUISupport {
 
   @transient val resolver: URIResolver
   @transient val schemaPrefix: String
 
   val numWrites = 1000
+
+  def userDir: String = CommonConst.USER_DIR
 
   lazy val temp: TempResource = TempResource(
     resolver,
@@ -76,18 +78,19 @@ abstract class AbstractURIResolverSuite extends FunSpecx with LocalPathDocsFixtu
   it("can convert relative path of non-existing file") {
     {
       val abs = resolver.toAbsolute(nonExistingFile.pathStr)
-      assert(abs == schemaPrefix + CommonConst.USER_DIR + "/" + nonExistingFile.pathStr)
+      assert(abs == CommonUtils.\\\(schemaPrefix, userDir, nonExistingFile.pathStr))
     }
 
     {
       val abs = resolver.toAbsolute(nonExistingSubFile.pathStr)
-      assert(abs == schemaPrefix + CommonConst.USER_DIR + "/" + nonExistingSubFile.pathStr)
+      assert(abs == CommonUtils.\\\(schemaPrefix, userDir, nonExistingSubFile.pathStr))
     }
   }
 
   it("can convert absolute path of non-existing file") {
-    val abs = resolver.toAbsolute(Absolute.nonExistingSubFile.pathStr)
-    assert(abs == schemaPrefix + Absolute.nonExistingSubFile.pathStr)
+    val pathStr = schemaPrefix + Absolute.nonExistingSubFile.pathStr
+    val abs = resolver.toAbsolute(pathStr)
+    assert(abs == pathStr)
   }
 
   it(".toAbsolute is idempotent") {
@@ -109,7 +112,7 @@ abstract class AbstractURIResolverSuite extends FunSpecx with LocalPathDocsFixtu
   //  it("ResourceFirstResolver can convert path to non-existing file to absolute") {
   //    val resolver = ResourceFirstResolver(HDFSResolver(new Configuration()))
   //    val abs = resolver.toAbsolute(nonExistingPath)
-  //    assert(abs == "file:"+CommonConst.USER_DIR +"/"+ nonExistingPath)
+  //    assert(abs == "file:"+userDir +"/"+ nonExistingPath)
   //  }
 
   it("resolver is serializable") {
@@ -122,80 +125,25 @@ abstract class AbstractURIResolverSuite extends FunSpecx with LocalPathDocsFixtu
     )
   }
 
-  describe("Session") {}
-
-  describe("input") {
-
-    it("can get metadata concurrently") {
-
-      val rdd = sc.parallelize(1 to 100, 10)
-
-      val resolver: URIResolver = this.resolver
-      val HTML_URL = this.HTML_URL
-      val mdRDD = rdd.map { i =>
-        val md = resolver.input(HTML_URL) { _.metadata.all }
-        md
-      }
-      val mds = mdRDD.collect().map {
-        _.asMap.filterNot(_._1.contains("Space")).map(identity)
-      }
-
-      AssertSerializable(mds.head)
-      assert(mds.head == mds.last)
-    }
-
-    it("all accessors can be mutated after creation") {
-
-      def accessorVs(rr: InputResource) = {
-        Seq(
-          rr.getLength,
-          rr.getLastModified
-        )
-      }
-
-      existingFile.requireEmptyFile {
-
-        val session = resolver.execute(existingFile.pathStr)
-
-        var vs1 = session.input(accessorVs)
-
-        for (i <- 1 to 3) {
-          resolver.output(existingFile.pathStr, WriteMode.Overwrite) { out =>
-            val a = Array.ofDim[Byte](16 * i)
-            Random.nextBytes(a)
-
-            out.stream.write(a)
-          }
-
-          val vs2 = session.input(accessorVs)
-
-          assert(vs1 != vs2)
-
-          vs1 = vs2
-        }
-      }
-    }
-  }
-
   describe("output") {
 
-//    it("can get metadata concurrently") {
-//
-//      val rdd = sc.parallelize(1 to 100, 10)
-//
-//      val resolver: URIResolver = this.resolver
-//      val HTML_URL = this.HTML_URL
-//      val mdRDD = rdd.map { i =>
-//        val md = resolver.output(HTML_URL, WriteMode.CreateOnly) { _.metadata.all }
-//        md
-//      }
-//      val mds = mdRDD.collect().map {
-//        _.asMap.filterNot(_._1.contains("Space")).map(identity)
-//      }
-//
-//      AssertSerializable(mds.head)
-//      assert(mds.head == mds.last)
-//    }
+    //    it("can get metadata concurrently") {
+    //
+    //      val rdd = sc.parallelize(1 to 100, 10)
+    //
+    //      val resolver: URIResolver = this.resolver
+    //      val HTML_URL = this.HTML_URL
+    //      val mdRDD = rdd.map { i =>
+    //        val md = resolver.output(HTML_URL, WriteMode.CreateOnly) { _.metadata.all }
+    //        md
+    //      }
+    //      val mds = mdRDD.collect().map {
+    //        _.asMap.filterNot(_._1.contains("Space")).map(identity)
+    //      }
+    //
+    //      AssertSerializable(mds.head)
+    //      assert(mds.head == mds.last)
+    //    }
 
     it("can automatically create missing directory") {
 
@@ -235,8 +183,8 @@ abstract class AbstractURIResolverSuite extends FunSpecx with LocalPathDocsFixtu
             intercept[IOException] {
 
               out2.stream
-//              println(out1.stream)
-//              println(out2.stream)
+              //              println(out1.stream)
+              //              println(out2.stream)
             }
           }
         }
@@ -269,6 +217,69 @@ abstract class AbstractURIResolverSuite extends FunSpecx with LocalPathDocsFixtu
       }
     }
 
+  }
+
+  describe("input") {
+
+    it("can get metadata concurrently") {
+
+      val resolver: URIResolver = this.resolver
+
+      existingFile.requireEmptyFile {
+
+        resolver.output(existingFile.pathStr, WriteMode.Overwrite) { out =>
+          out.stream
+        }
+
+        val rdd = sc.parallelize(1 to 100, 10)
+
+        val pathStr = existingFile.pathStr
+        val mdRDD = rdd.map { i =>
+          val md = resolver.input(pathStr) {
+            _.metadata.all
+          }
+          md
+        }
+        val mds = mdRDD.collect().map {
+          _.asMap.filterNot(_._1.contains("Space")).map(identity)
+        }
+
+        AssertSerializable(mds.head)
+        assert(mds.head == mds.last)
+      }
+    }
+
+    it("all accessors can be mutated after creation") {
+
+      def accessorVs(rr: InputResource) = {
+        Seq(
+          rr.getLength,
+          rr.getLastModified
+        )
+      }
+
+      existingFile.requireEmptyFile {
+
+        val session = resolver.execute(existingFile.pathStr)
+
+        var vs1 = session.input(accessorVs)
+
+        for (i <- 1 to 3) {
+          resolver.output(existingFile.pathStr, WriteMode.Overwrite) { out =>
+            val a = Array.ofDim[Byte](16 * i)
+            Random.nextBytes(a)
+
+            out.stream.write(a)
+          }
+
+          val vs2 = session.input(accessorVs)
+
+          assert(vs1 != vs2)
+
+          vs1 = vs2
+        }
+      }
+    }
   }
 
 //  describe("Snapshot") {

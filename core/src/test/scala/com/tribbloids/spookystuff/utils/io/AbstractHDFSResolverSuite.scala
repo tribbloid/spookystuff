@@ -3,24 +3,24 @@ package com.tribbloids.spookystuff.utils.io
 import org.apache.hadoop.conf.Configuration
 import org.apache.hadoop.security.UserGroupInformation
 
-object HDFSResolverSuite {
+object AbstractHDFSResolverSuite {
 
-  val conf = new Configuration()
+  lazy val conf = new Configuration()
 }
 
 /**
   * Created by peng on 07/10/15.
   */
-class HDFSResolverSuite extends AbstractURIResolverSuite {
+abstract class AbstractHDFSResolverSuite extends AbstractURIResolverSuite {
 
-  override val resolver: HDFSResolver = HDFSResolver(() => HDFSResolverSuite.conf)
+  def confFactory: () => Configuration = () => AbstractHDFSResolverSuite.conf
+
+  override val resolver: HDFSResolver = HDFSResolver(confFactory)
 
   val resolverWithUGI: HDFSResolver = HDFSResolver(
-    () => HDFSResolverSuite.conf,
+    confFactory,
     () => Some(UserGroupInformation.createUserForTesting("dummy", Array.empty))
   )
-
-  @transient override lazy val schemaPrefix = "file:"
 
   val nonExistingSchemePath = "file:/non-existing/not-a-file.txt"
   val nonExistingScheme2Path = "file:///non-existing/not-a-file.txt"
@@ -36,7 +36,8 @@ class HDFSResolverSuite extends AbstractURIResolverSuite {
   }
 
   it("can override login UGI") {
-    val user: String = resolverWithUGI.input(HTML_URL) { is =>
+
+    val user: String = resolverWithUGI.input(existingFile.pathStr) { is =>
       UserGroupInformation.getCurrentUser.getUserName
     }
     user.shouldBe("dummy")
@@ -44,11 +45,19 @@ class HDFSResolverSuite extends AbstractURIResolverSuite {
 
   it("... on executors") {
     val resolver = this.resolverWithUGI
-    val HTML_URL = this.HTML_URL
+
+//    existingFile.requireEmptyFile {
+//      resolver.output(existingFile.pathStr, WriteMode.Overwrite) { out =>
+//        out.stream
+//      }
+//    }
+
+    val pathStr = existingFile.pathStr
+
     val users = sc
       .parallelize(1 to (sc.defaultParallelism * 2))
       .mapPartitions { itr =>
-        val str: String = resolver.input(HTML_URL) { is =>
+        val str: String = resolver.input(pathStr) { is =>
           UserGroupInformation.getCurrentUser.getUserName
         }
         Iterator(str)
