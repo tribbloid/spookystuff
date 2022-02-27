@@ -32,7 +32,7 @@ class HDFSResolverSuite_MiniCluster extends AbstractHDFSResolverSuite with Befor
     miniCluster.getURI.toString
   }
 
-  override def userDir: String = s"user/${UserGroupInformation.getCurrentUser.getUserName}"
+  override def userDir: String = s"/user/${UserGroupInformation.getCurrentUser.getUserName}"
 
   override def beforeAll(): Unit = {
     super.beforeAll()

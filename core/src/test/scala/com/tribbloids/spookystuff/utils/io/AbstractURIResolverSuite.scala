@@ -78,12 +78,12 @@ abstract class AbstractURIResolverSuite extends FunSpecx with SparkUISupport {
   it("can convert relative path of non-existing file") {
     {
       val abs = resolver.toAbsolute(nonExistingFile.pathStr)
-      assert(abs == CommonUtils.\\\(schemaPrefix, userDir, nonExistingFile.pathStr))
+      assert(abs == schemaPrefix + CommonUtils.\\\(userDir, nonExistingFile.pathStr))
     }
 
     {
       val abs = resolver.toAbsolute(nonExistingSubFile.pathStr)
-      assert(abs == CommonUtils.\\\(schemaPrefix, userDir, nonExistingSubFile.pathStr))
+      assert(abs == schemaPrefix + CommonUtils.\\\(userDir, nonExistingSubFile.pathStr))
     }
   }
 
