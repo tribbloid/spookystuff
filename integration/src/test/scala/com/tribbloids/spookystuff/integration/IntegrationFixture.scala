@@ -112,8 +112,6 @@ abstract class IntegrationFixture extends SpookyEnvFixture with BeforeAndAfterAl
 
   protected def doTest(): Unit = {
 
-    beforeAll()
-
     doTestBeforeCache()
 
     doTestAfterCache()
@@ -149,12 +147,4 @@ abstract class IntegrationFixture extends SpookyEnvFixture with BeforeAndAfterAl
   def pageFetchedCap: Long = numPages * 2
 
   def remoteFetchSuboptimality: Range = 0 to 0
-}
-
-abstract class UncacheableIntegrationFixture extends IntegrationFixture {
-
-  override protected def doTest(): Unit = {
-
-    doTestBeforeCache()
-  }
 }
