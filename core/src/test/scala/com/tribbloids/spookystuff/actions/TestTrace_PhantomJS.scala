@@ -187,7 +187,8 @@ class TestTrace_PhantomJS extends SpookyEnvFixture with FunSpecx {
   //    ds.collect().foreach(println)
   //  }
 
-  it("visit and snapshot") {
+  // waiting for scalaJS rewrite
+  ignore("visit and snapshot") {
     val builder = new Session(spooky)
     Visit("http://www.wikipedia.org")(builder)
     val page = Snapshot()(builder).toList.head.asInstanceOf[Doc]
@@ -198,7 +199,8 @@ class TestTrace_PhantomJS extends SpookyEnvFixture with FunSpecx {
     assert(page.uri contains "//www.wikipedia.org/")
   }
 
-  it("visit, input submit and snapshot") {
+  // waiting for scalaJS rewrite
+  ignore("visit, input submit and snapshot") {
     val results = (
       Visit("http://www.wikipedia.org") ::
         WaitFor("input#searchInput").in(40.seconds) ::
@@ -232,7 +234,8 @@ class TestTrace_PhantomJS extends SpookyEnvFixture with FunSpecx {
     assert(res2.name === "B")
   }
 
-  it("sizzle selector should work") {
+  // waiting for scalaJS rewrite
+  ignore("sizzle selector should work") {
 
     val results = (
       Visit("http://www.wikipedia.org/") ::
@@ -244,7 +247,8 @@ class TestTrace_PhantomJS extends SpookyEnvFixture with FunSpecx {
     assert(code.contains("Wikipedia"))
   }
 
-  it("css selector should work") {
+  //TODO: the following 2 has external site dependencies, should be removed
+  ignore("css selector should work") {
 
     val results = (
       Visit("http://www.wikipedia.org/") ::
@@ -256,8 +260,7 @@ class TestTrace_PhantomJS extends SpookyEnvFixture with FunSpecx {
     assert(code.contains("Wikipedia"))
   }
 
-  //TODO: put in IT?
-  it("visit should handle corsera") {
+  ignore("visit should handle corsera") {
     val results = (
       Visit("https://www.coursera.org/yale") ::
         Snapshot() :: Nil

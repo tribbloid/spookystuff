@@ -3,7 +3,9 @@ package com.tribbloids.spookystuff.integration.fetch
 import com.tribbloids.spookystuff.actions._
 import com.tribbloids.spookystuff.dsl._
 import com.tribbloids.spookystuff.integration.IntegrationFixture
+import org.scalatest.Ignore
 
+@Ignore // waiting for scalaJS rewrite
 class FetchVisitIT extends IntegrationFixture {
 
   override def doMain() {
