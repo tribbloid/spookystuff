@@ -15,8 +15,8 @@ import scala.util.Random
 
 abstract class IntegrationFixture extends SpookyEnvFixture with BeforeAndAfterAll with RemoteDocsFixture {
 
-  val phantomJS: DriverFactories.PhantomJS = DriverFactories.PhantomJS()
-  val htmlUnit: DriverFactories.HtmlUnit = DriverFactories.HtmlUnit()
+  val phantomJS: WebDriverFactory.PhantomJS = WebDriverFactory.PhantomJS()
+  val htmlUnit: WebDriverFactory.HtmlUnit = WebDriverFactory.HtmlUnit()
 
   lazy val roots: Seq[String] = {
 

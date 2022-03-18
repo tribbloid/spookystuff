@@ -1,10 +1,10 @@
 package com.tribbloids.spookystuff.actions
 
-import com.tribbloids.spookystuff.dsl.DriverFactories
+import com.tribbloids.spookystuff.dsl.WebDriverFactory
 
 class TestTrace_HtmlUnit extends TestTrace_PhantomJS {
 
-  override lazy val driverFactory = DriverFactories.HtmlUnit()
+  override lazy val driverFactory = WebDriverFactory.HtmlUnit()
 
   //TODO: find the cause and a more stable test case
 //  test("click should not double click") {

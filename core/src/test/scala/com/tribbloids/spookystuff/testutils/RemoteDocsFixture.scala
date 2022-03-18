@@ -16,5 +16,5 @@ trait RemoteDocsFixture {
 
   def HTTP_IP_URL = "http://api.ipify.org/"
   def HTTPS_IP_URL = "https://api.ipify.org/"
-  def USERAGENT_URL = "http://www.whatsmyuseragent.com/"
+//  def USERAGENT_URL = "https://www.whatismybrowser.com/detect/what-is-my-user-agent/"
 }

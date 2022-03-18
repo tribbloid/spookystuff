@@ -1,14 +1,15 @@
 package com.tribbloids.spookystuff.integration.fetch
 
 import java.net.URLEncoder
-
 import com.tribbloids.spookystuff.actions.{DropDownSelect, Submit, TextInput, _}
 import com.tribbloids.spookystuff.dsl._
 import com.tribbloids.spookystuff.integration.IntegrationFixture
+import org.scalatest.Ignore
 
 /**
   * Created by peng on 12/14/14.
   */
+@Ignore // waiting for scalaJS rewrite
 class FetchInteractionsIT extends IntegrationFixture {
 
   override def doMain(): Unit = {

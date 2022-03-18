@@ -134,12 +134,12 @@ class TestWget extends SpookyEnvFixture {
 
     val results = (
       RandomDelay(1.seconds, 2.seconds)
-        :: wget("http://www.wikipedia.org")
+        :: wget(HTML_URL)
         :: Nil
     ).fetch(spooky)
 
     assert(results.size === 1)
-    assert(results.head.uid.backtrace.children.last == wget("http://www.wikipedia.org"))
+    assert(results.head.uid.backtrace.children.last == wget(HTML_URL))
   }
 
   //TODO: how to simulate a PKIX exception page?

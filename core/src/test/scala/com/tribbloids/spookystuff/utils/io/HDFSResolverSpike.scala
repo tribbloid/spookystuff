@@ -18,7 +18,7 @@ class HDFSResolverSpike extends FunSpec {
 
     val resolvers: Seq[URIResolver] = Seq(
       HDFSResolver(() => conf),
-      FTPResolver(5000)
+      URLConnectionResolver(5000)
     )
 
     val mds = resolvers.map { resolver =>

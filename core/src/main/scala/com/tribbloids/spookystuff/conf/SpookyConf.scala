@@ -13,13 +13,13 @@ import scala.concurrent.duration._
 
 object SpookyConf extends Submodules.Builder[SpookyConf] {
 
-  final val DEFAULT_WEBDRIVER_FACTORY = DriverFactories.PhantomJS().taskLocal
+  final val DEFAULT_WEBDRIVER_FACTORY = WebDriverFactory.PhantomJS().taskLocal
 
   /**
     * otherwise driver cannot do screenshot
     */
-  final val TEST_WEBDRIVER_FACTORY = DriverFactories.PhantomJS(loadImages = true).taskLocal
-  final val DEFAULT_PYTHONDRIVER_FACTORY = DriverFactories.Python2.taskLocal
+  final val TEST_WEBDRIVER_FACTORY = WebDriverFactory.PhantomJS(loadImages = true).taskLocal
+  final val DEFAULT_PYTHONDRIVER_FACTORY = PythonDriverFactory.Python3.taskLocal
 
   //DO NOT change to val! all confs are
   // mutable
