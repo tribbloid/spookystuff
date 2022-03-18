@@ -190,7 +190,7 @@ object DriverFactories {
   object PhantomJS {
 
     // TODO: separate win/mac/linux32/linux64 versions
-    final val HTTP_RESOURCE_URI = "https://drive.google.com/file/d/1tHWQTXy471_MTu5XBYwgvN6zEg741cD8/uc?export=download"
+    final val HTTP_RESOURCE_URI = "https://drive.google.com/uc?id=1tHWQTXy471_MTu5XBYwgvN6zEg741cD8&export=download"
 
     final def uri2fileName(path: String): String = path.split("/").last
 
