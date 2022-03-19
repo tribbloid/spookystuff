@@ -9,11 +9,12 @@ import com.tribbloids.spookystuff.{Const, QueryException, SpookyContext}
 import org.apache.spark.ml.dsl.utils.{DurationJSONSerializer, Verbose}
 import org.apache.spark.ml.dsl.utils.messaging.AutomaticRelay
 import org.apache.spark.sql.catalyst.trees.TreeNode
+import org.json4s.Formats
 import org.slf4j.LoggerFactory
 
 object ActionLike extends AutomaticRelay[ActionLike] {
 
-  override lazy val formats = super.formats + DurationJSONSerializer
+  override lazy val formats: Formats = super.formats + DurationJSONSerializer
 
   //TODO: aggregate all object that has children
   case class TreeNodeView(
@@ -31,7 +32,7 @@ object ActionLike extends AutomaticRelay[ActionLike] {
 @SerialVersionUID(8566489926281786854L)
 abstract class ActionLike extends Product with Serializable with Verbose {
 
-  override val productPrefix = this.getClass.getSimpleName.stripSuffix("$")
+  override val productPrefix: String = this.getClass.getSimpleName.stripSuffix("$")
 
   def children: Trace
 

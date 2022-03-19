@@ -2,12 +2,14 @@ package com.tribbloids.spookystuff.utils.io
 
 import java.io.{File, InputStream, OutputStream}
 import java.nio.file._
-
 import com.tribbloids.spookystuff.utils.Retry
 import org.apache.commons.io.FileUtils
 
+import java.nio.file.attribute.PosixFilePermission
+
 case class LocalResolver(
-    override val retry: Retry = URIResolver.default.retry
+    override val retry: Retry = URIResolver.default.retry,
+    extraPermissions: Set[PosixFilePermission] = Set(PosixFilePermission.OWNER_EXECUTE)
 ) extends URIResolver {
 
   @transient lazy val mdParser: ResourceMetadata.ReflectionParser[File] = ResourceMetadata.ReflectionParser[File]()
@@ -118,6 +120,10 @@ case class LocalResolver(
               Files.newOutputStream(path, StandardOpenOption.CREATE_NEW, StandardOpenOption.SYNC)
           }
 
+          val permissions = Files.getPosixFilePermissions(path)
+          permissions.addAll(extraPermissions.asJava)
+          Files.setPosixFilePermissions(path, permissions)
+
           fos
         }
       }
@@ -144,12 +150,7 @@ case class LocalResolver(
 
       Files.move(file.toPath, newFile.toPath, StandardCopyOption.ATOMIC_MOVE)
     }
-
-//    override def mkDirs(): Unit = {
-//
-//      file.mkdirs()
-//    }
   }
 }
 
-object LocalResolver extends LocalResolver(URIResolver.default.retry)
+object LocalResolver extends LocalResolver(URIResolver.default.retry, Set(PosixFilePermission.OWNER_EXECUTE))

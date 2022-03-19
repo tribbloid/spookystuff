@@ -69,9 +69,9 @@ class Session(
 ) extends AbstractSession(spooky) {
 
   @volatile private var _webDriverOpt: Option[CleanWebDriver] = None
-  def webDriverOpt = _webDriverOpt.filter(!_.isCleaned)
+  def webDriverOpt: Option[CleanWebDriver] = _webDriverOpt.filter(!_.isCleaned)
   //throwing error instead of lazy creation is required for restarting timer
-  def webDriver = webDriverOpt.getOrElse {
+  def webDriver: CleanWebDriver = webDriverOpt.getOrElse {
     throw new NoWebDriverException
   }
 
@@ -101,9 +101,9 @@ class Session(
   }
 
   @volatile private var _pythonDriverOpt: Option[PythonDriver] = None
-  def pythonDriverOpt = _pythonDriverOpt.filter(!_.isCleaned)
+  def pythonDriverOpt: Option[PythonDriver] = _pythonDriverOpt.filter(!_.isCleaned)
   //throwing error instead of lazy creation is required for restarting timer
-  def pythonDriver = pythonDriverOpt.getOrElse {
+  def pythonDriver: PythonDriver = pythonDriverOpt.getOrElse {
     throw new NoPythonDriverException
   }
 

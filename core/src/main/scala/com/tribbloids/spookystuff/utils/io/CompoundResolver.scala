@@ -43,7 +43,7 @@ class FSResolver(
 
   lazy val hdfs: HDFSResolver = HDFSResolver(hadoopConfFactory)
 
-  lazy val ftp: FTPResolver = FTPResolver(timeoutMillis)
+  lazy val ftp: URLConnectionResolver = URLConnectionResolver(timeoutMillis)
 
   override def getImpl(uri: String): URIResolver = {
 

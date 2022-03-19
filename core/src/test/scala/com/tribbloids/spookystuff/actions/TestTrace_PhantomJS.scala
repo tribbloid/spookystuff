@@ -11,7 +11,7 @@ class TestTrace_PhantomJS extends SpookyEnvFixture with FunSpecx {
 
   import scala.concurrent.duration._
 
-  override lazy val driverFactory: DriverFactory[CleanWebDriver] = DriverFactories.PhantomJS()
+  override lazy val driverFactory: DriverFactory[CleanWebDriver] = WebDriverFactory.PhantomJS()
 
   it("inject output names should change output doc names") {
 

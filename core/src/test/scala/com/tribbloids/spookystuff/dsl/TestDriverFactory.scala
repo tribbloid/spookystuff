@@ -2,7 +2,7 @@ package com.tribbloids.spookystuff.dsl
 
 import com.tribbloids.spookystuff.actions.Visit
 import com.tribbloids.spookystuff.conf.SpookyConf
-import com.tribbloids.spookystuff.dsl.DriverFactories.{TaskLocal, Transient}
+import com.tribbloids.spookystuff.dsl.DriverFactory.{TaskLocal, Transient}
 import com.tribbloids.spookystuff.session.Session
 import com.tribbloids.spookystuff.testutils.LocalPathDocsFixture
 import com.tribbloids.spookystuff.{SpookyContext, SpookyEnvFixture}
@@ -13,8 +13,8 @@ import com.tribbloids.spookystuff.{SpookyContext, SpookyEnvFixture}
 class TestDriverFactory extends SpookyEnvFixture with LocalPathDocsFixture {
 
   val baseFactories: Seq[Transient[_]] = Seq(
-    DriverFactories.PhantomJS(),
-    DriverFactories.Python(_ => "python3")
+    WebDriverFactory.PhantomJS(),
+    PythonDriverFactory.Python3
   )
 
   val poolingFactories: Seq[TaskLocal[_]] = baseFactories
@@ -37,7 +37,7 @@ class TestDriverFactory extends SpookyEnvFixture with LocalPathDocsFixture {
   //
   //  }
   it("If the old driver is released, the second Pooling DriverFactory.get() should yield the same driver") {
-    val conf = new SpookyConf(webDriverFactory = DriverFactories.PhantomJS().taskLocal)
+    val conf = new SpookyConf(webDriverFactory = WebDriverFactory.PhantomJS().taskLocal)
     val spooky = new SpookyContext(sql, conf)
 
     val session1 = new Session(spooky)

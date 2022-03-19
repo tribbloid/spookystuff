@@ -12,7 +12,7 @@ class FetchVisitIT extends IntegrationFixture {
 
     val RDD = spooky
       .fetch(
-        Visit("http://www.wikipedia.org/")
+        Visit(HTML_URL)
       )
       .persist()
 
@@ -21,7 +21,7 @@ class FetchVisitIT extends IntegrationFixture {
     val finishTime = System.currentTimeMillis()
     assert(pageRows.length === 1)
     assert(pageRows(0).docs.length === 1)
-    assert(pageRows(0).docs.head.uri contains "://www.wikipedia.org/")
+    assert(pageRows(0).docs.head.uri contains HTML_URL)
     assert(pageRows(0).docs.head.name === Snapshot(DocFilters.MustHaveTitle).toString)
     val pageTime = pageRows(0).docs.head.timeMillis
     assert(pageTime < finishTime)
@@ -29,7 +29,7 @@ class FetchVisitIT extends IntegrationFixture {
 
     val RDD2 = RDD
       .fetch(
-        Visit("http://www.wikipedia.org/") +> Snapshot() ~ 'b
+        Visit(HTML_URL) +> Snapshot() ~ 'b
       )
       .persist()
 

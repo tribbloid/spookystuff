@@ -19,7 +19,7 @@ class TestWayback extends SpookyEnvFixture {
     spooky.spookyConf.IgnoreCachedDocsBefore = Some(new Date())
 
     val dates: Seq[Long] = (0 to 2).map { i =>
-      val pages = (Delay(10.seconds) +> Wget("http://en.wikipedia.org")).head.fetch(spooky) //5s is long enough
+      val pages = (Delay(10.seconds) +> Wget(HTML_URL)).head.fetch(spooky) //5s is long enough
       assert(pages.size == 1)
       pages.head.timeMillis
     }
@@ -27,7 +27,7 @@ class TestWayback extends SpookyEnvFixture {
     spooky.spookyConf.cacheRead = true
 
     val cachedPages = (Delay(10.seconds)
-      +> Wget("http://en.wikipedia.org").waybackToTimeMillis(dates(1) + 2000)).head.fetch(spooky)
+      +> Wget(HTML_URL).waybackToTimeMillis(dates(1) + 2000)).head.fetch(spooky)
     assert(cachedPages.size == 1)
     assert(cachedPages.head.timeMillis == dates(1))
 
@@ -35,7 +35,7 @@ class TestWayback extends SpookyEnvFixture {
 
     intercept[QueryException] {
       (Delay(10.seconds)
-        +> Wget("http://en.wikipedia.org").waybackToTimeMillis(dates.head - 2000)).head.fetch(spooky)
+        +> Wget(HTML_URL).waybackToTimeMillis(dates.head - 2000)).head.fetch(spooky)
     }
   }
 
@@ -45,7 +45,7 @@ class TestWayback extends SpookyEnvFixture {
 
     val dates: Seq[Long] = (0 to 2).map { i =>
       val pages = (Delay(10.seconds)
-        +> Visit("http://en.wikipedia.org")).rewriteGlobally(defaultSchema).head.fetch(spooky) //5s is long enough
+        +> Visit(HTML_URL)).rewriteGlobally(defaultSchema).head.fetch(spooky) //5s is long enough
       assert(pages.size == 1)
       pages.head.timeMillis
     }
@@ -53,7 +53,7 @@ class TestWayback extends SpookyEnvFixture {
     spooky.spookyConf.cacheRead = true
 
     val cachedPages = (Delay(10.seconds)
-      +> Visit("http://en.wikipedia.org")
+      +> Visit(HTML_URL)
       +> Snapshot().waybackToTimeMillis(dates(1) + 2000)).head.fetch(spooky)
     assert(cachedPages.size == 1)
     assert(cachedPages.head.timeMillis == dates(1))
@@ -62,7 +62,7 @@ class TestWayback extends SpookyEnvFixture {
 
     intercept[QueryException] {
       (Delay(10.seconds)
-        +> Visit("http://en.wikipedia.org")
+        +> Visit(HTML_URL)
         +> Snapshot().waybackToTimeMillis(dates.head - 2000)).head.fetch(spooky)
     }
   }
@@ -73,7 +73,7 @@ class TestWayback extends SpookyEnvFixture {
 
     val dates: Seq[Long] = (0 to 2).map { i =>
       val pages = (Delay(10.seconds)
-        +> Visit("http://en.wikipedia.org")
+        +> Visit(HTML_URL)
         +> Screenshot()).head.fetch(spooky) //5s is long enough
       assert(pages.size == 1)
       pages.head.timeMillis
@@ -82,7 +82,7 @@ class TestWayback extends SpookyEnvFixture {
     spooky.spookyConf.cacheRead = true
 
     val cachedPages = (Delay(10.seconds)
-      +> Visit("http://en.wikipedia.org")
+      +> Visit(HTML_URL)
       +> Screenshot().waybackToTimeMillis(dates(1) + 2000)).head.fetch(spooky)
     assert(cachedPages.size == 1)
     assert(cachedPages.head.timeMillis == dates(1))
@@ -91,7 +91,7 @@ class TestWayback extends SpookyEnvFixture {
 
     intercept[QueryException] {
       (Delay(10.seconds)
-        +> Visit("http://en.wikipedia.org")
+        +> Visit(HTML_URL)
         +> Screenshot().waybackToTimeMillis(dates.head - 2000)).head.fetch(spooky)
     }
   }

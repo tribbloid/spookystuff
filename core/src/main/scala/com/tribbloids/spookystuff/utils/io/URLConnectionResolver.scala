@@ -6,13 +6,13 @@ import com.tribbloids.spookystuff.utils.http.HttpUtils
 import java.io.{InputStream, OutputStream}
 import java.net.{URI, URLConnection}
 
-object FTPResolver {
+object URLConnectionResolver {
 
   def apply(
       timeoutMillis: Int
-  ): FTPResolver = {
+  ): URLConnectionResolver = {
 
-    val ftp = FTPResolver({ uri =>
+    val ftp = URLConnectionResolver({ uri =>
       val conn = uri.toURL.openConnection()
       conn.setConnectTimeout(timeoutMillis)
       conn.setReadTimeout(timeoutMillis)
@@ -24,7 +24,7 @@ object FTPResolver {
   }
 }
 
-case class FTPResolver(
+case class URLConnectionResolver(
     input2Connection: URI => URLConnection,
     override val retry: Retry = Retry.ExponentialBackoff(8, 16000)
 ) extends URIResolver {
