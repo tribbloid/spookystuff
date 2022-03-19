@@ -23,7 +23,7 @@ object DocUtils {
       case e: Exception =>
         spooky.spookyMetrics.DFSReadFailure += 1
         val ex = new DFSReadException(pathStr, e)
-        ex.setStackTrace(e.getStackTrace)
+//        ex.setStackTrace(e.getStackTrace)
         if (spooky.spookyConf.failOnDFSError) throw ex
         else {
           LoggerFactory.getLogger(this.getClass).warn(message, ex)
@@ -44,7 +44,7 @@ object DocUtils {
       case e: Exception =>
         spooky.spookyMetrics.DFSWriteFailure += 1
         val ex = new DFSWriteException(pathStr, e)
-        ex.setStackTrace(e.getStackTrace)
+//        ex.setStackTrace(e.getStackTrace)
         throw ex
     }
   }
