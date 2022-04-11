@@ -1,10 +1,10 @@
 package com.tribbloids.spookystuff.dsl
 
 import java.sql.Timestamp
-
 import com.tribbloids.spookystuff.SpookyContext
 import com.tribbloids.spookystuff.actions.{Action, Trace, TraceSetView, TraceView}
-import com.tribbloids.spookystuff.doc.{Doc, DocUID, Elements, Unstructured}
+import com.tribbloids.spookystuff.doc.{Doc, DocUID, Elements, HasSeq, Unstructured}
+import com.tribbloids.spookystuff.extractors.GenExtractor.AndThen
 import com.tribbloids.spookystuff.extractors.impl.Extractors._
 import com.tribbloids.spookystuff.extractors._
 import com.tribbloids.spookystuff.extractors.impl.{Append, Get, Interpolate, Zipped}
@@ -36,27 +36,12 @@ sealed trait Level2 {
   import org.apache.spark.ml.dsl.utils.refl.ScalaType._
   import org.apache.spark.sql.catalyst.ScalaReflection.universe.TypeTag
 
-  implicit class ExView[R: ClassTag](self: Extractor[R]) extends Serializable {
-
-    private def defaultVal: R = Default.value[R]
+  implicit class ExView[R: ClassTag](self: Extractor[R])(
+      implicit val defaultV: Default[R]
+  ) extends Serializable {
 
     def into(field: Field) = Append.create[R](field, self)
     def ~+(field: Field) = into(field)
-
-    //    def -->[R2](g: Extractor[R2]) = And_->(self, g)
-    //    def orNull[B >: R]: Extractor[B] = orElse[FetchedRow, B] {
-    //      case _ => null.asInstanceOf[B]
-    //    }
-    //    def orDefault[B >: R]: Extractor[B] = orElse[FetchedRow, B] {
-    //      case _ => defaultVal: B
-    //    }
-
-    //    def orNull: Extractor[R] = orElse[FetchedRow, R] {
-    //      case _ => null.asInstanceOf[R]
-    //    }
-    //    def orDefault: Extractor[R] = orElse[FetchedRow, R] {
-    //      case _ => defaultVal: R
-    //    }
   }
 
   implicit class StringExView(self: Extractor[String]) extends Serializable {
@@ -101,7 +86,16 @@ sealed trait Level2 {
 
     def boilerPipe = self.andOptionFn(_.boilerPipe)
 
-    def expand(range: Range) = ExpandExpr(self, range)
+    def expand(range: Range) = {
+      self match {
+        case AndThen(_, _, Some(FindAllMeta(argg, selector))) =>
+          argg.andFn(_.findAllWithSiblings(selector, range))
+        case AndThen(_, _, Some(ChildrenMeta(argg, selector))) =>
+          argg.andFn(_.childrenWithSiblings(selector, range))
+        case _ =>
+          throw new UnsupportedOperationException("expression does not support expand")
+      }
+    }
   }
 
   implicit class ElementsExView(self: Extractor[Elements[_]]) extends Serializable {
@@ -148,19 +142,11 @@ sealed trait Level2 {
     def defaultFileExtension: Extractor[String] = self.andOptionFn(_.defaultFileExtension)
   }
 
-  implicit class IterableExView[T: ClassTag](self: Extractor[Iterable[T]]) extends Serializable {
+  implicit def SeqMagnetExView[T: TypeTag](self: Extractor[HasSeq[T]]): IterableExView[T] = {
+    new IterableExView[T](self.andFn(v => v.seq))
+  }
 
-    //    def andSelfType[R <: Iterable[T]](f: Iterable[T] => Option[R]) = self.andOptionFnTyped[R, Iterable[T]](
-    //      f, {
-    //        t => t
-    //      }
-    //    )
-    //
-    //    def andUnboxedType(f: Iterable[T] => Option[T]) = self.andOptionFnTyped[T, Iterable[T]](
-    //      f, {
-    //        case ArrayType(boxed, _) => boxed
-    //      }
-    //    )
+  implicit class IterableExView[T: TypeTag](self: Extractor[Iterable[T]]) extends Serializable {
 
     def head: Extractor[T] = self.andOptionTyped((v: Iterable[T]) => v.headOption, _.unboxArrayOrMap)
 
@@ -306,7 +292,7 @@ class DSL extends Level1 {
   def A(selector: String) = 'A.findAll(selector)
   def A(selector: String, i: Int): Extractor[Unstructured] = {
     val expr = 'A.findAll(selector)
-    new IterableExView(expr).get(i)
+    expr.get(i)
   }
 }
 

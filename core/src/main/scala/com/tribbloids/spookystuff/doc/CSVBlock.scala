@@ -35,7 +35,7 @@ case class CSVBlock(
   override def breadcrumb: Option[Seq[String]] = ???
 
   override def children(selector: CSSQuery): Elements[Unstructured] = {
-    if (!this.headers.contains(selector)) new EmptyElements
+    if (!this.headers.contains(selector)) Elements.empty
     else {
       val data = parsedList.map { record =>
         val datum = record.get(selector)
@@ -49,7 +49,7 @@ case class CSVBlock(
   }
 
   override def childrenWithSiblings(selector: CSSQuery, range: Range): Elements[Siblings[Unstructured]] = {
-    if (!this.headers.contains(selector)) new EmptyElements
+    if (!this.headers.contains(selector)) Elements.empty
     else {
       val data = parsedList.map { record =>
         val index = headers.indexOf(selector)
@@ -98,13 +98,13 @@ class CSVCell(
     val header: String
 ) extends Unstructured {
 
-  override def findAll(selector: CSSQuery): Elements[Unstructured] = new EmptyElements
+  override def findAll(selector: CSSQuery): Elements[Unstructured] = Elements.empty
 
   override def text: Option[String] = ownText
 
   override def breadcrumb: Option[Seq[String]] = ???
 
-  override def children(selector: CSSQuery): Elements[Unstructured] = new EmptyElements
+  override def children(selector: CSSQuery): Elements[Unstructured] = Elements.empty
 
   override def ownText: Option[String] = Some(_ownText)
 
@@ -115,14 +115,14 @@ class CSVCell(
   override def boilerPipe: Option[String] = ownText
 
   override def findAllWithSiblings(selector: CSSQuery, range: Range): Elements[Siblings[Unstructured]] =
-    new EmptyElements
+    Elements.empty
 
   override def href: Option[String] = ownText
 
   override def code: Option[String] = ownText
 
   override def childrenWithSiblings(selector: CSSQuery, range: Range): Elements[Siblings[Unstructured]] =
-    new EmptyElements
+    Elements.empty
 
   override def allAttr: Option[Map[String, String]] = Some(Map())
 

@@ -19,20 +19,6 @@ import org.apache.tika.metadata.{Metadata, TikaMetadataKeys}
 import org.apache.tika.mime.{MimeType, MimeTypes}
 import org.mozilla.universalchardet.UniversalDetector
 
-/**
-  * Created by peng on 04/06/14.
-  */
-//use to genterate a lookup key for each page so
-@SerialVersionUID(612503421395L)
-case class DocUID(
-    backtrace: Trace,
-    output: Export,
-    //                    sessionStartTime: Long,
-    blockIndex: Int = 0,
-    blockSize: Int = 1
-)( //number of pages in a block output,
-  val name: String = Option(output).map(_.name).orNull) {}
-
 class DocOptionUDT extends ScalaUDT[DocOption]
 
 //keep small, will be passed around by Spark
@@ -76,7 +62,7 @@ case class NoDoc(
 ) extends Serializable
     with DocOption {
 
-  @transient override lazy val uid: DocUID = DocUID(backtrace, null, 0, 1)()
+  @transient override lazy val uid: DocUID = DocUID(backtrace, null)()
 
   override def updated(
       uid: DocUID = this.uid,
@@ -128,7 +114,7 @@ object Doc {
   val defaultCSVFormat: CSVFormat = CSVFormat.DEFAULT
 }
 @SerialVersionUID(94865098324L)
-@SQLUserDefinedType(udt = classOf[UnstructuredUDT])
+@SQLUserDefinedType(udt = classOf[Unstructured.UDT])
 case class Doc(
     override val uid: DocUID,
     uri: String, //redirected
@@ -142,6 +128,8 @@ case class Doc(
     override val metadata: ResourceMetadata = ResourceMetadata.proto //for customizing parsing TODO: remove, delegate to CSVElement.
 ) extends DocOption
     with IDMixin {
+
+  import scala.collection.JavaConverters._
 
   lazy val _id: Any = (uid, uri, declaredContentType, timeMillis, httpStatus.toString)
 
@@ -228,7 +216,7 @@ case class Doc(
     } else if (mimeType.contains("plain") || mimeType.contains("text")) {
       PlainElement(contentStr, uri) //not serialize, parsing is faster
     } else {
-      TikaMetadataXMLElement(raw, effectiveCharset, mimeType, uri)
+      HtmlElement.fromBytes(raw, effectiveCharset, mimeType, uri)
     }
   }
   def charset: Option[String] = Option(parsedContentType.getCharset).map(_.name())
@@ -236,27 +224,13 @@ case class Doc(
 
   def contentType: String = parsedContentType.toString
 
-  def tikaMimeType: MimeType = MimeTypes.getDefaultMimeTypes.forName(mimeType)
-  def fileExtensions: Array[String] = tikaMimeType.getExtensions.toArray(Array[String]()).map { str =>
+  lazy val tikaMimeType: MimeType = MimeTypes.getDefaultMimeTypes.forName(mimeType)
+  lazy val fileExtensions: Seq[String] = tikaMimeType.getExtensions.asScala.map { str =>
     if (str.startsWith(".")) str.splitAt(1)._2
     else str
   }
   def defaultFileExtension: Option[String] = fileExtensions.headOption
 
-  //  override def findAll(selector: String) = root.findAll(selector)
-  //  override def findAllWithSiblings(start: String, range: Range) = root.findAllWithSiblings(start, range)
-  //  override def children(selector: Selector): Elements[Unstructured] = root.children(selector)
-  //  override def childrenWithSiblings(selector: Selector, range: Range): Elements[Siblings[Unstructured]] = root.childrenWithSiblings(selector, range)
-  //  override def code: Option[String] = root.code
-  //  override def formattedCode: Option[String] = root.formattedCode
-  //  override def allAttr: Option[Map[String, String]] = root.allAttr
-  //  override def attr(attr: String, noEmpty: Boolean): Option[String] = root.attr(attr, noEmpty)
-  //  override def href: Option[String] = root.href
-  //  override def src: Option[String] = root.src
-  //  override def text: Option[String] = root.text
-  //  override def ownText: Option[String] = root.ownText
-  //  override def boilerPipe: Option[String] = root.boilerPipe
-  //  override def breadcrumb: Option[Seq[String]] = root.breadcrumb TODO: remove
   //---------------------------------------------------------------------------------------------------
 
   def save(
@@ -274,7 +248,7 @@ case class Doc(
       val fos = try {
         fs.create(fullPath, overwrite)
       } catch {
-        case e: Exception =>
+        case _: Exception =>
           val altPath = new Path(path + "-" + UUID.randomUUID())
           fs.create(altPath, overwrite)
       }
@@ -294,7 +268,8 @@ case class Doc(
       overwrite: Boolean = false
   ): Unit =
     this.save(
-      spooky.dirConf.autoSave :: spooky.spookyConf.autoSaveFilePath(this).toString :: Nil
+      spooky.dirConf.autoSave :: spooky.spookyConf.autoSaveFilePath(this) :: Nil,
+      overwrite
     )(spooky)
 
   //TODO: merge into cascade retries
@@ -303,12 +278,13 @@ case class Doc(
       overwrite: Boolean = false
   ): Unit = {
     val root = this.uid.output match {
-      case ss: Screenshot => spooky.dirConf.errorScreenshot
-      case _              => spooky.dirConf.errorDump
+      case _: Screenshot => spooky.dirConf.errorScreenshot
+      case _             => spooky.dirConf.errorDump
     }
 
     this.save(
-      root :: spooky.spookyConf.errorDumpFilePath(this).toString :: Nil
+      root :: spooky.spookyConf.errorDumpFilePath(this) :: Nil,
+      overwrite
     )(spooky)
   }
 
@@ -317,12 +293,13 @@ case class Doc(
       overwrite: Boolean = false
   ): Unit = {
     val root = this.uid.output match {
-      case ss: Screenshot => spooky.dirConf.errorScreenshotLocal
-      case _              => spooky.dirConf.errorDumpLocal
+      case _: Screenshot => spooky.dirConf.errorScreenshotLocal
+      case _             => spooky.dirConf.errorDumpLocal
     }
 
     this.save(
-      root :: spooky.spookyConf.errorDumpFilePath(this).toString :: Nil
+      root :: spooky.spookyConf.errorDumpFilePath(this) :: Nil,
+      overwrite
     )(spooky)
   }
 

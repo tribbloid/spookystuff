@@ -74,6 +74,13 @@
     <!--</dependency>-->
 
     <dependency>
+      <groupId>com.tribbloids.spookystuff</groupId>
+      <artifactId>spookystuff-test-resources</artifactId>
+      <version>${project.version}</version>
+      <scope>test</scope>
+    </dependency>
+
+    <dependency>
       <groupId>org.jhades</groupId>
       <artifactId>jhades</artifactId>
       <version>1.0.4</version>

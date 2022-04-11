@@ -31,12 +31,10 @@ object Siblings {
 }
 
 class Siblings[+T <: Unstructured](
-    override val self: List[T],
+    override val seq: List[T],
     val delimiter: String = " ",
     val formattedDelimiter: String = "\n"
-) extends Elements[T](self)
-    with Seq[T]
-    with SeqLike[T, Siblings[T]] {
+) extends Elements[T](seq) {
 
   override def text =
     if (texts.isEmpty) None
@@ -57,6 +55,4 @@ class Siblings[+T <: Unstructured](
   override def boilerPipe =
     if (boilerPipes.isEmpty) None
     else Some(boilerPipes.filter(_.nonEmpty).mkString(delimiter))
-
-  override protected[this] def newBuilder = Siblings.newBuilder[T]
 }

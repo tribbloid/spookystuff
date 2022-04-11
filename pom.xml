@@ -248,12 +248,6 @@
   <dependencyManagement>
     <dependencies>
 
-      <dependency>
-        <groupId>org.scalatest</groupId>
-        <artifactId>scalatest_${scala.binary.version}</artifactId>
-        <version>3.0.8</version>
-      </dependency>
-
       <!--DON'T DELETE! guava has too many versions and a ground truth has to be setup.-->
       <!--      TODO: add back! before this package wreck havoc of hadoop-->
       <dependency>
@@ -272,6 +266,12 @@
         <groupId>com.google.protobuf</groupId>
         <artifactId>protobuf-java</artifactId>
         <version>${protobuf.version}</version>
+      </dependency>
+
+      <dependency>
+        <groupId>org.apache.httpcomponents</groupId>
+        <artifactId>httpclient</artifactId>
+        <version>4.5.2</version>
       </dependency>
 
       <dependency>
@@ -336,11 +336,6 @@
       <scope>test</scope>
     </dependency>
 
-    <dependency>
-      <groupId>org.scalatest</groupId>
-      <artifactId>scalatest_${scala.binary.version}</artifactId>
-      <scope>test</scope>
-    </dependency>
     <!-- https://mvnrepository.com/artifact/com.holdenkarau/spark-testing-base -->
     <!--<dependency>-->
     <!--<groupId>com.holdenkarau</groupId>-->

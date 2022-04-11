@@ -2,8 +2,9 @@ package org.apache.spark.ml.dsl.utils.refl
 
 /**
   * Scala 2.10 reflection is not thread safe
-  * DO NOT REMOVE! apparently much faster than the vanilla locking mechanism of Scala 2.11
+  * apparently faster than the vanilla locking mechanism of Scala 2.11
   */
+// TODO: remove, thread safety issue is long gone
 object ReflectionLock
 
 trait ReflectionLock {
