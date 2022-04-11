@@ -12,6 +12,14 @@
   <artifactId>spookystuff-benchmark</artifactId>
 
   <dependencies>
+
+    <dependency>
+      <groupId>com.tribbloids.spookystuff</groupId>
+      <artifactId>spookystuff-test-resources</artifactId>
+      <version>${project.version}</version>
+      <scope>test</scope>
+    </dependency>
+
     <dependency>
       <groupId>com.tribbloids.spookystuff</groupId>
       <artifactId>spookystuff-core</artifactId>

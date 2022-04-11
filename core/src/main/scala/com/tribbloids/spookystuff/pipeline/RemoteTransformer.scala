@@ -96,6 +96,6 @@ trait RemoteTransformer extends RemoteTransformerLike with Dynamic {
       result.unpersist()
     }
 
-    assert(result.toObjectRDD(S_*).flatMap(identity).count() >= 1)
+    assert(result.toObjectRDD(S_*).flatMap(v => v.seq).count() >= 1)
   }
 }

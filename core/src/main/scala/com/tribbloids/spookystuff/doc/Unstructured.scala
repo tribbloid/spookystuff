@@ -4,6 +4,7 @@ import org.apache.spark.ml.dsl.utils.refl.ScalaUDT
 import org.apache.spark.sql.types.SQLUserDefinedType
 
 class UnstructuredUDT extends ScalaUDT[Unstructured]
+
 @SQLUserDefinedType(udt = classOf[UnstructuredUDT])
 trait Unstructured extends Serializable {
 
@@ -11,7 +12,7 @@ trait Unstructured extends Serializable {
 
   def findAll(selector: CSSQuery): Elements[Unstructured]
 
-  final def \\(selector: CSSQuery) = findAll(selector)
+  final def \\(selector: CSSQuery): Elements[Unstructured] = findAll(selector)
 
   final def findFirst(selector: CSSQuery): Option[Unstructured] =
     findAll(selector).headOption
@@ -26,7 +27,7 @@ trait Unstructured extends Serializable {
 
   def children(selector: CSSQuery): Elements[Unstructured]
 
-  final def \(selector: CSSQuery) = findAll(selector)
+  final def \(selector: CSSQuery): Elements[Unstructured] = findAll(selector)
 
   final def child(selector: CSSQuery): Option[Unstructured] =
     children(selector).headOption

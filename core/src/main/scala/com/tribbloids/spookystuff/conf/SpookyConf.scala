@@ -1,13 +1,13 @@
 package com.tribbloids.spookystuff.conf
 
-import java.util.Date
-
 import com.tribbloids.spookystuff.dsl._
 import com.tribbloids.spookystuff.row.Sampler
-import com.tribbloids.spookystuff.session.{PythonDriver, _}
+import com.tribbloids.spookystuff.session._
+import com.tribbloids.spookystuff.utils.TimeoutConf
 import org.apache.spark.SparkConf
 import org.apache.spark.storage.StorageLevel
 
+import java.util.Date
 import scala.concurrent.duration.Duration.Infinite
 import scala.concurrent.duration._
 
@@ -25,7 +25,7 @@ object SpookyConf extends Submodules.Builder[SpookyConf] {
   // mutable
   def default = new SpookyConf()
 
-  val defaultHTTPHeaders = Map[String, String](
+  val defaultHTTPHeaders: Map[String, String] = Map(
     "User-Agent" ->
       "Mozilla/5.0 (X11; Linux x86_64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/37.0.2062.120 Safari/537.36"
   )
@@ -57,9 +57,9 @@ class SpookyConf(
     var errorDump: Boolean = true,
     var errorScreenshot: Boolean = true,
     var errorDumpFilePath: ByDoc[String] = FilePaths.UUIDName(FilePaths.Hierarchical),
-    var remoteResourceTimeout: Duration = 60.seconds,
-    var DFSTimeout: Duration = 40.seconds,
-    var failOnDFSError: Boolean = false,
+    var remoteResourceTimeout: TimeoutConf = TimeoutConf(60.seconds),
+    var DFSTimeout: TimeoutConf = TimeoutConf(40.seconds),
+    var failOnDFSRead: Boolean = false,
     var defaultJoinType: JoinType = Inner,
     var defaultFlattenSampler: Sampler[Any] = identity,
     var defaultJoinSampler: Sampler[Any] = identity, //join takes remote actions and cost much more than flatten.
@@ -97,7 +97,7 @@ class SpookyConf(
       errorDumpFilePath = this.errorDumpFilePath,
       remoteResourceTimeout = this.remoteResourceTimeout,
       DFSTimeout = this.DFSTimeout,
-      failOnDFSError = this.failOnDFSError,
+      failOnDFSRead = this.failOnDFSRead,
       defaultJoinType = this.defaultJoinType,
       //default max number of elements scraped from a page, set to Int.MaxValue to allow unlimited fetch
       defaultFlattenSampler = this.defaultFlattenSampler,

@@ -1,47 +1,17 @@
 package com.tribbloids.spookystuff.session
 
-import java.util.Date
-import java.util.concurrent.TimeUnit
-
 import com.tribbloids.spookystuff.actions._
 import com.tribbloids.spookystuff.utils.CommonUtils
+import com.tribbloids.spookystuff.utils.io.Progress
 import com.tribbloids.spookystuff.utils.lifespan.{Lifespan, LocalCleanable}
 import com.tribbloids.spookystuff.{Const, SpookyContext, SpookyException}
 import org.apache.spark.TaskContext
 import org.openqa.selenium.Dimension
 import org.slf4j.LoggerFactory
 
+import java.util.Date
+import java.util.concurrent.TimeUnit
 import scala.collection.mutable.ArrayBuffer
-
-//case object SessionRelay extends MessageRelay[Session] {
-//
-//  case class M(
-//                startTime: Long,
-//                backtrace: Seq[Action],
-//                TaskContext: Option[TaskContextRelay.M]
-//              ) extends Message
-//
-//  override def toMessage(v: Session): M = {
-//    M(
-//      v.startTime,
-//      v.backtrace,
-//      v.taskContextOpt.map (tc => TaskContextRelay.toMessage(tc))
-//    )
-//  }
-//}
-//
-//case object TaskContextRelay extends MessageRelay[TaskContext] {
-//
-//  case class M(
-//                attemptNumber: Int
-//              ) extends Message
-//
-//  override def toMessage(v: TaskContext): M = {
-//    M(
-//      v.attemptNumber()
-//    )
-//  }
-//}
 
 abstract class NoDriverException(override val simpleMsg: String) extends SpookyException
 class NoWebDriverException extends NoDriverException("INTERNAL ERROR: should initialize driver automatically")
@@ -57,6 +27,8 @@ sealed abstract class AbstractSession(val spooky: SpookyContext) extends LocalCl
   def pythonDriver: PythonDriver
 
   def taskContextOpt: Option[TaskContext] = lifespan.ctx.taskOpt
+
+  lazy val progress: Progress = Progress()
 }
 
 /**
@@ -78,16 +50,18 @@ class Session(
   def getOrProvisionWebDriver: CleanWebDriver = {
     webDriverOpt.getOrElse {
       CommonUtils.retry(Const.localResourceLocalRetries) {
-        CommonUtils.withDeadline(Const.sessionInitializationTimeout) {
+        CommonUtils.withTimeout(Const.sessionInitializationTimeout) {
           val driver = spooky.spookyConf.webDriverFactory.dispatch(this)
           spooky.spookyMetrics.webDriverDispatched += 1
+
+          val maxTimeoutSec = spooky.spookyConf.remoteResourceTimeout.max.toSeconds
           //      try {
           driver
             .manage()
             .timeouts()
-            .implicitlyWait(spooky.spookyConf.remoteResourceTimeout.toSeconds, TimeUnit.SECONDS)
-            .pageLoadTimeout(spooky.spookyConf.remoteResourceTimeout.toSeconds, TimeUnit.SECONDS)
-            .setScriptTimeout(spooky.spookyConf.remoteResourceTimeout.toSeconds, TimeUnit.SECONDS)
+            .implicitlyWait(maxTimeoutSec, TimeUnit.SECONDS)
+            .pageLoadTimeout(maxTimeoutSec, TimeUnit.SECONDS)
+            .setScriptTimeout(maxTimeoutSec, TimeUnit.SECONDS)
 
           val resolution = spooky.spookyConf.browserResolution
           if (resolution != null) driver.manage().window().setSize(new Dimension(resolution._1, resolution._2))
@@ -111,7 +85,7 @@ class Session(
     pythonDriverOpt.getOrElse {
       CommonUtils.retry(Const.localResourceLocalRetries) {
 
-        CommonUtils.withDeadline(Const.sessionInitializationTimeout) {
+        CommonUtils.withTimeout(Const.sessionInitializationTimeout) {
           val driver = spooky.spookyConf.pythonDriverFactory.dispatch(this)
           spooky.spookyMetrics.pythonDriverDispatched += 1
 

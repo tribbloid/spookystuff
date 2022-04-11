@@ -2,14 +2,15 @@ package com.tribbloids.spookystuff.actions
 
 import com.tribbloids.spookystuff.doc.{Doc, DocOption}
 import com.tribbloids.spookystuff.session.Session
-import com.tribbloids.spookystuff.utils.CommonUtils
-import org.apache.spark.ml.dsl.utils.refl.ScalaUDT
+import com.tribbloids.spookystuff.utils.{CommonUtils, TimeoutConf}
 import com.tribbloids.spookystuff.{ActionException, Const, SpookyContext}
+import org.apache.spark.ml.dsl.utils.refl.ScalaUDT
 import org.apache.spark.sql.types.SQLUserDefinedType
+import org.openqa.selenium.WebElement
 import org.openqa.selenium.support.ui.{ExpectedConditions, WebDriverWait}
 import org.slf4j.LoggerFactory
 
-import scala.concurrent.duration.Duration
+import java.util
 
 class ActionUDT extends ScalaUDT[Action]
 
@@ -128,19 +129,22 @@ trait Action extends ActionLike {
     }
   }
 
-  protected[actions] def withDriversDuring[T](session: Session)(f: => T) = {
+  protected[actions] def withDriversDuring[T](session: Session)(f: => T): T = {
 
     var baseStr = s"[${session.taskContextOpt.map(_.partitionId()).getOrElse(0)}]+> ${this.toString}"
     this match {
-      case tt: Timed =>
-        baseStr = baseStr + s" in ${tt.timeout(session)}"
+      case timed: Timed =>
+        baseStr = baseStr + s" in ${timed.timeout(session)}"
         LoggerFactory.getLogger(this.getClass).info(this.withDetail(baseStr))
 
-        session.withDriversDuring(
-          CommonUtils.withDeadline(tt.hardTerminateTimeout(session)) {
-            f
-          }
-        )
+        session.withDriversDuring {
+          session.progress.ping()
+
+          CommonUtils.withTimeout(timed.hardTerminateTimeout(session))(
+            f,
+            session.progress.defaultHeartbeat
+          )
+        }
       case _ =>
         LoggerFactory.getLogger(this.getClass).info(this.withDetail(baseStr))
 
@@ -168,14 +172,14 @@ trait Action extends ActionLike {
 
 trait Timed extends Action {
 
-  var _timeout: Duration = _
+  var _timeout: TimeoutConf = _
 
-  def in(deadline: Duration): this.type = {
-    this._timeout = deadline
+  def in(timeout: TimeoutConf): this.type = {
+    this._timeout = timeout
     this
   }
 
-  def timeout(session: Session): Duration = {
+  def timeout(session: Session): TimeoutConf = {
     val base =
       if (this._timeout == null) session.spooky.spookyConf.remoteResourceTimeout
       else this._timeout
@@ -183,29 +187,29 @@ trait Timed extends Action {
     base
   }
 
-  //TODO: this causes downloading large files to fail, need a better mechanism
-  def hardTerminateTimeout(session: Session): Duration = {
-    timeout(session) + Const.hardTerminateOverhead
+  def hardTerminateTimeout(session: Session): TimeoutConf = {
+    val original = timeout(session)
+    original.copy(max = original.max + Const.hardTerminateOverhead)
   }
 
   def webDriverWait(session: Session): WebDriverWait =
-    new WebDriverWait(session.webDriver, this.timeout(session).toSeconds)
+    new WebDriverWait(session.webDriver, this.timeout(session).max.toSeconds)
 
-  def getClickableElement(selector: Selector, session: Session) = {
+  def getClickableElement(selector: Selector, session: Session): WebElement = {
 
     val elements = webDriverWait(session).until(ExpectedConditions.elementToBeClickable(selector.by))
 
     elements
   }
 
-  def getElement(selector: Selector, session: Session) = {
+  def getElement(selector: Selector, session: Session): WebElement = {
 
     val elements = webDriverWait(session).until(ExpectedConditions.presenceOfElementLocated(selector.by))
 
     elements
   }
 
-  def getElements(selector: Selector, session: Session) = {
+  def getElements(selector: Selector, session: Session): util.List[WebElement] = {
 
     val elements = webDriverWait(session).until(ExpectedConditions.presenceOfAllElementsLocatedBy(selector.by))
 
@@ -221,7 +225,7 @@ trait Timed extends Action {
 trait Named extends Action {
 
   var nameOpt: Option[String] = None
-  def name = nameOpt.getOrElse(this.toString)
+  def name: String = nameOpt.getOrElse(this.toString)
 
   def as(name: Symbol): this.type = {
     assert(name != null)
@@ -242,7 +246,7 @@ trait Driverless extends Action {}
 
 trait ActionPlaceholder extends Action {
 
-  override protected def doExe(session: Session) = {
+  override protected def doExe(session: Session): Seq[DocOption] = {
     throw new UnsupportedOperationException(s"${this.getClass.getSimpleName} is a placeholder")
   }
 }

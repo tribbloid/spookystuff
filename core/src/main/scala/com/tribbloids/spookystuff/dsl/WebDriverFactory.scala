@@ -137,7 +137,7 @@ object WebDriverFactory {
       newCaps.setCapability(PhantomJSDriverService.PHANTOMJS_EXECUTABLE_PATH_PROPERTY, pathStr)
       newCaps.setCapability(
         PhantomJSDriverService.PHANTOMJS_PAGE_SETTINGS_PREFIX + "resourceTimeout",
-        spooky.spookyConf.remoteResourceTimeout.toMillis
+        spooky.spookyConf.remoteResourceTimeout.max.toMillis
       )
       importHeaders(newCaps, spooky)
 

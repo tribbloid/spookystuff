@@ -178,7 +178,7 @@ class Python3DriverSuite extends SpookyEnvFixture {
       proc.batchImport(Seq("import time"))
       val (_, time) = CommonUtils.timed {
         Try {
-          CommonUtils.withDeadline(5.seconds) {
+          CommonUtils.withTimeout(5.seconds) {
             proc.interpret(s"""
                  |for i in range(10, 1, -1):
                  |  print("sleeping:", i, "second(s) left")
@@ -205,7 +205,7 @@ class Python3DriverSuite extends SpookyEnvFixture {
       }
 
       LoggerFactory.getLogger(this.getClass).info("========= START CLEANING =========")
-      CommonUtils.withDeadline(20.seconds, Some(1.second)) { // 3 * 15 << 20
+      CommonUtils.withTimeout(20.seconds, 1.second) { // 3 * 15 << 20
         proc.clean()
       }
     }

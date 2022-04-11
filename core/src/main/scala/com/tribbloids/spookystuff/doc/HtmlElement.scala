@@ -23,11 +23,8 @@ object HtmlElement {
 
     e.parents().asScala.map(_.tagName()).reverse :+ e.tagName()
   }
-}
 
-object TikaMetadataXMLElement {
-
-  def apply(content: Array[Byte], charSet: String, mimeType: String, uri: String): HtmlElement = {
+  def fromBytes(content: Array[Byte], charSet: String, mimeType: String, uri: String): HtmlElement = {
 
     val handler = new ToXMLContentHandler()
 

@@ -1,10 +1,9 @@
 package com.tribbloids.spookystuff.doc
 
 import java.util.Date
-
 import com.tribbloids.spookystuff._
 import com.tribbloids.spookystuff.utils.CommonUtils
-import com.tribbloids.spookystuff.utils.io.WriteMode
+import com.tribbloids.spookystuff.utils.io.{Progress, WriteMode}
 import org.apache.commons.io.IOUtils
 import org.apache.hadoop.fs.{FileStatus, Path}
 import org.apache.spark.SparkEnv
@@ -12,10 +11,14 @@ import org.slf4j.LoggerFactory
 
 object DocUtils {
 
-  def dfsRead[T](message: String, pathStr: String, spooky: SpookyContext)(f: => T): T = {
+  def dfsRead[T](message: String, pathStr: String, spooky: SpookyContext)(f: Progress => T): T = {
     try {
       val result = CommonUtils.retry(Const.DFSLocalRetries) {
-        CommonUtils.withDeadline(spooky.spookyConf.DFSTimeout) { f }
+        val progress = Progress()
+        CommonUtils.withTimeout(spooky.spookyConf.DFSTimeout)(
+          f(progress),
+          progress.defaultHeartbeat
+        )
       }
       spooky.spookyMetrics.DFSReadSuccess += 1
       result
@@ -23,8 +26,8 @@ object DocUtils {
       case e: Exception =>
         spooky.spookyMetrics.DFSReadFailure += 1
         val ex = new DFSReadException(pathStr, e)
-//        ex.setStackTrace(e.getStackTrace)
-        if (spooky.spookyConf.failOnDFSError) throw ex
+
+        if (spooky.spookyConf.failOnDFSRead) throw ex
         else {
           LoggerFactory.getLogger(this.getClass).warn(message, ex)
           null.asInstanceOf[T]
@@ -33,10 +36,14 @@ object DocUtils {
   }
 
   //always fail on retry depletion and timeout
-  def dfsWrite[T](message: String, pathStr: String, spooky: SpookyContext)(f: => T): T = {
+  def dfsWrite[T](message: String, pathStr: String, spooky: SpookyContext)(f: Progress => T): T = {
     try {
       val result = CommonUtils.retry(Const.DFSLocalRetries) {
-        CommonUtils.withDeadline(spooky.spookyConf.DFSTimeout) { f }
+        val progress = Progress()
+        CommonUtils.withTimeout(spooky.spookyConf.DFSTimeout)(
+          f(progress),
+          progress.defaultHeartbeat
+        )
       }
       spooky.spookyMetrics.DFSWriteSuccess += 1
       result
@@ -44,15 +51,19 @@ object DocUtils {
       case e: Exception =>
         spooky.spookyMetrics.DFSWriteFailure += 1
         val ex = new DFSWriteException(pathStr, e)
-//        ex.setStackTrace(e.getStackTrace)
         throw ex
+//        if (spooky.spookyConf.failOnDFSRead) throw ex // TODO: add failOnDFSWrite
+//        else {
+//          LoggerFactory.getLogger(this.getClass).warn(message, ex)
+//          null.asInstanceOf[T]
+//        }
     }
   }
 
   def load(pathStr: String)(spooky: SpookyContext): Array[Byte] =
-    dfsRead("load", pathStr, spooky) {
+    dfsRead("load", pathStr, spooky) { progress =>
       val result = spooky.pathResolver.input(pathStr) { in =>
-        IOUtils.toByteArray(in.stream)
+        IOUtils.toByteArray(progress.WrapIStream(in.stream))
       }
 
       result
@@ -67,7 +78,7 @@ object DocUtils {
       pathStr: String,
       overwrite: Boolean = true
   )(spooky: SpookyContext): Unit =
-    dfsWrite("cache", pathStr, spooky) {
+    dfsWrite("cache", pathStr, spooky) { progress =>
       val list = pageLikes.toList // Seq may be a stream that cannot be serialized
 
       val mode =
@@ -76,7 +87,7 @@ object DocUtils {
 
       spooky.pathResolver.output(pathStr, mode) { out =>
         val ser = SparkEnv.get.serializer.newInstance()
-        val serOut = ser.serializeStream(out.stream)
+        val serOut = ser.serializeStream(progress.WrapOStream(out.stream))
 
         try {
           serOut.writeObject(
@@ -89,12 +100,11 @@ object DocUtils {
     }
 
   private def restore[T](pathStr: String)(spooky: SpookyContext): Seq[T] =
-    dfsRead("restore", pathStr, spooky) {
-
+    dfsRead("restore", pathStr, spooky) { progress =>
       val result = spooky.pathResolver.input(pathStr) { in =>
         val ser = SparkEnv.get.serializer.newInstance()
 
-        val serIn = ser.deserializeStream(in.stream)
+        val serIn = ser.deserializeStream(progress.WrapIStream(in.stream))
         try {
           serIn.readObject[List[T]]()
         } finally {
@@ -105,22 +115,6 @@ object DocUtils {
       result
     }
 
-  //  def autoCache(
-  //                 pageLikes: Seq[Fetched],
-  //                 spooky: SpookyContext
-  //                 ): Unit = {
-  //    val effectivePageLikes = pageLikes.filter(_.cacheable)
-  //    if (effectivePageLikes.isEmpty) return
-  //
-  //    val pathStr = Utils.pathConcat(
-  //      spooky.conf.dirs.cache,
-  //      spooky.conf.cacheFilePath(effectivePageLikes.head.uid.backtrace).toString,
-  //      UUID.randomUUID().toString
-  //    )
-  //
-  //    cache(effectivePageLikes, pathStr)(spooky)
-  //  }
-
   //restore latest in a directory
   //returns: Nil => has backtrace dir but contains no page
   //returns null => no backtrace dir
@@ -130,21 +124,21 @@ object DocUtils {
       latestModificationTime: Long
   )(spooky: SpookyContext): Seq[DocOption] = {
 
-    val latestStatus: Option[FileStatus] = dfsRead("get latest version", dirPath.toString, spooky) {
+    val latestStatus: Option[FileStatus] =
+      dfsRead("get latest version", dirPath.toString, spooky) { _ =>
+        val fs = dirPath.getFileSystem(spooky.hadoopConf)
 
-      val fs = dirPath.getFileSystem(spooky.hadoopConf)
+        if (fs.exists(dirPath) && fs.getFileStatus(dirPath).isDirectory) {
 
-      if (fs.exists(dirPath) && fs.getFileStatus(dirPath).isDirectory) {
+          val statuses = fs.listStatus(dirPath)
 
-        val statuses = fs.listStatus(dirPath)
-
-        statuses
-        //          .filter(status => !status.isDirectory && status.getModificationTime >= earliestModificationTime - 300*1000) //Long enough for overhead of eventual consistency to take effect and write down file
-          .filter(_.getModificationTime < latestModificationTime) //TODO: may have disk write delay!
-          .sortBy(_.getModificationTime)
-          .lastOption
-      } else None
-    }
+          statuses
+          //          .filter(status => !status.isDirectory && status.getModificationTime >= earliestModificationTime - 300*1000) //Long enough for overhead of eventual consistency to take effect and write down file
+            .filter(_.getModificationTime < latestModificationTime) //TODO: may have disk write delay!
+            .sortBy(_.getModificationTime)
+            .lastOption
+        } else None
+      }
 
     latestStatus match {
       case Some(status) =>
@@ -168,57 +162,4 @@ object DocUtils {
         null
     }
   }
-
-  //TODO: return Option[Seq]
-  //TODO: move into caching
-  //  def autoRestore(
-  //                   backtrace: Trace,
-  //                   spooky: SpookyContext
-  //                   ): Seq[Fetched] = {
-  //
-  //    import dsl._
-  //
-  //    val pathStr = Utils.pathConcat(
-  //      spooky.conf.dirs.cache,
-  //      spooky.conf.cacheFilePath(backtrace).toString
-  //    )
-  //
-  //    val waybackOption = backtrace.last match {
-  //      case w: Wayback =>
-  //        Option(w.wayback).map{
-  //          expr =>
-  //            val result = expr.asInstanceOf[Literal[Long]].value
-  //            spooky.conf.IgnoreDocsCreatedBefore match {
-  //              case Some(date) =>
-  //                assert(result > date.getTime, "SpookyConf.pageNotExpiredSince cannot be set to later than wayback date")
-  //              case None =>
-  //            }
-  //            result
-  //        }
-  //      case _ =>
-  //        None
-  //    }
-  //
-  //    val nowMillis = waybackOption match {
-  //      case Some(wayback) => wayback
-  //      case None => System.currentTimeMillis()
-  //    }
-  //
-  //    val earliestTime = spooky.conf.getEarliestDocCreationTime(nowMillis)
-  //
-  //    val latestTime = waybackOption.getOrElse(Long.MaxValue)
-  //
-  //    val pages = restoreLatest(
-  //      new Path(pathStr),
-  //      earliestTime,
-  //      latestTime
-  //    )(spooky)
-  //
-  //    if (pages != null) for (page <- pages) {
-  //      val pageBacktrace: Trace = page.uid.backtrace
-  //
-  //      pageBacktrace.injectFrom(backtrace) //this is to allow actions in backtrace to have different name than those cached
-  //    }
-  //    pages
-  //  }
 }

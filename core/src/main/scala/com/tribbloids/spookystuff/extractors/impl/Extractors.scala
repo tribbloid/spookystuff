@@ -7,7 +7,7 @@ import com.tribbloids.spookystuff.row._
 
 object Extractors {
 
-  val GroupIndexExpr = GenExtractor.fromFn { v1: FR =>
+  val GroupIndexExpr: GenExtractor[FR, Int] = GenExtractor.fromFn { v1: FR =>
     v1.dataRow.groupIndex
   }
 
@@ -22,18 +22,18 @@ object Extractors {
       }
   }
 
-  def GetDocExpr(field: Field) = GenExtractor.fromOptionFn { v1: FR =>
+  def GetDocExpr(field: Field): GenExtractor[FR, Doc] = GenExtractor.fromOptionFn { v1: FR =>
     v1.getDoc(field.name)
   }
-  val GetOnlyDocExpr = GenExtractor.fromOptionFn { v1: FR =>
+  val GetOnlyDocExpr: GenExtractor[FR, Doc] = GenExtractor.fromOptionFn { v1: FR =>
     v1.getOnlyDoc
   }
-  val GetAllDocsExpr = GenExtractor.fromFn { v1: FR =>
+  val GetAllDocsExpr: GenExtractor[FR, Elements[Unstructured]] = GenExtractor.fromFn { v1: FR =>
     new Elements(v1.docs.map(_.root).toList)
   }
 
   case class FindAllMeta(arg: Extractor[Unstructured], selector: String)
-  def FindAllExpr(arg: Extractor[Unstructured], selector: String) = arg.andFn(
+  def FindAllExpr(arg: Extractor[Unstructured], selector: String): GenExtractor[FR, Elements[Unstructured]] = arg.andFn(
     { v1: Unstructured =>
       v1.findAll(selector)
     },
@@ -41,25 +41,15 @@ object Extractors {
   )
 
   case class ChildrenMeta(arg: Extractor[Unstructured], selector: String)
-  def ChildrenExpr(arg: Extractor[Unstructured], selector: String) = arg.andFn(
-    { v1 =>
-      v1.children(selector)
-    },
-    Some(ChildrenMeta(arg, selector))
-  )
+  def ChildrenExpr(arg: Extractor[Unstructured], selector: String): GenExtractor[FR, Elements[Unstructured]] =
+    arg.andFn(
+      { v1 =>
+        v1.children(selector)
+      },
+      Some(ChildrenMeta(arg, selector))
+    )
 
-  def ExpandExpr(arg: Extractor[Unstructured], range: Range) = {
-    arg match {
-      case AndThen(_, _, Some(FindAllMeta(argg, selector))) =>
-        argg.andFn(_.findAllWithSiblings(selector, range))
-      case AndThen(_, _, Some(ChildrenMeta(argg, selector))) =>
-        argg.andFn(_.childrenWithSiblings(selector, range))
-      case _ =>
-        throw new UnsupportedOperationException("expression does not support expand")
-    }
-  }
-
-  def ReplaceKeyExpr(str: String) = GenExtractor.fromOptionFn { v1: FR =>
+  def ReplaceKeyExpr(str: String): GenExtractor[FR, String] = GenExtractor.fromOptionFn { v1: FR =>
     v1.dataRow.replaceInto(str)
   }
 }

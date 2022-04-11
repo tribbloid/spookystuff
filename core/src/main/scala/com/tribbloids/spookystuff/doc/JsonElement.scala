@@ -48,7 +48,7 @@ class JsonElement private (
 
   //TODO: how to implement?
   override def findAllWithSiblings(selector: CSSQuery, range: Range) = {
-    val found = this.findAll(selector).self
+    val found = this.findAll(selector).seq
     new Elements(found.map(unstructured => new Siblings(List(unstructured))))
   }
 
@@ -87,7 +87,7 @@ class JsonElement private (
   }
 
   override def childrenWithSiblings(selector: CSSQuery, range: Range): Elements[Siblings[Unstructured]] = {
-    val found = this.children(selector).self
+    val found = this.children(selector).seq
     new Elements(found.map(unstructured => new Siblings(List(unstructured))))
   }
 

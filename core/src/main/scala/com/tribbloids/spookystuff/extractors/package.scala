@@ -9,8 +9,6 @@ import scala.language.implicitConversions
   */
 package object extractors {
 
-//  type TypeTag[T] = ScalaReflection.universe.TypeTag[T]
-
   type DataType = org.apache.spark.sql.types.DataType
 
   type FR = FetchedRow
