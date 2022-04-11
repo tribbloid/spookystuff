@@ -5,7 +5,10 @@ SPARK_DIR_ROOT="$HOME/.ci/spark-dist"
 
 SPARK_DIR_NAME="$SPARK_NAME"-bin-hadoop2.7-scala2.12
 
-SPARK_URL="https://storage.googleapis.com/ci_public/spark/${SPARK_NAME}/${SPARK_DIR_NAME}.tgz"
+SPARK_URL="https://storage.googleapis.com/ci_public/spark/${SPARK_DIR_NAME}.tgz"
+
+echo "SPARK_URL"
+echo "$SPARK_URL"
 
 # Download Spark
 wget -N -q "$SPARK_URL" -P "$SPARK_DIR_ROOT"
