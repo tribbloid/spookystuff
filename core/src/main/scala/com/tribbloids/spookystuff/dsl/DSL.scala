@@ -3,7 +3,7 @@ package com.tribbloids.spookystuff.dsl
 import java.sql.Timestamp
 import com.tribbloids.spookystuff.SpookyContext
 import com.tribbloids.spookystuff.actions.{Action, Trace, TraceSetView, TraceView}
-import com.tribbloids.spookystuff.doc.{Doc, DocUID, Elements, HasSeq, Unstructured}
+import com.tribbloids.spookystuff.doc.{DelegateSeq, Doc, DocUID, Elements, Unstructured}
 import com.tribbloids.spookystuff.extractors.GenExtractor.AndThen
 import com.tribbloids.spookystuff.extractors.impl.Extractors._
 import com.tribbloids.spookystuff.extractors._
@@ -142,7 +142,7 @@ sealed trait Level2 {
     def defaultFileExtension: Extractor[String] = self.andOptionFn(_.defaultFileExtension)
   }
 
-  implicit def SeqMagnetExView[T: TypeTag](self: Extractor[HasSeq[T]]): IterableExView[T] = {
+  implicit def SeqMagnetExView[T: TypeTag](self: Extractor[DelegateSeq[T]]): IterableExView[T] = {
     new IterableExView[T](self.andFn(v => v.seq))
   }
 

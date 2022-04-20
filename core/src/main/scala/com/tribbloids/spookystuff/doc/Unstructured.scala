@@ -3,12 +3,9 @@ package com.tribbloids.spookystuff.doc
 import org.apache.spark.ml.dsl.utils.refl.ScalaUDT
 import org.apache.spark.sql.types.SQLUserDefinedType
 
-object Unstructured {
+class UnstructuredUDT extends ScalaUDT[Unstructured]
 
-  class UDT extends ScalaUDT[Unstructured]
-}
-
-@SQLUserDefinedType(udt = classOf[Unstructured.UDT])
+@SQLUserDefinedType(udt = classOf[UnstructuredUDT])
 trait Unstructured extends Serializable {
 
   def uri: String

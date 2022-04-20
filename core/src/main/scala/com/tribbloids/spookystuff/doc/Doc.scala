@@ -114,7 +114,7 @@ object Doc {
   val defaultCSVFormat: CSVFormat = CSVFormat.DEFAULT
 }
 @SerialVersionUID(94865098324L)
-@SQLUserDefinedType(udt = classOf[Unstructured.UDT])
+@SQLUserDefinedType(udt = classOf[UnstructuredUDT])
 case class Doc(
     override val uid: DocUID,
     uri: String, //redirected

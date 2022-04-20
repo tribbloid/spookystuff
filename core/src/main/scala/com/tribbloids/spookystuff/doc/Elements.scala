@@ -25,7 +25,7 @@ object Elements {
   object empty extends Elements[Nothing](Nil)
 }
 
-class Elements[+T <: Unstructured](val seq: List[T]) extends Unstructured with HasSeq[T] {
+case class Elements[+T <: Unstructured](override val seq: List[T]) extends Unstructured with DelegateSeq[T] {
 
   def uris: Seq[String] = seq.map(_.uri)
 
