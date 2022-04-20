@@ -1,8 +1,5 @@
 package com.tribbloids.spookystuff.actions
 
-import java.net.URI
-import java.util.Date
-
 import com.tribbloids.spookystuff.Const
 import com.tribbloids.spookystuff.caching.DocCacheLevel
 import com.tribbloids.spookystuff.doc._
@@ -20,6 +17,9 @@ import org.apache.http.client.methods.{HttpGet, HttpPost}
 import org.apache.http.entity.StringEntity
 import org.openqa.selenium.{OutputType, TakesScreenshot}
 
+import java.net.URI
+import java.util.Date
+
 /**
   * Export a page from the browser or http client
   * the page an be anything including HTML/XML file, image, PDF file or JSON string.
@@ -29,7 +29,7 @@ abstract class Export extends Named {
 
   def filter: DocFilter = DocFilters.Bypass
 
-  final override def outputNames = Set(this.name)
+  final override def outputNames: Set[CSSQuery] = Set(this.name)
 
   final override def skeleton: Option[Export.this.type] = None //have not impact to driver
 
@@ -224,7 +224,7 @@ case class Wget(
 
   def getResolver(session: Session): OmniResolver = {
 
-    val timeout = this.timeout(session).toMillis.toInt
+    val timeout = this.timeout(session).max.toMillis.toInt
     val hadoopConf = session.spooky.hadoopConf
     val proxy = session.spooky.spookyConf.webProxy()
 
@@ -268,7 +268,7 @@ case class Wget(
         new Doc(
           uid = DocUID(List(this), this)(),
           uri = in.getURI,
-          raw = IOUtils.toByteArray(in.stream),
+          raw = IOUtils.toByteArray(session.progress.WrapIStream(in.stream)),
           cacheLevel = cacheLevel,
           metadata = in.metadata.root
         )
@@ -318,7 +318,7 @@ case class WpostImpl private[actions] (
 
   def getResolver(session: Session): OmniResolver = {
 
-    val timeout = this.timeout(session).toMillis.toInt
+    val timeout = this.timeout(session).max.toMillis.toInt
     val hadoopConf = session.spooky.hadoopConf
     val proxy = session.spooky.spookyConf.webProxy()
 
@@ -348,24 +348,25 @@ case class WpostImpl private[actions] (
     val impl = resolver.getImpl(uri)
 
     val doc = impl match {
-      case v: HTTPResolver =>
-        v.input(uri) { in =>
-          val md = in.metadata.root
-          val cacheLevel = DocCacheLevel.getDefault(uriOption)
-
-          new Doc(
-            uid = DocUID(List(this), this)(),
-            uri = in.getURI,
-            raw = IOUtils.toByteArray(in.stream),
-            cacheLevel = cacheLevel,
-            metadata = md
-          )
-
-        }
+//      case v: HTTPResolver =>
+//        // TODO: should this be v.output? Or removed completely?
+//        v.input(uri) { in =>
+//          val md = in.metadata.root
+//          val cacheLevel = DocCacheLevel.getDefault(uriOption)
+//
+//          new Doc(
+//            uid = DocUID(List(this), this)(),
+//            uri = in.getURI,
+//            raw = IOUtils.toByteArray(in.stream),
+//            cacheLevel = cacheLevel,
+//            metadata = md
+//          )
+//
+//        }
 
       case _ =>
         impl.output(uri, WriteMode.Overwrite) { out =>
-          val length = IOUtils.copy(entity.getContent, out.stream)
+          val length = IOUtils.copy(entity.getContent, session.progress.WrapOStream(out.stream))
           val md: ResourceMetadata = out.metadata.root.asMap.updated("length", length)
           NoDoc(
             backtrace = List(this),

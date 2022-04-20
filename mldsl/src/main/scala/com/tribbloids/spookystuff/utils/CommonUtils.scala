@@ -1,8 +1,9 @@
 package com.tribbloids.spookystuff.utils
 
+import com.tribbloids.spookystuff.utils.AwaitWithHeartbeat.Heartbeat
+
 import java.io.{File, InputStream, PrintWriter, StringWriter}
 import java.net.URL
-
 import org.apache.spark.SparkEnv
 import org.apache.spark.ml.dsl.utils.DSLUtils
 import org.apache.spark.storage.BlockManagerId
@@ -72,12 +73,12 @@ abstract class CommonUtils {
 //    ctx
 //  }
 
-  def withDeadline[T](
-      n: Duration,
-      heartbeatOpt: Option[Duration] = Some(10.seconds)
+  def withTimeout[T](
+      timeout: TimeoutConf,
+      interval: Duration = 10.seconds
   )(
       fn: => T,
-      callbackOpt: Option[Int => Unit] = None
+      heartbeat: Heartbeat = Heartbeat.default
   ): T = {
 
     val future = FutureInterruptable(fn)(AwaitWithHeartbeat.executionContext)
@@ -85,8 +86,8 @@ abstract class CommonUtils {
     val TIMEOUT = "TIMEOUT!!!!" + s"\t@ ${_callerShowStr}"
 
     try {
-      val hb = AwaitWithHeartbeat(heartbeatOpt)(callbackOpt)
-      hb.result(future, n)
+      val hb = AwaitWithHeartbeat(interval)(heartbeat)
+      hb.result(future, timeout)
     } catch {
       case e: TimeoutException =>
         future.interrupt()

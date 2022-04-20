@@ -151,7 +151,7 @@ class PythonDriver(
       CommonUtils.retry(5) {
         try {
           if (process.isAlive) {
-            CommonUtils.withDeadline(3.seconds) {
+            CommonUtils.withTimeout(3.seconds) {
               try {
                 this._interpret("exit()")
               } catch {

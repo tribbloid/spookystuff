@@ -114,7 +114,7 @@ object Doc {
   val defaultCSVFormat: CSVFormat = CSVFormat.DEFAULT
 }
 @SerialVersionUID(94865098324L)
-@SQLUserDefinedType(udt = classOf[Unstructured.UDT])
+@SQLUserDefinedType(udt = classOf[UnstructuredUDT])
 case class Doc(
     override val uid: DocUID,
     uri: String, //redirected
@@ -240,8 +240,7 @@ case class Doc(
 
     val path = CommonUtils.\\\(pathParts: _*)
 
-    DocUtils.dfsWrite("save", path, spooky) {
-
+    DocUtils.dfsWrite("save", path, spooky) { progress =>
       val fullPath = new Path(path)
       val fs = fullPath.getFileSystem(spooky.hadoopConf)
       //      if (!overwrite && fs.exists(fullPath)) fullPath = new Path(path + "-" + UUID.randomUUID())
@@ -253,10 +252,12 @@ case class Doc(
           fs.create(altPath, overwrite)
       }
 
+      val os = progress.WrapOStream(fos)
+
       try {
-        fos.write(raw) //       remember that apache IOUtils is defective for DFS!
+        os.write(raw) //       remember that apache IOUtils is defective for DFS!
       } finally {
-        fos.close()
+        os.close()
       }
 
       saved += fullPath.toString

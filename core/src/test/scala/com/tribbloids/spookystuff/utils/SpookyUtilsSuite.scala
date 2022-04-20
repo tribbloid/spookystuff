@@ -57,7 +57,7 @@ class SpookyUtilsSuite extends FunSpecx {
 
     val (_, time) = CommonUtils.timed {
       TestHelper.intercept[TimeoutException] {
-        CommonUtils.withDeadline(10.seconds, Some(1.second))(
+        CommonUtils.withTimeout(10.seconds, 1.second)(
           {
             Thread.sleep(20000)
           }
@@ -67,7 +67,7 @@ class SpookyUtilsSuite extends FunSpecx {
     Predef.assert(time < 12000)
 
     val (_, time2) = CommonUtils.timed {
-      CommonUtils.withDeadline(10.seconds, Some(1.second))(
+      CommonUtils.withTimeout(10.seconds, 1.second)(
         {
           Thread.sleep(5000)
         }
@@ -78,18 +78,18 @@ class SpookyUtilsSuite extends FunSpecx {
 
   it("withDeadline can execute heartbeat") {
 
-    var log = ArrayBuffer[Int]()
+    val log = ArrayBuffer[Int]()
 
     val (_, time) = CommonUtils.timed {
       TestHelper.intercept[TimeoutException] {
-        CommonUtils.withDeadline(10.seconds, Some(1.second))(
+        CommonUtils.withTimeout(10.seconds, 1.second)(
           {
             Thread.sleep(20000)
-          },
-          Some { i: Int =>
+          }, { i: Int =>
             val str = s"heartbeat: i=$i"
             println(str)
             log += i
+            true
           }
         )
       }
@@ -99,14 +99,14 @@ class SpookyUtilsSuite extends FunSpecx {
 
     log.clear()
     val (_, time2) = CommonUtils.timed {
-      CommonUtils.withDeadline(10.seconds, Some(1.second))(
+      CommonUtils.withTimeout(10.seconds, 1.second)(
         {
           Thread.sleep(5000)
-        },
-        Some { i: Int =>
+        }, { i: Int =>
           val str = s"heartbeat: i=$i"
           println(str)
           log += i
+          true
         }
       )
     }
@@ -120,7 +120,7 @@ class SpookyUtilsSuite extends FunSpecx {
       println("partition-" + TaskContext.get().partitionId())
       val (_, time) = CommonUtils.timed {
         TestHelper.intercept[TimeoutException] {
-          CommonUtils.withDeadline(10.seconds, Some(1.second)) {
+          CommonUtils.withTimeout(10.seconds, 1.second) {
             Thread.sleep(20000)
             println("result 1")
           }
@@ -129,7 +129,7 @@ class SpookyUtilsSuite extends FunSpecx {
       Predef.assert(time < 11000, s"$time vs 11000")
 
       val (_, time2) = CommonUtils.timed {
-        CommonUtils.withDeadline(10.seconds, Some(1.second)) {
+        CommonUtils.withTimeout(10.seconds, 1.second) {
           Thread.sleep(3000)
           println("result 2")
         }
@@ -140,15 +140,15 @@ class SpookyUtilsSuite extends FunSpecx {
 
   it("RDDs.batchReduce yield the same results as RDDs.map(_.reduce)") {
     val src = TestHelper.TestSC.parallelize(1 to 10)
-    val rdds: Seq[RDD[Int]] = (1 to 10).map { i =>
-      val result = src.map { j =>
+    val rdds: Seq[RDD[Int]] = (1 to 10).map { _ =>
+      val result = src.map { _ =>
         Random.nextInt(100)
       }
       result.persist()
     }
 
     val sum1 = rdds.zipWithIndex.map {
-      case (rdd, i) =>
+      case (rdd, _) =>
         rdd.reduce(_ + _)
     }
 

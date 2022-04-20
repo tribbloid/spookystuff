@@ -124,7 +124,7 @@ class CleanableSuite extends SpookyEnvFixture {
         val v: Lifespan = tuple._1
         val newID = TaskContext.get().taskAttemptId()
         //          val newID2 = v._id
-        val newID3 = CommonUtils.withDeadline(10.seconds) {
+        val newID3 = CommonUtils.withTimeout(10.seconds) {
           val result = v.batchIDs.head
           //            Predef.assert(v._id == newID2)
           result
