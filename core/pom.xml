@@ -49,10 +49,17 @@
       <artifactId>commons-csv</artifactId>
       <version>1.5</version>
     </dependency>
+
     <dependency>
       <groupId>org.apache.tika</groupId>
       <artifactId>tika-core</artifactId>
-      <version>1.22</version>
+      <version>${tika.version}</version>
+    </dependency>
+    <dependency>
+      <groupId>org.apache.tika</groupId>
+      <artifactId>tika-parsers</artifactId>
+      <version>${tika.version}</version>
+      <scope>test</scope>
     </dependency>
 
     <dependency>
