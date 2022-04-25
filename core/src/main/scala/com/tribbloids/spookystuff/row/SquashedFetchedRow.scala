@@ -37,7 +37,7 @@ case class SquashedFetchedRow(
     traceView: TraceView = TraceView()
 ) {
 
-  def ++(another: SquashedFetchedRow) = {
+  def ++(another: SquashedFetchedRow): SquashedFetchedRow = {
     this.copy(dataRows = this.dataRows ++ another.dataRows)
   }
 
@@ -53,7 +53,7 @@ case class SquashedFetchedRow(
     )
   }
 
-  def remove(fields: Field*) = this.copy(
+  def remove(fields: Field*): SquashedFetchedRow = this.copy(
     dataRows = dataRows.map(_.--(fields))
   )
 
@@ -159,7 +159,7 @@ case class SquashedFetchedRow(
       SquashedFetchedRow.this.copy(dataRows = allUpdatedDataRows)
     }
 
-    def extract(ex: Resolved[Any]*) = _extract(ex)
+    def extract(ex: Resolved[Any]*): SquashedFetchedRow = _extract(ex)
 
     /*
      * same as extract + toTuple
@@ -174,32 +174,39 @@ case class SquashedFetchedRow(
         distinct: Boolean = true
     ): Array[(TraceView, DataRow)] = {
 
-      val dataRows_traceOpts = semiUnsquash.flatMap { rows => //each element contains a different page group, CAUTION: not all of them are used: page group that yield no new datum will be removed, if all groups yield no new datum at least 1 row is preserved
-        val dataRows_traceOpts = rows.flatMap { row =>
+      val dataRows_traces = semiUnsquash.flatMap { rows => //each element contains a different page group, CAUTION: not all of them are used: page group that yield no new datum will be removed, if all groups yield no new datum at least 1 row is preserved
+        val dataRows_traces = rows.flatMap { row =>
           traces.map { trace =>
-            val rewritten: Option[Trace] = TraceView(trace).interpolateAndRewriteLocally(row, schema)
+            val rewritten: Seq[TraceView] = TraceView(trace).interpolateAndRewriteLocally(row, schema)
             row.dataRow -> rewritten
           //always discard old pages & temporary data before repartition, unlike flatten
           }
         }
 
-        val filteredDataRows_traceOpts =
-          if (!filterEmpty) dataRows_traceOpts
+        val filteredDataRows_traces =
+          if (!filterEmpty) dataRows_traces
           else {
-            val result = dataRows_traceOpts.filter(_._2.nonEmpty)
-            if (result.isEmpty) dataRows_traceOpts.headOption.toArray
+            val result = dataRows_traces.filter(_._2.nonEmpty)
+            if (result.isEmpty) dataRows_traces.headOption.toArray
             else result
           }
 
-        val mergedDataRows_traceOpts =
-          if (!distinct) filteredDataRows_traceOpts
-          else filteredDataRows_traceOpts.groupBy(_._2).map(_._2.head).toArray
+        val mergedDataRows_traces =
+          if (!distinct) filteredDataRows_traces
+          else filteredDataRows_traces.groupBy(_._2).map(_._2.head).toArray
 
-        mergedDataRows_traceOpts
+        mergedDataRows_traces
       }
 
-      dataRows_traceOpts.map { v =>
-        TraceView(v._2.getOrElse(Actions.empty)) -> v._1
+      dataRows_traces.flatMap { v =>
+        val traces = v._2
+        if (traces.isEmpty) {
+          Seq(TraceView(Actions.empty) -> v._1)
+        } else {
+          traces.map { trace =>
+            TraceView(trace) -> v._1
+          }
+        }
       }
     }
   }

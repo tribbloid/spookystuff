@@ -32,19 +32,19 @@ object ActionLike extends AutomaticRelay[ActionLike] {
 @SerialVersionUID(8566489926281786854L)
 abstract class ActionLike extends Product with Serializable with Verbose {
 
-  override val productPrefix: String = this.getClass.getSimpleName.stripSuffix("$")
+  override lazy val productPrefix: String = this.getClass.getSimpleName.stripSuffix("$")
 
   def children: Trace
 
   lazy val TreeNode: ActionLike.TreeNodeView = ActionLike.TreeNodeView(this)
 
-  def globalRewriters: Seq[RewriteRule[Trace]] = Nil
+  def globalRewriteRules(schema: SpookySchema): Seq[RewriteRule[TraceView]] = Nil
 
   /**
     * invoked on executors, immediately after interpolation
     * *IMPORTANT!* may be called several times, before or after GenPartitioner.
     **/
-  def localRewriters: Seq[MonadicRewriteRule[Trace]] = Nil
+  def localRewriteRules(schema: SpookySchema): Seq[RewriteRule[TraceView]] = Nil
 
   final def interpolate(row: FetchedRow, schema: SpookySchema): Option[this.type] = {
     val result = this.doInterpolate(row, schema)
@@ -60,7 +60,8 @@ abstract class ActionLike extends Product with Serializable with Verbose {
     */
   def doInterpolate(row: FetchedRow, schema: SpookySchema): Option[this.type] = Some(this)
 
-  def injectFrom(same: ActionLike): Unit = {} //TODO: change to immutable pattern to avoid one Trace being used twice with different names
+  def injectFrom(same: ActionLike): Unit = {}
+  //TODO: change to immutable pattern to avoid one Trace being used twice with different names
 
   //  final def injectTo(same: ActionLike): Unit = same.injectFrom(this)
 
@@ -73,7 +74,7 @@ abstract class ActionLike extends Product with Serializable with Verbose {
     * create a list of list each denoting the anticipated backtrace of each output.
     * @return
     */
-  def dryrun: DryRun
+  def dryRun: DryRun
 
   //the minimal equivalent action that can be put into backtrace
   def skeleton: Option[this.type] = Some(this)
@@ -98,15 +99,15 @@ abstract class ActionLike extends Product with Serializable with Verbose {
     val pagesFromCache: Seq[Seq[DocOption]] =
       if (!spooky.spookyConf.cacheRead) Seq(null)
       else
-        dryrun.map(
-          dry =>
-            InMemoryDocCache
-              .get(dry, spooky)
-              .orElse {
-                DFSDocCache.get(dry, spooky)
-              }
-              .orNull
-        )
+        dryRun.map { dry =>
+          val view = TraceView(dry)
+          InMemoryDocCache
+            .get(view, spooky)
+            .orElse {
+              DFSDocCache.get(view, spooky)
+            }
+            .orNull
+        }
 
     if (!pagesFromCache.contains(null)) {
       spooky.spookyMetrics.fetchFromCacheSuccess += 1

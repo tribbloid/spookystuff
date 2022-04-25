@@ -7,7 +7,7 @@ import org.scalatest.Ignore
 
 class FetchVisitIT extends IntegrationFixture {
 
-  override def doMain() {
+  override def doMain(): Unit = {
 
     val RDD = spooky
       .fetch(
@@ -59,7 +59,7 @@ class FetchVisitIT extends IntegrationFixture {
     assert(fetchNoneRows(1).docs.length === 0)
   }
 
-  override def numPages = spooky.spookyConf.defaultGenPartitioner match {
+  override def numPages: Long = spooky.spookyConf.defaultGenPartitioner match {
 //    case FetchOptimizers.WebCacheAware => 1
     case _ => 1
   }

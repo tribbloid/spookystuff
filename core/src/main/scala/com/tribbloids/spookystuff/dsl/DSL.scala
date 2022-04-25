@@ -261,13 +261,6 @@ sealed trait Level1 extends Level2 {
 
   implicit def FDToRDD(self: FetchedDataset): RDD[FetchedRow] = self.rdd
 
-  implicit def spookyContextToFD(spooky: SpookyContext): FetchedDataset = spooky.createBlank
-
-  implicit def traceView(trace: Trace): TraceView = new TraceView(trace)
-
-  implicit def traceSetView[Repr](traces: Repr)(implicit f: Repr => Set[Trace]): TraceSetView = new TraceSetView(traces)
-
-  implicit def actionToTraceSet(action: Action): Set[Trace] = Set(List(action))
 }
 
 class DSL extends Level1 {

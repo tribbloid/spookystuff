@@ -40,7 +40,7 @@ abstract class AutomaticRelay[T <: Product: Manifest] extends MessageRelay[T] {
     val transformedKVs = kvs.mapValues { v =>
       Nested[Any](v)
         .map[Any] { v: Any =>
-          val codec = Registry.Default.findCodecOrDefault(v)
+          val codec = CodecRegistry.Default.findCodecOrDefault(v)
           codec.toMessage_>>(v)
         }
         .self

@@ -23,8 +23,8 @@ object SimpleFlowGraph extends Algebra[SimpleFlowGraph] {
     override def +(v1: String, v2: String): String = v1 + v2
   }
 
-  override def nodeAlgebra: DataAlgebra[graph.example.SimpleFlowGraph.NodeData] = DataAlgebra.NoAmbiguity().Monadic
-  override def edgeAlgebra: DataAlgebra[graph.example.SimpleFlowGraph.EdgeData] = DataAlgebraProto.Monadic
+  override def nodeAlgebra: DataAlgebra[graph.example.SimpleFlowGraph.NodeData] = DataAlgebra.NoAmbiguity().ForSome
+  override def edgeAlgebra: DataAlgebra[graph.example.SimpleFlowGraph.EdgeData] = DataAlgebraProto.ForSome
 
   object Layout extends FlowLayout[SimpleFlowGraph] {
 

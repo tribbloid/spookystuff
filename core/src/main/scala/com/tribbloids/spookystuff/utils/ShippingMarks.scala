@@ -20,15 +20,18 @@ trait ShippingMarks extends Serializable {
   @transient private var zombieMark: Nil.type = _
   zombieMark = Nil
 
-  def isShipped = shippingMark == null
-  def notShipped = !isShipped
+  def isShipped: Boolean = shippingMark == null
+  def notShipped: Boolean = !isShipped
 
-  def requireNotShipped() = {
+  /**
+    * can only be used on driver
+    */
+  def requireNotShipped(): Unit = {
     def methodName = DSLUtils.Caller().fnName
 
     require(notShipped, s"method $methodName can only be used on Spark driver, it is disabled after shipping")
   }
 
-  def isZombie = zombieMark == null
-  def notZombie = !isZombie
+  def isZombie: Boolean = zombieMark == null
+  def notZombie: Boolean = !isZombie
 }

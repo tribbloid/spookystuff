@@ -4,7 +4,7 @@ import java.lang.reflect.{InvocationTargetException, Method}
 
 import com.tribbloids.spookystuff.utils.TreeThrowable
 import org.apache.spark.ml.dsl.utils.DSLUtils
-import org.apache.spark.ml.dsl.utils.messaging.{MessageRelay, MessageWriter, Nested, Registry}
+import org.apache.spark.ml.dsl.utils.messaging.{CodecRegistry, MessageRelay, MessageWriter, Nested}
 import org.apache.spark.ml.dsl.utils.refl.ScalaType
 import org.json4s
 import org.json4s.JsonAST.{JObject, JString, JValue}
@@ -42,7 +42,7 @@ trait EAVRelay[I <: EAV] extends MessageRelay[I] with EAVBuilder[I] {
             TreeThrowable
               .|||^[JValue](Seq(
                 { () =>
-                  val codec = Registry.Default.findCodecOrDefault[Any](v)
+                  val codec = CodecRegistry.Default.findCodecOrDefault[Any](v)
                   assertWellFormed(codec.toWriter_>>(elem).toJValue)
                 }, { () =>
                   JString(elem.toString)

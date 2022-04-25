@@ -1,14 +1,16 @@
 package com.tribbloids.spookystuff.integration
 
-import java.util.Date
 import com.tribbloids.spookystuff._
-import com.tribbloids.spookystuff.conf.SpookyConf
+import com.tribbloids.spookystuff.actions.TraceView
+import com.tribbloids.spookystuff.conf.{SpookyConf, Web, WebDriverFactory}
 import com.tribbloids.spookystuff.dsl._
 import com.tribbloids.spookystuff.metrics.SpookyMetrics
-import com.tribbloids.spookystuff.testutils.{LocalURIDocsFixture, RemoteDocsFixture, TestHelper}
+import com.tribbloids.spookystuff.session.CleanWebDriver
+import com.tribbloids.spookystuff.testutils.{LocalURIDocsFixture, TestHelper}
 import com.tribbloids.spookystuff.utils.{CommonConst, CommonUtils}
 import org.scalatest.BeforeAndAfterAll
 
+import java.util.Date
 import scala.concurrent.duration
 import scala.util.Random
 
@@ -24,13 +26,13 @@ abstract class IntegrationFixture extends SpookyEnvFixture with BeforeAndAfterAl
     local ++ TestHelper.S3Path
   }
 
-  lazy val driverFactories = Seq(
+  lazy val driverFactories: Seq[DriverFactory[CleanWebDriver]] = Seq(
     phantomJS,
     phantomJS.taskLocal
     //    htmlUnit
   )
 
-  lazy val genPartitioners = Seq(
+  lazy val genPartitioners: Seq[GenPartitionerLike[TraceView, Any]] = Seq(
     GenPartitioners.Narrow,
     GenPartitioners.Wide(),
     GenPartitioners.DocCacheAware()
@@ -43,21 +45,18 @@ abstract class IntegrationFixture extends SpookyEnvFixture with BeforeAndAfterAl
     for (driver <- driverFactories) {
       for (gp <- genPartitioners) {
         it(s"$gp/$driver/$root") {
-          val submodules = this.submodules.transform {
-            case _: SpookyConf =>
-              new SpookyConf(
-                webDriverFactory = driver,
-                defaultGenPartitioner = gp,
-                epochSize = 1 + Random.nextInt(4),
-                shareMetrics = true,
-                remoteResourceTimeout = 10.seconds
-              )
-            case v @ _ => v
-          }
 
-          _spooky = SpookyContext(
-            sql,
-            submodules
+          _spooky = SpookyContext(sql)
+          _spooky.setConf(
+            SpookyConf(
+              defaultGenPartitioner = gp,
+              epochSize = 1 + Random.nextInt(4),
+              shareMetrics = true,
+              remoteResourceTimeout = 10.seconds
+            ),
+            Web.Conf(
+              webDriverFactory = driver,
+            )
           )
 
           doTest()
@@ -69,7 +68,7 @@ abstract class IntegrationFixture extends SpookyEnvFixture with BeforeAndAfterAl
   //TODO: for local-cluster mode, some of these metrics may have higher than expected results because.
   def assertBeforeCache(): Unit = {
     val metrics: SpookyMetrics = spooky.spookyMetrics
-    val metricsJSON: String = metrics.toNestedMap.toJSON() //TODO: this will trigger a compiler bug in scala 2.10.6, need to fix it!
+    val metricsJSON: String = metrics.toNestedMap.toJSON()
     println(metricsJSON)
 
     val pagesFetched = metrics.pagesFetched.value
@@ -79,8 +78,8 @@ abstract class IntegrationFixture extends SpookyEnvFixture with BeforeAndAfterAl
     assert(metrics.pagesFetchedFromCache.value === pagesFetched - remotePagesFetched)
     assert(metrics.sessionInitialized.value === numSessions)
     assert(metrics.sessionReclaimed.value >= metrics.sessionInitialized.value)
-    assert(metrics.webDriverDispatched.value === numDrivers)
-    assert(metrics.webDriverReleased.value >= metrics.webDriverDispatched.value)
+    assert(metrics.Drivers.dispatchedTotalCount === numWebDrivers)
+    assert(metrics.Drivers.releasedTotalCount >= numWebDrivers)
     assert(pagesFetched <= pageFetchedCap)
   }
 
@@ -95,8 +94,8 @@ abstract class IntegrationFixture extends SpookyEnvFixture with BeforeAndAfterAl
     assert(metrics.pagesFetchedFromCache.value === pagesFetched)
     assert(metrics.sessionInitialized.value === 0)
     assert(metrics.sessionReclaimed.value >= metrics.sessionInitialized.value)
-    assert(metrics.webDriverDispatched.value === 0)
-    assert(metrics.webDriverReleased.value >= metrics.webDriverDispatched.value)
+    assert(metrics.Drivers.dispatchedTotalCount === 0)
+    assert(metrics.Drivers.releasedTotalCount >= 0)
     //    assert(metrics.DFSReadSuccess.value > 0) //TODO: enable this after more detailed control over 2 caches.
     assert(metrics.DFSReadFailure.value === 0)
 //    assert(pagesFetched <= pageFetchedCap) // cache read is too fast, its hard to optimize
@@ -116,20 +115,19 @@ abstract class IntegrationFixture extends SpookyEnvFixture with BeforeAndAfterAl
     doTestAfterCache()
   }
 
-  protected def doTestAfterCache(): Unit = {
-    CommonUtils.retry(retry) {
-      spooky.zeroMetrics()
-      doMain()
-      assertAfterCache()
-    }
-  }
-
   protected def doTestBeforeCache(): Unit = {
     CommonUtils.retry(retry) {
       spooky.spookyConf.IgnoreCachedDocsBefore = Some(new Date(System.currentTimeMillis()))
-      spooky.zeroMetrics()
+      spooky.Plugins.resetAll()
       doMain()
       assertBeforeCache()
+    }
+  }
+  protected def doTestAfterCache(): Unit = {
+    CommonUtils.retry(retry) {
+      spooky.Plugins.resetAll()
+      doMain()
+      assertAfterCache()
     }
   }
 
@@ -137,8 +135,9 @@ abstract class IntegrationFixture extends SpookyEnvFixture with BeforeAndAfterAl
 
   def numPages: Long
   var remotePagesFetched: Long = _
+
   def numSessions: Long = remotePagesFetched
-  final def numDrivers: Long = {
+  final def numWebDrivers: Long = {
     if (driverFactories.flatMap(Option(_)).isEmpty) 0
     else numSessions
   }

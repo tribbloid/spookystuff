@@ -15,10 +15,10 @@ limitations under the License.
  */
 package com.tribbloids.spookystuff.dsl
 
-import com.tribbloids.spookystuff.SpookyContext
-import com.tribbloids.spookystuff.session._
+import com.tribbloids.spookystuff.session.{DriverLike, Session}
 import com.tribbloids.spookystuff.utils.CachingUtils.ConcurrentMap
 import com.tribbloids.spookystuff.utils.lifespan.{Cleanable, Lifespan}
+import com.tribbloids.spookystuff.{DriverStatus, SpookyContext}
 import org.apache.spark.TaskContext
 
 //local to TaskID, if not exist, local to ThreadID
@@ -28,11 +28,14 @@ import org.apache.spark.TaskContext
 // if from a different session but same taskAttempt wait for the old one to be released.
 // in any case it should ensure 1 taskAttempt only has 1 active driver
 //TODO: delay Future-based waiting control until asynchronous Action exe is implemented. Right now it works just fine
-sealed abstract class DriverFactory[+T] extends Serializable {
+sealed abstract class DriverFactory[D <: DriverLike] extends Serializable {
 
   // If get is called again before the previous driver is released, the old driver is destroyed to create a new one.
   // this is to facilitate multiple retries
-  def dispatch(session: Session): T
+
+  def dispatch(session: Session): D
+
+  // release all Drivers that belong to a session
   def release(session: Session): Unit
 
   def driverLifespan(session: Session): Lifespan = Lifespan.TaskOrJVM(ctxFactory = () => session.lifespan.ctx)
@@ -44,28 +47,29 @@ object DriverFactory {
 
   /**
     * session local
-    * @tparam T AutoCleanable preferred
     */
-  abstract class Transient[T] extends DriverFactory[T] {
+  abstract class Transient[D <: DriverLike] extends DriverFactory[D] with Product {
+
+    override lazy val toString: String = productPrefix
 
     // session -> driver
     // cleanup: this has no effect whatsoever
-    @transient lazy val sessionLocals: ConcurrentMap[Session, T] = ConcurrentMap()
+    @transient lazy val sessionLocals: ConcurrentMap[Session, D] = ConcurrentMap()
 
-    def dispatch(session: Session): T = {
+    def dispatch(session: Session): D = {
       release(session)
       val driver = create(session)
       sessionLocals += session -> driver
       driver
     }
 
-    final def create(session: Session): T = {
+    final def create(session: Session): D = {
       _createImpl(session, driverLifespan(session))
     }
 
-    def _createImpl(session: Session, lifespan: Lifespan): T
+    def _createImpl(session: Session, lifespan: Lifespan): D
 
-    def factoryReset(driver: T): Unit
+    def factoryReset(driver: D): Unit
 
     def release(session: Session): Unit = {
       val existingOpt = sessionLocals.remove(session)
@@ -74,7 +78,7 @@ object DriverFactory {
       }
     }
 
-    final def destroy(driver: T, tcOpt: Option[TaskContext]): Unit = {
+    final def destroy(driver: D, tcOpt: Option[TaskContext]): Unit = {
       driver match {
         case v: Cleanable => v.tryClean()
         case _            =>
@@ -91,21 +95,21 @@ object DriverFactory {
     * first release() return driver to the pool to be used by the same Spark Task
     * call any function with a new Spark Task ID will add a cleanup TaskCompletionListener to the Task that destroy all drivers
     */
-  case class TaskLocal[T](
-      delegate: Transient[T]
-  ) extends DriverFactory[T] {
+  case class TaskLocal[D <: DriverLike](
+      delegate: Transient[D]
+  ) extends DriverFactory[D] {
 
     //taskOrThreadIDs -> (driver, busy)
-    @transient lazy val taskLocals: ConcurrentMap[Seq[Any], DriverStatus[T]] = {
+    @transient lazy val taskLocals: ConcurrentMap[Seq[Any], DriverStatus[D]] = {
       ConcurrentMap()
     }
 
-    override def dispatch(session: Session): T = {
+    override def dispatch(session: Session): D = {
 
       val ls = driverLifespan(session)
       val taskLocalOpt = taskLocals.get(ls.batchIDs)
 
-      def newDriver: T = {
+      def newDriver: D = {
         val fresh = delegate.create(session)
         taskLocals.put(ls.batchIDs, new DriverStatus(fresh))
         fresh
@@ -113,7 +117,7 @@ object DriverFactory {
 
       taskLocalOpt
         .map { status =>
-          def recreateDriver: T = {
+          def recreateDriver: D = {
             delegate.destroy(status.self, session.taskContextOpt)
             newDriver
           }
@@ -124,7 +128,7 @@ object DriverFactory {
               status.isBusy = true
               status.self
             } catch {
-              case e: Exception =>
+              case _: Exception =>
                 recreateDriver
             }
           } else {
@@ -140,8 +144,8 @@ object DriverFactory {
     override def release(session: Session): Unit = {
 
       val ls = driverLifespan(session)
-      val opt = taskLocals.get(ls.batchIDs)
-      opt.foreach { status =>
+      val statusOpt = taskLocals.get(ls.batchIDs)
+      statusOpt.foreach { status =>
         status.isBusy = false
       }
     }

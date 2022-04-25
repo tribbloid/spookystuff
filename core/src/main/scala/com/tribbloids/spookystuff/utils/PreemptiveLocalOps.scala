@@ -58,7 +58,7 @@ case class PreemptiveLocalOps(capacity: Int)(
             )
 
             sc.withJob(jobText) {
-              LoggerFactory.getLogger(this.getClass).info(s"Submitting:\t [$exe]\t\t- $jobText")
+              LoggerFactory.getLogger(this.getClass).debug(s"Submitting:\t [$exe]\t\t- $jobText")
               exe.AsArray.start // non-blocking
               buffer.put( // may be blocking due to capacity
                 Success(exe))
@@ -87,7 +87,7 @@ case class PreemptiveLocalOps(capacity: Int)(
           val exe = trial.get
 
           val array = exe.AsArray.get
-          LoggerFactory.getLogger(this.getClass).info(s"Collected :\t [$exe]")
+          LoggerFactory.getLogger(this.getClass).debug(s"Collected :\t [$exe]")
           array
         }
 

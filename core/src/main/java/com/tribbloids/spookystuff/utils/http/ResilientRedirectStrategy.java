@@ -5,7 +5,8 @@ import org.apache.http.client.utils.URIBuilder;
 import org.apache.http.impl.client.LaxRedirectStrategy;
 import org.apache.http.util.TextUtils;
 
-import java.net.*;
+import java.net.URI;
+import java.net.URISyntaxException;
 import java.util.Locale;
 
 /**

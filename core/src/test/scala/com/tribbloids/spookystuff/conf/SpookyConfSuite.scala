@@ -14,7 +14,7 @@ import scala.util.Random
 class SpookyConfSuite extends SpookyEnvFixture {
 
   def conf = new SpookyConf()
-  def dirConf: DirConf = DirConf()
+  def dirConf: Dir.Conf = Dir.Conf()
 
   it("SpookyConf is serializable") {
 
@@ -41,7 +41,6 @@ class SpookyConfSuite extends SpookyEnvFixture {
     val sparkConf = new SparkConf()
     val dummyV = "dummy" + Random.nextLong()
     sparkConf.set("spooky.dirs.autosave", dummyV)
-    DFSDocCache
     val imported = dirConf.importFrom(sparkConf)
 
     assert(imported.autoSave == dummyV)

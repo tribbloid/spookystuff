@@ -6,7 +6,7 @@ trait DataAlgebra[T] {
 
   def +(v1: T, v2: T): T
 
-  object Monadic extends DataAlgebra[Option[T]] {
+  object ForSome extends DataAlgebra[Option[T]] {
 
     override val eye = None
 

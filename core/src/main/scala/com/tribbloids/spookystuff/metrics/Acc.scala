@@ -1,5 +1,6 @@
 package com.tribbloids.spookystuff.metrics
 
+import com.tribbloids.spookystuff.utils.accumulator.MapAccumulator
 import org.apache.spark.SparkContext
 import org.apache.spark.ml.dsl.utils.?
 import org.apache.spark.sql.SparkSession
@@ -26,7 +27,7 @@ trait Acc[T <: AccumulatorV2[_, _]] extends MetricLike {
     result
   }
 
-  final def +=[V0](v: V0)(implicit canBuild: Acc.CanInitialise[V0, T]): Unit = {
+  final def +=[V0](v: V0)(implicit canBuild: Acc.CanInit[V0, T]): Unit = {
     canBuild.add(self, v)
   }
 }
@@ -35,28 +36,25 @@ object Acc {
 
   implicit def unbox[T <: AccumulatorV2[_, _]](acc: Acc[T]): T = acc.self
 
+  implicit def boxKV[T <: AccumulatorV2[_, _]](v: (String, T)): Acc[T] = {
+    Simple(
+      v._2,
+      Some(v._1)
+    )
+  }
+
   case class Simple[T <: AccumulatorV2[_, _]](
       override val _self: T,
       override val displayNameOvrd: Option[String] = None,
       @transient override val sparkContext: SparkContext = SparkSession.active.sparkContext
   ) extends Acc[T]
 
-//  case class FromType[T <: AccumulatorV2[_, _]](
-//      override val displayNameOvrd: Option[String] = None,
-//      @transient override val sparkContext: SparkContext = SparkSession.active.sparkContext
-//  )(
-//      implicit canBuild: CanBuild[T]
-//  ) extends Acc[T] {
-//
-//    override def _self: T = canBuild.build
-//  }
-
   case class FromV0[V0, T <: AccumulatorV2[_, _]](
       v0: V0,
       override val displayNameOvrd: Option[String] = None,
       @transient override val sparkContext: SparkContext = SparkSession.active.sparkContext
   )(
-      implicit canBuild: CanInitialise[V0, T]
+      implicit canBuild: CanInit[V0, T]
   ) extends Acc[T] {
 
     override def _self: T = canBuild.initialise(v0)
@@ -69,7 +67,7 @@ object Acc {
 
   object CanBuild extends CanBuild_Level0
 
-  trait CanInitialise[V0, T <: AccumulatorV2[_, _]] extends CanBuild[T] {
+  trait CanInit[V0, T <: AccumulatorV2[_, _]] extends CanBuild[T] {
 
     def add(self: T, v: V0): Unit
 
@@ -80,13 +78,11 @@ object Acc {
     }
   }
 
-//  object CanInitialise extends CanBuild_Level0
-
   abstract class CanBuild_Level2 {}
 
   abstract class CanBuild_Level1 extends CanBuild_Level2 {
 
-    case class Long2Stats[IN]()(implicit ev: IN => Long) extends CanInitialise[IN, EventTimeStatsAccum] {
+    case class Long2Stats[IN]()(implicit ev: IN => Long) extends CanInit[IN, EventTimeStatsAccum] {
 
       override def build: EventTimeStatsAccum = new EventTimeStatsAccum()
 
@@ -94,40 +90,52 @@ object Acc {
     }
     implicit def long2Stats[IN](implicit ev: IN => Long): Long2Stats[IN] = Long2Stats()(ev)
 
-    case class Double2Double[IN]()(implicit ev: IN => Double) extends CanInitialise[IN, DoubleAccumulator] {
+    case class FromDouble[IN]()(implicit ev: IN => Double) extends CanInit[IN, DoubleAccumulator] {
       override def build: DoubleAccumulator = new DoubleAccumulator()
 
       override def add(self: DoubleAccumulator, v: IN): Unit = self.add(v)
     }
-    implicit def double2Double[IN](implicit ev: IN => Double): Double2Double[IN] = Double2Double()(ev)
+    implicit def double2Double[IN](implicit ev: IN => Double): FromDouble[IN] = FromDouble()(ev)
   }
 
   abstract class CanBuild_Level0 extends CanBuild_Level1 {
 
-    case class Long2Long[IN]()(implicit ev: IN => Long) extends CanInitialise[IN, LongAccumulator] {
+    case class FromLong[IN]()(implicit ev: IN => Long) extends CanInit[IN, LongAccumulator] {
 
       override def build: LongAccumulator = new LongAccumulator()
 
       override def add(self: LongAccumulator, v: IN): Unit = self.add(v)
     }
-    implicit def long2Long[IN](implicit ev: IN => Long): Long2Long[IN] = Long2Long()(ev)
+    implicit def long2Long[IN](implicit ev: IN => Long): FromLong[IN] = FromLong()(ev)
 
+    case class FromMap[K, V]() extends CanInit[collection.Map[K, V], MapAccumulator[K, V]] {
+
+      override def build: MapAccumulator[K, V] = MapAccumulator[K, V]()
+
+      override def add(self: MapAccumulator[K, V], map: collection.Map[K, V]): Unit = {
+
+        map.foreach { kv =>
+          self.add(kv)
+        }
+      }
+
+    }
   }
 
   def create[IN, T <: AccumulatorV2[_, _]](value: IN, displayNameOvrd: String ? _ = None)(
-      implicit canBuild: CanInitialise[IN, T]
+      implicit canBuild: CanInit[IN, T]
   ): Acc[T] = {
     FromV0(value, displayNameOvrd.asOption)
   }
 
   implicit def fromV0[IN, T <: AccumulatorV2[_, _]](value: IN)(
-      implicit canBuild: CanInitialise[IN, T]
+      implicit canBuild: CanInit[IN, T]
   ): Acc[T] = {
     create(value)
   }
 
   implicit def fromKV0[IN, T <: AccumulatorV2[_, _]](kv: (String, IN))(
-      implicit canBuild: CanInitialise[IN, T]
+      implicit canBuild: CanInit[IN, T]
   ): Acc[T] = {
 
     create(kv._2, kv._1)

@@ -2,15 +2,11 @@ package com.tribbloids.spookystuff.actions
 
 import com.tribbloids.spookystuff.doc.{Doc, DocOption}
 import com.tribbloids.spookystuff.session.Session
-import com.tribbloids.spookystuff.utils.{CommonUtils, TimeoutConf}
-import com.tribbloids.spookystuff.{ActionException, Const, SpookyContext}
+import com.tribbloids.spookystuff.utils.CommonUtils
+import com.tribbloids.spookystuff.{ActionException, SpookyContext}
 import org.apache.spark.ml.dsl.utils.refl.ScalaUDT
 import org.apache.spark.sql.types.SQLUserDefinedType
-import org.openqa.selenium.WebElement
-import org.openqa.selenium.support.ui.{ExpectedConditions, WebDriverWait}
 import org.slf4j.LoggerFactory
-
-import java.util
 
 class ActionUDT extends ScalaUDT[Action]
 
@@ -24,18 +20,38 @@ class ActionUDT extends ScalaUDT[Action]
   */
 //TODO: merging with Extractor[Seq[Fetched]]?
 @SQLUserDefinedType(udt = classOf[ActionUDT])
-trait Action extends ActionLike {
+trait Action extends ActionLike with TraceAPI {
 
   override def children: Trace = Nil
+  @transient override lazy val asTrace: Trace = List(this)
 
   var timeElapsed: Long = -1 //only set once
 
-  override def dryrun: List[List[Action]] = {
+  override def dryRun: List[List[Action]] = {
     if (hasOutput) {
       List(List(this))
     } else {
       List()
     }
+  }
+
+  //execute errorDumps as side effects
+  protected def getSessionExceptionMessage(
+      session: Session,
+      docOpt: Option[Doc] = None
+  ): String = {
+    var message: String = "\n{\n"
+
+    message += {
+      session.backtrace.map { action =>
+        "| " + action.toString
+      } ++
+        Seq("+> " + this.detailedStr)
+    }.mkString("\n")
+
+    message += "\n}"
+
+    message
   }
 
   //this should handle autoSave, cache and errorDump
@@ -59,52 +75,6 @@ trait Action extends ActionLike {
     session.spooky.spookyMetrics.pagesFetchedFromRemote += results.count(_.isInstanceOf[Doc])
 
     results
-  }
-
-  //execute errorDumps as side effects
-  protected def getSessionExceptionMessage(
-      session: Session,
-      docOpt: Option[Doc] = None
-  ): String = {
-    var message: String = "\n{\n"
-
-    message += {
-      session.backtrace.map { action =>
-        "| " + action.toString
-      } ++
-        Seq("+> " + this.detailedStr)
-    }.mkString("\n")
-
-    val errorDump: Boolean = session.spooky.spookyConf.errorDump
-    val errorDumpScreenshot: Boolean = session.spooky.spookyConf.errorScreenshot
-
-    message += "\n}"
-
-    session match {
-      case d: Session =>
-        if (d.webDriverOpt.nonEmpty) {
-          if (errorDump) {
-            val rawPage = ErrorDump.exe(session).head.asInstanceOf[Doc]
-            message += "\nSnapshot: " + this.errorDump(message, rawPage, session.spooky)
-          }
-          if (errorDumpScreenshot) {
-            try {
-              val rawPage = ErrorScreenshot.exe(session).head.asInstanceOf[Doc]
-              message += "\nScreenshot: " + this.errorDump(message, rawPage, session.spooky)
-            } catch {
-              case e: Exception =>
-                LoggerFactory.getLogger(this.getClass).error("Cannot take screenshot on ActionError:", e)
-            }
-          }
-        } else {
-          docOpt.foreach { doc =>
-            if (errorDump) {
-              message += "\nSnapshot: " + this.errorDump(message, doc, session.spooky)
-            }
-          }
-        }
-    }
-    message
   }
 
   protected def errorDump(message: String, rawPage: Doc, spooky: SpookyContext): String = {
@@ -137,20 +107,20 @@ trait Action extends ActionLike {
         baseStr = baseStr + s" in ${timed.timeout(session)}"
         LoggerFactory.getLogger(this.getClass).info(this.withDetail(baseStr))
 
-        session.withDriversDuring {
-          session.progress.ping()
+//        session.withDriversDuring {
+        session.progress.ping()
 
-          CommonUtils.withTimeout(timed.hardTerminateTimeout(session))(
-            f,
-            session.progress.defaultHeartbeat
-          )
-        }
+        CommonUtils.withTimeout(timed.hardTerminateTimeout(session))(
+          f,
+          session.progress.defaultHeartbeat
+        )
+//        }
       case _ =>
         LoggerFactory.getLogger(this.getClass).info(this.withDetail(baseStr))
 
-        session.withDriversDuring(
-          f
-        )
+//        session.withDriversDuring(
+        f
+//        )
     }
   }
 
@@ -167,58 +137,6 @@ trait Action extends ActionLike {
   override def injectFrom(same: ActionLike): Unit = {
     super.injectFrom(same)
     this.timeElapsed = same.asInstanceOf[Action].timeElapsed
-  }
-}
-
-trait Timed extends Action {
-
-  var _timeout: TimeoutConf = _
-
-  def in(timeout: TimeoutConf): this.type = {
-    this._timeout = timeout
-    this
-  }
-
-  def timeout(session: Session): TimeoutConf = {
-    val base =
-      if (this._timeout == null) session.spooky.spookyConf.remoteResourceTimeout
-      else this._timeout
-
-    base
-  }
-
-  def hardTerminateTimeout(session: Session): TimeoutConf = {
-    val original = timeout(session)
-    original.copy(max = original.max + Const.hardTerminateOverhead)
-  }
-
-  def webDriverWait(session: Session): WebDriverWait =
-    new WebDriverWait(session.webDriver, this.timeout(session).max.toSeconds)
-
-  def getClickableElement(selector: Selector, session: Session): WebElement = {
-
-    val elements = webDriverWait(session).until(ExpectedConditions.elementToBeClickable(selector.by))
-
-    elements
-  }
-
-  def getElement(selector: Selector, session: Session): WebElement = {
-
-    val elements = webDriverWait(session).until(ExpectedConditions.presenceOfElementLocated(selector.by))
-
-    elements
-  }
-
-  def getElements(selector: Selector, session: Session): util.List[WebElement] = {
-
-    val elements = webDriverWait(session).until(ExpectedConditions.presenceOfAllElementsLocatedBy(selector.by))
-
-    elements
-  }
-
-  override def injectFrom(same: ActionLike): Unit = {
-    super.injectFrom(same)
-    this._timeout = same.asInstanceOf[Timed]._timeout
   }
 }
 

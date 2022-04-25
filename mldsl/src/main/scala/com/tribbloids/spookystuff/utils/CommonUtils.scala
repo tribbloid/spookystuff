@@ -65,14 +65,6 @@ abstract class CommonUtils {
     result
   }
 
-//  def isolatedExecutionContext = {
-//
-//    // TODO: switch to cached thread pool with inifite size
-//    val threadPool = Executors.newSingleThreadExecutor()
-//    val ctx = ExecutionContext.fromExecutor(threadPool)
-//    ctx
-//  }
-
   def withTimeout[T](
       timeout: TimeoutConf,
       interval: Duration = 10.seconds
@@ -86,8 +78,8 @@ abstract class CommonUtils {
     val TIMEOUT = "TIMEOUT!!!!" + s"\t@ ${_callerShowStr}"
 
     try {
-      val hb = AwaitWithHeartbeat(interval)(heartbeat)
-      hb.result(future, timeout)
+      val await = AwaitWithHeartbeat(interval)(heartbeat)
+      await.result(future, timeout)
     } catch {
       case e: TimeoutException =>
         future.interrupt()

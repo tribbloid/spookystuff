@@ -1,32 +1,33 @@
 package com.tribbloids.spookystuff.rdd
 
-import com.tribbloids.spookystuff.actions.{ClusterRetry, Snapshot, Visit, Wget, _}
+import com.tribbloids.spookystuff.actions._
 import com.tribbloids.spookystuff.conf.SpookyConf
 import com.tribbloids.spookystuff.doc.{Doc, DocOption}
 import com.tribbloids.spookystuff.dsl.{ExploreAlgorithm, JoinType, _}
 import com.tribbloids.spookystuff.execution.ExplorePlan.Params
-import com.tribbloids.spookystuff.execution.{ExplorePlan, FetchPlan, _}
+import com.tribbloids.spookystuff.execution._
 import com.tribbloids.spookystuff.extractors._
 import com.tribbloids.spookystuff.extractors.impl.Get
 import com.tribbloids.spookystuff.row.{Field, _}
 import com.tribbloids.spookystuff.utils.SpookyViews
 import com.tribbloids.spookystuff.{Const, SpookyContext}
-import org.apache.spark.{SparkContext, TaskContext}
 import org.apache.spark.ml.dsl.utils.refl.ScalaType
 import org.apache.spark.rdd.RDD
 import org.apache.spark.sql.DataFrame
-import org.apache.spark.sql.catalyst.encoders.RowEncoder
 import org.apache.spark.sql.catalyst.expressions.GenericInternalRow
 import org.apache.spark.sql.catalyst.{CatalystTypeConverters, InternalRow}
 import org.apache.spark.sql.types.{DataType, StructType}
 import org.apache.spark.sql.utils.SparkHelper
 import org.apache.spark.storage.StorageLevel
+import org.apache.spark.{SparkContext, TaskContext}
 
 import scala.collection.Map
 import scala.collection.immutable.ListMap
 import scala.concurrent.duration.Duration
 import scala.language.implicitConversions
 import scala.reflect.ClassTag
+
+object FetchedDataset {}
 
 /**
   * Created by peng on 8/29/14.
@@ -73,7 +74,7 @@ case class FetchedDataset(
   def isCached: Boolean = plan.isCached
 
   def squashedRDD: SquashedFetchedRDD = {
-    plan.broadcastAndRDD()
+    plan.tryDeployAndRDD()
   }
 
   def rdd: RDD[FR] = unsquashedRDD
@@ -165,7 +166,7 @@ case class FetchedDataset(
       converter
     }
 
-    val rowEncoder = RowEncoder.apply(spookySchema.structType)
+//    val rowEncoder = RowEncoder.apply(spookySchema.structType)
 
     dataRDD
       .map { v =>
@@ -349,32 +350,17 @@ case class FetchedDataset(
     _delay
   }
 
-  protected def _defaultVisit(
-      cooldown: Option[Duration] = None,
-      filter: DocFilter = Const.defaultDocumentFilter,
-      on: Col[String] = Get(Const.defaultJoinField)
-  ): Set[Trace] = {
-
-    val _cooldown: Duration = cooldown.getOrElse(Const.Interaction.delayMin)
-    val result = (
-      Visit(on, cooldown = _cooldown)
-        +> Snapshot(filter)
-    )
-
-    result
-  }
-
   protected def _defaultWget(
       cooldown: Option[Duration] = None,
       filter: DocFilter = Const.defaultDocumentFilter,
       on: Col[String] = Get(Const.defaultJoinField)
-  ): Set[Trace] = {
+  ): TraceView = {
 
     val _delay: Trace = _defaultCooldown(cooldown)
 
-    val result = Wget(on, filter) +> Set(_delay)
+    val result = Wget(on, filter) +> _delay
 
-    result
+    TraceView(result)
   }
 
   // Always left
@@ -382,26 +368,11 @@ case class FetchedDataset(
       traces: Set[Trace],
       keyBy: Trace => Any = identity,
       genPartitioner: GenPartitioner = spooky.spookyConf.defaultGenPartitioner
-  ): FetchedDataset = FetchPlan(plan, traces.rewriteGlobally(plan.schema), keyBy, genPartitioner)
-
-  //shorthand of fetch
-  def visit(
-      on: Col[String],
-      cooldown: Option[Duration] = None,
-      keyBy: Trace => Any = identity,
-      filter: DocFilter = Const.defaultDocumentFilter,
-      failSafe: Int = -1,
-      genPartitioner: GenPartitioner = spooky.spookyConf.defaultGenPartitioner
   ): FetchedDataset = {
 
-    var trace = _defaultVisit(cooldown, filter, on)
-    if (failSafe > 0) trace = ClusterRetry(trace, failSafe)
+    val _traces = TraceSetView(traces).rewriteGlobally(schema)
 
-    this.fetch(
-      trace,
-      keyBy,
-      genPartitioner = genPartitioner
-    )
+    FetchPlan(plan, _traces, keyBy, genPartitioner)
   }
 
   //shorthand of fetch
@@ -419,7 +390,7 @@ case class FetchedDataset(
     if (failSafe > 0) trace = ClusterRetry(trace, failSafe)
 
     this.fetch(
-      trace,
+      trace.asTraceSet,
       keyBy,
       genPartitioner = genPartitioner
     )
@@ -443,36 +414,6 @@ case class FetchedDataset(
   }
 
   /**
-    * results in a new set of Pages by crawling links on old pages
-    * old pages that doesn't contain the link will be ignored
-    *
-    * @return RDD[Page]
-    */
-  def visitJoin(
-      on: Extractor[Any],
-      joinType: JoinType = spooky.spookyConf.defaultJoinType,
-      ordinalField: Field = null, //left & idempotent parameters are missing as they are always set to true
-      sampler: Sampler[Any] = spooky.spookyConf.defaultJoinSampler,
-      cooldown: Option[Duration] = None,
-      keyBy: Trace => Any = identity,
-      filter: DocFilter = Const.defaultDocumentFilter,
-      failSafe: Int = -1,
-      genPartitioner: GenPartitioner = spooky.spookyConf.defaultGenPartitioner
-  ): FetchedDataset = {
-
-    var trace = _defaultVisit(cooldown, filter)
-    if (failSafe > 0) {
-      trace = ClusterRetry(trace, failSafe)
-    }
-
-    this.join(on, joinType, ordinalField, sampler)(
-      trace,
-      keyBy,
-      genPartitioner = genPartitioner
-    )
-  }
-
-  /**
     * same as join, but avoid launching a browser by using direct http GET (wget) to download new pages
     * much faster and less stressful to both crawling and target server(s)
     *
@@ -492,7 +433,7 @@ case class FetchedDataset(
 
     var trace = _defaultWget(cooldown, filter)
     if (failSafe > 0) {
-      trace = ClusterRetry(trace, failSafe)
+      trace = ClusterRetry(trace, failSafe).traceView
     }
 
     this.join(on, joinType, ordinalField, sampler)(
@@ -529,7 +470,7 @@ case class FetchedDataset(
       on.withJoinFieldIfMissing,
       sampler,
       joinType,
-      traces.rewriteGlobally(plan.schema),
+      TraceSetView(traces).rewriteGlobally(plan.schema),
       keyBy,
       genPartitioner,
       params,
@@ -537,43 +478,6 @@ case class FetchedDataset(
       epochSize,
       checkpointInterval,
       List(MapPlan.Extract(extracts))
-    )
-  }
-
-  def visitExplore(
-      on: Extractor[Any],
-      joinType: JoinType = spooky.spookyConf.defaultJoinType,
-      ordinalField: Field = null,
-      sampler: Sampler[Any] = spooky.spookyConf.defaultJoinSampler,
-      filter: DocFilter = Const.defaultDocumentFilter,
-      failSafe: Int = -1,
-      cooldown: Option[Duration] = None,
-      keyBy: Trace => Any = identity,
-      genPartitioner: GenPartitioner = spooky.spookyConf.defaultGenPartitioner,
-      depthField: Field = null,
-      range: Range = spooky.spookyConf.defaultExploreRange,
-      exploreAlgorithm: ExploreAlgorithm = spooky.spookyConf.defaultExploreAlgorithm,
-      miniBatch: Int = 500,
-      checkpointInterval: Int = spooky.spookyConf.checkpointInterval, // set to Int.MaxValue to disable checkpointing,
-
-      select: Extractor[Any] = null,
-      selects: Traversable[Extractor[Any]] = Seq()
-  ): FetchedDataset = {
-
-    var trace = _defaultVisit(cooldown, filter)
-    if (failSafe > 0) trace = ClusterRetry(trace, failSafe)
-
-    explore(on, joinType, ordinalField, sampler)(
-      trace,
-      keyBy,
-      genPartitioner,
-      depthField,
-      range,
-      exploreAlgorithm,
-      miniBatch,
-      checkpointInterval
-    )(
-      Option(select).toSeq ++ selects: _*
     )
   }
 

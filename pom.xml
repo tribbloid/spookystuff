@@ -36,6 +36,7 @@
     <module>test-resources</module>
     <module>mldsl</module>
     <module>core</module>
+    <module>web</module>
     <module>integration</module>
     <!--<module>pipeline</module>-->
     <module>example</module>
@@ -53,7 +54,7 @@
     <project.reporting.outputEncoding>UTF-8</project.reporting.outputEncoding>
     <java.version>1.8</java.version>
 
-    <scala.version>2.12.14</scala.version>
+    <scala.version>2.12.15</scala.version>
     <scala.binary.version>2.12</scala.binary.version>
 
     <spark.version>2.4.8</spark.version>
@@ -781,7 +782,7 @@
             <!--<arg>-Ywarn-unused-import</arg>-->
             <!--<arg>-Ypartial-unification</arg>-->
             <!--<arg>-Ywarn-numeric-widen</arg>        &lt;!&ndash;      // Warn when numerics are widened. &ndash;&gt;-->
-            <!--<arg>-language:higherKinds</arg>-->
+            <arg>-language:higherKinds</arg>
             <!--<arg>-P:wartremover:only-warn-traverser:org.wartremover.warts.Unsafe</arg>-->
           </args>
           <!--<jvmArgs>-->

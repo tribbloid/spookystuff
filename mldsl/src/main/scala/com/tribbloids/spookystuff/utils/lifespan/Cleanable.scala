@@ -1,13 +1,10 @@
 package com.tribbloids.spookystuff.utils.lifespan
 
-import java.io.Closeable
-
 import com.tribbloids.spookystuff.utils.CachingUtils._
-import com.tribbloids.spookystuff.utils.TreeThrowable
 import org.slf4j.{Logger, LoggerFactory}
 
+import java.io.Closeable
 import scala.reflect.ClassTag
-import scala.util.Try
 
 object Cleanable {
 
@@ -95,7 +92,7 @@ trait Cleanable extends Closeable {
     * taskOrThreadOnCreation is incorrect in withDeadline or threads not created by Spark
     * Override this to correct such problem
     */
-  def _lifespan: Lifespan = new Lifespan.JVM()
+  def _lifespan: Lifespan = Lifespan.JVM()
   final val lifespan = _lifespan
   final val trackingNumber = System.identityHashCode(this).toLong // can be int value
 
@@ -149,39 +146,32 @@ trait Cleanable extends Closeable {
     )
   }
 
-  def chainClean: Seq[Cleanable] = Nil
+  lazy val doCleanOnce: Unit = CleanStateLock.synchronized {
 
-  final def clean(silent: Boolean = false): Unit = {
-    val chained: Seq[Try[Unit]] = chainClean.map { v =>
-      Try {
-        v.clean(silent)
+    stacktraceAtCleaning = Some(Thread.currentThread().getStackTrace)
+    try {
+      cleanImpl()
+      _isCleaned = true
+
+      uncleanedInBatchs.foreach { inBatch =>
+        inBatch -= this.trackingNumber
       }
-    }
-    val self = CleanStateLock.synchronized {
-      Try {
-        if (!isCleaned) {
-          stacktraceAtCleaning = Some(Thread.currentThread().getStackTrace)
-          try {
-            cleanImpl()
-            _isCleaned = true
-            if (!silent) logPrefixed("Cleaned")
-          } catch {
-            case e: Throwable =>
-              stacktraceAtCleaning = None
-              throw e
-          }
-        }
-      }
-    }
-
-    TreeThrowable.&&&(chained :+ self)
-
-    uncleanedInBatchs.foreach { inBatch =>
-      inBatch -= this.trackingNumber
+    } catch {
+      case e: Throwable =>
+        stacktraceAtCleaning = None
+        throw e
     }
   }
 
-  def isSilent(ee: Throwable): Boolean = false
+  final def clean(silent: Boolean = false): Unit = {
+
+    val isCleaned = this.isCleaned
+    doCleanOnce
+
+    if (!silent && !isCleaned) logPrefixed("Cleaned")
+  }
+
+  def silentOnError(ee: Throwable): Boolean = false
 
   final def tryClean(silent: Boolean = false): Unit = {
     try {
@@ -189,7 +179,7 @@ trait Cleanable extends Closeable {
     } catch {
       case e: Exception =>
         val ee = e
-        if (!isSilent(ee))
+        if (!silentOnError(ee))
           LoggerFactory
             .getLogger(this.getClass)
             .warn(

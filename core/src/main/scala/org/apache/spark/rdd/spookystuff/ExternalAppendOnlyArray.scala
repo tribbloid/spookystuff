@@ -204,8 +204,7 @@ class ExternalAppendOnlyArray[T] private[spookystuff] (
   def sanity(): Unit = {
 
     if (isCleaned) {
-
-      throw new IllegalStateException("Already scrapped for ID $id")
+      throw new IllegalStateException(s"Already scrapped for ID $id")
     } else if (mapDB.isClosed) {
 
       throw new IllegalStateException(s"External storage is closed for ID $id")

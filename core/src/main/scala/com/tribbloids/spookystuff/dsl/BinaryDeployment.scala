@@ -1,6 +1,5 @@
 package com.tribbloids.spookystuff.dsl
 
-import com.tribbloids.spookystuff.dsl.WebDriverFactory.PhantomJS
 import com.tribbloids.spookystuff.utils.io.{LocalResolver, URLConnectionResolver, WriteMode}
 import com.tribbloids.spookystuff.utils.{CommonUtils, Retry, SpookyUtils, TreeThrowable}
 import org.apache.commons.io.IOUtils
@@ -12,8 +11,8 @@ import scala.util.Try
 
 trait BinaryDeployment extends Serializable {
 
-  def localPath: String = PhantomJS.defaultLocalPath
-  def remoteURL: String = PhantomJS.defaultRemoteURL
+  def localPath: String
+  def remoteURL: String
 
   final lazy val localFileName = CommonUtils.uri2fileName(localPath)
 
@@ -21,7 +20,7 @@ trait BinaryDeployment extends Serializable {
 
   val MIN_SIZE_K: Double = 1024.0
 
-  def verifyLocalPath(): String = PhantomJS.verifyExe(localPath).get
+  def verifyLocalPath(): String
 
   case class OnDriver(sparkContext: SparkContext) {
 
@@ -75,7 +74,7 @@ trait BinaryDeployment extends Serializable {
   /**
     * do nothing if local already exists.
     * otherwise download from driver
-    * never download from worker(s)! assuming no connection and uncached cache
+    * never download from worker(s)! assuming no connection and cached local file
     */
   lazy val verifiedLocalPath: String = {
 

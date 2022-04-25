@@ -12,9 +12,7 @@ class FetchedRowViewSuite extends SpookyEnvFixture with LocalPathDocsFixture {
   import dsl._
 
   it("get page") {
-    val pages = (
-      Wget(HTML_URL) :: Nil
-    ).fetch(spooky)
+    val pages = Wget(HTML_URL).fetch(spooky)
     val row = FetchedRow(fetched = pages)
 
     val page1 = row.getOnlyDoc
@@ -27,9 +25,7 @@ class FetchedRowViewSuite extends SpookyEnvFixture with LocalPathDocsFixture {
   }
 
   it("get unstructured") {
-    val pages = (
-      (Wget(HTML_URL) as 'pp) :: Nil
-    ).fetch(spooky)
+    val pages = (Wget(HTML_URL) as 'pp).fetch(spooky)
     val row = FetchedRow(fetched = pages)
       .squash(spooky)
       .extract(

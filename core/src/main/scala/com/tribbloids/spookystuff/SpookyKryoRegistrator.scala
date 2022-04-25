@@ -2,9 +2,8 @@ package com.tribbloids.spookystuff
 
 import java.util.UUID
 import java.util.concurrent.TimeUnit
-
 import com.esotericsoftware.kryo.Kryo
-import com.tribbloids.spookystuff.conf.{DirConf, SpookyConf}
+import com.tribbloids.spookystuff.conf.{Dir, SpookyConf}
 import com.tribbloids.spookystuff.dsl._
 import com.tribbloids.spookystuff.doc._
 import com.tribbloids.spookystuff.metrics.SpookyMetrics
@@ -17,6 +16,7 @@ import scala.collection.immutable.ListMap
 import scala.concurrent.duration.FiniteDuration
 
 //TODO: not all classes are registered which renders this class useless
+// should be part of the Plugin API
 class SpookyKryoRegistrator extends KryoRegistrator {
 
   override def registerClasses(kryo: Kryo): Unit = {
@@ -36,7 +36,7 @@ class SpookyKryoRegistrator extends KryoRegistrator {
 
       //used by broadcast & accumulator
       classOf[SpookyConf],
-      classOf[DirConf],
+      classOf[Dir.Conf],
       classOf[SerializableWritable[_]],
       classOf[SpookyContext],
       classOf[SpookyMetrics],
@@ -47,8 +47,7 @@ class SpookyKryoRegistrator extends KryoRegistrator {
       classOf[FiniteDuration],
       classOf[TimeUnit],
       FilePaths.getClass,
-      PartitionerFactories.getClass,
-      WebProxyFactories.getClass
+      PartitionerFactories.getClass
     )
     array.foreach(kryo.register)
   }

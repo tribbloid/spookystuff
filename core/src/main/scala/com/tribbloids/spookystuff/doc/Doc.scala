@@ -222,6 +222,8 @@ case class Doc(
   def charset: Option[String] = Option(parsedContentType.getCharset).map(_.name())
   def mimeType: String = parsedContentType.getMimeType
 
+  def isImage: Boolean = mimeType.startsWith("image")
+
   def contentType: String = parsedContentType.toString
 
   lazy val tikaMimeType: MimeType = MimeTypes.getDefaultMimeTypes.forName(mimeType)
@@ -278,10 +280,9 @@ case class Doc(
       spooky: SpookyContext,
       overwrite: Boolean = false
   ): Unit = {
-    val root = this.uid.output match {
-      case _: Screenshot => spooky.dirConf.errorScreenshot
-      case _             => spooky.dirConf.errorDump
-    }
+    val root =
+      if (this.isImage) spooky.dirConf.errorScreenshot
+      else spooky.dirConf.errorDump
 
     this.save(
       root :: spooky.spookyConf.errorDumpFilePath(this) :: Nil,
@@ -293,10 +294,9 @@ case class Doc(
       spooky: SpookyContext,
       overwrite: Boolean = false
   ): Unit = {
-    val root = this.uid.output match {
-      case _: Screenshot => spooky.dirConf.errorScreenshotLocal
-      case _             => spooky.dirConf.errorDumpLocal
-    }
+    val root =
+      if (this.isImage) spooky.dirConf.errorScreenshot
+      else spooky.dirConf.errorDump
 
     this.save(
       root :: spooky.spookyConf.errorDumpFilePath(this) :: Nil,

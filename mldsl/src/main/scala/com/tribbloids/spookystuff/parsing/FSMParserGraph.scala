@@ -30,7 +30,7 @@ object FSMParserGraph extends Algebra[FSMParserGraph] {
       },
       Some(FState.Ordinary)
     )
-  override def edgeAlgebra: DataAlgebra[parsing.FSMParserGraph.EdgeData] = DataAlgebra.NoAmbiguity[Rule]().Monadic
+  override def edgeAlgebra: DataAlgebra[parsing.FSMParserGraph.EdgeData] = DataAlgebra.NoAmbiguity[Rule]().ForSome
 
   object Layout extends FlowLayout[FSMParserGraph] {
 

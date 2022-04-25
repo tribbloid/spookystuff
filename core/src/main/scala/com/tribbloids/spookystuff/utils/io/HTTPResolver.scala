@@ -1,12 +1,8 @@
 package com.tribbloids.spookystuff.utils.io
 
-import java.io._
-import java.net.{InetSocketAddress, URI}
-
 import com.tribbloids.spookystuff.session.WebProxySetting
-import com.tribbloids.spookystuff.utils.http._
 import com.tribbloids.spookystuff.utils.Retry
-import javax.net.ssl.SSLContext
+import com.tribbloids.spookystuff.utils.http._
 import org.apache.http.client.HttpClient
 import org.apache.http.client.config.RequestConfig
 import org.apache.http.client.methods._
@@ -16,6 +12,10 @@ import org.apache.http.conn.socket.ConnectionSocketFactory
 import org.apache.http.impl.client.{CloseableHttpClient, HttpClients}
 import org.apache.http.impl.conn.PoolingHttpClientConnectionManager
 import org.apache.http.{HttpEntity, HttpHost, HttpResponse}
+
+import java.io._
+import java.net.{InetSocketAddress, URI}
+import javax.net.ssl.SSLContext
 
 object HTTPResolver {
 

@@ -1,17 +1,12 @@
 package com.tribbloids.spookystuff.doc
 
 import com.tribbloids.spookystuff.actions.Wget
-import com.tribbloids.spookystuff.dsl
 import com.tribbloids.spookystuff.testutils.LocalPathDocsFixture
 
 class TestPageFromFile extends TestPageFromHttp with LocalPathDocsFixture {
 
-  import dsl._
-
   it("wget dir, save and load") {
-    val results = (
-      Wget(DIR_URL) :: Nil
-    ).fetch(spooky)
+    val results = Wget(DIR_URL).fetch(spooky)
 
     val resultsList = results.toArray
     assert(resultsList.length === 1)

@@ -33,11 +33,11 @@
       <scope>test</scope>
     </dependency>
 
-    <dependency>
-      <groupId>com.tribbloids.spookystuff</groupId>
-      <artifactId>repackaged-selenium-bundle</artifactId>
-      <version>${selenium.version}</version>
-    </dependency>
+<!--    <dependency>-->
+<!--      <groupId>com.tribbloids.spookystuff</groupId>-->
+<!--      <artifactId>repackaged-selenium-bundle</artifactId>-->
+<!--      <version>${selenium.version}</version>-->
+<!--    </dependency>-->
 
     <dependency>
       <groupId>oauth.signpost</groupId>

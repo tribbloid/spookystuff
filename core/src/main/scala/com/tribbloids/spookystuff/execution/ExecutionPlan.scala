@@ -1,11 +1,13 @@
 package com.tribbloids.spookystuff.execution
 
+import com.tribbloids.spookystuff.SpookyContext
 import com.tribbloids.spookystuff.actions.TraceView
 import com.tribbloids.spookystuff.row._
 import org.apache.spark.rdd.RDD
 import org.apache.spark.sql.catalyst.trees.TreeNode
 import org.apache.spark.sql.types.DataType
 import org.apache.spark.storage.StorageLevel
+import org.slf4j.LoggerFactory
 
 import scala.collection.immutable.ListMap
 import scala.language.implicitConversions
@@ -25,10 +27,10 @@ abstract class ExecutionPlan(
     children.map(_.ec).reduce(_ :++ _)
   )
 
-  def spooky = ec.spooky
-  def scratchRDDs = ec.scratchRDDs
+  def spooky: SpookyContext = ec.spooky
+  def scratchRDDs: ScratchRDDs = ec.scratchRDDs
 
-  def verboseString = simpleString
+  def verboseString: String = simpleString
 
   //Cannot be lazy, always defined on construction
   val schema: SpookySchema = SpookySchema(
@@ -45,11 +47,11 @@ abstract class ExecutionPlan(
 
   def allSortIndices: List[IndexedField] = schema.indexedFields.filter(_._1.self.isSortIndex)
 
-  def firstChildOpt = children.headOption
+  def firstChildOpt: Option[ExecutionPlan] = children.headOption
 
   //beconRDD is always empty, with fixed partitioning, cogroup with it to maximize Local Cache hitting chance
   //by default, inherit from the first child
-  protected final def inheritedBeaconRDDOpt =
+  protected final def inheritedBeaconRDDOpt: Option[BeaconRDD[NodeKey]] =
     firstChildOpt.flatMap(_.beaconRDDOpt)
 
   lazy val beaconRDDOpt: Option[BeaconRDD[TraceView]] = inheritedBeaconRDDOpt
@@ -65,10 +67,17 @@ abstract class ExecutionPlan(
   var _cachedRDD: SquashedFetchedRDD = _
   def cachedRDDOpt: Option[SquashedFetchedRDD] = Option(_cachedRDD)
 
-  def isCached = cachedRDDOpt.nonEmpty
+  def isCached: Boolean = cachedRDDOpt.nonEmpty
 
-  final def broadcastAndRDD(): SquashedFetchedRDD = {
-    spooky.rebroadcast()
+  final def tryDeployAndRDD(): SquashedFetchedRDD = {
+    try {
+      spooky.Plugins.deployAllOnce
+    } catch {
+      case e: Throwable =>
+        LoggerFactory
+          .getLogger(this.getClass)
+          .error("Deploy partially failed", e)
+    }
     rdd()
   }
 
@@ -97,6 +106,6 @@ abstract class ExecutionPlan(
   def persist[T](
       rdd: RDD[T],
       storageLevel: StorageLevel = ExecutionPlan.this.spooky.spookyConf.defaultStorageLevel
-  ) = scratchRDDs.persist(rdd, storageLevel)
+  ): RDD[T] = scratchRDDs.persist(rdd, storageLevel)
 
 }

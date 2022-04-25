@@ -8,7 +8,7 @@ import org.apache.spark.sql.DataFrame
 import org.apache.spark.storage.{RDDInfo, StorageLevel}
 import org.apache.spark.{HashPartitioner, SparkContext, TaskContext}
 
-import scala.collection.{mutable, Map}
+import scala.collection.Map
 import scala.collection.immutable.ListMap
 import scala.reflect.ClassTag
 import scala.util.Random

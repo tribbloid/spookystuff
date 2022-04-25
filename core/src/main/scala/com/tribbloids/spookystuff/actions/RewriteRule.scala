@@ -1,23 +1,21 @@
 package com.tribbloids.spookystuff.actions
 
-import com.tribbloids.spookystuff.row.SpookySchema
-
 trait RewriteRule[T] extends Serializable {
 
-  /**
-    * @param v
-    * @param schema
-    * @return
-    */
-  def rewrite(v: T, schema: SpookySchema): T
+  def rewrite(v: T): Seq[T]
 }
 
-trait MonadicRewriteRule[T] extends Serializable {
+object RewriteRule {
 
-  /**
-    * @param v
-    * @param schema
-    * @return
-    */
-  def rewrite(v: T, schema: SpookySchema): Option[T]
+  case class Rules[T](rules: Seq[RewriteRule[T]]) {
+
+    def rewriteAll(values: Seq[T]): Seq[T] = {
+      val result = rules.foldLeft(values) { (opt, rewriter) =>
+        opt.flatMap { trace =>
+          rewriter.rewrite(trace)
+        }
+      }
+      result
+    }
+  }
 }

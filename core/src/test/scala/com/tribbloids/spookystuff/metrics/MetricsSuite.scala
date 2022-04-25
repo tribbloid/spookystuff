@@ -11,14 +11,14 @@ object MetricsSuite {
   case class DummyMetrics(
       v1: Acc[LongAccumulator] = "v1" -> 0L,
       v2: Acc[DoubleAccumulator] = "v2" -> 1.0
-  ) extends Metrics
+  ) extends AbstractMetrics
 
   case class DummyTreeMetrics(
       v3: Acc[EventTimeStatsAccum] = "v3" -> 2L,
       sub: DummyMetrics = DummyMetrics()
-  ) extends Metrics
+  ) extends AbstractMetrics
 
-  case class DummyMetrics_HasMembers() extends Metrics.HasExtraMembers {
+  case class DummyMetrics_HasMembers() extends AbstractMetrics.HasExtraMembers {
 
     lazy val v1: Acc[LongAccumulator] = "v1" -> 0L
     lazy val v2: Acc[DoubleAccumulator] = "v2" -> 1.0

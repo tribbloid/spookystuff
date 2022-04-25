@@ -75,7 +75,7 @@ class ScalaDynamicExtractorSuite extends SpookyEnvFixture with LocalPathDocsFixt
 
     val action: Action = Wget(HTML_URL)
 
-    val result = action.dryrun
+    val result = action.dryRun
 
     def dynamic = ScalaDynamicExtractor(
       Lit[Action](action),

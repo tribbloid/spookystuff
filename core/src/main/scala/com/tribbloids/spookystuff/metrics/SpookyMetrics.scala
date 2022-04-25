@@ -1,27 +1,20 @@
 package com.tribbloids.spookystuff.metrics
 
-import com.tribbloids.spookystuff.conf.Submodules
+import com.tribbloids.spookystuff.utils.accumulator.MapAccumulator
 import org.apache.spark.util.LongAccumulator
 
 import scala.language.implicitConversions
 
-object SpookyMetrics extends Submodules.Builder[SpookyMetrics] {
+object SpookyMetrics {}
 
-  override implicit def default: SpookyMetrics = SpookyMetrics()
-}
-
-//TODO: change to multi-level
 @SerialVersionUID(64065023841293L)
 case class SpookyMetrics(
-    webDriverDispatched: Acc[LongAccumulator] = Acc.create(0L, "webDriverDispatched"),
-    webDriverReleased: Acc[LongAccumulator] = Acc.create(0L, "webDriverReleased"),
-    pythonDriverDispatched: Acc[LongAccumulator] = Acc.create(0L, "pythonDriverDispatched"),
-    pythonDriverReleased: Acc[LongAccumulator] = Acc.create(0L, "pythonDriverReleased"),
-    //TODO: cleanup? useless
-    pythonInterpretationSuccess: Acc[LongAccumulator] = Acc.create(0L, "pythonInterpretationSuccess"),
-    pythonInterpretationError: Acc[LongAccumulator] = Acc.create(0L, "pythonInterpretationSuccess"),
     sessionInitialized: Acc[LongAccumulator] = Acc.create(0L, "sessionInitialized"),
     sessionReclaimed: Acc[LongAccumulator] = Acc.create(0L, "sessionReclaimed"),
+    //
+    driverDispatched: Acc[MapAccumulator[String, Long]] = "driverDispatched" -> MapAccumulator.kToLong[String],
+    driverReleased: Acc[MapAccumulator[String, Long]] = "driverReleased" -> MapAccumulator.kToLong[String],
+    //
     DFSReadSuccess: Acc[LongAccumulator] = Acc.create(0L, "DFSReadSuccess"),
     DFSReadFailure: Acc[LongAccumulator] = Acc.create(0L, "DFSReadFail"),
     DFSWriteSuccess: Acc[LongAccumulator] = Acc.create(0L, "DFSWriteSuccess"),
@@ -34,4 +27,11 @@ case class SpookyMetrics(
     fetchFromRemoteSuccess: Acc[LongAccumulator] = Acc.create(0L, "fetchFromRemoteSuccess"),
     fetchFromRemoteFailure: Acc[LongAccumulator] = Acc.create(0L, "fetchFromRemoteFailure"),
     pagesSaved: Acc[LongAccumulator] = Acc.create(0L, "pagesSaved")
-) extends Metrics {}
+) extends AbstractMetrics {
+
+  object Drivers extends Serializable {
+
+    def dispatchedTotalCount: Long = driverDispatched.value.values.sum
+    def releasedTotalCount: Long = driverReleased.value.values.sum
+  }
+}

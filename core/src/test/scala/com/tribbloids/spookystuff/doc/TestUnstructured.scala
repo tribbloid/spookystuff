@@ -1,7 +1,7 @@
 package com.tribbloids.spookystuff.doc
 
+import com.tribbloids.spookystuff.SpookyEnvFixture
 import com.tribbloids.spookystuff.actions._
-import com.tribbloids.spookystuff.{dsl, SpookyEnvFixture}
 import com.tribbloids.spookystuff.testutils.LocalPathDocsFixture
 import com.tribbloids.spookystuff.utils.serialization.AssertSerializable
 import org.apache.spark.SparkEnv
@@ -11,9 +11,7 @@ import org.apache.spark.SparkEnv
   */
 class TestUnstructured extends SpookyEnvFixture with LocalPathDocsFixture {
 
-  import dsl._
-
-  lazy val page = (Wget(HTML_URL).as('old) :: Nil).fetch(spooky).head.asInstanceOf[Doc]
+  lazy val page: Doc = Wget(HTML_URL).as('old).fetch(spooky).head.asInstanceOf[Doc]
 
   it("Unstructured is serializable for div") {
     val elements = page.findAll("div.central-featured-lang")
@@ -43,7 +41,7 @@ class TestUnstructured extends SpookyEnvFixture with LocalPathDocsFixture {
     }
   }
 
-  lazy val tablePage = (Wget(HTML_URL).as('old) :: Nil).fetch(spooky).head.asInstanceOf[Doc]
+  lazy val tablePage = Wget(HTML_URL).as('old).fetch(spooky).head.asInstanceOf[Doc]
 
   ignore("Unstructured is serializable for tr") {
     val elements = tablePage.findAll("table#mp-topbanner > tbody > tr")

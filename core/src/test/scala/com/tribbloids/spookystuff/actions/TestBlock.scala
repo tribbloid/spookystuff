@@ -1,14 +1,12 @@
 package com.tribbloids.spookystuff.actions
 
-import java.util.Date
-
 import com.tribbloids.spookystuff.SpookyEnvFixture
 import com.tribbloids.spookystuff.extractors.impl.Lit
 import com.tribbloids.spookystuff.session.Session
 
-class TestBlock extends SpookyEnvFixture {
+import java.util.Date
 
-  import com.tribbloids.spookystuff.dsl._
+class TestBlock extends SpookyEnvFixture {
 
   import scala.concurrent.duration._
 
@@ -23,7 +21,7 @@ class TestBlock extends SpookyEnvFixture {
     )
     loop.exe(session)
 
-    assert(session.webDriverOpt.isEmpty)
+    assert(session.Drivers.cache.isEmpty)
 //    assert(!loop.needDriver)
   }
 
@@ -39,7 +37,7 @@ class TestBlock extends SpookyEnvFixture {
     )
     tryy.exe(session)
 
-    assert(session.webDriverOpt.isEmpty)
+    assert(session.Drivers.cache.isEmpty)
   }
 
   it("Try(Wget) can failsafe on malformed uri") {}

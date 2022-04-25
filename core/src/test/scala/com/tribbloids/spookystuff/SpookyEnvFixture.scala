@@ -2,11 +2,10 @@ package com.tribbloids.spookystuff
 
 import com.tribbloids.spookystuff.conf._
 import com.tribbloids.spookystuff.doc.{Doc, Unstructured}
-import com.tribbloids.spookystuff.dsl.DriverFactory
 import com.tribbloids.spookystuff.execution.SpookyExecutionContext
 import com.tribbloids.spookystuff.extractors.{Alias, GenExtractor, GenResolved}
 import com.tribbloids.spookystuff.row.{SpookySchema, SquashedFetchedRow, TypedField}
-import com.tribbloids.spookystuff.session.{CleanWebDriver, Driver}
+import com.tribbloids.spookystuff.session.DriverLike
 import com.tribbloids.spookystuff.testutils.{FunSpecx, RemoteDocsFixture, TestHelper}
 import com.tribbloids.spookystuff.utils.lifespan.{Cleanable, Lifespan}
 import com.tribbloids.spookystuff.utils.{CommonConst, CommonUtils, Retry, SparkUISupport}
@@ -72,8 +71,8 @@ object SpookyEnvFixture {
       //this is necessary as each suite won't automatically cleanup drivers NOT in task when finished
       Cleanable.cleanSweepAll(
         condition = {
-          case v: Driver => true
-          case _         => false
+          case _: DriverLike => true
+          case _             => false
         }
       )
     }
@@ -94,11 +93,6 @@ object SpookyEnvFixture {
     def sc: SparkContext = TestHelper.TestSC
     def sql: SQLContext = TestHelper.TestSQL
 
-    lazy val driverFactory: DriverFactory[CleanWebDriver] = SpookyConf.TEST_WEBDRIVER_FACTORY
-
-    @transient lazy val spookyConf = new SpookyConf(
-      webDriverFactory = driverFactory
-    )
     var _spooky: SpookyContext = _
     def spooky: SpookyContext = {
       Option(_spooky)
@@ -110,10 +104,12 @@ object SpookyEnvFixture {
 
     def reloadSpooky: SpookyContext = {
       val sql = this.sql
-      val result = new SpookyContext(sql, spookyConf)
+      val result = SpookyContext(sql, SpookyConf.default)
       _spooky = result
       result
     }
+
+    def spookyConf: SpookyConf = spooky.getConf(Core)
   }
 
 }
@@ -156,7 +152,7 @@ abstract class SpookyEnvFixture
 
   import com.tribbloids.spookystuff.utils.SpookyViews._
 
-  def _processNames = Seq("phantomjs", "python")
+  def _processNames: Seq[String] = Seq("phantomjs", "python")
   final lazy val conditions = {
     val _processNames = this._processNames
     val exitingPIDs = this.exitingPIDs
@@ -181,7 +177,7 @@ abstract class SpookyEnvFixture
     SpookyEnvFixture.firstRun = false
   }
 
-  override def afterAll() {
+  override def afterAll(): Unit = {
 
     val spooky = this.spooky
     val conditions = this.conditions
@@ -201,19 +197,14 @@ abstract class SpookyEnvFixture
 
   override def beforeEach(): Unit = CommonUtils.retry(3, 1000) {
     //    SpookyEnvFixture.cleanDriverInstances()
-    spooky._configurations = submodules
     spooky.spookyMetrics.resetAll()
-    spooky.rebroadcast()
-  }
 
-  def submodules: Submodules[AbstractConf] = {
-    Submodules(
-      new SpookyConf(
-        autoSave = true,
+    spooky.setConf(
+      SpookyConf(
         cacheWrite = false,
         cacheRead = false
       ),
-      DirConf(
+      Dir.Conf(
         root = CommonUtils.\\\(CommonConst.USER_TEMP_DIR, "spooky-unit")
       )
     )

@@ -7,7 +7,7 @@ import com.tribbloids.spookystuff.session.Session
 //TODO: support chaining & extends ExpressionLike/TreeNode
 sealed trait AbstractDocFilter extends DocFilter {
 
-  def assertStatusCode(page: Doc) {
+  def assertStatusCode(page: Doc): Unit = {
     page.httpStatus.foreach { v =>
       assert(v.getStatusCode.toString.startsWith("2"), v.toString)
     }

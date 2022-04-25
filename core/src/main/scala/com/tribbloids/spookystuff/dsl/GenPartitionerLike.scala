@@ -65,7 +65,6 @@ object GenPartitionerLike {
 
   /**
     * only need to defined a key repartitioning function
-    * @tparam K
     */
   abstract class RepartitionKeyImpl[K](implicit val ctg: ClassTag[K]) extends Instance[K] {
 
@@ -98,7 +97,7 @@ object GenPartitionerLike {
     ): RDD[(K, K)]
   }
 
-  trait Passthrough extends AnyGenPartitioner {
+  trait PassThrough extends AnyGenPartitioner {
 
     def getInstance[K: ClassTag](schema: SpookySchema): Instance[K] = {
       Inst[K]()

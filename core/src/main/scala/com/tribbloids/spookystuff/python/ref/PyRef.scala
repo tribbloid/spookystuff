@@ -2,7 +2,7 @@ package com.tribbloids.spookystuff.python.ref
 
 import com.tribbloids.spookystuff.SpookyContext
 import com.tribbloids.spookystuff.python.PyConverter
-import com.tribbloids.spookystuff.session._
+import com.tribbloids.spookystuff.session.{PythonDriver, Session}
 import com.tribbloids.spookystuff.utils.CachingUtils.ConcurrentMap
 import com.tribbloids.spookystuff.utils.lifespan.Cleanable
 import org.apache.spark.ml.dsl.utils._
@@ -79,7 +79,7 @@ trait PyRef extends Cleanable {
   def varNamePrefix = DSLUtils.toCamelCase(simpleClassName)
   def packageName = pyClassNameParts.slice(0, pyClassNameParts.length - 1).mkString(".")
 
-  override def chainClean: Seq[Cleanable] = bindings
+//  override def chainClean: Seq[Cleanable] = bindings
 
   def _Py(
       driver: PythonDriver,
@@ -102,7 +102,12 @@ trait PyRef extends Cleanable {
     _Py(session.pythonDriver, Some(session.spooky))
   }
 
-  override protected def cleanImpl(): Unit = {}
+  override protected def cleanImpl(): Unit = {
+
+    bindings.foreach { binding =>
+      binding.clean(true)
+    }
+  }
 }
 
 object PyRef {
@@ -111,7 +116,7 @@ object PyRef {
 
   def sanityCheck(): Unit = {
     val subs = Cleanable.getTyped[PyBinding]
-    val refSubs = Cleanable.getTyped[PyRef].map(_.chainClean)
+    val refSubs = Cleanable.getTyped[PyRef].map(_.bindings)
     assert(
       subs.intersect(refSubs).size <= refSubs.size, {
         "INTERNAL ERROR: dangling tree!"

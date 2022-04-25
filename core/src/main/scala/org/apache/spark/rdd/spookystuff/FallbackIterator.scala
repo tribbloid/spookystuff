@@ -1,7 +1,6 @@
 package org.apache.spark.rdd.spookystuff
 
 import com.tribbloids.spookystuff.utils.lifespan.LifespanContext
-import org.apache.spark.rdd.spookystuff.ExternalAppendOnlyArray.CannotComputeException
 import org.slf4j.LoggerFactory
 
 /**
@@ -11,6 +10,8 @@ import org.slf4j.LoggerFactory
   * @tparam T type of element
   */
 trait FallbackIterator[T] extends FastForwardingIterator[T] with ConsumedIterator {
+
+  import FallbackIterator._
 
   def getPrimary: Iterator[T] with ConsumedIterator
   def getBackup: Iterator[T] with ConsumedIterator
@@ -136,4 +137,7 @@ trait FallbackIterator[T] extends FastForwardingIterator[T] with ConsumedIterato
   }
 }
 
-object FallbackIterator {}
+object FallbackIterator {
+
+  class CannotComputeException(info: String) extends ArrayIndexOutOfBoundsException(info)
+}

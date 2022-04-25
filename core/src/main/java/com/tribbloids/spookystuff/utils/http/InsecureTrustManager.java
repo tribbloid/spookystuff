@@ -15,10 +15,9 @@
  */
 package com.tribbloids.spookystuff.utils.http;
 
+import javax.net.ssl.X509TrustManager;
 import java.security.cert.CertificateException;
 import java.security.cert.X509Certificate;
-
-import javax.net.ssl.X509TrustManager;
 
 /**
  * A completely insecure (yet very easy to use) x509 trust manager. This manager trusts all servers

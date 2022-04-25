@@ -107,7 +107,7 @@ object Lifespan {
 
     import JVM._
 
-    override def getBatchIDs = Seq(ID((ctx.thread.getId % JVM.MAX_NUMBER_OF_SHUTDOWN_HOOKS).toInt))
+    override def getBatchIDs: Seq[ID] = Seq(ID((ctx.thread.getId % JVM.MAX_NUMBER_OF_SHUTDOWN_HOOKS).toInt))
 
     override def registerHook(fn: () => Unit): Unit =
       try {

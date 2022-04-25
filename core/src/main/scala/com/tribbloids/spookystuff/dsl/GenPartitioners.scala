@@ -11,7 +11,7 @@ import scala.reflect.ClassTag
 
 object GenPartitioners {
 
-  case object Passthrogh extends GenPartitionerLike.Passthrough
+  case object Passthrogh extends GenPartitionerLike.PassThrough
 
   //this won't merge identical traces and do lookup, only used in case each resolve may yield different result
   case object Narrow extends AnyGenPartitioner {
@@ -39,9 +39,11 @@ object GenPartitioners {
     }
   }
 
-  case class Wide(partitionerFactory: RDD[_] => Partitioner = {
-    PartitionerFactories.SamePartitioner
-  }) extends AnyGenPartitioner {
+  case class Wide(
+      partitionerFactory: RDD[_] => Partitioner = {
+        PartitionerFactories.SamePartitioner
+      }
+  ) extends AnyGenPartitioner {
 
     def getInstance[K: ClassTag](schema: SpookySchema): Instance[K] = {
       Inst[K]()

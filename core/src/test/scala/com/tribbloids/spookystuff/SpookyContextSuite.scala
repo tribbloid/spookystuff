@@ -169,7 +169,7 @@ class SpookyContextSuite extends SpookyEnvFixture with LocalPathDocsFixture {
   it("when sharedMetrics=false, new SpookyContext created from default SpookyConf should have default dir configs") {
 
     val conf: SpookyConf = new SpookyConf(shareMetrics = false)
-    val context = new SpookyContext(this.sql, conf)
+    val context = SpookyContext(this.sql, conf)
 
     val dirs = context.dirConf
     val json = dirs.prettyJSON
@@ -191,7 +191,7 @@ class SpookyContextSuite extends SpookyEnvFixture with LocalPathDocsFixture {
   it("when sharedMetrics=true, new SpookyContext created from default SpookyConf should have default dir configs") {
 
     val conf: SpookyConf = new SpookyConf(shareMetrics = true)
-    val context = new SpookyContext(this.sql, conf)
+    val context = SpookyContext(this.sql, conf)
 
     val dirs = context.dirConf
     val json = dirs.prettyJSON
@@ -199,14 +199,16 @@ class SpookyContextSuite extends SpookyEnvFixture with LocalPathDocsFixture {
 
     import dirs._
     assert(
-      !Seq(root,
-           localRoot,
-           autoSave,
-           cache,
-           errorDump,
-           errorScreenshot,
-           checkpoint,
-           errorDumpLocal,
-           errorScreenshotLocal).contains(null))
+      !Seq(
+        root,
+        localRoot,
+        autoSave,
+        cache,
+        errorDump,
+        errorScreenshot,
+        checkpoint,
+        errorDumpLocal,
+        errorScreenshotLocal
+      ).contains(null))
   }
 }

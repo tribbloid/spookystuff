@@ -1,7 +1,7 @@
 package com.tribbloids.spookystuff.python
 
 import com.tribbloids.spookystuff.python.ref.PyRef
-import org.apache.spark.ml.dsl.utils.messaging.Registry
+import org.apache.spark.ml.dsl.utils.messaging.CodecRegistry
 
 /**
   * Created by peng on 01/11/16.
@@ -72,7 +72,7 @@ object PyConverter {
     // as deep as not inspecting case class constructor, if you do it all hell break loose
     // this limits class constructor to use only JSON compatible weak types, which is not a big deal.
     def scala2py(v: Any): (Seq[PyRef], String) = {
-      val codec = Registry.Default.findCodecOrDefault(v)
+      val codec = CodecRegistry.Default.findCodecOrDefault(v)
       val json = codec.toWriter_>>(v).prettyJSON
 
       val code =

@@ -1,8 +1,8 @@
 package com.tribbloids.spookystuff.actions
 
 import java.sql.Timestamp
-
 import com.tribbloids.spookystuff.SpookyEnvFixture
+import com.tribbloids.spookystuff.actions.Delay.RandomDelay
 import com.tribbloids.spookystuff.doc.Doc
 import com.tribbloids.spookystuff.rdd.FetchedDataset
 import com.tribbloids.spookystuff.testutils.LocalOnly
@@ -65,9 +65,7 @@ class TestWget extends SpookyEnvFixture {
   }
 
   def getIP(url: String = HTTP_IP_URL): String = {
-    val results = (
-      wget(HTTPS_IP_URL) :: Nil
-    ).fetch(spooky)
+    val results = wget(url).fetch(spooky)
 
     results.head.asInstanceOf[Doc].code.get
   }
@@ -76,9 +74,7 @@ class TestWget extends SpookyEnvFixture {
   it("wget should encode malformed url") {
     spooky.spookyConf.webProxy = WebProxyFactories.NoProxy
 
-    val results = (
-      wget("https://www.google.com/?q=giant robot") :: Nil
-    ).fetch(spooky)
+    val results = wget("https://www.google.com/?q=giant robot").fetch(spooky)
 
     assert(results.size === 1)
     val doc = results.head.asInstanceOf[Doc]
@@ -133,13 +129,11 @@ class TestWget extends SpookyEnvFixture {
     import duration._
 
     val results = (
-      RandomDelay(1.seconds, 2.seconds)
-        :: wget(HTML_URL)
-        :: Nil
+      RandomDelay(1.seconds, 2.seconds) +> wget(HTML_URL)
     ).fetch(spooky)
 
     assert(results.size === 1)
-    assert(results.head.uid.backtrace.children.last == wget(HTML_URL))
+    assert(results.head.uid.backtrace.last == wget(HTML_URL))
   }
 
   //TODO: how to simulate a PKIX exception page?

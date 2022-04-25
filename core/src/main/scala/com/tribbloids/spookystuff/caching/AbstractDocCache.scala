@@ -1,6 +1,6 @@
 package com.tribbloids.spookystuff.caching
 
-import com.tribbloids.spookystuff.{dsl, SpookyContext}
+import com.tribbloids.spookystuff.SpookyContext
 import com.tribbloids.spookystuff.actions._
 import com.tribbloids.spookystuff.doc.DocOption
 import com.tribbloids.spookystuff.extractors.FR
@@ -11,20 +11,18 @@ import com.tribbloids.spookystuff.extractors.impl.Lit
   */
 trait AbstractDocCache {
 
-  import dsl._
-
-  def get(k: Trace, spooky: SpookyContext): Option[Seq[DocOption]] = {
+  def get(k: TraceView, spooky: SpookyContext): Option[Seq[DocOption]] = {
     val pagesOpt = getImpl(k, spooky)
 
-    val dryrun = k.dryrun
+    val dryRun = k.dryRun
 
     val result = pagesOpt.map { pages =>
       for (page <- pages) yield {
         val pageBacktrace: Trace = page.uid.backtrace
-        val similarTrace = dryrun.find(_ == pageBacktrace).get
+        val similarTrace = dryRun.find(_ == pageBacktrace).get
 
-        pageBacktrace
-          .injectFrom(similarTrace) //this is to allow actions in backtrace to have different name than those cached
+        TraceView(pageBacktrace)
+          .injectFrom(TraceView(similarTrace)) //this is to allow actions in backtrace to have different name than those cached
         page.updated(
           uid = page.uid.copy()(name = Option(page.uid.output).map(_.name).orNull)
         )
@@ -32,9 +30,9 @@ trait AbstractDocCache {
     }
     result
   }
-  def getImpl(k: Trace, spooky: SpookyContext): Option[Seq[DocOption]]
+  def getImpl(k: TraceView, spooky: SpookyContext): Option[Seq[DocOption]]
 
-  def getOrElsePut(k: Trace, v: Seq[DocOption], spooky: SpookyContext): Seq[DocOption] = {
+  def getOrElsePut(k: TraceView, v: Seq[DocOption], spooky: SpookyContext): Seq[DocOption] = {
 
     val gg = get(k, spooky)
     gg.getOrElse {
@@ -60,7 +58,7 @@ trait AbstractDocCache {
 
   def getTimeRange(action: Action, spooky: SpookyContext): (Long, Long) = {
     val waybackOption = action match {
-      case w: Wayback =>
+      case w: WaybackLike =>
         Option(w.wayback).map { expr =>
           val result = expr.asInstanceOf[Lit[FR, Long]].value
           spooky.spookyConf.IgnoreCachedDocsBefore match {

@@ -1,6 +1,6 @@
 package com.tribbloids.spookystuff.utils.locality
 
-import com.tribbloids.spookystuff.utils.Broadcasted
+import com.tribbloids.spookystuff.utils.BroadcastWrapper
 import org.apache.spark.{Partitioner, TaskContext}
 import org.apache.spark.rdd.RDD
 import org.apache.spark.util.collection.AppendOnlyMap
@@ -15,10 +15,10 @@ case class MapPartitioner(
     @transient key2PartitionID: Map[Any, Int]
 ) extends Partitioner {
 
-  val key2PartitionID_broadcasted = Broadcasted(key2PartitionID)
+  val key2PartitionID_broadcast: BroadcastWrapper[Map[Any, Int]] = BroadcastWrapper(key2PartitionID)
 
-  override def getPartition(key: Any) = {
-    key2PartitionID_broadcasted.value.getOrElse(key, Random.nextInt(numPartitions))
+  override def getPartition(key: Any): Int = {
+    key2PartitionID_broadcast.value.getOrElse(key, Random.nextInt(numPartitions))
   }
 }
 
@@ -27,7 +27,7 @@ case class IndexingLocalityImpl[K: ClassTag, V: ClassTag](
     persistFn: RDD[_] => Unit = _.persist()
 ) extends Locality_OrdinalityImpl[K, V] {
 
-  val numPartitions1 = rdd1.partitions.length
+  val numPartitions1: Int = rdd1.partitions.length
 
   lazy val beacon: RDD[(Int, (K, V))] = {
     val withPID = rdd1.mapPartitions { itr =>
@@ -39,7 +39,7 @@ case class IndexingLocalityImpl[K: ClassTag, V: ClassTag](
     withPID
   }
 
-  override def cogroupBase[V2: ClassTag](rdd2: RDD[(K, V2)]) = {
+  override def cogroupBase[V2: ClassTag](rdd2: RDD[(K, V2)]): RDD[(K, (V, Iterable[V2]))] = {
 
     val key2PartitionID: Map[Any, Int] = beacon
       .mapValues(_._1)

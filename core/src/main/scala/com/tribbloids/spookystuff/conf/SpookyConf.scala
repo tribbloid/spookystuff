@@ -11,15 +11,7 @@ import java.util.Date
 import scala.concurrent.duration.Duration.Infinite
 import scala.concurrent.duration._
 
-object SpookyConf extends Submodules.Builder[SpookyConf] {
-
-  final val DEFAULT_WEBDRIVER_FACTORY = WebDriverFactory.PhantomJS().taskLocal
-
-  /**
-    * otherwise driver cannot do screenshot
-    */
-  final val TEST_WEBDRIVER_FACTORY = WebDriverFactory.PhantomJS(loadImages = true).taskLocal
-  final val DEFAULT_PYTHONDRIVER_FACTORY = PythonDriverFactory.Python3.taskLocal
+object SpookyConf {
 
   //DO NOT change to val! all confs are
   // mutable
@@ -35,16 +27,13 @@ object SpookyConf extends Submodules.Builder[SpookyConf] {
   * Created by peng on 12/06/14.
   * will be shipped to workers
   */
-//TODO: should be case class
-class SpookyConf(
+case class SpookyConf(
     var shareMetrics: Boolean = false, //TODO: not necessary
 
-    var webDriverFactory: DriverFactory[CleanWebDriver] = SpookyConf.DEFAULT_WEBDRIVER_FACTORY,
     var webProxy: WebProxyFactory = WebProxyFactories.NoProxy,
     var httpHeadersFactory: () => Map[String, String] = () => SpookyConf.defaultHTTPHeaders,
     var oAuthKeysFactory: () => OAuthKeys = () => null,
     var browserResolution: (Int, Int) = (1920, 1080),
-    var pythonDriverFactory: DriverFactory[PythonDriver] = SpookyConf.DEFAULT_PYTHONDRIVER_FACTORY,
     var remote: Boolean = true, //if disabled won't use remote client at all
     var autoSave: Boolean = true,
     var cacheWrite: Boolean = true,
@@ -71,44 +60,11 @@ class SpookyConf(
 
     //if encounter too many out of memory error, change to MEMORY_AND_DISK_SER
     var defaultStorageLevel: StorageLevel = StorageLevel.MEMORY_AND_DISK
-) extends AbstractConf
+) extends Core.MutableConfLike
     with Serializable {
 
-  override def importFrom(sparkConf: SparkConf): this.type = {
-
-    new SpookyConf(
-      shareMetrics = this.shareMetrics,
-      webDriverFactory = this.webDriverFactory,
-      webProxy = this.webProxy,
-      httpHeadersFactory = this.httpHeadersFactory,
-      oAuthKeysFactory = this.oAuthKeysFactory,
-      browserResolution = this.browserResolution,
-      pythonDriverFactory = this.pythonDriverFactory,
-      remote = this.remote,
-      autoSave = this.autoSave,
-      cacheWrite = this.cacheWrite,
-      cacheRead = this.cacheRead,
-      errorDump = this.errorDump,
-      errorScreenshot = this.errorScreenshot,
-      cachedDocsLifeSpan = this.cachedDocsLifeSpan,
-      IgnoreCachedDocsBefore = this.IgnoreCachedDocsBefore,
-      cacheFilePath = this.cacheFilePath,
-      autoSaveFilePath = this.autoSaveFilePath,
-      errorDumpFilePath = this.errorDumpFilePath,
-      remoteResourceTimeout = this.remoteResourceTimeout,
-      DFSTimeout = this.DFSTimeout,
-      failOnDFSRead = this.failOnDFSRead,
-      defaultJoinType = this.defaultJoinType,
-      //default max number of elements scraped from a page, set to Int.MaxValue to allow unlimited fetch
-      defaultFlattenSampler = this.defaultFlattenSampler,
-      defaultJoinSampler = this.defaultJoinSampler,
-      defaultExploreRange = this.defaultExploreRange,
-      defaultGenPartitioner = this.defaultGenPartitioner,
-      defaultExploreAlgorithm = this.defaultExploreAlgorithm,
-      epochSize = this.epochSize,
-      checkpointInterval = this.checkpointInterval,
-      defaultStorageLevel = this.defaultStorageLevel
-    ).asInstanceOf[this.type]
+  override def importFrom(sparkConf: SparkConf): SpookyConf = {
+    this
   }
 
   def getEarliestDocCreationTime(nowMillis: Long = System.currentTimeMillis()): Long = {
@@ -125,13 +81,4 @@ class SpookyConf(
         earliestTimeFromDuration
     }
   }
-
-  def driverFactories: Seq[DriverFactory[_]] = {
-    Seq(
-      webDriverFactory,
-      pythonDriverFactory
-    ).flatMap(v => Option(v))
-  }
 }
-
-object DefaultSpookyConf extends SpookyConf()

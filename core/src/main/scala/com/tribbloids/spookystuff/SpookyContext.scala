@@ -1,181 +1,153 @@
 package com.tribbloids.spookystuff
 
-import com.tribbloids.spookystuff.conf.{AbstractConf, DirConf, SpookyConf, Submodules}
-import com.tribbloids.spookystuff.metrics.{Metrics, SpookyMetrics}
+import com.tribbloids.spookystuff.conf._
+import com.tribbloids.spookystuff.metrics.{AbstractMetrics, SpookyMetrics}
 import com.tribbloids.spookystuff.rdd.FetchedDataset
 import com.tribbloids.spookystuff.row._
 import com.tribbloids.spookystuff.session.Session
+import com.tribbloids.spookystuff.utils.{ShippingMarks, TreeThrowable}
 import com.tribbloids.spookystuff.utils.io.HDFSResolver
 import com.tribbloids.spookystuff.utils.serialization.SerDeOverride
-import org.apache.spark.ml.dsl.utils.refl.ScalaType
-import com.tribbloids.spookystuff.utils.{ShippingMarks, TreeThrowable}
 import org.apache.hadoop.conf.Configuration
 import org.apache.spark._
 import org.apache.spark.broadcast.Broadcast
 import org.apache.spark.ml.dsl.utils.messaging.MessageWriter
+import org.apache.spark.ml.dsl.utils.refl.ScalaType
 import org.apache.spark.rdd.RDD
-import org.apache.spark.sql.{DataFrame, SQLContext, SparkSession}
-import org.slf4j.LoggerFactory
+import org.apache.spark.sql.{DataFrame, SQLContext}
 
 import scala.collection.immutable.ListMap
 import scala.language.implicitConversions
 import scala.reflect.ClassTag
+import scala.util.Try
+
+object SpookyContext {
+
+  def apply(
+      sqlContext: SQLContext,
+      conf: PluginSystem#MutableConfLike*
+  ): SpookyContext = {
+    val result = SpookyContext(sqlContext)
+    result.setConf(conf: _*)
+    result
+  }
+
+  implicit def toFetchedDS(spooky: SpookyContext): FetchedDataset = spooky.createBlank
+}
 
 case class SpookyContext(
-    @transient sqlContext: SQLContext, //can't be used on executors, TODO: change to SparkSession
-    // TODO: change to Option or SparkContext
-    var _configurations: Submodules[AbstractConf] = Submodules(), //always broadcasted
-    _metrics: Submodules[Metrics] = Submodules() //accumulators cannot be broadcasted,
+    @transient sqlContext: SQLContext //can't be used on executors, TODO: change to SparkSession
 ) extends ShippingMarks {
 
-  import sqlContext.sparkSession.implicits._
+//  {
+//    Plugins.deployAll()
+//  }
 
-  def this(
-      sqlContext: SQLContext,
-      conf: SpookyConf
-  ) {
-    this(sqlContext, _configurations = Submodules(conf))
-  }
+  // can be shipped to executors to determine behaviours of actions
+  // features can be configured in-place without affecting metrics
+  // right before the shipping (implemented as serialisation hook),
+  // all enabled features that are not configured will be initialised with default value
 
-  def this(sqlContext: SQLContext) {
-    this(sqlContext, new SpookyConf())
-  }
+  object Plugins extends PluginRegistry.Factory {
 
-  def this(conf: SparkConf) {
-    this(SparkSession.builder().config(conf).getOrCreate().sqlContext)
-  }
+    type UB = PluginSystem
+    override implicit lazy val ubEv: ClassTag[UB] = ClassTag(classOf[UB])
 
-  def this(sc: SparkContext) {
-    this(sc.getConf)
-  }
+    override type Out[T <: PluginSystem] = T#Plugin
+    override def compute[T <: PluginSystem](v: T): v.Plugin = {
+      requireNotShipped()
+      val result = v.default(SpookyContext.this)
+      result
+    }
 
-  {
-    SpookyConf
-    DirConf
-    SpookyMetrics
+    def deployAll(): Unit = {
+      createEnabled()
+      val trials = cache.values.toList.map { v =>
+        Try { v.deploy() }
+      }
+      TreeThrowable.&&&(trials)
+    }
 
-    _configurations.buildAll[AbstractConf]()
-    _metrics.buildAll[Metrics]()
+    lazy val deployAllOnce: Unit = deployAll()
 
-    try {
-      deployDrivers()
-    } catch {
-      case e: Exception =>
-        LoggerFactory.getLogger(this.getClass).error("Driver deployment fail on SpookyContext initialization", e)
+    def resetAll(): Unit = {
+      Plugins.cache.values.foreach { ff =>
+        ff.reset()
+      }
     }
   }
+
+  def getPlugin[T <: PluginSystem](v: T): v.Plugin = Plugins.apply(v)
+  def setPlugin(vs: PluginSystem#Plugin*): this.type = {
+    requireNotShipped()
+
+    vs.foreach { plugin =>
+      Plugins.update(plugin.pluginSystem, plugin)
+    }
+    this
+  }
+
+  import sqlContext.sparkSession.implicits._
 
   import org.apache.spark.sql.catalyst.ScalaReflection.universe._
 
   def sparkContext: SparkContext = this.sqlContext.sparkContext
 
-  def configurations: Submodules[AbstractConf] = {
-    if (isShipped) {
-      broadcastedConfigurations.value
-    } else {
-      _configurations.buildAll[AbstractConf]()
-
-      _configurations = _configurations.transform { conf =>
-        conf.importFrom(sparkContext.getConf)
-      }
-      _configurations
-    }
-  }
-
-  def getConf[T <: AbstractConf: Submodules.Builder]: T = {
-    configurations.getOrBuild[T]
-  }
-
-  def spookyConf: SpookyConf = getConf[SpookyConf]
-  def dirConf: DirConf = getConf[DirConf]
-
-  /**
-    * can only be used on driver
-    */
-  def setConf[T <: AbstractConf](v: T)(implicit ev: Submodules.Builder[T]): Unit = {
+  def getConf[T <: PluginSystem](v: T): v.Conf = getPlugin(v).getConf
+  def setConf(vs: PluginSystem#MutableConfLike*): this.type = {
     requireNotShipped()
-    implicit val ctg: ClassTag[T] = ev.ctg
-    _configurations.transform {
-      case _: T  => v
-      case v @ _ => v
+
+    val plugins = vs.map { conf =>
+      val sys = conf.pluginSystem
+      val old = getPlugin(sys)
+      val neo: PluginSystem#Plugin = old.withConf(conf.asInstanceOf[sys.Conf])
+
+      neo
     }
+
+    setPlugin(plugins: _*)
   }
 
+  def getMetric[T <: PluginSystem](v: T): v.Metrics = getPlugin(v).metrics
+
+  def spookyConf: SpookyConf = getPlugin(Core).getConf
   def spookyConf_=(v: SpookyConf): Unit = {
     setConf(v)
   }
-  def dirConf_=(v: DirConf): Unit = {
+  def dirConf: Dir.Conf = getPlugin(Dir).getConf
+  def dirConf_=(v: Dir.Conf): Unit = {
     setConf(v)
   }
 
-  val broadcastedHadoopConf: Broadcast[SerDeOverride[Configuration]] = {
+  val hadoopConfBroadcast: Broadcast[SerDeOverride[Configuration]] = {
     sqlContext.sparkContext.broadcast(
       SerDeOverride(this.sqlContext.sparkContext.hadoopConfiguration)
     )
   }
-  def hadoopConf: Configuration = broadcastedHadoopConf.value.value
+  def hadoopConf: Configuration = hadoopConfBroadcast.value.value
 
-  def pathResolver: HDFSResolver = HDFSResolver(() => hadoopConf) // TODO: should be @transient lazy val?
+  @transient lazy val pathResolver: HDFSResolver = HDFSResolver(() => hadoopConf)
 
-  var broadcastedConfigurations: Broadcast[Submodules[AbstractConf]] = {
-    sqlContext.sparkContext.broadcast(
-      this.configurations
-    )
+  def spookyMetrics: SpookyMetrics = getPlugin(Core).metrics
+
+  final override def clone: SpookyContext = {
+    val result = SpookyContext(sqlContext)
+    val plugins = Plugins.cache.values.toList.map(plugin => plugin.clone)
+    result.setPlugin(plugins: _*)
+
+    result
   }
 
-  def rebroadcast(): Unit = {
-    requireNotShipped()
-    scala.util.Try {
-      broadcastedConfigurations.destroy()
-    }
-    broadcastedConfigurations = {
-      sqlContext.sparkContext.broadcast(
-        this.configurations
-      )
-    }
-  }
-
-  // may take a long time then fail, only attempted once
-  def deployDrivers(): Unit = {
-    val trials = spookyConf.driverFactories
-      .map { v =>
-        scala.util.Try {
-          v.deployGlobally(this)
-        }
-      }
-    TreeThrowable.&&&(trials)
-  }
-
-  def metrics: Submodules[Metrics] = {
-    _metrics.buildAll[Metrics]()
-    _metrics
-  }
-
-  def getMetrics[T <: Metrics: Submodules.Builder]: T = metrics.getOrBuild[T]
-
-  def spookyMetrics: SpookyMetrics = getMetrics[SpookyMetrics]
-
-  def zeroMetrics(): SpookyContext = {
-    metrics.foreach {
-      _.resetAll()
-    }
-    this
-  }
-
-  def getSpookyForRDD: SpookyContext = {
-    if (spookyConf.shareMetrics) this
-    else {
-      rebroadcast()
-      val result = this.copy(
-        _configurations = this.configurations,
-        _metrics = Submodules()
-      )
-      result
+  def forkForNewRDD: SpookyContext = {
+    if (spookyConf.shareMetrics) {
+      this // TODO: this doesn't fork configuration and may still cause interference
+    } else {
+      this.clone
     }
   }
 
-  def create(df: DataFrame): FetchedDataset = this.dsl.dataFrameToPageRowRDD(df)
-  def create[T: TypeTag](rdd: RDD[T]): FetchedDataset = this.dsl.rddToFetchedDataset(rdd)
+  def create(df: DataFrame): FetchedDataset = this.dsl.dfToFetchedDS(df)
+  def create[T: TypeTag](rdd: RDD[T]): FetchedDataset = this.dsl.rddToFetchedDS(rdd)
 
   //TODO: merge after 2.0.x
   def create[T: TypeTag](
@@ -183,7 +155,7 @@ case class SpookyContext(
   ): FetchedDataset = {
 
     implicit val ctg: ClassTag[T] = ScalaType.FromTypeTag[T].asClassTag
-    this.dsl.rddToFetchedDataset(this.sqlContext.sparkContext.parallelize(seq.toSeq))
+    this.dsl.rddToFetchedDS(this.sqlContext.sparkContext.parallelize(seq.toSeq))
   }
   def create[T: TypeTag](
       seq: TraversableOnce[T],
@@ -191,7 +163,7 @@ case class SpookyContext(
   ): FetchedDataset = {
 
     implicit val ctg: ClassTag[T] = ScalaType.FromTypeTag[T].asClassTag
-    this.dsl.rddToFetchedDataset(this.sqlContext.sparkContext.parallelize(seq.toSeq, numSlices))
+    this.dsl.rddToFetchedDS(this.sqlContext.sparkContext.parallelize(seq.toSeq, numSlices))
   }
 
   def withSession[T](fn: Session => T): T = {
@@ -205,15 +177,15 @@ case class SpookyContext(
     }
   }
 
-  lazy val _blankSelfRDD: RDD[SquashedFetchedRow] = sparkContext.parallelize(Seq(SquashedFetchedRow.blank))
+  lazy val _blankRowRDD: RDD[SquashedFetchedRow] = sparkContext.parallelize(Seq(SquashedFetchedRow.blank))
 
-  def createBlank: FetchedDataset = this.create(_blankSelfRDD)
+  def createBlank: FetchedDataset = this.create(_blankRowRDD)
 
   object dsl extends Serializable {
 
     import com.tribbloids.spookystuff.utils.SpookyViews._
 
-    implicit def dataFrameToPageRowRDD(df: DataFrame): FetchedDataset = {
+    implicit def dfToFetchedDS(df: DataFrame): FetchedDataset = {
       val mapRDD = new DataFrameView(df)
         .toMapRDD()
 
@@ -231,12 +203,12 @@ case class SpookyContext(
       new FetchedDataset(
         self,
         fieldMap = ListMap(fields: _*),
-        spooky = getSpookyForRDD
+        spooky = forkForNewRDD
       )
     }
 
     //every input or noInput will generate a new metrics
-    implicit def rddToFetchedDataset[T: TypeTag](rdd: RDD[T]): FetchedDataset = {
+    implicit def rddToFetchedDS[T: TypeTag](rdd: RDD[T]): FetchedDataset = {
 
       val ttg = implicitly[TypeTag[T]]
 
@@ -253,7 +225,7 @@ case class SpookyContext(
               map => MessageWriter(map).compactJSON
             ))
           val dataFrame = sqlContext.read.json(jsonDS)
-          dataFrameToPageRowRDD(dataFrame)
+          dfToFetchedDS(dataFrame)
 
         // RDD[SquashedFetchedRow] => ..
         //discard schema
@@ -263,7 +235,7 @@ case class SpookyContext(
           new FetchedDataset(
             self,
             fieldMap = ListMap(),
-            spooky = getSpookyForRDD
+            spooky = forkForNewRDD
           )
 
         // RDD[T] => RDD('_ -> T) => ...
@@ -277,7 +249,7 @@ case class SpookyContext(
           new FetchedDataset(
             self,
             fieldMap = ListMap(Field("_") -> ScalaType.FromTypeTag(ttg).asCatalystType),
-            spooky = getSpookyForRDD
+            spooky = forkForNewRDD
           )
       }
     }

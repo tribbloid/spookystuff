@@ -1,7 +1,7 @@
 package com.tribbloids.spookystuff.session
 
-import java.io.File
-import java.util.regex.Pattern
+import com.tribbloids.spookystuff.conf.Python
+import com.tribbloids.spookystuff.driver.PythonProcess
 import com.tribbloids.spookystuff.utils.lifespan.Lifespan
 import com.tribbloids.spookystuff.utils.{BypassingRule, CommonUtils, SpookyUtils}
 import com.tribbloids.spookystuff.{PyException, PyInterpretationException, SpookyContext}
@@ -9,6 +9,8 @@ import org.apache.commons.io.FileUtils
 import org.apache.spark.ml.dsl.utils.DSLUtils
 import org.slf4j.LoggerFactory
 
+import java.io.File
+import java.util.regex.Pattern
 import scala.collection.mutable
 import scala.collection.mutable.ArrayBuffer
 import scala.concurrent.TimeoutException
@@ -43,14 +45,6 @@ object PythonDriver {
       SpookyUtils.extractResource(resource, pythonPath)
     }
 
-    //    val moduleResourceOpt = SpookyUtils.getCPResource(PythonDriver.MODULE_RESOURCE)
-    //    moduleResourceOpt.foreach {
-    //      resource =>
-    //        //        SpookyUtils.asynchIfNotExist(modulePath){
-    //
-    //        SpookyUtils.extractResource(resource, modulePath)
-    //      //        }
-    //    }
     pythonPath
   }
 
@@ -87,6 +81,7 @@ object PythonDriver {
   }
 
   val defaultTemplate = new PythonDriver()
+
 }
 
 /**
@@ -101,7 +96,7 @@ class PythonDriver(
                     """.trim.stripMargin,
     override val _lifespan: Lifespan = Lifespan.TaskOrJVM()
 ) extends PythonProcess(pythonExe)
-    with Driver {
+    with DriverLike {
 
   import scala.concurrent.duration._
 
@@ -155,7 +150,7 @@ class PythonDriver(
               try {
                 this._interpret("exit()")
               } catch {
-                case e: PyException =>
+                case _: PyException =>
               }
             }
             Thread.sleep(1000)
@@ -211,7 +206,7 @@ class PythonDriver(
     } catch {
       case e: Exception =>
         spookyOpt.foreach(
-          _.spookyMetrics.pythonInterpretationError += 1
+          _.Plugins.apply(Python).metrics.pythonInterpretationError += 1
         )
         val cause = e
         if (this.isCleaned) {
@@ -245,7 +240,7 @@ class PythonDriver(
 
     if (hasError) {
       spookyOpt.foreach(
-        _.spookyMetrics.pythonInterpretationError += 1
+        _.Plugins.apply(Python).metrics.pythonInterpretationError += 1
       )
       val ee = PyInterpretationException(
         indentedCode,
@@ -299,7 +294,7 @@ class PythonDriver(
     }
 
     spookyOpt.foreach(
-      _.spookyMetrics.pythonInterpretationSuccess += 1
+      _.Plugins.apply(Python).metrics.pythonInterpretationSuccess += 1
     )
 
     rows
@@ -390,7 +385,6 @@ class PythonDriver(
   }
 
   def batchImport(codes: Seq[String]): Unit = IntpLock.synchronized {
-    val effectiveCodes = ArrayBuffer[String]()
     codes
       .map(_.trim)
       .foreach { code =>
