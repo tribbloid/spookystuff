@@ -46,7 +46,7 @@ class FlatSelectIT extends IntegrationFixture {
     assert(rows.head.getString(0) === "en")
     assert(rows.head.getString(1) contains "en.wikipedia.org/")
     assert(rows.head.getString(2) === "The Free Encyclopedia")
-    assert(rows.head.getString(3) contains "spookystuff/test/Wikipedia.html")
+    assert(rows.head.getString(3) contains "testutils/files/Wikipedia.html")
   }
 
   override def numPages = 1
