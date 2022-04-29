@@ -16,7 +16,7 @@ object Web extends PluginSystem.WithDrivers {
   final val TEST_WEBDRIVER_FACTORY = WebDriverFactory.PhantomJS(loadImages = true).taskLocal
 
   case class Conf(
-      var webDriverFactory: DriverFactory[CleanWebDriver] = DEFAULT_WEBDRIVER_FACTORY,
+      var webDriverFactory: DriverFactory[CleanWebDriver] = DEFAULT_WEBDRIVER_FACTORY
   ) extends MutableConfLike {
 
     override def importFrom(sparkConf: SparkConf): Conf = this.copy()
@@ -41,6 +41,7 @@ object Web extends PluginSystem.WithDrivers {
     override def withEffectiveConf(conf: Conf): Plugin = copy(spooky, conf)
   }
 
-  override def default(spooky: SpookyContext): Plugin =
+  override def default(spooky: SpookyContext): Plugin = {
     Plugin(spooky, defaultConf).withEffectiveConf(defaultConf)
+  }
 }
