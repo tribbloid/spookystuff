@@ -1,19 +1,18 @@
 package com.tribbloids.spookystuff.integration
 
 import java.util.Date
-
 import com.tribbloids.spookystuff._
 import com.tribbloids.spookystuff.conf.SpookyConf
 import com.tribbloids.spookystuff.dsl._
 import com.tribbloids.spookystuff.metrics.SpookyMetrics
-import com.tribbloids.spookystuff.testutils.{RemoteDocsFixture, TestHelper}
+import com.tribbloids.spookystuff.testutils.{LocalURIDocsFixture, RemoteDocsFixture, TestHelper}
 import com.tribbloids.spookystuff.utils.{CommonConst, CommonUtils}
 import org.scalatest.BeforeAndAfterAll
 
 import scala.concurrent.duration
 import scala.util.Random
 
-abstract class IntegrationFixture extends SpookyEnvFixture with BeforeAndAfterAll with RemoteDocsFixture {
+abstract class IntegrationFixture extends SpookyEnvFixture with BeforeAndAfterAll with LocalURIDocsFixture {
 
   val phantomJS: WebDriverFactory.PhantomJS = WebDriverFactory.PhantomJS()
   val htmlUnit: WebDriverFactory.HtmlUnit = WebDriverFactory.HtmlUnit()
