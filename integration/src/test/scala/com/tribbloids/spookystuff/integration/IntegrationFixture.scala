@@ -55,7 +55,7 @@ abstract class IntegrationFixture extends SpookyEnvFixture with BeforeAndAfterAl
               remoteResourceTimeout = 10.seconds
             ),
             Web.Conf(
-              webDriverFactory = driver,
+              webDriverFactory = driver
             )
           )
 
