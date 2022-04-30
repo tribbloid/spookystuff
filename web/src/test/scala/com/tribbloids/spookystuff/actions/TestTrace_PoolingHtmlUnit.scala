@@ -1,7 +1,6 @@
 package com.tribbloids.spookystuff.actions
 
-import com.tribbloids.spookystuff.conf.WebDriverFactory
-import com.tribbloids.spookystuff.dsl.DriverFactory
+import com.tribbloids.spookystuff.conf.{DriverFactory, WebDriverFactory}
 
 class TestTrace_PoolingHtmlUnit extends AbstractTestTrace {
 

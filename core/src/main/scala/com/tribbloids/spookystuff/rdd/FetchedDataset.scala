@@ -27,7 +27,10 @@ import scala.concurrent.duration.Duration
 import scala.language.implicitConversions
 import scala.reflect.ClassTag
 
-object FetchedDataset {}
+object FetchedDataset {
+
+  implicit def FDToRDD(self: FetchedDataset): RDD[FetchedRow] = self.rdd
+}
 
 /**
   * Created by peng on 8/29/14.

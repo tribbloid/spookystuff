@@ -1,4 +1,6 @@
-package com.tribbloids.spookystuff
+package com.tribbloids.spookystuff.conf
+
+import com.tribbloids.spookystuff.SpookyEnvFixture
 
 import com.tribbloids.spookystuff.actions.{Visit, Wget}
 import com.tribbloids.spookystuff.conf.{Web, WebDriverFactory}

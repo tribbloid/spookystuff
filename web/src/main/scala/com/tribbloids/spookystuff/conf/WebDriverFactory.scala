@@ -2,7 +2,7 @@ package com.tribbloids.spookystuff.conf
 
 import com.gargoylesoftware.htmlunit.BrowserVersion
 import com.tribbloids.spookystuff.SpookyContext
-import com.tribbloids.spookystuff.dsl.{BinaryDeployment, DriverFactory}
+import com.tribbloids.spookystuff.dsl.BinaryDeployment
 import com.tribbloids.spookystuff.session.{CleanWebDriver, Session, WebProxySetting}
 import com.tribbloids.spookystuff.utils.ConfUtils
 import com.tribbloids.spookystuff.utils.io.LocalResolver

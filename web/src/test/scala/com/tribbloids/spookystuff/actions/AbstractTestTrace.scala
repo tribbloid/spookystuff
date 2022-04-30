@@ -1,8 +1,8 @@
 package com.tribbloids.spookystuff.actions
 
 import com.tribbloids.spookystuff.SpookyEnvFixture
+import com.tribbloids.spookystuff.conf.DriverFactory
 import com.tribbloids.spookystuff.doc.Doc
-import com.tribbloids.spookystuff.dsl.DriverFactory
 import com.tribbloids.spookystuff.session.{AbstractSession, CleanWebDriver, Session}
 import com.tribbloids.spookystuff.testutils.FunSpecx
 

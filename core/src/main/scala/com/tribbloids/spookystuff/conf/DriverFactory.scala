@@ -13,7 +13,7 @@ WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 See the License for the specific language governing permissions and
 limitations under the License.
  */
-package com.tribbloids.spookystuff.dsl
+package com.tribbloids.spookystuff.conf
 
 import com.tribbloids.spookystuff.session.{DriverLike, Session}
 import com.tribbloids.spookystuff.utils.CachingUtils.ConcurrentMap

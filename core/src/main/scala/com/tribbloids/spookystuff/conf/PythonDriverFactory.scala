@@ -1,7 +1,7 @@
-package com.tribbloids.spookystuff.dsl
+package com.tribbloids.spookystuff.conf
 
-import com.tribbloids.spookystuff.session.{PythonDriver, Session}
 import com.tribbloids.spookystuff.SpookyContext
+import com.tribbloids.spookystuff.session.{PythonDriver, Session}
 import com.tribbloids.spookystuff.utils.lifespan.Lifespan
 
 case class PythonDriverFactory(

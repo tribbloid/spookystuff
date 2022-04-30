@@ -1,7 +1,6 @@
 package com.tribbloids.spookystuff.conf
 
 import com.tribbloids.spookystuff.SpookyContext
-import com.tribbloids.spookystuff.dsl.{DriverFactory, PythonDriverFactory}
 import com.tribbloids.spookystuff.metrics.{AbstractMetrics, Acc}
 import com.tribbloids.spookystuff.session.PythonDriver
 import org.apache.spark.SparkConf

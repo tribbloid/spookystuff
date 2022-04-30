@@ -1,7 +1,6 @@
 package com.tribbloids.spookystuff.conf
 
 import com.tribbloids.spookystuff.SpookyContext
-import com.tribbloids.spookystuff.dsl.DriverFactory
 import com.tribbloids.spookystuff.metrics.AbstractMetrics
 import com.tribbloids.spookystuff.session.DriverLike
 import com.tribbloids.spookystuff.utils.BroadcastWrapper

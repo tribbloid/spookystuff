@@ -1,20 +1,16 @@
 package com.tribbloids.spookystuff.dsl
 
-import java.sql.Timestamp
-import com.tribbloids.spookystuff.SpookyContext
-import com.tribbloids.spookystuff.actions.{Action, Trace, TraceSetView, TraceView}
-import com.tribbloids.spookystuff.doc.{DelegateSeq, Doc, DocUID, Elements, Unstructured}
+import com.tribbloids.spookystuff.doc._
 import com.tribbloids.spookystuff.extractors.GenExtractor.AndThen
-import com.tribbloids.spookystuff.extractors.impl.Extractors._
 import com.tribbloids.spookystuff.extractors._
+import com.tribbloids.spookystuff.extractors.impl.Extractors._
 import com.tribbloids.spookystuff.extractors.impl.{Append, Get, Interpolate, Zipped}
-import com.tribbloids.spookystuff.rdd.FetchedDataset
-import com.tribbloids.spookystuff.row.{FetchedRow, Field}
+import com.tribbloids.spookystuff.row.Field
 import com.tribbloids.spookystuff.utils.Default
 import org.apache.spark.ml.dsl.utils.refl.UnreifiedObjectType
-import org.apache.spark.rdd.RDD
 import org.apache.spark.sql.types.MapType
 
+import java.sql.Timestamp
 import scala.collection.GenTraversableOnce
 import scala.language.implicitConversions
 import scala.reflect.ClassTag
@@ -258,9 +254,6 @@ sealed trait Level1 extends Level2 {
 
     def A(parts: Col[String]*) = 'A.findAll(strC.s(parts: _*))
   }
-
-  implicit def FDToRDD(self: FetchedDataset): RDD[FetchedRow] = self.rdd
-
 }
 
 class DSL extends Level1 {

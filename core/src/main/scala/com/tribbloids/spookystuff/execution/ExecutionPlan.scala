@@ -71,7 +71,7 @@ abstract class ExecutionPlan(
 
   final def tryDeployAndRDD(): SquashedFetchedRDD = {
     try {
-      spooky.Plugins.deployAllOnce
+      ec.deployPluginsOnce
     } catch {
       case e: Throwable =>
         LoggerFactory

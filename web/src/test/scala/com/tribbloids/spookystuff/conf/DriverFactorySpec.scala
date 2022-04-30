@@ -1,4 +1,4 @@
-package com.tribbloids.spookystuff.dsl
+package com.tribbloids.spookystuff.conf
 
 import com.tribbloids.spookystuff.actions.Visit
 import com.tribbloids.spookystuff.conf.{PluginSystem, Python, Web, WebDriverFactory}

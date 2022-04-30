@@ -1,13 +1,13 @@
 package com.tribbloids.spookystuff
 
 import com.tribbloids.spookystuff.conf._
-import com.tribbloids.spookystuff.metrics.{AbstractMetrics, SpookyMetrics}
+import com.tribbloids.spookystuff.metrics.SpookyMetrics
 import com.tribbloids.spookystuff.rdd.FetchedDataset
 import com.tribbloids.spookystuff.row._
 import com.tribbloids.spookystuff.session.Session
-import com.tribbloids.spookystuff.utils.{ShippingMarks, TreeThrowable}
 import com.tribbloids.spookystuff.utils.io.HDFSResolver
 import com.tribbloids.spookystuff.utils.serialization.SerDeOverride
+import com.tribbloids.spookystuff.utils.{ShippingMarks, TreeThrowable}
 import org.apache.hadoop.conf.Configuration
 import org.apache.spark._
 import org.apache.spark.broadcast.Broadcast
@@ -39,10 +39,6 @@ case class SpookyContext(
     @transient sqlContext: SQLContext //can't be used on executors, TODO: change to SparkSession
 ) extends ShippingMarks {
 
-//  {
-//    Plugins.deployAll()
-//  }
-
   // can be shipped to executors to determine behaviours of actions
   // features can be configured in-place without affecting metrics
   // right before the shipping (implemented as serialisation hook),
@@ -62,13 +58,11 @@ case class SpookyContext(
 
     def deployAll(): Unit = {
       createEnabled()
-      val trials = cache.values.toList.map { v =>
-        Try { v.deploy() }
+      val trials = cache.values.toList.map { plugin =>
+        Try { plugin.deploy() }
       }
       TreeThrowable.&&&(trials)
     }
-
-    lazy val deployAllOnce: Unit = deployAll()
 
     def resetAll(): Unit = {
       Plugins.cache.values.foreach { ff =>
@@ -87,9 +81,8 @@ case class SpookyContext(
     this
   }
 
-  import sqlContext.sparkSession.implicits._
-
   import org.apache.spark.sql.catalyst.ScalaReflection.universe._
+  import sqlContext.sparkSession.implicits._
 
   def sparkContext: SparkContext = this.sqlContext.sparkContext
 

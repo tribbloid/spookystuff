@@ -13,6 +13,8 @@ case class SpookyExecutionContext(
     @transient scratchRDDs: ScratchRDDs = ScratchRDDs()
 ) {
 
+  @transient lazy val deployPluginsOnce: Unit = spooky.Plugins.deployAll()
+
   def :++(b: SpookyExecutionContext): SpookyExecutionContext = {
     //    assert(this.spooky == b.spooky,
     //      "cannot merge execution plans due to diverging SpookyContext")
