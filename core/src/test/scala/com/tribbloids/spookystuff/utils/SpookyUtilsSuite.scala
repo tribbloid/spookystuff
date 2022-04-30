@@ -1,7 +1,6 @@
 package com.tribbloids.spookystuff.utils
 
 import java.io.File
-
 import com.tribbloids.spookystuff.testutils.{FunSpecx, TestHelper}
 import org.apache.spark.TaskContext
 import org.apache.spark.rdd.RDD
@@ -37,104 +36,108 @@ class SpookyUtilsSuite extends FunSpecx {
     assert(SpookyUtils.asIterable[Int](Seq(1, 2.2, "b")).toSeq == Iterable(1))
   }
 
-  it("copyResourceToDirectory can extract a dependency's package in a jar") {
-    val src = SpookyUtils.getCPResource("org/apache/log4j/xml").get
-    val dst = CommonUtils.\\\(CommonConst.USER_TEMP_DIR, "log4j")
-    SpookyUtils.extractResource(src, dst)
-    val dir = new File(dst)
-    assert(dir.list().nonEmpty)
+  describe("copyResourceToDirectory") {
+
+    it("can extract a dependency's package in a jar") {
+      val src = SpookyUtils.getCPResource("org/apache/log4j/xml").get
+      val dst = CommonUtils.\\\(CommonConst.USER_TEMP_DIR, "log4j")
+      SpookyUtils.extractResource(src, dst)
+      val dir = new File(dst)
+      assert(dir.list().nonEmpty)
+    }
+
+    it("can extract a package in file system") {
+      val src = SpookyUtils.getCPResource("com/tribbloids/spookystuff/utils").get
+      val dst = "temp/utils/"
+      SpookyUtils.extractResource(src, dst)
+      val dir = new File(dst)
+      assert(dir.list().nonEmpty)
+    }
   }
 
-  it("copyResourceToDirectory can extract a package in file system") {
-    val src = SpookyUtils.getCPResource("com/tribbloids/spookystuff/utils").get
-    val dst = "temp/utils/"
-    SpookyUtils.extractResource(src, dst)
-    val dir = new File(dst)
-    assert(dir.list().nonEmpty)
-  }
+  describe("withTimeout") {
 
-  it("withDeadline can write heartbeat info into log by default") {
+    it("can write heartbeat info into log by default") {
 
-    val (_, time) = CommonUtils.timed {
-      TestHelper.intercept[TimeoutException] {
+      val (_, time) = CommonUtils.timed {
+        TestHelper.intercept[TimeoutException] {
+          CommonUtils.withTimeout(10.seconds, 1.second)(
+            {
+              Thread.sleep(20000)
+            }
+          )
+        }
+      }
+      Predef.assert(time < 12000)
+
+      val (_, time2) = CommonUtils.timed {
         CommonUtils.withTimeout(10.seconds, 1.second)(
           {
-            Thread.sleep(20000)
+            Thread.sleep(5000)
           }
         )
       }
+      assert(time2 < 6000)
     }
-    Predef.assert(time < 12000)
 
-    val (_, time2) = CommonUtils.timed {
-      CommonUtils.withTimeout(10.seconds, 1.second)(
-        {
-          Thread.sleep(5000)
+    it("can execute heartbeat") {
+
+      val log = ArrayBuffer[Int]()
+
+      val (_, time) = CommonUtils.timed {
+        TestHelper.intercept[TimeoutException] {
+          CommonUtils.withTimeout(10.seconds, 1.second)(
+            {
+              Thread.sleep(20000)
+            },
+            AwaitWithHeartbeat.Heartbeat.WrapWithInfo { i: Int =>
+              log += i
+              true
+            }
+          )
         }
-      )
-    }
-    assert(time2 < 6000)
-  }
+      }
+      Predef.assert(time < 12000)
+      Predef.assert((8 to 10).contains(log.max))
 
-  it("withDeadline can execute heartbeat") {
-
-    val log = ArrayBuffer[Int]()
-
-    val (_, time) = CommonUtils.timed {
-      TestHelper.intercept[TimeoutException] {
+      log.clear()
+      val (_, time2) = CommonUtils.timed {
         CommonUtils.withTimeout(10.seconds, 1.second)(
           {
-            Thread.sleep(20000)
-          }, { i: Int =>
-            val str = s"heartbeat: i=$i"
-            println(str)
+            Thread.sleep(5000)
+          },
+          AwaitWithHeartbeat.Heartbeat.WrapWithInfo { i: Int =>
             log += i
             true
           }
         )
       }
+      Predef.assert(time2 < 6000)
+      Predef.assert((4 to 5).contains(log.max))
     }
-    Predef.assert(time < 12000)
-    Predef.assert(Seq(9, 10).contains(log.max))
 
-    log.clear()
-    val (_, time2) = CommonUtils.timed {
-      CommonUtils.withTimeout(10.seconds, 1.second)(
-        {
-          Thread.sleep(5000)
-        }, { i: Int =>
-          val str = s"heartbeat: i=$i"
-          println(str)
-          log += i
-          true
-        }
-      )
-    }
-    Predef.assert(time2 < 6000)
-    Predef.assert(Seq(4, 5).contains(log.max))
-  }
+    it("won't be affected by scala concurrency global ForkJoin thread pool") {
 
-  it("withDeadline won't be affected by scala concurrency global ForkJoin thread pool") {
-
-    TestHelper.TestSC.uuidSeed().mapOncePerCore { _ =>
-      println("partition-" + TaskContext.get().partitionId())
-      val (_, time) = CommonUtils.timed {
-        TestHelper.intercept[TimeoutException] {
-          CommonUtils.withTimeout(10.seconds, 1.second) {
-            Thread.sleep(20000)
-            println("result 1")
+      TestHelper.TestSC.uuidSeed().mapOncePerCore { _ =>
+        println("partition-" + TaskContext.get().partitionId())
+        val (_, time) = CommonUtils.timed {
+          TestHelper.intercept[TimeoutException] {
+            CommonUtils.withTimeout(10.seconds, 1.second) {
+              Thread.sleep(20000)
+              println("result 1")
+            }
           }
         }
-      }
-      Predef.assert(time < 11000, s"$time vs 11000")
+        Predef.assert(time < 11000, s"$time vs 11000")
 
-      val (_, time2) = CommonUtils.timed {
-        CommonUtils.withTimeout(10.seconds, 1.second) {
-          Thread.sleep(3000)
-          println("result 2")
+        val (_, time2) = CommonUtils.timed {
+          CommonUtils.withTimeout(10.seconds, 1.second) {
+            Thread.sleep(3000)
+            println("result 2")
+          }
         }
+        Predef.assert(time2 < 6000, s"$time2 vs 6000")
       }
-      Predef.assert(time2 < 6000, s"$time2 vs 6000")
     }
   }
 
