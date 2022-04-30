@@ -250,7 +250,27 @@ class DFDSuite extends AbstractDFDSuite {
 
     val transformed = model.transform(training)
 
-    transformed.show(false)
+    transformed
+      .collect()
+      .mkString("\n")
+      .shouldBe(
+        """
+          |[0,a b c d e spark,1.0,WrappedArray(a, b, c, d, e, spark),WrappedArray(b, c, d, e, spark),(262144,[17222,27526,28698,30913,234657],[1.0,1.0,1.0,1.0,1.0]),WrappedArray([b,1.0], [c,1.0], [d,1.0], [e,1.0], [spark,1.0])]
+          |[1,b d,0.0,WrappedArray(b, d),WrappedArray(b, d),(262144,[27526,30913],[1.0,1.0]),WrappedArray([b,1.0], [d,1.0])]
+          |[2,spark f g h,1.0,WrappedArray(spark, f, g, h),WrappedArray(spark, f, g, h),(262144,[15554,24152,51505,234657],[1.0,1.0,1.0,1.0]),WrappedArray([spark,1.0], [f,1.0], [g,1.0], [h,1.0])]
+          |[3,hadoop mapreduce,0.0,WrappedArray(hadoop, mapreduce),WrappedArray(hadoop, mapreduce),(262144,[42633,155117],[1.0,1.0]),WrappedArray([hadoop,1.0], [mapreduce,1.0])]
+          |[3,hadoop mapreduce,1.0,WrappedArray(hadoop, mapreduce),WrappedArray(hadoop, mapreduce),(262144,[42633,155117],[1.0,1.0]),WrappedArray([hadoop,1.0], [mapreduce,1.0])]
+          |[4,b spark who,1.0,WrappedArray(b, spark, who),WrappedArray(b, spark),(262144,[30913,234657],[1.0,1.0]),WrappedArray([b,1.0], [spark,1.0])]
+          |[5,g d a y,0.0,WrappedArray(g, d, a, y),WrappedArray(g, d, y),(262144,[27526,51505,130027],[1.0,1.0,1.0]),WrappedArray([g,1.0], [d,1.0], [y,1.0])]
+          |[6,spark fly,1.0,WrappedArray(spark, fly),WrappedArray(spark, fly),(262144,[213423,234657],[1.0,1.0]),WrappedArray([spark,1.0], [fly,1.0])]
+          |[7,was mapreduce,0.0,WrappedArray(was, mapreduce),WrappedArray(mapreduce),(262144,[42633],[1.0]),WrappedArray([mapreduce,1.0])]
+          |[8,e spark program,1.0,WrappedArray(e, spark, program),WrappedArray(e, spark, program),(262144,[17222,210452,234657],[1.0,1.0,1.0]),WrappedArray([e,1.0], [spark,1.0], [program,1.0])]
+          |[9,a e c l,0.0,WrappedArray(a, e, c, l),WrappedArray(e, c, l),(262144,[17222,28698,213302],[1.0,1.0,1.0]),WrappedArray([e,1.0], [c,1.0], [l,1.0])]
+          |[10,spark compile,1.0,WrappedArray(spark, compile),WrappedArray(spark, compile),(262144,[89047,234657],[1.0,1.0]),WrappedArray([spark,1.0], [compile,1.0])]
+          |[11,hadoop software,0.0,WrappedArray(hadoop, software),WrappedArray(hadoop, software),(262144,[123474,155117],[1.0,1.0]),WrappedArray([hadoop,1.0], [software,1.0])]
+          |""".stripMargin
+      )
+
   }
 
   val validPart: DFD = (

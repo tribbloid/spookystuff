@@ -17,7 +17,7 @@ class MessageReaderSuite extends AbstractDFDSuite {
     val param = reader.Param("id", "name", "")
 
     val json = param.jsonEncode(fn)
-    println(json)
+    println(json) // TODO: assert
     val fn2 = param.jsonDecode(json)
     assert(fn2(2) == 4)
   }
@@ -40,7 +40,6 @@ class MessageReaderSuite extends AbstractDFDSuite {
   it("can read lossless timestamp") {
     val str = "2016-09-08T15:00:00.0Z"
     val xmlStr = s"<TimeWrapper><time>$str</time></TimeWrapper>"
-    println(xmlStr)
 
     val reader = new MessageReader[TimeWrapper]()
     val v = reader.fromXML(xmlStr)
@@ -50,7 +49,6 @@ class MessageReaderSuite extends AbstractDFDSuite {
   it("can read less accurate timestamp") {
     val str = "2016-09-08T15:00:00Z"
     val xmlStr = s"<TimeWrapper><time>$str</time></TimeWrapper>"
-    println(xmlStr)
 
     val reader = new MessageReader[TimeWrapper]()
     val v = reader.fromXML(xmlStr)
@@ -60,7 +58,6 @@ class MessageReaderSuite extends AbstractDFDSuite {
   it("can convert even less accurate timestamp") {
     val str = "2016-09-08T15:00"
     val xmlStr = s"<TimeWrapper><time>$str</time></TimeWrapper>"
-    println(xmlStr)
 
     val reader = new MessageReader[TimeWrapper]()
     val v = reader.fromXML(xmlStr)
