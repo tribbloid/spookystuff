@@ -2,6 +2,7 @@ package com.tribbloids.spookystuff.integration.explore
 
 import com.tribbloids.spookystuff.actions._
 import com.tribbloids.spookystuff.integration.IntegrationFixture
+import com.tribbloids.spookystuff.web.actions.{Click, Snapshot, Visit}
 
 /**
   * Created by peng on 12/10/14.

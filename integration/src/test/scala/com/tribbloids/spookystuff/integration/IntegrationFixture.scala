@@ -2,12 +2,13 @@ package com.tribbloids.spookystuff.integration
 
 import com.tribbloids.spookystuff._
 import com.tribbloids.spookystuff.actions.TraceView
-import com.tribbloids.spookystuff.conf.{DriverFactory, SpookyConf, Web, WebDriverFactory}
+import com.tribbloids.spookystuff.conf.{DriverFactory, SpookyConf}
 import com.tribbloids.spookystuff.dsl._
 import com.tribbloids.spookystuff.metrics.SpookyMetrics
-import com.tribbloids.spookystuff.session.CleanWebDriver
 import com.tribbloids.spookystuff.testutils.{LocalURIDocsFixture, TestHelper}
 import com.tribbloids.spookystuff.utils.{CommonConst, CommonUtils}
+import com.tribbloids.spookystuff.web.conf.{Web, WebDriverFactory}
+import com.tribbloids.spookystuff.web.session.CleanWebDriver
 import org.scalatest.BeforeAndAfterAll
 
 import java.util.Date

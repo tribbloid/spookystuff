@@ -4,9 +4,11 @@ import com.tribbloids.spookystuff.testutils.FunSpecx
 import com.tribbloids.spookystuff.utils.serialization.AssertSerializable
 import org.apache.spark.sql.catalyst.ScalaReflection
 import org.apache.spark.sql.catalyst.ScalaReflection.universe
+import org.scalatest.Ignore
 
 import scala.reflect.ClassTag
 
+@Ignore
 class ScalaTypeSpike extends FunSpecx {
 
   import ScalaReflection.universe._

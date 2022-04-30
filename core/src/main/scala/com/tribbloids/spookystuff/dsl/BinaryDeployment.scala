@@ -114,5 +114,3 @@ object BinaryDeployment {
     }
   }
 }
-
-case class PhantomJSDeployment() {}

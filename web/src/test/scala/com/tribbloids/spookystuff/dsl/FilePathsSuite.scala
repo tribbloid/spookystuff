@@ -1,9 +1,9 @@
 package com.tribbloids.spookystuff.dsl
 
 import java.io.File
-
 import com.tribbloids.spookystuff.SpookyEnvFixture
 import com.tribbloids.spookystuff.actions._
+import com.tribbloids.spookystuff.web.actions.{Snapshot, Visit, WaitFor}
 
 class FilePathsSuite extends SpookyEnvFixture {
 

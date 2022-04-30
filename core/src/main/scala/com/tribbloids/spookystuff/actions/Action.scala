@@ -88,12 +88,12 @@ trait Action extends ActionLike with TraceAPI {
       page.errorDump(spooky)
       "saved to: " + page.saved.last
     } catch {
-      case e: Exception =>
+      case _: Exception =>
         try {
           page.errorDumpLocally(spooky)
           "DFS inaccessible.........saved to: " + page.saved.last
         } catch {
-          case e: Exception =>
+          case _: Exception =>
             "all file systems inaccessible.........not saved"
         }
     }
@@ -107,24 +107,20 @@ trait Action extends ActionLike with TraceAPI {
         baseStr = baseStr + s" in ${timed.timeout(session)}"
         LoggerFactory.getLogger(this.getClass).info(this.withDetail(baseStr))
 
-//        session.withDriversDuring {
         session.progress.ping()
 
         CommonUtils.withTimeout(timed.hardTerminateTimeout(session))(
           f,
           session.progress.defaultHeartbeat
         )
-//        }
       case _ =>
         LoggerFactory.getLogger(this.getClass).info(this.withDetail(baseStr))
 
-//        session.withDriversDuring(
         f
-//        )
     }
   }
 
-  final protected[actions] def exe(session: Session): Seq[DocOption] = {
+  final def exe(session: Session): Seq[DocOption] = {
     withDriversDuring(session) {
       doExe(session)
     }

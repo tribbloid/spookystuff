@@ -1,10 +1,11 @@
 package com.tribbloids.spookystuff.integration.fetch
 
-import java.net.URLEncoder
-import com.tribbloids.spookystuff.actions.{DropDownSelect, Submit, TextInput, _}
 import com.tribbloids.spookystuff.dsl._
 import com.tribbloids.spookystuff.integration.IntegrationFixture
+import com.tribbloids.spookystuff.web.actions.{DropDownSelect, Snapshot, Submit, TextInput, Visit}
 import org.scalatest.Ignore
+
+import java.net.URLEncoder
 
 /**
   * Created by peng on 12/14/14.
@@ -36,7 +37,7 @@ class FetchInteractionsIT extends IntegrationFixture {
     assert(
       (uri endsWith "zh.wikipedia.org/wiki/深度学习") || (uri endsWith "zh.wikipedia.org/wiki/" + URLEncoder
         .encode("深度学习", "UTF-8")))
-    assert(pageRows(0).docs.head.name === Snapshot(DocFilters.MustHaveTitle).toString)
+    assert(pageRows(0).docs.head.name === Snapshot(DocFilterImpl.MustHaveTitle).toString)
     val pageTime = pageRows(0).fetched.head.timeMillis
     assert(pageTime < finishTime)
     assert(pageTime > finishTime - 120000) //long enough even after the second time it is retrieved from s3 cache
@@ -60,11 +61,11 @@ class FetchInteractionsIT extends IntegrationFixture {
 
     assert(unionRows(0).docs.head.timeMillis === unionRows(1).docs.head.timeMillis)
     assert(unionRows(0).docs.head.raw === unionRows(1).docs.head.raw)
-    assert(unionRows(0).docs.head.name === Snapshot(DocFilters.MustHaveTitle).toString)
+    assert(unionRows(0).docs.head.name === Snapshot(DocFilterImpl.MustHaveTitle).toString)
     assert(unionRows(1).docs.head.name === "b")
   }
 
-  override def numPages = spooky.spookyConf.defaultGenPartitioner match {
+  override def numPages: Long = spooky.spookyConf.defaultGenPartitioner match {
 //    case WebCacheAware => 1
     case _ => 1
   }

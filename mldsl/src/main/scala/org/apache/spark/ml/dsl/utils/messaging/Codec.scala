@@ -1,6 +1,6 @@
 package org.apache.spark.ml.dsl.utils.messaging
 
-import org.apache.spark.ml.dsl.utils.{XMLFormats, Xml}
+import org.apache.spark.ml.dsl.utils.messaging.xml.{XMLFormats, Xml}
 import org.apache.spark.ml.dsl.utils.refl.ScalaType
 import org.apache.spark.ml.util.Identifiable
 import org.json4s.JsonAST.{JArray, JObject}
@@ -191,7 +191,7 @@ abstract class Codec[Proto] extends CodecLevel1 with HasRootTag {
 
 object Codec {
 
-  def defaultFormats: Formats = XMLFormats.defaultFormats
+  def defaultFormats: Formats = XMLFormats.defaultFormats + DateSerializer
 
   def getRootTag(v: Any): String = {
     v match {

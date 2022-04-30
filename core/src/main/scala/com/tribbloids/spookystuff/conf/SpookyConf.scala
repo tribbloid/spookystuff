@@ -49,7 +49,7 @@ case class SpookyConf(
     var remoteResourceTimeout: TimeoutConf = TimeoutConf(60.seconds),
     var DFSTimeout: TimeoutConf = TimeoutConf(40.seconds),
     var failOnDFSRead: Boolean = false,
-    var defaultJoinType: JoinType = Inner,
+    var defaultJoinType: JoinType = JoinType.Inner,
     var defaultFlattenSampler: Sampler[Any] = identity,
     var defaultJoinSampler: Sampler[Any] = identity, //join takes remote actions and cost much more than flatten.
     var defaultExploreRange: Range = 0 until Int.MaxValue,

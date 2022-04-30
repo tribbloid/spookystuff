@@ -2,7 +2,7 @@ package org.apache.spark.ml.dsl.utils
 
 import RecursiveEitherAsUnionToJSONSpike.{InclusiveOpt, _}
 import org.apache.spark.ml.dsl.utils.messaging.{MessageReader, MessageWriter}
-import org.scalatest.FunSpec
+import org.scalatest.{FunSpec, Ignore}
 import org.slf4j.LoggerFactory
 
 object RecursiveEitherAsUnionToJSONSpike {
@@ -24,6 +24,7 @@ object RecursiveEitherAsUnionToJSONSpike {
   case class InclusiveOpt(v: Option[Union], x: String)
 }
 
+@Ignore
 class RecursiveEitherAsUnionToJSONSpike extends FunSpec {
 
   val u1: Union = Right(Test1("abc", 2))
