@@ -1,6 +1,7 @@
 package com.tribbloids.spookystuff.integration.explore
 
 import com.tribbloids.spookystuff.actions._
+import com.tribbloids.spookystuff.dsl.JoinType.LeftOuter
 import com.tribbloids.spookystuff.dsl._
 import com.tribbloids.spookystuff.integration.IntegrationFixture
 
@@ -9,7 +10,7 @@ import com.tribbloids.spookystuff.integration.IntegrationFixture
   */
 class JoinAndExplorePagesIT extends IntegrationFixture {
 
-  override lazy val driverFactories = Seq(
+  override lazy val driverFactories: Seq[Null] = Seq(
     null
   )
 
@@ -86,6 +87,6 @@ class JoinAndExplorePagesIT extends IntegrationFixture {
 
   override def numPages = 15
 
-  override val remoteFetchSuboptimality = 0 to 4
+  override val remoteFetchSuboptimality: Range = 0 to 4
   override def pageFetchedCap = 40
 }

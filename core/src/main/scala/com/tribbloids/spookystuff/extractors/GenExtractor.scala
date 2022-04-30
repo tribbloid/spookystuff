@@ -12,7 +12,7 @@ import org.apache.spark.sql.catalyst.trees.TreeNode
 import scala.language.{existentials, implicitConversions}
 import scala.reflect.ClassTag
 
-object GenExtractor extends AutomaticRelay[GenExtractor[_, _]] {
+object GenExtractor extends AutomaticRelay[GenExtractor[_, _]] with GenExtractorImplicits {
 
 //  import org.apache.spark.ml.dsl.utils.refl.ScalaType._
 
@@ -34,7 +34,7 @@ object GenExtractor extends AutomaticRelay[GenExtractor[_, _]] {
     override def _args: Seq[GenExtractor[_, _]] = Nil
   }
   trait Unary[T, +R] extends GenExtractor[T, R] {
-    override def _args = Seq(child)
+    override def _args: Seq[GenExtractor[_, _]] = Seq(child)
     def child: GenExtractor[_, _]
   }
 
@@ -161,10 +161,10 @@ trait GenExtractor[T, +R] extends Product with ReflectionLock with Serializable 
   def resolveType(tt: DataType): DataType
   def resolve(tt: DataType): PartialFunction[T, R]
 
-  def withAlias(field: Field): AliasImpl[T, R] = {
+  def withAlias(field: Field): Alias.Impl[T, R] = {
     this match {
-      case v: Wrapper[T, R] => new AliasImpl[T, R](v.child, field)
-      case _                => new AliasImpl[T, R](this, field)
+      case v: Wrapper[T, R] => new Alias.Impl[T, R](v.child, field)
+      case _                => new Alias.Impl[T, R](this, field)
     }
   }
   def withoutAlias: GenExtractor[T, R] = {
@@ -239,14 +239,3 @@ trait GenExtractor[T, +R] extends Product with ReflectionLock with Serializable 
 
   def toStr: GenExtractor[T, String] = andFn(_.toString)
 }
-
-trait Alias[T, +R] extends GenExtractor[T, R] {
-
-  def field: Field
-}
-
-case class AliasImpl[T, +R](
-    child: GenExtractor[T, R],
-    field: Field
-) extends Alias[T, R]
-    with GenExtractor.Wrapper[T, R] {}

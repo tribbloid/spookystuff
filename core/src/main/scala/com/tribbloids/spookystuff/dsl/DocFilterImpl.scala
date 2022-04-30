@@ -5,7 +5,7 @@ import com.tribbloids.spookystuff.doc.Doc
 import com.tribbloids.spookystuff.session.Session
 
 //TODO: support chaining & extends ExpressionLike/TreeNode
-sealed trait AbstractDocFilter extends DocFilter {
+sealed trait DocFilterImpl extends DocFilter {
 
   def assertStatusCode(page: Doc): Unit = {
     page.httpStatus.foreach { v =>
@@ -14,16 +14,16 @@ sealed trait AbstractDocFilter extends DocFilter {
   }
 }
 
-object DocFilters {
+object DocFilterImpl {
 
-  case object Bypass extends AbstractDocFilter {
+  case object Bypass extends DocFilterImpl {
 
     override def apply(v: (Doc, Session)): Doc = {
       v._1
     }
   }
 
-  case object AcceptStatusCode2XX extends AbstractDocFilter {
+  case object AcceptStatusCode2XX extends DocFilterImpl {
 
     override def apply(v: (Doc, Session)): Doc = {
       val result = v._1
@@ -32,7 +32,7 @@ object DocFilters {
     }
   }
 
-  case object MustHaveTitle extends AbstractDocFilter {
+  case object MustHaveTitle extends DocFilterImpl {
 
     override def apply(v: (Doc, Session)): Doc = {
       val result = v._1

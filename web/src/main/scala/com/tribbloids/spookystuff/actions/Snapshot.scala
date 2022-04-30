@@ -3,7 +3,7 @@ package com.tribbloids.spookystuff.actions
 import com.tribbloids.spookystuff.Const
 import com.tribbloids.spookystuff.conf.Web
 import com.tribbloids.spookystuff.doc._
-import com.tribbloids.spookystuff.dsl.DocFilters
+import com.tribbloids.spookystuff.dsl.DocFilterImpl
 import com.tribbloids.spookystuff.row.{FetchedRow, SpookySchema}
 import com.tribbloids.spookystuff.session.Session
 
@@ -43,9 +43,9 @@ case class Snapshot(
 object Snapshot {
 
   //this is used to save GC when invoked by anothor component
-  object QuickSnapshot extends Snapshot(DocFilters.Bypass)
+  object QuickSnapshot extends Snapshot(DocFilterImpl.Bypass)
   object ErrorDump
-      extends Snapshot(DocFilters.Bypass)
+      extends Snapshot(DocFilterImpl.Bypass)
       //  with MessageAPI
       {}
 }

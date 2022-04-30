@@ -1,6 +1,7 @@
 package com.tribbloids.spookystuff.integration.join
 
 import com.tribbloids.spookystuff.actions.{Action, Visit}
+import com.tribbloids.spookystuff.dsl.JoinType.Inner
 import com.tribbloids.spookystuff.dsl._
 import com.tribbloids.spookystuff.extractors.Col
 import com.tribbloids.spookystuff.integration.IntegrationFixture
@@ -69,7 +70,7 @@ class InnerVisitJoinIT extends IntegrationFixture {
     )
   }
 
-  override def numPages = spooky.spookyConf.defaultGenPartitioner match {
+  override def numPages: Long = spooky.spookyConf.defaultGenPartitioner match {
     //    case FetchOptimizers.WebCacheAware => 6
     case _ => 6
   }

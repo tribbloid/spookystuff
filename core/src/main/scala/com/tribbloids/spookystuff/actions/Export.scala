@@ -1,7 +1,7 @@
 package com.tribbloids.spookystuff.actions
 
 import com.tribbloids.spookystuff.doc._
-import com.tribbloids.spookystuff.dsl.DocFilters
+import com.tribbloids.spookystuff.dsl.DocFilterImpl
 import com.tribbloids.spookystuff.extractors.Extractor
 import com.tribbloids.spookystuff.extractors.impl.Lit
 import com.tribbloids.spookystuff.row.{FetchedRow, SpookySchema}
@@ -16,7 +16,7 @@ import java.util.Date
 @SerialVersionUID(564570120183654L)
 abstract class Export extends Named {
 
-  def filter: DocFilter = DocFilters.Bypass
+  def filter: DocFilter = DocFilterImpl.Bypass
 
   final override def outputNames: Set[CSSQuery] = Set(this.name)
 

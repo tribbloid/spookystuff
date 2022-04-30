@@ -3,7 +3,7 @@ package com.tribbloids.spookystuff.actions
 import com.tribbloids.spookystuff.Const
 import com.tribbloids.spookystuff.conf.Web
 import com.tribbloids.spookystuff.doc._
-import com.tribbloids.spookystuff.dsl.DocFilters
+import com.tribbloids.spookystuff.dsl.DocFilterImpl
 import com.tribbloids.spookystuff.row.{FetchedRow, SpookySchema}
 import com.tribbloids.spookystuff.session.Session
 import org.openqa.selenium.{OutputType, TakesScreenshot}
@@ -41,9 +41,9 @@ case class Screenshot(
 
 object Screenshot {
 
-  object QuickScreenshot extends Screenshot(DocFilters.Bypass)
+  object QuickScreenshot extends Screenshot(DocFilterImpl.Bypass)
   object ErrorScreenshot
-      extends Screenshot(DocFilters.Bypass)
+      extends Screenshot(DocFilterImpl.Bypass)
       //  with MessageAPI
       {
 

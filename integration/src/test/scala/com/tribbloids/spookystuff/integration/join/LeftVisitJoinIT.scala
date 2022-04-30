@@ -1,6 +1,7 @@
 package com.tribbloids.spookystuff.integration.join
 
 import com.tribbloids.spookystuff.actions._
+import com.tribbloids.spookystuff.dsl.JoinType.LeftOuter
 import com.tribbloids.spookystuff.dsl._
 import com.tribbloids.spookystuff.extractors._
 import com.tribbloids.spookystuff.integration.IntegrationFixture
