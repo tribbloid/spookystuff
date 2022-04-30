@@ -125,8 +125,6 @@ class TestPageFromHttp extends SpookyEnvFixture {
 
     assert(page.findAll("profiles > profile").size == 5)
 
-//        page.findAll("*").flatMap(_.breadcrumb).map(_.mkString("/")).distinct.foreach(println)
-
     page.autoSave(spooky, overwrite = true)
 
     val loadedContent = DocUtils.load(page.saved.head)(spooky)
@@ -147,8 +145,6 @@ class TestPageFromHttp extends SpookyEnvFixture {
     assert(page.findAll("title").texts.isEmpty)
 
     assert(page.findAll("Name").size == 14)
-
-    //    page.findAll("*").flatMap(_.breadcrumb).map(_.mkString("/")).distinct.foreach(println)
 
     page.autoSave(spooky, overwrite = true)
 

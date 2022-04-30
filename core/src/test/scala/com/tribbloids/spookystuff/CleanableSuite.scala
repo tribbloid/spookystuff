@@ -1,10 +1,9 @@
 package com.tribbloids.spookystuff
 
-import com.tribbloids.spookystuff.SpookyEnvFixture
-import CleanableSuite.DummyCleanable
+import com.tribbloids.spookystuff.CleanableSuite.DummyCleanable
+import com.tribbloids.spookystuff.utils.CommonUtils
 import com.tribbloids.spookystuff.utils.lifespan.{Cleanable, Lifespan, LocalCleanable, SparkLifespan}
 import com.tribbloids.spookystuff.utils.serialization.AssertSerializable
-import com.tribbloids.spookystuff.utils.CommonUtils
 import org.apache.spark.{HashPartitioner, SparkException, TaskContext}
 
 import scala.util.Random
@@ -76,17 +75,15 @@ class CleanableSuite extends SpookyEnvFixture {
       .partitionBy(new HashPartitioner(4))
     assert(repartitioned.partitions.length == 4)
 
-    repartitioned
-      .map { tuple =>
-        val v = tuple._1
-        val newID = TaskContext.get().taskAttemptId()
-        Predef.assert(v.batchIDs.head.asInstanceOf[Lifespan.Task.ID].id == newID)
-        tuple._2 -> newID
-      }
-      .collectPerPartition
-      .foreach {
-        println
-      }
+    val old_new = repartitioned.map { tuple =>
+      val v = tuple._1
+      val newID = TaskContext.get().taskAttemptId()
+      Predef.assert(v.batchIDs.head.asInstanceOf[Lifespan.Task.ID].id == newID)
+      tuple._2 -> newID
+    }.collectPerPartition
+
+    val difference = old_new.flatten.count(v => v._1 != v._2)
+    require(difference > 0)
   }
 
   it("Lifespan._id should be updated after being shipped to driver") {

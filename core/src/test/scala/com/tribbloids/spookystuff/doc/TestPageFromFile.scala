@@ -12,11 +12,11 @@ class TestPageFromFile extends TestPageFromHttp with LocalPathDocsFixture {
     assert(resultsList.length === 1)
     val page = resultsList(0).asInstanceOf[Doc]
 
-    page.code.foreach(println)
-
     assert(page.mimeType == "inode/directory")
     assert(page.charset.map(_.toLowerCase).get == "utf-8")
     assert(page.findAll("title").texts.isEmpty)
+
+    assert(page.code.get.contains("<URI>file:/tmp/spookystuff/resources/testutils/files/Wikipedia.html</URI>"))
 
     page.autoSave(spooky, overwrite = true)
 
