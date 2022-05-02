@@ -1,8 +1,9 @@
-package com.tribbloids.spookystuff.actions
+package com.tribbloids.spookystuff.web.actions
 
-import com.tribbloids.spookystuff.conf.{PluginRegistry, Web}
+import com.tribbloids.spookystuff.actions.Action
 import com.tribbloids.spookystuff.doc.Doc
 import com.tribbloids.spookystuff.session.Session
+import com.tribbloids.spookystuff.web.conf.Web
 import org.slf4j.LoggerFactory
 
 object WebAction {}

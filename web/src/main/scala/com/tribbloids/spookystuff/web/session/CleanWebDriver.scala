@@ -1,5 +1,6 @@
-package com.tribbloids.spookystuff.session
+package com.tribbloids.spookystuff.web.session
 
+import com.tribbloids.spookystuff.session.DriverLike
 import com.tribbloids.spookystuff.utils.lifespan.Lifespan
 import org.openqa.selenium.{NoSuchSessionException, WebDriver}
 

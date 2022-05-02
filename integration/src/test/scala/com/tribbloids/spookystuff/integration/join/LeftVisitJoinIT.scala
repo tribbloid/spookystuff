@@ -5,6 +5,7 @@ import com.tribbloids.spookystuff.dsl.JoinType.LeftOuter
 import com.tribbloids.spookystuff.dsl._
 import com.tribbloids.spookystuff.extractors._
 import com.tribbloids.spookystuff.integration.IntegrationFixture
+import com.tribbloids.spookystuff.web.actions.Visit
 
 /**
   * Created by peng on 12/5/14.

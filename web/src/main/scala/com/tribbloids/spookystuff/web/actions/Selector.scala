@@ -1,4 +1,4 @@
-package com.tribbloids.spookystuff.actions
+package com.tribbloids.spookystuff.web.actions
 
 import com.tribbloids.spookystuff.selenium.BySizzleCssSelector
 import org.apache.spark.ml.dsl.utils.refl.ScalaUDT

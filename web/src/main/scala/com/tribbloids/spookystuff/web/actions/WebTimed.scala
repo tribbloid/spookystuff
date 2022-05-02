@@ -1,7 +1,8 @@
-package com.tribbloids.spookystuff.actions
+package com.tribbloids.spookystuff.web.actions
 
-import com.tribbloids.spookystuff.conf.Web
+import com.tribbloids.spookystuff.actions.Timed
 import com.tribbloids.spookystuff.session.Session
+import com.tribbloids.spookystuff.web.conf.Web
 import org.openqa.selenium.WebElement
 import org.openqa.selenium.support.ui.{ExpectedConditions, WebDriverWait}
 

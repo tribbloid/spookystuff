@@ -1,6 +1,7 @@
-package com.tribbloids.spookystuff.actions
+package com.tribbloids.spookystuff.web.actions
 
 import com.tribbloids.spookystuff._
+import com.tribbloids.spookystuff.actions.{Actions, Block, Loop}
 import com.tribbloids.spookystuff.doc.{Doc, DocOption}
 import com.tribbloids.spookystuff.row.{FetchedRow, SpookySchema}
 import com.tribbloids.spookystuff.session.Session

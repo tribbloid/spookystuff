@@ -1,11 +1,14 @@
-package com.tribbloids.spookystuff.actions
+package com.tribbloids.spookystuff.web.actions
 
 import com.tribbloids.spookystuff.SpookyEnvFixture
+import com.tribbloids.spookystuff.actions.{Delay, Loop, OAuthV2, TraceView, Wget}
 import com.tribbloids.spookystuff.conf.DriverFactory
 import com.tribbloids.spookystuff.doc.Doc
-import com.tribbloids.spookystuff.session.{AbstractSession, CleanWebDriver, Session}
+import com.tribbloids.spookystuff.session.{AbstractSession, Session}
 import com.tribbloids.spookystuff.testutils.FunSpecx
+import com.tribbloids.spookystuff.web.session.CleanWebDriver
 
+// TODO: part of this test suite should be move to core
 abstract class AbstractTestTrace extends SpookyEnvFixture with FunSpecx {
 
   import scala.concurrent.duration._
@@ -53,7 +56,7 @@ abstract class AbstractTestTrace extends SpookyEnvFixture with FunSpecx {
   it("TraceView.autoSnapshot should not modify empty Trace") {
 
     assert(
-      TraceView(List[Action]()).rewriteGlobally(defaultSchema) ==
+      TraceView().rewriteGlobally(defaultSchema) ==
         List(TraceView())
     )
   }

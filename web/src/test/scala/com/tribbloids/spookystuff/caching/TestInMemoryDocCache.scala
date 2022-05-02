@@ -1,9 +1,10 @@
 package com.tribbloids.spookystuff.caching
 
 import com.tribbloids.spookystuff.SpookyEnvFixture
-import com.tribbloids.spookystuff.actions.{Snapshot, TraceView, Visit, Wget}
+import com.tribbloids.spookystuff.actions.{TraceView, Wget}
 import com.tribbloids.spookystuff.doc.{Doc, DocUID}
 import com.tribbloids.spookystuff.testutils.LocalPathDocsFixture
+import com.tribbloids.spookystuff.web.actions.{Snapshot, Visit}
 
 import scala.concurrent.duration._
 

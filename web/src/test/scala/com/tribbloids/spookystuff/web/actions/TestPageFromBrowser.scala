@@ -1,8 +1,8 @@
-package com.tribbloids.spookystuff.doc
+package com.tribbloids.spookystuff.web.actions
 
-import com.tribbloids.spookystuff.actions.{Snapshot, Visit}
-import com.tribbloids.spookystuff.conf.Web
+import com.tribbloids.spookystuff.doc.{Doc, DocUtils}
 import com.tribbloids.spookystuff.session.Session
+import com.tribbloids.spookystuff.web.conf.Web
 import com.tribbloids.spookystuff.{dsl, SpookyEnvFixture}
 
 class TestPageFromBrowser extends SpookyEnvFixture {

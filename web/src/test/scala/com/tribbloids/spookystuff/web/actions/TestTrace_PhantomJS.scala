@@ -1,6 +1,6 @@
-package com.tribbloids.spookystuff.actions
+package com.tribbloids.spookystuff.web.actions
 
-import com.tribbloids.spookystuff.conf.WebDriverFactory
+import com.tribbloids.spookystuff.web.conf.WebDriverFactory
 
 class TestTrace_PhantomJS extends AbstractTestTrace {
 

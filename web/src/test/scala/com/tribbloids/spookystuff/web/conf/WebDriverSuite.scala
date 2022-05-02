@@ -1,10 +1,9 @@
-package com.tribbloids.spookystuff.conf
+package com.tribbloids.spookystuff.web.conf
 
 import com.tribbloids.spookystuff.SpookyEnvFixture
-
-import com.tribbloids.spookystuff.actions.{Visit, Wget}
-import com.tribbloids.spookystuff.conf.{Web, WebDriverFactory}
+import com.tribbloids.spookystuff.actions.Wget
 import com.tribbloids.spookystuff.testutils.LocalPathDocsFixture
+import com.tribbloids.spookystuff.web.actions.Visit
 import org.apache.spark.SparkException
 
 import java.util.Date
@@ -13,8 +12,6 @@ import java.util.Date
   * Created by peng on 24/11/16.
   */
 class WebDriverSuite extends SpookyEnvFixture with LocalPathDocsFixture {
-
-  import com.tribbloids.spookystuff.dsl._
 
   it("PhantomJS DriverFactory can degrade gracefully if remote URI is unreachable") {
 

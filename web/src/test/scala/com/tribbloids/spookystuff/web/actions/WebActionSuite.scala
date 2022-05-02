@@ -1,8 +1,9 @@
-package com.tribbloids.spookystuff.actions
+package com.tribbloids.spookystuff.web.actions
 
-import com.tribbloids.spookystuff.conf.Web
+import com.tribbloids.spookystuff.actions.{Action, ClusterRetry, Delay, Export, Loop, Timed, Wget}
 import com.tribbloids.spookystuff.doc.DocOption
 import com.tribbloids.spookystuff.session.Session
+import com.tribbloids.spookystuff.web.conf.Web
 import com.tribbloids.spookystuff.{ActionException, SpookyEnvFixture}
 import org.apache.spark.rdd.RDD
 

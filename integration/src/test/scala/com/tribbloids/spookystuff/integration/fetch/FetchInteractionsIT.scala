@@ -1,10 +1,11 @@
 package com.tribbloids.spookystuff.integration.fetch
 
-import java.net.URLEncoder
-import com.tribbloids.spookystuff.actions.{DropDownSelect, Submit, TextInput, _}
 import com.tribbloids.spookystuff.dsl._
 import com.tribbloids.spookystuff.integration.IntegrationFixture
+import com.tribbloids.spookystuff.web.actions.{DropDownSelect, Snapshot, Submit, TextInput, Visit}
 import org.scalatest.Ignore
+
+import java.net.URLEncoder
 
 /**
   * Created by peng on 12/14/14.

@@ -1,5 +1,6 @@
-package com.tribbloids.spookystuff
+package com.tribbloids.spookystuff.web
 
+import com.tribbloids.spookystuff.actions.Action
 import com.tribbloids.spookystuff.doc.Doc
 import com.tribbloids.spookystuff.session.Session
 import com.tribbloids.spookystuff.utils.Lambda

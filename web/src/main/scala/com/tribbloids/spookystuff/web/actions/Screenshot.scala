@@ -1,11 +1,12 @@
-package com.tribbloids.spookystuff.actions
+package com.tribbloids.spookystuff.web.actions
 
 import com.tribbloids.spookystuff.Const
-import com.tribbloids.spookystuff.conf.Web
+import com.tribbloids.spookystuff.actions.{Export, Wayback}
 import com.tribbloids.spookystuff.doc._
 import com.tribbloids.spookystuff.dsl.DocFilterImpl
 import com.tribbloids.spookystuff.row.{FetchedRow, SpookySchema}
 import com.tribbloids.spookystuff.session.Session
+import com.tribbloids.spookystuff.web.conf.Web
 import org.openqa.selenium.{OutputType, TakesScreenshot}
 
 case class Screenshot(

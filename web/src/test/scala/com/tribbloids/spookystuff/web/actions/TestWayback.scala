@@ -1,7 +1,8 @@
-package com.tribbloids.spookystuff.actions
+package com.tribbloids.spookystuff.web.actions
+
+import com.tribbloids.spookystuff.actions.{Delay, Wget}
 
 import java.util.Date
-
 import com.tribbloids.spookystuff.{QueryException, SpookyEnvFixture}
 
 /**

@@ -1,12 +1,14 @@
-package com.tribbloids.spookystuff.conf
+package com.tribbloids.spookystuff.web.conf
 
 import com.gargoylesoftware.htmlunit.BrowserVersion
 import com.tribbloids.spookystuff.SpookyContext
+import com.tribbloids.spookystuff.conf.DriverFactory
 import com.tribbloids.spookystuff.dsl.BinaryDeployment
-import com.tribbloids.spookystuff.session.{CleanWebDriver, Session, WebProxySetting}
+import com.tribbloids.spookystuff.session.{Session, WebProxySetting}
 import com.tribbloids.spookystuff.utils.ConfUtils
 import com.tribbloids.spookystuff.utils.io.LocalResolver
 import com.tribbloids.spookystuff.utils.lifespan.Lifespan
+import com.tribbloids.spookystuff.web.session.CleanWebDriver
 import org.apache.commons.io.FileUtils
 import org.openqa.selenium.htmlunit.HtmlUnitDriver
 import org.openqa.selenium.phantomjs.{PhantomJSDriver, PhantomJSDriverService}

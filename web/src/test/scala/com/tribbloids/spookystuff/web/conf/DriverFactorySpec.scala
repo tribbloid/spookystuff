@@ -1,9 +1,10 @@
-package com.tribbloids.spookystuff.conf
+package com.tribbloids.spookystuff.web.conf
 
-import com.tribbloids.spookystuff.actions.Visit
-import com.tribbloids.spookystuff.conf.{PluginSystem, Python, Web, WebDriverFactory}
+import com.tribbloids.spookystuff.conf.DriverFactory.Transient
+import com.tribbloids.spookystuff.conf.{PluginSystem, Python, PythonDriverFactory}
 import com.tribbloids.spookystuff.session.Session
 import com.tribbloids.spookystuff.testutils.LocalPathDocsFixture
+import com.tribbloids.spookystuff.web.actions.Visit
 import com.tribbloids.spookystuff.{SpookyContext, SpookyEnvFixture}
 
 class DriverFactorySpec extends SpookyEnvFixture with LocalPathDocsFixture {
@@ -13,7 +14,7 @@ class DriverFactorySpec extends SpookyEnvFixture with LocalPathDocsFixture {
     val pluginSys: PluginSystem.WithDrivers
     type Driver = pluginSys.Driver
 
-    def driverFactory: DriverFactory.Transient[Driver]
+    def driverFactory: Transient[Driver]
 
     it(s"$driverFactory can factoryReset") {
       val session = new Session(spooky)

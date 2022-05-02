@@ -1,19 +1,19 @@
-package com.tribbloids.spookystuff.actions
+package com.tribbloids.spookystuff.web.actions
 
-import com.tribbloids.spookystuff.conf.Web
-import com.tribbloids.spookystuff.{ActionException, Const}
+import com.tribbloids.spookystuff.actions.{Interaction, RewriteRule, TraceView}
 import com.tribbloids.spookystuff.doc.{Doc, Unstructured}
 import com.tribbloids.spookystuff.extractors.Col
 import com.tribbloids.spookystuff.extractors.impl.Lit
 import com.tribbloids.spookystuff.row.{FetchedRow, SpookySchema}
 import com.tribbloids.spookystuff.session.Session
 import com.tribbloids.spookystuff.utils.SpookyUtils
+import com.tribbloids.spookystuff.web.conf.Web
+import com.tribbloids.spookystuff.{ActionException, Const}
+import org.openqa.selenium.support.ui.{ExpectedCondition, ExpectedConditions, Select}
 import org.openqa.selenium.{interactions, JavascriptExecutor, WebDriver}
-import org.openqa.selenium.support.ui.{ExpectedCondition, ExpectedConditions, Select, WebDriverWait}
 
 import scala.collection.mutable
 import scala.concurrent.duration.Duration
-import scala.util.Random
 
 /**
   * Interact with the browser (e.g. click a button or type into a search box) to reach the data page.

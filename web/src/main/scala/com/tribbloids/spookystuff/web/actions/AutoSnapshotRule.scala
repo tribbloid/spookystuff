@@ -1,4 +1,6 @@
-package com.tribbloids.spookystuff.actions
+package com.tribbloids.spookystuff.web.actions
+
+import com.tribbloids.spookystuff.actions.{RewriteRule, TraceView}
 
 /**
   * Created by peng on 15/07/17.

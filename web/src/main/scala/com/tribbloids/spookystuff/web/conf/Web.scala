@@ -1,11 +1,13 @@
-package com.tribbloids.spookystuff.conf
+package com.tribbloids.spookystuff.web.conf
 
 import com.tribbloids.spookystuff.SpookyContext
+import com.tribbloids.spookystuff.conf.DriverFactory
+import com.tribbloids.spookystuff.conf.PluginSystem.WithDrivers
 import com.tribbloids.spookystuff.metrics.AbstractMetrics
-import com.tribbloids.spookystuff.session.CleanWebDriver
+import com.tribbloids.spookystuff.web.session.CleanWebDriver
 import org.apache.spark.SparkConf
 
-object Web extends PluginSystem.WithDrivers {
+object Web extends WithDrivers {
 
   final val DEFAULT_WEBDRIVER_FACTORY = WebDriverFactory.PhantomJS().taskLocal
 
