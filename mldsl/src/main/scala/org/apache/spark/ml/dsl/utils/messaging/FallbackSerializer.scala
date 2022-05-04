@@ -1,14 +1,12 @@
-package org.apache.spark.ml.dsl.utils
+package org.apache.spark.ml.dsl.utils.messaging
 
-import java.nio.ByteBuffer
-
+import org.apache.spark.ml.dsl.utils.DSLUtils
 import org.apache.spark.ml.dsl.utils.EncodedBinaryMagnet.Base64
 import org.json4s._
 import org.slf4j.LoggerFactory
 
+import java.nio.ByteBuffer
 import scala.reflect.ClassTag
-
-object FallbackSerializer {}
 
 // fallback mechanism that works for any java object
 abstract class FallbackSerializer(
@@ -77,4 +75,4 @@ abstract class FallbackSerializer(
   }
 }
 
-object FallbackJSONSerializer extends FallbackSerializer()
+object FallbackSerializer extends FallbackSerializer(DSLUtils.defaultJavaSerializer)

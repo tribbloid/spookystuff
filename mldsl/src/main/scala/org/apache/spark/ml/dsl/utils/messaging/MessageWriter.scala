@@ -1,11 +1,11 @@
 package org.apache.spark.ml.dsl.utils.messaging
 
 import java.io.File
-
 import org.apache.spark.ml.dsl.utils._
+import org.apache.spark.ml.dsl.utils.messaging.xml.{XMLFormats, Xml}
 import org.apache.spark.ml.dsl.utils.refl.ScalaType
 import org.json4s.JsonAST.JObject
-import org.json4s.jackson.JsonMethods.{pretty, _}
+import org.json4s.jackson.JsonMethods._
 import org.json4s.{Extraction, Formats, JValue}
 
 import scala.xml.NodeSeq

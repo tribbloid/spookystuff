@@ -1,11 +1,10 @@
-package org.apache.spark.ml.dsl.utils
+package org.apache.spark.ml.dsl.utils.messaging.xml
+
+import com.tribbloids.spookystuff.utils.ThreadLocal
+import org.json4s.{DateFormat, DefaultFormats, Formats}
 
 import java.text.SimpleDateFormat
 import java.util.{Date, TimeZone}
-
-import com.tribbloids.spookystuff.utils.ThreadLocal
-import org.json4s._
-
 import scala.util.Try
 
 object XMLFormats extends DefaultFormats {
