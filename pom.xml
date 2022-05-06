@@ -364,7 +364,12 @@
       <artifactId>scalatest_${scala.binary.version}</artifactId>
       <scope>test</scope>
     </dependency>
-
+    <dependency>
+      <groupId>org.pegdown</groupId>
+      <artifactId>pegdown</artifactId>
+      <version>1.2.1</version>
+      <scope>test</scope>
+    </dependency>
 
     <dependency>
       <groupId>org.scalacheck</groupId>
@@ -814,6 +819,7 @@
         <configuration>
           <reportsDirectory>${project.build.directory}/test-results/scalatest</reportsDirectory>
           <junitxml>.</junitxml>
+          <htmlreporters>${project.build.directory}/site/scalatest</htmlreporters>
 
           <tagsToExclude>
             com.tribbloids.spookystuff.testutils.Unstable,
