@@ -337,12 +337,12 @@
       <scope>provided</scope>
     </dependency>
 
-<!--    <dependency>-->
-<!--      <groupId>junit</groupId>-->
-<!--      <artifactId>junit</artifactId>-->
-<!--      <version>4.12</version>-->
-<!--      <scope>test</scope>-->
-<!--    </dependency>-->
+    <!--    <dependency>-->
+    <!--      <groupId>junit</groupId>-->
+    <!--      <artifactId>junit</artifactId>-->
+    <!--      <version>4.12</version>-->
+    <!--      <scope>test</scope>-->
+    <!--    </dependency>-->
 
     <!-- https://mvnrepository.com/artifact/com.holdenkarau/spark-testing-base -->
     <!--<dependency>-->
@@ -366,6 +366,12 @@
       <scope>test</scope>
     </dependency>
 
+    <dependency>
+      <groupId>org.pegdown</groupId>
+      <artifactId>pegdown</artifactId>
+      <version>1.2.1</version>
+      <scope>test</scope>
+    </dependency>
 
     <dependency>
       <groupId>org.scalacheck</groupId>
@@ -815,6 +821,7 @@
         <configuration>
           <reportsDirectory>${project.build.directory}/test-results/scalatest</reportsDirectory>
           <junitxml>.</junitxml>
+          <htmlreporters>${project.build.directory}/site/scalatest</htmlreporters>
 
           <tagsToExclude>
             com.tribbloids.spookystuff.testutils.Unstable,
@@ -893,17 +900,6 @@
       <!--<version>1.9.8</version>-->
       <!--</configuration>-->
       <!--</plugin>-->
-      <!--<plugin>-->
-      <!--<groupId>org.apache.maven.plugins</groupId>-->
-      <!--<artifactId>maven-surefire-plugin</artifactId>-->
-      <!--<version>2.17</version>-->
-      <!--<configuration>-->
-      <!--<systemPropertyVariables>-->
-      <!--<phantomjs.binary>${phantomjs.binary}</phantomjs.binary>-->
-      <!--</systemPropertyVariables>-->
-      <!--</configuration>-->
-      <!--</plugin>-->
-
 
       <plugin>
         <groupId>org.apache.maven.plugins</groupId>
