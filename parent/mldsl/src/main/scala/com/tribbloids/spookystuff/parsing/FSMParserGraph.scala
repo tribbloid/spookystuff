@@ -1,10 +1,9 @@
 package com.tribbloids.spookystuff.parsing
 
 import java.util.UUID
-
-import com.github.mdr.ascii.layout.prefs.LayoutPrefsImpl
 import com.tribbloids.spookystuff.graph._
 import com.tribbloids.spookystuff.parsing
+import org.scalameta.ascii.layout.prefs.LayoutPrefsImpl
 
 /**
   * State-machine based parser combinator that takes a graph and compile into a deterministic decision process ... that

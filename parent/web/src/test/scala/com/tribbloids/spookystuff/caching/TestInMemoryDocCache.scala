@@ -25,9 +25,11 @@ class TestInMemoryDocCache extends SpookyEnvFixture with LocalPathDocsFixture {
         _.asInstanceOf[Doc].updated(cacheLevel = DocCacheLevel.All)
       ) // By default wget from DFS are only cached in-memory
 
+  lazy val shortLifeSpan: FiniteDuration = 15.seconds
+
   it("cache and restore") {
     val visitPage = this.visitPage
-    spooky.spookyConf.cachedDocsLifeSpan = 10.seconds
+    spooky.spookyConf.cachedDocsLifeSpan = shortLifeSpan
 
     assert(visitPage.head.uid === DocUID(Visit(HTML_URL) :: Snapshot().as('U) :: Nil, Snapshot())())
 
@@ -43,8 +45,7 @@ class TestInMemoryDocCache extends SpookyEnvFixture with LocalPathDocsFixture {
 
   it("cache visit and restore with different name") {
     val visitPage = this.visitPage
-    val lifespan = 15.seconds
-    spooky.spookyConf.cachedDocsLifeSpan = lifespan
+    spooky.spookyConf.cachedDocsLifeSpan = shortLifeSpan
 
     cache.put(visit, visitPage, spooky)
 
@@ -58,7 +59,7 @@ class TestInMemoryDocCache extends SpookyEnvFixture with LocalPathDocsFixture {
     assert(page2.head.code === page2.head.code)
     assert(page2.head.name === "new")
 
-    Thread.sleep(lifespan.toMillis)
+    Thread.sleep(shortLifeSpan.toMillis)
 
     val page3 = cache.get(visitPage.head.uid.backtrace, spooky).orNull
     assert(page3 === null)
@@ -72,7 +73,7 @@ class TestInMemoryDocCache extends SpookyEnvFixture with LocalPathDocsFixture {
 
   it("cache wget and restore with different name") {
     val wgetPage = this.wgetPage
-    spooky.spookyConf.cachedDocsLifeSpan = 10.seconds
+    spooky.spookyConf.cachedDocsLifeSpan = shortLifeSpan
 
     cache.put(wget, wgetPage, spooky)
 
@@ -86,7 +87,7 @@ class TestInMemoryDocCache extends SpookyEnvFixture with LocalPathDocsFixture {
 //    assert(page2.head.code === page2.head.code)
     assert(page2.head.name === "newWget")
 
-    Thread.sleep(11000)
+    Thread.sleep(shortLifeSpan.toMillis)
 
     val page3 = cache.get(wgetPage.head.uid.backtrace, spooky).orNull
     assert(page3 === null)

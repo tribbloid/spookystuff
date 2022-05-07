@@ -7,7 +7,7 @@ import scala.language.implicitConversions
 // technically only StaticGraph is required, DSL is optional, but whatever
 //TODO: not optimized, children are repeatedly created when calling .path
 //TODO: use mapChildren to recursively get TreeNode[(Seq[String] -> Tree)] efficiently
-trait ElementTreeNode[D <: Domain] extends TreeView[ElementTreeNode[D]] with Algebra.Aliases[D] {
+trait ElementTreeNode[D <: Domain] extends TreeView.Immutable[ElementTreeNode[D]] with Algebra.Aliases[D] {
 
   def viewWFormat: ElementView[D]#WFormat
   final def view: ElementView[D] = viewWFormat.outer
@@ -33,7 +33,7 @@ trait ElementTreeNode[D <: Domain] extends TreeView[ElementTreeNode[D]] with Alg
     else result
   }
 
-  final override lazy val simpleString: String = prefix + viewWFormat.toString
+  final override def simpleString(maxFields: Int): String = prefix + viewWFormat.toString
 
   override protected def argStrings: Seq[String] = mergedPath
 

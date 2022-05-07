@@ -56,7 +56,7 @@ trait ElementView[D <: Domain] extends Algebra.Aliases[D] with EqualBy {
         prefixes ++= tailOpt
         if (positioning.isEmpty) positioning += 0
 
-        prefixes -> positioning
+        prefixes.toSeq -> positioning.toSeq
       case _ =>
         Nil -> Nil
     }

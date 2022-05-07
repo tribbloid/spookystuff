@@ -29,7 +29,7 @@ class MessageReaderSuite extends AbstractDFDSuite {
     val clazz = classOf[TimeWrapper]
     val tors = clazz.getConstructors
     val ctor = tors.head
-    val exe = new Executable(ctor)
+    val exe = new Executable(ctor, true)
 
     val names = ParanamerReader.lookupParameterNames(exe)
 

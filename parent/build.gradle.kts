@@ -169,7 +169,7 @@ allprojects {
 //            }
 
             api("com.fasterxml.jackson.core:jackson-core:${vs.jacksonV}")
-            api("com.fasterxml.jackson.core:jackson-databind:${vs.jacksonV}.5")
+            api("com.fasterxml.jackson.core:jackson-databind:${vs.jacksonV}")
             api("com.fasterxml.jackson.core:jackson-annotations:${vs.jacksonV}")
             api("com.fasterxml.jackson.module:jackson-module-scala_${vs.scalaBinaryV}:${vs.jacksonV}")
         }

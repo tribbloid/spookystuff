@@ -3,7 +3,7 @@ package com.tribbloids.spookystuff.parsing
 import com.tribbloids.spookystuff.testutils.FunSpecx
 import com.tribbloids.spookystuff.utils.{InterleavedIterator, Interpolation}
 import fastparse.internal.Logger
-import org.apache.spark.BenchmarkHelper
+import org.apache.spark.benchmark.BenchmarkHelper
 import org.scalatest.Ignore
 import org.slf4j.LoggerFactory
 

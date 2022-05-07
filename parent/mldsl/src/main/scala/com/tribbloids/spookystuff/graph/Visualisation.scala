@@ -1,10 +1,10 @@
 package com.tribbloids.spookystuff.graph
 
-import com.github.mdr.ascii.graph.Graph
-import com.github.mdr.ascii.layout.GraphLayout
-import com.github.mdr.ascii.layout.prefs.LayoutPrefsImpl
 import com.tribbloids.spookystuff.graph.Visualisation.Format
 import com.tribbloids.spookystuff.utils.CommonUtils
+import org.scalameta.ascii.graph.Graph
+import org.scalameta.ascii.layout.GraphLayout
+import org.scalameta.ascii.layout.prefs.LayoutPrefsImpl
 
 import scala.collection.immutable.ListMap
 import scala.collection.mutable

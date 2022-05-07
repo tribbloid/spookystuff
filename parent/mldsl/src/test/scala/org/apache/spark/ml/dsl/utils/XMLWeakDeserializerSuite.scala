@@ -154,7 +154,8 @@ class XMLWeakDeserializerSuite extends AbstractDFDSuite {
     d2.toString.shouldBe("Some(Map())")
   }
 
-  it("missing member to default constructor value") {
+  // this is no longer consistent with the latest behaviour of json4s
+  ignore("missing member to default constructor value") {
     val d1 = StrIntSeq("a", Nil)
     val json = decompose(d1)
 

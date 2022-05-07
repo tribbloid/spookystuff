@@ -10,10 +10,25 @@ abstract class TreeView[BaseType <: TreeView[BaseType]] extends TreeNode[BaseTyp
   // this may change in the future once this class switch to an implementation with better support to multiple rows
   protected def argStrings: Seq[String] = Nil
 
-  final override lazy val verboseString: String = {
+  final override def verboseString(maxFields: Int): String = {
     val argBlock =
       if (argStrings.isEmpty) ""
       else argStrings.mkString("[", ", ", "]")
-    simpleString + argBlock
+    simpleString(maxFields) + argBlock
+  }
+
+  final override def simpleStringWithNodeId(): String = simpleString(0)
+
+}
+
+object TreeView {
+
+  trait Immutable[BaseType <: Immutable[BaseType]] extends TreeView[BaseType] {
+    self: BaseType =>
+
+    final override def withNewChildrenInternal(newChildren: IndexedSeq[BaseType]): BaseType = {
+      ???
+      // unsupported,
+    }
   }
 }

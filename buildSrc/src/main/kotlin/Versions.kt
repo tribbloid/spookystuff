@@ -25,5 +25,5 @@ class Versions(self: Project) {
 
     val tikaV: String = "2.4.1"
 
-    val jacksonV: String = "2.9.10"
+    val jacksonV: String = "2.12.3"
 }

@@ -5,23 +5,15 @@ import org.apache.spark.ml.Transformer
 import org.apache.spark.ml.param.shared.{HasInputCols, HasOutputCol}
 import org.apache.spark.ml.param.{Param, ParamMap}
 import org.apache.spark.ml.util.{DefaultParamsReadable, DefaultParamsWritable, Identifiable}
-import org.apache.spark.mllib.linalg.VectorUDT
+import org.apache.spark.sql.expressions.{SparkUserDefinedFunction, UserDefinedFunction}
+import org.apache.spark.sql.types.{DataType, StructField, StructType}
 import org.apache.spark.sql.{DataFrame, Dataset}
-import org.apache.spark.sql.expressions.UserDefinedFunction
-import org.apache.spark.sql.types.{StructField, StructType}
 
 abstract class UDFTransformerLike extends Transformer with HasOutputCol with DynamicParamsMixin {
 
   def udfImpl: UserDefinedFunction
 
   def setUDFSafely(_udfImpl: UserDefinedFunction): UDFTransformerLike.this.type = {
-    _udfImpl.inputTypes.toSeq.flatten.foreach { dataType =>
-      assert(!dataType.isInstanceOf[VectorUDT], s"UDF input type ${classOf[VectorUDT].getCanonicalName} is obsolete!")
-    }
-    assert(
-      !_udfImpl.dataType.isInstanceOf[VectorUDT],
-      s"UDF output type ${classOf[VectorUDT].getCanonicalName} is obsolete!"
-    )
     this.setUDF(_udfImpl)
   }
 
@@ -39,9 +31,16 @@ abstract class UDFTransformerLike extends Transformer with HasOutputCol with Dyn
     result
   }
 
+  lazy val outDataType: DataType = udfImpl match {
+    case v: SparkUserDefinedFunction =>
+      v.dataType
+    case _ =>
+      throw new UnsupportedOperationException(s"$udfImpl is not a SparkUserDefinedFunction")
+  }
+
   @DeveloperApi
   override def transformSchema(schema: StructType): StructType = {
-    StructType(schema.fields :+ StructField(getOutputCol, udfImpl.dataType, nullable = true))
+    StructType(schema.fields :+ StructField(getOutputCol, outDataType, nullable = true))
   }
 }
 
@@ -68,7 +67,7 @@ case class UDFTransformer(
 
   @DeveloperApi
   override def transformSchema(schema: StructType): StructType = {
-    StructType(schema.fields :+ StructField(outputCol, UDF.dataType, nullable = true))
+    StructType(schema.fields :+ StructField(outputCol, outDataType, nullable = true))
   }
 
 }

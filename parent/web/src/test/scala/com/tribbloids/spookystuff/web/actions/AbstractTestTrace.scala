@@ -115,7 +115,7 @@ abstract class AbstractTestTrace extends SpookyEnvFixture with FunSpecx {
 
     traces.foreach { trace =>
       val str = TraceView(trace).TreeNode.toString
-      println(str)
+//      println(str)
       assert(str contains "\n")
     }
   }

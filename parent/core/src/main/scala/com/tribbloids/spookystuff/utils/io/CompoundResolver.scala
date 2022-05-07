@@ -4,7 +4,7 @@ import com.tribbloids.spookystuff.session.WebProxySetting
 import com.tribbloids.spookystuff.utils.http._
 import com.tribbloids.spookystuff.utils.serialization.NOTSerializable
 import org.apache.hadoop.conf.Configuration
-import org.apache.http.client.methods.HttpRequestBase
+import org.apache.hadoop.shaded.org.apache.http.client.methods.HttpRequestBase
 
 import java.net.URI
 

@@ -19,7 +19,7 @@ object ActionLike extends AutomaticRelay[ActionLike] {
   // TODO: aggregate all object that has children
   case class TreeNodeView(
       actionLike: ActionLike
-  ) extends TreeView[TreeNodeView] {
+  ) extends TreeView.Immutable[TreeNodeView] {
 
     override def children: Seq[TreeNodeView] = actionLike.children.map {
       TreeNodeView

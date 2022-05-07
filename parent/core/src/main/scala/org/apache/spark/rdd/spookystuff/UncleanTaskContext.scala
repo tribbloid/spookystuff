@@ -1,13 +1,15 @@
 package org.apache.spark.rdd.spookystuff
 
 import java.util.EventListener
-
 import com.tribbloids.spookystuff.utils.CachingUtils
 import org.apache.spark.TaskContext
 import org.apache.spark.executor.TaskMetrics
 import org.apache.spark.metrics.source.Source
+import org.apache.spark.resource.ResourceInformation
 import org.apache.spark.shuffle.FetchFailedException
 import org.apache.spark.util.{AccumulatorV2, TaskCompletionListener, TaskFailureListener}
+
+import java.util
 
 case class UncleanTaskContext(
     self: TaskContext
@@ -18,7 +20,11 @@ case class UncleanTaskContext(
 
   override def isInterrupted(): Boolean = self.isInterrupted()
 
-  override def isRunningLocally(): Boolean = self.isRunningLocally()
+  override def cpus(): Int = self.cpus()
+
+  override def resources(): Map[String, ResourceInformation] = self.resources()
+
+  override def resourcesJMap(): util.Map[String, ResourceInformation] = self.resourcesJMap()
 
   lazy val listeners: CachingUtils.ConcurrentMap[Long, EventListener] =
     CachingUtils.ConcurrentMap[Long, EventListener]()
