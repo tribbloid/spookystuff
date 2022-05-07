@@ -8,7 +8,6 @@ import com.tribbloids.spookystuff.session.Session
 import com.tribbloids.spookystuff.utils.IDMixin
 
 import scala.collection.mutable.ArrayBuffer
-import scala.language.implicitConversions
 
 object TraceView {
 

@@ -1,23 +1,20 @@
 package org.apache.spark.rdd.spookystuff
 
-import java.util.concurrent.atomic.AtomicLong
-
-import com.tribbloids.spookystuff.testutils.TestHelper
 import com.tribbloids.spookystuff.testutils.TestHelper.TestSC
+import com.tribbloids.spookystuff.testutils.{FunSpecx, TestHelper}
 import com.tribbloids.spookystuff.utils.{SparkUISupport, Stopwatch}
 import org.apache.spark.rdd.RDD
 import org.apache.spark.sql.execution.UnsafeRowSerializer
 import org.apache.spark.util.LongAccumulator
-import org.scalatest.FunSpec
 
+import java.util.concurrent.atomic.AtomicLong
 import scala.collection.mutable
-import scala.languageFeature.existentials
 import scala.reflect.ClassTag
 import scala.util.Random
 
 abstract class IncrementallyCachedRDDSuite[T](
     numPartitions: Int
-) extends FunSpec
+) extends FunSpecx
     with SparkUISupport
     with Product {
 

@@ -11,7 +11,6 @@ import com.tribbloids.spookystuff.{QueryException, SpookyEnvFixture}
 //TODO: test independently for each cache type (after switch for different cache is implemented)
 class TestWayback extends SpookyEnvFixture {
 
-  import com.tribbloids.spookystuff.dsl._
 
   import scala.concurrent.duration._
 

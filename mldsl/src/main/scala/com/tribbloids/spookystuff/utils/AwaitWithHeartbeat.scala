@@ -7,7 +7,6 @@ import org.slf4j.LoggerFactory
 import java.util.concurrent.{ExecutorService, Executors}
 import scala.concurrent.duration._
 import scala.concurrent._
-import scala.language.implicitConversions
 
 object AwaitWithHeartbeat {
 

@@ -1,11 +1,11 @@
 package org.apache.spark.ml.dsl.utils
 
-import org.scalatest.FunSuite
+import com.tribbloids.spookystuff.testutils.FunSpecx
 
 /**
   * Created by peng on 10/04/16.
   */
-class DSLUtilsSuite extends FunSuite {
+class DSLUtilsSuite extends FunSpecx {
 
   def caller(): Array[StackTraceElement] = {
     DSLUtils.getBreakpointInfo()
@@ -19,7 +19,7 @@ class DSLUtilsSuite extends FunSuite {
       c: Array[StackTraceElement] = caller2
   ): Array[StackTraceElement] = c
 
-  test("methodName should return caller's name") {
+  it("methodName should return caller's name") {
     assert(caller3.head.getMethodName == "caller")
     assert(caller3(1).getMethodName == "caller2")
     assert(caller3(2).isNativeMethod)

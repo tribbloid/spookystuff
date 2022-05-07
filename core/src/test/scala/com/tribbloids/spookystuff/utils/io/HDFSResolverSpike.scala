@@ -1,13 +1,13 @@
 package com.tribbloids.spookystuff.utils.io
 
-import com.tribbloids.spookystuff.testutils.TestHelper
+import com.tribbloids.spookystuff.testutils.{FunSpecx, TestHelper}
 import org.apache.hadoop.conf.Configuration
 import org.apache.hadoop.fs.ftp.FTPFileSystem
 import org.apache.hadoop.fs.{FileSystem, Path}
-import org.scalatest.{FunSpec, Ignore}
+import org.scalatest.Ignore
 
 @Ignore
-class HDFSResolverSpike extends FunSpec {
+class HDFSResolverSpike extends FunSpecx {
 
   it("HDFSResolver can read from FTP server") {
 

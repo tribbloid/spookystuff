@@ -1,10 +1,10 @@
 package com.tribbloids.spookystuff.utils
 
-import org.scalatest.FunSpec
+import com.tribbloids.spookystuff.testutils.FunSpecx
 
 import scala.util.Random
 
-class BacktrackingIteratorSuite extends FunSpec {
+class BacktrackingIteratorSuite extends FunSpecx {
 
   it("can backtrack once") {
 

@@ -17,7 +17,7 @@ class FetchWgetAndSaveIT extends IntegrationFixture {
     null
   )
 
-  override def doMain() {
+  override def doMain(): Unit = {
 
     val fetched = spooky
       .fetch(

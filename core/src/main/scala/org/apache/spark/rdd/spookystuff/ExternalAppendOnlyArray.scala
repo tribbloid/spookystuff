@@ -3,14 +3,13 @@ package org.apache.spark.rdd.spookystuff
 import java.io._
 import java.util.UUID
 import java.util.concurrent.atomic.AtomicInteger
-
 import com.tribbloids.spookystuff.utils.lifespan.{Lifespan, LocalCleanable}
 import com.tribbloids.spookystuff.utils.serialization.NOTSerializable
 import com.tribbloids.spookystuff.utils.{CachingUtils, CommonConst, CommonUtils, ThreadLocal}
 import org.apache.spark.serializer
 import org.apache.spark.serializer.SerializerInstance
 import org.apache.spark.storage.StorageLevel
-import org.mapdb._
+import org.mapdb.{DB, DBMaker, DataInput2, DataOutput2, IndexTreeList}
 import org.mapdb.serializer.GroupSerializerObjectArray
 import org.slf4j.LoggerFactory
 

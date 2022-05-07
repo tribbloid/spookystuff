@@ -1,12 +1,9 @@
 package com.tribbloids.spookystuff.utils
 
-import com.tribbloids.spookystuff.testutils.TestHelper
+import com.tribbloids.spookystuff.testutils.{FunSpecx, TestHelper}
 import org.apache.spark.SparkContext
-import org.scalatest.FunSpec
 
-import scala.language.implicitConversions
-
-class PreemptiveLocalOpsSuite extends FunSpec {
+class PreemptiveLocalOpsSuite extends FunSpecx {
 
   import SpookyViews._
 

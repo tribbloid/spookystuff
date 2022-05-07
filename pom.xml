@@ -47,7 +47,7 @@
 
     <revision.base>0.7.0</revision.base>
     <!--    https://maven.apache.org/maven-ci-friendly.html-->
-    <revision>${revision.base}-SNAPSHOT</revision>
+    <revision>${revision.base}_${scala.binary.version}${version.suffix}-SNAPSHOT</revision>
     <version.suffix/>
 
     <project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
@@ -76,27 +76,12 @@
   </properties>
 
   <profiles>
-
-    <profile>
-      <id>scala-suffix</id>
-      <activation>
-        <activeByDefault>true</activeByDefault>
-      </activation>
-
-      <!--      experimental, attach scala version to artifact version-->
-      <!--      TODO: canonical way should be attaching scala version to artifact ID, but maven doesn't support it-->
-      <properties>
-        <revision>${revision.base}_${scala.binary.version}${version.suffix}-SNAPSHOT</revision>
-      </properties>
-    </profile>
-
     <profile>
       <id>java8</id>
       <activation>
         <activeByDefault>true</activeByDefault>
       </activation>
     </profile>
-
 
     <!--    <profile>-->
     <!--      <id>spark-2.2</id>-->
@@ -128,6 +113,36 @@
         <spark.version>2.4.0.cloudera2</spark.version>
         <version.suffix>.cloudera2</version.suffix>
       </properties>
+    </profile>
+
+    <profile>
+      <id>scalafix</id>
+
+      <build>
+        <plugins>
+
+          <plugin>
+            <groupId>net.alchim31.maven</groupId>
+            <artifactId>scala-maven-plugin</artifactId>
+            <configuration>
+              <compilerPlugins>
+                <compilerPlugin>
+                  <groupId>org.scalameta</groupId>
+                  <artifactId>semanticdb-scalac_${scala.version}</artifactId>
+                  <version>4.5.6</version>
+                </compilerPlugin>
+              </compilerPlugins>
+            </configuration>
+          </plugin>
+
+          <plugin>
+            <groupId>io.github.evis</groupId>
+            <artifactId>scalafix-maven-plugin_${scala.binary.version}</artifactId>
+            <version>0.1.6_0.10.0</version>
+          </plugin>
+        </plugins>
+      </build>
+
     </profile>
 
 
@@ -273,7 +288,7 @@
       <dependency>
         <groupId>org.scalatest</groupId>
         <artifactId>scalatest_${scala.binary.version}</artifactId>
-        <version>3.0.8</version>
+        <version>3.2.12</version>
       </dependency>
 
       <dependency>
@@ -359,17 +374,25 @@
       <scope>test</scope>
     </dependency>
 
-
     <dependency>
       <groupId>org.scalatest</groupId>
       <artifactId>scalatest_${scala.binary.version}</artifactId>
       <scope>test</scope>
     </dependency>
 
+<!--   2 required by scalatest html report-->
+<!--    https://github.com/scalatest/scalatest-maven-plugin/issues/88-->
     <dependency>
       <groupId>org.pegdown</groupId>
       <artifactId>pegdown</artifactId>
-      <version>1.2.1</version>
+      <version>1.6.0</version>
+      <scope>test</scope>
+    </dependency>
+    <dependency>
+      <groupId>com.vladsch.flexmark</groupId>
+      <artifactId>flexmark-all</artifactId>
+      <version>0.62.2</version>
+<!--      latest version compatible to Java 8-->
       <scope>test</scope>
     </dependency>
 
@@ -764,6 +787,15 @@
           </execution>
         </executions>
         <configuration>
+
+<!--          <compilerPlugins>-->
+<!--            <compilerPlugin>-->
+<!--              <groupId>org.scalameta</groupId>-->
+<!--              <artifactId>semanticdb-scalac_${scala.version}</artifactId>-->
+<!--              <version>4.5.6</version>-->
+<!--            </compilerPlugin>-->
+<!--          </compilerPlugins>-->
+
           <scalaVersion>${scala.version}</scalaVersion>
           <scalaCompatVersion>${scala.binary.version}</scalaCompatVersion>
           <recompileMode>incremental</recompileMode>
@@ -778,42 +810,30 @@
             <arg>-encoding</arg>
             <arg>UTF-8</arg>
 
-            <!--<arg>-Xfatal-warnings</arg>-->
             <arg>-Xlint</arg>
+            <arg>-Ywarn-unused</arg>
             <!--<arg>-Yno-adapted-args</arg>-->
             <!--<arg>-Ywarn-dead-code</arg> &lt;!&ndash;,        // N.B. doesn't work well with the ??? hole &ndash;&gt;-->
             <!--<arg>-Ywarn-numeric-widen</arg>-->
             <!--<arg>-Ywarn-value-discard</arg>-->
             <!--<arg>-Xfuture</arg>-->
-            <!--<arg>-Ywarn-unused-import</arg>-->
             <!--<arg>-Ypartial-unification</arg>-->
             <!--<arg>-Ywarn-numeric-widen</arg>        &lt;!&ndash;      // Warn when numerics are widened. &ndash;&gt;-->
+
             <arg>-language:higherKinds</arg>
-            <!--<arg>-P:wartremover:only-warn-traverser:org.wartremover.warts.Unsafe</arg>-->
           </args>
-          <!--<jvmArgs>-->
-          <!--<jvmArg>-Xms64m</jvmArg>-->
-          <!--<jvmArg>-Xms1024m</jvmArg>-->
-          <!--<jvmArg>-Xmx1024m</jvmArg>-->
-          <!--</jvmArgs>-->
           <javacArgs>
             <javacArg>-source</javacArg>
             <javacArg>${java.version}</javacArg>
             <javacArg>-target</javacArg>
             <javacArg>${java.version}</javacArg>
           </javacArgs>
-          <!--<compilerPlugins>-->
-          <!--<compilerPlugin>-->
-          <!--<groupId>org.scalamacros</groupId>-->
-          <!--<artifactId>paradise_2.10.4</artifactId>-->
-          <!--<version>2.0.1</version>-->
-          <!--</compilerPlugin>-->
-          <!--</compilerPlugins>-->
           <excludes>
             <exclude>**/.ipynb_checkpoints/*</exclude>
           </excludes>
         </configuration>
       </plugin>
+
       <plugin>
         <groupId>org.scalatest</groupId>
         <artifactId>scalatest-maven-plugin</artifactId>

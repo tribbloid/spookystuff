@@ -1,10 +1,9 @@
 package com.tribbloids.spookystuff.metrics
 
-import org.apache.spark.sql.execution.streaming.{EventTimeStats, EventTimeStatsAccum}
+import com.tribbloids.spookystuff.testutils.FunSpecx
 import org.apache.spark.util.LongAccumulator
-import org.scalatest.FunSpec
 
-class AccSuite extends FunSpec {
+class AccSuite extends FunSpecx {
 
   //TODO: it is not working
 //  it("FromType") {

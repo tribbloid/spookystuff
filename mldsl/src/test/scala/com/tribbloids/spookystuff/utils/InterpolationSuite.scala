@@ -1,8 +1,8 @@
 package com.tribbloids.spookystuff.utils
 
-import org.scalatest.FunSpec
+import com.tribbloids.spookystuff.testutils.FunSpecx
 
-class InterpolationSuite extends FunSpec {
+class InterpolationSuite extends FunSpecx {
 
   it("interpolate can use common character as delimiter") {
 

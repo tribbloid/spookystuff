@@ -1,12 +1,13 @@
 package com.tribbloids.spookystuff.spike
 
+import com.tribbloids.spookystuff.testutils.FunSpecx
 import org.apache.spark.SparkContext
 import org.apache.spark.sql.{SQLContext, SparkSession}
-import org.scalatest.{FunSpec, Ignore}
+import org.scalatest.Ignore
 
 //TODO: delete after https://stackoverflow.com/questions/57482120/in-apache-spark-how-to-convert-a-slow-rdd-dataset-into-a-stream
 @Ignore
-class SlowRDDSpike extends FunSpec {
+class SlowRDDSpike extends FunSpecx {
 
   lazy val spark: SparkSession = SparkSession.builder().master("local[*]").getOrCreate()
 

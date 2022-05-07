@@ -2,7 +2,6 @@ package com.tribbloids.spookystuff.actions
 
 import com.tribbloids.spookystuff.row.SpookySchema
 
-import scala.language.implicitConversions
 
 object TraceSetView {}
 

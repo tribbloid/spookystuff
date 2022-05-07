@@ -14,7 +14,7 @@ class FetchTryWgetIT extends UncacheableIntegrationFixture {
     null
   )
 
-  override def doMain() {
+  override def doMain(): Unit = {
 
     val spooky = this.spooky
     import spooky.dsl._

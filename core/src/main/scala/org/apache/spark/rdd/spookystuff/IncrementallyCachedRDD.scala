@@ -326,7 +326,7 @@ case class IncrementallyCachedRDD[T: ClassTag](
     sys.error("IMPOSSIBLE!")
   }
 
-  override def clearDependencies() {
+  override def clearDependencies(): Unit = {
     super.clearDependencies()
 
     prev = null

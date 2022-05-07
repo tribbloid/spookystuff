@@ -5,7 +5,6 @@ import com.tribbloids.spookystuff.doc.Doc
 import com.tribbloids.spookystuff.session.WebProxySetting
 import com.tribbloids.spookystuff.utils.Lambda
 
-import scala.language.implicitConversions
 
 // should import DSL directly, instead of package dsl.
 package object dsl extends DSL {

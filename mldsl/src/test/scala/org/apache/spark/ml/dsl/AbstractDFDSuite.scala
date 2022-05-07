@@ -78,7 +78,7 @@ abstract class AbstractDFDSuite extends FunSpecx with BeforeAndAfterAll {
     input_output
   }
 
-  override def afterAll() {
+  override def afterAll(): Unit = {
 
     TestHelper.cleanTempDirs()
     super.afterAll()

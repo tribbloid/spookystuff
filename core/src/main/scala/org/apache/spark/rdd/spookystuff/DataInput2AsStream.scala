@@ -1,8 +1,8 @@
 package org.apache.spark.rdd.spookystuff
 
-import java.io._
+import org.mapdb.DataInput2
 
-import org.mapdb._
+import java.io._
 
 /**
   * Wraps [[DataInput]] into [[InputStream]]

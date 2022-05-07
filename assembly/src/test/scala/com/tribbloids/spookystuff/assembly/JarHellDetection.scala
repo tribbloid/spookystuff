@@ -4,7 +4,7 @@ import org.apache.spark.ml.dsl.utils.LazyVar
 import org.jhades.JHades
 import org.jhades.model.ClasspathResourceVersion
 import org.jhades.service.ClasspathScanner
-import org.scalatest.FunSpec
+import org.scalatest.funspec.AnyFunSpec
 
 object JarHellDetection {
 
@@ -19,9 +19,10 @@ object JarHellDetection {
 
 }
 
-class JarHellDetection extends FunSpec {
+class JarHellDetection extends AnyFunSpec {
 
   import JarHellDetection._
+
   import scala.collection.JavaConverters._
 
   it("jars conflicts") {
@@ -104,7 +105,7 @@ class JarHellDetection extends FunSpec {
         (msgs ++ Seq("")).mkString("\n")
     }
 
-    msgs.foreach(println)
+//    msgs.foreach(println)
 
     println(
       s"""

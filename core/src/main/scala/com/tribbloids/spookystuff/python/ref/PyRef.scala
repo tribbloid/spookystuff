@@ -7,7 +7,6 @@ import com.tribbloids.spookystuff.utils.CachingUtils.ConcurrentMap
 import com.tribbloids.spookystuff.utils.lifespan.Cleanable
 import org.apache.spark.ml.dsl.utils._
 
-import scala.language.dynamics
 
 trait PyRef extends Cleanable {
 

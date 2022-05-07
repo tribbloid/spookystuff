@@ -8,7 +8,6 @@ import org.apache.spark._
 import org.apache.spark.rdd.RDD
 import NarrowDispersedRDD._
 
-import scala.language.existentials
 import scala.reflect.ClassTag
 import scala.util.Random
 
@@ -159,7 +158,7 @@ class NarrowDispersedRDD[T: ClassTag](
     Seq(new RoundRobinDependencyImpl(prev))
   }
 
-  override def clearDependencies() {
+  override def clearDependencies(): Unit = {
     super.clearDependencies()
     prev = null
   }

@@ -19,11 +19,11 @@ package org.apache.spark.ml.dsl
 
 object UnsafeUtils {
 
-  def setSuperField(obj: Object, fieldName: String, fieldValue: Object) {
+  def setSuperField(obj: Object, fieldName: String, fieldValue: Object): Unit = {
     setAncestorField(obj, 1, fieldName, fieldValue)
   }
 
-  def setAncestorField(obj: AnyRef, level: Int, fieldName: String, fieldValue: AnyRef) {
+  def setAncestorField(obj: AnyRef, level: Int, fieldName: String, fieldValue: AnyRef): Unit = {
     val ancestor = Iterator.iterate[Class[_]](obj.getClass)(_.getSuperclass).drop(level).next()
     val field = ancestor.getDeclaredField(fieldName)
     field.setAccessible(true)
