@@ -10,7 +10,6 @@ import org.apache.spark.storage.StorageLevel
 import org.scalatest.{BeforeAndAfterAll, FunSpec}
 
 import scala.collection.immutable
-import scala.languageFeature.existentials
 
 class IncrementallyCachedRDDMatrix extends FunSpec with BeforeAndAfterAll {
 

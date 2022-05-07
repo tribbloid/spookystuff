@@ -11,7 +11,6 @@ import org.apache.spark.util.LongAccumulator
 import org.scalatest.FunSpec
 
 import scala.collection.mutable
-import scala.languageFeature.existentials
 import scala.reflect.ClassTag
 import scala.util.Random
 

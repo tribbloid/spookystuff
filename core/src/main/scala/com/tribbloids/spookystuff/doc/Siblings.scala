@@ -1,6 +1,6 @@
 package com.tribbloids.spookystuff.doc
 
-import scala.collection.{mutable, SeqLike}
+import scala.collection.mutable
 
 /**
   * Created by peng on 18/07/15.

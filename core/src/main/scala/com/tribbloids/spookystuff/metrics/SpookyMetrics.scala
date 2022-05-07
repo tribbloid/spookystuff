@@ -3,7 +3,6 @@ package com.tribbloids.spookystuff.metrics
 import com.tribbloids.spookystuff.utils.accumulator.MapAccumulator
 import org.apache.spark.util.LongAccumulator
 
-import scala.language.implicitConversions
 
 object SpookyMetrics {}
 

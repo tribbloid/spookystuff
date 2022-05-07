@@ -2,7 +2,6 @@ package com.tribbloids.spookystuff.extractors
 
 import com.tribbloids.spookystuff.row.Field
 
-import scala.language.{existentials, implicitConversions}
 
 trait Alias[T, +R] extends GenExtractor[T, R] {
 

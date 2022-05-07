@@ -57,6 +57,8 @@
     <scala.version>2.12.15</scala.version>
     <scala.binary.version>2.12</scala.binary.version>
 
+    <semanticdb.version>4.5.6</semanticdb.version>
+
     <spark.version>2.4.8</spark.version>
     <spark.binary.version>2.4</spark.binary.version>
     <spark.assembly.version>${spark.binary.version}</spark.assembly.version>
@@ -764,6 +766,13 @@
           </execution>
         </executions>
         <configuration>
+          <compilerPlugins>
+            <compilerPlugin>
+              <groupId>org.scalameta</groupId>
+              <artifactId>semanticdb-scalac_${scala.version}</artifactId>
+              <version>${semanticdb.version}</version>
+            </compilerPlugin>
+          </compilerPlugins>
           <scalaVersion>${scala.version}</scalaVersion>
           <scalaCompatVersion>${scala.binary.version}</scalaCompatVersion>
           <recompileMode>incremental</recompileMode>
@@ -778,37 +787,24 @@
             <arg>-encoding</arg>
             <arg>UTF-8</arg>
 
-            <!--<arg>-Xfatal-warnings</arg>-->
             <arg>-Xlint</arg>
+            <arg>-Ywarn-unused</arg>
             <!--<arg>-Yno-adapted-args</arg>-->
             <!--<arg>-Ywarn-dead-code</arg> &lt;!&ndash;,        // N.B. doesn't work well with the ??? hole &ndash;&gt;-->
             <!--<arg>-Ywarn-numeric-widen</arg>-->
             <!--<arg>-Ywarn-value-discard</arg>-->
             <!--<arg>-Xfuture</arg>-->
-            <!--<arg>-Ywarn-unused-import</arg>-->
             <!--<arg>-Ypartial-unification</arg>-->
             <!--<arg>-Ywarn-numeric-widen</arg>        &lt;!&ndash;      // Warn when numerics are widened. &ndash;&gt;-->
+
             <arg>-language:higherKinds</arg>
-            <!--<arg>-P:wartremover:only-warn-traverser:org.wartremover.warts.Unsafe</arg>-->
           </args>
-          <!--<jvmArgs>-->
-          <!--<jvmArg>-Xms64m</jvmArg>-->
-          <!--<jvmArg>-Xms1024m</jvmArg>-->
-          <!--<jvmArg>-Xmx1024m</jvmArg>-->
-          <!--</jvmArgs>-->
           <javacArgs>
             <javacArg>-source</javacArg>
             <javacArg>${java.version}</javacArg>
             <javacArg>-target</javacArg>
             <javacArg>${java.version}</javacArg>
           </javacArgs>
-          <!--<compilerPlugins>-->
-          <!--<compilerPlugin>-->
-          <!--<groupId>org.scalamacros</groupId>-->
-          <!--<artifactId>paradise_2.10.4</artifactId>-->
-          <!--<version>2.0.1</version>-->
-          <!--</compilerPlugin>-->
-          <!--</compilerPlugins>-->
           <excludes>
             <exclude>**/.ipynb_checkpoints/*</exclude>
           </excludes>
@@ -836,6 +832,11 @@
             </goals>
           </execution>
         </executions>
+      </plugin>
+      <plugin>
+        <groupId>io.github.evis</groupId>
+        <artifactId>scalafix-maven-plugin_2.13</artifactId>
+        <version>0.1.6_0.10.0</version>
       </plugin>
 
       <plugin>

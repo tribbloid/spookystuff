@@ -11,7 +11,6 @@ import org.apache.spark.rdd.RDD
 import org.slf4j.LoggerFactory
 
 import scala.collection.mutable
-import scala.language.implicitConversions
 import scala.reflect.ClassTag
 
 abstract class SpookyUtils extends CommonUtils {

@@ -5,7 +5,6 @@ import com.tribbloids.spookystuff.row.{SquashedFetchedRDD, SquashedFetchedRow}
 import org.apache.spark.rdd.{RDD, UnionRDD}
 import org.apache.spark.storage.StorageLevel
 
-import scala.language.implicitConversions
 
 case class CoalescePlan(
     override val child: ExecutionPlan,

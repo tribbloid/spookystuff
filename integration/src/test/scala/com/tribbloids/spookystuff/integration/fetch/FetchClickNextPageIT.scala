@@ -13,7 +13,7 @@ class FetchClickNextPageIT extends IntegrationFixture {
 //    phantomJS //TODO: HtmlUnit does not support Backbone.js
 //  )
 
-  override def doMain() {
+  override def doMain(): Unit = {
 
     val RDD = spooky
       .fetch(

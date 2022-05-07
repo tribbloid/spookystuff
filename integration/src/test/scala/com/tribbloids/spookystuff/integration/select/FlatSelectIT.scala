@@ -13,7 +13,7 @@ class FlatSelectIT extends IntegrationFixture {
     null
   )
 
-  override def doMain() {
+  override def doMain(): Unit = {
 
     val raw = spooky
       .fetch(

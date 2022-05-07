@@ -4,7 +4,6 @@ import com.tribbloids.spookystuff.Const
 import com.tribbloids.spookystuff.session.Session
 import com.tribbloids.spookystuff.utils.TimeoutConf
 
-import scala.concurrent.duration.Duration
 
 trait Timed extends Action {
 

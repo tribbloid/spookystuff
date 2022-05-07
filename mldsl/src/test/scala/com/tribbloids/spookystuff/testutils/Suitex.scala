@@ -139,7 +139,7 @@ trait Suitex {
     //    }
 
     // from org.apache.spark.JsonTestUtils
-    def assertValidDataInJson(validateJson: JValue, expectedJson: JValue) {
+    def assertValidDataInJson(validateJson: JValue, expectedJson: JValue): Unit = {
 
       import org.json4s._
 

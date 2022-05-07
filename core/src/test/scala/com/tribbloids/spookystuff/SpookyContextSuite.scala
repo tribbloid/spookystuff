@@ -2,7 +2,6 @@ package com.tribbloids.spookystuff
 
 import com.tribbloids.spookystuff.actions._
 import com.tribbloids.spookystuff.conf.SpookyConf
-import com.tribbloids.spookystuff.dsl._
 import com.tribbloids.spookystuff.row.Field
 import com.tribbloids.spookystuff.testutils.LocalPathDocsFixture
 import com.tribbloids.spookystuff.utils.serialization.AssertWeaklySerializable

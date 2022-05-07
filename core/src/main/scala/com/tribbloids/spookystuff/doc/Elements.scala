@@ -1,7 +1,6 @@
 package com.tribbloids.spookystuff.doc
 
 import scala.collection.mutable
-import scala.language.implicitConversions
 
 /**
   * Created by peng on 18/07/15.

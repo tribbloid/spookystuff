@@ -4,7 +4,6 @@ import com.tribbloids.spookystuff.testutils.TestHelper
 import org.apache.spark.SparkContext
 import org.scalatest.FunSpec
 
-import scala.language.implicitConversions
 
 class PreemptiveLocalOpsSuite extends FunSpec {
 

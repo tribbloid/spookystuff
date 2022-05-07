@@ -2,7 +2,7 @@ package com.tribbloids.spookystuff.utils
 
 import com.tribbloids.spookystuff.testutils.TestHelper
 import org.apache.hadoop.security.UserGroupInformation
-import org.scalatest.{BeforeAndAfterAll, BeforeAndAfterEach, FunSpec}
+import org.scalatest.{BeforeAndAfterAll, FunSpec}
 
 class SCFunctionsSuite extends FunSpec with BeforeAndAfterAll {
 

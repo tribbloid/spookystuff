@@ -2,7 +2,6 @@ package com.tribbloids.spookystuff
 
 import com.tribbloids.spookystuff.row.FetchedRow
 
-import scala.language.implicitConversions
 
 /**
   * Created by peng on 12/2/14.

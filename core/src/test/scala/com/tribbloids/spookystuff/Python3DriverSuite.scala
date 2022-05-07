@@ -5,7 +5,6 @@ import Python3DriverSuite.Runner
 import com.tribbloids.spookystuff.session.PythonDriver
 import com.tribbloids.spookystuff.utils.CommonUtils
 import com.tribbloids.spookystuff.utils.lifespan.Lifespan
-import com.tribbloids.spookystuff.{PyInterpretationException, SpookyEnvFixture}
 import org.slf4j.LoggerFactory
 
 import scala.concurrent.Future

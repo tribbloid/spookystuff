@@ -1,6 +1,5 @@
 package com.tribbloids.spookystuff.metrics
 
-import org.apache.spark.sql.execution.streaming.{EventTimeStats, EventTimeStatsAccum}
 import org.apache.spark.util.LongAccumulator
 import org.scalatest.FunSpec
 

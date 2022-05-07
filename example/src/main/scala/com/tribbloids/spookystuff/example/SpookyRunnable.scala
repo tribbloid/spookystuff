@@ -13,7 +13,7 @@ trait SpookyRunnable extends SpookyEnv {
 
   def doMain(spooky: SpookyContext): Any
 
-  final def main(args: Array[String]) {
+  final def main(args: Array[String]): Unit = {
 
     val spooky = getSpooky(args)
     val result = doMain(spooky)

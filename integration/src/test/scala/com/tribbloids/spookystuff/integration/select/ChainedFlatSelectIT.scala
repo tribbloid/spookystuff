@@ -13,7 +13,7 @@ class ChainedFlatSelectIT extends IntegrationFixture {
     null
   )
 
-  override def doMain() {
+  override def doMain(): Unit = {
 
     val r1 = spooky
       .fetch(

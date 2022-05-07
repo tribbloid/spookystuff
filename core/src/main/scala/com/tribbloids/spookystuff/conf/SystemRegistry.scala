@@ -1,7 +1,6 @@
 package com.tribbloids.spookystuff.conf
 
 import com.tribbloids.spookystuff.utils.TreeThrowable
-import org.slf4j.LoggerFactory
 
 import scala.collection.mutable.ArrayBuffer
 import scala.reflect.ClassTag
