@@ -1,9 +1,9 @@
 package com.tribbloids.spookystuff.utils.http;
 
-import org.apache.http.ProtocolException;
-import org.apache.http.client.utils.URIBuilder;
-import org.apache.http.impl.client.LaxRedirectStrategy;
-import org.apache.http.util.TextUtils;
+import org.apache.hadoop.shaded.org.apache.http.ProtocolException;
+import org.apache.hadoop.shaded.org.apache.http.client.utils.URIBuilder;
+import org.apache.hadoop.shaded.org.apache.http.impl.client.LaxRedirectStrategy;
+import org.apache.hadoop.shaded.org.apache.http.util.TextUtils;
 
 import java.net.URI;
 import java.net.URISyntaxException;

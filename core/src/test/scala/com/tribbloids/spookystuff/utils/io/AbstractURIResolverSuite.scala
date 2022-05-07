@@ -501,11 +501,13 @@ abstract class AbstractURIResolverSuite extends FunSpecx with LocalPathDocsFixtu
           }
           .toSeq
 
+        val truncated = bytes.slice(0, groundTruth.size)
+
         assert(
-          s"${bytes.size} elements:\n ${bytes.mkString(" ")}" ===
+          s"${truncated.size} elements:\n ${truncated.mkString(" ")}" ===
             s"${groundTruth.size} elements:\n ${groundTruth.mkString(" ")}"
         )
-        assert(bytes.length === groundTruth.size)
+        assert(truncated.length === groundTruth.size)
 
       } finally {
 

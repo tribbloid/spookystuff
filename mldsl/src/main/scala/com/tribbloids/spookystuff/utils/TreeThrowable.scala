@@ -8,7 +8,7 @@ import scala.util.{Failure, Success, Try}
 
 object TreeThrowable {
 
-  case class TreeNodeView(self: Throwable) extends TreeView[TreeNodeView] {
+  case class TreeNodeView(self: Throwable) extends TreeView.Immutable[TreeNodeView] {
     override def children: Seq[TreeNodeView] = {
       val result = self match {
         case v: TreeThrowable =>
@@ -19,10 +19,10 @@ object TreeThrowable {
           )
           eOpt.map(TreeNodeView).toSeq
       }
-      result.sortBy(_.simpleString)
+      result.sortBy(_.simpleString(0))
     }
 
-    override def simpleString: String = {
+    override def simpleString(maxFields: Int): String = {
       self match {
         case v: TreeThrowable =>
           v.simpleMsg

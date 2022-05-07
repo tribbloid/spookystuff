@@ -83,4 +83,8 @@ case class TrieNode[K, V](
       }
     )
   }
+
+  override protected def withNewChildrenInternal(newChildren: IndexedSeq[TrieNode[K, V]]): TrieNode[K, V] = {
+    this.copy(children = newChildren)
+  }
 }

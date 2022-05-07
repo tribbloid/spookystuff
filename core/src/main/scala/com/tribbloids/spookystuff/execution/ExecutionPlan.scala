@@ -17,7 +17,7 @@ import scala.language.implicitConversions
 abstract class ExecutionPlan(
     val children: Seq[ExecutionPlan],
     val ec: SpookyExecutionContext
-) extends TreeView[ExecutionPlan]
+) extends TreeView.Immutable[ExecutionPlan]
     with Serializable {
 
   def this(

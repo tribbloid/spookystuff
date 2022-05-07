@@ -1,8 +1,5 @@
 package com.tribbloids.spookystuff.doc
 
-import java.sql.{Date, Time, Timestamp}
-import java.util.UUID
-
 import com.tribbloids.spookystuff._
 import com.tribbloids.spookystuff.actions._
 import com.tribbloids.spookystuff.caching.DocCacheLevel
@@ -10,14 +7,17 @@ import com.tribbloids.spookystuff.utils.io.ResourceMetadata
 import com.tribbloids.spookystuff.utils.{CommonUtils, IDMixin}
 import org.apache.commons.csv.CSVFormat
 import org.apache.hadoop.fs.Path
-import org.apache.http.StatusLine
-import org.apache.http.entity.ContentType
+import org.apache.hadoop.shaded.org.apache.http.StatusLine
+import org.apache.hadoop.shaded.org.apache.http.entity.ContentType
 import org.apache.spark.ml.dsl.utils.refl.ScalaUDT
 import org.apache.spark.sql.types.SQLUserDefinedType
 import org.apache.tika.io.TikaInputStream
 import org.apache.tika.metadata.{Metadata, TikaCoreProperties}
 import org.apache.tika.mime.{MimeType, MimeTypes}
 import org.mozilla.universalchardet.UniversalDetector
+
+import java.sql.{Date, Time, Timestamp}
+import java.util.UUID
 
 class DocOptionUDT extends ScalaUDT[DocOption]
 

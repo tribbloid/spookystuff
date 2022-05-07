@@ -9,7 +9,7 @@ import com.tribbloids.spookystuff.row.{FetchedRow, SpookySchema}
 import com.tribbloids.spookystuff.session.Session
 import com.tribbloids.spookystuff.utils.io.CompoundResolver.OmniResolver
 import org.apache.commons.io.IOUtils
-import org.apache.http.client.methods.HttpGet
+import org.apache.hadoop.shaded.org.apache.http.client.methods.HttpGet
 
 /**
   * use an http GET to fetch a remote resource deonted by url

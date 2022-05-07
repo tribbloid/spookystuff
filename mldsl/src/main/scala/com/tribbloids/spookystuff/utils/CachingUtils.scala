@@ -1,6 +1,6 @@
 package com.tribbloids.spookystuff.utils
 
-import org.spark_project.guava.cache.CacheBuilder
+import org.sparkproject.guava.cache.CacheBuilder
 
 import scala.collection.mutable
 

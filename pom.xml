@@ -43,7 +43,7 @@
   </modules>
 
   <properties>
-    <revision.base>0.7.0</revision.base>
+    <revision.base>0.8.0</revision.base>
     <!--    https://maven.apache.org/maven-ci-friendly.html-->
     <revision>${revision.base}_${scala.binary.version}${version.suffix}-SNAPSHOT</revision>
     <version.suffix/>
@@ -55,8 +55,8 @@
     <scala.version>2.12.16</scala.version>
     <scala.binary.version>2.12</scala.binary.version>
 
-    <spark.version>2.4.8</spark.version>
-    <spark.binary.version>2.4</spark.binary.version>
+    <spark.version>3.2.1</spark.version>
+    <spark.binary.version>3.2</spark.binary.version>
     <spark.assembly.version>${spark.binary.version}</spark.assembly.version>
     <spark.classifier>spark${spark.binary.version}</spark.classifier>
 
@@ -67,7 +67,7 @@
     <protobuf.version>2.5.0</protobuf.version>
 
     <cxf.version>3.0.16</cxf.version>
-    <jackson.version>2.9.10</jackson.version>
+    <jackson.version>2.12.3</jackson.version>
 
     <!--    <jmh.version>1.21</jmh.version>-->
 
@@ -99,19 +99,10 @@
     <!--    </profile>-->
 
     <profile>
-      <id>spark-2.4</id>
+      <id>spark-3.2</id>
       <activation>
         <activeByDefault>true</activeByDefault>
       </activation>
-    </profile>
-
-    <profile>
-      <id>spark-2.4-cloudera2</id>
-
-      <properties>
-        <spark.version>2.4.0.cloudera2</spark.version>
-        <version.suffix>.cloudera2</version.suffix>
-      </properties>
     </profile>
 
     <profile>
@@ -144,22 +135,21 @@
 
     </profile>
 
-
-    <profile>
-      <id>scala-2.11</id>
-
-      <properties>
-        <scala.version>2.11.12</scala.version>
-        <scala.binary.version>2.11</scala.binary.version>
-      </properties>
-    </profile>
-
     <profile>
       <id>scala-2.12</id>
 
       <activation>
         <activeByDefault>true</activeByDefault>
       </activation>
+    </profile>
+    <profile>
+      <id>scala-2.13</id>
+<!--      temporarily not used-->
+
+      <properties>
+        <scala.version>2.13.8</scala.version>
+        <scala.binary.version>2.13</scala.binary.version>
+      </properties>
     </profile>
 
     <profile>
@@ -329,7 +319,7 @@
       <dependency>
         <groupId>com.fasterxml.jackson.core</groupId>
         <artifactId>jackson-databind</artifactId>
-        <version>${jackson.version}.5</version>
+        <version>${jackson.version}</version>
       </dependency>
       <dependency>
         <groupId>com.fasterxml.jackson.core</groupId>
@@ -949,13 +939,9 @@
             </goals>
             <configuration>
               <rules>
-                <requireActiveProfile>
-                  <profiles>spark-2.2,spark-2.3,spark-2.4,spark-2.4-cloudera2</profiles>
-                  <all>false</all>
-                </requireActiveProfile>
 
                 <requireActiveProfile>
-                  <profiles>scala-2.11,scala-2.12</profiles>
+                  <profiles>scala-2.12,scala-2.13</profiles>
                   <all>false</all>
                 </requireActiveProfile>
               </rules>

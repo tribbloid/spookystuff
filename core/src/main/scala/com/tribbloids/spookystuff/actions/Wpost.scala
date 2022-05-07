@@ -10,9 +10,9 @@ import com.tribbloids.spookystuff.session.Session
 import com.tribbloids.spookystuff.utils.io.CompoundResolver.OmniResolver
 import com.tribbloids.spookystuff.utils.io._
 import org.apache.commons.io.IOUtils
-import org.apache.http.HttpEntity
-import org.apache.http.client.methods.HttpPost
-import org.apache.http.entity.StringEntity
+import org.apache.hadoop.shaded.org.apache.http.HttpEntity
+import org.apache.hadoop.shaded.org.apache.http.client.methods.HttpPost
+import org.apache.hadoop.shaded.org.apache.http.entity.StringEntity
 
 import java.net.URI
 

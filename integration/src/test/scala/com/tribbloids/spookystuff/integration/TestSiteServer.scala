@@ -1,8 +1,10 @@
 package com.tribbloids.spookystuff.integration
 
 import com.tribbloids.spookystuff.utils.CommonConst
-import org.spark_project.jetty.server.handler.{DefaultHandler, HandlerList, HandlerWrapper, ResourceHandler}
-import org.spark_project.jetty.server.{Request, Server}
+import org.sparkproject.jetty.server.handler.{DefaultHandler, HandlerList, HandlerWrapper, ResourceHandler}
+import org.sparkproject.jetty.server.{Request, Server}
+
+import javax.servlet.http.{HttpServletRequest, HttpServletResponse}
 
 import javax.servlet.http.{HttpServletRequest, HttpServletResponse}
 
