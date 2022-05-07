@@ -17,7 +17,7 @@ trait AttrLike[T] extends Serializable with EqualBy {
     Magnets.KV[T](this.primaryName, Some(v))
   }
 
-  def -?>(vOpt: T ? _): Magnets.KV[T] = {
+  def -?>(vOpt: T `?` _): Magnets.KV[T] = {
 
     Magnets.KV[T](this.primaryName, vOpt.asOption)
   }

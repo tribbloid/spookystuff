@@ -63,9 +63,9 @@ class WebActionSuite extends SpookyEnvFixture {
         .shouldBe(
           """
           |Click(
-          |	By.sizzleCssSelector: o1,
-          |	0 seconds,
-          |	true
+          |  By.sizzleCssSelector: o1,
+          |  0 seconds,
+          |  true
           |)
         """.stripMargin
         )
@@ -103,17 +103,17 @@ class WebActionSuite extends SpookyEnvFixture {
         .shouldBe(
           """
           |Loop(
-          |	List(
-          |		Click(
-          |			By.sizzleCssSelector: o1,
-          |			0 seconds,
-          |			true
-          |		),
-          |		Snapshot(
-          |			MustHaveTitle
-          |		)
-          |	),
-          |	2147483647
+          |  ::(
+          |    Click(
+          |      By.sizzleCssSelector: o1,
+          |      0 seconds,
+          |      true
+          |    ),
+          |    Snapshot(
+          |      MustHaveTitle
+          |    )
+          |  ),
+          |  2147483647
           |)
         """.stripMargin
         )
@@ -138,8 +138,8 @@ class WebActionSuite extends SpookyEnvFixture {
     } catch {
       case e: ActionException =>
         println(e)
-        assert(e.getMessage.contains("ErrorDump/DefectiveWebExport"))
-        assert(e.getMessage.contains("ErrorScreenshot/DefectiveWebExport"))
+        assert(e.getMessage.contains("Snapshot/Bypass/DefectiveWebExport"))
+        assert(e.getMessage.contains("Screenshot/Bypass/DefectiveWebExport"))
     }
   }
 
@@ -153,8 +153,8 @@ class WebActionSuite extends SpookyEnvFixture {
     } catch {
       case e: ActionException =>
         println(e)
-        assert(e.getMessage.contains("Delay/1_second/ErrorDump/DefectiveWebExport"))
-        assert(e.getMessage.contains("Delay/1_second/ErrorScreenshot/DefectiveWebExport"))
+        assert(e.getMessage.contains("Delay/1_second/Snapshot/Bypass/DefectiveWebExport"))
+        assert(e.getMessage.contains("Delay/1_second/Screenshot/Bypass/DefectiveWebExport"))
     }
   }
 }

@@ -1,14 +1,14 @@
 package org.apache.spark.ml.dsl
 
-import com.github.mdr.ascii.graph.Graph
-import com.github.mdr.ascii.layout.GraphLayout
-import com.github.mdr.ascii.layout.prefs.LayoutPrefsImpl
 import org.apache.spark.ml.dsl.StepGraph.{MayHaveHeads, MayHaveTails}
 import org.apache.spark.ml.dsl.utils.DSLUtils
 import org.apache.spark.ml.{Pipeline, PipelineModel, PipelineStage, Transformer}
 import org.apache.spark.sql.catalyst.expressions.NamedExpression
 import org.apache.spark.sql.types.{StructField, StructType}
 import org.apache.spark.sql.{Column, DataFrame}
+import org.scalameta.ascii.graph.Graph
+import org.scalameta.ascii.layout.GraphLayout
+import org.scalameta.ascii.layout.prefs.LayoutPrefsImpl
 
 import scala.collection.mutable.ArrayBuffer
 import scala.language.implicitConversions
@@ -133,7 +133,7 @@ trait DFDComponent extends MayHaveHeads with MayHaveTails {
     val newSteps = allSteps.connectAll(effectiveFromIDs, toIDs)
 
     val newHeadIDs = if (right.headExists) {
-      this.headIDs.toBuffer -- fromIDs ++ right.heads.flatMap {
+      this.headIDs.toBuffer --= fromIDs ++= right.heads.flatMap {
         case PASSTHROUGH => effectiveFromIDs
         case v: StepLike => Seq(v.id)
       }

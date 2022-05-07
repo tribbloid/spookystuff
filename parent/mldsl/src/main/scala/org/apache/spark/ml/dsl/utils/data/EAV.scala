@@ -1,8 +1,8 @@
 package org.apache.spark.ml.dsl.utils.data
 
 import java.util.Properties
-
 import com.tribbloids.spookystuff.utils.{CommonUtils, EqualBy, TreeThrowable}
+import org.apache.spark.ml.dsl.utils.messaging.RootTagged
 import org.apache.spark.ml.dsl.utils.{?, ScalaNameMixin}
 import org.apache.spark.sql.catalyst.util.CaseInsensitiveMap
 
@@ -14,7 +14,7 @@ import scala.util.Try
 /**
   * entity-(with)-attribute-value
   */
-trait EAV extends Serializable with EqualBy {
+trait EAV extends Serializable with EqualBy with RootTagged {
 
   type VV
   protected def getCtg(
@@ -23,6 +23,8 @@ trait EAV extends Serializable with EqualBy {
   ): ClassTag[VV] = v
   def ctg: ClassTag[VV]
   final lazy val _ctg = ctg
+
+  override lazy val rootTag = "root"
 
   def source: EAV
 
@@ -186,8 +188,8 @@ trait EAV extends Serializable with EqualBy {
       // should only be used in setters
       val aliases: List[String] = Nil,
       nullable: Boolean = false,
-      default: T ? _ = None,
-      primaryNameOverride: String ? _ = None
+      default: T `?` _ = None,
+      primaryNameOverride: String `?` _ = None
   )(
       implicit
       ev: T <:< VV

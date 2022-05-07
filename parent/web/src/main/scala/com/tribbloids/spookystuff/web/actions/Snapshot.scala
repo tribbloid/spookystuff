@@ -45,5 +45,5 @@ object Snapshot {
   object QuickSnapshot extends Snapshot(DocFilterImpl.Bypass)
   object ErrorDump extends Snapshot(DocFilterImpl.Bypass)
   //  with MessageAPI
-  {}
+
 }

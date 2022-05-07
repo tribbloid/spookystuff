@@ -33,36 +33,35 @@ class MetricsSuite extends FunSpecx {
   it("can be converted to JSON") {
     Seq(DummyMetrics(), DummyMetrics_HasMembers()).foreach { v =>
       val m = v.View
-      m.toNestedMap
+      m.toTreeIR
         .toJSON()
         .shouldBe(
           """
               |{
-              |  "v2" : 1.0,
-              |  "v1" : 0
+              |  "v1" : 0,
+              |  "v2" : 1.0
               |}
         """.stripMargin
         )
     }
-
   }
 
   it("tree can be converted to JSON") {
     val m = DummyTreeMetrics().View_AccessorName
-    m.toNestedMap
+    m.toTreeIR
       .toJSON()
       .shouldBe(
         """
           |{
-          |  "sub" : {
-          |    "v2" : 1.0,
-          |    "v1" : 0
-          |  },
           |  "v3" : {
           |    "max" : 2,
           |    "min" : 2,
           |    "avg" : 2.0,
           |    "count" : 1
+          |  },
+          |  "sub" : {
+          |    "v1" : 0,
+          |    "v2" : 1.0
           |  }
           |}
         """.stripMargin
@@ -79,8 +78,8 @@ class MetricsSuite extends FunSpecx {
           |    "avg" : 2.0,
           |    "count" : 1
           |  },
-          |  "sub/v2" : 1.0,
-          |  "sub/v1" : 0
+          |  "sub/v1" : 0,
+          |  "sub/v2" : 1.0
           |}
         """.stripMargin
       )

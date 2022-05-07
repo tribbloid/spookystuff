@@ -16,8 +16,8 @@ class MessageWriterSuite extends FunSpecx {
       writer.memberStrPretty.shouldBe(
         """
           |User(
-          |	1,
-          |	None
+          |  1,
+          |  None
           |)
         """.stripMargin
       )
@@ -27,15 +27,15 @@ class MessageWriterSuite extends FunSpecx {
       writer.memberStrPretty.shouldBe(
         """
           |User(
-          |	2,
-          |	Some(
-          |		Roles(
-          |			List(
-          |				r1,
-          |				r2
-          |			)
-          |		)
-          |	)
+          |  2,
+          |  Some(
+          |    Roles(
+          |      ::(
+          |        r1,
+          |        r2
+          |      )
+          |    )
+          |  )
           |)
         """.stripMargin
       )
@@ -45,32 +45,32 @@ class MessageWriterSuite extends FunSpecx {
       val writer = MessageWriter(map)
       writer.memberStrPretty.shouldBe(
         """
-          |Map(
-          |1 -> 	User(
-          |		1,
-          |		None
-          |	),
-          |2 -> 	User(
-          |		2,
-          |		Some(
-          |			Roles(
-          |				List(
-          |					r1,
-          |					r2
-          |				)
-          |			)
-          |		)
-          |	)
+          |Map2(
+          |  1=User(
+          |    1,
+          |    None
+          |  ),
+          |  2=User(
+          |    2,
+          |    Some(
+          |      Roles(
+          |        ::(
+          |          r1,
+          |          r2
+          |        )
+          |      )
+          |    )
+          |  )
           |)
         """.stripMargin
       )
     }
     it("can resolve codec of nested object if augmented by AutomaticRelay") {
-      val writer = CodecWrapper(WithCodec("abc"))
-      writer.memberStrPretty.shouldBe(
+      val wrapper = CodecWrapper(WithCodec("abc"))
+      wrapper.memberStrPretty.shouldBe(
         """
           |CodecWrapper(
-          |	abc
+          |  abc
           |)
         """.stripMargin
       )

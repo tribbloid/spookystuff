@@ -1,6 +1,7 @@
 package org.apache.spark.ml.dsl
 
 import scala.collection.mutable
+import scala.language.implicitConversions
 
 trait StepGraph {
 

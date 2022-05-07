@@ -1,23 +1,23 @@
 package org.apache.spark.ml.dsl.utils.messaging
 
-import java.io.File
 import org.apache.spark.ml.dsl.utils._
 import org.apache.spark.ml.dsl.utils.messaging.xml.{XMLFormats, Xml}
-import org.apache.spark.ml.dsl.utils.refl.ScalaType
 import org.json4s.JsonAST.JObject
 import org.json4s.jackson.JsonMethods._
 import org.json4s.{Extraction, Formats, JValue}
 
+import java.io.File
 import scala.xml.NodeSeq
 
-class MessageWriter[M](
-    val message: M,
-    val formats: Formats = XMLFormats.defaultFormats,
+case class MessageWriter[M](
+    message: M,
+    formats: Formats = XMLFormats.defaultFormats,
     rootTagOverride: Option[String] = None
-) extends Serializable {
+) extends Serializable
+    with RootTagged {
 
-  def rootTag: String = rootTagOverride.getOrElse(
-    Codec.getRootTag(message)
+  override lazy val rootTag: String = rootTagOverride.getOrElse(
+    Codec.RootTagOf(message).default
   )
 
   // TODO: move into case class WFormats(.) and enable lazy val
@@ -80,28 +80,30 @@ class MessageWriter[M](
     def listRecursion(elems: Traversable[Any]): List[String] = {
       elems.toList
         .map { vv =>
-          MessageWriter(vv).getMemberStr(start, sep, end, indentFn, recursion + 1)
-        }
-        .map { str =>
+          val str = MessageWriter(vv).getMemberStr(start, sep, end, indentFn, recursion + 1)
           DSLUtils.indent(str, indentStr)
         }
     }
 
-    def mapRecursion[T](map: Map[T, Any]): Map[T, String] = {
-      map
-        .mapValues { vv =>
-          MessageWriter(vv).getMemberStr(start, sep, end, indentFn, recursion + 1)
-        }
-        .mapValues { str =>
-          DSLUtils.indent(str, indentStr)
+    def mapRecursion[T](map: Map[T, Any]): Seq[String] = {
+      map.toSeq
+        .map {
+          case (kk, vv) =>
+            val vvStr = MessageWriter(vv).getMemberStr(start, sep, end, indentFn, recursion + 1)
+            DSLUtils.indent(s"$kk=$vvStr", indentStr)
         }
     }
 
     def product2Str(v: Product): String = {
       val elems = v.productIterator.toList
-      val runtimeType = ScalaType.getRuntimeType(v)
 
-      val concat = if (elems.isEmpty || runtimeType.asClass.getCanonicalName.endsWith("$")) {
+      val vIsSingleton = {
+
+        val className = v.getClass.getName
+        className.endsWith("$")
+      }
+
+      val concat = if (elems.isEmpty || vIsSingleton) {
         rootTag
       } else {
         val strs: List[String] = listRecursion(elems)
@@ -112,8 +114,9 @@ class MessageWriter[M](
     }
 
     message match {
-      case v: GenericProduct[_] =>
-        product2Str(v)
+
+      case is: TreeIR.ProductMap =>
+        product2Str(is)
 
       case is: Map[_, _] =>
         val strs = mapRecursion(is)
@@ -138,7 +141,6 @@ class MessageWriter[M](
 
       case _ =>
         "" + message // TODO: should we allow this fallback?
-
     }
   }
 
@@ -150,16 +152,9 @@ class MessageWriter[M](
     ",\n",
     "\n)",
     { _ =>
-      "\t"
+      "  "
     }
   )
 }
 
-object MessageWriter {
-
-  def apply[M](
-      message: M,
-      formats: Formats = XMLFormats.defaultFormats,
-      rootTagOverride: Option[String] = None
-  ): MessageWriter[M] = new MessageWriter[M](message, formats, rootTagOverride)
-}
+object MessageWriter {}

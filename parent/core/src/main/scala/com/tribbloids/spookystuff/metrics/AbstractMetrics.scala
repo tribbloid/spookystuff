@@ -1,10 +1,12 @@
 package com.tribbloids.spookystuff.metrics
 
-import org.apache.spark.ml.dsl.utils.NestedMap
+import com.tribbloids.spookystuff.utils.CommonUtils
+import org.apache.spark.ml.dsl.utils.messaging.TreeIR
 import org.apache.spark.ml.dsl.utils.refl.ReflectionUtils
 import org.apache.spark.util.AccumulatorV2
 
 import java.lang.reflect.Modifier
+import scala.collection.mutable
 import scala.language.implicitConversions
 import scala.util.Try
 
@@ -52,25 +54,28 @@ abstract class AbstractMetrics extends MetricLike {
       useDisplayName: Boolean = true
   ) {
 
-    def toNestedMap: NestedMap[T] = {
-      val result = NestedMap[T]()
+    def toTreeIR: TreeIR.Struct[T] = {
+      val cache = mutable.LinkedHashMap.empty[String, TreeIR[T]]
       val list = namedChildren(useDisplayName)
       list.foreach {
+
         case (_name: String, acc: Acc[_]) =>
-          fn(acc).foreach(v => result += _name -> Left(v))
+          fn(acc).foreach(v => cache += _name -> TreeIR.Leaf(v))
 
         case (_name: String, nested: AbstractMetrics) =>
           val name = nested.displayNameOvrd.getOrElse(_name)
           val nestedView = nested.View(fn, useDisplayName)
-          result += name -> Right(nestedView.toNestedMap)
+          cache += name -> nestedView.toTreeIR
 
         case _ =>
           None
       }
-      result
+      TreeIR.Struct.Builder(Some(AbstractMetrics.this.productPrefix)).fromKVs(cache.toSeq: _*)
     }
 
-    def toMap: Map[String, T] = toNestedMap.leafMap
+    def toMap: Map[String, T] = toTreeIR.pathToValueMap.map {
+      case (k, v) => CommonUtils./:/(k: _*) -> v
+    }
   }
 
   object View extends View[Any](v => Some(v.value), true)

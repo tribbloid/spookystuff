@@ -1,15 +1,10 @@
 package org.apache.spark.ml.dsl.utils.data
 
-import java.lang.reflect.{InvocationTargetException, Method}
-
-import com.tribbloids.spookystuff.utils.TreeThrowable
 import org.apache.spark.ml.dsl.utils.DSLUtils
-import org.apache.spark.ml.dsl.utils.messaging.{CodecRegistry, MessageRelay, MessageWriter, Nested}
+import org.apache.spark.ml.dsl.utils.messaging.{MessageRelay, TreeIR}
 import org.apache.spark.ml.dsl.utils.refl.ScalaType
-import org.json4s
-import org.json4s.JsonAST.{JObject, JString, JValue}
 
-import scala.collection.immutable.ListMap
+import java.lang.reflect.{InvocationTargetException, Method}
 import scala.reflect.ClassTag
 
 trait EAVRelay[I <: EAV] extends MessageRelay[I] with EAVBuilder[I] {
@@ -17,68 +12,50 @@ trait EAVRelay[I <: EAV] extends MessageRelay[I] with EAVBuilder[I] {
   final override type Impl = I
   final override def Impl: EAVRelay[I] = this
 
-  override def getRootTag(protoOpt: Option[I], messageOpt: Option[Map[String, JValue]]): String = "root"
-
-  private val jvBlacklist: Set[JValue] = Set(
-    JObject()
-  )
-  def assertWellFormed(jv: JValue): JValue = {
-    assert(!jvBlacklist.contains(jv))
-    jv
-  }
-
   // TODO: too much boilerplates! should use the overriding pattern in:
   // https://stackoverflow.com/questions/55801443/in-scala-how-can-an-inner-case-class-consistently-override-a-method
   def fromCore(v: EAV.Impl): I
 
-  final type M = Map[String, JValue]
-  override def messageMF: Manifest[Map[String, JValue]] = implicitly[Manifest[M]]
+  final type M = Any
+  override def messageMF: Manifest[M] = implicitly[Manifest[M]]
 
-  override def toMessage_>>(md: I): M = {
-    val result: Seq[(String, json4s.JValue)] = md.asMap.toSeq
-      .map {
-        case (k, v) =>
-          val mapped = Nested[Any](v).map[JValue] { elem: Any =>
-            TreeThrowable
-              .|||^[JValue](
-                Seq(
-                  { () =>
-                    val codec = CodecRegistry.Default.findCodecOrDefault[Any](v)
-                    assertWellFormed(codec.toWriter_>>(elem).toJValue)
-                  },
-                  { () =>
-                    JString(elem.toString)
-                  }
-                )
-              )
-              .get
+  override def toMessage_>>(eav: I): M = {
+    val raw: TreeIR.Leaf[I] = TreeIR.Leaf(eav)
+
+    val expanded = raw.depthFirstTransform
+      .down[Any] {
+        case TreeIR.Leaf(v: EAV) =>
+          val sub = v.asMap.toSeq
+          val subNodes: Seq[(String, TreeIR.Leaf[Any])] = sub.map {
+            case (kk, vv) =>
+              kk -> TreeIR.Leaf[Any](vv)
           }
-          k -> MessageWriter(mapped.self).toJValue
-      }
 
-    ListMap(result: _*)
+          TreeIR.Struct.Builder().fromKVs(subNodes: _*)
+        case others @ _ =>
+          others
+      }
+      .execute
+
+    expanded.toMessage_>>
   }
 
   override def toProto_<<(m: M, rootTag: String): I = {
-    val map = m.toSeq
-      .map {
-        case (k, jv) =>
-          val mapped = Nested[Any](jv).map(
-            fn = identity,
-            preproc = {
-              case v: JValue => v.values
-              case v @ _     => v
-            }
-          )
-          k -> mapped.self
-        //          RecursiveTransform(jv, failFast = true)(
-        //            {
-        //              case v: JValue => v.values
-        //              case v@ _ => v
-        //            }
-        //          )
+
+    val relay = TreeIR._Relay[Any]()
+    val ir: TreeIR[Any] = relay.toProto_<<(m, rootTag)
+
+    val collected = ir.depthFirstTransform
+      .up[Any, TreeIR.Leaf[Any]] {
+        case struct: TreeIR.Struct[_] =>
+          val map = struct.toMessage_>>
+          TreeIR.Leaf(fromUntypedTuples(map.toSeq: _*))
+        case ll: TreeIR.Leaf[_] =>
+          ll.asInstanceOf[TreeIR.Leaf[Any]]
       }
-    fromUntypedTuples(map: _*)
+      .execute
+
+    collected.repr.asInstanceOf[I]
   }
 
   case class ReflectionParser[TT: ClassTag]() {
@@ -93,9 +70,6 @@ trait EAVRelay[I <: EAV] extends MessageRelay[I] with EAVBuilder[I] {
         (m.getParameterTypes.length == 0) &&
         DSLUtils.isSerializable(m.getReturnType)
       }
-//      val _methods = methods.filter { m =>
-//        m.getParameterTypes.length == 0
-//      }
       val commonGetters = _methods
         .filter { m =>
           m.getName.startsWith("get")

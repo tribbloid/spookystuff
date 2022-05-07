@@ -8,7 +8,8 @@ import scala.util.{Failure, Success, Try}
 
 object TreeThrowable {
 
-  case class TreeNodeView(self: Throwable) extends TreeView[TreeNodeView] {
+  // TODO: rename to _TreeVew, keep consistency
+  case class TreeNodeView(self: Throwable) extends TreeView.Immutable[TreeNodeView] {
     override def children: Seq[TreeNodeView] = {
       val result = self match {
         case v: TreeThrowable =>
@@ -17,20 +18,16 @@ object TreeThrowable {
           val eOpt = Option(self).flatMap(v => Option(v.getCause))
           eOpt.map(TreeNodeView).toSeq
       }
-      result.sortBy(_.simpleString)
+      result.sortBy(_.simpleString(0))
     }
 
-    override def simpleString: String = {
+    override def simpleString(maxFields: Int): String = {
       self match {
         case v: TreeThrowable =>
           v.simpleMsg
         case _ =>
           self.getClass.getName + ": " + self.getMessage
       }
-    }
-
-    override protected lazy val argStrings: Seq[String] = {
-      DSLUtils.stackTracesShowStr(self.getStackTrace).split("\n")
     }
   }
 

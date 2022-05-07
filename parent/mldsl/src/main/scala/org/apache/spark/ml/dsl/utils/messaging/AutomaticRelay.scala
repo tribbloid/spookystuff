@@ -1,54 +1,51 @@
 package org.apache.spark.ml.dsl.utils.messaging
 
-import org.apache.spark.ml.dsl.utils.refl.{ReflectionUtils, RuntimeTypeOverride, ScalaType}
+import org.apache.spark.ml.dsl.utils.refl.ReflectionUtils
 
 import scala.collection.immutable.ListMap
 
-//TODO: add type information
-case class GenericProduct[T <: Product: Manifest](
-    override val productPrefix: String,
-    kvs: ListMap[String, Any],
-    runtimeType: ScalaType[_]
-) extends MessageAPI
-    with Map[String, Any]
-    with RuntimeTypeOverride {
+object AutomaticRelay {}
 
-  override def rootTag: String = productPrefix
-
-  override def productElement(n: Int): Any = kvs.toSeq(n)._2
-
-  override def productArity: Int = kvs.size
-
-  override def +[B1 >: Any](kv: (String, B1)): Map[String, B1] = this.copy(kvs = kvs + kv)
-
-  override def get(key: String): Option[Any] = kvs.get(key)
-
-  override def iterator: Iterator[(String, Any)] = kvs.iterator
-
-  override def -(key: String): Map[String, Any] = this.copy(kvs = kvs - key)
-}
-
+// use reflection to find most qualified relay for the type of each field from their respective companion objects
 abstract class AutomaticRelay[T <: Product: Manifest] extends MessageRelay[T] {
+  // TODO:
+  //  slow in runtime, and unreliable
+  //  in the next version, should be rewritten using shapeless Generic and prover through implicits
 
-  override type M = GenericProduct[T]
-  override def messageMF: Manifest[GenericProduct[T]] = implicitly[Manifest[M]]
+  override type M = Any
+  override def messageMF: Manifest[Any] = implicitly[Manifest[M]]
 
-  override def toMessage_>>(v: T): GenericProduct[T] = {
+  override def toMessage_>>(v: T): M = {
     val prefix = v.productPrefix
     val kvs = Map(ReflectionUtils.getCaseAccessorMap(v): _*)
 
-    val transformedKVs = kvs.mapValues { v =>
-      Nested[Any](v)
-        .map[Any] { v: Any =>
-          val codec = CodecRegistry.Default.findCodecOrDefault(v)
-          codec.toMessage_>>(v)
+    val relayedKVs = kvs.mapValues { v =>
+      val ir: TreeIR.Leaf[Any] = TreeIR.Leaf(v)
+      ir.depthFirstTransform.onLeaf { v: Any =>
+        v match {
+          case vs: Seq[_] =>
+            vs.map { v: Any =>
+              val codec = CodecRegistry.Default.findCodecOrDefault(v)
+              codec.toMessage_>>(v)
+            }
+          case m: Map[_, _] =>
+            val list = m.toList.map {
+              case (k: Any, v: Any) =>
+                val codec = CodecRegistry.Default.findCodecOrDefault(v)
+                k -> codec.toMessage_>>(v)
+            }
+            ListMap(list: _*)
+          case v: Any =>
+            val codec = CodecRegistry.Default.findCodecOrDefault(v)
+            codec.toMessage_>>(v)
         }
-        .self
+
+      }.execute
     }
 
-    val casted = ListMap(transformedKVs.toSeq: _*)
+    val relayed = TreeIR.Struct.Builder(Some(prefix)).fromKVs(relayedKVs.toSeq: _*)
 
-    val result = GenericProduct[T](prefix, casted, v.getClass)
+    val result = relayed.toMessage_>>
     result
   }
 }

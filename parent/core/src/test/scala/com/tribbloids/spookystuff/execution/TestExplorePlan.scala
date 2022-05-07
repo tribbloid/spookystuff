@@ -17,7 +17,7 @@ class TestExplorePlan extends SpookyEnvFixture with LocalPathDocsFixture {
 
     val base = spooky
       .fetch(
-        Wget("http://webscraper.io/test-sites/e-commerce/allinone")
+        Wget("dummy")
       )
 
     val explored = base
@@ -66,7 +66,7 @@ class TestExplorePlan extends SpookyEnvFixture with LocalPathDocsFixture {
     val rdd2 = rdd1
       .explore('dummy)(
         Wget(HTML_URL),
-        genPartitioner = GenPartitioners.DocCacheAware(v => partitioner2)
+        genPartitioner = GenPartitioners.DocCacheAware(_ => partitioner2)
       )()
 
     assert(rdd2.plan.beaconRDDOpt.get.partitioner.get eq partitioner)

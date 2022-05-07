@@ -52,7 +52,9 @@ trait GenExtractorImplicits {
     def \(selector: String) = children(selector)
     def child(selector: String) = children(selector).head
 
-    def text: Extractor[String] = self.andOptionFn(_.text)
+    def text: Extractor[String] = self.andOptionFn { v =>
+      v.text
+    }
 
     def code = self.andOptionFn(_.code)
 

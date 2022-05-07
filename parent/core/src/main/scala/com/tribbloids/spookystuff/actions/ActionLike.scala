@@ -19,7 +19,7 @@ object ActionLike extends AutomaticRelay[ActionLike] {
   // TODO: aggregate all object that has children
   case class TreeNodeView(
       actionLike: ActionLike
-  ) extends TreeView[TreeNodeView] {
+  ) extends TreeView.Immutable[TreeNodeView] {
 
     override def children: Seq[TreeNodeView] = actionLike.children.map {
       TreeNodeView
@@ -30,7 +30,7 @@ object ActionLike extends AutomaticRelay[ActionLike] {
 @SerialVersionUID(8566489926281786854L)
 abstract class ActionLike extends Product with Serializable with Verbose {
 
-  override lazy val productPrefix: String = this.getClass.getSimpleName.stripSuffix("$")
+//  override lazy val productPrefix: String = this.getClass.getSimpleName.stripSuffix("$")
 
   def children: Trace
 

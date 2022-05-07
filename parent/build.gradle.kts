@@ -169,7 +169,7 @@ allprojects {
 //            }
 
             api("com.fasterxml.jackson.core:jackson-core:${vs.jacksonV}")
-            api("com.fasterxml.jackson.core:jackson-databind:${vs.jacksonV}.5")
+            api("com.fasterxml.jackson.core:jackson-databind:${vs.jacksonV}")
             api("com.fasterxml.jackson.core:jackson-annotations:${vs.jacksonV}")
             api("com.fasterxml.jackson.module:jackson-module-scala_${vs.scalaBinaryV}:${vs.jacksonV}")
         }
@@ -190,6 +190,10 @@ allprojects {
         bothProvided("${vs.scalaGroup}:scala-compiler:${vs.scalaV}")
         bothProvided("${vs.scalaGroup}:scala-library:${vs.scalaV}")
         bothProvided("${vs.scalaGroup}:scala-reflect:${vs.scalaV}")
+
+        bothProvided(
+            "org.scala-lang.modules:scala-collection-compat_${vs.scalaBinaryV}:2.8.1"
+        )
 
         bothProvided("org.apache.spark:spark-sql_${vs.scalaBinaryV}:${vs.sparkV}")
         bothProvided("org.apache.spark:spark-mllib_${vs.scalaBinaryV}:${vs.sparkV}")

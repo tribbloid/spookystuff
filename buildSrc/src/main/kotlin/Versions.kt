@@ -6,7 +6,7 @@ class Versions(self: Project) {
     val projectGroup = "com.tribbloids.spookstuff"
     val projectRootID = "spookstuff"
 
-    val projectV = "0.8.0-SNAPSHOT"
+    val projectV = "0.9.0-SNAPSHOT"
     val projectVMajor = projectV.removeSuffix("-SNAPSHOT")
 //    val projectVComposition = projectV.split('-')
 
@@ -25,5 +25,5 @@ class Versions(self: Project) {
 
     val tikaV: String = "2.4.1"
 
-    val jacksonV: String = "2.9.10"
+    val jacksonV: String = "2.12.3"
 }

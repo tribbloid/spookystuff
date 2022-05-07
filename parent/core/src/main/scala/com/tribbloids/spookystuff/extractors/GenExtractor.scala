@@ -126,7 +126,7 @@ object GenExtractor extends AutomaticRelay[GenExtractor[_, _]] with GenExtractor
     override def _args: Seq[GenExtractor[_, _]] = Seq(arg1, arg2)
   }
 
-  case class TreeNodeView(self: GenExtractor[_, _]) extends TreeView[TreeNodeView] {
+  case class TreeNodeView(self: GenExtractor[_, _]) extends TreeView.Immutable[TreeNodeView] {
     override def children: Seq[TreeNodeView] = self._args.map(TreeNodeView)
 
   }

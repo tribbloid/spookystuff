@@ -11,18 +11,6 @@ import org.slf4j.LoggerFactory
 import scala.language.implicitConversions
 import scala.xml.{Elem, NodeSeq, XML}
 
-trait CodecLevel1 {
-
-  def formats: Formats = Codec.defaultFormats
-
-  type M // Message type
-  implicit protected def messageMF: Manifest[M]
-
-  //  implicit def proto2Message(m: M): MessageWriter[M] = {
-  //    MessageWriter[M](m, this.formats)
-  //  }
-}
-
 /**
   * mixin to allow converting to a message object and back used to delegate ser/de tasks (from/to xml, json, Dataset
   * encoding, protobuf) to the case class with a fixed schema all concreate subclasses must be singletons.
@@ -39,25 +27,18 @@ trait CodecLevel1 {
   * types, all parameter types' supertypes Implicit scope of an argument’s type (2.9.1) - e.g. Companion objects
   * Implicit scope of type arguments (2.8.0) - e.g. Companion objects Outer objects for nested types
   */
-abstract class Codec[Proto] extends CodecLevel1 with HasRootTag {
+abstract class Codec[Proto] extends CodecLevel1 with RootTagged {
 
   implicit def findCodec: Codec[Proto] = this
   implicit def toWriter_>>(v: Proto): MessageWriter[M] = {
 
     val msg = toMessage_>>(v)
+    val rootTagOvrd = Codec.RootTagOf(v, msg).default
     MessageWriter[M](
       msg,
       this.formats,
-      Some(getRootTag(Some(v), Some(msg)))
+      Some(rootTagOvrd)
     )
-  }
-
-  def getRootTag(protoOpt: Option[Proto], messageOpt: Option[M]): String = {
-    messageOpt
-      .map { v =>
-        Codec.getRootTag(v)
-      }
-      .getOrElse(this.rootTag)
   }
 
   def selfType: ScalaType[Proto]
@@ -78,7 +59,7 @@ abstract class Codec[Proto] extends CodecLevel1 with HasRootTag {
   }
   final def _fromJValue[T: Codec](jv: JValue): T = {
     val reader = implicitly[Codec[T]]
-    val rootTag = reader.getRootTag(None, None)
+    val rootTag = this.rootTag
     _fromJField(rootTag -> jv)(reader)
   }
   final def _fromJSON[T: Codec](json: String): T = _fromJValue[T](JsonMethods.parse(json))
@@ -128,35 +109,6 @@ abstract class Codec[Proto] extends CodecLevel1 with HasRootTag {
   final def fromXMLNode(ns: NodeSeq): Proto = _fromXMLNode[Proto](ns)(this)
   final def fromXML(xml: String): Proto = _fromXML[Proto](xml)(this)
 
-  //  final def toMessageAPIIfNot(v: Self): MessageAPI = {
-  //    v match {
-  //      case v: MessageAPI => v
-  //      case _ => toMessageAPI(v)
-  //    }
-  //  }
-
-  //  implicit class RelayView(self: Self) extends MessageAPI {
-  //
-  //    override def formats = RelayLike.this.formats
-  //
-  //    final def toM = RelayLike.this.toM(self)
-  //    final def toMessageAPI = RelayLike.this.toMessageAPI(self)
-  //    final def toMessageAPIIfNot = RelayLike.this.toMessageAPI(self)
-  //
-  //    override def proto: Any = toMessageAPI.proto
-  //  }
-
-  //  class UDT extends UserDefinedType[Obj] {
-  //
-  //    override def sqlType: DataType = ???
-  //
-  //    override def serialize(obj: Obj): Any = ???
-  //
-  //    override def deserialize(datum: Any): Obj = ???
-  //
-  //    override def userClass: Class[Obj] = ???
-  //  }
-
   def Param(
       parent: String,
       name: String,
@@ -183,26 +135,38 @@ abstract class Codec[Proto] extends CodecLevel1 with HasRootTag {
 
 object Codec {
 
-  def defaultFormats: Formats = XMLFormats.defaultFormats + DateSerializer
+  lazy val defaultFormats: Formats = XMLFormats.defaultFormats + DateSerializer
 
-  def getRootTag(v: Any): String = {
-    v match {
-      case vv: HasRootTag =>
-        vv.rootTag
-      case _ =>
-        getDefaultRootTag(v)
-    }
-  }
+  case class RootTagOf(chain: Any*) {
 
-  def getDefaultRootTag(v: Any): String = {
-    v match {
-      case vv: Traversable[_] =>
-        vv.stringPrefix
-      case vv: Product =>
-        vv.productPrefix
-      case _ =>
-        ScalaType.getRuntimeType(v).asClass.getSimpleName.stripSuffix("$")
+    val first: Any = chain.head // sanity check
+
+    lazy val explicitOpt: Option[String] = {
+
+      val trials = chain.toStream.map {
+        case vv: RootTagged =>
+          Some(vv.rootTag)
+
+        case vv: Product =>
+          Some(vv.productPrefix)
+        case _ =>
+          None
+      }
+
+      trials.collectFirst {
+        case Some(v) => v
+      }
     }
+
+    lazy val fallback: String = first match {
+
+//      case vv: GenTraversableLike[_, _] =>
+//        vv.stringPrefix
+      case _ =>
+        ScalaType.getRuntimeType(first).asClass.getSimpleName.stripSuffix("$")
+    }
+
+    lazy val default: String = explicitOpt.getOrElse(fallback)
   }
 
   implicit def fallbackCodec[T: Manifest]: Codec[T] = new MessageReader[T]()

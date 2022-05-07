@@ -4,11 +4,9 @@ import com.tribbloids.spookystuff.tree.TreeView
 import org.apache.spark.ml.dsl.utils.messaging.{MessageAPI_<<, MessageRelay}
 import org.apache.spark.sql.utils.DataTypeRelay
 
-trait StepTreeNode[BaseType <: StepTreeNode[BaseType]] extends TreeView[StepTreeNode[BaseType]] {
+trait StepTreeNode[BaseType <: StepTreeNode[BaseType]] extends TreeView.Immutable[StepTreeNode[BaseType]] {
 
   val self: StepLike
-
-  override protected def argStrings: Seq[String] = mergedPath
 
   lazy val paths: Seq[Seq[String]] = {
     val rootPath = Seq(self.name)

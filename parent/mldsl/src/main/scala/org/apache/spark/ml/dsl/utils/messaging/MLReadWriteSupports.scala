@@ -44,57 +44,58 @@ object MLReadWriteSupports {
 
   implicit class ReadWrite[Obj](val base: Codec[Obj]) {
 
-    def toMLReader: MLReader[Obj] = MessageMLReader(base)
+    def toMLReader: MLReader[Obj] = Reader(base)
 
     def toMLWriter(v: Obj) = {
-      MessageMLWriter(base.toWriter_>>(v))
+      Writer(base.toWriter_>>(v))
     }
   }
-}
 
-case class MessageMLReader[Obj](outer: Codec[Obj]) extends MLReader[Obj] {
+  case class Reader[Obj](outer: Codec[Obj]) extends MLReader[Obj] {
 
-  // TODO: need impl
-  override def load(path: String): Obj = {
-    //      val metadata = DefaultParamsReader.loadMetadata(path, sc)
-    //      val cls = Utils.classForName(metadata.className)
-    //      val instance =
-    //        cls.getConstructor(classOf[String]).newInstance(metadata.uid).asInstanceOf[Params]
-    //      DefaultParamsReader.getAndSetParams(instance, metadata)
-    //      instance.asInstanceOf[T]
-    ???
+    // TODO: need impl
+    override def load(path: String): Obj = {
+      //      val metadata = DefaultParamsReader.loadMetadata(path, sc)
+      //      val cls = Utils.classForName(metadata.className)
+      //      val instance =
+      //        cls.getConstructor(classOf[String]).newInstance(metadata.uid).asInstanceOf[Params]
+      //      DefaultParamsReader.getAndSetParams(instance, metadata)
+      //      instance.asInstanceOf[T]
+      ???
+    }
   }
-}
 
-case class MessageMLWriter[T](message: MessageWriter[T]) extends MLWriter with Serializable {
+  case class Writer[T](message: MessageWriter[T]) extends MLWriter with Serializable {
 
-  //    def saveJSON(path: String): Unit = {
-  //      val resolver = HDFSResolver(sc.hadoopConfiguration)
-  //
-  //      resolver.output(path, overwrite = true){
-  //        os =>
-  //          os.write(StructRepr.this.prettyJSON.getBytes("UTF-8"))
-  //      }
-  //    }
-
-  override protected def saveImpl(path: String): Unit = {
-
-    val instance = new MessageParams(Identifiable.randomUID(message.message.getClass.getSimpleName))
-
-    val jV = JObject("metadata" -> message.toJValue)
-    DefaultParamsWriter.saveMetadata(instance, path, sc, extraMetadata = Some(jV))
-
-    // Save stages
-    //    val stagesDir = new Path(path, "stages").toString
-    //    stages.zipWithIndex.foreach { case (stage: MLWritable, idx: Int) =>
-    //      stage.write.save(getStagePath(stage.uid, idx, stages.length, stagesDir))
+    //    def saveJSON(path: String): Unit = {
+    //      val resolver = HDFSResolver(sc.hadoopConfiguration)
+    //
+    //      resolver.output(path, overwrite = true){
+    //        os =>
+    //          os.write(StructRepr.this.prettyJSON.getBytes("UTF-8"))
+    //      }
     //    }
+
+    override protected def saveImpl(path: String): Unit = {
+
+      val instance = new _Params(Identifiable.randomUID(message.message.getClass.getSimpleName))
+
+      val jV = JObject("metadata" -> message.toJValue)
+      DefaultParamsWriter.saveMetadata(instance, path, sc, extraMetadata = Some(jV))
+
+      // Save stages
+      //    val stagesDir = new Path(path, "stages").toString
+      //    stages.zipWithIndex.foreach { case (stage: MLWritable, idx: Int) =>
+      //      stage.write.save(getStagePath(stage.uid, idx, stages.length, stagesDir))
+      //    }
+    }
   }
-}
 
-class MessageParams(
-    val uid: String
-) extends Params {
+  class _Params(
+      val uid: String
+  ) extends Params {
 
-  override def copy(extra: ParamMap): Params = this.defaultCopy(extra)
+    override def copy(extra: ParamMap): Params = this.defaultCopy(extra)
+  }
+
 }

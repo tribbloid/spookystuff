@@ -121,7 +121,8 @@ case class HDFSResolver(
           children.map { status =>
             execute(status.getPath.toString)
           }
-        } else Nil
+        }.toSeq
+        else Nil
       }
 
       override protected def _newIStream: InputStream = {

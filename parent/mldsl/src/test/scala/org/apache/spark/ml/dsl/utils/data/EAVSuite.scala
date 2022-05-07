@@ -12,19 +12,12 @@ class EAVSuite extends FunSpecx {
     "int" -> 1,
     "double" -> 2.5,
     "itr" -> Seq("a", "b"),
-    "map" -> Map("a" -> 1, "b" -> 2)
+    "map" -> Impl("a" -> 1, "b" -> 2),
+    "path" -> "file://home/dir"
   )
 
-  val malformed = wellformed :++ Impl(
-    "path" -> new Path("file://home/dir")
-  )
-  val malformedFixed = Impl(self = malformed.self.updated("path", "file://home/dir"))
-
-  val nested = malformed :++ Impl(
-    "children" -> malformed.self
-  )
-  val nestedFixed = malformedFixed :++ Impl(
-    "children" -> malformedFixed.self
+  val nested = wellformed :++ Impl(
+    "children" -> wellformed
   )
 
   val withNull = wellformed :++ Impl("nullable" -> null)
@@ -50,33 +43,13 @@ class EAVSuite extends FunSpecx {
         |  "map" : {
         |    "a" : 1,
         |    "b" : 2
-        |  }
-        |}
-      """.stripMargin
-    )
-    val back: Impl = Impl.fromJSON(json)
-    assert(o == back)
-  }
-
-  it("malformed <=> JSON") {
-    val o = malformed
-    val json = o.toJSON()
-    json.jsonShouldBe(
-      """
-        |{
-        |  "int" : 1,
-        |  "double" : 2.5,
-        |  "itr" : [ "a", "b" ],
-        |  "map" : {
-        |    "a" : 1,
-        |    "b" : 2
         |  },
         |  "path" : "file://home/dir"
         |}
       """.stripMargin
     )
     val back: Impl = Impl.fromJSON(json)
-    assert(malformedFixed == back)
+    assert(back == o)
   }
 
   it("nested <=> JSON") {
@@ -107,7 +80,7 @@ class EAVSuite extends FunSpecx {
       """.stripMargin
     )
     val back: Impl = Impl.fromJSON(json)
-    assert(nestedFixed == back)
+    assert(back == nested)
   }
 
   it("withNull <=> JSON") {
@@ -124,12 +97,13 @@ class EAVSuite extends FunSpecx {
         |    "b" : 2
         |  },
         |  "double" : 2.5,
+        |  "path" : "file://home/dir",
         |  "int" : 1
         |}
       """.stripMargin
     )
     val back: Impl = Impl.fromJSON(json)
-    assert(withNull == back)
+    assert(back == withNull)
   }
 
   it("tryGetEnum can convert String to Enumeration") {

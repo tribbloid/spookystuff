@@ -1,10 +1,9 @@
-package org.apache.spark
+package org.apache.spark.benchmark
+
+import org.apache.spark.benchmark.__inline.Benchmark
 
 import java.io.OutputStream
-
-import org.apache.spark.util.Benchmark
-
-import scala.concurrent.duration._
+import scala.concurrent.duration.{DurationInt, FiniteDuration}
 
 case class BenchmarkHelper(
     name: String,
