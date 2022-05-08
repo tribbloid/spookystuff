@@ -1,11 +1,11 @@
 package org.apache.spark.rdd.spookystuff
 
+import com.tribbloids.spookystuff.testutils.FunSpecx
 import com.tribbloids.spookystuff.utils.SparkUISupport
 import org.apache.spark.rdd.{RDD, UnionRDD}
 import org.apache.spark.storage.StorageLevel
 import org.apache.spark.util.{CollectionAccumulator, LongAccumulator}
 import org.apache.spark.{SparkEnv, TaskContext}
-import org.scalatest.FunSpec
 
 object ExternalAppendOnlyArraySuite {}
 
@@ -14,7 +14,7 @@ case class ExternalAppendOnlyArraySuite(
     taskSize: Int = 100,
     numTestRuns: Int = 10,
     storageLevel: StorageLevel = StorageLevel.MEMORY_AND_DISK_SER
-) extends FunSpec
+) extends FunSpecx
     with SparkUISupport {
 
   import com.tribbloids.spookystuff.testutils.TestHelper._

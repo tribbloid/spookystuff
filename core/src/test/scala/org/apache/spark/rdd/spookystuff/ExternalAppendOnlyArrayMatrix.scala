@@ -1,11 +1,12 @@
 package org.apache.spark.rdd.spookystuff
 
-import org.scalatest.{FunSpec, Suite}
+import com.tribbloids.spookystuff.testutils.FunSpecx
+import org.scalatest.Suite
 
 import scala.collection.immutable
 import scala.util.Random
 
-class ExternalAppendOnlyArrayMatrix extends FunSpec {
+class ExternalAppendOnlyArrayMatrix extends FunSpecx {
 
   import com.tribbloids.spookystuff.testutils.TestHelper._
 

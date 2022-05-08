@@ -1,8 +1,9 @@
 package org.apache.spark.ml.dsl.utils
 
 import RecursiveEitherAsUnionToJSONSpike.{InclusiveOpt, _}
+import com.tribbloids.spookystuff.testutils.FunSpecx
 import org.apache.spark.ml.dsl.utils.messaging.{MessageReader, MessageWriter}
-import org.scalatest.{FunSpec, Ignore}
+import org.scalatest.Ignore
 import org.slf4j.LoggerFactory
 
 object RecursiveEitherAsUnionToJSONSpike {
@@ -25,7 +26,7 @@ object RecursiveEitherAsUnionToJSONSpike {
 }
 
 @Ignore
-class RecursiveEitherAsUnionToJSONSpike extends FunSpec {
+class RecursiveEitherAsUnionToJSONSpike extends FunSpecx {
 
   val u1: Union = Right(Test1("abc", 2))
   val u2: Union = Left(Right(Test2(3.2)))

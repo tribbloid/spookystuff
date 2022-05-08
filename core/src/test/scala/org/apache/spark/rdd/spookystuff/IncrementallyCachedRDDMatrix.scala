@@ -1,17 +1,18 @@
 package org.apache.spark.rdd.spookystuff
 
 import com.tribbloids.spookystuff.dsl.Samplers
+import com.tribbloids.spookystuff.testutils.FunSpecx
 import com.tribbloids.spookystuff.testutils.TestHelper.TestSC
 import com.tribbloids.spookystuff.utils.PreemptiveLocalOps
 import org.apache.spark.rdd.RDD
 import org.apache.spark.rdd.spookystuff.IncrementallyCachedRDDSuite.TestSubject
 import org.apache.spark.sql.catalyst.InternalRow
 import org.apache.spark.storage.StorageLevel
-import org.scalatest.{BeforeAndAfterAll, FunSpec}
+import org.scalatest.BeforeAndAfterAll
 
 import scala.collection.immutable
 
-class IncrementallyCachedRDDMatrix extends FunSpec with BeforeAndAfterAll {
+class IncrementallyCachedRDDMatrix extends FunSpecx with BeforeAndAfterAll {
 
   import com.tribbloids.spookystuff.testutils.TestHelper.TestSQL.implicits._
 

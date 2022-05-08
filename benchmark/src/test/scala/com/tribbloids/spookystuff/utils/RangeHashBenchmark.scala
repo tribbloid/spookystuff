@@ -1,9 +1,9 @@
 package com.tribbloids.spookystuff.utils
 
+import com.tribbloids.spookystuff.testutils.FunSpecx
 import org.apache.commons.lang.math.{IntRange, LongRange}
-import org.scalatest.FunSpec
 
-class RangeHashBenchmark extends FunSpec {
+class RangeHashBenchmark extends FunSpecx {
 
   it("range hash should be fast") {
 
