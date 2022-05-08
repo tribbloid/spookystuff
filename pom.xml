@@ -47,7 +47,7 @@
 
     <revision.base>0.7.0</revision.base>
     <!--    https://maven.apache.org/maven-ci-friendly.html-->
-    <revision>${revision.base}-SNAPSHOT</revision>
+    <revision>${revision.base}_${scala.binary.version}${version.suffix}-SNAPSHOT</revision>
     <version.suffix/>
 
     <project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
@@ -56,8 +56,6 @@
 
     <scala.version>2.12.15</scala.version>
     <scala.binary.version>2.12</scala.binary.version>
-
-    <semanticdb.version>4.5.6</semanticdb.version>
 
     <spark.version>2.4.8</spark.version>
     <spark.binary.version>2.4</spark.binary.version>
@@ -78,27 +76,12 @@
   </properties>
 
   <profiles>
-
-    <profile>
-      <id>scala-suffix</id>
-      <activation>
-        <activeByDefault>true</activeByDefault>
-      </activation>
-
-      <!--      experimental, attach scala version to artifact version-->
-      <!--      TODO: canonical way should be attaching scala version to artifact ID, but maven doesn't support it-->
-      <properties>
-        <revision>${revision.base}_${scala.binary.version}${version.suffix}-SNAPSHOT</revision>
-      </properties>
-    </profile>
-
     <profile>
       <id>java8</id>
       <activation>
         <activeByDefault>true</activeByDefault>
       </activation>
     </profile>
-
 
     <!--    <profile>-->
     <!--      <id>spark-2.2</id>-->
@@ -131,6 +114,12 @@
         <version.suffix>.cloudera2</version.suffix>
       </properties>
     </profile>
+
+<!--    <profile>-->
+<!--      <id>scalafix</id>-->
+
+
+<!--    </profile>-->
 
 
     <profile>
@@ -770,7 +759,7 @@
             <compilerPlugin>
               <groupId>org.scalameta</groupId>
               <artifactId>semanticdb-scalac_${scala.version}</artifactId>
-              <version>${semanticdb.version}</version>
+              <version>4.5.6</version>
             </compilerPlugin>
           </compilerPlugins>
           <scalaVersion>${scala.version}</scalaVersion>
@@ -833,10 +822,11 @@
           </execution>
         </executions>
       </plugin>
+
       <plugin>
         <groupId>io.github.evis</groupId>
-        <artifactId>scalafix-maven-plugin_2.13</artifactId>
-        <version>0.1.6_0.10.0</version>
+        <artifactId>scalafix-maven-plugin_${scala.binary.version}</artifactId>
+        <version>0.1.4_0.9.31</version>
       </plugin>
 
       <plugin>
