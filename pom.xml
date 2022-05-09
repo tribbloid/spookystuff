@@ -115,11 +115,35 @@
       </properties>
     </profile>
 
-<!--    <profile>-->
-<!--      <id>scalafix</id>-->
+    <profile>
+      <id>scalafix</id>
 
+      <build>
+        <plugins>
 
-<!--    </profile>-->
+          <plugin>
+            <groupId>net.alchim31.maven</groupId>
+            <artifactId>scala-maven-plugin</artifactId>
+            <configuration>
+              <compilerPlugins>
+                <compilerPlugin>
+                  <groupId>org.scalameta</groupId>
+                  <artifactId>semanticdb-scalac_${scala.version}</artifactId>
+                  <version>4.5.6</version>
+                </compilerPlugin>
+              </compilerPlugins>
+            </configuration>
+          </plugin>
+
+          <plugin>
+            <groupId>io.github.evis</groupId>
+            <artifactId>scalafix-maven-plugin_${scala.binary.version}</artifactId>
+            <version>0.1.6_0.10.0</version>
+          </plugin>
+        </plugins>
+      </build>
+
+    </profile>
 
 
     <profile>
@@ -349,7 +373,6 @@
       <version>1.6.5</version>
       <scope>test</scope>
     </dependency>
-
 
     <dependency>
       <groupId>org.scalatest</groupId>
@@ -755,13 +778,6 @@
           </execution>
         </executions>
         <configuration>
-          <compilerPlugins>
-            <compilerPlugin>
-              <groupId>org.scalameta</groupId>
-              <artifactId>semanticdb-scalac_${scala.version}</artifactId>
-              <version>4.5.6</version>
-            </compilerPlugin>
-          </compilerPlugins>
           <scalaVersion>${scala.version}</scalaVersion>
           <scalaCompatVersion>${scala.binary.version}</scalaCompatVersion>
           <recompileMode>incremental</recompileMode>
@@ -799,6 +815,7 @@
           </excludes>
         </configuration>
       </plugin>
+
       <plugin>
         <groupId>org.scalatest</groupId>
         <artifactId>scalatest-maven-plugin</artifactId>
@@ -821,12 +838,6 @@
             </goals>
           </execution>
         </executions>
-      </plugin>
-
-      <plugin>
-        <groupId>io.github.evis</groupId>
-        <artifactId>scalafix-maven-plugin_${scala.binary.version}</artifactId>
-        <version>0.1.4_0.9.31</version>
       </plugin>
 
       <plugin>
