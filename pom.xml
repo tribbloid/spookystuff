@@ -779,13 +779,13 @@
         </executions>
         <configuration>
 
-          <compilerPlugins>
-            <compilerPlugin>
-              <groupId>org.scalameta</groupId>
-              <artifactId>semanticdb-scalac_${scala.version}</artifactId>
-              <version>4.5.6</version>
-            </compilerPlugin>
-          </compilerPlugins>
+<!--          <compilerPlugins>-->
+<!--            <compilerPlugin>-->
+<!--              <groupId>org.scalameta</groupId>-->
+<!--              <artifactId>semanticdb-scalac_${scala.version}</artifactId>-->
+<!--              <version>4.5.6</version>-->
+<!--            </compilerPlugin>-->
+<!--          </compilerPlugins>-->
 
           <scalaVersion>${scala.version}</scalaVersion>
           <scalaCompatVersion>${scala.binary.version}</scalaCompatVersion>
