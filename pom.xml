@@ -391,7 +391,8 @@
     <dependency>
       <groupId>com.vladsch.flexmark</groupId>
       <artifactId>flexmark</artifactId>
-      <version>0.64.0</version>
+      <version>0.62.2</version>
+<!--      latest version compatible to Java 8-->
       <scope>test</scope>
     </dependency>
 
