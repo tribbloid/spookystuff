@@ -390,7 +390,7 @@
     </dependency>
     <dependency>
       <groupId>com.vladsch.flexmark</groupId>
-      <artifactId>flexmark</artifactId>
+      <artifactId>flexmark-all</artifactId>
       <version>0.62.2</version>
 <!--      latest version compatible to Java 8-->
       <scope>test</scope>
