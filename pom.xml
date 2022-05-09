@@ -288,7 +288,7 @@
       <dependency>
         <groupId>org.scalatest</groupId>
         <artifactId>scalatest_${scala.binary.version}</artifactId>
-        <version>3.2.3</version>
+        <version>3.2.11</version>
       </dependency>
 
       <dependency>

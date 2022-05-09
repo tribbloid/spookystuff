@@ -1,8 +1,9 @@
 #!/usr/bin/env bash
 
 CRDIR="$(cd "`dirname "$0"`"; pwd)"
-FWDIR="$(cd "`dirname "$0"`"/..; pwd)"
 
-"$CRDIR"/mvn-install.sh scalafix,benchmark,scala-2.12,spark-2.4
+source "${CRDIR}/profiles/apache-latest/.common.sh"
 
-mvn scalafix:scalafix -P scalafix,benchmark,scala-2.12,spark-2.4 -f "$FWDIR"/pom.xml
+"$CRDIR"/mvn-install.sh "${MVN_PROFILES[@]}"
+
+mvn scalafix:scalafix "${MVN_PROFILES[@]}" -Pscalafix -f "$CRDIR"/../pom.xml
