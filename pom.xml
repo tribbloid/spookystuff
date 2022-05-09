@@ -380,10 +380,17 @@
       <scope>test</scope>
     </dependency>
 
+<!--   2 required by scalatest html report-->
     <dependency>
       <groupId>org.pegdown</groupId>
       <artifactId>pegdown</artifactId>
       <version>1.6.0</version>
+      <scope>test</scope>
+    </dependency>
+    <dependency>
+      <groupId>com.vladsch.flexmark</groupId>
+      <artifactId>flexmark</artifactId>
+      <version>0.35.10</version>
       <scope>test</scope>
     </dependency>
 
