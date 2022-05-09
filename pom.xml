@@ -381,6 +381,7 @@
     </dependency>
 
 <!--   2 required by scalatest html report-->
+<!--    https://github.com/scalatest/scalatest-maven-plugin/issues/88-->
     <dependency>
       <groupId>org.pegdown</groupId>
       <artifactId>pegdown</artifactId>
