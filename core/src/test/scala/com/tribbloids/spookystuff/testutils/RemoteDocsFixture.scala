@@ -11,7 +11,7 @@ trait RemoteDocsFixture {
   //  def jsonUrlIncorrectContentType = "https://raw.githubusercontent.com/tribbloid/spookystuff/master/core/src/test/resources/site/tribbloid.json"
   def PNG_URL = "http://tribbloid.github.io/spookystuff/test/logo11w.png"
   def PDF_URL = "http://tribbloid.github.io/spookystuff/test/Test.pdf"
-  def XML_URL = "http://tribbloid.github.io/spookystuff/test/pom.xml"
+  def XML_URL = "http://tribbloid.github.io/spookystuff/test/example.xml"
   def CSV_URL = "http://tribbloid.github.io/spookystuff/test/table.csv"
 
   def HTTP_IP_URL = "http://api.ipify.org/"
