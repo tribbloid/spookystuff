@@ -839,9 +839,12 @@
         <artifactId>scalatest-maven-plugin</artifactId>
         <version>2.0.2</version>
         <configuration>
+          <memoryFiles>${project.build.directory}/test-results/scalatest/scalatest-failed.txt</memoryFiles>
+
           <reportsDirectory>${project.build.directory}/test-results/scalatest</reportsDirectory>
           <junitxml>.</junitxml>
           <filereports>scalatest-report.txt</filereports>
+
           <htmlreporters>${project.build.directory}/site/scalatest</htmlreporters>
 
           <tagsToExclude>

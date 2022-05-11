@@ -2,19 +2,20 @@ package com.tribbloids.spookystuff.python.ref
 
 import com.tribbloids.spookystuff.SpookyContext
 import com.tribbloids.spookystuff.session.PythonDriver
-import com.tribbloids.spookystuff.utils.lifespan.{Lifespan, LocalCleanable}
+import com.tribbloids.spookystuff.utils.lifespan.Cleanable.Lifespan
+import com.tribbloids.spookystuff.utils.lifespan.LocalCleanable
 
 trait BindedRef extends PyRef with LocalCleanable {
 
   def driverTemplate: PythonDriver
 
   @transient var _driver: PythonDriver = _
-  def driver = this.synchronized {
+  def driver: PythonDriver = this.synchronized {
     Option(_driver).getOrElse {
       val v = new PythonDriver(
         driverTemplate.pythonExe,
         driverTemplate.autoImports,
-        _lifespan = new Lifespan.JVM(nameOpt = Some(this.getClass.getSimpleName))
+        _lifespan = Lifespan.JVM.apply(nameOpt = Some(this.getClass.getSimpleName))
       )
       _driver = v
       v

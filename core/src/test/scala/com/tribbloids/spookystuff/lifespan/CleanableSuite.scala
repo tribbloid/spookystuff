@@ -1,36 +1,48 @@
-package com.tribbloids.spookystuff
+package com.tribbloids.spookystuff.lifespan
 
-import com.tribbloids.spookystuff.CleanableSuite.DummyCleanable
+import com.tribbloids.spookystuff.SpookyEnvFixture
 import com.tribbloids.spookystuff.utils.CommonUtils
-import com.tribbloids.spookystuff.utils.lifespan.{Cleanable, Lifespan, LocalCleanable, SparkLifespan}
+import com.tribbloids.spookystuff.utils.lifespan.Cleanable.Lifespan
+import com.tribbloids.spookystuff.utils.lifespan.{Cleanable, LeafType, LocalCleanable}
 import com.tribbloids.spookystuff.utils.serialization.AssertSerializable
 import org.apache.spark.{HashPartitioner, SparkException, TaskContext}
 
 import scala.util.Random
 
+// TODO: move to previous module
 /**
   * Created by peng on 16/11/16.
   */
 class CleanableSuite extends SpookyEnvFixture {
 
+  import com.tribbloids.spookystuff.lifespan.CleanableSuite._
   import com.tribbloids.spookystuff.utils.SpookyViews._
 
   override def beforeEach(): Unit = {
     super.beforeEach()
     sc.runEverywhere(alsoOnDriver = false) { _ =>
-      Cleanable.cleanSweepAll {
+      Cleanable.All.cleanSweep {
         case _: DummyCleanable => true
         case _                 => false
       }
     }
   }
 
+  it("Lifespan.JVM.batchID is serializable") {
+    val v1 = Lifespan.JVM().batchID
+    val v2 = v1.copy(v1.id)
+    assert(v1 == v2)
+
+    AssertSerializable(v1)
+  }
+
   it("Lifespan.JVM is serializable") {
 
-    AssertSerializable(Lifespan.JVM())
+    lifespanIsSerializable(Lifespan.JVM())
+
     val rdd = sc.uuidSeed().map { _ =>
       val lifespan = Lifespan.JVM()
-      AssertSerializable(lifespan)
+      lifespanIsSerializable(lifespan)
       lifespan
     }
     rdd.count()
@@ -41,33 +53,21 @@ class CleanableSuite extends SpookyEnvFixture {
 
     val rdd = sc.uuidSeed().map { _ =>
       val lifespan = Lifespan.Task()
-      AssertSerializable(lifespan)
+      lifespanIsSerializable(lifespan)
       lifespan
     }
     rdd.count()
     intercept[SparkException] { //cannot be re-initialized outside Task
-      rdd.collect()
+      val vv = rdd.collect()
+      vv
     }
-  }
-
-  it("Lifespan.SparkApp is serializable") {
-
-    AssertSerializable(SparkLifespan.App())
-
-    //TODO: the following doesn't work in local mode
-//    intercept[SparkException] {
-//      sc.uuidSeed().foreach { _ =>
-//        val lifespan = Lifespan.SparkApp()
-//        AssertSerializable(lifespan)
-//      }
-//    }
   }
 
   it("Lifespan.batchIDs should be updated after being shipped to a different executor") {
 
     val rdd = sc.uuidSeed().mapOncePerCore { _ =>
       val lifespan = Lifespan.Task()
-      val oldID = lifespan.batchIDs.head.asInstanceOf[Lifespan.Task.ID].id
+      val oldID = lifespan.registeredID.head.asInstanceOf[Lifespan.Task.ID].id
       lifespan -> oldID
     }
 
@@ -78,7 +78,7 @@ class CleanableSuite extends SpookyEnvFixture {
     val old_new = repartitioned.map { tuple =>
       val v = tuple._1
       val newID = TaskContext.get().taskAttemptId()
-      Predef.assert(v.batchIDs.head.asInstanceOf[Lifespan.Task.ID].id == newID)
+      Predef.assert(v.registeredID.head.asInstanceOf[Lifespan.Task.ID].id == newID)
       tuple._2 -> newID
     }.collectPerPartition
 
@@ -90,7 +90,7 @@ class CleanableSuite extends SpookyEnvFixture {
 
     val rdd = sc.uuidSeed().mapOncePerWorker { _ =>
       val lifespan = Lifespan.TaskOrJVM()
-      val oldID = lifespan.batchIDs.head.asInstanceOf[Lifespan.Task.ID].id
+      val oldID = lifespan.registeredID.head.asInstanceOf[Lifespan.Task.ID].id
       lifespan -> oldID
     }
 
@@ -99,16 +99,16 @@ class CleanableSuite extends SpookyEnvFixture {
     collected
       .foreach { tuple =>
         val v = tuple._1
-        Predef.assert(v.batchIDs.head.isInstanceOf[Lifespan.JVM.ID])
+        Predef.assert(v.registeredID.head.isInstanceOf[Lifespan.JVM.ID])
       }
   }
 
-  it("Lifespan._id should be updated after being shipped to a new thread created by a different executor") {
+  it("Lifespan.batchIDs should be updated after being shipped to a new thread created by a different executor") {
     import scala.concurrent.duration._
 
     val rdd = sc.uuidSeed().mapOncePerCore { _ =>
       val lifespan = Lifespan.Task()
-      val oldID = lifespan.batchIDs.head.asInstanceOf[Lifespan.Task.ID].id
+      val oldID = lifespan.registeredID.head.asInstanceOf[Lifespan.Task.ID].id
       lifespan -> oldID
     }
 
@@ -116,23 +116,22 @@ class CleanableSuite extends SpookyEnvFixture {
       .partitionBy(new HashPartitioner(4))
     assert(repartitioned.partitions.length == 4)
 
-    repartitioned
-      .map { tuple =>
-        val v: Lifespan = tuple._1
-        val newID = TaskContext.get().taskAttemptId()
-        //          val newID2 = v._id
-        val newID3 = CommonUtils.withTimeout(10.seconds) {
-          val result = v.batchIDs.head
-          //            Predef.assert(v._id == newID2)
-          result
-        }
-        Predef.assert(newID3.asInstanceOf[Lifespan.Task.ID].id == newID)
-        tuple._2 -> newID
+    val old_new = repartitioned.map { tuple =>
+      val v: Lifespan = tuple._1
+      val newID = TaskContext.get().taskAttemptId()
+      //          val newID2 = v._id
+      val newID3 = CommonUtils.withTimeout(10.seconds) {
+        val result = v.registeredID.head
+        //            Predef.assert(v._id == newID2)
+        result
       }
-      .collectPerPartition
-      .foreach {
-        println
-      }
+      Predef.assert(newID3.asInstanceOf[Lifespan.Task.ID].id == newID)
+      tuple._2 -> newID
+    }.collectPerPartition
+
+    val flatten = old_new.toList.flatten
+
+    assert(flatten.count(v => v._1 == v._2) < flatten.size)
   }
 
   it("can get all created Cleanables") {
@@ -151,7 +150,7 @@ class CleanableSuite extends SpookyEnvFixture {
     val i2 = sc
       .uuidSeed()
       .mapOncePerWorker { _ =>
-        Cleanable.getTyped[DummyCleanable].map(_.index)
+        Cleanable.All.typed[DummyCleanable].map(_.index)
       }
       .flatMap(identity)
       .collect()
@@ -175,5 +174,20 @@ object CleanableSuite {
   ) extends LocalCleanable {
 
     override protected def cleanImpl(): Unit = {}
+  }
+
+  def lifespanIsSerializable(v: Lifespan): Unit = {
+
+    AssertSerializable[Lifespan](
+      v,
+      condition = { (v1, v2) =>
+        AssertSerializable.serializableCondition(v1, v2)
+        Seq(v1, v2).foreach {
+          case v: LeafType#Internal =>
+            v.requireUsable()
+          case _ =>
+        }
+      }
+    )
   }
 }

@@ -75,24 +75,23 @@ class TestExplorePlan extends SpookyEnvFixture with LocalPathDocsFixture {
 
   it("ExplorePlan should work recursively on directory") {
 
-    val resourcePath = DIR_URL
+    val resourcePath = DEEP_DIR_URL
 
     val df = spooky
-      .create(Seq(resourcePath.toString))
+      .create(Seq(resourcePath))
       .fetch {
         Wget('_)
       }
-      .explore(S"root directory".attr("path"))(
+      .explore(S"root directory URI".text)(
         Wget('A)
       )()
       .flatExtract(S"root file")(
-        'A.ownText ~ 'leaf,
-        'A.attr("path") ~ 'fullPath,
-        'A.allAttr ~ 'metadata
+        A"name".text ~ 'leaf,
+        A"URI".text ~ 'fullPath
       )
       .toDF(sort = true)
 
-    df.show(truncate = false)
+    assert(df.collectAsList().size() == 6)
   }
 
   it("ExplorePlan will throw an exception if OrdinalField == DepthField") {

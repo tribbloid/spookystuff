@@ -71,7 +71,7 @@ case class AwaitWithHeartbeat(
     result
   }
 
-  def result[T](future: Future[T], timeout: TimeoutConf): T = {
+  def result[T](future: Future[T], timeout: Timeout): T = {
     val maxTimeMil = timeout.max.toMillis
     val maxNoProgressMil = timeout.noProgress.toMillis
 

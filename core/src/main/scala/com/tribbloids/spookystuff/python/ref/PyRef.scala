@@ -4,9 +4,11 @@ import com.tribbloids.spookystuff.SpookyContext
 import com.tribbloids.spookystuff.python.PyConverter
 import com.tribbloids.spookystuff.session.{PythonDriver, Session}
 import com.tribbloids.spookystuff.utils.CachingUtils.ConcurrentMap
+import com.tribbloids.spookystuff.utils.TreeThrowable
 import com.tribbloids.spookystuff.utils.lifespan.Cleanable
 import org.apache.spark.ml.dsl.utils._
 
+import scala.util.Try
 
 trait PyRef extends Cleanable {
 
@@ -103,9 +105,11 @@ trait PyRef extends Cleanable {
 
   override protected def cleanImpl(): Unit = {
 
-    bindings.foreach { binding =>
-      binding.clean(true)
-    }
+    TreeThrowable.&&&(
+      bindings.map { binding =>
+        Try(binding.clean(true))
+      }
+    )
   }
 }
 
@@ -114,8 +118,8 @@ object PyRef {
   object ROOT extends PyRef {}
 
   def sanityCheck(): Unit = {
-    val subs = Cleanable.getTyped[PyBinding]
-    val refSubs = Cleanable.getTyped[PyRef].map(_.bindings)
+    val subs = Cleanable.All.typed[PyBinding]
+    val refSubs = Cleanable.All.typed[PyRef].map(_.bindings)
     assert(
       subs.intersect(refSubs).size <= refSubs.size, {
         "INTERNAL ERROR: dangling tree!"

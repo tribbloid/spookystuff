@@ -1,7 +1,7 @@
 package com.tribbloids.spookystuff.utils
 
 import com.tribbloids.spookystuff.utils.lifespan.Cleanable
-import org.apache.spark.{SparkContext, SparkException}
+import org.apache.spark.SparkContext
 import org.apache.spark.broadcast.Broadcast
 import org.slf4j.LoggerFactory
 
@@ -36,13 +36,17 @@ case class BroadcastWrapper[T](
   }
 
   private def destroy(): Unit = this.synchronized {
-    try {
-      Option(wrapped).foreach(_.destroy())
-    } catch {
-      case _: NullPointerException | _: SparkException =>
-      // Spark master is gone, no need to destroy
-      case e: Exception =>
-        LoggerFactory.getLogger(this.getClass).error("broadcast cannot be destroyed", e)
+    if (sc == null || sc.isStopped) {
+      // do nothing
+    } else {
+      try {
+        Option(wrapped).foreach(_.destroy())
+      } catch {
+//        case _: NullPointerException | _: SparkException =>
+        // Spark master is gone, no need to destroy
+        case e: Exception =>
+          LoggerFactory.getLogger(this.getClass).error("broadcast cannot be destroyed", e)
+      }
     }
   }
 

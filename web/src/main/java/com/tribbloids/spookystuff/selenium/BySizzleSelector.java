@@ -4,9 +4,11 @@ import org.apache.commons.io.IOUtils;
 import org.openqa.selenium.*;
 
 import java.io.Serializable;
+import java.nio.charset.Charset;
 import java.util.List;
+import java.util.Objects;
 
-public class BySizzleCssSelector extends By implements Serializable {
+public class BySizzleSelector extends By implements Serializable {
 
   private static final long serialVersionUID = -584931842702178943L;
 
@@ -14,7 +16,7 @@ public class BySizzleCssSelector extends By implements Serializable {
 
   private static String sizzleSource = null;
 
-  public BySizzleCssSelector(String selector) {
+  public BySizzleSelector(String selector) {
     this.selector = selector;
   }
 
@@ -26,7 +28,7 @@ public class BySizzleCssSelector extends By implements Serializable {
     }
     else {
       throw new WebDriverException(
-        "Driver does not support finding an element by selector: " + selector);
+              "Driver does not support finding an element by selector: " + selector);
     }
   }
 
@@ -62,7 +64,10 @@ public class BySizzleCssSelector extends By implements Serializable {
   protected synchronized void injectSizzle(JavascriptExecutor context) {
     if (sizzleSource == null) {
       try {
-        sizzleSource = IOUtils.toString(this.getClass().getResource("/com/tribbloids/spookystuff/lib/js/sizzle.js"));
+        sizzleSource = IOUtils.toString(
+                Objects.requireNonNull(this.getClass().getResource("/com/tribbloids/spookystuff/lib/js/sizzle.js")),
+                Charset.defaultCharset()
+        );
       } catch (Throwable e) {
         throw new RuntimeException("Cannot load sizzle.js from classpath", e);
       }

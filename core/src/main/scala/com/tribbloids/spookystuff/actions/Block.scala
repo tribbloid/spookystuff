@@ -120,7 +120,7 @@ object ClusterRetry {
               e
             )
           } else logger.warn(s"Failover on ${e.getClass.getSimpleName}: Cluster-wise retries has depleted")
-          logger.info("\t\\-->", e)
+          logger.debug("\t\\-->", e)
       }
 
       pages

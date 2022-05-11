@@ -2,8 +2,6 @@
 
 FWDIR="$(cd "`dirname "$0"`"/..; pwd)"
 
-set -e
-
 # shellcheck source=profiles/apache-stable/.common.sh
 source "${FWDIR}/profiles/${1}/.common.sh"
 

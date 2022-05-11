@@ -7,7 +7,8 @@ import com.tribbloids.spookystuff.extractors.{Alias, GenExtractor, GenResolved}
 import com.tribbloids.spookystuff.row.{SpookySchema, SquashedFetchedRow, TypedField}
 import com.tribbloids.spookystuff.session.DriverLike
 import com.tribbloids.spookystuff.testutils.{FunSpecx, RemoteDocsFixture, TestHelper}
-import com.tribbloids.spookystuff.utils.lifespan.{Cleanable, Lifespan}
+import com.tribbloids.spookystuff.utils.lifespan.Cleanable
+import com.tribbloids.spookystuff.utils.lifespan.Cleanable.Lifespan
 import com.tribbloids.spookystuff.utils.{CommonConst, CommonUtils, Retry, SparkUISupport}
 import org.apache.spark.SparkContext
 import org.apache.spark.sql.SQLContext
@@ -44,13 +45,15 @@ object SpookyEnvFixture {
 
     Cleanable.uncleaned
       .foreach { tuple =>
-        val nonLocalDrivers = tuple._2.values
+        val taskCleanable = tuple._2.values
           .filter { v =>
-            v.lifespan.isInstanceOf[Lifespan.Task]
+            v.lifespan.leaves.exists { ll =>
+              ll._type == Lifespan.Task
+            }
           }
         Predef.assert(
-          nonLocalDrivers.isEmpty,
-          s": ${tuple._1} is unclean! ${nonLocalDrivers.size} left:\n" + nonLocalDrivers.mkString("\n")
+          taskCleanable.isEmpty,
+          s": ${tuple._1} is unclean! ${taskCleanable.size} left:\n" + taskCleanable.mkString("\n")
         )
       }
   }
@@ -69,7 +72,7 @@ object SpookyEnvFixture {
 
     if (cleanSweepDrivers) {
       //this is necessary as each suite won't automatically cleanup drivers NOT in task when finished
-      Cleanable.cleanSweepAll(
+      Cleanable.All.cleanSweep(
         condition = {
           case _: DriverLike => true
           case _             => false
@@ -152,7 +155,7 @@ abstract class SpookyEnvFixture
 
   import com.tribbloids.spookystuff.utils.SpookyViews._
 
-  def _processNames: Seq[String] = Seq("phantomjs", "python")
+  def _processNames: Seq[String] = Seq("phantomjs", s"${PythonDriverFactory.python3} -iu")
   final lazy val conditions = {
     val _processNames = this._processNames
     val exitingPIDs = this.exitingPIDs
@@ -165,34 +168,33 @@ abstract class SpookyEnvFixture
     }
   }
 
-  override def beforeAll(): Unit = if (SpookyEnvFixture.firstRun) {
+  def validateBeforeAndAfterAll(): Unit = {
 
-    super.beforeAll()
+    TestHelper.cleanTempDirs()
 
     val spooky = this.spooky
     val conditions = this.conditions
     sc.runEverywhere() { _ =>
       SpookyEnvFixture.shouldBeClean(spooky, conditions)
     }
+
     SpookyEnvFixture.firstRun = false
+  }
+
+  override def beforeAll(): Unit = {
+
+    super.beforeAll()
+
+    if (SpookyEnvFixture.firstRun)
+      validateBeforeAndAfterAll()
   }
 
   override def afterAll(): Unit = {
 
-    val spooky = this.spooky
-    val conditions = this.conditions
-    TestHelper.cleanTempDirs()
-
-    //unpersist all RDDs, disabled to better detect memory leak
-    //    sc.getPersistentRDDs.values.toList.foreach {
-    //      _.unpersist()
-    //    }
-
-    sc.runEverywhere() { _ =>
-      SpookyEnvFixture.shouldBeClean(spooky, conditions)
-    }
+    validateBeforeAndAfterAll()
 
     super.afterAll()
+
   }
 
   override def beforeEach(): Unit = CommonUtils.retry(3, 1000) {

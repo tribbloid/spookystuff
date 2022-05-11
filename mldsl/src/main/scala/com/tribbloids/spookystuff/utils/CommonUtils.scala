@@ -66,7 +66,7 @@ abstract class CommonUtils {
   }
 
   def withTimeout[T](
-      timeout: TimeoutConf,
+      timeout: Timeout,
       interval: Duration = 10.seconds
   )(
       fn: => T,

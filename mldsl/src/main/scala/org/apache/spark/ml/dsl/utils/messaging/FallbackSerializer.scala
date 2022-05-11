@@ -20,7 +20,7 @@ abstract class FallbackSerializer(
       case (ti, JString(str)) =>
         LoggerFactory
           .getLogger(this.getClass)
-          .info(
+          .debug(
             s"JSON === [${this.getClass.getSimpleName}] ==> Object"
           )
         try {
@@ -47,7 +47,7 @@ abstract class FallbackSerializer(
       case v: Serializable =>
         LoggerFactory
           .getLogger(this.getClass)
-          .info(
+          .debug(
             s"Object === [${this.getClass.getSimpleName}] ==> JSON"
           )
         //        try {

@@ -72,7 +72,18 @@ class SelectIT extends IntegrationFixture {
       .toDF(sort = true)
 
     df2.schema.treeString.shouldBe(
-      )
+      """
+        |root
+        | |-- _c1: string (nullable = true)
+        | |-- _c2: timestamp (nullable = true)
+        | |-- title: array (nullable = true)
+        | |    |-- element: string (containsNull = true)
+        | |-- langs: array (nullable = true)
+        | |    |-- element: string (containsNull = true)
+        | |-- expanded: array (nullable = true)
+        | |    |-- element: string (containsNull = true)
+        |""".stripMargin
+    )
 
     val rows2 = df2.collect()
     val titles = rows2.head.getAs[Iterable[String]]("title")

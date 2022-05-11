@@ -1,9 +1,11 @@
 package org.apache.spark.rdd.spookystuff
 
+import com.tribbloids.spookystuff.utils.lifespan.Cleanable.Lifespan
+
 import java.io._
 import java.util.UUID
 import java.util.concurrent.atomic.AtomicInteger
-import com.tribbloids.spookystuff.utils.lifespan.{Lifespan, LocalCleanable}
+import com.tribbloids.spookystuff.utils.lifespan.LocalCleanable
 import com.tribbloids.spookystuff.utils.serialization.NOTSerializable
 import com.tribbloids.spookystuff.utils.{CachingUtils, CommonConst, CommonUtils, ThreadLocal}
 import org.apache.spark.serializer
@@ -25,7 +27,7 @@ class ExternalAppendOnlyArray[T] private[spookystuff] (
     id: String,
     storageLevel: StorageLevel,
     serializerFactory: () => serializer.Serializer,
-    override val _lifespan: Lifespan = Lifespan.JVM()
+    override val _lifespan: Lifespan = Lifespan.JVM.apply()
 )(
     implicit val ctag: ClassTag[T]
 ) extends LocalCleanable {

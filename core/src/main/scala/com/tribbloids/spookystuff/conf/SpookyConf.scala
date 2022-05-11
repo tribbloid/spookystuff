@@ -3,7 +3,7 @@ package com.tribbloids.spookystuff.conf
 import com.tribbloids.spookystuff.dsl._
 import com.tribbloids.spookystuff.row.Sampler
 import com.tribbloids.spookystuff.session._
-import com.tribbloids.spookystuff.utils.TimeoutConf
+import com.tribbloids.spookystuff.utils.Timeout
 import org.apache.spark.SparkConf
 import org.apache.spark.storage.StorageLevel
 
@@ -46,8 +46,8 @@ case class SpookyConf(
     var errorDump: Boolean = true,
     var errorScreenshot: Boolean = true,
     var errorDumpFilePath: ByDoc[String] = FilePaths.UUIDName(FilePaths.Hierarchical),
-    var remoteResourceTimeout: TimeoutConf = TimeoutConf(60.seconds),
-    var DFSTimeout: TimeoutConf = TimeoutConf(40.seconds),
+    var remoteResourceTimeout: Timeout = Timeout(60.seconds),
+    var DFSTimeout: Timeout = Timeout(40.seconds),
     var failOnDFSRead: Boolean = false,
     var defaultJoinType: JoinType = JoinType.Inner,
     var defaultFlattenSampler: Sampler[Any] = identity,

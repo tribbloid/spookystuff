@@ -2,8 +2,8 @@ package com.tribbloids.spookystuff.session
 
 import com.tribbloids.spookystuff.conf.Python
 import com.tribbloids.spookystuff.driver.PythonProcess
-import com.tribbloids.spookystuff.utils.lifespan.Lifespan
-import com.tribbloids.spookystuff.utils.{BypassingRule, CommonUtils, SpookyUtils}
+import com.tribbloids.spookystuff.utils.lifespan.Cleanable.Lifespan
+import com.tribbloids.spookystuff.utils.{BypassingRule, CommonConst, CommonUtils, SpookyUtils}
 import com.tribbloids.spookystuff.{PyException, PyInterpretationException, SpookyContext}
 import org.apache.commons.io.FileUtils
 import org.apache.spark.ml.dsl.utils.DSLUtils
@@ -94,11 +94,9 @@ class PythonDriver(
                       |import os
                       |from __future__ import print_function
                     """.trim.stripMargin,
-    override val _lifespan: Lifespan = Lifespan.TaskOrJVM()
+    override val _lifespan: Lifespan = Lifespan.TaskOrJVM().forShipping
 ) extends PythonProcess(pythonExe)
     with DriverLike {
-
-  import scala.concurrent.duration._
 
   /**
     * NOT thread safe
@@ -143,10 +141,10 @@ class PythonDriver(
 
   override def cleanImpl(): Unit = {
     Try {
-      CommonUtils.retry(5) {
+      CommonUtils.retry(CommonConst.driverClosingRetries) {
         try {
           if (process.isAlive) {
-            CommonUtils.withTimeout(3.seconds) {
+            CommonUtils.withTimeout(CommonConst.driverClosingTimeout) {
               try {
                 this._interpret("exit()")
               } catch {

@@ -1,8 +1,6 @@
 package com.tribbloids.spookystuff.testutils
 
-import java.io.File
-import java.util.{Date, Properties}
-
+import com.tribbloids.spookystuff.utils.lifespan.Cleanable.Lifespan
 import com.tribbloids.spookystuff.utils.lifespan.LocalCleanable
 import com.tribbloids.spookystuff.utils.{CommonConst, CommonUtils, ConfUtils}
 import org.apache.hadoop.fs.FileUtil
@@ -11,6 +9,8 @@ import org.apache.spark.sql.{SQLContext, SparkSession}
 import org.apache.spark.{SparkConf, SparkContext, SparkEnv, SparkException}
 import org.slf4j.LoggerFactory
 
+import java.io.File
+import java.util.{Date, Properties}
 import scala.reflect.ClassTag
 import scala.util.{Failure, Success, Try}
 
@@ -55,7 +55,7 @@ abstract class TestHelper extends LocalCleanable {
 
   def SPARK_HOME: String = System.getenv("SPARK_HOME")
 
-  final val MAX_TOTAL_MEMORY = 16 * 1024
+  final val MAX_TOTAL_MEMORY = 8 * 1024
   final val MEMORY_PER_CORE = 1024
   //  final val EXECUTOR_JVM_MEMORY_OVERHEAD = 256 //TODO: remove, too complex
 
@@ -64,7 +64,7 @@ abstract class TestHelper extends LocalCleanable {
   val METASTORE_PATH: String = CommonUtils.\\\(CommonConst.USER_DIR, "metastore_db")
   val WAREHOUSE_PATH: String = CommonUtils.\\\(CommonConst.USER_DIR, "warehouse")
 
-  var sparkSessionInitialised: Boolean = false
+  @transient var sparkSessionInitialised: Boolean = false
 
   {
     CommonUtils.debugCPResource()
@@ -78,38 +78,28 @@ abstract class TestHelper extends LocalCleanable {
       System.setProperty("fs.s3.awsSecretAccessKey", _)
     }
 
-    cleanBeforeAndAfterLifespan()
+    cleanBeforeAndAfter()
   }
+
+  override def _lifespan: Lifespan = Lifespan.HadoopShutdown.BeforeSpark()
 
   override def cleanImpl(): Unit = {
 
-    if (sparkSessionInitialised) {
+    println("=============== Stopping Test Spark Context ==============")
+    // Suppress the following log error when shutting down in local-cluster mode:
+    // Remote RPC client disassociated. Likely due to containers exceeding thresholds, or network issues.
+    // Check driver logs for WARN messages.
+    // java.lang.IllegalStateException: Shutdown hooks cannot be modified during shutdown
+    val logger = org.apache.log4j.Logger.getRootLogger
+    logger.setLevel(org.apache.log4j.Level.toLevel("OFF"))
 
-      println("=============== Stopping Test Spark Context ==============")
-      // Suppress the following log error when shutting down in local-cluster mode:
-      // Remote RPC client disassociated. Likely due to containers exceeding thresholds, or network issues.
-      // Check driver logs for WARN messages.
-      // java.lang.IllegalStateException: Shutdown hooks cannot be modified during shutdown
-      val logger = org.apache.log4j.Logger.getRootLogger
-      val oldLevel = logger.getLevel
-      logger.setLevel(org.apache.log4j.Level.toLevel("OFF"))
-      try {
-        TestSC.stop()
-      } catch {
-        case e: Throwable =>
-          logger.setLevel(oldLevel)
-          logger.error("cannot stop Test SparkContext", e)
-      } finally {
-        logger.setLevel(oldLevel)
-      }
-//      println("=============== Test Spark Context has stopped ==============")
-    }
+    TestSC.stop()
 
-    cleanBeforeAndAfterLifespan()
-
+    //      println("=============== Test Spark Context has stopped ==============")
+    cleanBeforeAndAfter()
   }
 
-  def cleanBeforeAndAfterLifespan(): Unit = {
+  def cleanBeforeAndAfter(): Unit = {
     cleanTempDirs(
       Seq(
         WAREHOUSE_PATH,
@@ -140,7 +130,7 @@ abstract class TestHelper extends LocalCleanable {
     )
 
     Option(SPARK_HOME)
-      .flatMap { h =>
+      .flatMap { _ =>
         tuple match {
           case (None, None) =>
             None
@@ -182,7 +172,7 @@ abstract class TestHelper extends LocalCleanable {
 
   @transient lazy val envOverrides = Map(
     "SPARK_SCALA_VERSION" -> CommonUtils.scalaBinaryVersion
-//    "SPARK_LOCAL_HOSTNAME" -> "localhost"
+    //    "SPARK_LOCAL_HOSTNAME" -> "localhost"
   )
 
   /**
@@ -200,8 +190,7 @@ abstract class TestHelper extends LocalCleanable {
       masterStr
     } else {
 
-      {
-        //TODO: Unstable! remove?
+      if (envOverrides.nonEmpty) {
         LoggerFactory
           .getLogger(this.getClass)
           .warn(
@@ -403,10 +392,10 @@ abstract class TestHelper extends LocalCleanable {
     }
     val expectedErrorName = implicitly[ClassTag[EE]].runtimeClass.getSimpleName
     trial match {
-      case Failure(e: EE) =>
+      case Failure(_: EE) =>
       case Failure(e) =>
         throw new AssertionError(s"Expecting $expectedErrorName, but get ${e.getClass.getSimpleName}", e)
-      case Success(n) =>
+      case Success(_) =>
         throw new AssertionError(s"expecting $expectedErrorName, but no exception was thrown")
     }
   }

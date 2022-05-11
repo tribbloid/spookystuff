@@ -12,7 +12,4 @@ mvn --version
 mvn clean install --errors -f "$FWDIR"/repackaged/selenium-bundle/pom.xml "$@"
 "${CRDIR}/tree.sh" "$@"
 
-#see https://intoli.com/blog/exit-on-errors-in-bash-scripts/
-set -e
-
 mvn clean install --errors -f "$FWDIR"/pom.xml -Pdist "$@"

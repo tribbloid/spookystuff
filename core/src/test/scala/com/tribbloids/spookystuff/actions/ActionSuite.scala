@@ -5,7 +5,7 @@ import com.tribbloids.spookystuff.dsl._
 import com.tribbloids.spookystuff.extractors.impl.Lit
 import com.tribbloids.spookystuff.row.{DataRow, FetchedRow, Field}
 import com.tribbloids.spookystuff.session.Session
-import com.tribbloids.spookystuff.utils.{CommonUtils, TimeoutConf}
+import com.tribbloids.spookystuff.utils.{CommonUtils, Timeout}
 import com.tribbloids.spookystuff.{ActionException, Const, SpookyEnvFixture}
 
 import scala.collection.immutable.ListMap
@@ -20,7 +20,7 @@ class ActionSuite extends SpookyEnvFixture {
   it("interpolate should not change timeout") {
     import scala.concurrent.duration._
 
-    val randomTimeout = TimeoutConf(Random.nextInt().seconds)
+    val randomTimeout = Timeout(Random.nextInt().seconds)
     val action = Wget(Const.keyDelimiter + "{~}").in(randomTimeout)
 
     val rewritten = action

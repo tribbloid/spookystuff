@@ -3,8 +3,8 @@ package com.tribbloids.spookystuff
 import com.tribbloids.spookystuff.python.PyConverter
 import Python3DriverSuite.Runner
 import com.tribbloids.spookystuff.session.PythonDriver
-import com.tribbloids.spookystuff.utils.CommonUtils
-import com.tribbloids.spookystuff.utils.lifespan.Lifespan
+import com.tribbloids.spookystuff.utils.lifespan.Cleanable.Lifespan
+import com.tribbloids.spookystuff.utils.{CommonConst, CommonUtils}
 import org.slf4j.LoggerFactory
 
 import scala.concurrent.Future
@@ -22,10 +22,14 @@ object Python3DriverSuite {
 
     def runIterable[T, R](xs: Iterable[T])(f: (T, PythonDriver) => R): Iterable[R] = {
       val pythonExec = this.pythonExec
-      val proc = new PythonDriver(pythonExec,
-                                  _lifespan = Lifespan.TaskOrJVM(
-                                    nameOpt = Some("testPython")
-                                  ))
+      val proc = new PythonDriver(
+        pythonExec,
+        _lifespan = Lifespan
+          .TaskOrJVM(
+            nameOpt = Some("testPython")
+          )
+          .forShipping
+      )
       try {
         val result = xs.map {
           f(_, proc)
@@ -205,7 +209,10 @@ class Python3DriverSuite extends SpookyEnvFixture {
       }
 
       LoggerFactory.getLogger(this.getClass).info("========= START CLEANING =========")
-      CommonUtils.withTimeout(20.seconds, 1.second) { // 3 * 15 << 20
+      CommonUtils.withTimeout(
+        (CommonConst.driverClosingTimeout * CommonConst.driverClosingRetries) + 5.seconds,
+        1.second
+      ) {
         proc.clean()
       }
     }

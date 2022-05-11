@@ -4,7 +4,7 @@ import com.tribbloids.spookystuff.SpookyEnvFixture
 import com.tribbloids.spookystuff.actions.{Delay, Loop, OAuthV2, TraceView, Wget}
 import com.tribbloids.spookystuff.conf.DriverFactory
 import com.tribbloids.spookystuff.doc.Doc
-import com.tribbloids.spookystuff.session.{AbstractSession, Session}
+import com.tribbloids.spookystuff.session.Session
 import com.tribbloids.spookystuff.testutils.FunSpecx
 import com.tribbloids.spookystuff.web.session.CleanWebDriver
 
@@ -97,7 +97,7 @@ abstract class AbstractTestTrace extends SpookyEnvFixture with FunSpecx {
             +> TextInput("box", "something")
             +> Snapshot()
             +> WebDocIf(
-              { (v: Doc, _: AbstractSession) =>
+              { (v: Doc, _: Session) =>
                 v.uri startsWith "http"
               },
               Click("o1")

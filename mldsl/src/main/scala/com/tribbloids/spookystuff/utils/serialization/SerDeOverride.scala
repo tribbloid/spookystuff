@@ -2,10 +2,9 @@ package com.tribbloids.spookystuff.utils.serialization
 
 import java.io
 import java.nio.ByteBuffer
-
 import com.tribbloids.spookystuff.utils.IDMixin
 import org.apache.hadoop.io.Writable
-import org.apache.spark.serializer.{JavaSerializer, KryoSerializer, SerializerInstance}
+import org.apache.spark.serializer.{JavaSerializer, KryoSerializer, Serializer, SerializerInstance}
 import org.apache.spark.sql.catalyst.ScalaReflection.universe.TypeTag
 import org.apache.spark.{SerializableWritable, SparkConf}
 
@@ -31,7 +30,7 @@ object SerDeOverride {
         Some(kryoSerializer.newInstance())
     }
 
-    @transient lazy val allSerializers = List(javaSerializer, kryoSerializer)
+    @transient lazy val allSerializers: List[Serializer] = List(javaSerializer, kryoSerializer)
   }
 
   object Default extends WithConf
@@ -47,6 +46,7 @@ object SerDeOverride {
   * wrapping & unwrapping is lazy
   */
 case class SerDeOverride[T: ClassTag](
+    // TODO: replace with twitter MeatLocker?
     @transient private val _original: T,
     overrideImpl: () => Option[SerializerInstance] = () => None // no override by default
 ) extends Serializable
@@ -92,34 +92,3 @@ case class SerDeOverride[T: ClassTag](
 
   override def _id: Any = value
 }
-
-//TODO: cleanup, useless, can be completely superceded by SerializableWritable?
-//class BinaryWritable[T <: Writable](
-//                                     @transient val obj: T,
-//                                     val serFactory: () => SerializerInstance = BinaryWritable.javaSerFactory
-//                                   ) extends Serializable {
-//
-//  val delegate: BinarySerializable[SerializableWritable[T]] = new BinarySerializable(
-//    new SerializableWritable(obj),
-//    serFactory
-//  )
-//
-//  @transient lazy val value: T = Option(obj).getOrElse {
-//    delegate.value.value
-//  }
-//}
-
-//class SerializableUGI(
-//                       @transient val _ugi: UserGroupInformation,
-//                       val serFactory: () => SerializerInstance = BinaryWritable.javaSerFactory
-//                     ) extends Serializable {
-//
-//  val name =  _ugi.getUserName
-//  val credentials: BinaryWritable[Credentials] = new BinaryWritable(_ugi.getCredentials, serFactory)
-//
-//  @transient lazy val value: UserGroupInformation = Option(_ugi).getOrElse {
-//    val result = UserGroupInformation.createRemoteUser(name)
-//    result.addCredentials(credentials.value)
-//    result
-//  }
-//}
