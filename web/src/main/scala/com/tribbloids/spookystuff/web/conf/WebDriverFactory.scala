@@ -171,7 +171,8 @@ object WebDriverFactory {
 
     //called from executors
     override def _createImpl(session: Session, lifespan: Lifespan): CleanWebDriver = {
-      val self = new PhantomJSDriver(newCaps(session.spooky))
+      val caps = newCaps(session.spooky)
+      val self = new PhantomJSDriver(caps)
       new CleanWebDriver(self, lifespan)
     }
   }
