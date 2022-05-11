@@ -42,21 +42,21 @@ object WebDriverFactory {
 
   import com.tribbloids.spookystuff.utils.CommonViews._
 
+  def asSeleniumProxy(s: WebProxySetting): Proxy = {
+    val seleniumProxy: Proxy = new Proxy
+    seleniumProxy.setProxyType(Proxy.ProxyType.MANUAL)
+    val proxyStr: String = s"${s.addr}:${s.port}"
+    seleniumProxy.setHttpProxy(proxyStr)
+    seleniumProxy.setSslProxy(proxyStr)
+    seleniumProxy.setSocksProxy(proxyStr)
+    seleniumProxy
+  }
+
   case class HtmlUnit(
       browser: BrowserVersion = BrowserVersion.getDefault
   ) extends WebDriverFactory {
 
     @transient lazy val baseCaps: DesiredCapabilities = new DesiredCapabilities(BrowserType.HTMLUNIT, "", Platform.ANY)
-
-    def toSeleniumProxy(s: WebProxySetting): Proxy = {
-      val seleniumProxy: Proxy = new Proxy
-      seleniumProxy.setProxyType(Proxy.ProxyType.MANUAL)
-      val proxyStr: String = s"${s.addr}:${s.port}"
-      seleniumProxy.setHttpProxy(proxyStr)
-      seleniumProxy.setSslProxy(proxyStr)
-      seleniumProxy.setSocksProxy(proxyStr)
-      seleniumProxy
-    }
 
     def newCaps(capabilities: Capabilities, spooky: SpookyContext): DesiredCapabilities = {
       val newCaps = new DesiredCapabilities(baseCaps)
@@ -66,7 +66,7 @@ object WebDriverFactory {
       val proxy: WebProxySetting = spooky.spookyConf.webProxy()
 
       if (proxy != null) {
-        newCaps.setCapability(PROXY, toSeleniumProxy(proxy))
+        newCaps.setCapability(PROXY, asSeleniumProxy(proxy))
       }
 
       newCaps.merge(capabilities)
@@ -115,10 +115,17 @@ object WebDriverFactory {
       val dstFile = new File(dst)
       FileUtils.forceDelete(dstFile)
     }
+
+    lazy val defaultServiceBuilder: PhantomJSDriverService.Builder = {
+
+      new PhantomJSDriverService.Builder()
+        .usingAnyFreePort()
+    }
   }
 
   case class PhantomJS(
       deploy: SpookyContext => BinaryDeployment = _ => PhantomJSDeployment(),
+//      serviceBuilder: PhantomJSDriverService.Builder,
       loadImages: Boolean = false
   ) extends WebDriverFactory {
 
@@ -158,13 +165,13 @@ object WebDriverFactory {
       )
       importHeaders(newCaps, spooky)
 
-      val proxy = spooky.spookyConf.webProxy()
+      val proxyOpt = Option(spooky.spookyConf.webProxy()).map { v =>
+        asSeleniumProxy(v)
+      }
 
-      if (proxy != null)
-        newCaps.setCapability(
-          PhantomJSDriverService.PHANTOMJS_CLI_ARGS,
-          Array("--proxy=" + proxy.addr + ":" + proxy.port, "--proxy-type=" + proxy.protocol)
-        )
+      proxyOpt.foreach { proxy =>
+        newCaps.setCapability("proxy", proxy)
+      }
 
       newCaps.merge(extra.orNull)
     }
@@ -172,6 +179,40 @@ object WebDriverFactory {
     //called from executors
     override def _createImpl(session: Session, lifespan: Lifespan): CleanWebDriver = {
       val caps = newCaps(session.spooky)
+
+//      lazy val service: PhantomJSDriverService = {
+//
+//        // Look for Proxy configuration within the Capabilities
+//        val proxy = {
+//          val setting = session.spooky.spookyConf.webProxy()
+//          asSeleniumProxy(setting)
+//        }
+//
+//        //        var proxy = null
+//        //        if (desiredCapabilities != null) proxy = Proxy.extractFrom(desiredCapabilities)
+//
+//        // Find PhantomJS executable
+//        val phantomjsfile = findPhantomJS(desiredCapabilities, PHANTOMJS_DOC_LINK, PHANTOMJS_DOWNLOAD_LINK)
+//
+//        // Find GhostDriver main JavaScript file
+//        val ghostDriverfile = findGhostDriver(desiredCapabilities, GHOSTDRIVER_DOC_LINK, GHOSTDRIVER_DOWNLOAD_LINK)
+//
+//        // Build & return service
+//        new PhantomJSDriverService.Builder()
+//          .usingAnyFreePort()
+//          .withProxy(proxy)
+//          .usingPhantomJSExecutable(phantomjsfile)
+//          .usingGhostDriver(ghostDriverfile)
+//          .usingAnyFreePort
+//          .withProxy(proxy)
+//          .withLogFile(new File(PHANTOMJS_DEFAULT_LOGFILE))
+//          .usingCommandLineArguments(findCLIArgumentsFromCaps(desiredCapabilities, PHANTOMJS_CLI_ARGS))
+//          .usingGhostDriverCommandLineArguments(
+//            findCLIArgumentsFromCaps(desiredCapabilities, PHANTOMJS_GHOSTDRIVER_CLI_ARGS)
+//          )
+//          .build
+//      }
+
       val self = new PhantomJSDriver(caps)
       new CleanWebDriver(self, lifespan)
     }
