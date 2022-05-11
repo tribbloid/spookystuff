@@ -8,5 +8,5 @@ set -e
 source "${FWDIR}/profiles/${1}/.common.sh"
 
 "$FWDIR"/mvn-install.sh "${MVN_PROFILES[@]}" -Pbenchmark && \
-"$FWDIR"/test.sh "${MVN_PROFILES[@]}" -Pbenchmark && \
-"$FWDIR"/test-reports.sh
+"$FWDIR"/test.sh "${MVN_PROFILES[@]}" -Pbenchmark || \
+("$FWDIR"/test-reports.sh && throw -1)
