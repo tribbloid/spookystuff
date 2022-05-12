@@ -13,7 +13,7 @@ import org.apache.commons.io.FileUtils
 import org.openqa.selenium.htmlunit.HtmlUnitDriver
 import org.openqa.selenium.phantomjs.{PhantomJSDriver, PhantomJSDriverService}
 import org.openqa.selenium.remote.CapabilityType._
-import org.openqa.selenium.remote.{BrowserType, CapabilityType, DesiredCapabilities}
+import org.openqa.selenium.remote.DesiredCapabilities
 import org.openqa.selenium.{Capabilities, Platform, Proxy}
 
 import java.io.File
@@ -56,7 +56,7 @@ object WebDriverFactory {
       browserV: BrowserVersion = BrowserVersion.getDefault
   ) extends WebDriverFactory {
 
-    @transient lazy val baseCaps: DesiredCapabilities = new DesiredCapabilities(BrowserType.HTMLUNIT, "", Platform.ANY)
+    @transient lazy val baseCaps: DesiredCapabilities = new DesiredCapabilities("htmlunit", "", Platform.ANY)
 
     def newCaps(capabilities: Capabilities, spooky: SpookyContext): DesiredCapabilities = {
       val newCaps = new DesiredCapabilities(baseCaps)
