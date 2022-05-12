@@ -116,10 +116,11 @@ object WebDriverFactory {
       FileUtils.forceDelete(dstFile)
     }
 
-    lazy val defaultServiceBuilder: PhantomJSDriverService.Builder = {
+    lazy val defaultBuilder: PhantomJSDriverService.Builder = {
 
       new PhantomJSDriverService.Builder()
         .usingAnyFreePort()
+        .withLogFile(new File("phantomjsdriver.log"))
     }
   }
 
@@ -182,40 +183,32 @@ object WebDriverFactory {
     override def _createImpl(session: Session, lifespan: Lifespan): CleanWebDriver = {
       val caps = newCaps(session.spooky)
 
-//      lazy val service: PhantomJSDriverService = {
-//
-//        // Look for Proxy configuration within the Capabilities
-//        val proxy = {
-//          val setting = session.spooky.spookyConf.webProxy()
-//          asSeleniumProxy(setting)
-//        }
-//
-//        //        var proxy = null
-//        //        if (desiredCapabilities != null) proxy = Proxy.extractFrom(desiredCapabilities)
-//
-//        // Find PhantomJS executable
-//        val phantomjsfile = findPhantomJS(desiredCapabilities, PHANTOMJS_DOC_LINK, PHANTOMJS_DOWNLOAD_LINK)
-//
-//        // Find GhostDriver main JavaScript file
-//        val ghostDriverfile = findGhostDriver(desiredCapabilities, GHOSTDRIVER_DOC_LINK, GHOSTDRIVER_DOWNLOAD_LINK)
-//
-//        // Build & return service
-//        new PhantomJSDriverService.Builder()
-//          .usingAnyFreePort()
-//          .withProxy(proxy)
-//          .usingPhantomJSExecutable(phantomjsfile)
-//          .usingGhostDriver(ghostDriverfile)
-//          .usingAnyFreePort
-//          .withProxy(proxy)
-//          .withLogFile(new File(PHANTOMJS_DEFAULT_LOGFILE))
-//          .usingCommandLineArguments(findCLIArgumentsFromCaps(desiredCapabilities, PHANTOMJS_CLI_ARGS))
-//          .usingGhostDriverCommandLineArguments(
-//            findCLIArgumentsFromCaps(desiredCapabilities, PHANTOMJS_GHOSTDRIVER_CLI_ARGS)
-//          )
-//          .build
-//      }
+      lazy val service: PhantomJSDriverService = {
 
-      val self = new PhantomJSDriver(caps)
+        val deployment = deploy(session.spooky)
+        val pathStr = deployment.verifiedLocalPath
+
+        val proxyOpt = Option(session.spooky.spookyConf.webProxy()).map { v =>
+          asSeleniumProxy(v)
+        }
+
+        import scala.collection.JavaConverters._
+
+        var builder = PhantomJS.defaultBuilder
+          .usingPhantomJSExecutable(new File(pathStr))
+          .withEnvironment(
+            Map(
+              "OPENSSL_CONF" -> "/dev/null" //https://github.com/bazelbuild/rules_closure/issues/351
+            ).asJava
+          )
+        proxyOpt.foreach { proxy =>
+          builder = builder.withProxy(proxy)
+        }
+
+        builder.build
+      }
+
+      val self = new PhantomJSDriver(service, caps)
       new CleanWebDriver(self, lifespan)
     }
   }

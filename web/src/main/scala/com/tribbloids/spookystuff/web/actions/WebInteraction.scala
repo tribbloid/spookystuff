@@ -47,7 +47,6 @@ abstract class WebInteraction(
 
     new org.openqa.selenium.interactions.Actions(session.driverOf(Web))
   }
-
 }
 
 object WebInteraction {

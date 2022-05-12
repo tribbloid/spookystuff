@@ -369,7 +369,7 @@ case class IncrementallyCachedRDD[T: ClassTag](
     val result = SCFunctions(sparkContext).withJob(info) {
 
       this
-        .mapOncePerWorker { v =>
+        .mapOncePerWorker { _ =>
           logInfo(info + s" - executor ${SparkHelper.taskLocationStrOpt.getOrElse("??")}")
           val result = depCache.cleanUp()
 

@@ -9,4 +9,4 @@ source "${FWDIR}/profiles/${1}/.common.sh"
 
 "$FWDIR"/mvn-install.sh "${MVN_PROFILES[@]}" -Pbenchmark && \
 "$FWDIR"/test.sh "${MVN_PROFILES[@]}" -Pbenchmark || \
-("$FWDIR"/test-reports.sh && throw -1)
+(dev/test-reports.sh && exit 1)
