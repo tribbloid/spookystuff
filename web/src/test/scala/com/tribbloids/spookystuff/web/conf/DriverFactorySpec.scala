@@ -1,7 +1,7 @@
 package com.tribbloids.spookystuff.web.conf
 
 import com.tribbloids.spookystuff.conf.DriverFactory.Transient
-import com.tribbloids.spookystuff.conf.{PluginSystem, Python, PythonDriverFactory}
+import com.tribbloids.spookystuff.conf.{DriverFactory, PluginSystem, Python, PythonDriverFactory}
 import com.tribbloids.spookystuff.session.Session
 import com.tribbloids.spookystuff.testutils.LocalPathDocsFixture
 import com.tribbloids.spookystuff.web.actions.Visit
@@ -15,6 +15,8 @@ class DriverFactorySpec extends SpookyEnvFixture with LocalPathDocsFixture {
     type Driver = pluginSys.Driver
 
     def driverFactory: Transient[Driver]
+
+    lazy val taskLocalDriverFactory: DriverFactory.TaskLocal[Driver] = driverFactory.taskLocal
 
     it(s"$driverFactory can factoryReset") {
       val session = new Session(spooky)
@@ -42,10 +44,16 @@ class DriverFactorySpec extends SpookyEnvFixture with LocalPathDocsFixture {
     override lazy val driverFactory = WebDriverFactory.PhantomJS()
   }
 
+  object HtmlUnitDriverCase extends BaseCase {
+    override val pluginSys: Web.type = Web
+    override lazy val driverFactory = WebDriverFactory.HtmlUnit()
+  }
+
   PythonDriverCase
   WebDriverCase
+  HtmlUnitDriverCase
 
-  it("If the old driver is released, the second Pooling DriverFactory.get() should yield the same driver") {
+  it("If the old driver is released, the second taskLocal DriverFactory.get() should yield the same driver") {
     val conf = Web.Conf(WebDriverFactory.PhantomJS().taskLocal)
 
     val spooky = new SpookyContext(sql)
