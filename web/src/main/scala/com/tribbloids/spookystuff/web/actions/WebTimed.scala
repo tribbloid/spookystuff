@@ -11,7 +11,7 @@ import java.util
 trait WebTimed extends WebAction with Timed {
 
   def webDriverWait(session: Session): WebDriverWait =
-    new WebDriverWait(session.driverOf(Web), this.timeout(session).max.toSeconds)
+    new WebDriverWait(session.driverOf(Web), java.time.Duration.ofNanos(this.timeout(session).max.toNanos))
 
   def getClickableElement(selector: Selector, session: Session): WebElement = {
 

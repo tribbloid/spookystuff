@@ -53,7 +53,7 @@ object WebDriverFactory {
   }
 
   case class HtmlUnit(
-      browser: BrowserVersion = BrowserVersion.getDefault
+      browserV: BrowserVersion = BrowserVersion.getDefault
   ) extends WebDriverFactory {
 
     @transient lazy val baseCaps: DesiredCapabilities = new DesiredCapabilities(BrowserType.HTMLUNIT, "", Platform.ANY)
@@ -75,7 +75,7 @@ object WebDriverFactory {
     override def _createImpl(session: Session, lifespan: Lifespan): CleanWebDriver = {
 
       val cap = newCaps(null, session.spooky)
-      val self = new HtmlUnitDriver(browser)
+      val self = new HtmlUnitDriver(browserV)
       self.setJavascriptEnabled(true)
       self.setProxySettings(Proxy.extractFrom(cap))
       val driver = new CleanWebDriver(self, lifespan)
@@ -137,10 +137,12 @@ object WebDriverFactory {
     }
 
     @transient lazy val baseCaps: DesiredCapabilities = {
-      val baseCaps = new DesiredCapabilities(BrowserType.PHANTOMJS, "", Platform.ANY)
+      val baseCaps = new DesiredCapabilities()
+      baseCaps.setBrowserName("chrome")
+      baseCaps.setPlatform(Platform.ANY)
 
       baseCaps.setJavascriptEnabled(true); //< not really needed: JS enabled by default
-      baseCaps.setCapability(CapabilityType.SUPPORTS_FINDING_BY_CSS, true)
+//      baseCaps.setCapability(CapabilityType.SUPPORTS_FINDING_BY_CSS, true)
       //  baseCaps.setCapability(CapabilityType.HAS_NATIVE_EVENTS, false)
       baseCaps.setCapability(TAKES_SCREENSHOT, true)
       baseCaps.setCapability(ACCEPT_SSL_CERTS, true)
