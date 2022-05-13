@@ -9,4 +9,4 @@ echo "# TEST REPORT #"
 echo "###############"
 echo ""
 
-find "${FWDIR}" -wholename "**/scalatest-report.txt" -exec cat {} \;
+find "${FWDIR}" -wholename "**/scalatest-report.txt" -print -exec cat {} \;
