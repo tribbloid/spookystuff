@@ -9,4 +9,8 @@ echo "# TEST REPORT #"
 echo "###############"
 echo ""
 
-find "${FWDIR}" -wholename "**/scalatest-report.txt" -print -exec cat {} \;
+cd "${FWDIR}"
+
+#find cannot use symbolic link, so cd is used
+#see https://unix.stackexchange.com/questions/93857/find-does-not-work-on-symlinked-path
+find . -wholename "./**/scalatest-report.txt" -print -exec cat {} \;
