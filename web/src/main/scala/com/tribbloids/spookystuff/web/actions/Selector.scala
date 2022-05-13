@@ -1,8 +1,8 @@
 package com.tribbloids.spookystuff.web.actions
 
 import com.tribbloids.spookystuff.selenium.BySizzleCssSelector
-import org.apache.spark.ml.dsl.utils.refl.ScalaUDT
 import org.apache.spark.ml.dsl.utils.messaging.MessageRelay
+import org.apache.spark.ml.dsl.utils.refl.ScalaUDT
 import org.apache.spark.sql.types.SQLUserDefinedType
 import org.openqa.selenium.By
 
@@ -41,7 +41,7 @@ object Selector extends MessageRelay[Selector] {
       }
     }
 
-    Selector(new BySizzleCssSelector(v))
+    Selector(By.cssSelector(v))
   }
 
   override type M = String

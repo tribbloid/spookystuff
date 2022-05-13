@@ -13,7 +13,7 @@ import org.apache.commons.io.FileUtils
 import org.openqa.selenium.htmlunit.HtmlUnitDriver
 import org.openqa.selenium.phantomjs.{PhantomJSDriver, PhantomJSDriverService}
 import org.openqa.selenium.remote.CapabilityType._
-import org.openqa.selenium.remote.DesiredCapabilities
+import org.openqa.selenium.remote.{CapabilityType, DesiredCapabilities}
 import org.openqa.selenium.{Capabilities, Platform, Proxy}
 
 import java.io.File
@@ -144,7 +144,7 @@ object WebDriverFactory {
 
       baseCaps.setJavascriptEnabled(true); //< not really needed: JS enabled by default
 //      baseCaps.setCapability(CapabilityType.SUPPORTS_FINDING_BY_CSS, true)
-      //  baseCaps.setCapability(CapabilityType.HAS_NATIVE_EVENTS, false)
+//      baseCaps.setCapability(CapabilityType.HAS_NATIVE_EVENTS, false)
       baseCaps.setCapability(TAKES_SCREENSHOT, true)
       baseCaps.setCapability(ACCEPT_SSL_CERTS, true)
       baseCaps.setCapability(SUPPORTS_ALERTS, true)

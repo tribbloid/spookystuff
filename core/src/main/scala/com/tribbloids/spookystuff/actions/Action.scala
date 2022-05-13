@@ -67,7 +67,6 @@ trait Action extends ActionLike with TraceAPI {
           case ae: ActionException => ae
           case _                   => new ActionException(message, e)
         }
-//        ex.setStackTrace(e.getStackTrace)
         throw ex
     }
 
