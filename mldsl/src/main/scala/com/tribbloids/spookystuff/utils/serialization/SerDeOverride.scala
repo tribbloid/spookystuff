@@ -2,10 +2,9 @@ package com.tribbloids.spookystuff.utils.serialization
 
 import java.io
 import java.nio.ByteBuffer
-
 import com.tribbloids.spookystuff.utils.IDMixin
 import org.apache.hadoop.io.Writable
-import org.apache.spark.serializer.{JavaSerializer, KryoSerializer, SerializerInstance}
+import org.apache.spark.serializer.{JavaSerializer, KryoSerializer, Serializer, SerializerInstance}
 import org.apache.spark.sql.catalyst.ScalaReflection.universe.TypeTag
 import org.apache.spark.{SerializableWritable, SparkConf}
 
@@ -31,7 +30,7 @@ object SerDeOverride {
         Some(kryoSerializer.newInstance())
     }
 
-    @transient lazy val allSerializers = List(javaSerializer, kryoSerializer)
+    @transient lazy val allSerializers: List[Serializer] = List(javaSerializer, kryoSerializer)
   }
 
   object Default extends WithConf

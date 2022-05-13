@@ -120,7 +120,7 @@ object WebDriverFactory {
 
       new PhantomJSDriverService.Builder()
         .usingAnyFreePort()
-        .withLogFile(new File("phantomjsdriver.log"))
+        .withLogFile(new File("logs/phantomjsdriver.log"))
     }
   }
 
@@ -139,7 +139,7 @@ object WebDriverFactory {
 
     @transient lazy val baseCaps: DesiredCapabilities = {
       val baseCaps = new DesiredCapabilities()
-      baseCaps.setBrowserName("chrome")
+      baseCaps.setBrowserName("phantomjs")
       baseCaps.setPlatform(Platform.ANY)
 
       baseCaps.setJavascriptEnabled(true); //< not really needed: JS enabled by default

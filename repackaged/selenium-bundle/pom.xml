@@ -12,7 +12,7 @@
   <version>${revision}</version>
 
   <properties>
-    <selenium.version>4.0.0</selenium.version>
+    <selenium.version>4.1.4</selenium.version>
 
     <revision>${selenium.version}</revision>
 

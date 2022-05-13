@@ -6,7 +6,7 @@ import org.openqa.selenium.*;
 import java.io.Serializable;
 import java.util.List;
 
-public class BySizzleCssSelector extends By implements Serializable {
+public class BySizzleSelector extends By implements Serializable {
 
   private static final long serialVersionUID = -584931842702178943L;
 
@@ -14,7 +14,7 @@ public class BySizzleCssSelector extends By implements Serializable {
 
   private static String sizzleSource = null;
 
-  public BySizzleCssSelector(String selector) {
+  public BySizzleSelector(String selector) {
     this.selector = selector;
   }
 

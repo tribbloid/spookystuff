@@ -1,10 +1,15 @@
 package com.tribbloids.spookystuff.session
 
 import com.tribbloids.spookystuff.SpookyContext
+import com.tribbloids.spookystuff.actions.Action
 import com.tribbloids.spookystuff.conf.{Core, PluginRegistry, PluginSystem, Python}
 import com.tribbloids.spookystuff.utils.TreeThrowable
-import com.tribbloids.spookystuff.utils.lifespan.Lifespan
+import com.tribbloids.spookystuff.utils.io.Progress
+import com.tribbloids.spookystuff.utils.lifespan.{Lifespan, LocalCleanable}
+import org.apache.spark.TaskContext
 
+import java.util.Date
+import scala.collection.mutable.ArrayBuffer
 import scala.reflect.ClassTag
 import scala.util.Try
 
@@ -13,9 +18,17 @@ import scala.util.Try
   * should be manually cleaned By ActionLike, so don't set lifespan unless absolutely necessary
   */
 class Session(
-    override val spooky: SpookyContext,
+    val spooky: SpookyContext,
     override val _lifespan: Lifespan = new Lifespan.JVM()
-) extends AbstractSession(spooky) {
+) extends LocalCleanable {
+
+  spooky.spookyMetrics.sessionInitialized += 1
+  val startTime: Long = new Date().getTime
+  val backtrace: ArrayBuffer[Action] = ArrayBuffer()
+
+  def taskContextOpt: Option[TaskContext] = lifespan.ctx.taskOpt
+
+  lazy val progress: Progress = Progress()
 
   object Drivers extends PluginRegistry.Factory {
 
@@ -62,14 +75,6 @@ class Session(
 
     TreeThrowable.&&&(trials)
 
-//    Option(spooky.spookyConf.webDriverFactory).foreach { factory =>
-//      factory.release(this)
-//      spooky.spookyMetrics.webDriverReleased += 1
-//    }
-//    Option(spooky.spookyConf.pythonDriverFactory).foreach { factory =>
-//      factory.release(this)
-//      spooky.spookyMetrics.pythonDriverReleased += 1
-//    }
     spooky.spookyMetrics.sessionReclaimed += 1
   }
 }
