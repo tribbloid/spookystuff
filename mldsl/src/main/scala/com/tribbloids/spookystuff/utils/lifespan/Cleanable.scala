@@ -86,7 +86,7 @@ trait Cleanable extends Closeable {
 
   import Cleanable._
 
-  @transient object CleanStateLock
+//  @transient object CleanStateLock
 
   /**
     * taskOrThreadOnCreation is incorrect in withDeadline or threads not created by Spark
@@ -98,7 +98,7 @@ trait Cleanable extends Closeable {
 
   //each can only be cleaned once
   @volatile protected var _isCleaned: Boolean = false
-  def isCleaned: Boolean = CleanStateLock.synchronized {
+  def isCleaned: Boolean = {
     _isCleaned
   }
 
@@ -125,7 +125,7 @@ trait Cleanable extends Closeable {
   }
 
   protected def cleanableLogFunction(logger: Logger): String => Unit = {
-    logger.debug
+    logger.info
   }
 
   protected def logPrefixed(s: String): Unit = {
@@ -146,7 +146,7 @@ trait Cleanable extends Closeable {
     )
   }
 
-  lazy val doCleanOnce: Unit = CleanStateLock.synchronized {
+  lazy val doCleanOnce: Unit = {
 
     stacktraceAtCleaning = Some(Thread.currentThread().getStackTrace)
     try {
