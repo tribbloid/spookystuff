@@ -98,7 +98,7 @@ trait Action extends ActionLike with TraceAPI {
     }
   }
 
-  protected[actions] def withDriversDuring[T](session: Session)(f: => T): T = {
+  protected[actions] def withTimeoutDuring[T](session: Session)(f: => T): T = {
 
     var baseStr = s"[${session.taskContextOpt.map(_.partitionId()).getOrElse(0)}]+> ${this.toString}"
     this match {
@@ -120,7 +120,7 @@ trait Action extends ActionLike with TraceAPI {
   }
 
   final def exe(session: Session): Seq[DocOption] = {
-    withDriversDuring(session) {
+    withTimeoutDuring(session) {
       doExe(session)
     }
   }

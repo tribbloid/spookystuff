@@ -94,7 +94,8 @@ object WebDriverFactory {
       new PhantomJSDriverService.Builder()
         .withLogFile(new File("logs/phantomjsdriver.log"))
 //        .withLogFile(new File("/dev/null"))
-        .usingCommandLineArguments(Array.empty)
+        .usingCommandLineArguments(Array("--webdriver-loglevel=ERROR"))
+//        .usingCommandLineArguments(Array.empty)
 //        .usingGhostDriverCommandLineArguments(Array("service_log_path", "/tmp/ghostdriver.log"))
         .usingGhostDriverCommandLineArguments(Array.empty)
     }
