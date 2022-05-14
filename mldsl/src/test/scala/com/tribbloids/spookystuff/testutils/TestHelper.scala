@@ -55,7 +55,7 @@ abstract class TestHelper extends LocalCleanable {
 
   def SPARK_HOME: String = System.getenv("SPARK_HOME")
 
-  final val MAX_TOTAL_MEMORY = 16 * 1024
+  final val MAX_TOTAL_MEMORY = 8 * 1024
   final val MEMORY_PER_CORE = 1024
   //  final val EXECUTOR_JVM_MEMORY_OVERHEAD = 256 //TODO: remove, too complex
 
