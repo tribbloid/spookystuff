@@ -125,7 +125,7 @@ trait Cleanable extends Closeable {
   }
 
   protected def cleanableLogFunction(logger: Logger): String => Unit = {
-    logger.info
+    logger.debug
   }
 
   protected def logPrefixed(s: String): Unit = {
