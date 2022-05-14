@@ -92,11 +92,11 @@ object WebDriverFactory {
     lazy val defaultBuilder: PhantomJSDriverService.Builder = {
 
       new PhantomJSDriverService.Builder()
-        .usingAnyFreePort()
         .withLogFile(new File("logs/phantomjsdriver.log"))
 //        .withLogFile(new File("/dev/null"))
         .usingCommandLineArguments(Array.empty)
-        .usingGhostDriverCommandLineArguments(Array("service_log_path", "/tmp/ghostdriver.log"))
+//        .usingGhostDriverCommandLineArguments(Array("service_log_path", "/tmp/ghostdriver.log"))
+        .usingGhostDriverCommandLineArguments(Array.empty)
     }
   }
 
@@ -132,6 +132,7 @@ object WebDriverFactory {
         import scala.collection.JavaConverters._
 
         var builder = PhantomJS.defaultBuilder
+          .usingAnyFreePort()
           .usingPhantomJSExecutable(new File(pathStr))
           .withEnvironment(
             Map(
