@@ -121,6 +121,8 @@ object WebDriverFactory {
       new PhantomJSDriverService.Builder()
         .usingAnyFreePort()
         .withLogFile(new File("logs/phantomjsdriver.log"))
+        .usingCommandLineArguments(Array.empty)
+        .usingGhostDriverCommandLineArguments(Array.empty)
     }
   }
 
@@ -208,6 +210,7 @@ object WebDriverFactory {
         builder.build
       }
 
+//      val self = new PhantomJSDriver(caps)
       val self = new PhantomJSDriver(service, caps)
       new CleanWebDriver(self, lifespan)
     }
