@@ -6,12 +6,17 @@ import com.tribbloids.spookystuff.web.conf.Web
 import org.openqa.selenium.WebElement
 import org.openqa.selenium.support.ui.{ExpectedConditions, WebDriverWait}
 
+import java.time.Duration
 import java.util
+
+import scala.language.implicitConversions
 
 trait WebTimed extends WebAction with Timed {
 
+  implicit def nanos2JDuration(v: Long): Duration = java.time.Duration.ofNanos(v)
+
   def webDriverWait(session: Session): WebDriverWait =
-    new WebDriverWait(session.driverOf(Web), java.time.Duration.ofNanos(this.timeout(session).max.toNanos))
+    new WebDriverWait(session.driverOf(Web), this.timeout(session).max.toNanos)
 
   def getClickableElement(selector: Selector, session: Session): WebElement = {
 
