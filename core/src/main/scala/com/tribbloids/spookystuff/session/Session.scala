@@ -40,7 +40,9 @@ class Session(
     override def compute[V <: UB](v: V): Out[V] = {
       val plugin: V#Plugin = spooky.Plugins.apply(v)
 
+      progress.ping()
       val result = plugin.driverFactory.dispatch(Session.this)
+      progress.ping()
 
       spooky.getMetric(Core).driverDispatched.add(plugin.driverFactory.toString -> 1L)
 
