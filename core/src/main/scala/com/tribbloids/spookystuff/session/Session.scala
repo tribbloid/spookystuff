@@ -19,7 +19,7 @@ import scala.util.Try
   */
 class Session(
     val spooky: SpookyContext,
-    override val _lifespan: Lifespan = new Lifespan.JVM()
+    override val _lifespan: Lifespan = new Lifespan.TaskOrJVM()
 ) extends LocalCleanable {
 
   spooky.spookyMetrics.sessionInitialized += 1
