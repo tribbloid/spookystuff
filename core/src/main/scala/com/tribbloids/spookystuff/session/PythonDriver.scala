@@ -3,7 +3,7 @@ package com.tribbloids.spookystuff.session
 import com.tribbloids.spookystuff.conf.Python
 import com.tribbloids.spookystuff.driver.PythonProcess
 import com.tribbloids.spookystuff.utils.lifespan.Lifespan
-import com.tribbloids.spookystuff.utils.{BypassingRule, CommonUtils, SpookyUtils}
+import com.tribbloids.spookystuff.utils.{BypassingRule, CommonConst, CommonUtils, SpookyUtils}
 import com.tribbloids.spookystuff.{PyException, PyInterpretationException, SpookyContext}
 import org.apache.commons.io.FileUtils
 import org.apache.spark.ml.dsl.utils.DSLUtils
@@ -146,7 +146,7 @@ class PythonDriver(
       CommonUtils.retry(5) {
         try {
           if (process.isAlive) {
-            CommonUtils.withTimeout(3.seconds) {
+            CommonUtils.withTimeout(CommonConst.driverTerminationTimeout) {
               try {
                 this._interpret("exit()")
               } catch {

@@ -9,11 +9,7 @@ class CommonConst {
   val defaultTextCharset = "ISO-8859-1"
   val defaultApplicationCharset = "UTF-8"
 
-  //  val webClientOptions = new WebClientOptions
-  //  webClientOptions.setUseInsecureSSL(true)
-
-  //TODO: move to SpookyConf as much as possible
-  val sessionInitializationTimeout: FiniteDuration = 40.seconds
+  val driverTerminationTimeout: FiniteDuration = 5.seconds
 
   val localResourceLocalRetries = 3 //In-node/partition retries
   val remoteResourceLocalRetries = 2 //In-node/partition retries

@@ -92,7 +92,7 @@ object WebDriverFactory {
     lazy val defaultBuilder: PhantomJSDriverService.Builder = {
 
       new PhantomJSDriverService.Builder()
-        .withLogFile(new File("logs/phantomjsdriver.log"))
+        .withLogFile(new File("target/logs/phantomjsdriver.log"))
 //        .withLogFile(new File("/dev/null"))
         .usingCommandLineArguments(Array("--webdriver-loglevel=ERROR"))
 //        .usingCommandLineArguments(Array.empty)

@@ -60,12 +60,12 @@ class Session(
   override def cleanImpl(): Unit = {
     val plugins = spooky.Plugins.cache.values.toList
 
-    val withDrivers = plugins.collect {
-      case p: PluginSystem.WithDrivers#PluginLike =>
+    val filtered = plugins.collect {
+      case p: PluginSystem.WithDrivers#Plugin =>
         p
     }
 
-    val trials = withDrivers.map { p =>
+    val trials = filtered.map { p =>
       Try {
         p.driverFactoryOpt.foreach { v =>
           v.release(this)

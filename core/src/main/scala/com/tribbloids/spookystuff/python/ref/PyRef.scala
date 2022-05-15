@@ -7,7 +7,6 @@ import com.tribbloids.spookystuff.utils.CachingUtils.ConcurrentMap
 import com.tribbloids.spookystuff.utils.lifespan.Cleanable
 import org.apache.spark.ml.dsl.utils._
 
-
 trait PyRef extends Cleanable {
 
   type Binding <: PyBinding
@@ -104,7 +103,7 @@ trait PyRef extends Cleanable {
   override protected def cleanImpl(): Unit = {
 
     bindings.foreach { binding =>
-      binding.clean(true)
+      binding.tryClean(true)
     }
   }
 }
