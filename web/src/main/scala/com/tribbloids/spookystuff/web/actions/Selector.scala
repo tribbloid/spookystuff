@@ -1,6 +1,7 @@
 package com.tribbloids.spookystuff.web.actions
 
 import com.tribbloids.spookystuff.selenium.BySizzleSelector
+import com.tribbloids.spookystuff.utils.IDMixin
 import org.apache.spark.ml.dsl.utils.messaging.MessageRelay
 import org.apache.spark.ml.dsl.utils.refl.ScalaUDT
 import org.apache.spark.sql.types.SQLUserDefinedType
@@ -54,9 +55,11 @@ object Selector extends MessageRelay[Selector] {
 class SelectorUDT extends ScalaUDT[Selector]
 
 @SQLUserDefinedType(udt = classOf[SelectorUDT])
-case class Selector(factory: String => By, pattern: String) {
+case class Selector(factory: String => By, pattern: String) extends IDMixin {
 
   @transient lazy val by: By = factory(pattern)
 
   override def toString: String = by.toString
+
+  override lazy val _id: By = by
 }
