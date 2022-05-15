@@ -3,7 +3,7 @@ package com.tribbloids.spookystuff
 import com.tribbloids.spookystuff.python.PyConverter
 import Python3DriverSuite.Runner
 import com.tribbloids.spookystuff.session.PythonDriver
-import com.tribbloids.spookystuff.utils.CommonUtils
+import com.tribbloids.spookystuff.utils.{CommonConst, CommonUtils}
 import com.tribbloids.spookystuff.utils.lifespan.Lifespan
 import org.slf4j.LoggerFactory
 
@@ -205,7 +205,10 @@ class Python3DriverSuite extends SpookyEnvFixture {
       }
 
       LoggerFactory.getLogger(this.getClass).info("========= START CLEANING =========")
-      CommonUtils.withTimeout(20.seconds, 1.second) { // 3 * 15 << 20
+      CommonUtils.withTimeout(
+        (CommonConst.driverClosingTimeout * CommonConst.driverClosingRetries) + 5.seconds,
+        1.second
+      ) { // 3 * 15 << 20
         proc.clean()
       }
     }

@@ -9,7 +9,8 @@ class CommonConst {
   val defaultTextCharset = "ISO-8859-1"
   val defaultApplicationCharset = "UTF-8"
 
-  val driverTerminationTimeout: FiniteDuration = 5.seconds
+  val driverClosingTimeout: FiniteDuration = 3.seconds
+  val driverClosingRetries: Int = 5
 
   val localResourceLocalRetries = 3 //In-node/partition retries
   val remoteResourceLocalRetries = 2 //In-node/partition retries

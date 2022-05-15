@@ -20,8 +20,8 @@ class CleanWebDriver(
 
   override def cleanImpl(): Unit = {
     try {
-      CommonUtils.retry(5) {
-        CommonUtils.withTimeout(CommonConst.driverTerminationTimeout) {
+      CommonUtils.retry(CommonConst.driverClosingRetries) {
+        CommonUtils.withTimeout(CommonConst.driverClosingTimeout) {
 
           self.close()
         }

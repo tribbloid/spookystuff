@@ -143,10 +143,10 @@ class PythonDriver(
 
   override def cleanImpl(): Unit = {
     Try {
-      CommonUtils.retry(5) {
+      CommonUtils.retry(CommonConst.driverClosingRetries) {
         try {
           if (process.isAlive) {
-            CommonUtils.withTimeout(CommonConst.driverTerminationTimeout) {
+            CommonUtils.withTimeout(CommonConst.driverClosingTimeout) {
               try {
                 this._interpret("exit()")
               } catch {
