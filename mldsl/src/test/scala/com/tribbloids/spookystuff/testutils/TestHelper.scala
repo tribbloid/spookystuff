@@ -2,10 +2,10 @@ package com.tribbloids.spookystuff.testutils
 
 import java.io.File
 import java.util.{Date, Properties}
-
 import com.tribbloids.spookystuff.utils.lifespan.LocalCleanable
 import com.tribbloids.spookystuff.utils.{CommonConst, CommonUtils, ConfUtils}
 import org.apache.hadoop.fs.FileUtil
+import org.apache.spark.scheduler.{SparkListener, SparkListenerApplicationEnd}
 import org.apache.spark.serializer.KryoSerializer
 import org.apache.spark.sql.{SQLContext, SparkSession}
 import org.apache.spark.{SparkConf, SparkContext, SparkEnv, SparkException}
@@ -64,7 +64,7 @@ abstract class TestHelper extends LocalCleanable {
   val METASTORE_PATH: String = CommonUtils.\\\(CommonConst.USER_DIR, "metastore_db")
   val WAREHOUSE_PATH: String = CommonUtils.\\\(CommonConst.USER_DIR, "warehouse")
 
-  var sparkSessionInitialised: Boolean = false
+  @transient var sparkSessionInitialised: Boolean = false
 
   {
     CommonUtils.debugCPResource()
@@ -81,9 +81,8 @@ abstract class TestHelper extends LocalCleanable {
     cleanBeforeAndAfterLifespan()
   }
 
-  override def cleanImpl(): Unit = {
-
-    if (sparkSessionInitialised) {
+  object DisableLoggingListener extends SparkListener {
+    override def onApplicationEnd(applicationEnd: SparkListenerApplicationEnd): Unit = {
 
       println("=============== Stopping Test Spark Context ==============")
       // Suppress the following log error when shutting down in local-cluster mode:
@@ -91,23 +90,14 @@ abstract class TestHelper extends LocalCleanable {
       // Check driver logs for WARN messages.
       // java.lang.IllegalStateException: Shutdown hooks cannot be modified during shutdown
       val logger = org.apache.log4j.Logger.getRootLogger
-      val oldLevel = logger.getLevel
       logger.setLevel(org.apache.log4j.Level.toLevel("OFF"))
-      try {
-        TestSC.stop()
-      } catch {
-        case e: Throwable =>
-          logger.setLevel(oldLevel)
-          logger.error("cannot stop Test SparkContext", e)
-      } finally {
-        logger.setLevel(oldLevel)
-      }
+
 //      println("=============== Test Spark Context has stopped ==============")
+      cleanBeforeAndAfterLifespan()
     }
-
-    cleanBeforeAndAfterLifespan()
-
   }
+
+  override def cleanImpl(): Unit = {}
 
   def cleanBeforeAndAfterLifespan(): Unit = {
     cleanTempDirs(
@@ -294,6 +284,7 @@ abstract class TestHelper extends LocalCleanable {
 
     val session = builder.getOrCreate()
     val sc = session.sparkContext
+    sc.addSparkListener(DisableLoggingListener)
 
     CommonUtils.retry(3, 8000, silent = true) {
       // wait for all executors in local-cluster mode to be online

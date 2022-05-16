@@ -208,7 +208,7 @@ class Python3DriverSuite extends SpookyEnvFixture {
       CommonUtils.withTimeout(
         (CommonConst.driverClosingTimeout * CommonConst.driverClosingRetries) + 5.seconds,
         1.second
-      ) { // 3 * 15 << 20
+      ) {
         proc.clean()
       }
     }

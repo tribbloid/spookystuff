@@ -15,7 +15,7 @@ import java.util.Date
 import scala.concurrent.duration
 import scala.util.Random
 
-abstract class IntegrationFixture extends SpookyEnvFixture with BeforeAndAfterAll with LocalURIDocsFixture {
+abstract class IntegrationFixture extends SpookyEnvFixture with LocalURIDocsFixture {
 
   val phantomJS: WebDriverFactory.PhantomJS = WebDriverFactory.PhantomJS()
   val htmlUnit: WebDriverFactory.HtmlUnit = WebDriverFactory.HtmlUnit()
