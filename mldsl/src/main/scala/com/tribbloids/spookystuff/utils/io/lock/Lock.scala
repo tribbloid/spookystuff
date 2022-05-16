@@ -2,7 +2,8 @@ package com.tribbloids.spookystuff.utils.io.lock
 
 import com.tribbloids.spookystuff.utils.BypassingRule
 import com.tribbloids.spookystuff.utils.io.{URIExecution, URIResolver}
-import com.tribbloids.spookystuff.utils.lifespan.{Lifespan, LocalCleanable}
+import com.tribbloids.spookystuff.utils.lifespan.Cleanable.Lifespan
+import com.tribbloids.spookystuff.utils.lifespan.LocalCleanable
 
 import java.io.FileNotFoundException
 import java.nio.file.NoSuchFileException
@@ -10,7 +11,7 @@ import java.nio.file.NoSuchFileException
 case class Lock(
     source: URIExecution,
     expired: LockExpired = URIResolver.default.expired, // TODO: use it!
-    override val _lifespan: Lifespan = Lifespan.TaskOrJVM()
+    override val _lifespan: Lifespan = Lifespan.TaskOrJVM().forShipping
 ) extends LockLike
     with LocalCleanable {
 

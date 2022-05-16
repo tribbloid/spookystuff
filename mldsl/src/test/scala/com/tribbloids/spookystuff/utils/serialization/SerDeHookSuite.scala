@@ -7,7 +7,7 @@ object SerDeHookSuite {
   var readCounter = 0
   var writeCounter = 0
 
-  val example = SerDeHook(
+  val example: SerDeHook = SerDeHook(
     _ => readCounter += 1,
     _ => writeCounter += 1
   )

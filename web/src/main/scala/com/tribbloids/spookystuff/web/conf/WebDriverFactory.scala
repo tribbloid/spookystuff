@@ -7,7 +7,7 @@ import com.tribbloids.spookystuff.dsl.BinaryDeployment
 import com.tribbloids.spookystuff.session.{Session, WebProxySetting}
 import com.tribbloids.spookystuff.utils.ConfUtils
 import com.tribbloids.spookystuff.utils.io.LocalResolver
-import com.tribbloids.spookystuff.utils.lifespan.Lifespan
+import com.tribbloids.spookystuff.utils.lifespan.Cleanable.Lifespan
 import com.tribbloids.spookystuff.web.session.CleanWebDriver
 import org.apache.commons.io.FileUtils
 import org.openqa.selenium.Proxy

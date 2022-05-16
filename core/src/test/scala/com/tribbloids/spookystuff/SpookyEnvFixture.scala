@@ -7,7 +7,8 @@ import com.tribbloids.spookystuff.extractors.{Alias, GenExtractor, GenResolved}
 import com.tribbloids.spookystuff.row.{SpookySchema, SquashedFetchedRow, TypedField}
 import com.tribbloids.spookystuff.session.DriverLike
 import com.tribbloids.spookystuff.testutils.{FunSpecx, RemoteDocsFixture, TestHelper}
-import com.tribbloids.spookystuff.utils.lifespan.{Cleanable, Lifespan}
+import com.tribbloids.spookystuff.utils.lifespan.Cleanable.Lifespan
+import com.tribbloids.spookystuff.utils.lifespan.Cleanable
 import com.tribbloids.spookystuff.utils.{CommonConst, CommonUtils, Retry, SparkUISupport}
 import org.apache.spark.SparkContext
 import org.apache.spark.sql.SQLContext
@@ -44,13 +45,16 @@ object SpookyEnvFixture {
 
     Cleanable.uncleaned
       .foreach { tuple =>
-        val nonLocalDrivers = tuple._2.values
+        val taskCleanable = tuple._2.values
           .filter { v =>
-            v.lifespan.isInstanceOf[Lifespan.Task]
+            v.lifespan.value match {
+              case vv: Lifespan.Task.Elementary if vv._type == Lifespan.Task => true
+              case _                                                         => false
+            }
           }
         Predef.assert(
-          nonLocalDrivers.isEmpty,
-          s": ${tuple._1} is unclean! ${nonLocalDrivers.size} left:\n" + nonLocalDrivers.mkString("\n")
+          taskCleanable.isEmpty,
+          s": ${tuple._1} is unclean! ${taskCleanable.size} left:\n" + taskCleanable.mkString("\n")
         )
       }
   }
@@ -69,7 +73,7 @@ object SpookyEnvFixture {
 
     if (cleanSweepDrivers) {
       //this is necessary as each suite won't automatically cleanup drivers NOT in task when finished
-      Cleanable.cleanSweepAll(
+      Cleanable.All.cleanSweep(
         condition = {
           case _: DriverLike => true
           case _             => false
@@ -165,7 +169,7 @@ abstract class SpookyEnvFixture
     }
   }
 
-  override def beforeAll(): Unit = if (SpookyEnvFixture.firstRun) {
+  override def beforeAll(): Unit = {
 
     super.beforeAll()
 
@@ -174,6 +178,7 @@ abstract class SpookyEnvFixture
     sc.runEverywhere() { _ =>
       SpookyEnvFixture.shouldBeClean(spooky, conditions)
     }
+
     SpookyEnvFixture.firstRun = false
   }
 

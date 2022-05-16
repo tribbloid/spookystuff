@@ -5,7 +5,8 @@ import com.tribbloids.spookystuff.actions.Action
 import com.tribbloids.spookystuff.conf.{Core, PluginRegistry, PluginSystem, Python}
 import com.tribbloids.spookystuff.utils.TreeThrowable
 import com.tribbloids.spookystuff.utils.io.Progress
-import com.tribbloids.spookystuff.utils.lifespan.{Lifespan, LocalCleanable}
+import com.tribbloids.spookystuff.utils.lifespan.Cleanable.Lifespan
+import com.tribbloids.spookystuff.utils.lifespan.LocalCleanable
 import org.apache.spark.TaskContext
 
 import java.util.Date
@@ -19,7 +20,7 @@ import scala.util.Try
   */
 class Session(
     val spooky: SpookyContext,
-    override val _lifespan: Lifespan = new Lifespan.TaskOrJVM()
+    override val _lifespan: Lifespan = Lifespan.TaskOrJVM().forShipping
 ) extends LocalCleanable {
 
   spooky.spookyMetrics.sessionInitialized += 1

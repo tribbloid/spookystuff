@@ -1,7 +1,7 @@
 package com.tribbloids.spookystuff.web.session
 
 import com.tribbloids.spookystuff.session.DriverLike
-import com.tribbloids.spookystuff.utils.lifespan.Lifespan
+import com.tribbloids.spookystuff.utils.lifespan.Cleanable.Lifespan
 import com.tribbloids.spookystuff.utils.{CommonConst, CommonUtils}
 import org.openqa.selenium.{NoSuchSessionException, WebDriver}
 import org.slf4j.LoggerFactory
@@ -15,7 +15,7 @@ object CleanWebDriver {
 
 class CleanWebDriver(
     val self: WebDriver,
-    override val _lifespan: Lifespan = Lifespan.TaskOrJVM()
+    override val _lifespan: Lifespan = Lifespan.TaskOrJVM().forShipping
 ) extends DriverLike {
 
   override def cleanImpl(): Unit = {

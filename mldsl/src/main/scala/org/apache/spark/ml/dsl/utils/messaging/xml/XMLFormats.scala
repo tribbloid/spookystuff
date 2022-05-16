@@ -43,7 +43,7 @@ object XMLFormats extends DefaultFormats {
 
     def timezone: TimeZone = dateFormats.head.getTimeZone
 
-    def dateFormats: Seq[SimpleDateFormat] = baseDataFormatsFactory()
+    def dateFormats: Seq[SimpleDateFormat] = baseDataFormatsFactory.get()
   }
 
   override val wantsBigDecimal = true

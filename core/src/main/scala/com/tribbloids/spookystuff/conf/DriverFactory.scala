@@ -17,7 +17,8 @@ package com.tribbloids.spookystuff.conf
 
 import com.tribbloids.spookystuff.session.{DriverLike, Session}
 import com.tribbloids.spookystuff.utils.CachingUtils.ConcurrentMap
-import com.tribbloids.spookystuff.utils.lifespan.{Cleanable, Lifespan}
+import com.tribbloids.spookystuff.utils.lifespan.Cleanable.Lifespan
+import com.tribbloids.spookystuff.utils.lifespan.Cleanable
 import com.tribbloids.spookystuff.{DriverStatus, SpookyContext}
 import org.apache.spark.TaskContext
 
@@ -38,7 +39,8 @@ sealed abstract class DriverFactory[D <: DriverLike] extends Serializable {
   // release all Drivers that belong to a session
   def release(session: Session): Unit
 
-  def driverLifespan(session: Session): Lifespan = Lifespan.TaskOrJVM(ctxFactory = () => session.lifespan.ctx)
+  def driverLifespan(session: Session): Lifespan =
+    Lifespan.TaskOrJVM(ctxFactory = () => session.lifespan.ctx).forShipping
 
   def deployGlobally(spooky: SpookyContext): Unit = {}
 }
@@ -107,11 +109,11 @@ object DriverFactory {
     override def dispatch(session: Session): D = {
 
       val ls = driverLifespan(session)
-      val taskLocalOpt = taskLocals.get(ls.batchIDs)
+      val taskLocalOpt = taskLocals.get(ls.registeredID)
 
       def newDriver: D = {
         val fresh = delegate.create(session)
-        taskLocals.put(ls.batchIDs, new DriverStatus(fresh))
+        taskLocals.put(ls.registeredID, new DriverStatus(fresh))
         fresh
       }
 
@@ -144,7 +146,7 @@ object DriverFactory {
     override def release(session: Session): Unit = {
 
       val ls = driverLifespan(session)
-      val statusOpt = taskLocals.get(ls.batchIDs)
+      val statusOpt = taskLocals.get(ls.registeredID)
       statusOpt.foreach { status =>
         status.isBusy = false
       }

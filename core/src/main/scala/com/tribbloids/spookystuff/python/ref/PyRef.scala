@@ -113,8 +113,8 @@ object PyRef {
   object ROOT extends PyRef {}
 
   def sanityCheck(): Unit = {
-    val subs = Cleanable.getTyped[PyBinding]
-    val refSubs = Cleanable.getTyped[PyRef].map(_.bindings)
+    val subs = Cleanable.All.typed[PyBinding]
+    val refSubs = Cleanable.All.typed[PyRef].map(_.bindings)
     assert(
       subs.intersect(refSubs).size <= refSubs.size, {
         "INTERNAL ERROR: dangling tree!"

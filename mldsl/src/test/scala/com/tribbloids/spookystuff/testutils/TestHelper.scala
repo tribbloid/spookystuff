@@ -1,16 +1,16 @@
 package com.tribbloids.spookystuff.testutils
 
-import java.io.File
-import java.util.{Date, Properties}
+import com.tribbloids.spookystuff.utils.lifespan.Cleanable.Lifespan
 import com.tribbloids.spookystuff.utils.lifespan.LocalCleanable
 import com.tribbloids.spookystuff.utils.{CommonConst, CommonUtils, ConfUtils}
 import org.apache.hadoop.fs.FileUtil
-import org.apache.spark.scheduler.{SparkListener, SparkListenerApplicationEnd}
 import org.apache.spark.serializer.KryoSerializer
 import org.apache.spark.sql.{SQLContext, SparkSession}
 import org.apache.spark.{SparkConf, SparkContext, SparkEnv, SparkException}
 import org.slf4j.LoggerFactory
 
+import java.io.File
+import java.util.{Date, Properties}
 import scala.reflect.ClassTag
 import scala.util.{Failure, Success, Try}
 
@@ -78,28 +78,28 @@ abstract class TestHelper extends LocalCleanable {
       System.setProperty("fs.s3.awsSecretAccessKey", _)
     }
 
-    cleanBeforeAndAfterLifespan()
+    cleanBeforeAndAfter()
   }
 
-  object DisableLoggingListener extends SparkListener {
-    override def onApplicationEnd(applicationEnd: SparkListenerApplicationEnd): Unit = {
+  override def _lifespan: Lifespan = Lifespan.HadoopShutdown.BeforeSpark()
 
-      println("=============== Stopping Test Spark Context ==============")
-      // Suppress the following log error when shutting down in local-cluster mode:
-      // Remote RPC client disassociated. Likely due to containers exceeding thresholds, or network issues.
-      // Check driver logs for WARN messages.
-      // java.lang.IllegalStateException: Shutdown hooks cannot be modified during shutdown
-      val logger = org.apache.log4j.Logger.getRootLogger
-      logger.setLevel(org.apache.log4j.Level.toLevel("OFF"))
+  override def cleanImpl(): Unit = {
 
-//      println("=============== Test Spark Context has stopped ==============")
-      cleanBeforeAndAfterLifespan()
-    }
+    println("=============== Stopping Test Spark Context ==============")
+    // Suppress the following log error when shutting down in local-cluster mode:
+    // Remote RPC client disassociated. Likely due to containers exceeding thresholds, or network issues.
+    // Check driver logs for WARN messages.
+    // java.lang.IllegalStateException: Shutdown hooks cannot be modified during shutdown
+    val logger = org.apache.log4j.Logger.getRootLogger
+    logger.setLevel(org.apache.log4j.Level.toLevel("OFF"))
+
+    TestSC.stop()
+
+    //      println("=============== Test Spark Context has stopped ==============")
+    cleanBeforeAndAfter()
   }
 
-  override def cleanImpl(): Unit = {}
-
-  def cleanBeforeAndAfterLifespan(): Unit = {
+  def cleanBeforeAndAfter(): Unit = {
     cleanTempDirs(
       Seq(
         WAREHOUSE_PATH,
@@ -130,7 +130,7 @@ abstract class TestHelper extends LocalCleanable {
     )
 
     Option(SPARK_HOME)
-      .flatMap { h =>
+      .flatMap { _ =>
         tuple match {
           case (None, None) =>
             None
@@ -172,7 +172,7 @@ abstract class TestHelper extends LocalCleanable {
 
   @transient lazy val envOverrides = Map(
     "SPARK_SCALA_VERSION" -> CommonUtils.scalaBinaryVersion
-//    "SPARK_LOCAL_HOSTNAME" -> "localhost"
+    //    "SPARK_LOCAL_HOSTNAME" -> "localhost"
   )
 
   /**
@@ -190,8 +190,7 @@ abstract class TestHelper extends LocalCleanable {
       masterStr
     } else {
 
-      {
-        //TODO: Unstable! remove?
+      if (envOverrides.nonEmpty) {
         LoggerFactory
           .getLogger(this.getClass)
           .warn(
@@ -284,7 +283,6 @@ abstract class TestHelper extends LocalCleanable {
 
     val session = builder.getOrCreate()
     val sc = session.sparkContext
-    sc.addSparkListener(DisableLoggingListener)
 
     CommonUtils.retry(3, 8000, silent = true) {
       // wait for all executors in local-cluster mode to be online
@@ -394,10 +392,10 @@ abstract class TestHelper extends LocalCleanable {
     }
     val expectedErrorName = implicitly[ClassTag[EE]].runtimeClass.getSimpleName
     trial match {
-      case Failure(e: EE) =>
+      case Failure(_: EE) =>
       case Failure(e) =>
         throw new AssertionError(s"Expecting $expectedErrorName, but get ${e.getClass.getSimpleName}", e)
-      case Success(n) =>
+      case Success(_) =>
         throw new AssertionError(s"expecting $expectedErrorName, but no exception was thrown")
     }
   }

@@ -2,7 +2,8 @@ package org.apache.spark.rdd.spookystuff
 
 import com.tribbloids.spookystuff.utils.CachingUtils.ConcurrentMap
 import com.tribbloids.spookystuff.utils.accumulator.MapAccumulator
-import com.tribbloids.spookystuff.utils.lifespan.{Cleanable, Lifespan, LocalCleanable}
+import com.tribbloids.spookystuff.utils.lifespan.Cleanable.Lifespan
+import com.tribbloids.spookystuff.utils.lifespan.{Cleanable, LocalCleanable}
 import com.tribbloids.spookystuff.utils.{CachingUtils, IDMixin, Retry, SCFunctions}
 import org.apache.spark
 import org.apache.spark.broadcast.Broadcast
@@ -254,7 +255,7 @@ case class IncrementallyCachedRDD[T: ClassTag](
       }
     }
 
-    override def _lifespan: Lifespan = Lifespan.JVM()
+    override def _lifespan: Lifespan = Lifespan.JVM.apply()
 
     /**
       * can only be called once

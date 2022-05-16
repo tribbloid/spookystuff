@@ -36,7 +36,7 @@ class HDFSResolverSuite extends AbstractURIResolverSuite {
   }
 
   it("can override login UGI") {
-    val user: String = resolverWithUGI.input(HTML_URL) { is =>
+    val user: String = resolverWithUGI.input(HTML_URL) { _ =>
       UserGroupInformation.getCurrentUser.getUserName
     }
     user.shouldBe("dummy")
@@ -47,8 +47,8 @@ class HDFSResolverSuite extends AbstractURIResolverSuite {
     val HTML_URL = this.HTML_URL
     val users = sc
       .parallelize(1 to (sc.defaultParallelism * 2))
-      .mapPartitions { itr =>
-        val str: String = resolver.input(HTML_URL) { is =>
+      .mapPartitions { _ =>
+        val str: String = resolver.input(HTML_URL) { _ =>
           UserGroupInformation.getCurrentUser.getUserName
         }
         Iterator(str)

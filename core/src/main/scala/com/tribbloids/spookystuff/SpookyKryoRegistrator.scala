@@ -1,17 +1,16 @@
 package com.tribbloids.spookystuff
 
-import java.util.UUID
-import java.util.concurrent.TimeUnit
 import com.esotericsoftware.kryo.Kryo
 import com.tribbloids.spookystuff.conf.{Dir, SpookyConf}
-import com.tribbloids.spookystuff.dsl._
 import com.tribbloids.spookystuff.doc._
+import com.tribbloids.spookystuff.dsl._
 import com.tribbloids.spookystuff.metrics.SpookyMetrics
 import com.tribbloids.spookystuff.row.FetchedRow
-import org.apache.spark.SerializableWritable
 import org.apache.spark.serializer.KryoRegistrator
 import org.apache.spark.sql.catalyst.ScalaReflection.universe.TypeTag
 
+import java.util.UUID
+import java.util.concurrent.TimeUnit
 import scala.collection.immutable.ListMap
 import scala.concurrent.duration.FiniteDuration
 
@@ -37,7 +36,6 @@ class SpookyKryoRegistrator extends KryoRegistrator {
       //used by broadcast & accumulator
       classOf[SpookyConf],
       classOf[Dir.Conf],
-      classOf[SerializableWritable[_]],
       classOf[SpookyContext],
       classOf[SpookyMetrics],
       //used by Expressions

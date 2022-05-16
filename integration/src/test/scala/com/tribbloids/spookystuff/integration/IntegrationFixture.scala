@@ -9,7 +9,6 @@ import com.tribbloids.spookystuff.testutils.{LocalURIDocsFixture, TestHelper}
 import com.tribbloids.spookystuff.utils.{CommonConst, CommonUtils}
 import com.tribbloids.spookystuff.web.conf.{Web, WebDriverFactory}
 import com.tribbloids.spookystuff.web.session.CleanWebDriver
-import org.scalatest.BeforeAndAfterAll
 
 import java.util.Date
 import scala.concurrent.duration

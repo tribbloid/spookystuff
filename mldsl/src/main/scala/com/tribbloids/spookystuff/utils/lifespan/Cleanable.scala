@@ -10,68 +10,70 @@ object Cleanable {
 
   import com.tribbloids.spookystuff.utils.CommonViews._
 
-  type TrackingN = Long
-  type InBatchMap = ConcurrentCache[Long, Cleanable]
+  type Lifespan = LifespanInternal#ForShipping
 
-  val uncleaned: ConcurrentMap[Any, InBatchMap] = ConcurrentMap()
+  // Java Deserialization only runs constructor of superclass
+  object Lifespan extends BasicTypes with HadoopTypes with SparkTypes
 
-  def getOrNew(id: Any): InBatchMap = {
+  type BatchID = ElementaryType#ID
+  type Batch = ConcurrentCache[Long, Cleanable]
+  val uncleaned: ConcurrentMap[BatchID, Batch] = ConcurrentMap()
 
-    uncleaned.getOrElseUpdateSynchronously(id) {
+  trait Selection {
 
+    def ids: Seq[BatchID]
+
+    final def batches: Seq[Batch] = ids.map { id =>
+      Select(id).getOrCreate
+    }
+
+    def filter(condition: Cleanable => Boolean = _ => true): Seq[Cleanable] = {
+
+      batches.flatMap(batch => batch.values).filter(condition)
+    }
+
+    def typed[T <: Cleanable: ClassTag]: Seq[T] = {
+      val result = filter {
+        case _: T => true
+        case _    => false
+      }.map { v =>
+        v.asInstanceOf[T]
+      }
+
+      result
+    }
+
+    def cleanSweep(condition: Cleanable => Boolean = _ => true): Unit = {
+
+      ids.foreach { id =>
+        val batch = Select(id).getOrCreate
+        val filtered = batch.values.filter(condition)
+
+        filtered
+          .foreach { instance =>
+            instance.tryClean()
+          }
+        batch --= filtered.map(_.trackingNumber)
+        if (batch.isEmpty) uncleaned.remove(id)
+      }
+    }
+  }
+
+  case class Select(id: BatchID) extends Selection {
+    override def ids: Seq[BatchID] = Seq(id)
+
+    def getOrExecute(exe: () => Batch): Batch = uncleaned.getOrElseUpdateSynchronously(id) {
+
+      exe()
+    }
+
+    def getOrCreate: Batch = getOrExecute { () =>
       ConcurrentMap()
     }
   }
 
-  def getByLifespan(
-      id: Any,
-      condition: Cleanable => Boolean
-  ): (InBatchMap, List[Cleanable]) = {
-    val batch = uncleaned.getOrElse(id, ConcurrentMap())
-    val filtered = batch.values.toList //create deep copy to avoid in-place deletion
-      .filter(condition)
-    (batch, filtered)
-  }
-  def getAll(
-      condition: Cleanable => Boolean = _ => true
-  ): Seq[Cleanable] = {
-    uncleaned.values.toList.flatten
-      .map(_._2)
-      .filter(condition)
-  }
-  def getTyped[T <: Cleanable: ClassTag]: Seq[T] = {
-    val result = getAll {
-      case _: T => true
-      case _    => false
-    }.map { v =>
-      v.asInstanceOf[T]
-    }
-    result
-  }
-
-  // cannot execute concurrent
-  def cleanSweep(
-      id: Any,
-      condition: Cleanable => Boolean = _ => true
-  ): Unit = {
-
-    val (map, filtered) = getByLifespan(id, condition)
-    filtered
-      .foreach { instance =>
-        instance.tryClean()
-      }
-    map --= filtered.map(_.trackingNumber)
-    if (map.isEmpty) uncleaned.remove(id)
-  }
-
-  def cleanSweepAll(
-      condition: Cleanable => Boolean = _ => true
-  ): Unit = {
-
-    uncleaned.keys.toList
-      .foreach { tt =>
-        cleanSweep(tt, condition)
-      }
+  case object All extends Selection {
+    override def ids: Seq[BatchID] = uncleaned.keys.toSeq
   }
 }
 
@@ -104,18 +106,18 @@ trait Cleanable extends Closeable {
 
   @volatile var stacktraceAtCleaning: Option[Array[StackTraceElement]] = None
 
-  @transient lazy val uncleanedInBatchs: Seq[InBatchMap] = {
+  @transient lazy val uncleanedInBatches: Seq[Batch] = {
     // This weird implementation is to mitigate thread-unsafe competition:
     // 2 empty collections being inserted simultaneously
-    lifespan.batchIDs.map { id =>
-      Cleanable.getOrNew(id)
+    lifespan.registeredID.map { id =>
+      Cleanable.Select(id).getOrCreate
     }
 
   }
 
   {
     logPrefixed("Created")
-    uncleanedInBatchs.foreach { inBatch =>
+    uncleanedInBatches.foreach { inBatch =>
       inBatch += this.trackingNumber -> this
     }
   }
@@ -153,7 +155,7 @@ trait Cleanable extends Closeable {
       cleanImpl()
       _isCleaned = true
 
-      uncleanedInBatchs.foreach { inBatch =>
+      uncleanedInBatches.foreach { inBatch =>
         inBatch -= this.trackingNumber
       }
     } catch {
