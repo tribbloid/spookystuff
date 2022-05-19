@@ -184,7 +184,7 @@ trait Cleanable extends Closeable {
         if (!silentOnError(ee))
           LoggerFactory
             .getLogger(this.getClass)
-            .warn(
+            .error(
               s"$logPrefix !!! FAIL TO CLEAN UP !!!\n",
               ee
             )

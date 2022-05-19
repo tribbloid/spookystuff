@@ -30,7 +30,7 @@ class CleanWebDriver(
       }
     } catch {
       case e: Throwable =>
-        LoggerFactory.getLogger(this.getClass).error("Failed to clean up", e)
+        LoggerFactory.getLogger(this.getClass).error("Failed to close ... will quit directly", e)
     }
 
     self.quit()
