@@ -38,7 +38,7 @@ abstract class LifespanInternal extends BeforeAndAfterShipping with IDMixin {
 
   def children: List[LeafType#Internal] = Nil
 
-  @transient final lazy val leaf: Seq[LeafType#Internal] = this match {
+  @transient final lazy val leaves: Seq[LeafType#Internal] = this match {
     case v: LeafType#Internal =>
       Seq(v) ++ children
     case _ =>

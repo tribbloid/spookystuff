@@ -54,7 +54,6 @@ object Cleanable {
           .foreach { instance =>
             instance.tryClean()
           }
-        batch --= filtered.map(_.trackingNumber)
         if (batch.isEmpty) uncleaned.remove(id)
       }
     }

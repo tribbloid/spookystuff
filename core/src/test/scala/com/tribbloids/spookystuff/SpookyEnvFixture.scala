@@ -47,14 +47,9 @@ object SpookyEnvFixture {
       .foreach { tuple =>
         val taskCleanable = tuple._2.values
           .filter { v =>
-            v.lifespan.leaf.exists { ll =>
+            v.lifespan.leaves.exists { ll =>
               ll._type == Lifespan.Task
             }
-//
-//            v.lifespan.value match {
-//              case vv: Lifespan.Task.Internal if vv._type == Lifespan.Task => true
-//              case _                                                       => false
-//            }
           }
         Predef.assert(
           taskCleanable.isEmpty,

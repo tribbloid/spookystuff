@@ -82,7 +82,7 @@ object DriverFactory {
 
     final def destroy(driver: D, tcOpt: Option[TaskContext]): Unit = {
       driver match {
-        case v: Cleanable => v.tryClean()
+        case v: Cleanable => v.clean()
         case _            =>
       }
     }

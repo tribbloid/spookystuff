@@ -4,8 +4,11 @@ import com.tribbloids.spookystuff.SpookyContext
 import com.tribbloids.spookystuff.python.PyConverter
 import com.tribbloids.spookystuff.session.{PythonDriver, Session}
 import com.tribbloids.spookystuff.utils.CachingUtils.ConcurrentMap
+import com.tribbloids.spookystuff.utils.TreeThrowable
 import com.tribbloids.spookystuff.utils.lifespan.Cleanable
 import org.apache.spark.ml.dsl.utils._
+
+import scala.util.Try
 
 trait PyRef extends Cleanable {
 
@@ -102,9 +105,11 @@ trait PyRef extends Cleanable {
 
   override protected def cleanImpl(): Unit = {
 
-    bindings.foreach { binding =>
-      binding.tryClean(true)
-    }
+    TreeThrowable.&&&(
+      bindings.map { binding =>
+        Try(binding.clean(true))
+      }
+    )
   }
 }
 
