@@ -173,9 +173,9 @@ abstract class SpookyEnvFixture
     }
   }
 
-  override def beforeAll(): Unit = {
+  def validateBeforeAndAfterAll(): Unit = {
 
-    super.beforeAll()
+    TestHelper.cleanTempDirs()
 
     val spooky = this.spooky
     val conditions = this.conditions
@@ -186,22 +186,20 @@ abstract class SpookyEnvFixture
     SpookyEnvFixture.firstRun = false
   }
 
+  override def beforeAll(): Unit = {
+
+    super.beforeAll()
+
+    if (SpookyEnvFixture.firstRun)
+      validateBeforeAndAfterAll()
+  }
+
   override def afterAll(): Unit = {
 
-    val spooky = this.spooky
-    val conditions = this.conditions
-    TestHelper.cleanTempDirs()
-
-    //unpersist all RDDs, disabled to better detect memory leak
-    //    sc.getPersistentRDDs.values.toList.foreach {
-    //      _.unpersist()
-    //    }
-
-    sc.runEverywhere() { _ =>
-      SpookyEnvFixture.shouldBeClean(spooky, conditions)
-    }
+    validateBeforeAndAfterAll()
 
     super.afterAll()
+
   }
 
   override def beforeEach(): Unit = CommonUtils.retry(3, 1000) {
