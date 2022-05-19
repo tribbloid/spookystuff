@@ -3,7 +3,7 @@ package com.tribbloids.spookystuff.lifespan
 import com.tribbloids.spookystuff.SpookyEnvFixture
 import com.tribbloids.spookystuff.utils.CommonUtils
 import com.tribbloids.spookystuff.utils.lifespan.Cleanable.Lifespan
-import com.tribbloids.spookystuff.utils.lifespan.{Cleanable, ElementaryType, LocalCleanable}
+import com.tribbloids.spookystuff.utils.lifespan.{Cleanable, LeafType, LocalCleanable}
 import com.tribbloids.spookystuff.utils.serialization.AssertSerializable
 import org.apache.spark.{HashPartitioner, SparkException, TaskContext}
 
@@ -183,7 +183,7 @@ object CleanableSuite {
       condition = { (v1, v2) =>
         AssertSerializable.serializableCondition(v1, v2)
         Seq(v1, v2).foreach {
-          case v: ElementaryType#Elementary =>
+          case v: LeafType#Internal =>
             v.requireUsable()
           case _ =>
         }

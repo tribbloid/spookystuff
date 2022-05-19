@@ -11,11 +11,12 @@ object Cleanable {
   import com.tribbloids.spookystuff.utils.CommonViews._
 
   type Lifespan = LifespanInternal#ForShipping
+  type Leaf = LeafType#Internal
 
   // Java Deserialization only runs constructor of superclass
   object Lifespan extends BasicTypes with HadoopTypes with SparkTypes
 
-  type BatchID = ElementaryType#ID
+  type BatchID = LeafType#ID
   type Batch = ConcurrentCache[Long, Cleanable]
   val uncleaned: ConcurrentMap[BatchID, Batch] = ConcurrentMap()
 

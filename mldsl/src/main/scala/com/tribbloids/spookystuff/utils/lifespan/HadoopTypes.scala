@@ -7,7 +7,7 @@ import org.apache.hadoop.util.ShutdownHookManager
 
 trait HadoopTypes {
 
-  trait HadoopType extends ElementaryType {}
+  trait HadoopType extends LeafType {}
 
   case class HadoopShutdown(priority: Int) extends HadoopType {
 

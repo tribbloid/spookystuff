@@ -9,18 +9,18 @@ abstract class LifespanType extends Serializable with Product {
   type ID
 }
 
-abstract class ElementaryType extends LifespanType {
+abstract class LeafType extends LifespanType {
 
   protected def _batchID(ctx: LifespanContext): ID
   protected def _registerHook(ctx: LifespanContext, fn: () => Unit): Unit
 
-  class Elementary(
+  class Internal(
       val nameOpt: Option[String] = None,
       val ctxFactory: () => LifespanContext = () => LifespanContext()
   ) extends LifespanInternal
       with BeforeAndAfterShipping {
 
-    def _type: ElementaryType = ElementaryType.this
+    def _type: LeafType = LeafType.this
 
     @transient lazy val batchID: ID = _type._batchID(ctx).asInstanceOf[ID]
 
@@ -46,8 +46,8 @@ abstract class ElementaryType extends LifespanType {
   def apply(
       nameOpt: Option[String] = None,
       ctxFactory: () => LifespanContext = () => LifespanContext()
-  ): BeforeAndAfterShipping.Container[Elementary] = {
-    val i = new Elementary(nameOpt, ctxFactory)
+  ): Internal#ForShipping = {
+    val i = new Internal(nameOpt, ctxFactory)
     i.forShipping
   }
 }

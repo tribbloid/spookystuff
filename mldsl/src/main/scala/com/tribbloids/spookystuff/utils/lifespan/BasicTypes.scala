@@ -1,6 +1,6 @@
 package com.tribbloids.spookystuff.utils.lifespan
 
-import com.tribbloids.spookystuff.utils.lifespan.Cleanable.{BatchID, Lifespan}
+import com.tribbloids.spookystuff.utils.lifespan.Cleanable.BatchID
 import com.tribbloids.spookystuff.utils.{CommonUtils, IDMixin}
 
 import scala.util.Try
@@ -10,7 +10,7 @@ import scala.util.Try
 // Without it Kryo deserializer will bypass the hook registration steps in init() when deserializing
 trait BasicTypes {
 
-  case object Task extends ElementaryType {
+  case object Task extends LeafType {
 
     case class ID(id: Long) extends IDMixin.ForProduct {
       override def toString: String = s"Task-$id"
@@ -27,7 +27,7 @@ trait BasicTypes {
 
   }
 
-  case object JVM extends ElementaryType {
+  case object JVM extends LeafType {
 
     val MAX_NUMBER_OF_SHUTDOWN_HOOKS: Int = CommonUtils.numLocalCores
 
@@ -51,16 +51,18 @@ trait BasicTypes {
 
   trait Compound extends LifespanInternal {
 
-    def delegates: List[ElementaryType]
+    def delegateTypes: List[LeafType]
 
-    @transient lazy val delegateInstances: List[Lifespan] = {
+    @transient lazy val delegateInstances: List[LeafType#Internal#ForShipping] = {
 
-      delegates.flatMap { v =>
+      delegateTypes.flatMap { v =>
         Try {
-          v(nameOpt, ctxFactory)
+          v.apply(nameOpt, ctxFactory)
         }.toOption
       }
     }
+
+    override def children: List[LeafType#Internal] = delegateInstances.map(v => v.value)
 
     override def _register: Seq[BatchID] = {
 
@@ -74,6 +76,6 @@ trait BasicTypes {
   ) extends Compound {
     def this() = this(None)
 
-    override lazy val delegates: List[ElementaryType] = List(Task, JVM)
+    override lazy val delegateTypes: List[LeafType] = List(Task, JVM)
   }
 }

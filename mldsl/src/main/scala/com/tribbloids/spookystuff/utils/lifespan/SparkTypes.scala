@@ -8,7 +8,7 @@ import org.apache.spark.sql.SparkSession
 
 trait SparkTypes {
 
-  trait SparkType extends ElementaryType with NOTSerializable {
+  trait SparkType extends LeafType with NOTSerializable {
 
     def sparkContext: SparkContext
 

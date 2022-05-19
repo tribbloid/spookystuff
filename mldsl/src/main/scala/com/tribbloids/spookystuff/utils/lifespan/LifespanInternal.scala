@@ -36,6 +36,15 @@ abstract class LifespanInternal extends BeforeAndAfterShipping with IDMixin {
   def ctxFactory: () => LifespanContext
   @transient lazy val ctx: LifespanContext = ctxFactory()
 
+  def children: List[LeafType#Internal] = Nil
+
+  @transient final lazy val leaf: Seq[LeafType#Internal] = this match {
+    case v: LeafType#Internal =>
+      Seq(v) ++ children
+    case _ =>
+      children
+  }
+
   protected def _register: Seq[BatchID]
   @transient final lazy val registeredID = _register
   final def _id: Seq[BatchID] = registeredID
