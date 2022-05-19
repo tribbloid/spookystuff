@@ -6,6 +6,7 @@ import com.tribbloids.spookystuff.utils.{CommonConst, CommonUtils}
 import org.openqa.selenium.{NoSuchSessionException, WebDriver}
 import org.slf4j.LoggerFactory
 
+import java.net.ConnectException
 import scala.language.implicitConversions
 
 object CleanWebDriver {
@@ -33,7 +34,18 @@ class CleanWebDriver(
         LoggerFactory.getLogger(this.getClass).error("Failed to close ... will quit directly", e)
     }
 
-    self.quit()
+    try {
+      CommonUtils.retry(CommonConst.driverClosingRetries) {
+        CommonUtils.withTimeout(CommonConst.driverClosingTimeout) {
+
+          self.quit()
+        }
+        Thread.sleep(1000)
+      }
+    } catch {
+      case e: ConnectException =>
+        LoggerFactory.getLogger(this.getClass).warn(s"${e.getMessage}, assuming already quit")
+    }
   }
 
   override def silentOnError(ee: Throwable): Boolean = {
