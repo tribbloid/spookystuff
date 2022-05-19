@@ -7,8 +7,8 @@ import com.tribbloids.spookystuff.extractors.{Alias, GenExtractor, GenResolved}
 import com.tribbloids.spookystuff.row.{SpookySchema, SquashedFetchedRow, TypedField}
 import com.tribbloids.spookystuff.session.DriverLike
 import com.tribbloids.spookystuff.testutils.{FunSpecx, RemoteDocsFixture, TestHelper}
-import com.tribbloids.spookystuff.utils.lifespan.Cleanable.Lifespan
 import com.tribbloids.spookystuff.utils.lifespan.Cleanable
+import com.tribbloids.spookystuff.utils.lifespan.Cleanable.Lifespan
 import com.tribbloids.spookystuff.utils.{CommonConst, CommonUtils, Retry, SparkUISupport}
 import org.apache.spark.SparkContext
 import org.apache.spark.sql.SQLContext
@@ -155,7 +155,7 @@ abstract class SpookyEnvFixture
 
   import com.tribbloids.spookystuff.utils.SpookyViews._
 
-  def _processNames: Seq[String] = Seq("phantomjs", "python")
+  def _processNames: Seq[String] = Seq("phantomjs", s"${PythonDriverFactory.python3} -iu")
   final lazy val conditions = {
     val _processNames = this._processNames
     val exitingPIDs = this.exitingPIDs
