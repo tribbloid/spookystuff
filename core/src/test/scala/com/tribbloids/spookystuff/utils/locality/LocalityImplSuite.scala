@@ -164,7 +164,8 @@ class LocalityImplSuite extends SpookyEnvFixture {
       v._1.head -> v._2.head
     }
 
-    println(joined.toDebugString)
+    joined.toDebugString.shouldBe(
+      )
 
     val zipped = joined.zipPartitions(rdd1, rdd2) { (itr1, itr2, itr3) =>
       val list1 = itr1.toList
@@ -179,7 +180,6 @@ class LocalityImplSuite extends SpookyEnvFixture {
     }
 
     val array = zipped.collect()
-    println(array.mkString("\n"))
     assert(array.count(v => v._1.sorted == v._3.sorted) == array.length)
     assert(array.count(v => v._2.sorted == v._4.sorted) < array.length)
     assert(array.count(v => v._1 == v._3) < array.length)
@@ -327,10 +327,10 @@ object LocalityImplSuite extends Assertions {
       }
       .persist()
 
-    val size = allZipped.count()
+    val size: Long = allZipped.count()
 
-    val array = allZipped_sorted.map(v => "" + v).collect()
-    array.foreach(println)
+    val array: Array[String] = allZipped_sorted.map(v => "" + v).collect()
+//    array.foreach(println)
 
     def assertLocality(): Unit = {
 

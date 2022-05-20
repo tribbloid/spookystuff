@@ -107,14 +107,15 @@ class JarHellDetection extends AnyFunSpec {
 
 //    msgs.foreach(println)
 
-    println(
-      s"""
-         |=== SUMMARY ===
-         |discovered:   ${pairs.size}
-         |conflicting:  ${conflicting.size}
-         |risky:        ${risky.size}
-         |""".stripMargin
-    )
+//    println(
+//      s"""
+//         |=== SUMMARY ===
+//         |discovered:   ${pairs.size}
+//         |conflicting:  ${conflicting.size}
+//         |risky:        ${risky.size}
+//         |""".stripMargin
+//    )
+    // TODO: need assertion
   }
 
   it("overlapping jars") {
