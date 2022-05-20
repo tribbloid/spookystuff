@@ -34,17 +34,12 @@ class CleanWebDriver(
         LoggerFactory.getLogger(this.getClass).error("Failed to close ... will quit directly", e)
     }
 
-    try {
-      CommonUtils.retry(CommonConst.driverClosingRetries) {
-        CommonUtils.withTimeout(CommonConst.driverClosingTimeout) {
+    CommonUtils.retry(CommonConst.driverClosingRetries) {
+      CommonUtils.withTimeout(CommonConst.driverClosingTimeout) {
 
-          self.quit()
-        }
-        Thread.sleep(1000)
+        self.quit()
       }
-    } catch {
-      case e: ConnectException =>
-        LoggerFactory.getLogger(this.getClass).warn(s"${e.getMessage}, assuming already quit")
+      Thread.sleep(1000)
     }
   }
 
