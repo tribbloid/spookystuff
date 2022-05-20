@@ -109,11 +109,11 @@ object DriverFactory {
     override def dispatch(session: Session): D = {
 
       val ls = driverLifespan(session)
-      val taskLocalOpt = taskLocals.get(ls._id)
+      val taskLocalOpt = taskLocals.get(ls.registeredIDs)
 
       def newDriver: D = {
         val fresh = delegate.create(session)
-        taskLocals.put(ls._id, new DriverStatus(fresh))
+        taskLocals.put(ls.registeredIDs, new DriverStatus(fresh))
         fresh
       }
 
@@ -146,7 +146,7 @@ object DriverFactory {
     override def release(session: Session): Unit = {
 
       val ls = driverLifespan(session)
-      val statusOpt = taskLocals.get(ls._id)
+      val statusOpt = taskLocals.get(ls.registeredIDs)
       statusOpt.foreach { status =>
         status.isBusy = false
       }

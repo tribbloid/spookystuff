@@ -92,13 +92,6 @@ trait Cleanable extends Closeable {
 
   import Cleanable._
 
-  {
-    logPrefixed("Created")
-    batches.foreach { inBatch =>
-      inBatch += this.trackingNumber -> this
-    }
-  }
-
   @transient object StateLock
 
   /**
@@ -108,6 +101,13 @@ trait Cleanable extends Closeable {
   def _lifespan: Lifespan = Lifespan.JVM()
   final val lifespan = _lifespan
   final val trackingNumber = System.identityHashCode(this).toLong // can be int value
+
+  {
+    logPrefixed("Created")
+    batches.foreach { inBatch =>
+      inBatch += this.trackingNumber -> this
+    }
+  }
 
   //each can only be cleaned once
   @volatile protected var _isCleaned: Boolean = false
