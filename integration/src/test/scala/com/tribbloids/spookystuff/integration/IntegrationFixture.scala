@@ -9,6 +9,7 @@ import com.tribbloids.spookystuff.testutils.{LocalURIDocsFixture, TestHelper}
 import com.tribbloids.spookystuff.utils.{CommonConst, CommonUtils}
 import com.tribbloids.spookystuff.web.conf.{Web, WebDriverFactory}
 import com.tribbloids.spookystuff.web.session.CleanWebDriver
+import org.slf4j.LoggerFactory
 
 import java.util.Date
 import scala.concurrent.duration
@@ -69,7 +70,7 @@ abstract class IntegrationFixture extends SpookyEnvFixture with LocalURIDocsFixt
   def assertBeforeCache(): Unit = {
     val metrics: SpookyMetrics = spooky.spookyMetrics
     val metricsJSON: String = metrics.toNestedMap.toJSON()
-    println(metricsJSON)
+    LoggerFactory.getLogger(this.getClass).info(metricsJSON)
 
     val pagesFetched = metrics.pagesFetched.value
     remotePagesFetched = metrics.pagesFetchedFromRemote.value
@@ -86,7 +87,7 @@ abstract class IntegrationFixture extends SpookyEnvFixture with LocalURIDocsFixt
   def assertAfterCache(): Unit = {
     val metrics: SpookyMetrics = spooky.spookyMetrics
     val metricsJSON: String = metrics.toNestedMap.toJSON()
-    println(metricsJSON)
+    LoggerFactory.getLogger(this.getClass).info(metricsJSON)
 
     val pagesFetched = metrics.pagesFetched.value
     assert(pagesFetched >= numPages)

@@ -28,7 +28,10 @@ trait BeforeAndAfterShipping extends Serializable {
 
 object BeforeAndAfterShipping {
 
-  def logMsg(v: String): Unit = LoggerFactory.getLogger(this.getClass).debug(v: String)
+  @inline
+  def logMsg(v: String): Unit = {
+//    LoggerFactory.getLogger(this.getClass).debug(v: String)
+  }
 
   object Container {
 
