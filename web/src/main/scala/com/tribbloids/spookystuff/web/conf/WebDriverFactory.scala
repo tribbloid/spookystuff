@@ -94,10 +94,10 @@ object WebDriverFactory {
       new PhantomJSDriverService.Builder()
         .withLogFile(new File("target/logs/phantomjsdriver.log"))
 //        .withLogFile(new File("/dev/null"))
-        .usingCommandLineArguments(Array("--webdriver-loglevel=ERROR"))
+        .usingCommandLineArguments(Array("--webdriver-loglevel=WARN"))
 //        .usingCommandLineArguments(Array.empty)
-//        .usingGhostDriverCommandLineArguments(Array("service_log_path", "/tmp/ghostdriver.log"))
-        .usingGhostDriverCommandLineArguments(Array.empty)
+        .usingGhostDriverCommandLineArguments(Array("service_log_path=target/logs/ghostdriver.log"))
+//        .usingGhostDriverCommandLineArguments(Array.empty)
     }
   }
 

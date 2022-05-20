@@ -174,8 +174,11 @@ abstract class SpookyEnvFixture
 
     val spooky = this.spooky
     val conditions = this.conditions
-    sc.runEverywhere() { _ =>
-      SpookyEnvFixture.shouldBeClean(spooky, conditions)
+
+    CommonUtils.retry(3, 1000) {
+      sc.runEverywhere() { _ =>
+        SpookyEnvFixture.shouldBeClean(spooky, conditions)
+      }
     }
 
     SpookyEnvFixture.firstRun = false
