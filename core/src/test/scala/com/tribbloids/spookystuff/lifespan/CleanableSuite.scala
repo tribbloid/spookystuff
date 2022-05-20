@@ -67,7 +67,7 @@ class CleanableSuite extends SpookyEnvFixture {
 
     val rdd = sc.uuidSeed().mapOncePerCore { _ =>
       val lifespan = Lifespan.Task()
-      val oldID = lifespan.registeredID.head.asInstanceOf[Lifespan.Task.ID].id
+      val oldID = lifespan.registeredIDs.head.asInstanceOf[Lifespan.Task.ID].id
       lifespan -> oldID
     }
 
@@ -78,7 +78,7 @@ class CleanableSuite extends SpookyEnvFixture {
     val old_new = repartitioned.map { tuple =>
       val v = tuple._1
       val newID = TaskContext.get().taskAttemptId()
-      Predef.assert(v.registeredID.head.asInstanceOf[Lifespan.Task.ID].id == newID)
+      Predef.assert(v.registeredIDs.head.asInstanceOf[Lifespan.Task.ID].id == newID)
       tuple._2 -> newID
     }.collectPerPartition
 
@@ -90,7 +90,7 @@ class CleanableSuite extends SpookyEnvFixture {
 
     val rdd = sc.uuidSeed().mapOncePerWorker { _ =>
       val lifespan = Lifespan.TaskOrJVM()
-      val oldID = lifespan.registeredID.head.asInstanceOf[Lifespan.Task.ID].id
+      val oldID = lifespan.registeredIDs.head.asInstanceOf[Lifespan.Task.ID].id
       lifespan -> oldID
     }
 
@@ -99,7 +99,7 @@ class CleanableSuite extends SpookyEnvFixture {
     collected
       .foreach { tuple =>
         val v = tuple._1
-        Predef.assert(v.registeredID.head.isInstanceOf[Lifespan.JVM.ID])
+        Predef.assert(v.registeredIDs.head.isInstanceOf[Lifespan.JVM.ID])
       }
   }
 
@@ -108,7 +108,7 @@ class CleanableSuite extends SpookyEnvFixture {
 
     val rdd = sc.uuidSeed().mapOncePerCore { _ =>
       val lifespan = Lifespan.Task()
-      val oldID = lifespan.registeredID.head.asInstanceOf[Lifespan.Task.ID].id
+      val oldID = lifespan.registeredIDs.head.asInstanceOf[Lifespan.Task.ID].id
       lifespan -> oldID
     }
 
@@ -121,7 +121,7 @@ class CleanableSuite extends SpookyEnvFixture {
       val newID = TaskContext.get().taskAttemptId()
       //          val newID2 = v._id
       val newID3 = CommonUtils.withTimeout(10.seconds) {
-        val result = v.registeredID.head
+        val result = v.registeredIDs.head
         //            Predef.assert(v._id == newID2)
         result
       }

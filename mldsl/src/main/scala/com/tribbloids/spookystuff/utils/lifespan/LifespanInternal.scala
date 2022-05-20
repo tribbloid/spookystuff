@@ -1,7 +1,7 @@
 package com.tribbloids.spookystuff.utils.lifespan
 
 import com.tribbloids.spookystuff.utils.IDMixin
-import com.tribbloids.spookystuff.utils.lifespan.Cleanable.BatchID
+import com.tribbloids.spookystuff.utils.lifespan.Cleanable.{Batch, BatchID}
 import com.tribbloids.spookystuff.utils.serialization.BeforeAndAfterShipping
 
 import scala.util.Try
@@ -26,7 +26,7 @@ abstract class LifespanInternal extends BeforeAndAfterShipping with IDMixin {
 
   protected def doInit(): Unit = {
     ctx
-    registeredID
+    registeredBatches
   }
 
   def requireUsable(): Unit = {
@@ -45,13 +45,14 @@ abstract class LifespanInternal extends BeforeAndAfterShipping with IDMixin {
       children
   }
 
-  protected def _register: Seq[BatchID]
-  @transient final lazy val registeredID = _register
-  final def _id: Seq[BatchID] = registeredID
+  protected def _registerBatches_CleanSweepHooks: Seq[(BatchID, Batch)]
+  @transient final lazy val registeredBatches = _registerBatches_CleanSweepHooks
+  final lazy val registeredIDs: Seq[BatchID] = registeredBatches.map(v => v._1)
+  final protected def _id: Seq[BatchID] = registeredIDs
 
   def nameOpt: Option[String]
   override def toString: String = {
-    val idStr = Try(registeredID.mkString("/")).getOrElse("[Error]")
+    val idStr = Try(registeredIDs.mkString("/")).getOrElse("[Error]")
     (nameOpt.toSeq ++ Seq(idStr)).mkString(":")
   }
 }

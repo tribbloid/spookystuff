@@ -17,15 +17,15 @@ object Cleanable {
   object Lifespan extends BasicTypes with HadoopTypes with SparkTypes
 
   type BatchID = LeafType#ID
-  type Batch = ConcurrentCache[Long, Cleanable]
-  val uncleaned: ConcurrentMap[BatchID, Batch] = ConcurrentMap()
+  type Batch = ConcurrentMap[Long, Cleanable] // trackingNumber -> instance
+  lazy val uncleaned: ConcurrentMap[BatchID, Batch] = ConcurrentMap()
 
   trait Selection {
 
     def ids: Seq[BatchID]
 
-    final def batches: Seq[Batch] = ids.map { id =>
-      Select(id).getOrCreate
+    final def batches: Seq[Batch] = ids.flatMap { id =>
+      Select(id).get
     }
 
     def filter(condition: Cleanable => Boolean = _ => true): Seq[Cleanable] = {
@@ -47,14 +47,15 @@ object Cleanable {
     def cleanSweep(condition: Cleanable => Boolean = _ => true): Unit = {
 
       ids.foreach { id =>
-        val batch = Select(id).getOrCreate
-        val filtered = batch.values.filter(condition)
+        Select(id).get.foreach { batch =>
+          val filtered = batch.values.filter(condition)
 
-        filtered
-          .foreach { instance =>
-            instance.tryClean()
-          }
-        if (batch.isEmpty) uncleaned.remove(id)
+          filtered
+            .foreach { instance =>
+              instance.tryClean()
+            }
+          if (batch.isEmpty) uncleaned.remove(id)
+        }
       }
     }
   }
@@ -67,6 +68,9 @@ object Cleanable {
       exe()
     }
 
+    def get: Option[Batch] = uncleaned.get(id)
+
+    @deprecated // creating a batch without registering clean sweep hook is illegal
     def getOrCreate: Batch = getOrExecute { () =>
       ConcurrentMap()
     }
@@ -88,7 +92,14 @@ trait Cleanable extends Closeable {
 
   import Cleanable._
 
-//  @transient object CleanStateLock
+  {
+    logPrefixed("Created")
+    batches.foreach { inBatch =>
+      inBatch += this.trackingNumber -> this
+    }
+  }
+
+  @transient object StateLock
 
   /**
     * taskOrThreadOnCreation is incorrect in withDeadline or threads not created by Spark
@@ -100,25 +111,17 @@ trait Cleanable extends Closeable {
 
   //each can only be cleaned once
   @volatile protected var _isCleaned: Boolean = false
-  def isCleaned: Boolean = {
+  def isCleaned: Boolean = StateLock.synchronized {
     _isCleaned
   }
 
   @volatile var stacktraceAtCleaning: Option[Array[StackTraceElement]] = None
 
-  @transient lazy val uncleanedInBatches: Seq[Batch] = {
+  @transient lazy val batches: Seq[Batch] = {
     // This weird implementation is to mitigate thread-unsafe competition:
     // 2 empty collections being inserted simultaneously
-    lifespan.registeredID.map { id =>
-      Cleanable.Select(id).getOrCreate
-    }
-
-  }
-
-  {
-    logPrefixed("Created")
-    uncleanedInBatches.foreach { inBatch =>
-      inBatch += this.trackingNumber -> this
+    lifespan.registeredBatches.map { v =>
+      v._2
     }
   }
 
@@ -148,14 +151,14 @@ trait Cleanable extends Closeable {
     )
   }
 
-  lazy val doCleanOnce: Unit = {
+  lazy val doCleanOnce: Unit = StateLock.synchronized {
 
     stacktraceAtCleaning = Some(Thread.currentThread().getStackTrace)
     try {
       cleanImpl()
       _isCleaned = true
 
-      uncleanedInBatches.foreach { inBatch =>
+      batches.foreach { inBatch =>
         inBatch -= this.trackingNumber
       }
     } catch {

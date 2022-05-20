@@ -17,7 +17,7 @@ package com.tribbloids.spookystuff.conf
 
 import com.tribbloids.spookystuff.session.{DriverLike, Session}
 import com.tribbloids.spookystuff.utils.CachingUtils.ConcurrentMap
-import com.tribbloids.spookystuff.utils.lifespan.Cleanable.Lifespan
+import com.tribbloids.spookystuff.utils.lifespan.Cleanable.{BatchID, Lifespan}
 import com.tribbloids.spookystuff.utils.lifespan.Cleanable
 import com.tribbloids.spookystuff.{DriverStatus, SpookyContext}
 import org.apache.spark.TaskContext
@@ -102,18 +102,18 @@ object DriverFactory {
   ) extends DriverFactory[D] {
 
     //taskOrThreadIDs -> (driver, busy)
-    @transient lazy val taskLocals: ConcurrentMap[Seq[Any], DriverStatus[D]] = {
+    @transient lazy val taskLocals: ConcurrentMap[Seq[BatchID], DriverStatus[D]] = {
       ConcurrentMap()
     }
 
     override def dispatch(session: Session): D = {
 
       val ls = driverLifespan(session)
-      val taskLocalOpt = taskLocals.get(ls.registeredID)
+      val taskLocalOpt = taskLocals.get(ls._id)
 
       def newDriver: D = {
         val fresh = delegate.create(session)
-        taskLocals.put(ls.registeredID, new DriverStatus(fresh))
+        taskLocals.put(ls._id, new DriverStatus(fresh))
         fresh
       }
 
@@ -146,7 +146,7 @@ object DriverFactory {
     override def release(session: Session): Unit = {
 
       val ls = driverLifespan(session)
-      val statusOpt = taskLocals.get(ls.registeredID)
+      val statusOpt = taskLocals.get(ls._id)
       statusOpt.foreach { status =>
         status.isBusy = false
       }
