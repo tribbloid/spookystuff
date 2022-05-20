@@ -47,7 +47,7 @@ abstract class LifespanInternal extends BeforeAndAfterShipping with IDMixin {
 
   protected def _registerBatches_CleanSweepHooks: Seq[(BatchID, Batch)]
   @transient final lazy val registeredBatches = _registerBatches_CleanSweepHooks
-  final lazy val registeredIDs: Seq[BatchID] = registeredBatches.map(v => v._1)
+  @transient final lazy val registeredIDs: Seq[BatchID] = registeredBatches.map(v => v._1)
   final protected def _id: Seq[BatchID] = registeredIDs
 
   def nameOpt: Option[String]
