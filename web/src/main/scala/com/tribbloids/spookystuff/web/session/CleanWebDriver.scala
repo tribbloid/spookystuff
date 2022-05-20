@@ -6,7 +6,6 @@ import com.tribbloids.spookystuff.utils.{CommonConst, CommonUtils}
 import org.openqa.selenium.{NoSuchSessionException, WebDriver}
 import org.slf4j.LoggerFactory
 
-import java.net.ConnectException
 import scala.language.implicitConversions
 
 object CleanWebDriver {

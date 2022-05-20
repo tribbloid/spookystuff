@@ -2,7 +2,6 @@ package com.tribbloids.spookystuff.utils.serialization
 
 import com.esotericsoftware.kryo.io.{Input, Output}
 import com.esotericsoftware.kryo.{Kryo, KryoSerializable}
-import org.slf4j.LoggerFactory
 
 import java.io.{InputStream, ObjectInputStream, ObjectOutputStream}
 
