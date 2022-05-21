@@ -50,11 +50,11 @@ class ExploreDirectoriesIT extends IntegrationFixture {
     val formatted = result.toJSON.collect().mkString("\n")
     formatted.shouldBe(
       s"""
-         |{"_":"$resourcePath","uri":"file:${_resourcePath}","leaf":"table.csv","fullPath":"file:${_resourcePath}/table.csv"}
-         |{"_":"$resourcePath","uri":"file:${_resourcePath}","leaf":"hivetable.csv","fullPath":"file:${_resourcePath}/hivetable.csv"}
-         |{"_":"$resourcePath","uri":"file:${_resourcePath}/dir","leaf":"Test.pdf","fullPath":"file:${_resourcePath}/dir/Test.pdf"}
-         |{"_":"$resourcePath","uri":"file:${_resourcePath}/dir/dir","leaf":"pom.xml","fullPath":"file:${_resourcePath}/dir/dir/pom.xml"}
-         |{"_":"$resourcePath","uri":"file:${_resourcePath}/dir/dir/dir","leaf":"tribbloid.json","fullPath":"file:${_resourcePath}/dir/dir/dir/tribbloid.json"}
+         |{"_":"$resourcePath","uri":"file://${_resourcePath}","leaf":"table.csv","fullPath":"file://${_resourcePath}/table.csv"}
+         |{"_":"$resourcePath","uri":"file://${_resourcePath}","leaf":"hivetable.csv","fullPath":"file://${_resourcePath}/hivetable.csv"}
+         |{"_":"$resourcePath","uri":"file://${_resourcePath}/dir","leaf":"Test.pdf","fullPath":"file://${_resourcePath}/dir/Test.pdf"}
+         |{"_":"$resourcePath","uri":"file://${_resourcePath}/dir/dir","leaf":"pom.xml","fullPath":"file://${_resourcePath}/dir/dir/pom.xml"}
+         |{"_":"$resourcePath","uri":"file://${_resourcePath}/dir/dir/dir","leaf":"tribbloid.json","fullPath":"file://${_resourcePath}/dir/dir/dir/tribbloid.json"}
       """.stripMargin,
       sort = true
     )
