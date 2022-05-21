@@ -16,7 +16,7 @@ class TestPageFromFile extends TestPageFromHttp with LocalPathDocsFixture {
     assert(page.charset.map(_.toLowerCase).get == "utf-8")
     assert(page.findAll("title").texts.isEmpty)
 
-    assert(page.code.get.contains("<URI>file:/tmp/spookystuff/resources/testutils/files/Wikipedia.html</URI>"))
+    assert(page.code.get.contains("<URI>file:///tmp/spookystuff/resources/testutils/files/Wikipedia.html</URI>"))
 
     page.autoSave(spooky, overwrite = true)
 
