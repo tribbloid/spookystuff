@@ -1,6 +1,7 @@
 package com.tribbloids.spookystuff.utils
 
 import com.tribbloids.spookystuff.testutils.FunSpecx
+import com.tribbloids.spookystuff.utils.CachingUtils.ConcurrentCache
 import org.scalatest.BeforeAndAfterEach
 
 import scala.concurrent.duration.Duration
@@ -19,14 +20,14 @@ class CachingUtilsSuite extends FunSpecx with BeforeAndAfterEach {
     count = 0
   }
 
-  def createHasFinalize(): Unit = {
-    HasFinalize()
+  def createData(): Unit = {
+    CacheTestData()
   }
 
   describe("spike") {
     it("exit from a subroutine allows all referenced objected to be GC'ed") {
 
-      createHasFinalize()
+      createData()
 
       //      Thread.sleep(10000)
       System.gc()
@@ -39,7 +40,7 @@ class CachingUtilsSuite extends FunSpecx with BeforeAndAfterEach {
 
       val f: Future[Unit] = Future {
 
-        val v1 = HasFinalize()
+        val v1 = CacheTestData()
       }
       Await.result(f, Duration.Inf)
 
@@ -53,37 +54,52 @@ class CachingUtilsSuite extends FunSpecx with BeforeAndAfterEach {
 
   describe("ConcurrentCache") {
 
-    it("has weak reference to values, allowing them to be GC'ed") {
+    describe("should remove value on garbage collection") {
 
-      val cache = CachingUtils.ConcurrentCache[String, AnyRef]()
+      it("if the value is de-referenced") {
+        val cache = ConcurrentCache[String, CacheTestData]()
 
-      val f: Future[Unit] = Future {
+        var myVal = CacheTestData("myString")
 
-        val v1 = HasFinalize()
+        cache.put("a", myVal)
+        myVal = null
 
-        cache += "a" -> v1
+        System.gc()
+        Thread.sleep(10) //delay to allow gc
+
+        assert(count == 1)
       }
-      Await.result(f, Duration.Inf)
 
-      System.gc()
-      Thread.sleep(2000)
+      it("if the value is not in scope") {
 
-      assert(count == 1)
+        val cache = CachingUtils.ConcurrentCache[String, CacheTestData]()
+
+        val f: Future[Unit] = Future {
+
+          val v1 = CacheTestData()
+
+          cache += "a" -> v1
+        }
+        Await.result(f, Duration.Inf)
+
+        System.gc()
+        Thread.sleep(2000)
+
+        assert(count == 1)
+      }
     }
   }
 }
 
 object CachingUtilsSuite {
 
-  @volatile var count = 0
+  @volatile var count: Int = 0
 
-  case class HasFinalize() {
-
+  case class CacheTestData(s: String = "") {
+    // called when object is garbage collected, which allows verification of gc behaviour
     override def finalize(): Unit = {
-
+      super.finalize()
       count += 1
-//      println("cleaned")
     }
   }
-
 }

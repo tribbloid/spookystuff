@@ -20,19 +20,19 @@ class HDFSResolverSuite extends AbstractURIResolverSuite {
     () => Some(UserGroupInformation.createUserForTesting("dummy", Array.empty))
   )
 
-  @transient override lazy val schemaPrefix = "file:"
+  @transient override lazy val schemaPrefix = "file://"
 
   val nonExistingSchemePath = "file:/non-existing/not-a-file.txt"
   val nonExistingScheme2Path = "file:///non-existing/not-a-file.txt"
 
   it("can convert path with schema of non-existing file") {
     val abs = resolver.toAbsolute(nonExistingSchemePath)
-    assert(abs == nonExistingSchemePath)
+    assert(abs == nonExistingScheme2Path)
   }
 
   it("can convert path with schema// of non-existing file") {
     val abs = resolver.toAbsolute(nonExistingScheme2Path)
-    assert(abs == nonExistingSchemePath)
+    assert(abs == nonExistingScheme2Path)
   }
 
   it("can override login UGI") {
@@ -42,7 +42,7 @@ class HDFSResolverSuite extends AbstractURIResolverSuite {
     user.shouldBe("dummy")
   }
 
-  it("... on executors") {
+  it(" ... on executors") {
     val resolver = this.resolverWithUGI
     val HTML_URL = this.HTML_URL
     val users = sc
@@ -58,5 +58,4 @@ class HDFSResolverSuite extends AbstractURIResolverSuite {
       .mkString("\n")
     users.shouldBe("dummy")
   }
-
 }

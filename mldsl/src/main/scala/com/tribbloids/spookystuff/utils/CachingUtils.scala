@@ -8,11 +8,12 @@ object CachingUtils {
 
   import scala.collection.JavaConverters._
 
-  // not concurrent, discarded
-  //  type MapCache[K, V] = mutable.WeakHashMap[K, V]
-  //  def MapCache[K, V]() = new mutable.WeakHashMap[K, V]()
-
   /**
+    * A cache designed for multithreaded usage in cases where values (not keys) contained in
+    * this map will not necessarily be cleanly removed. This map uses weak references for contained values
+    * (not keys) in order to ensure that the existance of a reference to that object in this cache
+    * will not prevent the garbage collection of the contained object.
+    *
     * <p><b>Warning:</b> DO NOT use .weakKeys()!. Otherwise, the resulting map will use identity ({@code ==})
     * comparison to determine equality of keys, which is a technical violation of the {@link Map}
     * specification, and may not be what you expect.
@@ -27,7 +28,7 @@ object CachingUtils {
     val base = CacheBuilder
       .newBuilder()
       .concurrencyLevel(CommonUtils.numLocalCores)
-      .weakValues()
+      .weakValues() // This ensures that being present in this map will not prevent garbage collection/finalization
       .build[Object, Object]()
       .asMap()
 

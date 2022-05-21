@@ -60,7 +60,7 @@ abstract class AbstractURIResolverSuite extends FunSpecx with LocalPathDocsFixtu
   lazy val nonExistingFile: TempResource = temp \ "not-a-file.txt"
 
   lazy val dir: TempResource = temp \ "dir"
-  lazy val nonExistingSubFile: TempResource = dir \ " not-a-file.txt"
+  lazy val nonExistingSubFile: TempResource = dir \ "not-a-file.txt"
 
   object Absolute {
 
@@ -68,7 +68,7 @@ abstract class AbstractURIResolverSuite extends FunSpecx with LocalPathDocsFixtu
       resolver,
       "/temp/non-existing"
     )
-    lazy val nonExistingSubFile: TempResource = nonExistingDir \ " not-a-file.txt"
+    lazy val nonExistingSubFile: TempResource = nonExistingDir \ "not-a-file.txt"
 
   }
   val sc: SparkContext = TestHelper.TestSC
@@ -121,8 +121,6 @@ abstract class AbstractURIResolverSuite extends FunSpecx with LocalPathDocsFixtu
       }
     )
   }
-
-  describe("Session") {}
 
   describe("input") {
 
@@ -178,24 +176,6 @@ abstract class AbstractURIResolverSuite extends FunSpecx with LocalPathDocsFixtu
   }
 
   describe("output") {
-
-//    it("can get metadata concurrently") {
-//
-//      val rdd = sc.parallelize(1 to 100, 10)
-//
-//      val resolver: URIResolver = this.resolver
-//      val HTML_URL = this.HTML_URL
-//      val mdRDD = rdd.map { i =>
-//        val md = resolver.output(HTML_URL, WriteMode.CreateOnly) { _.metadata.all }
-//        md
-//      }
-//      val mds = mdRDD.collect().map {
-//        _.asMap.filterNot(_._1.contains("Space")).map(identity)
-//      }
-//
-//      AssertSerializable(mds.head)
-//      assert(mds.head == mds.last)
-//    }
 
     it("can automatically create missing directory") {
 
@@ -270,80 +250,6 @@ abstract class AbstractURIResolverSuite extends FunSpecx with LocalPathDocsFixtu
     }
 
   }
-
-//  describe("Snapshot") {
-//
-//    def testConcurrentIO(
-//        url: String,
-//        groundTruth: Seq[Byte]
-//    ): Unit = {
-//
-//      try {
-//        val rdd = sc.parallelize(1 to numConcurrentWrites, numConcurrentWrites)
-//
-//        val resolver: URIResolver = this.resolver
-//
-//        rdd.foreach { i =>
-//          val snapshot = Snapshot(resolver.Execution(url))
-//          snapshot.during { session =>
-//            val bytes: Array[Byte] = session.input { in =>
-//              if (in.isExisting) IOUtils.toByteArray(in.stream)
-//              else Array.empty
-//            }
-//
-//            val lastByte: Byte = bytes.toSeq.lastOption.getOrElse(0)
-//
-//            val withExtra = bytes :+ (lastByte + 1).byteValue()
-//
-////            println(s"write ${bytes.length} => ${withExtra.length}")
-//
-//            session.output(WriteMode.Overwrite) { out =>
-//              val stream = out.stream
-//              stream.write(withExtra)
-//            }
-//          }
-//        }
-//
-//        Predef.assert(!resolver.isAlreadyExisting(url + ".lock")())
-//
-//        val bytes = resolver
-//          .input(url) { in =>
-//            IOUtils.toByteArray(in.stream)
-//          }
-//          .toSeq
-//
-//        assert(
-//          s"${bytes.size} elements:\n ${bytes.mkString(" ")}" ===
-//            s"${groundTruth.size} elements:\n ${groundTruth.mkString(" ")}"
-//        )
-//        assert(bytes.length === groundTruth.size)
-//
-//      } finally {
-//
-//        resolver.Execution(url).delete(false)
-//      }
-//    }
-//
-//    it("can guarantee sequential read and write on existing file") {
-//      existingFile.requireEmptyFile {
-//
-//        existingFile.session.output(WriteMode.Overwrite) { out =>
-//          out.stream.write(Array(10.byteValue()))
-//        }
-//
-//        val groundTruth = (10 to numConcurrentWrites + 10).map(_.byteValue())
-//        testConcurrentIO(existingFile.session.absolutePathStr, groundTruth)
-//      }
-//    }
-//
-//    it("can guarantee sequential read and write on non-existing file") {
-//      nonExistingFile.requireVoid {
-//
-//        val groundTruth = (1 to numConcurrentWrites).map(_.byteValue())
-//        testConcurrentIO(nonExistingFile.session.absolutePathStr, groundTruth)
-//      }
-//    }
-//  }
 
   it("move 1 file to the same target should be sequential") {
 

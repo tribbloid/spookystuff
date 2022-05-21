@@ -7,6 +7,7 @@ import org.apache.hadoop.fs.permission.FsPermission
 import org.apache.hadoop.security.UserGroupInformation
 
 import java.io.{InputStream, OutputStream}
+import java.net.URI
 import java.security.PrivilegedAction
 import java.util
 import scala.collection.mutable.ArrayBuffer
@@ -61,17 +62,14 @@ case class HDFSResolver(
 
     override lazy val absolutePathStr: String = doAsUGI {
 
-      if (path.isAbsolute) {
-        if (path.isAbsoluteAndSchemeAuthorityNull)
-          "file:" + path.toString
-        else
-          path.toString
-      } else {
-        val root = fc.getWorkingDirectory.toString.stripSuffix("/")
-        val combined = new Path(root + "/" + path.toString)
+      val defaultURI = fc.getDefaultFileSystem.getUri
+      val qualified = path.makeQualified(defaultURI, fc.getWorkingDirectory)
 
-        combined.toString
-      }
+      val uri: URI = qualified.toUri
+      val newAuthority = Option(uri.getAuthority).getOrElse("")
+      val withNewAuthority = new URI(uri.getScheme, newAuthority, uri.getPath, uri.getFragment)
+
+      withNewAuthority.toString
     }
 
     trait HDFSResource[T] extends Resource[T] {
