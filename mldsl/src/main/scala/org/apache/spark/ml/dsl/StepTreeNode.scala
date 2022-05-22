@@ -1,14 +1,15 @@
 package org.apache.spark.ml.dsl
 
+import com.tribbloids.spookystuff.tree.TreeView
 import org.apache.spark.ml.dsl.utils.messaging.{MessageAPI_<<, MessageRelay}
 import org.apache.spark.sql.catalyst.trees.TreeNode
 import org.apache.spark.sql.utils.DataTypeRelay
 
-trait StepTreeNode[BaseType <: StepTreeNode[BaseType]] extends TreeNode[StepTreeNode[BaseType]] {
+trait StepTreeNode[BaseType <: StepTreeNode[BaseType]] extends TreeView[StepTreeNode[BaseType]] {
 
   val self: StepLike
 
-  override def verboseString: String = this.simpleString + "\n========= PATHS =========\n" + mergedPath.mkString("\n")
+  override protected def argStrings: Seq[String] = mergedPath
 
   lazy val paths: Seq[Seq[String]] = {
     val rootPath = Seq(self.name)

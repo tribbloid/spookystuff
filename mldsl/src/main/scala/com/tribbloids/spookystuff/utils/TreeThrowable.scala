@@ -1,14 +1,14 @@
 package com.tribbloids.spookystuff.utils
 
+import com.tribbloids.spookystuff.tree.TreeView
 import com.tribbloids.spookystuff.utils.TreeThrowable.ExceptionWithCauses
 import org.apache.spark.ml.dsl.utils.DSLUtils
-import org.apache.spark.sql.catalyst.trees.TreeNode
 
 import scala.util.{Failure, Success, Try}
 
 object TreeThrowable {
 
-  case class TreeNodeView(self: Throwable) extends TreeNode[TreeNodeView] {
+  case class TreeNodeView(self: Throwable) extends TreeView[TreeNodeView] {
     override def children: Seq[TreeNodeView] = {
       val result = self match {
         case v: TreeThrowable =>
@@ -31,9 +31,9 @@ object TreeThrowable {
       }
     }
 
-    override def verboseString: String =
-      simpleString + "\n" +
-        DSLUtils.stackTracesShowStr(self.getStackTrace)
+    override protected lazy val argStrings: Seq[String] = {
+      DSLUtils.stackTracesShowStr(self.getStackTrace).split("\n")
+    }
   }
 
   /**
@@ -119,7 +119,7 @@ object TreeThrowable {
     }
 
     if (results.nonEmpty) {
-      val es = results.collect {
+      val es = results.flatMap(_.toOption).collect {
         case Failure(e) => e
       }
       throw agg(extra.flatMap(v => Option(v)) ++ es)
@@ -129,14 +129,14 @@ object TreeThrowable {
   }
 
   /**
-    * @param upliftUnary not recommended to set to false, should use Wrapper() directly for type safety
+    * @param foldUnary not recommended to set to false, should use Wrapper() directly for type safety
     * @return
     */
-  def combine(causes: Seq[Throwable], upliftUnary: Boolean = true): Throwable = {
+  def combine(causes: Seq[Throwable], foldUnary: Boolean = true): Throwable = {
     val _causes = causes.distinct.filterNot(_.isInstanceOf[Undefined])
-    if (_causes.isEmpty) Undefined
+    if (_causes.isEmpty) return Undefined
 
-    if (_causes.size == 1 && upliftUnary) {
+    if (_causes.size == 1 && foldUnary) {
       _causes.head
     } else {
       ExceptionWithCauses(causes = _causes)
@@ -146,14 +146,14 @@ object TreeThrowable {
   /**
     * same as [[combine]], except that any [[Undefined]] detected will cause the output to be also [[Undefined]]
     * indicating that a lack of trials is the ultimate cause and can be situationally ignored
-    * @param causes
-    * @param upliftUnary not recommended to set to false, should use Wrapper() directly for type safety
+    * @param causes all direct causes of this throwable
+    * @param foldUnary not recommended to set to false, should use Wrapper() directly for type safety
     * @return
     */
-  def monadicCombine(causes: Seq[Throwable], upliftUnary: Boolean = true): Throwable = {
+  def parallel(causes: Seq[Throwable], foldUnary: Boolean = true): Throwable = {
     val undefined = causes.find(_.isInstanceOf[Undefined])
     undefined.getOrElse(
-      combine(causes, upliftUnary)
+      combine(causes, foldUnary)
     )
   }
 

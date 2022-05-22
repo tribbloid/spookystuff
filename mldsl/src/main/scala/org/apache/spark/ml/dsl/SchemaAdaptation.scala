@@ -5,7 +5,7 @@ package org.apache.spark.ml.dsl
   */
 sealed abstract class SchemaAdaptation
 
-object SchemaAdaptations {
+object SchemaAdaptation {
 
   //disable schema validations ( e.g. Transformer.transformSchema)
   sealed trait TypeUnsafe extends SchemaAdaptation

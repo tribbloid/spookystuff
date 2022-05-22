@@ -17,7 +17,7 @@ trait StaticGraph[T <: Domain] extends Module[T] {
 
 object StaticGraph {
 
-  trait Builder[D <: Domain] extends Algebra.Sugars[D] {
+  trait Builder[D <: Domain] extends Algebra.Aliases[D] {
 
     type GG <: StaticGraph[D]
     protected def getCtg(implicit ev: ClassTag[GG]) = ev

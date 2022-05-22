@@ -288,7 +288,7 @@ class DFDSuite extends AbstractDFDSuite {
     val complete = ((validPart U validPart2) :>> new VectorAssembler())
       .build(
         dfEvidence = training,
-        adaptation = SchemaAdaptations.IgnoreIrrelevant
+        adaptation = SchemaAdaptation.IgnoreIrrelevant
       )
 
     getInputsOutputs(complete.getStages)
@@ -308,7 +308,7 @@ class DFDSuite extends AbstractDFDSuite {
     val incomplete = ((validPart U irrelevantPart) :>> new VectorAssembler())
       .build(
         dfEvidence = training,
-        adaptation = SchemaAdaptations.IgnoreIrrelevant
+        adaptation = SchemaAdaptation.IgnoreIrrelevant
       )
 
     getInputsOutputs(incomplete.getStages)
@@ -327,7 +327,7 @@ class DFDSuite extends AbstractDFDSuite {
     val incomplete = ((validPart U typeInconsistentPart) :>> new VectorAssembler())
       .build(
         dfEvidence = training,
-        adaptation = SchemaAdaptations.IgnoreIrrelevant
+        adaptation = SchemaAdaptation.IgnoreIrrelevant
       )
 
     getInputsOutputs(incomplete.getStages)
@@ -346,7 +346,7 @@ class DFDSuite extends AbstractDFDSuite {
     val incomplete = ((validPart U typeInconsistentPart) :>> new VectorAssembler())
       .build(
         dfEvidence = training,
-        adaptation = SchemaAdaptations.IgnoreIrrelevant_TypeUnsafe
+        adaptation = SchemaAdaptation.IgnoreIrrelevant_TypeUnsafe
       )
 
     getInputsOutputs(incomplete.getStages)
@@ -366,7 +366,7 @@ class DFDSuite extends AbstractDFDSuite {
     val forced = ((validPart U irrelevantPart) :>> new VectorAssembler())
       .build(
         dfEvidence = training,
-        adaptation = SchemaAdaptations.Force
+        adaptation = SchemaAdaptation.Force
       )
 
     getInputsOutputs(forced.getStages)
@@ -386,7 +386,7 @@ class DFDSuite extends AbstractDFDSuite {
     val forced = ((validPart U typeInconsistentPart) :>> new VectorAssembler())
       .build(
         dfEvidence = training,
-        adaptation = SchemaAdaptations.Force
+        adaptation = SchemaAdaptation.Force
       )
 
     getInputsOutputs(forced.getStages)
@@ -407,7 +407,7 @@ class DFDSuite extends AbstractDFDSuite {
       ((validPart U irrelevantPart) :>> new VectorAssembler())
         .build(
           dfEvidence = training,
-          adaptation = SchemaAdaptations.FailFast
+          adaptation = SchemaAdaptation.FailFast
         )
     )
   }
@@ -418,7 +418,7 @@ class DFDSuite extends AbstractDFDSuite {
       ((validPart U typeInconsistentPart) :>> new VectorAssembler())
         .build(
           dfEvidence = training,
-          adaptation = SchemaAdaptations.FailFast
+          adaptation = SchemaAdaptation.FailFast
         )
     )
   }
@@ -429,7 +429,7 @@ class DFDSuite extends AbstractDFDSuite {
     val incomplete = ((validPart U typeInconsistentPart) :>> new VectorAssembler())
       .build(
         dfEvidence = training,
-        adaptation = SchemaAdaptations.FailFast_TypeUnsafe
+        adaptation = SchemaAdaptation.FailFast_TypeUnsafe
       )
 
     getInputsOutputs(incomplete.getStages)
@@ -450,7 +450,7 @@ class DFDSuite extends AbstractDFDSuite {
     val incomplete = ((validPart U irrelevantPart) :>> new VectorAssembler())
       .build(
         dfEvidence = training,
-        adaptation = SchemaAdaptations.IgnoreIrrelevant_ValidateSchema
+        adaptation = SchemaAdaptation.IgnoreIrrelevant_ValidateSchema
       )
 
     getInputsOutputs(incomplete.getStages)
@@ -470,7 +470,7 @@ class DFDSuite extends AbstractDFDSuite {
       ((validPart U typeInconsistentPart) :>> new VectorAssembler())
         .build(
           dfEvidence = training,
-          adaptation = SchemaAdaptations.IgnoreIrrelevant_ValidateSchema
+          adaptation = SchemaAdaptation.IgnoreIrrelevant_ValidateSchema
         )
     )
   }

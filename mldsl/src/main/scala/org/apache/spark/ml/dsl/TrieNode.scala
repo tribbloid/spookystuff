@@ -1,6 +1,6 @@
 package org.apache.spark.ml.dsl
 
-import org.apache.spark.sql.catalyst.trees.TreeNode
+import com.tribbloids.spookystuff.tree.TreeView
 
 import scala.annotation.tailrec
 
@@ -43,13 +43,12 @@ object TrieNode {
   }
 }
 
-@Deprecated //TODO: delete, useless
 case class TrieNode[K, V](
     key: Seq[K],
     value: V,
     children: Seq[TrieNode[K, V]],
     depth: Int
-) extends TreeNode[TrieNode[K, V]] {
+) extends TreeView[TrieNode[K, V]] {
 
   @tailrec
   final def lastSingleDescendant: TrieNode[K, V] =
@@ -84,6 +83,4 @@ case class TrieNode[K, V](
       }
     )
   }
-
-  override def verboseString: String = simpleString
 }

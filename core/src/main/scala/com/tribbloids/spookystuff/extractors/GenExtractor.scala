@@ -2,6 +2,7 @@ package com.tribbloids.spookystuff.extractors
 
 import com.tribbloids.spookystuff.Const
 import com.tribbloids.spookystuff.row.Field
+import com.tribbloids.spookystuff.tree.TreeView
 import com.tribbloids.spookystuff.utils.SpookyUtils
 import org.apache.spark.ml.dsl.utils.messaging.AutomaticRelay
 import org.apache.spark.ml.dsl.utils.refl.{ReflectionLock, ScalaType, UnreifiedObjectType}
@@ -129,10 +130,9 @@ object GenExtractor extends AutomaticRelay[GenExtractor[_, _]] with GenExtractor
     override def _args: Seq[GenExtractor[_, _]] = Seq(arg1, arg2)
   }
 
-  case class TreeNodeView(self: GenExtractor[_, _]) extends TreeNode[TreeNodeView] {
+  case class TreeNodeView(self: GenExtractor[_, _]) extends TreeView[TreeNodeView] {
     override def children: Seq[TreeNodeView] = self._args.map(TreeNodeView)
 
-    override def verboseString: String = simpleString
   }
 
   // ------------implicits-------------

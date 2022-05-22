@@ -6,7 +6,7 @@ import com.tribbloids.spookystuff.utils.CommonTypes
 
 import scala.language.implicitConversions
 
-trait Module[T <: Domain] extends Algebra.Sugars[T] {
+trait Module[T <: Domain] extends Algebra.Aliases[T] {
 
   protected def _replicate(m: DataMutator)(
       implicit
@@ -24,7 +24,7 @@ trait Module[T <: Domain] extends Algebra.Sugars[T] {
 
 object Module {
 
-  trait Edges[T <: Domain, Self <: Edges[T, Self]] extends Algebra.TypeSugars[T] {
+  trait Edges[T <: Domain, Self <: Edges[T, Self]] extends Algebra.TypeAliases[T] {
 
     {
       sanityCheck()

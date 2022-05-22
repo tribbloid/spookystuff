@@ -7,7 +7,7 @@ import com.tribbloids.spookystuff.utils.CachingUtils.ConcurrentMap
 
 import scala.language.{higherKinds, implicitConversions}
 
-trait Layout[D <: Domain] extends Algebra.Sugars[D] {
+trait Layout[D <: Domain] extends Algebra.Aliases[D] {
 
   val defaultGraphBuilder: StaticGraph.Builder[D]
   final override val algebra: Algebra[D] = defaultGraphBuilder.algebra
@@ -80,7 +80,7 @@ trait Layout[D <: Domain] extends Algebra.Sugars[D] {
       tails: Map[Facet, _Tails] = Map.empty,
       heads: _Heads = Heads[D](),
       fromOverride: Option[_Heads] = None
-  ) extends algebra._Sugars {
+  ) extends algebra._Aliases {
 
     def layout: Layout.this.type = Layout.this
 

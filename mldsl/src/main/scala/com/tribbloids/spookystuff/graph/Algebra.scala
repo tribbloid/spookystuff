@@ -1,6 +1,6 @@
 package com.tribbloids.spookystuff.graph
 
-trait Algebra[T <: Domain] extends Algebra.TypeSugars[T] {
+trait Algebra[T <: Domain] extends Algebra.TypeAliases[T] {
 
   implicit def algebra: Algebra[T] = this
 
@@ -8,13 +8,13 @@ trait Algebra[T <: Domain] extends Algebra.TypeSugars[T] {
   def nodeAlgebra: DataAlgebra[NodeData]
   def edgeAlgebra: DataAlgebra[EdgeData]
 
-  trait _Sugars extends Algebra.Sugars[T] {
-    override implicit val algebra = Algebra.this
+  trait _Aliases extends Algebra.Aliases[T] {
+    override implicit val algebra: Algebra[T] = Algebra.this
   }
-  object _Sugars extends _Sugars
+  object _Aliases extends _Aliases
 
   //  case class Dangling(info: Option[NodeInfo] = None) extends NodeLike
-  object DANGLING extends Element.Node[T](nodeAlgebra.eye, idAlgebra.DANGLING) with _Sugars {
+  object DANGLING extends Element.Node[T](nodeAlgebra.eye, idAlgebra.DANGLING) with _Aliases {
 
     assert(isDangling)
 
@@ -51,7 +51,7 @@ trait Algebra[T <: Domain] extends Algebra.TypeSugars[T] {
 
 object Algebra {
 
-  trait TypeSugars[D <: Domain] {
+  trait TypeAliases[D <: Domain] {
 
     final type ID = D#ID
     final type NodeData = D#NodeData
@@ -78,7 +78,7 @@ object Algebra {
 //    final type _ElementView = ElementView[D]
   }
 
-  trait Sugars[D <: Domain] extends TypeSugars[D] {
+  trait Aliases[D <: Domain] extends TypeAliases[D] {
 
     implicit def algebra: Algebra[D]
 

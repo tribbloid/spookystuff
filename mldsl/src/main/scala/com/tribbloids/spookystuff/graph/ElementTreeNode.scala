@@ -1,13 +1,13 @@
 package com.tribbloids.spookystuff.graph
 
-import org.apache.spark.sql.catalyst.trees.TreeNode
+import com.tribbloids.spookystuff.tree.TreeView
 
 import scala.language.implicitConversions
 
 // technically only StaticGraph is required, DSL is optional, but whatever
 //TODO: not optimized, children are repeatedly created when calling .path
 //TODO: use mapChildren to recursively get TreeNode[(Seq[String] -> Tree)] efficiently
-trait ElementTreeNode[D <: Domain] extends TreeNode[ElementTreeNode[D]] with Algebra.Sugars[D] {
+trait ElementTreeNode[D <: Domain] extends TreeView[ElementTreeNode[D]] with Algebra.Aliases[D] {
 
   def viewWFormat: ElementView[D]#WFormat
   final def view: ElementView[D] = viewWFormat.outer
@@ -35,8 +35,7 @@ trait ElementTreeNode[D <: Domain] extends TreeNode[ElementTreeNode[D]] with Alg
 
   final override lazy val simpleString: String = prefix + viewWFormat.toString
 
-  override def verboseString: String =
-    this.simpleString + "\n=== TRACES ===\n" + mergedPath.mkString("\n")
+  override protected def argStrings: Seq[String] = mergedPath
 
   lazy val paths: Seq[Seq[String]] = {
     val rootPath = Seq(viewWFormat.format.shortNameOf(view.element))

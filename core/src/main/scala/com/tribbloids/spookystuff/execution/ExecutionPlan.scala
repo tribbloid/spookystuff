@@ -3,8 +3,8 @@ package com.tribbloids.spookystuff.execution
 import com.tribbloids.spookystuff.SpookyContext
 import com.tribbloids.spookystuff.actions.TraceView
 import com.tribbloids.spookystuff.row._
+import com.tribbloids.spookystuff.tree.TreeView
 import org.apache.spark.rdd.RDD
-import org.apache.spark.sql.catalyst.trees.TreeNode
 import org.apache.spark.sql.types.DataType
 import org.apache.spark.storage.StorageLevel
 import org.slf4j.LoggerFactory
@@ -17,7 +17,7 @@ import scala.language.implicitConversions
 abstract class ExecutionPlan(
     val children: Seq[ExecutionPlan],
     val ec: SpookyExecutionContext
-) extends TreeNode[ExecutionPlan]
+) extends TreeView[ExecutionPlan]
     with Serializable {
 
   def this(
@@ -29,8 +29,6 @@ abstract class ExecutionPlan(
 
   def spooky: SpookyContext = ec.spooky
   def scratchRDDs: ScratchRDDs = ec.scratchRDDs
-
-  def verboseString: String = simpleString
 
   //Cannot be lazy, always defined on construction
   val schema: SpookySchema = SpookySchema(

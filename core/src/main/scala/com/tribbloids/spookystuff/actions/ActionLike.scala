@@ -4,6 +4,7 @@ import com.tribbloids.spookystuff.caching.{DFSDocCache, InMemoryDocCache}
 import com.tribbloids.spookystuff.doc.{Doc, DocOption}
 import com.tribbloids.spookystuff.row.{FetchedRow, SpookySchema}
 import com.tribbloids.spookystuff.session.Session
+import com.tribbloids.spookystuff.tree.TreeView
 import com.tribbloids.spookystuff.utils.CommonUtils
 import com.tribbloids.spookystuff.{Const, QueryException, SpookyContext}
 import org.apache.spark.ml.dsl.utils.{DurationJSONSerializer, Verbose}
@@ -19,13 +20,11 @@ object ActionLike extends AutomaticRelay[ActionLike] {
   //TODO: aggregate all object that has children
   case class TreeNodeView(
       actionLike: ActionLike
-  ) extends TreeNode[TreeNodeView] {
+  ) extends TreeView[TreeNodeView] {
 
     override def children: Seq[TreeNodeView] = actionLike.children.map {
       TreeNodeView
     }
-
-    override def verboseString: String = simpleString
   }
 }
 
