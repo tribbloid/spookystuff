@@ -15,7 +15,7 @@ import org.apache.http.entity.ContentType
 import org.apache.spark.ml.dsl.utils.refl.ScalaUDT
 import org.apache.spark.sql.types.SQLUserDefinedType
 import org.apache.tika.io.TikaInputStream
-import org.apache.tika.metadata.{Metadata, TikaMetadataKeys}
+import org.apache.tika.metadata.{Metadata, TikaCoreProperties}
 import org.apache.tika.mime.{MimeType, MimeTypes}
 import org.mozilla.universalchardet.UniversalDetector
 
@@ -173,7 +173,7 @@ case class Doc(
       case None =>
         val metadata = new Metadata()
         val slash: Int = uri.lastIndexOf('/')
-        metadata.set(TikaMetadataKeys.RESOURCE_NAME_KEY, uri.substring(slash + 1))
+        metadata.set(TikaCoreProperties.RESOURCE_NAME_KEY, uri.substring(slash + 1))
         val stream = TikaInputStream.get(raw, metadata)
         try {
           val mediaType = Const.mimeDetector.detect(stream, metadata)

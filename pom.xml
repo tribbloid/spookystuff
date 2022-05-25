@@ -64,7 +64,7 @@
 
 <!--    <selenium.version>3.141.59</selenium.version>-->
     <selenium.version>4.1.4</selenium.version>
-    <tika.version>1.22</tika.version>
+    <tika.version>2.4.0</tika.version>
 
     <protobuf.version>2.5.0</protobuf.version>
 
