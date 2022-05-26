@@ -1,6 +1,7 @@
 package com.tribbloids.spookystuff.utils.io.lock
 
 import com.tribbloids.spookystuff.utils.CommonUtils
+import com.tribbloids.spookystuff.utils.io.lock.Lock.InMemoryLock
 import com.tribbloids.spookystuff.utils.io.{URIExecution, URIResolver}
 import com.tribbloids.spookystuff.utils.serialization.NOTSerializable
 
@@ -16,6 +17,11 @@ trait LockLike extends NOTSerializable {
 
   val resolver: URIResolver = exe.outer
   def absolutePathStr: String = exe.absolutePathStr
+
+  @transient lazy val inMemory: InMemoryLock = {
+    val result = Lock.inMemoryLocks.getOrElseUpdate(exe.outer.getClass -> exe.absolutePathStr, InMemoryLock())
+    result
+  }
 
   case object PathStrs {
 

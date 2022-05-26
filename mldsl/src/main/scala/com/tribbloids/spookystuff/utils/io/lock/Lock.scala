@@ -18,11 +18,6 @@ case class Lock(
 
   @volatile var acquiredTimestamp: Long = -1
 
-  @transient lazy val inMemory: InMemoryLock = {
-    val result = Lock.inMemoryLocks.getOrElseUpdate(exe.outer.getClass -> exe.absolutePathStr, InMemoryLock())
-    result
-  }
-
   protected def acquire(): URIExecution = {
 
     try {

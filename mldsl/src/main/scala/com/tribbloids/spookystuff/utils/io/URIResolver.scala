@@ -212,8 +212,8 @@ object URIResolver {
       intervalFactory = { n =>
         (10000.doubleValue() / Math.pow(1.2, n - 2)).asInstanceOf[Long] + Random.nextInt(1000).longValue()
       },
-      silent = true
-//      silent = false
+//      silent = true
+      silent = false
     )
 
     val expired: LockExpired = LockExpired(

@@ -37,7 +37,7 @@ case class WaitForUnlock(
     }
   }
 
-  final def during[T](fn: URIExecution => T): T = {
+  final def during[T](fn: URIExecution => T): T = inMemory.synchronized {
     resolver.retry {
       duringOnce(fn)
     }
