@@ -1,20 +1,19 @@
 package com.tribbloids.spookystuff.utils.io.lock
 
-import com.tribbloids.spookystuff.utils.BypassingRule
 import com.tribbloids.spookystuff.utils.io.{URIExecution, URIResolver}
 
 import java.io.FileNotFoundException
 import java.nio.file.NoSuchFileException
 
 case class WaitForUnlock(
-    source: URIExecution,
+    exe: URIExecution,
     expired: LockExpired = URIResolver.default.expired
 ) extends LockLike {
 
   def unlockIfPossible(): Unit = {
 
     try {
-      source.input { ii =>
+      exe.input { ii =>
         ii.getType
       }
     } catch {
@@ -23,7 +22,7 @@ case class WaitForUnlock(
 
         canBeUnlocked match {
           case Some(v) =>
-            v.exe.moveTo(source.absolutePathStr)
+            v.exe.moveTo(exe.absolutePathStr)
           case None =>
             throw ee
         }
@@ -34,12 +33,7 @@ case class WaitForUnlock(
     unlockIfPossible()
 
     try {
-      fn(source)
-    } catch {
-      case e: Lock.CanReattempt =>
-        throw e
-      case e: Throwable =>
-        throw BypassingRule.NoRetry(e)
+      fn(exe)
     }
   }
 

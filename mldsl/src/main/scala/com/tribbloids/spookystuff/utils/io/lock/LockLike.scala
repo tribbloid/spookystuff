@@ -12,14 +12,14 @@ trait LockLike extends NOTSerializable {
 
   lazy val id: UUID = UUID.randomUUID()
 
-  def source: URIExecution
+  def exe: URIExecution
 
-  val resolver: URIResolver = source.outer
-  def absolutePathStr: String = source.absolutePathStr
+  val resolver: URIResolver = exe.outer
+  def absolutePathStr: String = exe.absolutePathStr
 
   case object PathStrs {
 
-    lazy val dir: String = source.absolutePathStr + LOCK
+    lazy val dir: String = exe.absolutePathStr + LOCK
 
     lazy val locked: String = CommonUtils.\\\(dir, id + LOCKED)
 

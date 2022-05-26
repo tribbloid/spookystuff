@@ -1,6 +1,7 @@
 package com.tribbloids.spookystuff.utils.io.lock
 
-import com.tribbloids.spookystuff.utils.BypassingRule
+import com.tribbloids.spookystuff.utils.CachingUtils
+import com.tribbloids.spookystuff.utils.io.lock.Lock.InMemoryLock
 import com.tribbloids.spookystuff.utils.io.{URIExecution, URIResolver}
 import com.tribbloids.spookystuff.utils.lifespan.Cleanable.Lifespan
 import com.tribbloids.spookystuff.utils.lifespan.LocalCleanable
@@ -9,20 +10,23 @@ import java.io.FileNotFoundException
 import java.nio.file.NoSuchFileException
 
 case class Lock(
-    source: URIExecution,
-    expired: LockExpired = URIResolver.default.expired, // TODO: use it!
+    exe: URIExecution,
+    expired: LockExpired = URIResolver.default.expired,
     override val _lifespan: Lifespan = Lifespan.TaskOrJVM().forShipping
 ) extends LockLike
     with LocalCleanable {
 
-  import Lock._
-
   @volatile var acquiredTimestamp: Long = -1
+
+  @transient lazy val inMemory: InMemoryLock = {
+    val result = Lock.inMemoryLocks.getOrElseUpdate(exe.outer.getClass -> exe.absolutePathStr, InMemoryLock())
+    result
+  }
 
   protected def acquire(): URIExecution = {
 
     try {
-      source.moveTo(Moved.locked.absolutePathStr)
+      exe.moveTo(Moved.locked.absolutePathStr)
     } catch {
       case ee @ (_: FileNotFoundException | _: NoSuchFileException) =>
         val canBeUnlocked = expired.scanForUnlocking(Moved.dir)
@@ -35,7 +39,7 @@ case class Lock(
         }
     }
 
-    logAcquire(source)
+    logAcquire(exe)
     Moved.locked
   }
 
@@ -43,29 +47,24 @@ case class Lock(
 
     logRelease(Moved.locked)
 
-    if (source.isExisting) {
-      source.moveTo(PathStrs.old)
+    if (exe.isExisting) {
+      exe.moveTo(PathStrs.old)
     }
 
-    Moved.locked.moveTo(source.absolutePathStr)
+    Moved.locked.moveTo(exe.absolutePathStr)
   }
 
   protected def duringOnce[T](fn: URIExecution => T): T = {
     val acquired = acquire()
     try {
       fn(acquired)
-    } catch {
-      case e: CanReattempt =>
-        throw e
-      case e: Throwable =>
-        throw BypassingRule.NoRetry(e)
     } finally {
 
       release()
     }
   }
 
-  final def during[T](fn: URIExecution => T): T = source.synchronized {
+  final def during[T](fn: URIExecution => T): T = inMemory.synchronized {
     resolver.retry {
       duringOnce(fn)
     }
@@ -95,8 +94,10 @@ case class Lock(
 
 object Lock {
 
-//  val acquired: CachingUtils.ConcurrentCache[URIExecution, Long] = CachingUtils.ConcurrentCache()
+  case class InMemoryLock() {
+//    lazy val id: Long = Random.nextLong()
+  }
 
-  trait CanReattempt extends Exception
-
+  lazy val inMemoryLocks: CachingUtils.ConcurrentCache[(Class[_], String), InMemoryLock] =
+    CachingUtils.ConcurrentCache()
 }

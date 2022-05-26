@@ -2,7 +2,7 @@ package com.tribbloids.spookystuff.utils.io
 
 import com.tribbloids.spookystuff.utils.io.lock.{Lock, LockExpired}
 import com.tribbloids.spookystuff.utils.lifespan.LocalCleanable
-import com.tribbloids.spookystuff.utils.{CachingUtils, CommonUtils, Retry}
+import com.tribbloids.spookystuff.utils.{CommonUtils, Retry}
 import org.apache.commons.io.IOUtils
 
 import java.io._
@@ -19,15 +19,13 @@ import scala.util.Random
  */
 abstract class URIResolver extends Serializable {
 
-  import CachingUtils.MapView
-
   type Execution <: AbstractExecution
 
-  @transient lazy val cache: CachingUtils.ConcurrentCache[String, Execution] = CachingUtils.ConcurrentCache()
+//  @transient lazy val cache: CachingUtils.ConcurrentCache[String, Execution] = CachingUtils.ConcurrentCache()
 
   final def execute(pathStr: String): Execution = {
-
-    cache.getOrUpdateSync(pathStr)(newExecution(pathStr))
+    newExecution(pathStr)
+//    cache.getOrUpdateSync(pathStr)(newExecution(pathStr))
   }
 
   def newExecution(pathStr: String): Execution
@@ -69,6 +67,7 @@ abstract class URIResolver extends Serializable {
     val exe = execute(pathStr)
 
     val lock = new Lock(exe)
+
     lock.during(fn)
   }
 
