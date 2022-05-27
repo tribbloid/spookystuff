@@ -1,15 +1,16 @@
 package com.tribbloids.spookystuff.integration
 
 import com.tribbloids.spookystuff.utils.CommonConst
-import javax.servlet.http.{HttpServletRequest, HttpServletResponse}
 import org.spark_project.jetty.server.handler.{DefaultHandler, HandlerList, HandlerWrapper, ResourceHandler}
 import org.spark_project.jetty.server.{Request, Server}
+
+import javax.servlet.http.{HttpServletRequest, HttpServletResponse}
 
 object TestSiteServer {
 
   import com.tribbloids.spookystuff.utils.CommonViews._
 
-  class ExtHandler extends HandlerWrapper {
+  object RedirectHandler extends HandlerWrapper {
 
     override def handle(
         target: String,
@@ -21,6 +22,8 @@ object TestSiteServer {
       val redirectURIOpt = rewrite(request.getRequestURI)
       redirectURIOpt.foreach { v =>
         response.sendRedirect(v)
+        baseRequest.setHandled(true)
+      //https://stackoverflow.com/questions/72410379/strange-jetty-warning-java-lang-illegalstateexception-committed-on-redirectin
       }
     }
 
@@ -41,15 +44,14 @@ object TestSiteServer {
   lazy val server: Server = {
     val server = new Server(10092)
 
-    val ext_handler = new ExtHandler
-    val resource_handler = new ResourceHandler
+    val resourceHandler = new ResourceHandler
 
-    resource_handler.setDirectoriesListed(true)
-    resource_handler.setWelcomeFiles(Array[String]("test-sites.html"))
-    resource_handler.setResourceBase(CommonConst.USER_DIR \\ "test-sites")
+    resourceHandler.setDirectoriesListed(true)
+    resourceHandler.setWelcomeFiles(Array[String]("test-sites.html"))
+    resourceHandler.setResourceBase(CommonConst.USER_DIR \\ "test-sites")
 
     val handlers = new HandlerList
-    handlers.setHandlers(Array(ext_handler, resource_handler, new DefaultHandler))
+    handlers.setHandlers(Array(RedirectHandler, resourceHandler, new DefaultHandler))
     server.setHandler(handlers)
     server
   }

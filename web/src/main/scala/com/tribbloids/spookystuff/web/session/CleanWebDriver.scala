@@ -20,25 +20,22 @@ class CleanWebDriver(
 
   override def cleanImpl(): Unit = {
     try {
-      CommonUtils.retry(CommonConst.driverClosingRetries) {
+      CommonUtils.retry(CommonConst.driverClosingRetries, interval = 1000L) {
         CommonUtils.withTimeout(CommonConst.driverClosingTimeout) {
 
           self.close()
         }
-        Thread.sleep(1000)
-
       }
     } catch {
       case e: Throwable =>
         LoggerFactory.getLogger(this.getClass).error("Failed to close ... will quit directly", e)
     }
 
-    CommonUtils.retry(CommonConst.driverClosingRetries) {
+    CommonUtils.retry(CommonConst.driverClosingRetries, interval = 1000L) {
       CommonUtils.withTimeout(CommonConst.driverClosingTimeout) {
 
         self.quit()
       }
-      Thread.sleep(1000)
     }
   }
 
