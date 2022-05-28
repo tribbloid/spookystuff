@@ -1,7 +1,6 @@
 package com.tribbloids.spookystuff.utils.io.lock
 
 import com.tribbloids.spookystuff.utils.CachingUtils
-import com.tribbloids.spookystuff.utils.io.lock.Lock.InMemoryLock
 import com.tribbloids.spookystuff.utils.io.{URIExecution, URIResolver}
 import com.tribbloids.spookystuff.utils.lifespan.Cleanable.Lifespan
 import com.tribbloids.spookystuff.utils.lifespan.LocalCleanable
@@ -43,10 +42,10 @@ case class Lock(
     logRelease(Moved.locked)
 
     if (exe.isExisting) {
-      exe.moveTo(PathStrs.old)
+      exe.moveTo(PathStrs.old, force = true)
     }
 
-    Moved.locked.moveTo(exe.absolutePathStr)
+    Moved.locked.moveTo(exe.absolutePathStr, force = true)
   }
 
   protected def duringOnce[T](fn: URIExecution => T): T = {

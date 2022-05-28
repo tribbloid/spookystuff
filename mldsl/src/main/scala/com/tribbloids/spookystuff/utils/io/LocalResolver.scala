@@ -143,12 +143,15 @@ case class LocalResolver(
       }
     }
 
-    override def moveTo(target: String): Unit = {
+    override def moveTo(target: String, force: Boolean = false): Unit = {
 
       val newFile = new File(target).getAbsoluteFile // TODO: this is the only usage of Java old IO
       newFile.getParentFile.mkdirs()
 
-      Files.move(file.toPath, newFile.toPath, StandardCopyOption.ATOMIC_MOVE)
+      if (force)
+        Files.move(file.toPath, newFile.toPath, StandardCopyOption.ATOMIC_MOVE, StandardCopyOption.REPLACE_EXISTING)
+      else
+        Files.move(file.toPath, newFile.toPath, StandardCopyOption.ATOMIC_MOVE)
     }
   }
 }

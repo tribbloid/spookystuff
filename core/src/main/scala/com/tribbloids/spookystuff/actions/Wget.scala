@@ -7,7 +7,7 @@ import com.tribbloids.spookystuff.extractors.impl.Lit
 import com.tribbloids.spookystuff.extractors.{Col, FR}
 import com.tribbloids.spookystuff.row.{FetchedRow, SpookySchema}
 import com.tribbloids.spookystuff.session.Session
-import com.tribbloids.spookystuff.utils.io._
+import com.tribbloids.spookystuff.utils.io.CompoundResolver.OmniResolver
 import org.apache.commons.io.IOUtils
 import org.apache.http.client.methods.HttpGet
 

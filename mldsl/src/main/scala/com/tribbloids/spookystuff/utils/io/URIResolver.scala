@@ -97,7 +97,7 @@ abstract class URIResolver extends Serializable {
 //      }
     }
 
-    def moveTo(target: String): Unit
+    def moveTo(target: String, force: Boolean = false): Unit
 
     //removed, no need if creating new file is always recursive
 //    def mkDirs(): Unit

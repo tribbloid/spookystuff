@@ -105,7 +105,7 @@ case class URLConnectionResolver(
       //TODO: not supported by java library! should switch to a more professional one like org.apache.commons.net.ftp.FTPClient
     }
 
-    override def moveTo(target: String): Unit = {
+    override def moveTo(target: String, force: Boolean = false): Unit = {
 
       unsupported("move")
     }

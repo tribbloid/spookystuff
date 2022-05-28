@@ -9,7 +9,7 @@ import com.tribbloids.spookystuff.session.DriverLike
 import com.tribbloids.spookystuff.testutils.{FunSpecx, RemoteDocsFixture, TestHelper}
 import com.tribbloids.spookystuff.utils.lifespan.Cleanable
 import com.tribbloids.spookystuff.utils.lifespan.Cleanable.Lifespan
-import com.tribbloids.spookystuff.utils.{CommonConst, CommonUtils, Retry, SparkUISupport}
+import com.tribbloids.spookystuff.utils.{CommonConst, CommonUtils, Retry, SparkUISupport, TreeThrowable}
 import org.apache.spark.SparkContext
 import org.apache.spark.sql.SQLContext
 import org.jutils.jprocesses.JProcesses
@@ -17,6 +17,7 @@ import org.jutils.jprocesses.model.ProcessInfo
 import org.scalatest.{BeforeAndAfterAll, BeforeAndAfterEach, Outcome, Retries}
 
 import scala.language.implicitConversions
+import scala.util.Try
 
 object SpookyEnvFixture {
 
@@ -47,9 +48,11 @@ object SpookyEnvFixture {
       .foreach { tuple =>
         val taskCleanable = tuple._2.values
           .filter { v =>
-            v.lifespan.leaves.exists { ll =>
+            val isOfTask = v.lifespan.leaves.exists { ll =>
               ll._type == Lifespan.Task
             }
+            val isNotCleaned = !v.isCleaned
+            isOfTask && isNotCleaned
           }
         Predef.assert(
           taskCleanable.isEmpty,
@@ -174,11 +177,14 @@ abstract class SpookyEnvFixture
 
     val spooky = this.spooky
     val conditions = this.conditions
-    sc.runEverywhere() { _ =>
-      CommonUtils.retry(3, 1000) {
-        SpookyEnvFixture.shouldBeClean(spooky, conditions)
+    val result = sc.runEverywhere() { _ =>
+      Try {
+        CommonUtils.retry(3, 1000) {
+          SpookyEnvFixture.shouldBeClean(spooky, conditions)
+        }
       }
     }
+    TreeThrowable.&&&(result)
 
     SpookyEnvFixture.firstRun = false
   }
@@ -216,10 +222,14 @@ abstract class SpookyEnvFixture
 
   override def afterEach(): Unit = {
     val spooky = this.spooky
-    sc.runEverywhere() { _ =>
-      CommonUtils.retry(3, 1000) {
-        SpookyEnvFixture.instancesShouldBeClean(spooky)
+    val result = sc.runEverywhere() { _ =>
+      Try {
+
+        CommonUtils.retry(3, 1000) {
+          SpookyEnvFixture.instancesShouldBeClean(spooky)
+        }
       }
     }
+    TreeThrowable.&&&(result)
   }
 }

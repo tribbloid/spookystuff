@@ -15,6 +15,7 @@
 # specific language governing permissions and limitations
 # under the License.
 
+# TODO: very obsolete! need maintenance
 FROM phusion/baseimage:0.9.18
 
 MAINTAINER long <yl1984108@gmail.com>

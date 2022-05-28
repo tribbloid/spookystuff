@@ -44,7 +44,7 @@ object BeforeAndAfterShipping {
 
     final def value: T = _value.asInstanceOf[T]
 
-    def this() = this(null.asInstanceOf[T]) //TODO: useless?
+    override def toString: String = _value.toString
 
     private def writeObject(aOutputStream: ObjectOutputStream): Unit = {
       _value.beforeDeparture()
@@ -54,7 +54,6 @@ object BeforeAndAfterShipping {
 
     private def readObject(aInputStream: ObjectInputStream): Unit = {
       _value = aInputStream.readObject().asInstanceOf[T]
-//      assert(isEOF(aInputStream), "not EOF!")
 
       logMsg(s"JavaR: ${_value}")
 

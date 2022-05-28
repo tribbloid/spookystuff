@@ -27,7 +27,7 @@ trait CompoundResolver extends URIResolver {
 
     override def _delete(mustExist: Boolean): Unit = impl._delete(mustExist)
 
-    override def moveTo(target: String): Unit = impl.moveTo(target)
+    override def moveTo(target: String, force: Boolean = false): Unit = impl.moveTo(target, force)
 
 //    override def mkDirs(): Unit = impl.mkDirs()
   }
@@ -36,49 +36,52 @@ trait CompoundResolver extends URIResolver {
 //    getImpl(pathStr).lockAccessDuring(pathStr)(f)
 }
 
-class FSResolver(
-    hadoopConfFactory: () => Configuration,
-    timeoutMillis: Int
-) extends CompoundResolver {
+object CompoundResolver {
 
-  lazy val hdfs: HDFSResolver = HDFSResolver(hadoopConfFactory)
+  class FSResolver(
+      hadoopConfFactory: () => Configuration,
+      timeoutMillis: Int
+  ) extends CompoundResolver {
 
-  lazy val ftp: URLConnectionResolver = URLConnectionResolver(timeoutMillis)
+    lazy val hdfs: HDFSResolver = HDFSResolver(hadoopConfFactory)
 
-  override def getImpl(uri: String): URIResolver = {
+    lazy val ftp: URLConnectionResolver = URLConnectionResolver(timeoutMillis)
 
-    val _uri = HttpUtils.uri(uri)
-    val scheme = _uri.getScheme
-    scheme match {
-      case "ftp" | "ftps" =>
-        ftp
-      case "local" =>
-        LocalResolver //TODO: useless? identical to "file://"
-      case _ =>
-        hdfs
-    }
-  }
-}
+    override def getImpl(uri: String): URIResolver = {
 
-class OmniResolver(
-    hadoopConfFactory: () => Configuration,
-    timeoutMillis: Int,
-    webProxy: WebProxySetting,
-    input2Http: URI => HttpRequestBase
-) extends FSResolver(hadoopConfFactory, timeoutMillis)
-    with NOTSerializable {
-
-  override def getImpl(uri: String): URIResolver = {
-
-    val _uri = HttpUtils.uri(uri)
-    val scheme = _uri.getScheme
-    scheme match {
-      case "http" | "https" =>
-        http
-      case _ =>
-        super.getImpl(uri)
+      val _uri = HttpUtils.uri(uri)
+      val scheme = _uri.getScheme
+      scheme match {
+        case "ftp" | "ftps" =>
+          ftp
+        case "local" =>
+          LocalResolver //TODO: useless? identical to "file://"
+        case _ =>
+          hdfs
+      }
     }
   }
 
-  lazy val http: HTTPResolver = HTTPResolver(timeoutMillis, webProxy, input2Http)
+  class OmniResolver(
+      hadoopConfFactory: () => Configuration,
+      timeoutMillis: Int,
+      webProxy: WebProxySetting,
+      input2Http: URI => HttpRequestBase
+  ) extends FSResolver(hadoopConfFactory, timeoutMillis)
+      with NOTSerializable {
+
+    override def getImpl(uri: String): URIResolver = {
+
+      val _uri = HttpUtils.uri(uri)
+      val scheme = _uri.getScheme
+      scheme match {
+        case "http" | "https" =>
+          http
+        case _ =>
+          super.getImpl(uri)
+      }
+    }
+
+    lazy val http: HTTPResolver = HTTPResolver(timeoutMillis, webProxy, input2Http)
+  }
 }

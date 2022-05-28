@@ -163,7 +163,7 @@ case class HTTPResolver(
       unsupported("output")
     }
 
-    override def moveTo(target: String): Unit =
+    override def moveTo(target: String, force: Boolean = false): Unit =
       unsupported("move")
 
 //    override def mkDirs(): Unit = ???

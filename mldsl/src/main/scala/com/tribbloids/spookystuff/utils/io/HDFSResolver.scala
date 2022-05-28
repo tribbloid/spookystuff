@@ -172,13 +172,16 @@ case class HDFSResolver(
       fc.delete(path, true)
     }
 
-    override def moveTo(target: String): Unit = {
+    override def moveTo(target: String, force: Boolean = false): Unit = {
 
       val newPath = new Path(target)
 
       mkParent(newPath)
 
-      fc.rename(path, newPath, Options.Rename.NONE)
+      if (force)
+        fc.rename(path, newPath, Options.Rename.OVERWRITE)
+      else
+        fc.rename(path, newPath)
     }
 
     protected def mkParent(path: Path): Unit = {
