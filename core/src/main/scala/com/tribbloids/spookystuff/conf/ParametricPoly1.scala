@@ -38,27 +38,6 @@ object ParametricPoly1 {
 
       cache += k -> v
     }
-
-//    trait FlatTransformer extends GenParametricPoly1 {
-//      override type UB = CachedMutable.this.UB
-//      override type In[T <: UB] = (T, CachedMutable.this.Out[T])
-//      override type Out[T <: UB] = Option[CachedMutable.this.Out[T]]
-//    }
-//
-//    def flatTransform(fn: FlatTransformer): Unit = {
-//
-//      val existing = cache.toSeq
-//      existing.foreach { kv =>
-//        val k = kv._1
-//
-//        val _kv = kv.asInstanceOf[(k.type, Out[k.type])]
-//
-//        val opt: Option[Out[k.type]] = fn.apply[k.type](_kv)
-//        opt.foreach { transformed =>
-//          cache.put(_kv._1, transformed)
-//        }
-//      }
-//    }
   }
 
 }

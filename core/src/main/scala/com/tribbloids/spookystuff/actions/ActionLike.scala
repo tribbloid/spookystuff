@@ -7,9 +7,8 @@ import com.tribbloids.spookystuff.session.Session
 import com.tribbloids.spookystuff.tree.TreeView
 import com.tribbloids.spookystuff.utils.CommonUtils
 import com.tribbloids.spookystuff.{Const, QueryException, SpookyContext}
-import org.apache.spark.ml.dsl.utils.{DurationJSONSerializer, Verbose}
 import org.apache.spark.ml.dsl.utils.messaging.AutomaticRelay
-import org.apache.spark.sql.catalyst.trees.TreeNode
+import org.apache.spark.ml.dsl.utils.{DurationJSONSerializer, Verbose}
 import org.json4s.Formats
 import org.slf4j.LoggerFactory
 
@@ -134,6 +133,7 @@ abstract class ActionLike extends Product with Serializable with Verbose {
         } catch {
           case e: Exception =>
             spooky.spookyMetrics.fetchFromRemoteFailure += 1
+            session.Drivers.releaseAll()
             throw e
         }
       }

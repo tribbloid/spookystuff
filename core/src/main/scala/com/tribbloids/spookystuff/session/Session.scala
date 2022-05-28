@@ -2,7 +2,7 @@ package com.tribbloids.spookystuff.session
 
 import com.tribbloids.spookystuff.SpookyContext
 import com.tribbloids.spookystuff.actions.Action
-import com.tribbloids.spookystuff.conf.{Core, PluginRegistry, PluginSystem, Python}
+import com.tribbloids.spookystuff.conf.{Core, PluginRegistry, PluginSystem}
 import com.tribbloids.spookystuff.utils.TreeThrowable
 import com.tribbloids.spookystuff.utils.io.Progress
 import com.tribbloids.spookystuff.utils.lifespan.Cleanable.Lifespan
@@ -33,7 +33,7 @@ class Session(
 
   object Drivers extends PluginRegistry.Factory {
 
-    type UB = PluginSystem.WithDrivers
+    type UB = PluginSystem.WithDriver
     override implicit lazy val ubEv: ClassTag[UB] = ClassTag(classOf[UB])
 
     override type Out[V <: UB] = V#Driver
@@ -49,34 +49,45 @@ class Session(
 
       result
     }
+
+    def releaseAll(): Unit = {
+      val plugins = spooky.Plugins.cache.values.toList
+
+      val wDrivers = plugins.collect {
+        case p: PluginSystem.WithDriver#Plugin =>
+          p
+      }
+
+      val trials = wDrivers.map { p =>
+        Try {
+          p.driverFactoryOpt.foreach { v =>
+            v.release(Session.this)
+            cache -= p.pluginSystem
+
+            spooky.getMetric(Core).driverReleased.add(v.toString -> 1L)
+          }
+        }
+      }
+
+      require(cache.isEmpty, "cache not empty")
+
+      TreeThrowable.&&&(trials)
+    }
+
+    /**
+      * all drivers will be terminated, not released (as in cleanImpl)
+      * currently useless
+      */
+    def shutdownAll(): Unit = {
+
+      ???
+    }
   }
 
   def driverOf[V <: Drivers.UB](v: V): V#Driver = Drivers.apply(v)
 
-  def pythonDriver: PythonDriver = {
-
-    driverOf(Python)
-  }
-
   override def cleanImpl(): Unit = {
-    val plugins = spooky.Plugins.cache.values.toList
-
-    val filtered = plugins.collect {
-      case p: PluginSystem.WithDrivers#Plugin =>
-        p
-    }
-
-    val trials = filtered.map { p =>
-      Try {
-        p.driverFactoryOpt.foreach { v =>
-          v.release(this)
-
-          spooky.getMetric(Core).driverReleased.add(v.toString -> 1L)
-        }
-      }
-    }
-
-    TreeThrowable.&&&(trials)
+    Drivers.releaseAll()
 
     spooky.spookyMetrics.sessionReclaimed += 1
   }

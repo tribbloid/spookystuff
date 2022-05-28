@@ -49,6 +49,7 @@ class TestInMemoryDocCache extends SpookyEnvFixture with LocalPathDocsFixture {
 
     val newTrace = Visit(HTML_URL) +> Snapshot().as('new)
 
+    Thread.sleep(1000)
     val page2 = cache.get(newTrace, spooky).get.map(_.asInstanceOf[Doc])
 
     assert(page2.size === 1)
@@ -76,6 +77,7 @@ class TestInMemoryDocCache extends SpookyEnvFixture with LocalPathDocsFixture {
 
     val newTrace = Wget(HTML_URL).as('newWget) :: Nil
 
+    Thread.sleep(1000)
     val page2 = cache.get(newTrace, spooky).get.map(_.asInstanceOf[Doc])
 
     assert(page2.size === 1)

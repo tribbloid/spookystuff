@@ -1,6 +1,7 @@
 package com.tribbloids.spookystuff.python.ref
 
 import com.tribbloids.spookystuff.SpookyContext
+import com.tribbloids.spookystuff.conf.Python
 import com.tribbloids.spookystuff.python.PyConverter
 import com.tribbloids.spookystuff.session.{PythonDriver, Session}
 import com.tribbloids.spookystuff.utils.CachingUtils.ConcurrentMap
@@ -100,7 +101,7 @@ trait PyRef extends Cleanable {
   }
 
   def Py(session: Session): Binding = {
-    _Py(session.pythonDriver, Some(session.spooky))
+    _Py(session.driverOf(Python), Some(session.spooky))
   }
 
   override protected def cleanImpl(): Unit = {

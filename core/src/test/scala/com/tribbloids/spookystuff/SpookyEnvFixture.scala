@@ -172,11 +172,10 @@ abstract class SpookyEnvFixture
 
     TestHelper.cleanTempDirs()
 
-    CommonUtils.retry(3, 1000) {
-
-      val spooky = this.spooky
-      val conditions = this.conditions
-      sc.runEverywhere() { _ =>
+    val spooky = this.spooky
+    val conditions = this.conditions
+    sc.runEverywhere() { _ =>
+      CommonUtils.retry(3, 1000) {
         SpookyEnvFixture.shouldBeClean(spooky, conditions)
       }
     }
@@ -218,7 +217,9 @@ abstract class SpookyEnvFixture
   override def afterEach(): Unit = {
     val spooky = this.spooky
     sc.runEverywhere() { _ =>
-      SpookyEnvFixture.instancesShouldBeClean(spooky)
+      CommonUtils.retry(3, 1000) {
+        SpookyEnvFixture.instancesShouldBeClean(spooky)
+      }
     }
   }
 }
