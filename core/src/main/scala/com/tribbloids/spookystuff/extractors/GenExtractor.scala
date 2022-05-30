@@ -8,7 +8,6 @@ import org.apache.spark.ml.dsl.utils.messaging.AutomaticRelay
 import org.apache.spark.ml.dsl.utils.refl.{ReflectionLock, ScalaType, UnreifiedObjectType}
 import org.apache.spark.sql.catalyst.ScalaReflection.universe
 import org.apache.spark.sql.catalyst.ScalaReflection.universe.TypeTag
-import org.apache.spark.sql.catalyst.trees.TreeNode
 
 import scala.language.{existentials, implicitConversions}
 import scala.reflect.ClassTag

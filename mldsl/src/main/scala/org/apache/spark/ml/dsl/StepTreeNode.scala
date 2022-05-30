@@ -2,7 +2,6 @@ package org.apache.spark.ml.dsl
 
 import com.tribbloids.spookystuff.tree.TreeView
 import org.apache.spark.ml.dsl.utils.messaging.{MessageAPI_<<, MessageRelay}
-import org.apache.spark.sql.catalyst.trees.TreeNode
 import org.apache.spark.sql.utils.DataTypeRelay
 
 trait StepTreeNode[BaseType <: StepTreeNode[BaseType]] extends TreeView[StepTreeNode[BaseType]] {
