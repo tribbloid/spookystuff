@@ -87,7 +87,11 @@
               <relocations>
                 <relocation>
                   <pattern>com.google.common</pattern>
-                  <shadedPattern>com.tribbloids.spookystuff.repackaged.com.google.common</shadedPattern>
+                  <shadedPattern>relocated.spookystuff.com.google.common</shadedPattern>
+                </relocation>
+                <relocation>
+                  <pattern>io.netty</pattern>
+                  <shadedPattern>relocated.spookystuff.io.netty</shadedPattern>
                 </relocation>
               </relocations>
 
