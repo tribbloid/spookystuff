@@ -44,6 +44,8 @@ object BeforeAndAfterShipping {
 
     final def value: T = _value.asInstanceOf[T]
 
+    def this() = this(null.asInstanceOf[T])
+
     override def toString: String = _value.toString
 
     private def writeObject(aOutputStream: ObjectOutputStream): Unit = {
