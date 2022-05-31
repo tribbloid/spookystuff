@@ -88,9 +88,7 @@ case class Lock(
 
 object Lock {
 
-  case class InMemoryLock() {
-//    lazy val id: Long = Random.nextLong()
-  }
+  case class InMemoryLock() {}
 
   lazy val inMemoryLocks: CachingUtils.ConcurrentCache[(Class[_], String), InMemoryLock] =
     CachingUtils.ConcurrentCache()

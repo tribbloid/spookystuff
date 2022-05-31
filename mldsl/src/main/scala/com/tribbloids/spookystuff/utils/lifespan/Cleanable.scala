@@ -8,6 +8,8 @@ import scala.reflect.ClassTag
 
 object Cleanable {
 
+  case class StateLock()
+
   import com.tribbloids.spookystuff.utils.CommonViews._
 
   type Lifespan = LifespanInternal#ForShipping
@@ -92,7 +94,7 @@ trait Cleanable extends Closeable {
 
   import Cleanable._
 
-  @transient object StateLock
+  @transient lazy val stateLock: StateLock = StateLock()
 
   /**
     * taskOrThreadOnCreation is incorrect in withDeadline or threads not created by Spark
@@ -111,7 +113,7 @@ trait Cleanable extends Closeable {
 
   //each can only be cleaned once
   @volatile protected var _isCleaned: Boolean = false
-  def isCleaned: Boolean = StateLock.synchronized {
+  def isCleaned: Boolean = stateLock.synchronized {
     _isCleaned
   }
 
@@ -151,7 +153,7 @@ trait Cleanable extends Closeable {
     )
   }
 
-  lazy val doCleanOnce: Unit = StateLock.synchronized {
+  lazy val doCleanOnce: Unit = stateLock.synchronized {
 
     stacktraceAtCleaning = Some(Thread.currentThread().getStackTrace)
     try {
