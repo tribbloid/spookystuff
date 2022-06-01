@@ -1,6 +1,6 @@
 package com.tribbloids.spookystuff.web.actions
 
-import com.tribbloids.spookystuff.actions.{Action, ClusterRetry, Delay, Export, Loop, Timed, Wget}
+import com.tribbloids.spookystuff.actions._
 import com.tribbloids.spookystuff.doc.DocOption
 import com.tribbloids.spookystuff.session.Session
 import com.tribbloids.spookystuff.web.conf.Web
@@ -10,6 +10,8 @@ import org.apache.spark.rdd.RDD
 import scala.concurrent.duration
 
 class WebActionSuite extends SpookyEnvFixture {
+
+  import WebActionSuite._
 
   import duration._
 
@@ -156,25 +158,20 @@ class WebActionSuite extends SpookyEnvFixture {
   }
 }
 
-case object DefectiveExport extends Export {
+object WebActionSuite {
 
-  override def doExeNoName(session: Session): Seq[DocOption] = {
-    sys.error("error")
+  case object DefectiveExport extends Export {
+
+    override def doExeNoName(session: Session): Seq[DocOption] = {
+      sys.error("error")
+    }
   }
-}
 
-case object DefectiveWebExport extends Export with WebAction {
+  case object DefectiveWebExport extends Export with WebAction {
 
-  override def doExeNoName(session: Session): Seq[DocOption] = {
-    session.driverOf(Web)
-    sys.error("error")
-  }
-}
-
-case object OverdueExport extends Export with Timed {
-
-  override def doExeNoName(session: Session): Seq[DocOption] = {
-    Thread.sleep(120 * 1000)
-    Nil
+    override def doExeNoName(session: Session): Seq[DocOption] = {
+      session.driverOf(Web)
+      sys.error("error")
+    }
   }
 }

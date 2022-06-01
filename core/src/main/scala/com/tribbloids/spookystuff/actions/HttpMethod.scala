@@ -15,7 +15,7 @@ abstract class HttpMethod(
     uri: Col[String]
 ) extends Export
     with Driverless
-    with Timed
+    with Timed.ThreadSafe
     with Wayback {
 
   @transient lazy val uriOption: Option[URI] = {

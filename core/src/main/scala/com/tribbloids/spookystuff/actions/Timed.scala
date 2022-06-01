@@ -31,3 +31,10 @@ trait Timed extends Action {
     this._timeout = same.asInstanceOf[Timed]._timeout
   }
 }
+
+object Timed {
+
+  trait ThreadSafe extends Timed
+
+  trait ThreadUnsafe extends Timed
+}

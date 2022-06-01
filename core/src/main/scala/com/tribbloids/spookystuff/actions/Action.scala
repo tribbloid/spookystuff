@@ -70,7 +70,7 @@ trait Action extends ActionLike with TraceAPI {
         throw ex
     }
 
-    this.timeElapsed = System.currentTimeMillis() - session.startTime
+    this.timeElapsed = System.currentTimeMillis() - session.startTimeMillis
     session.spooky.spookyMetrics.pagesFetchedFromRemote += results.count(_.isInstanceOf[Doc])
 
     results
@@ -102,12 +102,13 @@ trait Action extends ActionLike with TraceAPI {
 
     var baseStr = s"[${session.taskContextOpt.map(_.partitionId()).getOrElse(0)}]+> ${this.toString}"
     this match {
-      case timed: Timed =>
+      case timed: Timed.ThreadSafe =>
         baseStr = baseStr + s" in ${timed.timeout(session)}"
         LoggerFactory.getLogger(this.getClass).info(this.withDetail(baseStr))
 
         session.progress.ping()
 
+        // the following execute f in a different thread, thus `timed` has to be declared as `ThreadSafe`
         CommonUtils.withTimeout(timed.hardTerminateTimeout(session))(
           f,
           session.progress.defaultHeartbeat

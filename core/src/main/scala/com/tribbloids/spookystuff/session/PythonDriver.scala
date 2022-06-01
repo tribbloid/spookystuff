@@ -144,7 +144,7 @@ class PythonDriver(
       CommonUtils.retry(CommonConst.driverClosingRetries) {
         try {
           if (process.isAlive) {
-            CommonUtils.withTimeout(CommonConst.driverClosingTimeout) {
+            CommonUtils.withTimeout(CommonConst.driverClosingTimeout, interrupt = false) {
               try {
                 this._interpret("exit()")
               } catch {

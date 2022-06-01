@@ -79,11 +79,15 @@ and the opening square bracket [,
 the opening curly brace {,
 These special characters are often called "metacharacters".
    */
-  def canonizeFileName(name: String): String = {
+  def canonizeFileName(
+      name: String,
+      noDash: Boolean = false
+  ): String = {
 
     var result = name.replaceAll("[ ]", "_").replaceAll("""[^0-9a-zA-Z!_.*'()-]+""", "_")
 
     if (result.length > 255) result = result.substring(0, 255)
+    if (noDash) result = result.replaceAll("-", "_") // phantomJS log will behave erratically if "-" is present
 
     result
   }

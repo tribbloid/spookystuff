@@ -15,11 +15,11 @@ limitations under the License.
  */
 package com.tribbloids.spookystuff.conf
 
-import com.tribbloids.spookystuff.session.{DriverLike, Session}
+import com.tribbloids.spookystuff.session.{DriverLike, DriverStatus, Session}
 import com.tribbloids.spookystuff.utils.CachingUtils.ConcurrentMap
 import com.tribbloids.spookystuff.utils.lifespan.Cleanable.{BatchID, Lifespan}
 import com.tribbloids.spookystuff.utils.lifespan.Cleanable
-import com.tribbloids.spookystuff.{DriverStatus, SpookyContext}
+import com.tribbloids.spookystuff.SpookyContext
 import org.apache.spark.TaskContext
 
 //local to TaskID, if not exist, local to ThreadID
@@ -81,10 +81,8 @@ object DriverFactory {
     }
 
     final def destroy(driver: D, tcOpt: Option[TaskContext]): Unit = {
-      driver match {
-        case v: Cleanable => v.clean()
-        case _            =>
-      }
+
+      driver.clean()
     }
 
     final lazy val taskLocal = TaskLocal(this)

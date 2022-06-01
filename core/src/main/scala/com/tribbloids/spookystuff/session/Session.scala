@@ -3,7 +3,7 @@ package com.tribbloids.spookystuff.session
 import com.tribbloids.spookystuff.SpookyContext
 import com.tribbloids.spookystuff.actions.Action
 import com.tribbloids.spookystuff.conf.{Core, PluginRegistry, PluginSystem}
-import com.tribbloids.spookystuff.utils.TreeThrowable
+import com.tribbloids.spookystuff.utils.{SpookyUtils, TreeThrowable}
 import com.tribbloids.spookystuff.utils.io.Progress
 import com.tribbloids.spookystuff.utils.lifespan.Cleanable.Lifespan
 import com.tribbloids.spookystuff.utils.lifespan.LocalCleanable
@@ -24,8 +24,17 @@ class Session(
 ) extends LocalCleanable {
 
   spooky.spookyMetrics.sessionInitialized += 1
-  val startTime: Long = new Date().getTime
+  val startTimeMillis: Long = new Date().getTime
   val backtrace: ArrayBuffer[Action] = ArrayBuffer()
+
+  object SessionLog {
+
+    lazy val level1: String = SpookyUtils.canonizeFileName(lifespan.registeredIDs.mkString("-"), noDash = true)
+
+    lazy val level2: String = SpookyUtils.canonizeFileName(startTimeMillis.toString, noDash = true)
+
+    lazy val dirPath: String = s"target/logs/$level1/$level2"
+  }
 
   def taskContextOpt: Option[TaskContext] = lifespan.ctx.taskOpt
 

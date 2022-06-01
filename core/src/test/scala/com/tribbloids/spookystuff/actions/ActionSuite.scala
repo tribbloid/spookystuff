@@ -105,7 +105,7 @@ class ActionSuite extends SpookyEnvFixture {
 
 object ActionSuite {
 
-  case object OverdueExport extends Export with Timed {
+  case object OverdueExport extends Export with Timed.ThreadSafe {
 
     override def doExeNoName(session: Session): Seq[DocOption] = {
       Thread.sleep(120 * 1000)

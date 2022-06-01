@@ -11,7 +11,7 @@ import java.util
 
 import scala.language.implicitConversions
 
-trait WebTimed extends WebAction with Timed {
+trait WebTimed extends WebAction with Timed.ThreadUnsafe {
 
   implicit def nanos2JDuration(v: Long): Duration = java.time.Duration.ofNanos(v)
 

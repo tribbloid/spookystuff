@@ -179,7 +179,7 @@ abstract class SpookyEnvFixture
     val conditions = this.conditions
     val result = sc.runEverywhere() { _ =>
       Try {
-        CommonUtils.retry(3, 1000) {
+        CommonUtils.retry(3, 1000, silent = true) {
           SpookyEnvFixture.shouldBeClean(spooky, conditions)
         }
       }
@@ -205,7 +205,7 @@ abstract class SpookyEnvFixture
 
   }
 
-  override def beforeEach(): Unit = CommonUtils.retry(3, 1000) {
+  override def beforeEach(): Unit = CommonUtils.retry(3, 1000, silent = true) {
     //    SpookyEnvFixture.cleanDriverInstances()
     spooky.spookyMetrics.resetAll()
 
@@ -225,7 +225,7 @@ abstract class SpookyEnvFixture
     val result = sc.runEverywhere() { _ =>
       Try {
 
-        CommonUtils.retry(3, 1000) {
+        CommonUtils.retry(3, 1000, silent = true) {
           SpookyEnvFixture.instancesShouldBeClean(spooky)
         }
       }

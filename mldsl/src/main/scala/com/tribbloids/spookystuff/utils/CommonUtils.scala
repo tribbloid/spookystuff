@@ -67,7 +67,8 @@ abstract class CommonUtils {
 
   def withTimeout[T](
       timeout: Timeout,
-      interval: Duration = 10.seconds
+      interval: Duration = 10.seconds,
+      interrupt: Boolean = true
   )(
       fn: => T,
       heartbeat: Heartbeat = Heartbeat.default
@@ -82,7 +83,7 @@ abstract class CommonUtils {
       await.result(future, timeout)
     } catch {
       case e: TimeoutException =>
-        future.interrupt()
+        if (interrupt) future.interrupt()
         LoggerFactory.getLogger(this.getClass).debug(TIMEOUT)
         throw e
     }

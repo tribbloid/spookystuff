@@ -51,9 +51,9 @@ object WebDriverFactory {
       val self = new HtmlUnitDriver(browserV)
       self.setJavascriptEnabled(true)
       self.setProxySettings(Proxy.extractFrom(caps))
-      val driver = new CleanWebDriver(self, lifespan)
+      val result = new CleanWebDriver(self, _lifespan = lifespan)
 
-      driver
+      result
     }
   }
 
@@ -92,12 +92,8 @@ object WebDriverFactory {
     lazy val defaultBuilder: PhantomJSDriverService.Builder = {
 
       new PhantomJSDriverService.Builder()
-        .withLogFile(new File("target/logs/phantomjsdriver.log"))
-//        .withLogFile(new File("/dev/null"))
         .usingCommandLineArguments(Array("--webdriver-loglevel=WARN"))
 //        .usingCommandLineArguments(Array.empty)
-        .usingGhostDriverCommandLineArguments(Array("service_log_path=target/logs/ghostdriver.log"))
-//        .usingGhostDriverCommandLineArguments(Array.empty)
     }
   }
 
@@ -113,12 +109,11 @@ object WebDriverFactory {
       deployment.OnDriver(spooky.sparkContext).deployOnce
     }
 
-    //called from executors
-    override def _createImpl(session: Session, lifespan: Lifespan): CleanWebDriver = {
+    case class DriverCreation(session: Session, lifespan: Lifespan) {
 
-      val deployment = deploy(session.spooky)
+      val deployment: BinaryDeployment = deploy(session.spooky)
 
-      val caps = DesiredCapabilitiesView.default.Imported(session.spooky).phantomJS
+      val caps: DesiredCapabilitiesView = DesiredCapabilitiesView.default.Imported(session.spooky).phantomJS
       caps.setCapability(PhantomJSDriverService.PHANTOMJS_EXECUTABLE_PATH_PROPERTY, deployment.verifiedLocalPath)
 
       lazy val service: PhantomJSDriverService = {
@@ -140,6 +135,12 @@ object WebDriverFactory {
               "OPENSSL_CONF" -> "/dev/null" //https://github.com/bazelbuild/rules_closure/issues/351
             ).asJava
           )
+          .withLogFile(new File(s"${session.SessionLog.dirPath}/PhantomJSDriver.log"))
+          //        .withLogFile(new File("/dev/null"))
+          .usingGhostDriverCommandLineArguments(
+            Array(s"""service_log_path="${session.SessionLog.dirPath}/GhostDriver.log"""")
+          )
+        //        .usingGhostDriverCommandLineArguments(Array.empty)
 
         proxyOpt.foreach { proxy =>
           builder = builder.withProxy(proxy)
@@ -148,9 +149,22 @@ object WebDriverFactory {
         builder.build
       }
 
-//      val self = new PhantomJSDriver(caps)
-      val self = new PhantomJSDriver(service, caps)
-      new CleanWebDriver(self, lifespan)
+      //      val driver = new PhantomJSDriver(caps)
+      lazy val driver: PhantomJSDriver = new PhantomJSDriver(service, caps)
+
+      lazy val cleanDriver: CleanWebDriver = {
+
+        val result = new CleanWebDriver(driver, Some(service), lifespan)
+        result
+      }
+
+    }
+
+    //called from executors
+    override def _createImpl(session: Session, lifespan: Lifespan): CleanWebDriver = PhantomJS.synchronized {
+      // synchronized to avoid 2 builders competing for the same port
+      val creation = DriverCreation(session, lifespan)
+      creation.cleanDriver
     }
   }
 }
