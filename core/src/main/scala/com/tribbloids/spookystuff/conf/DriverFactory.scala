@@ -18,7 +18,6 @@ package com.tribbloids.spookystuff.conf
 import com.tribbloids.spookystuff.session.{DriverLike, DriverStatus, Session}
 import com.tribbloids.spookystuff.utils.CachingUtils.ConcurrentMap
 import com.tribbloids.spookystuff.utils.lifespan.Cleanable.{BatchID, Lifespan}
-import com.tribbloids.spookystuff.utils.lifespan.Cleanable
 import com.tribbloids.spookystuff.SpookyContext
 import org.apache.spark.TaskContext
 
