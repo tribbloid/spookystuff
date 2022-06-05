@@ -39,12 +39,11 @@
     <module>web</module>
     <module>integration</module>
     <!--<module>pipeline</module>-->
-    <module>example</module>
     <module>assembly</module>
+    <module>spookystuff-showcase</module>
   </modules>
 
   <properties>
-
     <revision.base>0.7.0</revision.base>
     <!--    https://maven.apache.org/maven-ci-friendly.html-->
     <revision>${revision.base}_${scala.binary.version}${version.suffix}-SNAPSHOT</revision>
