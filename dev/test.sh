@@ -3,7 +3,6 @@
 CRDIR="$(cd "`dirname "$0"`"; pwd)"
 FWDIR="$(cd "`dirname "$0"`"/..; pwd)"
 
-source "${CRDIR}/.mvn-common.sh"
+source "${CRDIR}/.shared.sh"
 
-#see http://www.bloggure.info/MavenFailTestAtEnd/
-mvn test -f "$FWDIR"/pom.xml -Pdist "$@"
+${FWDIR}/gradlew test "-Dorg.gradle.parallel=false" "${@}"
