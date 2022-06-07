@@ -1,57 +1,78 @@
 *.class
 
+#test logs
+*.log
+**/log
+**/logs
+
 # maven
 *.versionsBackup
 
-# sbt specific
+# gradle
+**/.gradle
+**/build
+
+# sbt
 .cache/
 .history/
 .lib/
 dist/*
-target/
-*/target/
-*/lib_managed/
-*/src_managed/
+lib_managed/
+src_managed/
 project/boot/
 project/plugins/project/
 
-# Scala-IDE specific
+# Scala-IDE
 .scala_dependencies
 .worksheet
 
-# Eclipse specific
+# Eclipse
 .pmd
 .classpath
 .project
 .settings/
 
-# IntelliJ-IDEA specific
+# IntelliJ-IDEA
 *.iml
 .idea/
 .idea_modules/
 
+# VSCode
+.vscode/
+
+# BSP & Metals
+.bsp/
+.bloop/
+.metals/
+**/metals.sbt
+
+# the Singapore stack
+**/.ammonite/
+
+# Compiler
+output
+**/out
+**/target/
+
 #Misc
 temp
+**/temp
 foo
 **.crc
 **.lock
 
 #aws key
-# **/rootkey.csv
+**/rootkey.csv
 
-#test logs
-*.log
-**/log
-**/logs
+#publish
+dev/publish.sh
+dev/publishM2.sh
 
 #syncthing
 .stfolder
 
 #temporary code that are not supposed to be uploaded.
 **/spike*.*
-
-#vscode
-.vscode
 
 **/.rootkey.csv
 
