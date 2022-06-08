@@ -12,6 +12,7 @@
   </parent>
 
   <artifactId>repackaged-selenium-bundle</artifactId>
+  <version>${revision.base}</version>
 
   <properties>
 
