@@ -111,21 +111,10 @@
         </executions>
       </plugin>
 
+<!--      redefined to ensure that it is executed after maven-shade!-->
       <plugin>
         <groupId>org.codehaus.mojo</groupId>
         <artifactId>flatten-maven-plugin</artifactId>
-<!--        <executions>-->
-
-<!--          &lt;!&ndash; enable flattening &ndash;&gt;-->
-<!--          <execution>-->
-<!--            <id>flatten</id>-->
-<!--            <phase>process-resources</phase>-->
-<!--            <goals>-->
-<!--              <goal>flatten</goal>-->
-<!--            </goals>-->
-<!--          </execution>-->
-<!--        </executions>-->
-
       </plugin>
     </plugins>
   </build>

@@ -162,13 +162,13 @@
             </execution>
 
             <!-- enable flattening -->
-            <!--        <execution>-->
-            <!--          <id>flatten</id>-->
-            <!--          <phase>process-resources</phase>-->
-            <!--          <goals>-->
-            <!--            <goal>flatten</goal>-->
-            <!--          </goals>-->
-            <!--        </execution>-->
+            <execution>
+              <id>flatten</id>
+              <phase>process-resources</phase>
+              <goals>
+                <goal>flatten</goal>
+              </goals>
+            </execution>
 
             <!--          see https://stackoverflow.com/questions/52552329/use-maven-flatten-plugin-and-maven-shade-plugin-at-the-same-time-->
             <execution>
