@@ -149,7 +149,7 @@
         <plugin>
           <groupId>org.codehaus.mojo</groupId>
           <artifactId>flatten-maven-plugin</artifactId>
-          <version>1.2.5</version>
+          <version>1.2.7</version>
           <executions>
 
             <!-- ensure proper cleanup -->
@@ -165,15 +165,6 @@
             <execution>
               <id>flatten</id>
               <phase>process-resources</phase>
-              <goals>
-                <goal>flatten</goal>
-              </goals>
-            </execution>
-
-            <!--          see https://stackoverflow.com/questions/52552329/use-maven-flatten-plugin-and-maven-shade-plugin-at-the-same-time-->
-            <execution>
-              <id>flatten.shaded</id>
-              <phase>package</phase>
               <goals>
                 <goal>flatten</goal>
               </goals>
