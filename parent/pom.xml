@@ -48,120 +48,12 @@
   </modules>
 
   <profiles>
-    <profile>
-      <id>java8</id>
-      <activation>
-        <activeByDefault>true</activeByDefault>
-      </activation>
-    </profile>
-
-    <!--    <profile>-->
-    <!--      <id>spark-2.2</id>-->
-    <!--      <properties>-->
-    <!--        <spark.version>2.2.3</spark.version>-->
-    <!--        <spark.binary.version>2.2</spark.binary.version>-->
-    <!--      </properties>-->
-    <!--    </profile>-->
-
-    <!--    <profile>-->
-    <!--      <id>spark-2.3</id>-->
-    <!--      <properties>-->
-    <!--        <spark.version>2.3.3</spark.version>-->
-    <!--        <spark.binary.version>2.3</spark.binary.version>-->
-    <!--      </properties>-->
-    <!--    </profile>-->
-
-    <profile>
-      <id>spark-2.4</id>
-      <activation>
-        <activeByDefault>true</activeByDefault>
-      </activation>
-    </profile>
-
-    <profile>
-      <id>spark-2.4-cloudera2</id>
-
-      <properties>
-        <spark.version>2.4.0.cloudera2</spark.version>
-        <version.suffix>.cloudera2</version.suffix>
-      </properties>
-    </profile>
-
-    <profile>
-      <id>scalafix</id>
-
-      <build>
-        <plugins>
-
-          <plugin>
-            <groupId>net.alchim31.maven</groupId>
-            <artifactId>scala-maven-plugin</artifactId>
-            <configuration>
-              <compilerPlugins>
-                <compilerPlugin>
-                  <groupId>org.scalameta</groupId>
-                  <artifactId>semanticdb-scalac_${scala.version}</artifactId>
-                  <version>4.5.6</version>
-                </compilerPlugin>
-              </compilerPlugins>
-            </configuration>
-          </plugin>
-
-          <plugin>
-            <groupId>io.github.evis</groupId>
-            <artifactId>scalafix-maven-plugin_${scala.binary.version}</artifactId>
-            <version>0.1.6_0.10.0</version>
-          </plugin>
-        </plugins>
-      </build>
-
-    </profile>
-
-
-    <profile>
-      <id>scala-2.11</id>
-
-      <properties>
-        <scala.version>2.11.12</scala.version>
-        <scala.binary.version>2.11</scala.binary.version>
-      </properties>
-    </profile>
-
-    <profile>
-      <id>scala-2.12</id>
-
-      <activation>
-        <activeByDefault>true</activeByDefault>
-      </activation>
-    </profile>
 
     <profile>
       <id>benchmark</id>
       <modules>
         <module>benchmark</module>
       </modules>
-    </profile>
-
-    <profile>
-      <id>release-sign-artifacts</id>
-      <build>
-        <plugins>
-          <plugin>
-            <groupId>org.apache.maven.plugins</groupId>
-            <artifactId>maven-gpg-plugin</artifactId>
-            <version>1.6</version>
-            <executions>
-              <execution>
-                <id>sign-artifacts</id>
-                <phase>verify</phase>
-                <goals>
-                  <goal>sign</goal>
-                </goals>
-              </execution>
-            </executions>
-          </plugin>
-        </plugins>
-      </build>
     </profile>
 
     <profile>
