@@ -6,4 +6,4 @@ source "${CRDIR}/profiles/apache-latest/.common.sh"
 
 "$CRDIR"/mvn-install.sh "${MVN_PROFILES[@]}" -Pscalafix
 
-mvn scalafix:scalafix "${MVN_PROFILES[@]}" -Pscalafix -DskipTests -f "$CRDIR"/../pom.xml
+"$FWDIR"/mvnw scalafix:scalafix "${MVN_PROFILES[@]}" -Pscalafix -DskipTests -f "$CRDIR"/../pom.xml

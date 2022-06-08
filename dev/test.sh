@@ -6,4 +6,4 @@ FWDIR="$(cd "`dirname "$0"`"/..; pwd)"
 source "${CRDIR}/.mvn-common.sh"
 
 #see http://www.bloggure.info/MavenFailTestAtEnd/
-mvn test -f "$FWDIR"/pom.xml -Pdist "$@"
+"$FWDIR"/mvnw test -f "$FWDIR"/pom.xml -Pdist "$@"
