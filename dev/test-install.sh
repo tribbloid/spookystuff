@@ -7,9 +7,9 @@ FWDIR="$(cd "`dirname "$0"`"/..; pwd)"
 
 source "${CRDIR}/.mvn-common.sh"
 
-mvn --version
+"$FWDIR"/mvnw --version
 
-mvn clean install --errors -f "$FWDIR"/repackaged/selenium-bundle/pom.xml "$@"
+"$FWDIR"/mvnw clean install --errors -f "$FWDIR"/repackaged/selenium-bundle/pom.xml "$@"
 "${CRDIR}/tree.sh" "$@"
 
-mvn clean install --errors -f "$FWDIR"/pom.xml -Pdist "$@"
+"$FWDIR"/mvnw clean install --errors -f "$FWDIR"/pom.xml -Pdist "$@"
