@@ -5,11 +5,13 @@
 
   <modelVersion>4.0.0</modelVersion>
 
-<!--  now a top level project-->
-<!--  until https://stackoverflow.com/questions/63865005/non-readable-pom-home-rof-m2-repository-com-where-does-this-path-come-from is solved-->
-  <groupId>com.tribbloids.spookystuff</groupId>
+  <parent>
+    <artifactId>repackaged</artifactId>
+    <groupId>com.tribbloids.spookystuff</groupId>
+    <version>${revision}</version>
+  </parent>
+
   <artifactId>repackaged-selenium-bundle</artifactId>
-  <version>${revision}</version>
 
   <properties>
 
@@ -20,8 +22,6 @@
     <selenium.version>4.1.4</selenium.version>
     <phantomjs.version>1.5.0</phantomjs.version>
     <htmlunit.version>3.61.0</htmlunit.version>
-
-    <revision>${selenium.version}</revision>
 
   </properties>
 
@@ -64,7 +64,6 @@
       <plugin>
         <groupId>org.apache.maven.plugins</groupId>
         <artifactId>maven-shade-plugin</artifactId>
-        <version>3.2.4</version>
         <executions>
           <execution>
             <phase>package</phase>
@@ -112,24 +111,22 @@
         </executions>
       </plugin>
 
-<!--      <plugin>-->
-<!--        <groupId>org.codehaus.mojo</groupId>-->
-<!--        <artifactId>flatten-maven-plugin</artifactId>-->
+      <plugin>
+        <groupId>org.codehaus.mojo</groupId>
+        <artifactId>flatten-maven-plugin</artifactId>
 <!--        <executions>-->
 
-<!--          &lt;!&ndash;          see https://github.com/mojohaus/flatten-maven-plugin/issues/100&ndash;&gt;-->
-<!--          &lt;!&ndash;          and https://stackoverflow.com/questions/52552329/use-maven-flatten-plugin-and-maven-shade-plugin-at-the-same-time&ndash;&gt;-->
-<!--          &lt;!&ndash;          and https://issues.apache.org/jira/browse/MSHADE-323&ndash;&gt;-->
+<!--          &lt;!&ndash; enable flattening &ndash;&gt;-->
 <!--          <execution>-->
-<!--            <id>flatten.shaded</id>-->
-<!--            <phase>package</phase>-->
+<!--            <id>flatten</id>-->
+<!--            <phase>process-resources</phase>-->
 <!--            <goals>-->
 <!--              <goal>flatten</goal>-->
 <!--            </goals>-->
 <!--          </execution>-->
 <!--        </executions>-->
-<!--      </plugin>-->
 
+      </plugin>
     </plugins>
   </build>
 
