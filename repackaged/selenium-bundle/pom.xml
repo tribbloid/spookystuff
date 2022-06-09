@@ -9,6 +9,7 @@
     <artifactId>repackaged</artifactId>
     <groupId>com.tribbloids.spookystuff</groupId>
     <version>${revision}</version>
+    <relativePath>../pom.xml</relativePath>
   </parent>
 
   <artifactId>repackaged-selenium-bundle</artifactId>

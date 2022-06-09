@@ -6,6 +6,7 @@
     <artifactId>spookystuff-parent</artifactId>
     <groupId>com.tribbloids.spookystuff</groupId>
     <version>${revision}</version>
+    <relativePath>../pom.xml</relativePath>
   </parent>
   <modelVersion>4.0.0</modelVersion>
 
