@@ -9,6 +9,10 @@ source "${CRDIR}/.mvn-common.sh"
 
 "$FWDIR"/mvnw --version
 
+echo "${CRDIR}/tree.sh" "$@"
+echo "----------------------------------------------------"
 "${CRDIR}/tree.sh" "$@"
 
+echo "$FWDIR"/mvnw clean install --errors -f "$FWDIR"/pom.xml -Pdist "$@"
+echo "----------------------------------------------------"
 "$FWDIR"/mvnw clean install --errors -f "$FWDIR"/pom.xml -Pdist "$@"
