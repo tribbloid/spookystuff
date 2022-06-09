@@ -46,7 +46,7 @@
     <dependency>
       <groupId>com.tribbloids.spookystuff</groupId>
       <artifactId>repackaged-selenium-bundle</artifactId>
-      <version>${revision}</version>
+      <version>${project.version}</version>
     </dependency>
 
   </dependencies>
