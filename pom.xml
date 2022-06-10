@@ -40,7 +40,6 @@
     <module>integration</module>
     <!--<module>pipeline</module>-->
     <module>assembly</module>
-    <module>spookystuff-showcase</module>
   </modules>
 
   <properties>
@@ -167,6 +166,14 @@
       <id>benchmark</id>
       <modules>
         <module>benchmark</module>
+      </modules>
+    </profile>
+
+
+    <profile>
+      <id>showcase</id>
+      <modules>
+        <module>spookystuff-showcase</module>
       </modules>
     </profile>
 
