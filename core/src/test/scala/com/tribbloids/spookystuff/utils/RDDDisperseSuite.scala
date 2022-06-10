@@ -11,7 +11,7 @@ import org.slf4j.LoggerFactory
 import scala.concurrent.{ExecutionContext, ExecutionContextExecutor}
 import scala.util.Random
 
-class RDDDisperseSuite extends SpookyEnvFixture with HasEager {
+class RDDDisperseSuite extends SpookyEnvFixture {
 
   implicit val concurrentCtx: ExecutionContextExecutor = ExecutionContext.global
 
@@ -109,7 +109,7 @@ class RDDDisperseSuite extends SpookyEnvFixture with HasEager {
     rdd.unpersist(true)
   }
 
-  trait Facet extends Eager with ScalaNameMixin {
+  trait Facet extends ScalaNameMixin {
 
     val acc: LongAccumulator = sc.longAccumulator(this.facetName)
     var nPart: Int = -1
@@ -167,7 +167,7 @@ class RDDDisperseSuite extends SpookyEnvFixture with HasEager {
     }
   }
 
-  object PlainRDD extends Facet with NOTEager {
+  object PlainRDD extends Facet {
 
     override def doAssert(rdd: RDD[Int]): Unit = {
 
@@ -177,7 +177,7 @@ class RDDDisperseSuite extends SpookyEnvFixture with HasEager {
     }
   }
 
-  object PartitionReified extends Facet with NOTEager {
+  object PartitionReified extends Facet {
 
     override def doAssert(rdd: RDD[Int]): Unit = {
 
@@ -282,8 +282,6 @@ class RDDDisperseSuite extends SpookyEnvFixture with HasEager {
 
   {
     import StorageLevel._
-
-    reifyEager()
 
     Seq(MEMORY_ONLY, MEMORY_ONLY_SER_2, MEMORY_AND_DISK).flatMap { level =>
       Seq(
