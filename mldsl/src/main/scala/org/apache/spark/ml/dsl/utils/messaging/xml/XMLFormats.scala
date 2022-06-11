@@ -7,7 +7,7 @@ import java.text.SimpleDateFormat
 import java.util.{Date, TimeZone}
 import scala.util.Try
 
-object XMLFormats extends DefaultFormats {
+object XMLFormats {
 
   val baseDataFormatsFactory: ThreadLocal[Seq[SimpleDateFormat]] = ThreadLocal { _ =>
     Seq(
@@ -17,9 +17,27 @@ object XMLFormats extends DefaultFormats {
     )
   }
 
-  val baseFormat: XMLFormats.type = XMLFormats
+  object BaseFormat extends DefaultFormats {
 
-  def xmlFormats(base: Formats = baseFormat): Formats =
+    override val dateFormat: DateFormat = new DateFormat {
+      def parse(s: String): Some[Date] =
+        dateFormats.flatMap { format =>
+          Try {
+            Some(format.parse(s))
+          }.toOption
+        }.head
+
+      def format(d: Date): String = dateFormats.head.format(d)
+
+      def timezone: TimeZone = dateFormats.head.getTimeZone
+
+      def dateFormats: Seq[SimpleDateFormat] = baseDataFormatsFactory.get()
+    }
+
+    override val wantsBigDecimal = true
+  }
+
+  def xmlFormats(base: Formats = BaseFormat): Formats =
     base +
       StringToNumberDeserializer +
       EmptyStringToEmptyObjectDeserializer +
@@ -31,20 +49,4 @@ object XMLFormats extends DefaultFormats {
   lazy val defaultFormats: Formats = xmlFormats()
 
   val defaultXMLPrinter = new scala.xml.PrettyPrinter(80, 2)
-  override val dateFormat: DateFormat = new DateFormat {
-    def parse(s: String): Some[Date] =
-      dateFormats.flatMap { format =>
-        Try {
-          Some(format.parse(s))
-        }.toOption
-      }.head
-
-    def format(d: Date): String = dateFormats.head.format(d)
-
-    def timezone: TimeZone = dateFormats.head.getTimeZone
-
-    def dateFormats: Seq[SimpleDateFormat] = baseDataFormatsFactory.get()
-  }
-
-  override val wantsBigDecimal = true
 }
