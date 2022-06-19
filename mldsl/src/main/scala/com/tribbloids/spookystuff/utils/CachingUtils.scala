@@ -2,7 +2,6 @@ package com.tribbloids.spookystuff.utils
 
 import org.sparkproject.guava.cache.CacheBuilder
 
-import java.util.concurrent.ConcurrentHashMap
 import scala.collection.mutable
 
 object CachingUtils {
@@ -58,11 +57,9 @@ object CachingUtils {
     new java.util.concurrent.ConcurrentHashMap[K, V]().asScala
   }
 
-  type ConcurrentSet[V] = mutable.Set[V]
-
-  def ConcurrentSet[V](): mutable.Set[V] = {
-    new ConcurrentHashMap[V, Unit]().keySet().asScala //TODO: switch to this
-//    new mutable.HashSet[V]() with mutable.SynchronizedSet[V]
+  type ConcurrentSet[V] = ConcurrentMap[V, Unit]
+  def ConcurrentSet[V](): ConcurrentSet[V] = {
+    ConcurrentMap[V, Unit]()
   }
 
   implicit class MapView[K, V](self: mutable.Map[K, V]) {

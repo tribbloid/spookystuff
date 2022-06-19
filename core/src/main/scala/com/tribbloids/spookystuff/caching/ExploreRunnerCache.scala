@@ -26,7 +26,6 @@ object ExploreRunnerCache {
           v
         }
       )
-    //    }
   }
 
   def finishExploreExecutions(exeID: ExeID): Unit = {
@@ -58,7 +57,7 @@ object ExploreRunnerCache {
   }
 
   def register(v: ExploreRunner, exeID: ExeID): Unit = {
-    getOnGoingRunners(exeID) += v
+    getOnGoingRunners(exeID) += v -> Unit
   }
 
   def deregister(v: ExploreRunner, exeID: ExeID): Unit = {
@@ -68,20 +67,20 @@ object ExploreRunnerCache {
   def get(key: (NodeKey, ExeID)): Set[Iterable[DataRow]] = {
     val onGoing = this
       .getOnGoingRunners(key._2)
-      .toSet[ExploreRunner]
+      .keySet
 
     val onGoingVisitedSet = onGoing
       .flatMap { v =>
         v.visited.get(key._1)
       }
 
-    onGoingVisitedSet ++ committedVisited.get(key)
+    onGoingVisitedSet.toSet ++ committedVisited.get(key)
   }
 
   def getAll(exeID: ExeID): Map[NodeKey, Iterable[DataRow]] = {
     val onGoing: Map[NodeKey, Iterable[DataRow]] = this
       .getOnGoingRunners(exeID)
-      .map(_.visited.toMap)
+      .map(_._1.visited.toMap)
       .reduceOption { (v1, v2) =>
         v1 ++ v2
       }

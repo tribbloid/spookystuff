@@ -114,6 +114,7 @@ object ExploreAlgorithms {
       override val ordering: RowOrdering = Ordering.by { tuple: (NodeKey, Iterable[DataRow]) =>
         val inProgress = ExploreRunnerCache
           .getOnGoingRunners(params.executionID)
+          .keySet
           .flatMap(_.fetchingInProgressOpt)
 
         val result = if (inProgress contains tuple._1) {
