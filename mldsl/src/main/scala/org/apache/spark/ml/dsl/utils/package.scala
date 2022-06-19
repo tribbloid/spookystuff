@@ -4,7 +4,7 @@ package object utils {
 
   type Var = NullSafe.Var
 
-  type ?[T, M] = NullSafe.CanBeNull[T, M]
+  type `?`[T, M] = NullSafe.CanBeNull[T, M]
 
   type ![T, M] = NullSafe.CannotBeNull[T, M]
 

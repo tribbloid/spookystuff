@@ -118,7 +118,8 @@ case class HDFSResolver(
           children.map { status =>
             execute(status.getPath.toString)
           }
-        } else Nil
+        }.toSeq
+        else Nil
       }
     }
 

@@ -16,7 +16,7 @@ class LazyVar[T](
 ) extends Serializable
     with IDMixin {
 
-  protected val cached: T ? Var = None
+  protected val cached: T `?` Var = None
 
   def peek: Option[T] = cached.asOption
 

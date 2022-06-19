@@ -185,8 +185,8 @@ trait EAV extends Serializable with IDMixin {
       // should only be used in setters
       val aliases: List[String] = Nil,
       nullable: Boolean = false,
-      default: T ? _ = None,
-      primaryNameOverride: String ? _ = None
+      default: T `?` _ = None,
+      primaryNameOverride: String `?` _ = None
   )(implicit ev: T <:< VV)
       extends AttrLike[T]
       with ScalaNameMixin {

@@ -14,7 +14,7 @@ case class BacktrackingIterator[T](
 
   val history: ArrayBuffer[T] = ArrayBuffer.empty
 
-  def historySansCurrent: Seq[T] = history.init
+  def historySansCurrent: ArrayBuffer[T] = history.init
 
   @volatile var _backtracking: Int = -1
 

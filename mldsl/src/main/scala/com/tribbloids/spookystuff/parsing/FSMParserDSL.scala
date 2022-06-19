@@ -101,7 +101,7 @@ object FSMParserDSL extends DSL {
       val prunedTails = this.core.tails.mapValues { tails =>
         val seq = tails.seq.filter(_.data.nonEmpty)
         tails.copyImplicitly(seq)
-      }
+      }.toMap
 
       val pruned = this.core.copy(tails = prunedTails)
 

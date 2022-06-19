@@ -1,4 +1,5 @@
 package com.tribbloids.spookystuff.graph
+
 import com.tribbloids.spookystuff.graph.Layout.Facet
 import com.tribbloids.spookystuff.utils.IDMixin
 
@@ -55,7 +56,7 @@ trait ElementView[D <: Domain] extends Algebra.Aliases[D] with IDMixin {
         prefixes ++= tailOpt
         if (positioning.isEmpty) positioning += 0
 
-        prefixes -> positioning
+        prefixes.toSeq -> positioning.toSeq
       case _ =>
         Nil -> Nil
     }

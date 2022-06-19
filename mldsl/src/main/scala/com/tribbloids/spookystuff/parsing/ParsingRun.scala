@@ -57,7 +57,7 @@ case class ParsingRun(
       val captured = ls.spanTokens
       val result = ls.currentOutcome
       (captured, result._2, result._1)
-    }
+    }.toSeq
     ParsingRun.ResultSeq(seq)
   }
 }

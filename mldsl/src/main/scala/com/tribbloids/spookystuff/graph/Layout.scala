@@ -120,7 +120,7 @@ trait Layout[D <: Domain] extends Algebra.Aliases[D] {
 
       this.copy(
         self.replicate(m),
-        tails.mapValues(_.replicate(m)),
+        tails.mapValues(_.replicate(m)).toMap,
         heads.replicate(m)
       )
     }
