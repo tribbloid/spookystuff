@@ -67,6 +67,7 @@ case class DataRow(
     .filterKeys(_.isSelected)
     .map(identity)
     .map(tuple => tuple._1.name -> tuple._2)
+    .toMap
 
   override def toMessage_>> : Map[String, Any] = toMap
 

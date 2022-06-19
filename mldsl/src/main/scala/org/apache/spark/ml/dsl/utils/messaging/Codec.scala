@@ -204,8 +204,6 @@ object Codec {
 
   def getDefaultRootTag(v: Any): String = {
     v match {
-      case vv: Traversable[_] =>
-        vv.stringPrefix
       case vv: Product =>
         vv.productPrefix
       case _ =>

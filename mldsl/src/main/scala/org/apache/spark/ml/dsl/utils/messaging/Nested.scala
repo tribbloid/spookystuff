@@ -70,7 +70,7 @@ case class Nested[T: ClassTag](
 
     val treeException = if (errorBuffer.nonEmpty) {
 
-      val treeException = TreeThrowable.combine(errorBuffer)
+      val treeException = TreeThrowable.combine(errorBuffer.toSeq)
       if (failFast) throw treeException
       Some(treeException)
     } else {

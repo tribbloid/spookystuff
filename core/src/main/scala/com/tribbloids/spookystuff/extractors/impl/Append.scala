@@ -26,14 +26,14 @@ case class Append[+T: ClassTag] private (
     val getSeqResolved = get.AsSeq.resolve(tt).lift
     val exprResolved = expr.resolve(tt).lift
 
-    PartialFunction({ v1: FR =>
+    { v1: FR =>
       val lastOption = exprResolved.apply(v1)
       val oldOption = getSeqResolved.apply(v1)
 
       oldOption.toSeq.flatMap { old =>
         SpookyUtils.asIterable[T](old)
       } ++ lastOption
-    })
+    }
   }
 
   override def _args: Seq[GenExtractor[_, _]] = Seq(get, expr)

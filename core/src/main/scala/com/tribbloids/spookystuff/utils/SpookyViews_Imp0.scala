@@ -4,50 +4,49 @@ import com.tribbloids.spookystuff.row._
 import org.apache.spark.SparkContext
 import org.apache.spark.rdd.RDD
 
-import scala.collection.generic.CanBuildFrom
 import scala.collection.immutable.ListMap
-import scala.collection.{Map, TraversableLike}
+import scala.collection.{IterableOps, Map}
 import scala.reflect.ClassTag
 
 abstract class SpookyViews_Imp0 extends CommonViews {
 
-  //TODO: the following 2 can be merged into 1
-  implicit class TraversableLikeView[A, Repr](self: TraversableLike[A, Repr])(implicit ctg: ClassTag[A]) {
-
-    def filterByType[B: ClassTag]: FilterByType[B] = new FilterByType[B]
-
-    class FilterByType[B: ClassTag] {
-
-      def get[That](implicit bf: CanBuildFrom[Repr, B, That]): That = {
-        self.flatMap { v =>
-          SpookyUtils.typedOrNone[B](v)
-        }(bf)
-
-        //        self.collect {case v: B => v} //TODO: switch to this after stop 2.10 support
-      }
-    }
-
-    def mapToRDD[B: ClassTag](sc: SparkContext, local: Boolean = false, sliceOpt: Option[Int] = None)(
-        f: A => B
-    ): RDD[B] = {
-      if (local) {
-        sc.parallelize(
-          self.toSeq.map(
-            f
-          ),
-          sliceOpt.getOrElse(sc.defaultParallelism)
-        )
-      } else {
-        sc.parallelize(
-            self.toSeq,
-            sliceOpt.getOrElse(sc.defaultParallelism)
-          )
-          .map(
-            f
-          )
-      }
-    }
-  }
+//  //TODO: the following 2 can be merged into 1
+//  implicit class IterableOpsView[A, Repr](self: IterableOps[A])(implicit ctg: ClassTag[A]) {
+//
+////    def filterByType[B: ClassTag]: FilterByType[B] = new FilterByType[B]
+////
+////    class FilterByType[B: ClassTag] {
+////
+////      def get[That]: That = {
+////        self.flatMap { v =>
+////          SpookyUtils.typedOrNone[B](v)
+////        }
+////
+////        //        self.collect {case v: B => v} //TODO: switch to this after stop 2.10 support
+////      }
+////    }
+//
+//    def mapToRDD[B: ClassTag](sc: SparkContext, local: Boolean = false, sliceOpt: Option[Int] = None)(
+//        f: A => B
+//    ): RDD[B] = {
+//      if (local) {
+//        sc.parallelize(
+//          self.toSeq.map(
+//            f
+//          ),
+//          sliceOpt.getOrElse(sc.defaultParallelism)
+//        )
+//      } else {
+//        sc.parallelize(
+//            self.toSeq,
+//            sliceOpt.getOrElse(sc.defaultParallelism)
+//          )
+//          .map(
+//            f
+//          )
+//      }
+//    }
+//  }
 
   implicit class ArrayView[A](self: Array[A]) {
 
@@ -80,7 +79,7 @@ abstract class SpookyViews_Imp0 extends CommonViews {
     }
   }
 
-  implicit class MapView[K, V](self: scala.collection.Map[K, V]) {
+  implicit class MapView[K, V](self: collection.Map[K, V]) {
 
     assert(self != null)
 
@@ -112,10 +111,10 @@ abstract class SpookyViews_Imp0 extends CommonViews {
       result
     }
 
-    def canonizeKeysToColumnNames: scala.collection.Map[String, V] = self.map(
+    def canonizeKeysToColumnNames: collection.Map[String, V] = self.map(
       tuple => {
         val keyName: String = tuple._1 match {
-          case symbol: scala.Symbol =>
+          case symbol: Symbol =>
             symbol.name //TODO: remove, this feature should no longer work after dataframe integration
           case _ =>
             tuple._1.toString

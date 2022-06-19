@@ -106,7 +106,7 @@ class IncrementallyCachedRDDMatrix extends FunSpecx with BeforeAndAfterAll {
       )
     }
 
-    result.to[immutable.IndexedSeq]
+    result.to(immutable.IndexedSeq)
   }
 
 //  override def afterAll(): Unit = {

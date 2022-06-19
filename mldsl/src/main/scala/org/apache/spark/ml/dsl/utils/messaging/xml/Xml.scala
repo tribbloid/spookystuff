@@ -203,7 +203,7 @@ object Xml {
       case JSet(xs) =>
         xs.flatMap { v =>
           toXml(name, v)
-        }(collection.breakOut)
+        }.toSeq
       case JLong(x)    => new XmlElem(name, x.toString)
       case JInt(x)     => new XmlElem(name, x.toString)
       case JDouble(x)  => new XmlElem(name, x.toString)

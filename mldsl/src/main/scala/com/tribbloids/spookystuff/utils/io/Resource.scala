@@ -50,10 +50,11 @@ abstract class Resource[T] extends LocalCleanable {
         .map(session => session.input(in => in.metadata.root))
         .groupBy(_.asMap("Type").toString)
 
-      val childMaps: Map[String, Seq[Map[String, Any]]] = grouped.mapValues {
-        _.map { md =>
-          md.asMap
-        }
+      val childMaps: Map[String, Seq[Map[String, Any]]] = grouped.map {
+        case (k, v) =>
+          k -> v.map { md =>
+            md.asMap
+          }
       }
 
       val result = new ResourceMetadata(root :++ childMaps)

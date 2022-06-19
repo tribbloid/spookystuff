@@ -230,7 +230,7 @@ case class Doc(
   lazy val fileExtensions: Seq[String] = tikaMimeType.getExtensions.asScala.map { str =>
     if (str.startsWith(".")) str.splitAt(1)._2
     else str
-  }
+  }.toSeq
   def defaultFileExtension: Option[String] = fileExtensions.headOption
 
   //---------------------------------------------------------------------------------------------------

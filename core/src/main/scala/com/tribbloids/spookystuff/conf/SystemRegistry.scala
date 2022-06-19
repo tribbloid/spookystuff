@@ -38,7 +38,7 @@ trait SystemRegistry {
             None
         }
 
-      TreeThrowable.&&&(trials)
+      TreeThrowable.&&&(trials.toSeq)
     }
 
 //    def tryCreateEnabled(): Unit = {

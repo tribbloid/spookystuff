@@ -14,12 +14,12 @@ class NullSafeSuite extends FunSpecx {
 
   it("can be converted from option") {
 
-    validate(Some("abc"): String ? _)
+    validate(Some("abc"): String `?` _)
   }
 
   it("can be converted from value") {
 
-    validate("abc": String ? _)
+    validate("abc": String `?` _)
   }
 
   it("CannotBeNull can only be converted from Some") {
@@ -32,7 +32,7 @@ class NullSafeSuite extends FunSpecx {
 
   it("String ? Var supports mutation") {
     validate {
-      val v: String ? Var = "def"
+      val v: String `?` Var = "def"
       `v` := "abc"
       v
     }

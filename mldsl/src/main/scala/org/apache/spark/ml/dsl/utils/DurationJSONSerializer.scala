@@ -16,7 +16,7 @@ object DurationJSONSerializer
             case JNull      => null
           }, {
             case d: Duration =>
-              if (d.isFinite()) JString(d.toString)
+              if (d.isFinite) JString(d.toString)
               else JString(d.toString.split("\\.").last)
           }
       )

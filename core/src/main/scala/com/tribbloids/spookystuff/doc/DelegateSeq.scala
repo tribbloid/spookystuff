@@ -4,7 +4,7 @@ import scala.language.implicitConversions
 
 trait DelegateSeq[+T] extends Seq[T] {
 
-  def seq: Seq[T]
+  def originalSeq: Seq[T]
 
   override def length: Int = seq.length
 

@@ -165,7 +165,7 @@ trait GenExtractorImplicits {
       new Zipped[T, Any](self, values.typed[Iterable[_]])
 
     protected def groupByImpl[K](f: T => K): Iterable[T] => Map[K, Seq[T]] =
-      (v: Iterable[T]) => v.groupBy(f).mapValues(_.toSeq)
+      (v: Iterable[T]) => v.groupBy(f).mapValues(_.toSeq).toMap
 
     def groupBy[K: TypeTag](f: T => K): Extractor[Map[K, Seq[T]]] = {
 

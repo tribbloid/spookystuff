@@ -57,7 +57,7 @@ object ExploreRunnerCache {
   }
 
   def register(v: ExploreRunner, exeID: ExeID): Unit = {
-    getOnGoingRunners(exeID) += v -> Unit
+    getOnGoingRunners(exeID) += v -> ()
   }
 
   def deregister(v: ExploreRunner, exeID: ExeID): Unit = {
@@ -92,6 +92,7 @@ object ExploreRunnerCache {
         case (k, v) =>
           k._1 -> v
       }
+      .toMap
 
     onGoing ++ commited
   }

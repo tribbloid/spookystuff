@@ -25,7 +25,11 @@ case class GenericProduct[T <: Product: Manifest](
 
   override def iterator: Iterator[(String, Any)] = kvs.iterator
 
-  override def -(key: String): Map[String, Any] = this.copy(kvs = kvs - key)
+//  override def -(key: String): Map[String, Any] = this.copy(kvs = kvs - key)
+
+  override def removed(key: String): Map[String, Any] = this.copy(kvs = kvs.removed(key))
+
+  override def updated[V1 >: Any](key: String, value: V1): Map[String, V1] = this.copy(kvs = kvs.updated(key, value))
 }
 
 abstract class AutomaticRelay[T <: Product: Manifest] extends MessageRelay[T] {

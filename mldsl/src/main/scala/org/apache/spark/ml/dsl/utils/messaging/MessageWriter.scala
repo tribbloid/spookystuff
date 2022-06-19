@@ -71,6 +71,7 @@ class MessageWriter[M](
         .mapValues { str =>
           DSLUtils.indent(str, indentStr)
         }
+        .toMap
     }
 
     def product2Str(v: Product): String = {

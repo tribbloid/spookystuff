@@ -167,7 +167,7 @@ case class FetchedDataset(
       val reified = tpe.reified
       val converter = CatalystTypeConverters.createToCatalystConverter(reified)
       converter
-    }
+    }.toMap
 
 //    val rowEncoder = RowEncoder.apply(spookySchema.structType)
 

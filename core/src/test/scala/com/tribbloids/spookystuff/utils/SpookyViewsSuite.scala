@@ -58,20 +58,20 @@ class SpookyViewsSuite extends SpookyEnvFixture {
     assert(counter2.value > 100)
   }
 
-  it("TraversableLike.filterByType should work on primitive types") {
-
-    assert(Seq(1, 2.2, "a").filterByType[Int].get == Seq(1))
-    assert(Seq(1, 2.2, "a").filterByType[java.lang.Integer].get == Seq(1: java.lang.Integer))
-    assert(Seq(1, 2.2, "a").filterByType[Double].get == Seq(2.2))
-    assert(Seq(1, 2.2, "a").filterByType[java.lang.Double].get == Seq(2.2: java.lang.Double))
-    assert(Seq(1, 2.2, "a").filterByType[String].get == Seq("a"))
-
-    assert(Set(1, 2.2, "a").filterByType[Int].get == Set(1))
-    assert(Set(1, 2.2, "a").filterByType[java.lang.Integer].get == Set(1: java.lang.Integer))
-    assert(Set(1, 2.2, "a").filterByType[Double].get == Set(2.2))
-    assert(Set(1, 2.2, "a").filterByType[java.lang.Double].get == Set(2.2: java.lang.Double))
-    assert(Set(1, 2.2, "a").filterByType[String].get == Set("a"))
-  }
+//  it("TraversableLike.filterByType should work on primitive types") {
+//
+//    assert(Seq(1, 2.2, "a").filterByType[Int].get == Seq(1))
+//    assert(Seq(1, 2.2, "a").filterByType[java.lang.Integer].get == Seq(1: java.lang.Integer))
+//    assert(Seq(1, 2.2, "a").filterByType[Double].get == Seq(2.2))
+//    assert(Seq(1, 2.2, "a").filterByType[java.lang.Double].get == Seq(2.2: java.lang.Double))
+//    assert(Seq(1, 2.2, "a").filterByType[String].get == Seq("a"))
+//
+//    assert(Set(1, 2.2, "a").filterByType[Int].get == Set(1))
+//    assert(Set(1, 2.2, "a").filterByType[java.lang.Integer].get == Set(1: java.lang.Integer))
+//    assert(Set(1, 2.2, "a").filterByType[Double].get == Set(2.2))
+//    assert(Set(1, 2.2, "a").filterByType[java.lang.Double].get == Set(2.2: java.lang.Double))
+//    assert(Set(1, 2.2, "a").filterByType[String].get == Set("a"))
+//  }
 
   it("Array.filterByType should work on primitive types") {
 

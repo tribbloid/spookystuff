@@ -63,7 +63,7 @@ final case class WebDocIf(
       }
     }
 
-    pages
+    pages.toSeq
   }
 
   override def doInterpolate(pageRow: FetchedRow, schema: SpookySchema): Option[this.type] = {

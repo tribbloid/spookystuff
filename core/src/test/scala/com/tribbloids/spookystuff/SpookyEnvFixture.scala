@@ -62,7 +62,7 @@ object SpookyEnvFixture {
   }
 
   def getProcesses: Seq[ProcessInfo] = Retry.FixedInterval(5, 1000) {
-    JProcesses.getProcessList().asScala
+    JProcesses.getProcessList().asScala.toSeq
   }
 
   /**

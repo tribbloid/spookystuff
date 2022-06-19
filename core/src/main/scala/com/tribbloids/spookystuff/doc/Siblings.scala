@@ -1,40 +1,15 @@
 package com.tribbloids.spookystuff.doc
 
-import scala.collection.mutable
-
 /**
   * Created by peng on 18/07/15.
   */
-object Siblings {
-
-  //  implicit def canBuildFrom[T <: Unstructured]: CanBuildFrom[Elements[Unstructured], T, Elements[T]] =
-  //    new CanBuildFrom[Elements[Unstructured], T, Elements[T]] {
-  //
-  //      override def apply(from: Elements[Unstructured]): mutable.Builder[T, Elements[T]] = newBuilder[T]
-  //
-  //      override def apply(): mutable.Builder[T, Elements[T]] = newBuilder[T]
-  //    }
-
-  def newBuilder[T <: Unstructured]: mutable.Builder[T, Siblings[T]] = new mutable.Builder[T, Siblings[T]] {
-
-    val buffer = new mutable.ArrayBuffer[T]()
-
-    override def +=(elem: T): this.type = {
-      buffer += elem
-      this
-    }
-
-    override def result(): Siblings[T] = new Siblings(buffer.toList)
-
-    override def clear(): Unit = buffer.clear()
-  }
-}
+object Siblings {}
 
 class Siblings[+T <: Unstructured](
-    override val seq: List[T],
+    override val originalSeq: List[T],
     val delimiter: String = " ",
     val formattedDelimiter: String = "\n"
-) extends Elements[T](seq) {
+) extends Elements[T](originalSeq) {
 
   override def text =
     if (texts.isEmpty) None
