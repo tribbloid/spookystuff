@@ -31,7 +31,7 @@ abstract class Resource[T] extends LocalCleanable {
 
   def getLastModified: Long
 
-  final def isExisting: Boolean = Try(getType).isSuccess
+  def isExisting: Boolean = Try(getType).isSuccess
 
   protected def _metadata: ResourceMetadata
 
@@ -61,24 +61,23 @@ abstract class Resource[T] extends LocalCleanable {
     }
 
   }
-  //  override def cleanImpl(): Unit = {}
-}
-
-abstract class InputResource extends Resource[InputStream] {
-
-  override def cleanImpl(): Unit = _stream.peek.foreach(_.close())
-}
-
-abstract class OutputResource extends Resource[OutputStream] {
-
-  override def cleanImpl(): Unit =
-    _stream.peek.foreach { v =>
-      v.flush()
-      v.close()
-    }
 }
 
 object Resource extends {
+
+  abstract class InputResource extends Resource[InputStream] {
+
+    override def cleanImpl(): Unit = _stream.peek.foreach(_.close())
+  }
+
+  abstract class OutputResource extends Resource[OutputStream] {
+
+    override def cleanImpl(): Unit =
+      _stream.peek.foreach { v =>
+        v.flush()
+        v.close()
+      }
+  }
 
   val resourceParser: EAVCore.ReflectionParser[Resource[_]] = EAV.Impl.ReflectionParser[Resource[_]]()
 

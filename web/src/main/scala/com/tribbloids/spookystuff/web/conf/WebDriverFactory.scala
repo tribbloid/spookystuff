@@ -62,7 +62,7 @@ object WebDriverFactory {
       override val remoteURL: String = PhantomJS.defaultRemoteURL
   ) extends BinaryDeployment {
 
-    override def verifyLocalPath(): String = PhantomJS.verifyExe(localPath).get
+    override def verifyLocalPath: String = PhantomJS.verifyExe(localPath).get
   }
 
   object PhantomJS {

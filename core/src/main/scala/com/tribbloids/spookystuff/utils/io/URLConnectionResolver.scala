@@ -2,6 +2,7 @@ package com.tribbloids.spookystuff.utils.io
 
 import com.tribbloids.spookystuff.utils.Retry
 import com.tribbloids.spookystuff.utils.http.HttpUtils
+import com.tribbloids.spookystuff.utils.io.Resource.{InputResource, OutputResource}
 
 import java.io.{InputStream, OutputStream}
 import java.net.{URI, URLConnection}

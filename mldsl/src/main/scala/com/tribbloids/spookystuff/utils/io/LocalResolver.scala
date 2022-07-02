@@ -9,7 +9,7 @@ import java.nio.file.attribute.PosixFilePermission
 
 case class LocalResolver(
     override val retry: Retry = URIResolver.default.retry,
-    extraPermissions: Set[PosixFilePermission] = Set(PosixFilePermission.OWNER_EXECUTE)
+    extraPermissions: Set[PosixFilePermission] = Set()
 ) extends URIResolver {
 
   @transient lazy val mdParser: ResourceMetadata.ReflectionParser[File] = ResourceMetadata.ReflectionParser[File]()
@@ -35,26 +35,30 @@ case class LocalResolver(
 
     trait LocalResource[T] extends Resource[T] {
 
+      lazy val existingPath: Path = {
+        if (Files.exists(path)) path
+        else throw new NoSuchFileException(s"File $path doesn't exist")
+      }
+
       override lazy val getURI: String = absolutePathStr
 
       override lazy val getName: String = file.getName
 
       override lazy val getType: String = {
-        if (Files.isDirectory(path)) DIR
-        else if (Files.isRegularFile(path)) FILE
-        else if (Files.exists(path)) UNKNOWN
-        else throw new NoSuchFileException(s"File $path doesn't exist")
-
+        if (Files.isDirectory(existingPath)) DIR
+        else if (Files.isSymbolicLink(existingPath)) SYMLINK
+        else if (Files.isRegularFile(existingPath)) FILE
+        else UNKNOWN
       }
 
       override lazy val getContentType: String = {
         if (isDirectory) DIR_MIME_OUT
-        else Files.probeContentType(path)
+        else Files.probeContentType(existingPath)
       }
 
-      override lazy val getLength: Long = Files.size(path)
+      override lazy val getLength: Long = Files.size(existingPath)
 
-      override lazy val getLastModified: Long = Files.getLastModifiedTime(path).toMillis
+      override lazy val getLastModified: Long = Files.getLastModifiedTime(existingPath).toMillis
 
       override lazy val _metadata: ResourceMetadata = {
         // TODO: use Files.getFileAttributeView
@@ -145,15 +149,16 @@ case class LocalResolver(
 
     override def moveTo(target: String, force: Boolean = false): Unit = {
 
-      val newFile = new File(target).getAbsoluteFile // TODO: this is the only usage of Java old IO
-      newFile.getParentFile.mkdirs()
+      val newPath = Paths.get(target)
+
+      Files.createDirectories(absolutePath.getParent)
 
       if (force)
-        Files.move(file.toPath, newFile.toPath, StandardCopyOption.ATOMIC_MOVE, StandardCopyOption.REPLACE_EXISTING)
+        Files.move(path, newPath, StandardCopyOption.ATOMIC_MOVE, StandardCopyOption.REPLACE_EXISTING)
       else
-        Files.move(file.toPath, newFile.toPath, StandardCopyOption.ATOMIC_MOVE)
+        Files.move(path, newPath, StandardCopyOption.ATOMIC_MOVE)
     }
   }
 }
 
-object LocalResolver extends LocalResolver(URIResolver.default.retry, Set(PosixFilePermission.OWNER_EXECUTE))
+object LocalResolver extends LocalResolver(URIResolver.default.retry, Set())

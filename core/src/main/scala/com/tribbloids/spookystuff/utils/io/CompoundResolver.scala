@@ -2,6 +2,7 @@ package com.tribbloids.spookystuff.utils.io
 
 import com.tribbloids.spookystuff.session.WebProxySetting
 import com.tribbloids.spookystuff.utils.http._
+import com.tribbloids.spookystuff.utils.io.Resource.{InputResource, OutputResource}
 import com.tribbloids.spookystuff.utils.serialization.NOTSerializable
 import org.apache.hadoop.conf.Configuration
 import org.apache.http.client.methods.HttpRequestBase

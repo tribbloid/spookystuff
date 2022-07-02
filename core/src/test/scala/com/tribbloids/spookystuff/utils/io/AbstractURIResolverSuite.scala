@@ -3,6 +3,7 @@ package com.tribbloids.spookystuff.utils.io
 import com.tribbloids.spookystuff.testutils.{FunSpecx, LocalPathDocsFixture, TestHelper}
 import com.tribbloids.spookystuff.utils.{CommonConst, SparkUISupport}
 import com.tribbloids.spookystuff.utils.io.AbstractURIResolverSuite.SequentialCheck
+import com.tribbloids.spookystuff.utils.io.Resource.InputResource
 import com.tribbloids.spookystuff.utils.serialization.AssertSerializable
 import org.apache.commons.io.IOUtils
 import org.apache.spark.SparkContext

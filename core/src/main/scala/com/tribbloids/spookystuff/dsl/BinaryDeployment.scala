@@ -7,6 +7,7 @@ import org.apache.spark.{SparkContext, SparkFiles}
 import org.slf4j.LoggerFactory
 
 import java.io.File
+import java.nio.file.attribute.PosixFilePermission
 import scala.util.Try
 
 trait BinaryDeployment extends Serializable {
@@ -20,7 +21,7 @@ trait BinaryDeployment extends Serializable {
 
   val MIN_SIZE_K: Double = 1024.0
 
-  def verifyLocalPath(): String
+  def verifyLocalPath: String
 
   case class OnDriver(sparkContext: SparkContext) {
 
@@ -33,11 +34,11 @@ trait BinaryDeployment extends Serializable {
           .|||^(
             Seq(
               { () =>
-                verifyLocalPath()
+                verifyLocalPath
               }, { () =>
                 // download from remoteURI to localURI
                 val remoteResolver = URLConnectionResolver(10000)
-                val localResolver = LocalResolver
+                val localResolver = LocalExeResolver
 
                 remoteResolver.input(remoteURL) { i =>
                   localResolver.output(localPath, WriteMode.Overwrite) { o =>
@@ -45,7 +46,7 @@ trait BinaryDeployment extends Serializable {
                   }
                 }
 
-                verifyLocalPath()
+                verifyLocalPath
               }
             ),
             agg = { seq =>
@@ -82,12 +83,12 @@ trait BinaryDeployment extends Serializable {
       Seq(
         //already exists
         { () =>
-          verifyLocalPath()
+          verifyLocalPath
         },
         //copy from Spark local file
         { () =>
           copySparkFile2Local(localFileName, localPath)
-          verifyLocalPath()
+          verifyLocalPath
         }
       ),
       agg = { seq =>
@@ -103,6 +104,8 @@ trait BinaryDeployment extends Serializable {
 }
 
 object BinaryDeployment {
+
+  object LocalExeResolver extends LocalResolver(extraPermissions = Set(PosixFilePermission.OWNER_EXECUTE))
 
   def copySparkFile2Local(sparkFile: String, dstStr: String): Option[Any] = {
 

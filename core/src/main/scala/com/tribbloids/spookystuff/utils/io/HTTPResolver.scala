@@ -3,6 +3,7 @@ package com.tribbloids.spookystuff.utils.io
 import com.tribbloids.spookystuff.session.WebProxySetting
 import com.tribbloids.spookystuff.utils.Retry
 import com.tribbloids.spookystuff.utils.http._
+import com.tribbloids.spookystuff.utils.io.Resource.{InputResource, OutputResource}
 import org.apache.http.client.HttpClient
 import org.apache.http.client.config.RequestConfig
 import org.apache.http.client.methods._
@@ -136,9 +137,6 @@ case class HTTPResolver(
 
         override protected def createStream: InputStream = entity.getContent
 
-//        override lazy val isExisting: Boolean = {
-//          getStatusCode.exists(_.toString.startsWith("2"))
-//        }
       }
       try {
         fn(ir)

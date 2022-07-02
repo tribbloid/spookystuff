@@ -1,5 +1,6 @@
 package com.tribbloids.spookystuff.utils.io
 
+import com.tribbloids.spookystuff.utils.io.Resource.{InputResource, OutputResource}
 import com.tribbloids.spookystuff.utils.io.lock.{Lock, LockExpired}
 import com.tribbloids.spookystuff.utils.lifespan.LocalCleanable
 import com.tribbloids.spookystuff.utils.{CommonUtils, Retry}
@@ -21,11 +22,8 @@ abstract class URIResolver extends Serializable {
 
   type Execution <: AbstractExecution
 
-//  @transient lazy val cache: CachingUtils.ConcurrentCache[String, Execution] = CachingUtils.ConcurrentCache()
-
   final def execute(pathStr: String): Execution = {
     newExecution(pathStr)
-//    cache.getOrUpdateSync(pathStr)(newExecution(pathStr))
   }
 
   def newExecution(pathStr: String): Execution
@@ -78,7 +76,10 @@ abstract class URIResolver extends Serializable {
   }
 
   /**
-    * all implementations must be stateless
+    * entry for I/O operations for a given path
+    *
+    * all implementations must be stateless, such that a single execution can be used for multiple I/O operations,
+    * potentially in different threads
     */
   trait AbstractExecution extends LocalCleanable {
 
@@ -86,7 +87,6 @@ abstract class URIResolver extends Serializable {
 
     def absolutePathStr: String
 
-    // remove & write: execute immediately! write an empty file even if stream is not used
     protected[io] def _delete(mustExist: Boolean = true): Unit
     final def delete(mustExist: Boolean = true): Unit = {
       _delete(mustExist)
@@ -136,6 +136,7 @@ abstract class URIResolver extends Serializable {
 
     }
 
+    @Deprecated // use create_simple instead
     private def create_complex(): Unit = { //TODO: remove
 
       val touchSession: URIExecution = {
@@ -195,6 +196,7 @@ abstract class URIResolver extends Serializable {
     // read: may execute lazily
     def input[T](fn: InputResource => T): T
 
+    // write an empty file even if stream is not used
     def output[T](mode: WriteMode)(fn: OutputResource => T): T
 
     override protected def cleanImpl(): Unit = {}
@@ -206,7 +208,6 @@ object URIResolver {
 
   object default {
 
-    //  val defaultRetry: Retry = Retry.ExponentialBackoff(10, 32000, 1.5, silent = false)
     val retry: Retry = Retry(
       n = 16,
       intervalFactory = { n =>

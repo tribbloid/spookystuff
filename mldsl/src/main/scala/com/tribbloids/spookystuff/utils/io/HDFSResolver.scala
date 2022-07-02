@@ -6,7 +6,7 @@ import org.apache.hadoop.fs._
 import org.apache.hadoop.fs.permission.FsPermission
 import org.apache.hadoop.security.UserGroupInformation
 
-import java.io.{InputStream, OutputStream}
+import java.io.{FileNotFoundException, InputStream, OutputStream}
 import java.net.URI
 import java.security.PrivilegedAction
 import java.util
@@ -74,7 +74,7 @@ case class HDFSResolver(
 
     trait HDFSResource[T] extends Resource[T] {
 
-      def status: FileStatus = fc.getFileStatus(path)
+      lazy val status: FileStatus = fc.getFileStatus(path)
 
       override lazy val getURI: String = absolutePathStr
 
@@ -82,8 +82,8 @@ case class HDFSResolver(
 
       override lazy val getType: String = {
         if (status.isDirectory) DIR
-        else if (status.isFile) FILE
         else if (status.isSymlink) SYMLINK
+        else if (status.isFile) FILE
         else UNKNOWN
       }
 
@@ -169,7 +169,10 @@ case class HDFSResolver(
 
     def _delete(mustExist: Boolean = true): Unit = doAsUGI {
 
-      fc.delete(path, true)
+      (isExisting, mustExist) match {
+        case (false, false) =>
+        case _              => fc.delete(path, true)
+      }
     }
 
     override def moveTo(target: String, force: Boolean = false): Unit = {
