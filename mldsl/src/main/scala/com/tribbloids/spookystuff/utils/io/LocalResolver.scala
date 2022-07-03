@@ -35,30 +35,30 @@ case class LocalResolver(
 
     trait LocalResource[T] extends Resource[T] {
 
-      lazy val existingPath: Path = {
-        if (Files.exists(path)) path
+      override lazy val getURI: String = absolutePathStr
+
+      override lazy val getName: String = path.getFileName.toString
+
+      override lazy val getType: String = {
+        if (Files.isDirectory(path)) DIR
+        else if (Files.isSymbolicLink(path)) SYMLINK
+        else if (Files.isRegularFile(path)) FILE
+        else if (isExisting) UNKNOWN
         else throw new NoSuchFileException(s"File $path doesn't exist")
       }
 
-      override lazy val getURI: String = absolutePathStr
-
-      override lazy val getName: String = file.getName
-
-      override lazy val getType: String = {
-        if (Files.isDirectory(existingPath)) DIR
-        else if (Files.isSymbolicLink(existingPath)) SYMLINK
-        else if (Files.isRegularFile(existingPath)) FILE
-        else UNKNOWN
+      override def isExisting: Boolean = {
+        file.exists()
       }
 
       override lazy val getContentType: String = {
         if (isDirectory) DIR_MIME_OUT
-        else Files.probeContentType(existingPath)
+        else Files.probeContentType(path)
       }
 
-      override lazy val getLength: Long = Files.size(existingPath)
+      override lazy val getLength: Long = Files.size(path)
 
-      override lazy val getLastModified: Long = Files.getLastModifiedTime(existingPath).toMillis
+      override lazy val getLastModified: Long = Files.getLastModifiedTime(path).toMillis
 
       override lazy val _metadata: ResourceMetadata = {
         // TODO: use Files.getFileAttributeView
@@ -109,14 +109,14 @@ case class LocalResolver(
 
             case (true, WriteMode.Overwrite) =>
               delete(false)
-//              Files.createFile(path)
+              //              Files.createFile(path)
               Files.newOutputStream(path, StandardOpenOption.CREATE_NEW, StandardOpenOption.SYNC)
 
             case (true, WriteMode.Append) =>
               Files.newOutputStream(path, StandardOpenOption.APPEND, StandardOpenOption.SYNC)
 
             case (false, _) =>
-              if (!file.exists()) {
+              if (!isExisting) {
 
                 Files.createDirectories(absolutePath.getParent)
                 //              Files.createFile(path)
@@ -151,12 +151,12 @@ case class LocalResolver(
 
       val newPath = Paths.get(target)
 
-      Files.createDirectories(absolutePath.getParent)
+      Files.createDirectories(newPath.getParent)
 
       if (force)
-        Files.move(path, newPath, StandardCopyOption.ATOMIC_MOVE, StandardCopyOption.REPLACE_EXISTING)
+        Files.move(absolutePath, newPath, StandardCopyOption.ATOMIC_MOVE, StandardCopyOption.REPLACE_EXISTING)
       else
-        Files.move(path, newPath, StandardCopyOption.ATOMIC_MOVE)
+        Files.move(absolutePath, newPath, StandardCopyOption.ATOMIC_MOVE)
     }
   }
 }

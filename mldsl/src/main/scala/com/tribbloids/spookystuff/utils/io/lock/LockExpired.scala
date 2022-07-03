@@ -11,11 +11,10 @@ case class LockExpired(
     deleteAfter: Duration
 ) {
 
-  case class Finding(exe: URIExecution) {
+  case class ScanResult(exe: URIExecution) {
 
     val lastModified: Long = exe.input { in =>
       in.getLastModified
-
     }
 
     val elapsedMillis: Long = System.currentTimeMillis() - lastModified
@@ -24,13 +23,13 @@ case class LockExpired(
     lazy val canBeDeleted: Boolean = canBeUnlocked && elapsedMillis >= deleteAfter.toMillis
   }
 
-  protected def _scanForUnlocking(vs: Seq[URIExecution]): Option[Finding] = {
+  protected def _scanForUnlocking(vs: Seq[URIExecution]): Option[ScanResult] = {
 
-    val findings = vs.flatMap { v =>
+    val scanResult = vs.flatMap { v =>
       if (v.isExisting) {
 
         try {
-          Some(Finding(v))
+          Some(ScanResult(v))
         } catch {
           case _: FileNotFoundException => None
           case _: NoSuchFileException   => None
@@ -40,7 +39,7 @@ case class LockExpired(
       }
     }
 
-    val canBeUnlocked = findings.filter(_.canBeUnlocked)
+    val canBeUnlocked = scanResult.filter(_.canBeUnlocked)
 
     val latest = canBeUnlocked.sortBy(_.lastModified).lastOption
 
@@ -53,7 +52,9 @@ case class LockExpired(
     latest
   }
 
-  def scanForUnlocking(lockDir: URIExecution): Option[Finding] = {
+  def scanForUnlocking(lockDir: URIExecution): Option[ScanResult] = {
+
+    if (!lockDir.isExisting) return None
 
     val files = lockDir.input { in =>
       in.children

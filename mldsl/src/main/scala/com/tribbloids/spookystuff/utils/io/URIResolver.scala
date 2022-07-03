@@ -176,7 +176,7 @@ abstract class URIResolver extends Serializable {
     }
 
     final def isExisting: Boolean = {
-      input(_.isExisting)
+      output()(_.isExisting)
     }
 
     final def isNonEmpty: Boolean = satisfy { v =>
@@ -197,7 +197,7 @@ abstract class URIResolver extends Serializable {
     def input[T](fn: InputResource => T): T
 
     // write an empty file even if stream is not used
-    def output[T](mode: WriteMode)(fn: OutputResource => T): T
+    def output[T](mode: WriteMode = WriteMode.CreateOnly)(fn: OutputResource => T): T
 
     override protected def cleanImpl(): Unit = {}
   }

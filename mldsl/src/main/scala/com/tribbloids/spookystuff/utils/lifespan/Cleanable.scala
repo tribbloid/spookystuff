@@ -190,7 +190,7 @@ trait Cleanable extends Closeable {
           LoggerFactory
             .getLogger(this.getClass)
             .error(
-              s"$logPrefix !!! FAIL TO CLEAN UP !!!\n",
+              s"$logPrefix !!! FAILED TO CLEAN UP !!!\n",
               ee
             )
     } finally {

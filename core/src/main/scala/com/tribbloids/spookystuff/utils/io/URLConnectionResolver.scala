@@ -40,7 +40,7 @@ case class URLConnectionResolver(
     val uri: URI = HttpUtils.uri(pathStr)
     val _conn: URLConnection = input2Connection(uri)
 
-    trait FTPResource[T] extends Resource[T] with MimeTypeMixin {
+    trait URLConnectionResource[T] extends Resource[T] with MimeTypeMixin {
 
       lazy val conn: URLConnection = {
         _conn.connect()
@@ -72,7 +72,7 @@ case class URLConnectionResolver(
 
     override def input[T](fn: InputResource => T): T = {
 
-      val in = new InputResource with FTPResource[InputStream] {
+      val in = new InputResource with URLConnectionResource[InputStream] {
 
         override def createStream: InputStream = {
           conn.getInputStream
@@ -87,7 +87,8 @@ case class URLConnectionResolver(
     }
 
     override def output[T](mode: WriteMode)(fn: OutputResource => T): T = {
-      val out: OutputResource with FTPResource[OutputStream] = new OutputResource with FTPResource[OutputStream] {
+      val out: OutputResource with URLConnectionResource[OutputStream] = new OutputResource
+      with URLConnectionResource[OutputStream] {
 
         override val createStream: OutputStream = {
           conn.getOutputStream

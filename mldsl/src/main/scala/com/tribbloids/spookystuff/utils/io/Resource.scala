@@ -67,6 +67,10 @@ object Resource extends {
 
   abstract class InputResource extends Resource[InputStream] {
 
+    {
+      require(isExisting, s"Resource $getURI does not exist")
+    }
+
     override def cleanImpl(): Unit = _stream.peek.foreach(_.close())
   }
 
@@ -84,6 +88,7 @@ object Resource extends {
   final val DIR = "directory"
   final val FILE = "file"
   final val SYMLINK = "symlink"
+  final val UNKNOWN = "unknown"
 
   def mimeIsDir(mime: String): Boolean = {
 
@@ -93,5 +98,4 @@ object Resource extends {
   }
 
   final val DIR_MIME_OUT = "inode/directory; charset=UTF-8"
-  final val UNKNOWN = "unknown"
 }

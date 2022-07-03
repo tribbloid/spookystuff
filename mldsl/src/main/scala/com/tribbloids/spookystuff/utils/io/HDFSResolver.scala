@@ -6,7 +6,7 @@ import org.apache.hadoop.fs._
 import org.apache.hadoop.fs.permission.FsPermission
 import org.apache.hadoop.security.UserGroupInformation
 
-import java.io.{FileNotFoundException, InputStream, OutputStream}
+import java.io.{InputStream, OutputStream}
 import java.net.URI
 import java.security.PrivilegedAction
 import java.util
@@ -86,6 +86,8 @@ case class HDFSResolver(
         else if (status.isFile) FILE
         else UNKNOWN
       }
+
+      override def isExisting: Boolean = fc.util().exists(path)
 
       override lazy val getContentType: String = {
         if (isDirectory) DIR_MIME_OUT
