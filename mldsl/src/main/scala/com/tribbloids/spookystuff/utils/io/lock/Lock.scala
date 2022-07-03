@@ -64,7 +64,7 @@ case class Lock(
     }
   }
 
-  /**e
+  /**
     * unlock on cleanup
     */
   override protected def cleanImpl(): Unit = {

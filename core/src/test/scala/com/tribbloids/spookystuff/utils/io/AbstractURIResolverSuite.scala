@@ -436,31 +436,33 @@ abstract class AbstractURIResolverSuite extends FunSpecx with LocalPathDocsFixtu
       assert(errors.isEmpty, errors.mkString("\n"))
     }
 
-    it("can guarantee sequential access to existing file") {
-      existingFile.requireRandomContent() {
+    describe("can guarantee sequential access") {
+      it("to existing file") {
+        existingFile.requireRandomContent() {
 
-        doTest(existingFile.absolutePathStr)
+          doTest(existingFile.absolutePathStr)
+        }
       }
-    }
 
-    it("... and empty directory") {
+      it("to empty directory") {
 
-      dir.requireEmptyDir {
-        doTest(dir.absolutePathStr)
+        dir.requireEmptyDir {
+          doTest(dir.absolutePathStr)
+        }
       }
-    }
 
-    it("... and non empty directory") {
+      it("to non empty directory") {
 
-      nonExistingSubFile.requireRandomContent() {
-        doTest(dir.absolutePathStr)
+        nonExistingSubFile.requireRandomContent() {
+          doTest(dir.absolutePathStr)
+        }
       }
-    }
 
-    ignore("... even for non existing path") {
-      nonExistingFile.requireVoid {
+      ignore("... even for non existing path") {
+        nonExistingFile.requireVoid {
 
-        doTest(nonExistingFile.absolutePathStr)
+          doTest(nonExistingFile.absolutePathStr)
+        }
       }
     }
 
@@ -514,23 +516,26 @@ abstract class AbstractURIResolverSuite extends FunSpecx with LocalPathDocsFixtu
       }
     }
 
-    it("can guarantee sequential read and write to existing file") {
-      existingFile.requireEmptyFile {
+    describe("can guarantee sequential read and write") {
 
-        existingFile.execution.output(WriteMode.Overwrite) { out =>
-          out.stream.write(Array(10.byteValue()))
+      it("to existing file") {
+        existingFile.requireEmptyFile {
+
+          existingFile.execution.output(WriteMode.Overwrite) { out =>
+            out.stream.write(Array(10.byteValue()))
+          }
+
+          val groundTruth = (10 to numWrites + 10).map(_.byteValue())
+          doTestIO(existingFile.execution.absolutePathStr, groundTruth)
         }
-
-        val groundTruth = (10 to numWrites + 10).map(_.byteValue())
-        doTestIO(existingFile.execution.absolutePathStr, groundTruth)
       }
-    }
 
-    ignore("... and on non-existing file") {
-      nonExistingFile.requireVoid {
+      ignore("to non-existing file") {
+        nonExistingFile.requireVoid {
 
-        val groundTruth = (1 to numWrites).map(_.byteValue())
-        doTestIO(nonExistingFile.execution.absolutePathStr, groundTruth)
+          val groundTruth = (1 to numWrites).map(_.byteValue())
+          doTestIO(nonExistingFile.execution.absolutePathStr, groundTruth)
+        }
       }
     }
   }
