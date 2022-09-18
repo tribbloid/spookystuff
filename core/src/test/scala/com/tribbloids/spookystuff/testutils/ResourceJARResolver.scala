@@ -3,9 +3,8 @@ package com.tribbloids.spookystuff.testutils
 import java.io.File
 import java.net.URL
 import java.nio.file.{Path, Paths}
-
 import com.tribbloids.spookystuff.utils.lifespan.Cleanable
-import com.tribbloids.spookystuff.utils.{CommonConst, CommonUtils, SpookyUtils}
+import com.tribbloids.spookystuff.utils.{ClasspathDebugger, CommonConst, CommonUtils, SpookyUtils}
 
 /**
   * Created by peng on 20/09/16.
@@ -30,7 +29,7 @@ case class ResourceJARResolver(
 
   // run once and for all TODO: or clean up at shutdown hook
   lazy val unpackOnce: Unit = {
-    val resourceOpt = SpookyUtils.getCPResource(RESOURCE_NAME)
+    val resourceOpt = ClasspathDebugger.getResource(RESOURCE_NAME)
     resourceOpt.foreach { resource =>
       SpookyUtils.extractResource(
         resource,

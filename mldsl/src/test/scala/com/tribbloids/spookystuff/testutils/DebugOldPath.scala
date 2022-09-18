@@ -1,7 +1,9 @@
-package com.tribbloids.spookystuff
+package com.tribbloids.spookystuff.testutils
+
+import com.tribbloids.spookystuff.utils.ClasspathDebugger
 
 object DebugOldPath
-    extends ClasspathDebugger(
+    extends ClasspathDebugger.ForSparkEnv(
       """
   |/home/peng/.m2/repository/aopalliance/aopalliance/1.0/aopalliance-1.0.jar	System Classpath
   |/home/peng/.m2/repository/com/carrotsearch/hppc/0.7.2/hppc-0.7.2.jar	System Classpath

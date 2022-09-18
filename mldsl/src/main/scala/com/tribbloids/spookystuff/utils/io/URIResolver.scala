@@ -3,7 +3,7 @@ package com.tribbloids.spookystuff.utils.io
 import com.tribbloids.spookystuff.utils.io.Resource.{InputResource, OutputResource}
 import com.tribbloids.spookystuff.utils.io.lock.{Lock, LockExpired}
 import com.tribbloids.spookystuff.utils.lifespan.LocalCleanable
-import com.tribbloids.spookystuff.utils.{CommonUtils, Retry}
+import com.tribbloids.spookystuff.utils.{ClasspathDebugger, CommonUtils, Retry}
 import org.apache.commons.io.IOUtils
 
 import java.io._
@@ -52,7 +52,7 @@ abstract class URIResolver extends Serializable {
   }
 
   def resourceOrAbsolute(pathStr: String): String = {
-    val resourcePath = CommonUtils.getCPResource(pathStr.stripPrefix("/")).map(_.getPath).getOrElse(pathStr)
+    val resourcePath = ClasspathDebugger.getResource(pathStr.stripPrefix("/")).map(_.getPath).getOrElse(pathStr)
 
     val result = this.toAbsolute(resourcePath)
     result

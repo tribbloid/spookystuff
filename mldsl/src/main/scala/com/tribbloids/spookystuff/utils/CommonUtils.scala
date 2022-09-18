@@ -89,37 +89,6 @@ abstract class CommonUtils {
     }
   }
 
-  def getCPResource(str: String): Option[URL] =
-    Option(ClassLoader.getSystemClassLoader.getResource(str.stripSuffix(File.separator)))
-  def getCPResourceAsStream(str: String): Option[InputStream] =
-    Option(ClassLoader.getSystemClassLoader.getResourceAsStream(str.stripSuffix(File.separator)))
-
-  def getCPResourceDebugInfo(str: String): String = {
-    val urlOpt = getCPResource(str)
-    val info = urlOpt match {
-      case Some(url) =>
-        s"\tresource `$str` refers to ${url.toString}"
-      case None =>
-        s"\tresource `$str` has no reference"
-    }
-    info
-  }
-
-  def debugCPResource(
-      classpathFiles: Seq[String] = List(
-        "log4j.properties",
-        "rootkey.csv",
-        ".rootkey.csv"
-      )
-  ): Unit = {
-
-    {
-      val resolvedInfos = classpathFiles.map { v =>
-        CommonUtils.getCPResourceDebugInfo(v)
-      }
-      println("resolving files in classpath ...\n" + resolvedInfos.mkString("\n"))
-    }
-  }
 
   @scala.annotation.tailrec
   final def unboxException[T <: Throwable: ClassTag](e: Throwable): Throwable = {
