@@ -38,7 +38,7 @@ case class ClasspathDebugger(
     ".m2/repository",
     ".gradle/caches",
     "jre/lib",
-    "jdk/lib",
+    "jdk/lib"
   )
 
   def prunePath(v: String): String = {
