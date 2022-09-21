@@ -1,8 +1,9 @@
 package com.tribbloids.spookystuff.testutils
 
+import com.tribbloids.spookystuff.utils.classpath.ClasspathDebugger
 import com.tribbloids.spookystuff.utils.lifespan.Cleanable.Lifespan
 import com.tribbloids.spookystuff.utils.lifespan.LocalCleanable
-import com.tribbloids.spookystuff.utils.{ClasspathDebugger, CommonConst, CommonUtils, ConfUtils}
+import com.tribbloids.spookystuff.utils.{CommonConst, CommonUtils, ConfUtils}
 import org.apache.hadoop.fs.FileUtil
 import org.apache.spark.serializer.KryoSerializer
 import org.apache.spark.sql.{SQLContext, SparkSession}
@@ -67,7 +68,7 @@ abstract class TestHelper extends LocalCleanable {
   @transient var sparkSessionInitialised: Boolean = false
 
   {
-    ClasspathDebugger.debugResource()
+    ClasspathDebugger.Exe().debugResource()
 
     if (S3Path.isDefined) println("Test on AWS S3 with credentials provided by rootkey.csv")
 

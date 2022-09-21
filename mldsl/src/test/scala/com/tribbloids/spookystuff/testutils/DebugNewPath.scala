@@ -1,6 +1,6 @@
 package com.tribbloids.spookystuff.testutils
 
-import com.tribbloids.spookystuff.utils.ClasspathDebugger
+import com.tribbloids.spookystuff.utils.classpath.ClasspathDebugger
 
 object DebugNewPath
     extends ClasspathDebugger.ForSparkEnv(

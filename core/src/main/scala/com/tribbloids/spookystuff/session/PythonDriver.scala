@@ -2,8 +2,9 @@ package com.tribbloids.spookystuff.session
 
 import com.tribbloids.spookystuff.conf.Python
 import com.tribbloids.spookystuff.driver.PythonProcess
+import com.tribbloids.spookystuff.utils.classpath.ClasspathDebugger
 import com.tribbloids.spookystuff.utils.lifespan.Cleanable.Lifespan
-import com.tribbloids.spookystuff.utils.{BypassingRule, ClasspathDebugger, CommonConst, CommonUtils, SpookyUtils}
+import com.tribbloids.spookystuff.utils.{BypassingRule, CommonConst, CommonUtils, SpookyUtils}
 import com.tribbloids.spookystuff.{PyException, PyInterpretationException, SpookyContext}
 import org.apache.commons.io.FileUtils
 import org.apache.spark.ml.dsl.utils.DSLUtils
@@ -40,7 +41,7 @@ object PythonDriver {
     val pythonDir = new File(pythonPath)
     FileUtils.deleteQuietly(pythonDir)
 
-    val resourceOpt = ClasspathDebugger.getResource(PythonDriver.PYTHON_RESOURCE)
+    val resourceOpt = ClasspathDebugger.Exe().getResource(PythonDriver.PYTHON_RESOURCE)
     resourceOpt.foreach { resource =>
       SpookyUtils.extractResource(resource, pythonPath)
     }

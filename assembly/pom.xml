@@ -80,12 +80,6 @@
       <scope>test</scope>
     </dependency>
 
-    <dependency>
-      <groupId>org.jhades</groupId>
-      <artifactId>jhades</artifactId>
-      <version>1.0.4</version>
-      <scope>test</scope>
-    </dependency>
   </dependencies>
 
   <build>
