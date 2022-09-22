@@ -1,3 +1,3 @@
 package com.tribbloids.spookystuff.testutils
 
-object TestDocsResolver extends ResourceJARResolver("testutils")
+object TestDocsResolver extends UnpackResources("testutils")

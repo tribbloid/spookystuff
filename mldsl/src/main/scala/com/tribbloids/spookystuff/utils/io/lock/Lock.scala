@@ -9,9 +9,9 @@ import java.io.FileNotFoundException
 import java.nio.file.NoSuchFileException
 
 case class Lock(
-    exe: URIExecution,
-    expired: LockExpired = URIResolver.default.expired,
-    override val _lifespan: Lifespan = Lifespan.TaskOrJVM().forShipping
+                 exe: URIExecution,
+                 expired: LockExpired = URIResolver.default.lockExpired,
+                 override val _lifespan: Lifespan = Lifespan.TaskOrJVM().forShipping
 ) extends LockLike
     with LocalCleanable {
 

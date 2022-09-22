@@ -246,29 +246,29 @@ These special characters are often called "metacharacters".
   }
 
   //TODO: this is not tested on workers
-  def extractResource(resource: URL, dst: String): Unit = {
-
-    resource.getProtocol match {
-      case "jar" =>
-        val fullPath = resource.toString
-        val split = fullPath.split('!')
-        assert(split.length == 2)
-        val jarPath = split.head
-        val innerPathStr = split.last
-
-        val fs = FileSystems.newFileSystem(new URI(jarPath), new java.util.HashMap[String, String]())
-        try {
-          val srcPath = fs.getPath(innerPathStr)
-
-          treeCopy(srcPath, new File(dst).toPath)
-        } finally {
-          fs.close()
-        }
-      case _ =>
-        val src = new File(resource.toURI)
-        treeCopy(src.toPath, new File(dst).toPath)
-    }
-  }
+//  def extractResource(resource: URL, dst: String): Unit = {
+//
+//    resource.getProtocol match {
+//      case "jar" =>
+//        val fullPath = resource.toString
+//        val split = fullPath.split('!')
+//        assert(split.length == 2)
+//        val jarPath = split.head
+//        val innerPathStr = split.last
+//
+//        val fs = FileSystems.newFileSystem(new URI(jarPath), new java.util.HashMap[String, String]())
+//        try {
+//          val srcPath = fs.getPath(innerPathStr)
+//
+//          treeCopy(srcPath, new File(dst).toPath)
+//        } finally {
+//          fs.close()
+//        }
+//      case _ =>
+//        val src = new File(resource.toURI)
+//        treeCopy(src.toPath, new File(dst).toPath)
+//    }
+//  }
 
   def longHash(string: String): Long = {
     var h: Long = 1125899906842597L // prime

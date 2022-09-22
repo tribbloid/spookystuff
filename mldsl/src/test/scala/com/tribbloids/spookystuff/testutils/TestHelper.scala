@@ -1,6 +1,6 @@
 package com.tribbloids.spookystuff.testutils
 
-import com.tribbloids.spookystuff.utils.classpath.ClasspathDebugger
+import com.tribbloids.spookystuff.utils.classpath.ClasspathResolver
 import com.tribbloids.spookystuff.utils.lifespan.Cleanable.Lifespan
 import com.tribbloids.spookystuff.utils.lifespan.LocalCleanable
 import com.tribbloids.spookystuff.utils.{CommonConst, CommonUtils, ConfUtils}
@@ -68,7 +68,9 @@ abstract class TestHelper extends LocalCleanable {
   @transient var sparkSessionInitialised: Boolean = false
 
   {
-    ClasspathDebugger.Exe().debugResource()
+    val report: String = ClasspathResolver.withOverview { o =>
+      o.completeReport
+    }
 
     if (S3Path.isDefined) println("Test on AWS S3 with credentials provided by rootkey.csv")
 
@@ -171,7 +173,7 @@ abstract class TestHelper extends LocalCleanable {
     Math.min(n * MEMORY_PER_CORE, cap)
   }
 
-  @transient lazy val envOverrides = Map(
+  @transient lazy val envOverrides: Map[String, String] = Map(
     "SPARK_SCALA_VERSION" -> CommonUtils.scalaBinaryVersion
     //    "SPARK_LOCAL_HOSTNAME" -> "localhost"
   )

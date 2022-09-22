@@ -1,7 +1,7 @@
 package com.tribbloids.spookystuff.utils.io
 
 trait MimeTypeMixin {
-  self: Resource[_] =>
+  self: Resource =>
 
   final override def getType: String = {
 

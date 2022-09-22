@@ -2,5 +2,5 @@ package com.tribbloids.spookystuff.utils
 
 package object io {
 
-  type URIExecution = URIResolver#AbstractExecution
+  type URIExecution = URIResolver#Execution
 }

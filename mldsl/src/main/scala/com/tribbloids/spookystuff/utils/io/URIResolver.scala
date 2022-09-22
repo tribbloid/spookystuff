@@ -1,15 +1,12 @@
 package com.tribbloids.spookystuff.utils.io
 
-import com.tribbloids.spookystuff.utils.classpath.ClasspathDebugger
-import com.tribbloids.spookystuff.utils.io.Resource.{InputResource, OutputResource}
+import com.tribbloids.spookystuff.utils.Retry
 import com.tribbloids.spookystuff.utils.io.lock.{Lock, LockExpired}
 import com.tribbloids.spookystuff.utils.lifespan.LocalCleanable
-import com.tribbloids.spookystuff.utils.{CommonUtils, Retry}
 import org.apache.commons.io.IOUtils
 
 import java.io._
 import java.util.concurrent.TimeUnit
-import scala.concurrent.duration.Duration
 import scala.util.Random
 
 /*
@@ -21,97 +18,48 @@ import scala.util.Random
  */
 abstract class URIResolver extends Serializable {
 
-  type Execution <: AbstractExecution
-
-  final def execute(pathStr: String): Execution = {
-    newExecution(pathStr)
-  }
-
-  def newExecution(pathStr: String): Execution
-
-  def retry: Retry = URIResolver.default.retry
-  def lockExpireAfter: Duration = URIResolver.defaultLockExpireAfter
-
-  final def input[T](pathStr: String)(f: InputResource => T): T = {
-    val exe = execute(pathStr)
-    exe.input(f)
-  }
-
-  final def output[T](pathStr: String, mode: WriteMode)(f: OutputResource => T): T = {
-    val exe = execute(pathStr)
-    exe.output(mode)(f)
-  }
-
-  final def toAbsolute(pathStr: String): String = execute(pathStr).absolutePathStr
-
-  final def isAbsolute(pathStr: String): Boolean = {
-    toAbsolute(pathStr) == pathStr
-  }
-
-  def ensureAbsolute(file: File): Unit = {
-    assert(file.isAbsolute, s"BAD DESIGN: ${file.getPath} is not an absolute path")
-  }
-
-  def resourceOrAbsolute(pathStr: String): String = {
-    val resourcePath = ClasspathDebugger.Exe().getResource(pathStr.stripPrefix("/")).map(_.getPath).getOrElse(pathStr)
-
-    val result = this.toAbsolute(resourcePath)
-    result
-  }
-
-  /**
-    * ensure sequential access, doesn't work on non-existing path
-    */
-  def lock[T](pathStr: String)(fn: URIExecution => T): T = {
-    val exe = execute(pathStr)
-
-    val lock = new Lock(exe)
-
-    lock.during(fn)
-  }
-
-  def unsupported(op: String): Nothing = {
-    throw new UnsupportedOperationException(
-      s"Implementation doesn't support ${this.getClass.getSimpleName}.$op operation"
-    )
-  }
-
   /**
     * entry for I/O operations for a given path
     *
     * all implementations must be stateless, such that a single execution can be used for multiple I/O operations,
     * potentially in different threads
     */
-  trait AbstractExecution extends LocalCleanable {
+  trait Execution extends LocalCleanable {
+
+    type _Resource <: Resource
+    def _Resource: WriteMode => _Resource
 
     def outer: URIResolver = URIResolver.this
 
     def absolutePathStr: String
 
-    protected[io] def _delete(mustExist: Boolean = true): Unit
+    protected def _delete(mustExist: Boolean = true): Unit
+
     final def delete(mustExist: Boolean = true): Unit = {
       _delete(mustExist)
-//      retry {
-//        input { in =>
-//          assert(!in.isAlreadyExisting, s"$absolutePathStr cannot be deleted")
-//        }
-//      }
+      //      retry {
+      //        input { in =>
+      //          assert(!in.isAlreadyExisting, s"$absolutePathStr cannot be deleted")
+      //        }
+      //      }
     }
 
     def moveTo(target: String, force: Boolean = false): Unit
 
-    //removed, no need if creating new file is always recursive
-//    def mkDirs(): Unit
-
-    final def copyTo(target: String, mode: WriteMode): Unit = {
-
-      val tgtSession = outer.execute(target)
+    final def copyTo(targetExe: URIResolver#_Execution, mode: WriteMode): Unit = {
 
       this.input { in =>
-        tgtSession.output(mode) { out =>
+        targetExe.output(mode) { out =>
           IOUtils.copy(in.stream, out.stream)
         }
       }
+    }
+
+    final def copyTo(target: String, mode: WriteMode): Unit = {
+
+      val tgtExe = outer.execute(target)
+
+      copyTo(tgtExe, mode)
     }
 
     final def createNew(): Unit = create_simple()
@@ -137,47 +85,8 @@ abstract class URIResolver extends Serializable {
 
     }
 
-    @Deprecated // use create_simple instead
-    private def create_complex(): Unit = { //TODO: remove
-
-      val touchSession: URIExecution = {
-
-        val touchPathStr = this.absolutePathStr + URIResolver.TOUCH
-
-        outer.execute(touchPathStr)
-      }
-
-      // this convoluted way of creating file is to ensure that atomic contract can be engaged
-      // TODO: not working in any FS! why?
-
-      touchSession.output(WriteMode.CreateOnly) { out =>
-        out.stream.write(zeroByte)
-      }
-
-      try {
-        touchSession.moveTo(this.absolutePathStr)
-
-        this.input { in =>
-          val v = IOUtils.toByteArray(in.stream)
-          require(v.toSeq == zeroByte.toSeq)
-        }
-
-        this.output(WriteMode.Overwrite) { out =>
-          out.stream
-        }
-
-      } catch {
-        case e: Exception =>
-          touchSession.delete(false)
-          throw e
-      } finally {
-
-        touchSession.clean()
-      }
-    }
-
     final def isExisting: Boolean = {
-      output()(_.isExisting)
+      io()(_.isExisting)
     }
 
     final def isNonEmpty: Boolean = satisfy { v =>
@@ -185,22 +94,96 @@ abstract class URIResolver extends Serializable {
     }
 
     final def satisfy(
-        condition: InputResource => Boolean
+        condition: _Resource => Boolean
     ): Boolean = {
 
-      val result = input { v =>
+      val result = io() { v =>
         v.isExisting && condition(v)
       }
       result
     }
 
-    // read: may execute lazily
-    def input[T](fn: InputResource => T): T
+    final def input[T](fn: _Resource#InputView => T): T = io() { v =>
+      if (!v.isExisting)
+        throw new IOException(s"Resource ${absolutePathStr} does not exist")
 
-    // write an empty file even if stream is not used
-    def output[T](mode: WriteMode = WriteMode.CreateOnly)(fn: OutputResource => T): T
+      fn(v.InputView)
+    }
+
+    protected def io[T](mode: WriteMode = WriteMode.ReadOnly)(fn: _Resource => T): T = {
+
+      val resource = _Resource(mode)
+
+      try {
+        fn(resource)
+      } finally {
+        resource.clean()
+      }
+    }
+
+//     write an empty file even if stream is not used
+    final def output[T](mode: WriteMode = WriteMode.CreateOnly)(fn: _Resource#OutputView => T): T = io(mode) { v =>
+      fn(v.OutputView)
+    }
 
     override protected def cleanImpl(): Unit = {}
+  }
+
+  type _Execution <: Execution
+  def _Execution: String => _Execution
+
+  final type _Resource = _Execution#_Resource
+
+  final def execute(pathStr: String): _Execution = {
+    _Execution(pathStr)
+  }
+
+  def retry: Retry = URIResolver.default.retry
+  def lockExpire: LockExpired = URIResolver.default.lockExpired
+
+  final def input[T](pathStr: String)(f: _Resource#InputView => T): T = {
+    val exe = execute(pathStr)
+    exe.input(f)
+  }
+
+  final def output[T](pathStr: String, mode: WriteMode)(f: _Resource#OutputView => T): T = {
+    val exe = execute(pathStr)
+    exe.output(mode)(f)
+  }
+
+  final def toAbsolute(pathStr: String): String = execute(pathStr).absolutePathStr
+
+  final def isAbsolute(pathStr: String): Boolean = {
+    toAbsolute(pathStr) == pathStr
+  }
+
+  def ensureAbsolute(file: File): Unit = {
+    assert(file.isAbsolute, s"BAD DESIGN: ${file.getPath} is not an absolute path")
+  }
+
+//  def resourceOrAbsolute(pathStr: String): String = {
+//    val resourcePath =
+//      ClasspathResolver.Execution(pathStr.stripPrefix("/")).resourceOpt.map(_.getPath).getOrElse(pathStr)
+//
+//    val result = this.toAbsolute(resourcePath)
+//    result
+//  }
+
+  /**
+    * ensure sequential access, doesn't work on non-existing path
+    */
+  def lock[T](pathStr: String)(fn: URIExecution => T): T = {
+    val exe = execute(pathStr)
+
+    val lock = new Lock(exe, lockExpire)
+
+    lock.during(fn)
+  }
+
+  def unsupported(op: String): Nothing = {
+    throw new UnsupportedOperationException(
+      s"Implementation doesn't support ${this.getClass.getSimpleName}.$op operation"
+    )
   }
 
 }
@@ -218,13 +201,11 @@ object URIResolver {
       silent = false
     )
 
-    val expired: LockExpired = LockExpired(
+    val lockExpired: LockExpired = LockExpired(
       unlockAfter = 30 -> TimeUnit.SECONDS,
       deleteAfter = 1 -> TimeUnit.HOURS
     )
   }
 
   final val TOUCH = ".touch"
-
-  val defaultLockExpireAfter: Duration = 24 -> TimeUnit.HOURS
 }

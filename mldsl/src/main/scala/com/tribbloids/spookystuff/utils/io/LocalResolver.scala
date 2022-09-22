@@ -1,10 +1,10 @@
 package com.tribbloids.spookystuff.utils.io
 
-import java.io.{File, InputStream, OutputStream}
-import java.nio.file._
 import com.tribbloids.spookystuff.utils.Retry
 import org.apache.commons.io.FileUtils
 
+import java.io.{File, InputStream, OutputStream}
+import java.nio.file._
 import java.nio.file.attribute.PosixFilePermission
 
 case class LocalResolver(
@@ -12,14 +12,14 @@ case class LocalResolver(
     extraPermissions: Set[PosixFilePermission] = Set()
 ) extends URIResolver {
 
-  @transient lazy val mdParser: ResourceMetadata.ReflectionParser[File] = ResourceMetadata.ReflectionParser[File]()
+  @transient lazy val metadataParser: ResourceMetadata.ReflectionParser[File] =
+    ResourceMetadata.ReflectionParser[File]()
 
-  override def newExecution(pathStr: String): Execution = {
-    Execution(Paths.get(pathStr))
-  }
-  case class Execution(path: Path) extends super.AbstractExecution {
+  case class _Execution(pathStr: String) extends Execution {
 
     import Resource._
+
+    val path: Path = Paths.get(pathStr)
 
     import scala.collection.JavaConverters._
 
@@ -33,7 +33,7 @@ case class LocalResolver(
 
     override lazy val absolutePathStr: String = absolutePath.toString
 
-    trait LocalResource[T] extends Resource[T] {
+    case class _Resource(mode: WriteMode) extends Resource {
 
       override lazy val getURI: String = absolutePathStr
 
@@ -62,10 +62,10 @@ case class LocalResolver(
 
       override lazy val _metadata: ResourceMetadata = {
         // TODO: use Files.getFileAttributeView
-        mdParser(file)
+        metadataParser(file)
       }
 
-      override lazy val children: Seq[Execution] = {
+      override lazy val children: Seq[_Execution] = {
         if (isDirectory) {
 
           Files
@@ -78,67 +78,43 @@ case class LocalResolver(
             }
         } else Nil
       }
-    }
 
-    override def input[T](fn: InputResource => T): T = {
-
-      val ir = new InputResource with LocalResource[InputStream] {
-
-        override def createStream: InputStream = {
-
-          Files.newInputStream(path)
-        }
+      override protected def _newIStream: InputStream = {
+        Files.newInputStream(path)
       }
 
-      try {
-        fn(ir)
-      } finally {
-        ir.clean()
-      }
-    }
+      override protected def _newOStream: OutputStream = {
 
-    override def output[T](mode: WriteMode)(fn: OutputResource => T): T = {
+        val fos = (isExisting, mode) match {
 
-      val or = new OutputResource with LocalResource[OutputStream] {
+          case (true, WriteMode.CreateOnly) =>
+            throw new FileAlreadyExistsException(s"$absolutePathStr already exists")
 
-        override def createStream: OutputStream = {
-          val fos = (isExisting, mode) match {
+          case (true, WriteMode.Overwrite) =>
+            delete(false)
+            //              Files.createFile(path)
+            Files.newOutputStream(path, StandardOpenOption.CREATE_NEW, StandardOpenOption.SYNC)
 
-            case (true, WriteMode.CreateOnly) =>
-              throw new FileAlreadyExistsException(s"$absolutePathStr already exists")
+          case (true, WriteMode.Append) =>
+            Files.newOutputStream(path, StandardOpenOption.APPEND, StandardOpenOption.SYNC)
 
-            case (true, WriteMode.Overwrite) =>
-              delete(false)
+          case (false, _) =>
+            if (!isExisting) {
+
+              Files.createDirectories(absolutePath.getParent)
               //              Files.createFile(path)
-              Files.newOutputStream(path, StandardOpenOption.CREATE_NEW, StandardOpenOption.SYNC)
-
-            case (true, WriteMode.Append) =>
-              Files.newOutputStream(path, StandardOpenOption.APPEND, StandardOpenOption.SYNC)
-
-            case (false, _) =>
-              if (!isExisting) {
-
-                Files.createDirectories(absolutePath.getParent)
-                //              Files.createFile(path)
-              }
-              Files.newOutputStream(path, StandardOpenOption.CREATE_NEW, StandardOpenOption.SYNC)
-          }
-
-          val permissions = Files.getPosixFilePermissions(path)
-          permissions.addAll(extraPermissions.asJava)
-          Files.setPosixFilePermissions(path, permissions)
-
-          fos
+            }
+            Files.newOutputStream(path, StandardOpenOption.CREATE_NEW, StandardOpenOption.SYNC)
         }
-      }
 
-      try {
-        val result = fn(or)
-        result
-      } finally {
-        or.clean()
+        val permissions = Files.getPosixFilePermissions(path)
+        permissions.addAll(extraPermissions.asJava)
+        Files.setPosixFilePermissions(path, permissions)
+
+        fos
       }
     }
+
     override def _delete(mustExist: Boolean): Unit = {
 
       (isExisting, mustExist) match {

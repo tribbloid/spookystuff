@@ -2,21 +2,45 @@ package com.tribbloids.spookystuff.utils.io
 
 import java.io.{InputStream, OutputStream}
 import com.tribbloids.spookystuff.utils.lifespan.LocalCleanable
+import org.apache.commons.io.output.NullOutputStream
 import org.apache.spark.ml.dsl.utils.LazyVar
 import org.apache.spark.ml.dsl.utils.data.{EAV, EAVCore}
 
+import scala.language.implicitConversions
 import scala.util.Try
 
-abstract class Resource[T] extends LocalCleanable {
+abstract class Resource extends LocalCleanable {
+
+  def mode: WriteMode
 
   import Resource._
 
-  protected def createStream: T
+  protected def _newIStream: InputStream
+  protected def newIStream: InputStream = _newIStream
 
-  final protected lazy val _stream: LazyVar[T] = LazyVar {
-    createStream
+  protected def _newOStream: OutputStream
+  protected def newOStream: OutputStream = mode match {
+    case WriteMode.ReadOnly => throw new UnsupportedOperationException("cannot write if mode is ReadOnly")
+    case WriteMode.Ignore   => NullOutputStream.NULL_OUTPUT_STREAM
+    case _                  => _newOStream
   }
-  def stream: T = _stream.value
+
+  case class _IOView[T](streamFactory: () => T) extends IOView {
+
+    lazy val _stream: LazyVar[T] = LazyVar {
+      streamFactory()
+    }
+
+    def stream: T = _stream.value
+
+    final val outer: Resource.this.type = Resource.this
+  }
+
+  object InputView extends _IOView(() => newIStream) {}
+  type InputView = InputView.type
+
+  object OutputView extends _IOView(() => newOStream) {}
+  type OutputView = OutputView.type
 
   def getURI: String
 
@@ -47,7 +71,7 @@ abstract class Resource[T] extends LocalCleanable {
     final lazy val all: ResourceMetadata = {
 
       val grouped = children
-        .map(session => session.input(in => in.metadata.root))
+        .map(exe => exe.input(in => in.metadata.root))
         .groupBy(_.asMap("Type").toString)
 
       val childMaps: Map[String, Seq[Map[String, Any]]] = grouped.mapValues {
@@ -61,29 +85,31 @@ abstract class Resource[T] extends LocalCleanable {
     }
 
   }
+
+  override def cleanImpl(): Unit = {
+    InputView._stream.peek.foreach { v =>
+      v.close()
+    }
+    OutputView._stream.peek.foreach { v =>
+      v.flush()
+      v.close()
+    }
+  }
 }
 
 object Resource extends {
 
-  abstract class InputResource extends Resource[InputStream] {
+  trait IOView {
 
-    {
-      require(isExisting, s"Resource $getURI does not exist")
-    }
-
-    override def cleanImpl(): Unit = _stream.peek.foreach(_.close())
+    val outer: Resource
   }
 
-  abstract class OutputResource extends Resource[OutputStream] {
+  object IOView {
 
-    override def cleanImpl(): Unit =
-      _stream.peek.foreach { v =>
-        v.flush()
-        v.close()
-      }
+    implicit def asResource[R <: Resource, T](io: R#_IOView[T]): R = io.outer
   }
 
-  val resourceParser: EAVCore.ReflectionParser[Resource[_]] = EAV.Impl.ReflectionParser[Resource[_]]()
+  val resourceParser: EAVCore.ReflectionParser[Resource] = EAV.Impl.ReflectionParser[Resource]()
 
   final val DIR = "directory"
   final val FILE = "file"

@@ -1,10 +1,9 @@
 package com.tribbloids.spookystuff.utils.io
 
 import com.tribbloids.spookystuff.testutils.{FunSpecx, LocalPathDocsFixture, TestHelper}
-import com.tribbloids.spookystuff.utils.{CommonConst, SparkUISupport}
 import com.tribbloids.spookystuff.utils.io.AbstractURIResolverSuite.SequentialCheck
-import com.tribbloids.spookystuff.utils.io.Resource.InputResource
 import com.tribbloids.spookystuff.utils.serialization.AssertSerializable
+import com.tribbloids.spookystuff.utils.{CommonConst, SparkUISupport}
 import org.apache.commons.io.IOUtils
 import org.apache.spark.SparkContext
 import org.apache.spark.broadcast.Broadcast
@@ -99,13 +98,13 @@ abstract class AbstractURIResolverSuite extends FunSpecx with LocalPathDocsFixtu
     if (once.contains("file:")) assert(once.split("file:").head.isEmpty)
   }
 
-  it(".resourceOrAbsolute is idempotent") {
-    val once = resolver.resourceOrAbsolute(nonExistingFile.pathStr)
-    val twice = resolver.resourceOrAbsolute(once)
-    assert(once === twice)
-    assert(once.startsWith(schemaPrefix))
-    if (once.contains("file:")) assert(once.split("file:").head.isEmpty)
-  }
+//  it(".resourceOrAbsolute is idempotent") {
+//    val once = resolver.resourceOrAbsolute(nonExistingFile.pathStr)
+//    val twice = resolver.resourceOrAbsolute(once)
+//    assert(once === twice)
+//    assert(once.startsWith(schemaPrefix))
+//    if (once.contains("file:")) assert(once.split("file:").head.isEmpty)
+//  }
 
   //  it("ResourceFirstResolver can convert path to non-existing file to absolute") {
   //    val resolver = ResourceFirstResolver(HDFSResolver(new Configuration()))
@@ -145,7 +144,7 @@ abstract class AbstractURIResolverSuite extends FunSpecx with LocalPathDocsFixtu
 
     it("all accessors can be mutated after creation") {
 
-      def accessorVs(rr: InputResource) = {
+      def accessorVs(rr: Resource#InputView) = {
         Seq(
           rr.getLength,
           rr.getLastModified

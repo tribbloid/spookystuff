@@ -1,9 +1,9 @@
 package com.tribbloids.spookystuff.testutils
 
-import com.tribbloids.spookystuff.utils.classpath.ClasspathDebugger
+import com.tribbloids.spookystuff.utils.classpath.ClasspathResolver
 
 object DebugNewPath
-    extends ClasspathDebugger.ForSparkEnv(
+    extends ClasspathResolver.ForSparkEnv(
       """
         |/home/peng/.gradle/caches/7.4.2/workerMain/gradle-worker.jar	System Classpath
         |/home/peng/.gradle/caches/modules-2/files-2.1/aopalliance/aopalliance/1.0/235ba8b489512805ac13a8f9ea77a1ca5ebe3e8/aopalliance-1.0.jar	System Classpath

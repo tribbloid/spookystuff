@@ -1,29 +1,29 @@
 package com.tribbloids.spookystuff.assembly
 
-import com.tribbloids.spookystuff.utils.classpath.ClasspathDebugger
+import com.tribbloids.spookystuff.utils.classpath.ClasspathResolver
 import org.scalatest.funspec.AnyFunSpec
 
 object JarHellDetection {}
 
 class JarHellDetection extends AnyFunSpec {
 
-  lazy val exe = ClasspathDebugger.Exe()
-
   it("jars conflict") {
 
-    val detected = exe.Conflicts.aggregated
+    ClasspathResolver.withOverview { overview =>
+      val detected = overview.Conflicts.aggregated
 
-    val info = detected
-      .map {
-        case (k, v) =>
-          s"""
-           |${k.mkString("", "\n", "")}:
-           |${v.mkString("\t", "\n\t", "")}
-           |""".stripMargin.trim
-      }
-      .mkString("\n\n")
+      val info = detected
+        .map {
+          case (k, v) =>
+            s"""
+                 |${k.mkString("", "\n", "")}:
+                 |${v.mkString("\t", "\n\t", "")}
+                 |""".stripMargin.trim
+        }
+        .mkString("\n\n")
 
-    println(info)
+      println(info)
+    }
   }
 
 //  it("jars conflicts") {

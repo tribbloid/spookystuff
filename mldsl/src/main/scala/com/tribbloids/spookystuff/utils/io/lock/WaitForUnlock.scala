@@ -7,7 +7,7 @@ import java.nio.file.NoSuchFileException
 
 case class WaitForUnlock(
     exe: URIExecution,
-    expired: LockExpired = URIResolver.default.expired
+    expired: LockExpired = URIResolver.default.lockExpired
 ) extends LockLike {
 
   def unlockIfPossible(): Unit = {
