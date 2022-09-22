@@ -17,7 +17,7 @@ case class LocalResolver(
   override def newExecution(pathStr: String): Execution = {
     Execution(Paths.get(pathStr))
   }
-  case class Execution(path: Path) extends super.AbstractExecution {
+  case class Execution(path: Path) extends super.WritableExecution {
 
     import Resource._
 

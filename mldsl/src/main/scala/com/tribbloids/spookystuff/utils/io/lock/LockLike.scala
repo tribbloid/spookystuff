@@ -2,7 +2,7 @@ package com.tribbloids.spookystuff.utils.io.lock
 
 import com.tribbloids.spookystuff.utils.CommonUtils
 import com.tribbloids.spookystuff.utils.io.lock.Lock.InMemoryLock
-import com.tribbloids.spookystuff.utils.io.{URIExecution, URIResolver}
+import com.tribbloids.spookystuff.utils.io.{ReadExecution, URIResolver}
 import com.tribbloids.spookystuff.utils.serialization.NOTSerializable
 
 import java.util.UUID
@@ -13,7 +13,7 @@ trait LockLike extends NOTSerializable {
 
   lazy val id: UUID = UUID.randomUUID()
 
-  def exe: URIExecution
+  def exe: ReadExecution
 
   val resolver: URIResolver = exe.outer
   def absolutePathStr: String = exe.absolutePathStr

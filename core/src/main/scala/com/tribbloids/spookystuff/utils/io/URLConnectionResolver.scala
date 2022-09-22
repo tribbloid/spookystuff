@@ -33,7 +33,7 @@ case class URLConnectionResolver(
   import scala.collection.JavaConverters._
 
   override def newExecution(pathStr: String): Execution = new Execution(pathStr)
-  case class Execution(pathStr: String) extends super.AbstractExecution {
+  case class Execution(pathStr: String) extends super.ReadOnlyExecution {
 
     override def absolutePathStr: String = pathStr
 

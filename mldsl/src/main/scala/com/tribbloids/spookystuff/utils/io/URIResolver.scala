@@ -20,7 +20,7 @@ import scala.util.Random
  */
 abstract class URIResolver extends Serializable {
 
-  type Execution <: AbstractExecution
+  type Execution <: ReadOnlyExecution
 
   final def execute(pathStr: String): Execution = {
     newExecution(pathStr)
@@ -34,11 +34,6 @@ abstract class URIResolver extends Serializable {
   final def input[T](pathStr: String)(f: InputResource => T): T = {
     val exe = execute(pathStr)
     exe.input(f)
-  }
-
-  final def output[T](pathStr: String, mode: WriteMode)(f: OutputResource => T): T = {
-    val exe = execute(pathStr)
-    exe.output(mode)(f)
   }
 
   final def toAbsolute(pathStr: String): String = execute(pathStr).absolutePathStr
@@ -58,15 +53,38 @@ abstract class URIResolver extends Serializable {
     result
   }
 
-  /**
-    * ensure sequential access, doesn't work on non-existing path
-    */
-  def lock[T](pathStr: String)(fn: URIExecution => T): T = {
-    val exe = execute(pathStr)
+  case class WritableView()(
+      implicit proof: Execution <:< (Execution with WritableExecution)
+  ) {
 
-    val lock = new Lock(exe)
+    def outer: URIResolver = URIResolver.this
 
-    lock.during(fn)
+    def output[T](pathStr: String, mode: WriteMode)(f: OutputResource => T): T = {
+      val exe: Execution with WritableExecution = proof(outer.execute(pathStr))
+      exe.output(mode)(f)
+    }
+
+    final def copyTo(target: String, mode: WriteMode): Unit = {
+
+      val tgtExe = outer.execute(target)
+
+      outer.input { in: Execution =>
+        tgtExe.output(mode) { out =>
+          IOUtils.copy(in.stream, out.stream)
+        }
+      }
+    }
+
+    /**
+      * ensure sequential access, doesn't work on non-existing path
+      */
+    def lock[T](pathStr: String)(fn: WritableExecution => T): T = {
+      val exe = outer.execute(pathStr)
+
+      val lock = new Lock(exe)
+
+      lock.during(fn)
+    }
   }
 
   def unsupported(op: String): Nothing = {
@@ -81,37 +99,40 @@ abstract class URIResolver extends Serializable {
     * all implementations must be stateless, such that a single execution can be used for multiple I/O operations,
     * potentially in different threads
     */
-  trait AbstractExecution extends LocalCleanable {
+  trait ReadOnlyExecution extends LocalCleanable {
 
     def outer: URIResolver = URIResolver.this
 
     def absolutePathStr: String
 
-    protected[io] def _delete(mustExist: Boolean = true): Unit
-    final def delete(mustExist: Boolean = true): Unit = {
-      _delete(mustExist)
-//      retry {
-//        input { in =>
-//          assert(!in.isAlreadyExisting, s"$absolutePathStr cannot be deleted")
-//        }
-//      }
+    final def isExisting: Boolean = {
+      input(_.isExisting)
     }
 
-    def moveTo(target: String, force: Boolean = false): Unit
+    final def isNonEmpty: Boolean = satisfy { v =>
+      v.getLength > 0
+    }
 
-    //removed, no need if creating new file is always recursive
-//    def mkDirs(): Unit
+    final def satisfy(
+        condition: InputResource => Boolean
+    ): Boolean = {
 
-    final def copyTo(target: String, mode: WriteMode): Unit = {
-
-      val tgtSession = outer.execute(target)
-
-      this.input { in =>
-        tgtSession.output(mode) { out =>
-          IOUtils.copy(in.stream, out.stream)
-        }
+      val result = input { v =>
+        v.isExisting && condition(v)
       }
+      result
     }
+
+    // read: may execute lazily
+    def input[T](fn: InputResource => T): T
+
+    override protected def cleanImpl(): Unit = {}
+  }
+
+  trait WritableExecution extends ReadOnlyExecution {
+
+    // write an empty file even if stream is not used
+    def output[T](mode: WriteMode = WriteMode.CreateOnly)(fn: OutputResource => T): T
 
     final def createNew(): Unit = create_simple()
 
@@ -133,78 +154,23 @@ abstract class URIResolver extends Serializable {
           this.delete(false)
           throw e
       }
-
     }
 
-    @Deprecated // use create_simple instead
-    private def create_complex(): Unit = { //TODO: remove
+    protected[io] def _delete(mustExist: Boolean = true): Unit
 
-      val touchSession: URIExecution = {
-
-        val touchPathStr = this.absolutePathStr + URIResolver.TOUCH
-
-        outer.execute(touchPathStr)
-      }
-
-      // this convoluted way of creating file is to ensure that atomic contract can be engaged
-      // TODO: not working in any FS! why?
-
-      touchSession.output(WriteMode.CreateOnly) { out =>
-        out.stream.write(zeroByte)
-      }
-
-      try {
-        touchSession.moveTo(this.absolutePathStr)
-
-        this.input { in =>
-          val v = IOUtils.toByteArray(in.stream)
-          require(v.toSeq == zeroByte.toSeq)
-        }
-
-        this.output(WriteMode.Overwrite) { out =>
-          out.stream
-        }
-
-      } catch {
-        case e: Exception =>
-          touchSession.delete(false)
-          throw e
-      } finally {
-
-        touchSession.clean()
-      }
+    final def delete(mustExist: Boolean = true): Unit = {
+      _delete(mustExist)
     }
 
-    final def isExisting: Boolean = {
-      output()(_.isExisting)
-    }
-
-    final def isNonEmpty: Boolean = satisfy { v =>
-      v.getLength > 0
-    }
-
-    final def satisfy(
-        condition: InputResource => Boolean
-    ): Boolean = {
-
-      val result = input { v =>
-        v.isExisting && condition(v)
-      }
-      result
-    }
-
-    // read: may execute lazily
-    def input[T](fn: InputResource => T): T
-
-    // write an empty file even if stream is not used
-    def output[T](mode: WriteMode = WriteMode.CreateOnly)(fn: OutputResource => T): T
-
-    override protected def cleanImpl(): Unit = {}
+    def moveTo(target: String, force: Boolean = false): Unit
   }
-
 }
 
 object URIResolver {
+
+  implicit def toWritableView(v: URIResolver)(
+      implicit proof: v.Execution <:< v.WritableExecution
+  ): v.WritableView = v.WritableView()(proof)
 
   object default {
 

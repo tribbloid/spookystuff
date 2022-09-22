@@ -1,6 +1,6 @@
 package com.tribbloids.spookystuff.utils.io.lock
 
-import com.tribbloids.spookystuff.utils.io.URIExecution
+import com.tribbloids.spookystuff.utils.io.{ReadExecution, WriteExecution}
 
 import java.io.FileNotFoundException
 import java.nio.file.NoSuchFileException
@@ -11,7 +11,7 @@ case class LockExpired(
     deleteAfter: Duration
 ) {
 
-  case class ScanResult(exe: URIExecution) {
+  case class ScanResult(exe: WriteExecution) {
 
     val lastModified: Long = exe.input { in =>
       in.getLastModified
@@ -23,7 +23,7 @@ case class LockExpired(
     lazy val canBeDeleted: Boolean = canBeUnlocked && elapsedMillis >= deleteAfter.toMillis
   }
 
-  protected def _scanForUnlocking(vs: Seq[URIExecution]): Option[ScanResult] = {
+  protected def _scanForUnlocking(vs: Seq[WriteExecution]): Option[ScanResult] = {
 
     val scanResult = vs.flatMap { v =>
       if (v.isExisting) {
@@ -52,7 +52,7 @@ case class LockExpired(
     latest
   }
 
-  def scanForUnlocking(lockDir: URIExecution): Option[ScanResult] = {
+  def scanForUnlocking(lockDir: ReadExecution): Option[ScanResult] = {
 
     if (!lockDir.isExisting) return None
 
@@ -60,7 +60,7 @@ case class LockExpired(
       in.children
     }
 
-    val lockedFiles: Seq[URIExecution] = files.filter { file =>
+    val lockedFiles: Seq[WriteExecution] = files.filter { file =>
       file.absolutePathStr.split('.').lastOption.contains(LockLike.LOCKED)
     }
 

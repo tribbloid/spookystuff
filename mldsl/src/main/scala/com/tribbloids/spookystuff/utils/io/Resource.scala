@@ -35,7 +35,7 @@ abstract class Resource[T] extends LocalCleanable {
 
   protected def _metadata: ResourceMetadata
 
-  def children: Seq[URIExecution] = Nil
+  def children: Seq[ReadExecution] = Nil
 
   case object metadata {
 

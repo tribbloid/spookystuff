@@ -125,7 +125,7 @@ case class HTTPResolver(
 //  }
 
   override def newExecution(pathStr: String) = new Execution(pathStr)
-  case class Execution(pathStr: String) extends super.AbstractExecution {
+  case class Execution(pathStr: String) extends super.ReadOnlyExecution {
 
     override def absolutePathStr: String = pathStr
 

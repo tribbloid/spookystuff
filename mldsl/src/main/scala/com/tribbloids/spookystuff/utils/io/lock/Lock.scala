@@ -1,7 +1,7 @@
 package com.tribbloids.spookystuff.utils.io.lock
 
 import com.tribbloids.spookystuff.utils.CachingUtils
-import com.tribbloids.spookystuff.utils.io.{URIExecution, URIResolver}
+import com.tribbloids.spookystuff.utils.io.{ReadExecution, URIResolver, WriteExecution}
 import com.tribbloids.spookystuff.utils.lifespan.Cleanable.Lifespan
 import com.tribbloids.spookystuff.utils.lifespan.LocalCleanable
 
@@ -9,7 +9,7 @@ import java.io.FileNotFoundException
 import java.nio.file.NoSuchFileException
 
 case class Lock(
-    exe: URIExecution,
+    exe: WriteExecution,
     expired: LockExpired = URIResolver.default.expired,
     override val _lifespan: Lifespan = Lifespan.TaskOrJVM().forShipping
 ) extends LockLike
@@ -17,7 +17,7 @@ case class Lock(
 
   @volatile var acquiredTimestamp: Long = -1
 
-  protected def acquire(): URIExecution = {
+  protected def acquire(): WriteExecution = {
 
     try {
       exe.moveTo(Moved.locked.absolutePathStr)
@@ -48,7 +48,7 @@ case class Lock(
     Moved.locked.moveTo(exe.absolutePathStr, force = true)
   }
 
-  protected def duringOnce[T](fn: URIExecution => T): T = {
+  protected def duringOnce[T](fn: WriteExecution => T): T = {
     val acquired = acquire()
     try {
       fn(acquired)
@@ -58,7 +58,7 @@ case class Lock(
     }
   }
 
-  final def during[T](fn: URIExecution => T): T = inMemory.synchronized {
+  final def during[T](fn: WriteExecution => T): T = inMemory.synchronized {
     resolver.retry {
       duringOnce(fn)
     }
@@ -72,14 +72,14 @@ case class Lock(
     if (Moved.locked.isExisting) release()
   }
 
-  def logAcquire(execution: URIExecution): Unit = {
+  def logAcquire(execution: ReadExecution): Unit = {
 
 //    Lock.acquired += execution -> System.currentTimeMillis()
 
     this.logPrefixed(s"=== ACQUIRED!: ${execution.absolutePathStr}")
   }
 
-  def logRelease(execution: URIExecution): Unit = {
+  def logRelease(execution: ReadExecution): Unit = {
 //    Lock.acquired -= execution
 
     this.logPrefixed(s"=== RELEASED! ${execution.absolutePathStr}")

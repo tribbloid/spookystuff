@@ -1,13 +1,13 @@
 package com.tribbloids.spookystuff.utils.io.lock
 
-import com.tribbloids.spookystuff.utils.io.{URIExecution, URIResolver}
+import com.tribbloids.spookystuff.utils.io.{ReadExecution, URIResolver}
 
 import java.io.FileNotFoundException
 import java.nio.file.NoSuchFileException
 
 case class WaitForUnlock(
-    exe: URIExecution,
-    expired: LockExpired = URIResolver.default.expired
+                          exe: ReadExecution,
+                          expired: LockExpired = URIResolver.default.expired
 ) extends LockLike {
 
   def unlockIfPossible(): Unit = {
@@ -29,7 +29,7 @@ case class WaitForUnlock(
     }
   }
 
-  def duringOnce[T](fn: URIExecution => T): T = {
+  def duringOnce[T](fn: ReadExecution => T): T = {
     unlockIfPossible()
 
     try {
@@ -37,7 +37,7 @@ case class WaitForUnlock(
     }
   }
 
-  final def during[T](fn: URIExecution => T): T = inMemory.synchronized {
+  final def during[T](fn: ReadExecution => T): T = inMemory.synchronized {
     resolver.retry {
       duringOnce(fn)
     }

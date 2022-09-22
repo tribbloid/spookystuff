@@ -14,9 +14,9 @@ trait CompoundResolver extends URIResolver {
   def getImpl(pathStr: String): URIResolver
 
   override def newExecution(pathStr: String): Execution = Execution(pathStr)
-  case class Execution(pathStr: String) extends super.AbstractExecution {
+  case class Execution(pathStr: String) extends super.ReadOnlyExecution {
 
-    lazy val impl: URIExecution = getImpl(pathStr).execute(pathStr)
+    lazy val impl: ReadOnlyExecution = getImpl(pathStr).execute(pathStr)
 
     override def absolutePathStr: String = impl.absolutePathStr
 
