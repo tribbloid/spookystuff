@@ -8,8 +8,10 @@ object WriteMode extends Enumeration {
   object Overwrite extends Effective
   object Append extends Effective
 
+  object ReadOnly extends WriteMode
+
   //TODO: add back with some high-level implementation using apache-io NullOutputStream
-//  object Ignore extends WriteMode
+  object Ignore extends WriteMode
 }
 
 abstract class WriteMode

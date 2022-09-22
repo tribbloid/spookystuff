@@ -2,7 +2,6 @@ package com.tribbloids.spookystuff.utils.io
 
 import com.tribbloids.spookystuff.session.WebProxySetting
 import com.tribbloids.spookystuff.utils.http._
-import com.tribbloids.spookystuff.utils.io.Resource.{InputResource, OutputResource}
 import com.tribbloids.spookystuff.utils.serialization.NOTSerializable
 import org.apache.hadoop.conf.Configuration
 import org.apache.http.client.methods.HttpRequestBase
@@ -13,24 +12,28 @@ trait CompoundResolver extends URIResolver {
 
   def getImpl(pathStr: String): URIResolver
 
-  override def newExecution(pathStr: String): Execution = Execution(pathStr)
-  case class Execution(pathStr: String) extends super.AbstractExecution {
+  case class _Execution(pathStr: String) extends Execution {
 
     lazy val impl: URIExecution = getImpl(pathStr).execute(pathStr)
 
     override def absolutePathStr: String = impl.absolutePathStr
 
-    override def input[T](fn: InputResource => T): T =
-      impl.input(fn)
+//    override def inputNoValidation[T](fn: IResource => T): T =
+//      impl.input(fn)
+//
+//    override def output[T](mode: WriteMode)(fn: OResource => T): T =
+//      impl.output(mode)(fn)
 
-    override def output[T](mode: WriteMode)(fn: OutputResource => T): T =
-      impl.output(mode)(fn)
-
-    override def _delete(mustExist: Boolean): Unit = impl._delete(mustExist)
+    override def _delete(mustExist: Boolean): Unit = impl.delete(mustExist)
 
     override def moveTo(target: String, force: Boolean = false): Unit = impl.moveTo(target, force)
 
 //    override def mkDirs(): Unit = impl.mkDirs()
+    override type _Resource = impl._Resource
+
+    override def _Resource: WriteMode => impl._Resource = { v =>
+      impl._Resource(v)
+    }
   }
 
 //  override def lockAccessDuring[T](pathStr: String)(f: String => T) =

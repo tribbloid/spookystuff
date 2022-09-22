@@ -3,7 +3,6 @@ package com.tribbloids.spookystuff.utils.io
 import com.tribbloids.spookystuff.session.WebProxySetting
 import com.tribbloids.spookystuff.utils.Retry
 import com.tribbloids.spookystuff.utils.http._
-import com.tribbloids.spookystuff.utils.io.Resource.{InputResource, OutputResource}
 import org.apache.http.client.HttpClient
 import org.apache.http.client.config.RequestConfig
 import org.apache.http.client.methods._
@@ -13,6 +12,7 @@ import org.apache.http.conn.socket.ConnectionSocketFactory
 import org.apache.http.impl.client.{CloseableHttpClient, HttpClients}
 import org.apache.http.impl.conn.PoolingHttpClientConnectionManager
 import org.apache.http.{HttpEntity, HttpHost, HttpResponse}
+import org.apache.spark.ml.dsl.utils.LazyVar
 
 import java.io._
 import java.net.{InetSocketAddress, URI}
@@ -25,8 +25,8 @@ object HTTPResolver {
     val context: HttpClientContext = HttpClientContext.create
 
     if (proxy != null && proxy.protocol.startsWith("socks")) {
-      val socksaddr: InetSocketAddress = new InetSocketAddress(proxy.addr, proxy.port)
-      context.setAttribute("socks.address", socksaddr)
+      val socksAddr: InetSocketAddress = new InetSocketAddress(proxy.addr, proxy.port)
+      context.setAttribute("socks.address", socksAddr)
 
       context
     }
@@ -105,7 +105,7 @@ case class HTTPResolver(
     client: HttpClient,
     context: HttpClientContext,
     //                         headers: Map[String, String] = Map.empty,
-    input2Request: URI => HttpRequestBase = { v =>
+    readRequestFactory: URI => HttpRequestBase = { v =>
       new HttpGet(v)
     },
     //                         output2Request: URI => HttpEntityEnclosingRequestBase = { //TODO: need test
@@ -124,85 +124,66 @@ case class HTTPResolver(
 //    currentHost.toURI + currentReq.getURI
 //  }
 
-  override def newExecution(pathStr: String) = new Execution(pathStr)
-  case class Execution(pathStr: String) extends super.AbstractExecution {
+  case class _Execution(pathStr: String) extends Execution {
 
     override def absolutePathStr: String = pathStr
-
-    override def input[T](fn: InputResource => T): T = {
-
-      val uri = HttpUtils.uri(pathStr)
-      val ir = new InputResource with HttpResource[InputStream] {
-        override lazy val request: HttpUriRequest = input2Request(uri)
-
-        override protected def createStream: InputStream = entity.getContent
-
-      }
-      try {
-        fn(ir)
-      } finally {
-        ir.clean()
-      }
-      //    catch {
-      //      case e: ClientProtocolException =>
-      //        val cause = e.getCause
-      //        if (cause.isInstanceOf[RedirectException]) NoDoc(List(this)) //TODO: is it a reasonable exception? don't think so
-      //        else throw e
-      //      case e: Exception =>
-      //        throw e
-      //    }
-    }
 
     override def _delete(mustExist: Boolean): Unit = {
       unsupported("delete")
     }
 
-    override def output[T](mode: WriteMode)(fn: OutputResource => T): T = {
-      unsupported("output")
-    }
-
     override def moveTo(target: String, force: Boolean = false): Unit =
       unsupported("move")
 
-//    override def mkDirs(): Unit = ???
-  }
+    case class _Resource(mode: WriteMode) extends Resource with MimeTypeMixin {
 
-  trait HttpResource[T] extends Resource[T] with MimeTypeMixin {
+      lazy val readRequest: HttpUriRequest = {
 
-    def request: HttpUriRequest
+        val uri = HttpUtils.uri(pathStr)
+        readRequestFactory(uri)
+      }
 
-    @transient var existingResponse: HttpResponse = _
-    lazy val response: HttpResponse = {
-      existingResponse = client.execute(request, context)
-      existingResponse
-    }
+      lazy val _readResponse: LazyVar[HttpResponse] = LazyVar {
+        client.execute(readRequest, context)
+      }
 
-    lazy val entity: HttpEntity = response.getEntity
+      lazy val entity: HttpEntity = _readResponse.value.getEntity
 
-    override lazy val getURI: String = request.getURI.toString
+      override lazy val getURI: String = readRequest.getURI.toString
 
-    override lazy val getName: String = entity.getContentType.getName
+      override lazy val getName: String = entity.getContentType.getName
 
-    override lazy val getContentType: String = entity.getContentType.getValue
+      override lazy val getContentType: String = entity.getContentType.getValue
 
-    override lazy val getLength: Long = entity.getContentLength
+      override lazy val getLength: Long = entity.getContentLength
 
-    override lazy val getStatusCode: Option[Int] = Some(response.getStatusLine.getStatusCode)
+      override lazy val getStatusCode: Option[Int] = Some(_readResponse.getStatusLine.getStatusCode)
 
-    override lazy val getLastModified: Long = -1
+      override lazy val getLastModified: Long = -1
 
-    override lazy val _metadata: ResourceMetadata = {
-      val mapped = response.getAllHeaders.map { header =>
-        header.getName -> header.getValue
-      }.toSeq
-      ResourceMetadata.fromUntypedTuples(mapped: _*)
-    }
+      override lazy val _metadata: ResourceMetadata = {
+        val mapped = _readResponse.getAllHeaders.map { header =>
+          header.getName -> header.getValue
+        }.toSeq
+        ResourceMetadata.fromUntypedTuples(mapped: _*)
+      }
 
-    abstract override def cleanImpl(): Unit = {
-      super.cleanImpl()
-      Option(existingResponse).foreach {
-        case v: Closeable => v.close()
-        case _            =>
+      override def cleanImpl(): Unit = {
+        super.cleanImpl()
+        _readResponse.peek.foreach {
+          case v: Closeable => v.close()
+          case _            =>
+        }
+      }
+
+      override protected def _newIStream: InputStream = {
+
+        entity.getContent
+      }
+
+      override protected def _newOStream: OutputStream = {
+
+        unsupported("write")
       }
     }
   }

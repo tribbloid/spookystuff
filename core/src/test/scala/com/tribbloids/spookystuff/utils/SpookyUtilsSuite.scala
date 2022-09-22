@@ -1,8 +1,6 @@
 package com.tribbloids.spookystuff.utils
 
-import java.io.File
 import com.tribbloids.spookystuff.testutils.{FunSpecx, TestHelper}
-import com.tribbloids.spookystuff.utils.classpath.ClasspathDebugger
 import org.apache.spark.TaskContext
 import org.apache.spark.rdd.RDD
 
@@ -35,25 +33,6 @@ class SpookyUtilsSuite extends FunSpecx {
     assert(SpookyUtils.asIterable[Int](2) == Iterable(2))
     assert(SpookyUtils.asIterable[Int](Seq(1, 2, 3).iterator).toSeq == Iterable(1, 2, 3))
     assert(SpookyUtils.asIterable[Int](Seq(1, 2.2, "b")).toSeq == Iterable(1))
-  }
-
-  describe("copyResourceToDirectory") {
-
-    it("can extract a dependency's package in a jar") {
-      val src = ClasspathDebugger.Exe().getResource("org/apache/log4j/xml").get
-      val dst = CommonUtils.\\\(CommonConst.USER_TEMP_DIR, "log4j")
-      SpookyUtils.extractResource(src, dst)
-      val dir = new File(dst)
-      assert(dir.list().nonEmpty)
-    }
-
-    it("can extract a package in file system") {
-      val src = ClasspathDebugger.Exe().getResource("com/tribbloids/spookystuff/utils").get
-      val dst = "temp/utils/"
-      SpookyUtils.extractResource(src, dst)
-      val dir = new File(dst)
-      assert(dir.list().nonEmpty)
-    }
   }
 
   describe("withTimeout") {

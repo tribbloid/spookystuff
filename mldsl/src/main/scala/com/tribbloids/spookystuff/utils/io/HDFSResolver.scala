@@ -55,8 +55,9 @@ case class HDFSResolver(
     }
   }
 
-  override def newExecution(pathStr: String): Execution = Execution(new Path(pathStr))
-  case class Execution(path: Path) extends super.AbstractExecution {
+  case class _Execution(pathStr: String) extends Execution {
+
+    val path = new Path(pathStr)
 
     lazy val fc: FileContext = FileContext.getFileContext(path.toUri, _hadoopConf)
 
@@ -72,7 +73,7 @@ case class HDFSResolver(
       withNewAuthority.toString
     }
 
-    trait HDFSResource[T] extends Resource[T] {
+    case class _Resource(mode: WriteMode) extends Resource {
 
       lazy val status: FileStatus = fc.getFileStatus(path)
 
@@ -99,10 +100,10 @@ case class HDFSResolver(
       override lazy val getLastModified: Long = status.getModificationTime
 
       override lazy val _metadata: ResourceMetadata = {
-        HDFSResolver.mdParser.apply(status)
+        HDFSResolver.metadataParser.apply(status)
       }
 
-      override lazy val children: Seq[Execution] = {
+      override lazy val children: Seq[_Execution] = {
         if (isDirectory) {
 
           val childrenItr = fc.listStatus(path)
@@ -122,52 +123,78 @@ case class HDFSResolver(
           }
         } else Nil
       }
+
+      override protected def _newIStream: InputStream = {
+        fc.open(path)
+      }
+
+      override protected def _newOStream: OutputStream = {
+        import CreateFlag._
+
+        mkParent(path)
+
+        val result = mode match {
+          case WriteMode.CreateOnly => fc.create(path, util.EnumSet.of(CREATE))
+          case WriteMode.Append     => fc.create(path, util.EnumSet.of(CREATE, APPEND))
+          case WriteMode.Overwrite  => fc.create(path, util.EnumSet.of(CREATE, OVERWRITE))
+        }
+
+        result
+      }
+    }
+
+    override def inputNoValidation[T](fn: _Resource#InputView => T): T = doAsUGI {
+      super.inputNoValidation(fn)
+    }
+
+    override def output[T](mode: WriteMode)(fn: _Resource#OutputView => T): T = doAsUGI {
+      super.output(mode)(fn)
     }
 
     //TODO: retry CRC errors on read
-    def input[T](fn: InputResource => T): T = doAsUGI {
-
-      val ir = new InputResource with HDFSResource[InputStream] {
-
-        override def createStream: InputStream = {
-
-          fc.open(path)
-        }
-      }
-      try {
-        fn(ir)
-      } finally {
-        ir.clean()
-      }
-    }
-
-    override def output[T](mode: WriteMode)(fn: OutputResource => T): T = doAsUGI {
-
-      val or = new OutputResource with HDFSResource[OutputStream] {
-
-        override def createStream: OutputStream = {
-
-          import CreateFlag._
-
-          mkParent(path)
-
-          val result = mode match {
-            case WriteMode.CreateOnly => fc.create(path, util.EnumSet.of(CREATE))
-            case WriteMode.Append     => fc.create(path, util.EnumSet.of(CREATE, APPEND))
-            case WriteMode.Overwrite  => fc.create(path, util.EnumSet.of(CREATE, OVERWRITE))
-          }
-
-          result
-        }
-      }
-
-      try {
-        val result = fn(or)
-        result
-      } finally {
-        or.clean()
-      }
-    }
+//    override def inputNoValidation[T](fn: IResource => T): T = doAsUGI {
+//
+//      val ir = new IResource {
+//
+//        override def _newIStream: InputStream = {
+//
+//          fc.open(path)
+//        }
+//      }
+//      try {
+//        fn(ir)
+//      } finally {
+//        ir.clean()
+//      }
+//    }
+//
+//    override def output[T](mode: WriteMode)(fn: OResource => T): T = doAsUGI {
+//
+//      val or = new OResource {
+//
+//        override def _newIStream: OutputStream = {
+//
+//          import CreateFlag._
+//
+//          mkParent(path)
+//
+//          val result = mode match {
+//            case WriteMode.CreateOnly => fc.create(path, util.EnumSet.of(CREATE))
+//            case WriteMode.Append     => fc.create(path, util.EnumSet.of(CREATE, APPEND))
+//            case WriteMode.Overwrite  => fc.create(path, util.EnumSet.of(CREATE, OVERWRITE))
+//          }
+//
+//          result
+//        }
+//      }
+//
+//      try {
+//        val result = fn(or)
+//        result
+//      } finally {
+//        or.clean()
+//      }
+//    }
 
     def _delete(mustExist: Boolean = true): Unit = doAsUGI {
 
@@ -219,7 +246,7 @@ object HDFSResolver {
 
   def noUGIFactory: () => None.type = () => None
 
-  val mdParser: ResourceMetadata.ReflectionParser[FileStatus] = ResourceMetadata.ReflectionParser[FileStatus]()
+  val metadataParser: ResourceMetadata.ReflectionParser[FileStatus] = ResourceMetadata.ReflectionParser[FileStatus]()
 
   //  def serviceUGIFactory = () => Some(SparkHelper.serviceUGI)
   //

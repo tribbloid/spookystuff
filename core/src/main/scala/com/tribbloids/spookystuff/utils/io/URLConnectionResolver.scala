@@ -2,7 +2,6 @@ package com.tribbloids.spookystuff.utils.io
 
 import com.tribbloids.spookystuff.utils.Retry
 import com.tribbloids.spookystuff.utils.http.HttpUtils
-import com.tribbloids.spookystuff.utils.io.Resource.{InputResource, OutputResource}
 
 import java.io.{InputStream, OutputStream}
 import java.net.{URI, URLConnection}
@@ -32,15 +31,14 @@ case class URLConnectionResolver(
 
   import scala.collection.JavaConverters._
 
-  override def newExecution(pathStr: String): Execution = new Execution(pathStr)
-  case class Execution(pathStr: String) extends super.AbstractExecution {
+  case class _Execution(pathStr: String) extends Execution {
 
     override def absolutePathStr: String = pathStr
 
     val uri: URI = HttpUtils.uri(pathStr)
     val _conn: URLConnection = input2Connection(uri)
 
-    trait URLConnectionResource[T] extends Resource[T] with MimeTypeMixin {
+    case class _Resource(mode: WriteMode) extends Resource with MimeTypeMixin {
 
       lazy val conn: URLConnection = {
         _conn.connect()
@@ -68,36 +66,13 @@ case class URLConnectionResolver(
           }
         ResourceMetadata.fromMap(map)
       }
-    }
 
-    override def input[T](fn: InputResource => T): T = {
-
-      val in = new InputResource with URLConnectionResource[InputStream] {
-
-        override def createStream: InputStream = {
-          conn.getInputStream
-        }
-
+      override protected def _newIStream: InputStream = {
+        conn.getInputStream
       }
-      try {
-        fn(in)
-      } finally {
-        in.clean()
-      }
-    }
 
-    override def output[T](mode: WriteMode)(fn: OutputResource => T): T = {
-      val out: OutputResource with URLConnectionResource[OutputStream] = new OutputResource
-      with URLConnectionResource[OutputStream] {
-
-        override val createStream: OutputStream = {
-          conn.getOutputStream
-        }
-      }
-      try {
-        fn(out)
-      } finally {
-        out.clean()
+      override protected def _newOStream: OutputStream = {
+        conn.getOutputStream
       }
     }
 

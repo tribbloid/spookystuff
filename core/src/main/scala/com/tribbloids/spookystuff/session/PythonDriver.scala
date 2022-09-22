@@ -2,7 +2,8 @@ package com.tribbloids.spookystuff.session
 
 import com.tribbloids.spookystuff.conf.Python
 import com.tribbloids.spookystuff.driver.PythonProcess
-import com.tribbloids.spookystuff.utils.classpath.ClasspathDebugger
+import com.tribbloids.spookystuff.utils.classpath.ClasspathResolver
+import com.tribbloids.spookystuff.utils.io.{LocalResolver, WriteMode}
 import com.tribbloids.spookystuff.utils.lifespan.Cleanable.Lifespan
 import com.tribbloids.spookystuff.utils.{BypassingRule, CommonConst, CommonUtils, SpookyUtils}
 import com.tribbloids.spookystuff.{PyException, PyInterpretationException, SpookyContext}
@@ -41,10 +42,12 @@ object PythonDriver {
     val pythonDir = new File(pythonPath)
     FileUtils.deleteQuietly(pythonDir)
 
-    val resourceOpt = ClasspathDebugger.Exe().getResource(PythonDriver.PYTHON_RESOURCE)
-    resourceOpt.foreach { resource =>
-      SpookyUtils.extractResource(resource, pythonPath)
-    }
+    val exe = ClasspathResolver.execute(PythonDriver.PYTHON_RESOURCE)
+
+    exe.treeExtractTo(
+      LocalResolver.execute(pythonPath),
+      WriteMode.CreateOnly
+    )
 
     pythonPath
   }

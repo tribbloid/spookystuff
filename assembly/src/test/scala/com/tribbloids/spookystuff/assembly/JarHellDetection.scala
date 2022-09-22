@@ -1,13 +1,13 @@
 package com.tribbloids.spookystuff.assembly
 
-import com.tribbloids.spookystuff.utils.classpath.ClasspathDebugger
+import com.tribbloids.spookystuff.utils.classpath.ClasspathResolver
 import org.scalatest.funspec.AnyFunSpec
 
 object JarHellDetection {}
 
 class JarHellDetection extends AnyFunSpec {
 
-  lazy val exe = ClasspathDebugger.Exe()
+  lazy val exe = ClasspathResolver.overview
 
   it("jars conflict") {
 

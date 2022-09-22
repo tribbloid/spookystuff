@@ -12,12 +12,12 @@ case class TempResource(
 
   import TempResource._
 
-  lazy val execution: resolver.AbstractExecution = resolver.execute(pathStr)
+  lazy val execution: resolver.Execution = resolver.execute(pathStr)
   def absolutePathStr: String = execution.absolutePathStr
 
 //  def absolutePathStr: String = session.absolutePathStr
 
-  lazy val executions: Seq[URIResolver#AbstractExecution] = {
+  lazy val executions: Seq[URIResolver#Execution] = {
     Seq(execution)
   }
 
