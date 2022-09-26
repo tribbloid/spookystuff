@@ -86,7 +86,7 @@ abstract class URIResolver extends Serializable {
     }
 
     final def isExisting: Boolean = {
-      inputNoValidation(_.isExisting)
+      io()(_.isExisting)
     }
 
     final def isNonEmpty: Boolean = satisfy { v =>
@@ -97,39 +97,33 @@ abstract class URIResolver extends Serializable {
         condition: _Resource => Boolean
     ): Boolean = {
 
-      val result = inputNoValidation { v =>
-        v.isExisting && condition(v.outer)
+      val result = io() { v =>
+        v.isExisting && condition(v)
       }
       result
     }
 
-    final def input[T](fn: _Resource#InputView => T): T = inputNoValidation { v =>
+    final def input[T](fn: _Resource#InputView => T): T = io() { v =>
       if (!v.isExisting)
         throw new IOException(s"Resource ${absolutePathStr} does not exist")
 
-      fn(v)
+      fn(v.InputView)
     }
 
-    protected def inputNoValidation[T](fn: _Resource#InputView => T): T = {
+    protected def io[T](mode: WriteMode = WriteMode.ReadOnly)(fn: _Resource => T): T = {
 
-      val io = _Resource(WriteMode.ReadOnly)
+      val resource = _Resource(mode)
 
       try {
-        fn(io.InputView)
+        fn(resource)
       } finally {
-        io.clean()
+        resource.clean()
       }
     }
 
 //     write an empty file even if stream is not used
-    def output[T](mode: WriteMode = WriteMode.CreateOnly)(fn: _Resource#OutputView => T): T = {
-      val io = _Resource(mode)
-
-      try {
-        fn(io.OutputView)
-      } finally {
-        io.clean()
-      }
+    final def output[T](mode: WriteMode = WriteMode.CreateOnly)(fn: _Resource#OutputView => T): T = io(mode) { v =>
+      fn(v.OutputView)
     }
 
     override protected def cleanImpl(): Unit = {}

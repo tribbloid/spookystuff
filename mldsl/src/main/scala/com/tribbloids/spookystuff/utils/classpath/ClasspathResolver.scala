@@ -4,7 +4,7 @@ import com.tribbloids.spookystuff.utils.CommonUtils
 import com.tribbloids.spookystuff.utils.io.Resource.{DIR, FILE}
 import com.tribbloids.spookystuff.utils.io.{ResourceMetadata, URIResolver, WriteMode, Resource => IOResource}
 import com.tribbloids.spookystuff.utils.lifespan.Cleanable
-import io.github.classgraph.{ClassGraph, Resource, ScanResult}
+import io.github.classgraph.{ClassGraph, Resource, ResourceList, ScanResult}
 import org.apache.commons.lang.StringUtils
 import org.apache.spark.ml.dsl.utils.LazyVar
 
@@ -57,15 +57,14 @@ case class ClasspathResolver(
     v
   }
 
-  trait UseScanResult extends Cleanable {
-
-    def scanResultOverride: Option[ScanResult] = None
+  trait UseScan extends Cleanable {
 
     // TODO: this may not be efficient as every new _Execution requires a new can, but for safety ...
     lazy val _scanResult: LazyVar[ScanResult] = LazyVar {
       graph.scan()
     }
-    def scanResult: ScanResult = scanResultOverride.getOrElse(_scanResult.value)
+
+    def scanResult: ScanResult = _scanResult.value
 
     override def cleanImpl(): Unit = {
       _scanResult.peek.foreach { v =>
@@ -76,40 +75,30 @@ case class ClasspathResolver(
 
   object _Execution extends (String => _Execution) {
 
-    def apply(pathStr: String): _Execution = {
-
-      lazy val scanned: ScanResult = graph.scan()
-      val list = scanned.getResourcesWithPath(pathStr)
-
-      val rOpt = list.asScala.headOption.map { v =>
-        v
-      }
-      _Execution(pathStr, None, rOpt)
-
-    }
+//    def apply(pathStr: String): _Execution = {
+//
+//      lazy val scanned: ScanResult = graph.scan()
+//      val list = scanned.getResourcesWithPath(pathStr)
+//
+//      val rOpt = list.asScala.headOption.map { v =>
+//        v
+//      }
+//      _Execution(pathStr, rOpt)
+//
+//    }
   }
 
   case class _Execution(
       pathStr: String,
-      override val scanResultOverride: Option[ScanResult],
-      referenceOpt: Option[Resource]
-  ) extends Execution
-      with UseScanResult {
+//      override val scanResultOverride: Option[ScanResult],
+//      referenceOpt: Option[Resource]
+  ) extends Execution {
 
     lazy val childPattern: String = CommonUtils.\\\(pathStr, "*")
     lazy val offspringPattern: String = CommonUtils.\\\(pathStr, "**")
 
-    def find(wildcard: String): Seq[_Execution] = {
-      val list = scanResult.getResourcesMatchingWildcard(wildcard)
-
-      val result = list.asScala.map { v =>
-        _Execution(v.getPath, Some(scanResult), Some(v))
-      }
-      result
-    }
-
-    def referenceInfo: String = {
-      val info = referenceOpt match {
+    lazy val referenceInfo: String = io() { io =>
+      val info = io.firstRefOpt match {
         case Some(r) =>
           s"\tresource `$pathStr` refers to ${r.getURL.toString}"
         case None =>
@@ -120,36 +109,52 @@ case class ClasspathResolver(
 
     override def absolutePathStr: String = pathStr
 
-    case class _Resource(mode: WriteMode) extends IOResource {
+    case class _Resource(mode: WriteMode) extends IOResource with UseScan {
 
-      private lazy val ref = referenceOpt
-        .getOrElse(
-          throw new UnsupportedOperationException("reference doesn't exist")
-        )
+      lazy val _refs: LazyVar[ResourceList] = LazyVar {
+        scanResult.getResourcesWithPath(pathStr)
+      }
+      def firstRefOpt: Option[Resource] = _refs.value.asScala.headOption
+      def firstRef: Resource = firstRefOpt.getOrElse(???)
 
-      override lazy val getURI: String = ref.getURI.toString
+      override lazy val getURI: String = firstRef.getURI.toString
 
-      override def getName: String = ref.getURI.getFragment
+      override def getName: String = firstRef.getURI.getFragment
 
       override def getType: String =
-        if (referenceOpt.nonEmpty) FILE
+        if (!_refs.value.isEmpty) FILE
         else if (children.nonEmpty) DIR
         else throw new NoSuchFileException(s"File $pathStr doesn't exist")
+
+      def find(wildcard: String): Seq[_Execution] = {
+        val list = scanResult
+          .getResourcesMatchingWildcard(wildcard)
+          .asScala
+          .map { v =>
+            v.getPath
+          }
+          .distinct
+
+        val result = list.map { v =>
+          _Execution(v)
+        }
+        result
+      }
 
       override lazy val children: Seq[_Execution] = find(childPattern)
       lazy val offspring: Seq[_Execution] = find(offspringPattern)
 
-      override def getContentType: String = Files.probeContentType(ref.getClasspathElementFile.toPath)
+      override def getContentType: String = Files.probeContentType(firstRef.getClasspathElementFile.toPath)
 
-      override def getLength: Long = ref.getLength
+      override def getLength: Long = firstRef.getLength
 
-      override def getLastModified: Long = ref.getLastModified
+      override def getLastModified: Long = firstRef.getLastModified
 
-      override protected def _metadata: ResourceMetadata = metadataParser(ref)
+      override protected def _metadata: ResourceMetadata = metadataParser(firstRef)
 
       override protected def _newIStream: InputStream = {
         try {
-          ref.open()
+          firstRef.open()
         } catch {
           case e: Throwable =>
             throw new IOException(
@@ -160,6 +165,14 @@ case class ClasspathResolver(
       }
 
       override protected def _newOStream: OutputStream = unsupported("write")
+
+      override def cleanImpl(): Unit = {
+
+        _refs.peek.foreach { v =>
+          v.close()
+        }
+        super.cleanImpl()
+      }
     }
 
     override protected def _delete(mustExist: Boolean): Unit = unsupported("write")
@@ -167,7 +180,7 @@ case class ClasspathResolver(
     override def moveTo(target: String, force: Boolean): Unit = unsupported("write")
 
     // TODO: generalise to all URIResolvers! Renamed to treeCopyTo
-    def treeExtractTo(targetRootExe: URIResolver#Execution, mode: WriteMode): Unit = inputNoValidation { i =>
+    def treeExtractTo(targetRootExe: URIResolver#Execution, mode: WriteMode): Unit = io() { i =>
       val offspring = i.offspring
       offspring.foreach { v: ClasspathResolver#Execution =>
         val dst = CommonUtils.\\\(targetRootExe.absolutePathStr, v.absolutePathStr)
@@ -177,23 +190,26 @@ case class ClasspathResolver(
       Thread.sleep(5000) //for eventual consistency
     }
 
-    override def cleanImpl(): Unit = {
-
-      referenceOpt.foreach { v =>
-        v.close()
-      }
-      super.cleanImpl()
-    }
   }
 
-  def overview: Overview = Overview()
+//  def overview: Overview = Overview()
+
+  def withOverview[T](fn: Overview => T): T = {
+    val o = Overview()
+
+    try {
+      fn(o)
+    } finally {
+      o.clean()
+    }
+  }
 
   case class Overview(
       pathConflictFilter: String => Boolean = { v =>
         val exceptions = Set.empty[String]
         v.endsWith(".class") && (!exceptions.contains(v))
       }
-  ) extends UseScanResult {
+  ) extends UseScan {
 
     def debugConfFiles(
         fileNames: Seq[String] = List(
@@ -243,19 +259,24 @@ case class ClasspathResolver(
     object Conflicts {
 
       lazy val raw: Map[String, List[String]] = {
-        val seen = mutable.Map.empty[String, mutable.ArrayBuffer[String]]
-        try {
+        val seen = try {
 
           val resources = scanResult.getAllResources.asScala
-          for (resource <- resources) {
-            val path = resource.getPath
-            val classpathElements = seen.getOrElseUpdate(path, mutable.ArrayBuffer.empty)
 
-            classpathElements += resource.getClasspathElementFile.getPath
-          }
+          val result = resources
+            .groupBy { resource =>
+              resource.getPath
+            }
+            .map {
+              case (k, vs) =>
+                k -> vs.map { v =>
+                  v.getURI.toString
+                }
+            }
+          result
         }
 
-        val result = seen.toMap.flatMap {
+        val result = seen.flatMap {
           case (k, v) =>
             if (!pathConflictFilter(k)) None
             else if (v.size == 1) None
@@ -289,7 +310,7 @@ case class ClasspathResolver(
       }
     }
 
-    lazy val fullReport: String =
+    lazy val completeReport: String =
       s"""
          | === CONFLICTS ===
          |${Conflicts.formatted}
@@ -303,10 +324,11 @@ case class ClasspathResolver(
 
 object ClasspathResolver {
 
-  object default extends ClasspathResolver()
+  object System extends ClasspathResolver(classLoaderOverride = Some(ClassLoader.getSystemClassLoader))
 
-  // TODO: remove, should use default
-//  object system extends ClasspathResolver(classLoaderOverride = Some(ClassLoader.getSystemClassLoader))
+  object AllInclusive extends ClasspathResolver()
+
+  lazy val default: System.type = System
 
   class ForSparkEnv(info: String) extends ClasspathResolver {
     val elements: Seq[String] = {
@@ -324,7 +346,8 @@ object ClasspathResolver {
 
   def main(args: Array[String]): Unit = {
 
-    val run = default.overview
-    println(run.fullReport)
+    default.withOverview { o =>
+      println(o.completeReport)
+    }
   }
 }

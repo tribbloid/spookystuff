@@ -143,58 +143,9 @@ case class HDFSResolver(
       }
     }
 
-    override def inputNoValidation[T](fn: _Resource#InputView => T): T = doAsUGI {
-      super.inputNoValidation(fn)
+    override def io[T](mode: WriteMode)(fn: _Resource => T): T = doAsUGI {
+      super.io(mode)(fn)
     }
-
-    override def output[T](mode: WriteMode)(fn: _Resource#OutputView => T): T = doAsUGI {
-      super.output(mode)(fn)
-    }
-
-    //TODO: retry CRC errors on read
-//    override def inputNoValidation[T](fn: IResource => T): T = doAsUGI {
-//
-//      val ir = new IResource {
-//
-//        override def _newIStream: InputStream = {
-//
-//          fc.open(path)
-//        }
-//      }
-//      try {
-//        fn(ir)
-//      } finally {
-//        ir.clean()
-//      }
-//    }
-//
-//    override def output[T](mode: WriteMode)(fn: OResource => T): T = doAsUGI {
-//
-//      val or = new OResource {
-//
-//        override def _newIStream: OutputStream = {
-//
-//          import CreateFlag._
-//
-//          mkParent(path)
-//
-//          val result = mode match {
-//            case WriteMode.CreateOnly => fc.create(path, util.EnumSet.of(CREATE))
-//            case WriteMode.Append     => fc.create(path, util.EnumSet.of(CREATE, APPEND))
-//            case WriteMode.Overwrite  => fc.create(path, util.EnumSet.of(CREATE, OVERWRITE))
-//          }
-//
-//          result
-//        }
-//      }
-//
-//      try {
-//        val result = fn(or)
-//        result
-//      } finally {
-//        or.clean()
-//      }
-//    }
 
     def _delete(mustExist: Boolean = true): Unit = doAsUGI {
 

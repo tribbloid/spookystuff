@@ -18,12 +18,6 @@ trait CompoundResolver extends URIResolver {
 
     override def absolutePathStr: String = impl.absolutePathStr
 
-//    override def inputNoValidation[T](fn: IResource => T): T =
-//      impl.input(fn)
-//
-//    override def output[T](mode: WriteMode)(fn: OResource => T): T =
-//      impl.output(mode)(fn)
-
     override def _delete(mustExist: Boolean): Unit = impl.delete(mustExist)
 
     override def moveTo(target: String, force: Boolean = false): Unit = impl.moveTo(target, force)

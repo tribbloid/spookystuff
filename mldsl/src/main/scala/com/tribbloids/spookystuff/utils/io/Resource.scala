@@ -25,7 +25,7 @@ abstract class Resource extends LocalCleanable {
     case _                  => _newOStream
   }
 
-  case class _IO[T](streamFactory: () => T) extends IO {
+  case class _IOView[T](streamFactory: () => T) extends IOView {
 
     lazy val _stream: LazyVar[T] = LazyVar {
       streamFactory()
@@ -36,10 +36,10 @@ abstract class Resource extends LocalCleanable {
     final val outer: Resource.this.type = Resource.this
   }
 
-  object InputView extends _IO(() => newIStream) {}
+  object InputView extends _IOView(() => newIStream) {}
   type InputView = InputView.type
 
-  object OutputView extends _IO(() => newOStream) {}
+  object OutputView extends _IOView(() => newOStream) {}
   type OutputView = OutputView.type
 
   def getURI: String
@@ -99,14 +99,14 @@ abstract class Resource extends LocalCleanable {
 
 object Resource extends {
 
-  trait IO {
+  trait IOView {
 
     val outer: Resource
   }
 
-  object IO {
+  object IOView {
 
-    implicit def asResource[R <: Resource, T](io: R#_IO[T]): R = io.outer
+    implicit def asResource[R <: Resource, T](io: R#_IOView[T]): R = io.outer
   }
 
   val resourceParser: EAVCore.ReflectionParser[Resource] = EAV.Impl.ReflectionParser[Resource]()
