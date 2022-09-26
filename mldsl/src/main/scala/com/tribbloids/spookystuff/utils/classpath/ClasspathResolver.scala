@@ -59,11 +59,13 @@ case class ClasspathResolver(
 
   trait UseScanResult extends Cleanable {
 
+    def scanResultOverride: Option[ScanResult] = None
+
     // TODO: this may not be efficient as every new _Execution requires a new can, but for safety ...
     lazy val _scanResult: LazyVar[ScanResult] = LazyVar {
       graph.scan()
     }
-    def scanned: ScanResult = _scanResult.value
+    def scanResult: ScanResult = scanResultOverride.getOrElse(_scanResult.value)
 
     override def cleanImpl(): Unit = {
       _scanResult.peek.foreach { v =>
@@ -82,13 +84,14 @@ case class ClasspathResolver(
       val rOpt = list.asScala.headOption.map { v =>
         v
       }
-      new _Execution(pathStr, rOpt)
+      _Execution(pathStr, None, rOpt)
 
     }
   }
 
   case class _Execution(
       pathStr: String,
+      override val scanResultOverride: Option[ScanResult],
       referenceOpt: Option[Resource]
   ) extends Execution
       with UseScanResult {
@@ -96,11 +99,11 @@ case class ClasspathResolver(
     lazy val childPattern: String = CommonUtils.\\\(pathStr, "*")
     lazy val offspringPattern: String = CommonUtils.\\\(pathStr, "**")
 
-    def select(wildcard: String): Seq[_Execution] = {
-      val list = scanned.getResourcesMatchingWildcard(wildcard)
+    def find(wildcard: String): Seq[_Execution] = {
+      val list = scanResult.getResourcesMatchingWildcard(wildcard)
 
       val result = list.asScala.map { v =>
-        new _Execution(v.getPath, Some(v))
+        _Execution(v.getPath, Some(scanResult), Some(v))
       }
       result
     }
@@ -133,8 +136,8 @@ case class ClasspathResolver(
         else if (children.nonEmpty) DIR
         else throw new NoSuchFileException(s"File $pathStr doesn't exist")
 
-      override lazy val children: Seq[_Execution] = select(childPattern)
-      lazy val offspring: Seq[_Execution] = select(offspringPattern)
+      override lazy val children: Seq[_Execution] = find(childPattern)
+      lazy val offspring: Seq[_Execution] = find(offspringPattern)
 
       override def getContentType: String = Files.probeContentType(ref.getClasspathElementFile.toPath)
 
@@ -212,7 +215,7 @@ case class ClasspathResolver(
 
       lazy val paths: Seq[String] = {
         elementsOverride.getOrElse {
-          scanned.getClasspathURIs.asScala.toList.map(_.toString)
+          scanResult.getClasspathURIs.asScala.toList.map(_.toString)
         }
       }
 
@@ -243,7 +246,7 @@ case class ClasspathResolver(
         val seen = mutable.Map.empty[String, mutable.ArrayBuffer[String]]
         try {
 
-          val resources = scanned.getAllResources.asScala
+          val resources = scanResult.getAllResources.asScala
           for (resource <- resources) {
             val path = resource.getPath
             val classpathElements = seen.getOrElseUpdate(path, mutable.ArrayBuffer.empty)
