@@ -11,7 +11,6 @@ import org.apache.spark.ml.dsl.utils.LazyVar
 import java.io.{IOException, InputStream, OutputStream}
 import java.nio.file.{Files, NoSuchFileException}
 import java.util.regex.Pattern
-import scala.collection.mutable
 import scala.language.implicitConversions
 import scala.tools.nsc.io.File
 
@@ -73,25 +72,10 @@ case class ClasspathResolver(
     }
   }
 
-  object _Execution extends (String => _Execution) {
-
-//    def apply(pathStr: String): _Execution = {
-//
-//      lazy val scanned: ScanResult = graph.scan()
-//      val list = scanned.getResourcesWithPath(pathStr)
-//
-//      val rOpt = list.asScala.headOption.map { v =>
-//        v
-//      }
-//      _Execution(pathStr, rOpt)
-//
-//    }
-  }
+//  object _Execution extends (String => _Execution) {}
 
   case class _Execution(
-      pathStr: String,
-//      override val scanResultOverride: Option[ScanResult],
-//      referenceOpt: Option[Resource]
+      pathStr: String
   ) extends Execution {
 
     lazy val childPattern: String = CommonUtils.\\\(pathStr, "*")
