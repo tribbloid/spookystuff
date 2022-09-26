@@ -25,7 +25,7 @@ case class ClasspathResolver(
     ResourceMetadata.ReflectionParser[Resource]()
 
   lazy val graph: ClassGraph = {
-    var base = new ClassGraph().enableClassInfo.ignoreClassVisibility
+    var base = new ClassGraph() //.enableClassInfo.ignoreClassVisibility
 
     elementsOverride.foreach { oo =>
       base = base.overrideClasspath(oo)
