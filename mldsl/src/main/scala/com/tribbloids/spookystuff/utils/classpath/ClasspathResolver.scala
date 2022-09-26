@@ -312,7 +312,7 @@ object ClasspathResolver {
 
   object AllInclusive extends ClasspathResolver()
 
-  lazy val default: System.type = System
+  lazy val default: ClasspathResolver = AllInclusive
 
   class ForSparkEnv(info: String) extends ClasspathResolver {
     val elements: Seq[String] = {
