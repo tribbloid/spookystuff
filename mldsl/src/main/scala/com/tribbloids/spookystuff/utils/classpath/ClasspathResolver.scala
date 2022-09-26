@@ -254,7 +254,7 @@ case class ClasspathResolver(
             .map {
               case (k, vs) =>
                 k -> vs.map { v =>
-                  v.getURI.toString
+                  v.getClasspathElementURI.toString
                 }
             }
           result
