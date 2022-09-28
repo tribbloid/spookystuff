@@ -254,7 +254,8 @@ case class ClasspathResolver(
             .map {
               case (k, vs) =>
                 k -> vs.map { v =>
-                  v.getClasspathElementURI.toString
+                  val filePath = v.getClasspathElementURI.toString
+                  StringUtils.split(filePath, File.separator).last
                 }
             }
           result
