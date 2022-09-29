@@ -1,14 +1,14 @@
 package org.apache.spark.ml.dsl.utils.messaging
 
 import java.util.Date
-
 import org.apache.spark.ml.dsl.AbstractDFDSuite
 import org.apache.spark.ml.dsl.utils.messaging.TestBeans._
 import org.json4s.MappingException
+import org.json4s.reflect.{Executable, ParanamerReader}
 
 class MessageReaderSuite extends AbstractDFDSuite {
 
-  //TODO: disabled before FallbackSerializer is really put to use
+  // TODO: disabled before FallbackSerializer is really put to use
   ignore("SerializingParam[Function1] should work") {
     val fn = { k: Int =>
       2 * k
@@ -23,6 +23,18 @@ class MessageReaderSuite extends AbstractDFDSuite {
   }
 
   val date = new Date()
+
+  it("Paranamer constructor lookup") {
+
+    val clazz = classOf[TimeWrapper]
+    val tors = clazz.getConstructors
+    val ctor = tors.head
+    val exe = new Executable(ctor)
+
+    val names = ParanamerReader.lookupParameterNames(exe)
+
+    require(names.size == 1)
+  }
 
   it("can read generated timestamp") {
     val obj = TimeWrapper(date)
