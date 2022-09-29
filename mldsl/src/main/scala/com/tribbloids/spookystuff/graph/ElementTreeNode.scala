@@ -98,6 +98,6 @@ object ElementTreeNode {
     override lazy val prefix: String = delegate.prefix + "(cyclic)"
     override val _children: Seq[ElementView[D]] = Nil
 
-    override implicit def copyImplicitly(v: ElementView[D]): ElementTreeNode[D] = delegate.copyImplicitly(v)
+    implicit override def copyImplicitly(v: ElementView[D]): ElementTreeNode[D] = delegate.copyImplicitly(v)
   }
 }

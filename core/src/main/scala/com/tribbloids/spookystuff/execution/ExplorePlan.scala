@@ -22,8 +22,8 @@ object ExplorePlan {
   def nextExeID(): ExeID = UUID.randomUUID()
 
   case class Params(
-      depthField: Field, //can be null
-      ordinalField: Field, //can be null
+      depthField: Field, // can be null
+      ordinalField: Field, // can be null
       range: Range,
       executionID: ExeID = nextExeID()
   ) {}
@@ -46,8 +46,8 @@ case class ExplorePlan(
     params: Params,
     exploreAlgorithm: ExploreAlgorithm,
     epochSize: Int,
-    //TODO: stopping condition can be more than this,
-    //TODO: test if proceed to next epoch works
+    // TODO: stopping condition can be more than this,
+    // TODO: test if proceed to next epoch works
     checkpointInterval: Int, // set to Int.MaxValue to disable checkpointing,
 
     //                          extracts: Seq[Extractor[Any]],
@@ -149,7 +149,7 @@ case class ExplorePlan(
         val row0WithDepth = row0.extract(depth_0)
         val depth0 = rowMapper.apply(row0WithDepth)
         val visited0 = if (_effectiveParams.range.contains(0)) {
-          //extract on selfRDD, add into visited set.
+          // extract on selfRDD, add into visited set.
           Some(depth0.traceView -> Open_Visited(visited = Some(depth0.dataRows)))
         } else {
           None
@@ -177,7 +177,7 @@ case class ExplorePlan(
       )
     }
 
-    //this will use globalReducer, same thing will happen to later states, eliminator however will only be used inside ExploreStateView.execute()
+    // this will use globalReducer, same thing will happen to later states, eliminator however will only be used inside ExploreStateView.execute()
     //    val reducedState0RDD: RDD[(TraceView, Open_Visited)] = betweenEpochReduce(state0RDD, combinedReducer)
 
     val openSetSize = spooky.sparkContext.longAccumulator
@@ -210,7 +210,7 @@ case class ExplorePlan(
         state_+
       }
 
-      //this will use globalReducer, same thing will happen to later states, eliminator however will only be used inside ExploreStateView.execute()
+      // this will use globalReducer, same thing will happen to later states, eliminator however will only be used inside ExploreStateView.execute()
 
       //      val reducedStateRDD_+ : RDD[(TraceView, Open_Visited)] = betweenEpochReduce(stateRDD_+, combinedReducer)
 
@@ -229,7 +229,9 @@ case class ExplorePlan(
 
     val result = stateRDD
       .mapPartitions { itr =>
-        ExploreRunnerCache.finishExploreExecutions(params.executionID) //manual cleanup, one per node is enough, one per executor is not too much slower
+        ExploreRunnerCache.finishExploreExecutions(
+          params.executionID
+        ) // manual cleanup, one per node is enough, one per executor is not too much slower
         itr
       }
       .flatMap { v =>

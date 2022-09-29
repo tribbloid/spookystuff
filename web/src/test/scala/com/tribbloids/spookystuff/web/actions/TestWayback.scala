@@ -11,7 +11,6 @@ import com.tribbloids.spookystuff.{QueryException, SpookyEnvFixture}
 //TODO: test independently for each cache type (after switch for different cache is implemented)
 class TestWayback extends SpookyEnvFixture {
 
-
   import scala.concurrent.duration._
 
   it("Wget.waybackTo should work on cache") {
@@ -19,7 +18,7 @@ class TestWayback extends SpookyEnvFixture {
     spooky.spookyConf.IgnoreCachedDocsBefore = Some(new Date())
 
     val dates: Seq[Long] = (0 to 2).map { i =>
-      val pages = (Delay(10.seconds) +> Wget(HTML_URL)).fetch(spooky) //5s is long enough
+      val pages = (Delay(10.seconds) +> Wget(HTML_URL)).fetch(spooky) // 5s is long enough
       assert(pages.size == 1)
       pages.head.timeMillis
     }
@@ -47,7 +46,7 @@ class TestWayback extends SpookyEnvFixture {
       val pages = (
         Delay(10.seconds)
           +> Visit(HTML_URL)
-      ).rewriteGlobally(defaultSchema).head.fetch(spooky) //5s is long enough
+      ).rewriteGlobally(defaultSchema).head.fetch(spooky) // 5s is long enough
       assert(pages.size == 1)
       pages.head.timeMillis
     }
@@ -76,7 +75,7 @@ class TestWayback extends SpookyEnvFixture {
     val dates: Seq[Long] = (0 to 2).map { i =>
       val pages = (Delay(10.seconds)
         +> Visit(HTML_URL)
-        +> Screenshot()).fetch(spooky) //5s is long enough
+        +> Screenshot()).fetch(spooky) // 5s is long enough
       assert(pages.size == 1)
       pages.head.timeMillis
     }

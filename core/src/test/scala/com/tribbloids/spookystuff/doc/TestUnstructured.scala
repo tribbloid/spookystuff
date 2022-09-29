@@ -29,7 +29,8 @@ class TestUnstructured extends SpookyEnvFixture with LocalPathDocsFixture {
               .formattedCode
               .get
               .split("\n")
-              .map(_.trim))
+              .map(_.trim)
+          )
           assert(element.findAll("a").size === element2.findAll("a").size)
           assert(element.attr("class") === element2.attr("class"))
           assert(element.code === element2.code)
@@ -59,7 +60,8 @@ class TestUnstructured extends SpookyEnvFixture with LocalPathDocsFixture {
           .formattedCode
           .get
           .split("\n")
-          .map(_.trim))
+          .map(_.trim)
+      )
       assert(element.findAll("a").size === element2.findAll("a").size)
       assert(element.attr("class") === element2.attr("class"))
       assert(element.code === element2.code)
@@ -84,7 +86,8 @@ class TestUnstructured extends SpookyEnvFixture with LocalPathDocsFixture {
           .formattedCode
           .get
           .split("\n")
-          .map(_.trim))
+          .map(_.trim)
+      )
       assert(element.findAll("a").size === element2.findAll("a").size)
       assert(element.attr("class") === element2.attr("class"))
       assert(element.code === element2.code)

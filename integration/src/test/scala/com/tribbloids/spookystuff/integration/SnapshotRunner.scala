@@ -7,8 +7,7 @@ import com.tribbloids.spookystuff.rdd.FetchedDataset
 import com.tribbloids.spookystuff.utils.CommonConst
 
 /**
-  * move the entire webscraper.io/test-sites/ into a local dir for integration tests
-  * may use wayback machine:
+  * move the entire webscraper.io/test-sites/ into a local dir for integration tests may use wayback machine:
   * https://web.archive.org/web/20170707111752/http://webscraper.io:80/test-sites
   */
 object SnapshotRunner extends SpookyEnvFixture.EnvBase {
@@ -34,17 +33,15 @@ object SnapshotRunner extends SpookyEnvFixture.EnvBase {
 
       fd.persist()
       val originalVersion = fd.wget(
-        S.uri.andFn(
-          { uri =>
-            try {
-              val Array(first, last) = uri.split(SPLITTER)
-              first + "id_" + SPLITTER_MIN + last
-            } catch {
-              case e: Exception =>
-                throw new UnsupportedOperationException(s"malformed URI: $uri", e)
-            }
+        S.uri.andFn { uri =>
+          try {
+            val Array(first, last) = uri.split(SPLITTER)
+            first + "id_" + SPLITTER_MIN + last
+          } catch {
+            case e: Exception =>
+              throw new UnsupportedOperationException(s"malformed URI: $uri", e)
           }
-        ),
+        },
         cooldown = coolDown
       )
       originalVersion

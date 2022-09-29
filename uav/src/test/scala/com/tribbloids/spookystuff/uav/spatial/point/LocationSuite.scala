@@ -66,12 +66,12 @@ class LocationSuite extends SpookyEnvFixture {
 
       val c2 = p2.getCoordinate(NED, p1)
       c2.get.toStr_withSearchHistory.shouldBe(
-        "NED:POINT (-0.005983 -200 -20) hops=3 recursions=7" //TODO: should be 0
+        "NED:POINT (-0.005983 -200 -20) hops=3 recursions=7" // TODO: should be 0
       )
     }
   }
 
-  //TODO: enable this after reverse operator
+  // TODO: enable this after reverse operator
   ignore("NED - NED => NED (Defined to Undetermined Anchor)") {
     val base = Anchors.Geodetic
     val p1: Location = NED(300, 200, 10) -> base
@@ -102,7 +102,7 @@ class LocationSuite extends SpookyEnvFixture {
     p1.cache(LLA.fromVec(Vec(-79.262262, 43.694195, -30)) -> p2)
 
     val c2_Geo = p2.getCoordinate(LLA, Anchors.Geodetic)
-    //TODO: should I use NaN and yield the known part?
+    // TODO: should I use NaN and yield the known part?
     assert(c2_Geo.isEmpty)
   }
 

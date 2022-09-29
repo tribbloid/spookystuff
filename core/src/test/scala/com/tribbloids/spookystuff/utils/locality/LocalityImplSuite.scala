@@ -51,7 +51,8 @@ class LocalityImplSuite extends SpookyEnvFixture {
 
     it(
       "the first operand containing unserializable objects will not trigger an exception" +
-        "if it has a partitioner") {
+        "if it has a partitioner"
+    ) {
       val still = rdd1
         .partitionBy(new HashPartitioner(np))
         .mapValues { v =>
@@ -77,7 +78,8 @@ class LocalityImplSuite extends SpookyEnvFixture {
 
     it(
       "the second operand containing unserializable objects will not trigger an exception" +
-        "if it has a partitioner") {
+        "if it has a partitioner"
+    ) {
       val moved = rdd1
       val still = rdd2
         .partitionBy(new HashPartitioner(np))
@@ -146,7 +148,7 @@ class LocalityImplSuite extends SpookyEnvFixture {
     }
   }
 
-  //TODO: duplicate, delete!
+  // TODO: duplicate, delete!
   ignore("each partition of the first operand of cogroup should not move, but elements are shuffled") {
     // sc is the SparkContext
     val rdd1: RDD[(Int, Int)] = sc
@@ -165,7 +167,7 @@ class LocalityImplSuite extends SpookyEnvFixture {
     }
 
     joined.toDebugString.shouldBe(
-      )
+    )
 
     val zipped = joined.zipPartitions(rdd1, rdd2) { (itr1, itr2, itr3) =>
       val list1 = itr1.toList

@@ -7,12 +7,12 @@ import scala.language.implicitConversions
 
 /**
   * design to cover the following 4 cases:
-  * - start parsing: Start
-  * - match next char immediately: Start >>> P("{")
-  * - match the first char after arbitrary non-key tokens Start >>> P_*("$")
-  * - state change represented by a function (FStateMeta => FStateMeta): P("{").change(meta => ...)
-  * - strip
-  * - escape: go to same state with skip +1 P_*("$").escape
+  *   - start parsing: Start
+  *   - match next char immediately: Start >>> P("{")
+  *   - match the first char after arbitrary non-key tokens Start >>> P_*("$")
+  *   - state change represented by a function (FStateMeta => FStateMeta): P("{").change(meta => ...)
+  *   - strip
+  *   - escape: go to same state with skip +1 P_*("$").escape
   */
 object FSMParserDSL extends DSL {
 
@@ -60,7 +60,7 @@ object FSMParserDSL extends DSL {
     }
 
     override def union(another: Operand[_]): Operand[GG] = {
-      //reuse this.entryNode
+      // reuse this.entryNode
 
       val proto = super.union(another)
       val e1 = this.entryNode

@@ -49,7 +49,8 @@ abstract class AbstractDFDSuite extends FunSpecx with BeforeAndAfterAll {
     val lookup = compaction(cols)
 
     val replaced = regex.replaceAllIn(
-      str, { m =>
+      str,
+      { m =>
         val original: String = m.matched
         val multiPart = original.split('$').toSeq
         lookup(multiPart).mkString("\\$")

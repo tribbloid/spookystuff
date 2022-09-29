@@ -9,23 +9,23 @@ object ElementView {
 
   implicit def ordering[D <: Domain]: Ordering[ElementView[D]] = {
 
-    Ordering.by({ v: ElementView[D] =>
+    Ordering.by { v: ElementView[D] =>
       v.orderedBy
-    }) //(Ordering.Tuple3[Iterable[Int], Iterable[String], String])
+    } // (Ordering.Tuple3[Iterable[Int], Iterable[String], String])
   }
 }
 
 trait ElementView[D <: Domain] extends Algebra.Aliases[D] with IDMixin {
 
   val core: Layout[D]#Core[_]
-  override final def algebra: Algebra[D] = core.algebra
+  final override def algebra: Algebra[D] = core.algebra
 
   def element: _Element
 
   def inbound: Seq[ElementView[D]]
   def outbound: Seq[ElementView[D]]
 
-  override final def _id: _Element = element
+  final override def _id: _Element = element
 
   lazy val (prefixes, positioning): (Seq[String], Seq[Int]) = {
     element match {
@@ -94,7 +94,7 @@ trait ElementView[D <: Domain] extends Algebra.Aliases[D] with IDMixin {
     }
 
     case class ForwardTreeNode(
-        //VERY IMPORTANT for cycle elimination
+        // VERY IMPORTANT for cycle elimination
         visited: Set[_Element] = Set.empty
     ) extends ElementTreeNode[D] {
 
@@ -104,12 +104,12 @@ trait ElementView[D <: Domain] extends Algebra.Aliases[D] with IDMixin {
 
       override val _children: Seq[ElementView[D]] = ElementView.this.outbound
 
-      override implicit def copyImplicitly(v: ElementView[D]): ElementTreeNode[D] =
+      implicit override def copyImplicitly(v: ElementView[D]): ElementTreeNode[D] =
         v.WFormat(format).ForwardTreeNode(visited + element)
     }
 
     case class BackwardTreeNode(
-        //VERY IMPORTANT for cycle elimination
+        // VERY IMPORTANT for cycle elimination
         visited: Set[_Element] = Set.empty
     ) extends ElementTreeNode[D] {
 
@@ -119,7 +119,7 @@ trait ElementView[D <: Domain] extends Algebra.Aliases[D] with IDMixin {
 
       override val _children: Seq[ElementView[D]] = ElementView.this.inbound
 
-      override implicit def copyImplicitly(v: ElementView[D]): ElementTreeNode[D] =
+      implicit override def copyImplicitly(v: ElementView[D]): ElementTreeNode[D] =
         v.WFormat(format).BackwardTreeNode(visited + element)
     }
   }

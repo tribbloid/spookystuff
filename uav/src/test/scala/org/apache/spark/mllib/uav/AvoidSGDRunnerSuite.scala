@@ -37,16 +37,17 @@ class AvoidSGDRunnerSuite extends GeomMixin {
         List(
           Waypoint(NED(0, 0, 0)),
           Waypoint(NED(1, 1, 0))
-        )),
+        )
+      ),
       2 -> Seq(
         List(
           Waypoint(NED(1, 0, 0.1)),
           Waypoint(NED(0, 1, 0.1))
-        ))
+        )
+      )
     )
     val runner = AvoidSGDRunner(map2rdd(input), schema, clearance)
-    AssertSerializable(runner.gradient, condition = { (v1: AvoidGradient, v2: AvoidGradient) =>
-      })
+    AssertSerializable(runner.gradient, condition = { (v1: AvoidGradient, v2: AvoidGradient) => })
   }
 
   it("can generate training data RDD") {
@@ -55,17 +56,20 @@ class AvoidSGDRunnerSuite extends GeomMixin {
         List(
           Waypoint(NED(0, 0, 0)),
           Waypoint(NED(1, 1, 0))
-        )),
+        )
+      ),
       2 -> Seq(
         List(
           Waypoint(NED(1, 0, 0.1)),
           Waypoint(NED(0, 1, 0.1))
-        )),
+        )
+      ),
       3 -> Seq(
         List(
           Waypoint(NED(0, 0, 0.1)),
           Waypoint(NED(0, 1, 0.1))
-        ))
+        )
+      )
     )
     val runner = AvoidSGDRunner(map2rdd(input), schema, clearance)
     val data = runner.gradient.generateDataRDD
@@ -96,12 +100,14 @@ class AvoidSGDRunnerSuite extends GeomMixin {
         List(
           Waypoint(NED(0, 0, -0.1)),
           Waypoint(NED(1, 1, -0.1))
-        )),
+        )
+      ),
       2 -> Seq(
         List(
           Waypoint(NED(1, 0, 0.1)),
           Waypoint(NED(0, 1, 0.1))
-        ))
+        )
+      )
     )
 
     val runner = AvoidSGDRunner(map2rdd(input), schema, clearance)
@@ -122,12 +128,14 @@ class AvoidSGDRunnerSuite extends GeomMixin {
         List(
           Waypoint(NED(0, 0, -0.3)),
           Waypoint(NED(1, 5, -0.3))
-        )),
+        )
+      ),
       2 -> Seq(
         List(
           Waypoint(NED(1, 0, 0.3)),
           Waypoint(NED(0, 1, 0.3))
-        ))
+        )
+      )
     )
 
     val runner = AvoidSGDRunner(map2rdd(input), schema, clearance)
@@ -151,12 +159,14 @@ class AvoidSGDRunnerSuite extends GeomMixin {
         List(
           Waypoint(NED(0, 0, 0)),
           Waypoint(NED(1, 1, 0))
-        )),
+        )
+      ),
       2 -> Seq(
         List(
           Waypoint(NED(1, 0, 0)),
           Waypoint(NED(0, 1, 0))
-        ))
+        )
+      )
     )
 
     val runner = AvoidSGDRunner(map2rdd(input), schema, clearance)
@@ -183,13 +193,15 @@ class AvoidSGDRunnerSuite extends GeomMixin {
           Waypoint(NED(0, 0, 0.1)),
           Waypoint(NED(1, 1, 0.1)),
           Waypoint(NED(0, 2, 0.1))
-        )),
+        )
+      ),
       2 -> Seq(
         List(
           Waypoint(NED(1, 0, -0.1)),
           Waypoint(NED(0, 1, -0.1)),
           Waypoint(NED(1, 2, -0.1))
-        ))
+        )
+      )
     )
 
     val runner = AvoidSGDRunner(map2rdd(input), schema, clearance)
@@ -208,12 +220,14 @@ class AvoidSGDRunnerSuite extends GeomMixin {
   it("can optimize 4 Waypoints in 2 partitions") {
 
     val input: Map[Int, Seq[Trace]] = Map(
-      1 -> Seq(List(
-                 Waypoint(NED(0, 0, 0.1))
-               ),
-               List(
-                 Waypoint(NED(1, 1, 0.1))
-               )),
+      1 -> Seq(
+        List(
+          Waypoint(NED(0, 0, 0.1))
+        ),
+        List(
+          Waypoint(NED(1, 1, 0.1))
+        )
+      ),
       2 -> Seq(
         List(
           Waypoint(NED(1, 0, -0.1))

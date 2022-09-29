@@ -12,13 +12,13 @@ object URLConnectionResolver {
       timeoutMillis: Int
   ): URLConnectionResolver = {
 
-    val ftp = URLConnectionResolver({ uri =>
+    val ftp = URLConnectionResolver { uri =>
       val conn = uri.toURL.openConnection()
       conn.setConnectTimeout(timeoutMillis)
       conn.setReadTimeout(timeoutMillis)
 
       conn
-    })
+    }
 
     ftp
   }
@@ -79,7 +79,7 @@ case class URLConnectionResolver(
     override def _delete(mustExist: Boolean): Unit = {
 
       unsupported("delete")
-      //TODO: not supported by java library! should switch to a more professional one like org.apache.commons.net.ftp.FTPClient
+      // TODO: not supported by java library! should switch to a more professional one like org.apache.commons.net.ftp.FTPClient
     }
 
     override def moveTo(target: String, force: Boolean = false): Unit = {

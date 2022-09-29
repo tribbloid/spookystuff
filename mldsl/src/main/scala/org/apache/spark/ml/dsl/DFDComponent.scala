@@ -24,7 +24,7 @@ object DFDComponent {
     Step(namedStage)
   }
 
-  //TODO: why bother importing SQLContext.Implicits?
+  // TODO: why bother importing SQLContext.Implicits?
   implicit def pipelineStageTupleToStep(tuple: (PipelineStage, Any)): Step = {
     val namedStage = tuple match {
       case (v, s: Symbol) =>
@@ -64,8 +64,8 @@ object DFDComponent {
     Source(name, Set(dataType))
   }
 
-  //viewbound parameter
-  //TODO: why bother importing SQLContext.Implicits?
+  // viewbound parameter
+  // TODO: why bother importing SQLContext.Implicits?
   implicit def columnToSource(s: Column): Source = {
     val col: Column = s
     val clazz = col.getClass
@@ -80,7 +80,7 @@ object DFDComponent {
 
 trait DFDComponent extends MayHaveHeads with MayHaveTails {
 
-  //validations
+  // validations
   {
     coll.values.foreach { stage =>
       if (!this.tailIDs.contains(stage.id))
@@ -94,7 +94,7 @@ trait DFDComponent extends MayHaveHeads with MayHaveTails {
     }
   }
 
-  //no replicate
+  // no replicate
   // ~> this <~
   //     |
   //     "~> right <~
@@ -127,7 +127,7 @@ trait DFDComponent extends MayHaveHeads with MayHaveTails {
     val newTailIDs = newLeftTailIDs ++ newRightTailIDs
     val obsoleteIDs = (right.leftConnectors ++ this.PASSTHROUGHOutput)
       .filterNot(v => newTailIDs.contains(v.id))
-      .map(_.id) //if in the new TailIDs, cannot be deleted which causes not found error.
+      .map(_.id) // if in the new TailIDs, cannot be deleted which causes not found error.
 
     val allSteps = (coll ++ right.coll).remove(obsoleteIDs: _*)
     val newSteps = allSteps.connectAll(effectiveFromIDs, toIDs)
@@ -152,7 +152,7 @@ trait DFDComponent extends MayHaveHeads with MayHaveTails {
     result
   }
 
-  //no replicate
+  // no replicate
   //       ~> this <~
   //           |
   // ~> left <~
@@ -186,7 +186,7 @@ trait DFDComponent extends MayHaveHeads with MayHaveTails {
     val newTailIDs = newLeftTailIDs ++ newRightTailIDs
     val obsoleteIDs = (left.rightConnectors ++ this.PASSTHROUGHOutput)
       .filterNot(v => newTailIDs.contains(v.id))
-      .map(_.id) //if in the new TailIDs, cannot be deleted which causes not found error.
+      .map(_.id) // if in the new TailIDs, cannot be deleted which causes not found error.
 
     val allSteps = (coll ++ left.coll).remove(obsoleteIDs: _*)
     val newSteps = allSteps.connectAll(effectiveFromIDs, toIDs)
@@ -216,7 +216,7 @@ trait DFDComponent extends MayHaveHeads with MayHaveTails {
   def :>>(right: DFDComponent): DFD = compose_>(right)
 //  def >(right: FlowComponent) = compose_>(right)
 
-  //TODO: fast-forward handling: if right is reused for many times, ensure that only the part that doesn't overlap with this got duplicated (conditional duplicate)
+  // TODO: fast-forward handling: if right is reused for many times, ensure that only the part that doesn't overlap with this got duplicated (conditional duplicate)
   def mapHead_>(right: DFDComponent): DFD = {
 
     //    checkConnectivity_>(fromIDs, right)
@@ -317,8 +317,8 @@ trait DFDComponent extends MayHaveHeads with MayHaveTails {
     override def copy(self: StepLike): StepWrapperLike =
       StepVisualWrapper(self, showID, showInputs, showOutput, showPrefix)
   }
-  //TODO: not optimized, children are repeatedly created when calling .path
-  //TODO: use mapChildren to recursively get TreeNode[(Seq[String] -> Tree)] efficiently
+  // TODO: not optimized, children are repeatedly created when calling .path
+  // TODO: use mapChildren to recursively get TreeNode[(Seq[String] -> Tree)] efficiently
   case class ForwardNode(
       wrapper: StepWrapperLike
   ) extends StepTreeNode[ForwardNode] {
@@ -343,7 +343,8 @@ trait DFDComponent extends MayHaveHeads with MayHaveTails {
           ForwardNode(
             wrapper.copy(
               v
-            ))
+            )
+          )
         }
     }
   }
@@ -391,8 +392,8 @@ trait DFDComponent extends MayHaveHeads with MayHaveTails {
     ids_disambiguatedNames
   }
 
-  //this operation IS stateful & destructive, any other options?
-  //TODO: should generate deep copy to become stateless
+  // this operation IS stateful & destructive, any other options?
+  // TODO: should generate deep copy to become stateless
   def propagateCols[T <: PipelineStage](compaction: PathCompaction): Unit = {
     val ids_MultiPartNames = coll.mapValues(v => this.BackwardNode(StepVisualWrapper(v)).mergedPath)
 
@@ -418,7 +419,7 @@ trait DFDComponent extends MayHaveHeads with MayHaveTails {
 
         val inCols = step.dependencyIDs.map(ids_cols)
         stage.setInputs(inCols)
-      case _ => //do nothing
+      case _ => // do nothing
     }
   }
 
@@ -427,7 +428,8 @@ trait DFDComponent extends MayHaveHeads with MayHaveTails {
   // it is fast and can be used whenever a new Flow is constructed and has typed sources.
   def buildStagesImpl[T <: PipelineStage](
       compaction: PathCompaction = DFD.DEFAULT_COMPACTION,
-      fieldsEvidenceOpt: Option[Array[StructField]] = None, //set this to make pipeline adaptive to df being transformed.
+      fieldsEvidenceOpt: Option[Array[StructField]] =
+        None, // set this to make pipeline adaptive to df being transformed.
       adaptation: SchemaAdaptation = DFD.DEFAULT_SCHEMA_ADAPTATION
   ): Pipeline = {
     propagateCols(compaction)
@@ -532,7 +534,7 @@ trait DFDComponent extends MayHaveHeads with MayHaveTails {
         queue ++= this.coll.collect {
           case (id: String, src: Source) => id -> src
         }
-        currentSchemaOpt = None //typeCheck no longer required
+        currentSchemaOpt = None // typeCheck no longer required
 
         nextOpt = nextOptImpl()
         while (nextOpt.nonEmpty) {
@@ -560,9 +562,9 @@ trait DFDComponent extends MayHaveHeads with MayHaveTails {
 
   def build(
       compaction: PathCompaction = DFD.DEFAULT_COMPACTION,
-      fieldsEvidence: Array[StructField] = null, //set this to make pipeline adaptive to df being transformed.
-      schemaEvidence: StructType = null, //set this to make pipeline adaptive to df being transformed.
-      dfEvidence: DataFrame = null, //set this to make pipeline adaptive to df being transformed.
+      fieldsEvidence: Array[StructField] = null, // set this to make pipeline adaptive to df being transformed.
+      schemaEvidence: StructType = null, // set this to make pipeline adaptive to df being transformed.
+      dfEvidence: DataFrame = null, // set this to make pipeline adaptive to df being transformed.
       adaptation: SchemaAdaptation = DFD.DEFAULT_SCHEMA_ADAPTATION
   ): Pipeline = {
 
@@ -581,9 +583,9 @@ trait DFDComponent extends MayHaveHeads with MayHaveTails {
 
   def buildModel(
       compaction: PathCompaction = DFD.DEFAULT_COMPACTION,
-      fieldsEvidence: Array[StructField] = null, //set this to make pipeline adaptive to df being transformed.
-      schemaEvidence: StructType = null, //set this to make pipeline adaptive to df being transformed.
-      dfEvidence: DataFrame = null, //set this to make pipeline adaptive to df being transformed.
+      fieldsEvidence: Array[StructField] = null, // set this to make pipeline adaptive to df being transformed.
+      schemaEvidence: StructType = null, // set this to make pipeline adaptive to df being transformed.
+      dfEvidence: DataFrame = null, // set this to make pipeline adaptive to df being transformed.
       adaptation: SchemaAdaptation = DFD.DEFAULT_SCHEMA_ADAPTATION
   ): PipelineModel = {
 
@@ -669,7 +671,7 @@ trait DFDComponent extends MayHaveHeads with MayHaveTails {
       .mkString("")
   }
 
-  protected final val mirrorImgs = List(
+  final protected val mirrorImgs = List(
     'v' -> '^',
     '┌' -> '└',
     '┘' -> '┐',
@@ -684,7 +686,7 @@ trait DFDComponent extends MayHaveHeads with MayHaveTails {
     }
   }
 
-  protected final val layoutPrefs = LayoutPrefsImpl(unicode = true, explicitAsciiBends = false)
+  final protected val layoutPrefs = LayoutPrefsImpl(unicode = true, explicitAsciiBends = false)
 
   def showASCIIArt(
       showID: Boolean = true,

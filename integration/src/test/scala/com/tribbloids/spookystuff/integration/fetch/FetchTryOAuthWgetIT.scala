@@ -45,5 +45,5 @@ class FetchTryOAuthWgetIT extends UncacheableIntegrationFixture {
 
   override def numPages = 0
 
-  override def numSessions = 1 //TODO: should be 6, why local retry and cluster-wise retry doesn't count?
+  override def numSessions = 1 // TODO: should be 6, why local retry and cluster-wise retry doesn't count?
 }

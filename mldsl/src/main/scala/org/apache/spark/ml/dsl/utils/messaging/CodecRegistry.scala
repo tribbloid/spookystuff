@@ -22,9 +22,9 @@ trait CodecRegistry {
     *
     * otherwise try to find it using the following list with descending precedence (and add into registry):
     *
-    * - if its companion object is a codec, use it (by convention: companion class == type class)
-    * - else if its super class' companion object is a codec, use it.
-    * - if multiple super classes/traits have codec companion objects, use the one closest in the inheritance graph
+    *   - if its companion object is a codec, use it (by convention: companion class == type class)
+    *   - else if its super class' companion object is a codec, use it.
+    *   - if multiple super classes/traits have codec companion objects, use the one closest in the inheritance graph
     *
     * @return
     */

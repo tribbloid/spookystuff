@@ -7,19 +7,21 @@ import org.apache.spark.serializer.JavaSerializer
 import org.apache.spark.sql.types._
 
 /**
-  *  A Scala TypeTag-based UDT, by default it doesn't compress object
-  *  ideally it should compress object into InternalRow.
-  *  Should be working and serve as the fallback strategy for ScalaReflection.schemaFor
+  * A Scala TypeTag-based UDT, by default it doesn't compress object ideally it should compress object into InternalRow.
+  * Should be working and serve as the fallback strategy for ScalaReflection.schemaFor
   */
-abstract class ScalaUDT[T >: Null](implicit val self: ScalaType[T])
-    extends UserDefinedType[T]
+abstract class ScalaUDT[T >: Null](
+    implicit
+    val self: ScalaType[T]
+) extends UserDefinedType[T]
     with ScalaType.CatalystTypeMixin[T] {
 
-  override val typeName: String = this.getClass.getSimpleName.stripSuffix("$") //.stripSuffix("Type").stripSuffix("UDT").toLowerCase
+  override val typeName: String =
+    this.getClass.getSimpleName.stripSuffix("$") // .stripSuffix("Type").stripSuffix("UDT").toLowerCase
 
   override def toString: String = typeName
 
-  def serDe: JavaSerializer = { //TODO: kryo is better
+  def serDe: JavaSerializer = { // TODO: kryo is better
     val conf = new SparkConf()
     new JavaSerializer(conf)
   }
@@ -30,7 +32,7 @@ abstract class ScalaUDT[T >: Null](implicit val self: ScalaType[T])
     self.asClassTag.runtimeClass.asInstanceOf[Class[T]]
   }
 
-  //should convert to internal Row.
+  // should convert to internal Row.
   override def serialize(obj: T): Any = {
     serDe.newInstance().serialize(obj)(self.asClassTag).array()
   }

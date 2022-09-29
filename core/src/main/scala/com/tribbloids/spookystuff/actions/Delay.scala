@@ -9,7 +9,8 @@ import scala.util.Random
 /**
   * Wait for some time
   *
-  * @param cooldown seconds to be wait for
+  * @param cooldown
+  *   seconds to be wait for
   */
 @SerialVersionUID(-4852391414869985193L)
 case class Delay(
@@ -18,7 +19,7 @@ case class Delay(
     with Driverless {
 
   override def exeNoOutput(session: Session): Unit = {
-    //do nothing
+    // do nothing
   }
 }
 
@@ -27,7 +28,8 @@ object Delay {
   /**
     * Wait for some random time, add some unpredictability
     *
-    * @param cooldown seconds to be wait for
+    * @param cooldown
+    *   seconds to be wait for
     */
   @SerialVersionUID(2291926240766143181L)
   case class RandomDelay(

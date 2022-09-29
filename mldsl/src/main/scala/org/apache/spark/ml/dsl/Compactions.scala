@@ -48,12 +48,11 @@ object Compactions {
           val k = node.key
           node.value.map(_ -> k)
         }
-        .map(
-          tuple =>
-            if (!tuple._2.endsWith(tuple._1.lastOption.toSeq)) {
-              tuple._1 -> (tuple._2 ++ tuple._1.lastOption)
-            } else {
-              tuple._1 -> tuple._2
+        .map(tuple =>
+          if (!tuple._2.endsWith(tuple._1.lastOption.toSeq)) {
+            tuple._1 -> (tuple._2 ++ tuple._1.lastOption)
+          } else {
+            tuple._1 -> tuple._2
           }
         )
         .map(tuple => tuple._1.reverse -> tuple._2.reverse)

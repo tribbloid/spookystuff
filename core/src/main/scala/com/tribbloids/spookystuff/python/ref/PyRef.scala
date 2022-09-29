@@ -58,21 +58,19 @@ trait PyRef extends Cleanable {
   // TODO: DO NOT override this, use __del__() in python implementation as much as you can so it will be called by python interpreter shutdown hook
   def delOpt: Option[String] =
     if (createOpt.nonEmpty) {
-      referenceOpt.map(
-        v => s"""
+      referenceOpt.map(v => s"""
            |try:
            |  del($v)
            |except NameError:
            |  pass
-           """.stripMargin
-      )
+           """.stripMargin)
     } else {
       None
     }
 
   def dependencies: Seq[PyRef] = Nil // has to be initialized before calling the constructor
 
-  def lzy: Boolean = true //set to false to enable immediate Binding initialization
+  def lzy: Boolean = true // set to false to enable immediate Binding initialization
 
   def converter: PyConverter = PyConverter.JSON
 
@@ -122,9 +120,8 @@ object PyRef {
     val subs = Cleanable.All.typed[PyBinding]
     val refSubs = Cleanable.All.typed[PyRef].map(_.bindings)
     assert(
-      subs.intersect(refSubs).size <= refSubs.size, {
-        "INTERNAL ERROR: dangling tree!"
-      }
+      subs.intersect(refSubs).size <= refSubs.size,
+      "INTERNAL ERROR: dangling tree!"
     )
   }
 }

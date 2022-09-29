@@ -8,7 +8,8 @@ import scala.language.implicitConversions
 object FutureInterruptable {
 
   def apply[T](f: => T)(
-      implicit @deprecatedName('execctx) executor: ExecutionContext
+      implicit
+      @deprecatedName('execctx) executor: ExecutionContext
   ): FutureInterruptable[T] = new FutureInterruptable(() => f, executor)
 
   implicit def unbox[T](v: FutureInterruptable[T]): Future[T] = v.future

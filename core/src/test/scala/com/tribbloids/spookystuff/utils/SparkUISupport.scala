@@ -7,7 +7,7 @@ import org.scalatest.{Status, Suite}
 
 trait SparkUISupport extends Suite {
 
-  protected abstract override def runTest(testName: String, args: org.scalatest.Args): Status = {
+  abstract override protected def runTest(testName: String, args: org.scalatest.Args): Status = {
 
     lazy val fullText = s"[${this.suiteName}] $testName"
 

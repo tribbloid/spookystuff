@@ -40,7 +40,7 @@ object Paginate {
 }
 
 final case class WebDocIf(
-    condition: DocCondition, //TODO: merge with Extraction[Boolean]
+    condition: DocCondition, // TODO: merge with Extraction[Boolean]
     ifTrue: Trace,
     ifFalse: Trace
 ) extends Block(ifTrue ++ ifFalse) {

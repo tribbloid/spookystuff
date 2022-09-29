@@ -57,7 +57,7 @@ class CleanableSuite extends SpookyEnvFixture {
       lifespan
     }
     rdd.count()
-    intercept[SparkException] { //cannot be re-initialized outside Task
+    intercept[SparkException] { // cannot be re-initialized outside Task
       val vv = rdd.collect()
       vv
     }

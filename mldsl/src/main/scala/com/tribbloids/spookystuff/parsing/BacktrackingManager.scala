@@ -27,7 +27,7 @@ case class BacktrackingManager(
 
     def getEnd(length: Long): Long = start + length
 
-    //TODO: convert the following to AtomicInteger/Long and benchmark again.
+    // TODO: convert the following to AtomicInteger/Long and benchmark again.
     private var _length = 0L // strictly incremental
     private var _end = start
 
@@ -49,13 +49,13 @@ case class BacktrackingManager(
 
     def token: Token = input(end.toInt)
 
-    //TODO: remove, no need to take extra memory space! a slice of input is good enough
+    // TODO: remove, no need to take extra memory space! a slice of input is good enough
     //    val spanTokens: mutable.ArrayBuffer[Token] = {
     //      val result = new mutable.ArrayBuffer[Token](2048)
     //      result
     //    }
 
-    //TODO: how to index by long
+    // TODO: how to index by long
     def spanTokens: Seq[Token] = input.slice(start.toInt, end.toInt + 1)
 
     def lookForwardTokens: Seq[Token] = input.drop(end.toInt + 1)
@@ -67,7 +67,7 @@ case class BacktrackingManager(
       transitionQueueII = 0
     }
 
-    //update every state that depends on length
+    // update every state that depends on length
     def length_++(): Unit = {
 
       if (getEnd(length + 1) >= input.length)
@@ -79,7 +79,7 @@ case class BacktrackingManager(
     }
 
     def length_+=(v: Int): Unit = {
-      for (_ <- 0 until v) length_++() //TODO: inefficient! only the last update require refreshing transitionQueue
+      for (_ <- 0 until v) length_++() // TODO: inefficient! only the last update require refreshing transitionQueue
     }
 
     def findValidTransition(): Transition = {

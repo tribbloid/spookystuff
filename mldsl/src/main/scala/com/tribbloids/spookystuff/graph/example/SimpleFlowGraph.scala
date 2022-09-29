@@ -14,9 +14,11 @@ trait SimpleFlowGraph extends Domain {
 
 object SimpleFlowGraph extends Algebra[SimpleFlowGraph] {
 
-  override def idAlgebra: IDAlgebra[graph.example.SimpleFlowGraph.ID,
-                                    graph.example.SimpleFlowGraph.NodeData,
-                                    graph.example.SimpleFlowGraph.EdgeData] = IDAlgebra.UUIDAlgebra
+  override def idAlgebra: IDAlgebra[
+    graph.example.SimpleFlowGraph.ID,
+    graph.example.SimpleFlowGraph.NodeData,
+    graph.example.SimpleFlowGraph.EdgeData
+  ] = IDAlgebra.UUIDAlgebra
 
   object DataAlgebraProto extends DataAlgebra[String] {
 

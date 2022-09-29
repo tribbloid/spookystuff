@@ -14,7 +14,7 @@ object VectorEncodedNav {
 case class VectorEncodedNav(
     self: UAVNavigation#WSchema,
     weightIndices: Range,
-    seqIndex: Int = -1 //TODO: currently useless, remove?
+    seqIndex: Int = -1 // TODO: currently useless, remove?
 ) extends ActionPlaceholder {
 
   // TODO: expensive! this should have mnemonics

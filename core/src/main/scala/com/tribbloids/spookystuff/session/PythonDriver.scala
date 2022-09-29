@@ -31,12 +31,12 @@ object PythonDriver {
   final val syntaxErrorPattern: Pattern = Pattern.compile(".*(SyntaxError):.*$")
 
   /**
-    * DO NOT ATTEMPT TO SIMPLIFY IMPLEMENTATION!
-    * com.tribbloids.pyspookystuff exists in both /class & /test-class and any attempt to merge it
-    * with com.tribbloids.spookystuff.lib.python will results in test classes being retrieved.
+    * DO NOT ATTEMPT TO SIMPLIFY IMPLEMENTATION! com.tribbloids.pyspookystuff exists in both /class & /test-class and
+    * any attempt to merge it with com.tribbloids.spookystuff.lib.python will results in test classes being retrieved.
     */
   lazy val pythonPath: String = {
-    val pythonPath: String = PythonDriver.DEFAULT_PYTHON_PATH // extract pyspookystuff from resources temporarily on workers
+    val pythonPath: String =
+      PythonDriver.DEFAULT_PYTHON_PATH // extract pyspookystuff from resources temporarily on workers
     //    val modulePath = pythonPath \\ PythonDriver.MODULE_NAME
 
     val pythonDir = new File(pythonPath)
@@ -57,9 +57,8 @@ object PythonDriver {
   val ERROR_HEADER: String = "======== *!?error info!?* ========"
 
   /**
-    * Checks if there is a syntax error or an exception
-    * From Zeppelin PythonInterpreter
-    * HIGHLY VOLATILE: doesn't always work
+    * Checks if there is a syntax error or an exception From Zeppelin PythonInterpreter HIGHLY VOLATILE: doesn't always
+    * work
     */
   def primitiveErrorIn(lines: Seq[String]): Boolean = {
 
@@ -138,7 +137,7 @@ class PythonDriver(
     )
   }
 
-  //avoid reopening!
+  // avoid reopening!
   override lazy val open: Unit = {
     super.open()
   }
@@ -188,46 +187,49 @@ class PythonDriver(
 
   @transient object IntpLock
 
-  private def _interpret(code: String,
-                         spookyOpt: Option[SpookyContext] = None,
-                         detectError: Boolean = true): Array[String] = {
+  private def _interpret(
+      code: String,
+      spookyOpt: Option[SpookyContext] = None,
+      detectError: Boolean = true
+  ): Array[String] = {
     val indentedCode = DSLUtils.indent(code)
 
     LoggerFactory.getLogger(this.getClass).debug(s">>> $logPrefix INPUT >>>\n" + indentedCode)
 
-    val rows = try {
-      // DO NOT DELETE! some Python Drivers are accessed by many threads (e.g. ProxyManager)
-      val output = IntpLock.synchronized {
-        this.sendAndGetResult(code)
-      }
-      output
-        .split("\n")
-        .map(
-          removePrompts
-        )
-    } catch {
-      case e: Exception =>
-        spookyOpt.foreach(
-          _.Plugins.apply(Python).metrics.pythonInterpretationError += 1
-        )
-        val cause = e
-        if (this.isCleaned) {
-          LoggerFactory
-            .getLogger(this.getClass)
-            .debug(
-              s"ignoring ${cause.getClass.getSimpleName}, python process is cleaned"
-            )
-          return Array.empty[String]
-        } else {
-          val ee = new PyException(
-            indentedCode,
-            this.outputBuffer,
-            cause,
-            historyCodeOpt
-          )
-          throw ee
+    val rows =
+      try {
+        // DO NOT DELETE! some Python Drivers are accessed by many threads (e.g. ProxyManager)
+        val output = IntpLock.synchronized {
+          this.sendAndGetResult(code)
         }
-    }
+        output
+          .split("\n")
+          .map(
+            removePrompts
+          )
+      } catch {
+        case e: Exception =>
+          spookyOpt.foreach(
+            _.Plugins.apply(Python).metrics.pythonInterpretationError += 1
+          )
+          val cause = e
+          if (this.isCleaned) {
+            LoggerFactory
+              .getLogger(this.getClass)
+              .debug(
+                s"ignoring ${cause.getClass.getSimpleName}, python process is cleaned"
+              )
+            return Array.empty[String]
+          } else {
+            val ee = new PyException(
+              indentedCode,
+              this.outputBuffer,
+              cause,
+              historyCodeOpt
+            )
+            throw ee
+          }
+      }
 
     //    if (rows.exists(_.nonEmpty)) {
     //      LoggerFactory.getLogger(this.getClass).info(s"$$$$$$ PYTHON-${this.taskOrThread.id} OUTPUT ===============\n" + rows.mkString("\n"))
@@ -302,7 +304,7 @@ class PythonDriver(
     rows
   }
 
-  //TODO: due to unchecked use of thread-unsafe mutable objects (e.g. ArrayBuffer), all following APIs are rendered synchronized.
+  // TODO: due to unchecked use of thread-unsafe mutable objects (e.g. ArrayBuffer), all following APIs are rendered synchronized.
   def interpret(
       code: String,
       spookyOpt: Option[SpookyContext] = None
@@ -319,8 +321,8 @@ class PythonDriver(
   }
 
   /**
-    *
-    * @return stdout strings -> print(resultVar)
+    * @return
+    *   stdout strings -> print(resultVar)
     */
   def eval(
       code: String,

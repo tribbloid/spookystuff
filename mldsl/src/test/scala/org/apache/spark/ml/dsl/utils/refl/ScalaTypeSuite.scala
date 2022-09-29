@@ -107,24 +107,36 @@ class ScalaTypeSuite extends FunSpecx with PairwiseConversionMixin {
 //      }, { _: Any =>
 //        ???
 //      }),
-      PairwiseCase(_typeTag, _class, { r: TypeTag[_] =>
-        ScalaType.FromTypeTag(r).asClass
-      }, { r: Class[_] =>
-        ScalaType.FromClass(r).asTypeTag
-      }),
       PairwiseCase(
         _typeTag,
-        _class.map[ClassTag[_]](v => ClassTag(v)), { r: TypeTag[_] =>
+        _class,
+        { r: TypeTag[_] =>
+          ScalaType.FromTypeTag(r).asClass
+        },
+        { r: Class[_] =>
+          ScalaType.FromClass(r).asTypeTag
+        }
+      ),
+      PairwiseCase(
+        _typeTag,
+        _class.map[ClassTag[_]](v => ClassTag(v)),
+        { r: TypeTag[_] =>
           ScalaType.FromTypeTag(r).asClassTag
-        }, { r: ClassTag[_] =>
+        },
+        { r: ClassTag[_] =>
           ScalaType.FromClassTag(r).asTypeTag
         }
       ),
-      PairwiseCase(_typeTag, _catalystType, { r: TypeTag[_] =>
-        ScalaType.FromTypeTag(r).asCatalystType
-      }, { r: DataType =>
-        ScalaType.FromCatalystType(r).asTypeTag_casted
-      })
+      PairwiseCase(
+        _typeTag,
+        _catalystType,
+        { r: TypeTag[_] =>
+          ScalaType.FromTypeTag(r).asCatalystType
+        },
+        { r: DataType =>
+          ScalaType.FromCatalystType(r).asTypeTag_casted
+        }
+      )
     ).flatMap(_.bidirCases)
   }
 
@@ -165,13 +177,15 @@ class ScalaTypeSuite extends FunSpecx with PairwiseConversionMixin {
                 StructField("_1", StringType),
                 StructField("_2", IntegerType, nullable = false)
               )
-            )),
+            )
+          ),
           2
         ),
         Repr(
           Some(
             typeTag[(String, Int)]
-          )),
+          )
+        ),
         Repr(
           Some(
             ClassTag(classOf[Tuple2[_, _]])

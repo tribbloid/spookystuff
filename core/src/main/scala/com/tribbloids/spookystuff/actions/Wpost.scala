@@ -53,7 +53,8 @@ object Wpost {
       val resolver = new OmniResolver(
         () => hadoopConf,
         timeout,
-        proxy, { uri: URI =>
+        proxy,
+        { uri: URI =>
           val headers = session.spooky.spookyConf.httpHeadersFactory()
 
           val post = new HttpPost(uri)
@@ -108,8 +109,8 @@ object Wpost {
     override def doInterpolate(pageRow: FetchedRow, schema: SpookySchema): Option[this.type] = {
       val uriLit: Option[Lit[FR, String]] = resolveURI(pageRow, schema)
 
-      uriLit.flatMap(
-        lit => this.copy(uri = lit)(entity).asInstanceOf[this.type].injectWayback(this.wayback, pageRow, schema)
+      uriLit.flatMap(lit =>
+        this.copy(uri = lit)(entity).asInstanceOf[this.type].injectWayback(this.wayback, pageRow, schema)
       )
     }
   }

@@ -33,7 +33,10 @@ object RangeArg {
     RangeArg(new math.LongRange(v.start, v.end))
   }
 
-  implicit def fromNumericRange[T](v: NumericRange[T])(implicit ev: T => Number): RangeArg = {
+  implicit def fromNumericRange[T](v: NumericRange[T])(
+      implicit
+      ev: T => Number
+  ): RangeArg = {
     assert(v.step == 1, "Range with step != 1 is not supported")
     val end = ev(v.end).longValue()
     val last = if (v.isInclusive) end else end - 1L

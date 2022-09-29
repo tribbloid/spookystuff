@@ -14,9 +14,7 @@ object TreeThrowable {
         case v: TreeThrowable =>
           v.causes.map(TreeNodeView)
         case _ =>
-          val eOpt = Option(self).flatMap(
-            v => Option(v.getCause)
-          )
+          val eOpt = Option(self).flatMap(v => Option(v.getCause))
           eOpt.map(TreeNodeView).toSeq
       }
       result.sortBy(_.simpleString)
@@ -110,7 +108,7 @@ object TreeThrowable {
 
     val results = for (fn <- trials) yield {
 
-      val result = Try { fn() }
+      val result = Try(fn())
       result match {
         case Success(t) => return Some(t)
         case _          =>
@@ -129,7 +127,8 @@ object TreeThrowable {
   }
 
   /**
-    * @param foldUnary not recommended to set to false, should use Wrapper() directly for type safety
+    * @param foldUnary
+    *   not recommended to set to false, should use Wrapper() directly for type safety
     * @return
     */
   def combine(causes: Seq[Throwable], foldUnary: Boolean = true): Throwable = {
@@ -146,8 +145,10 @@ object TreeThrowable {
   /**
     * same as [[combine]], except that any [[Undefined]] detected will cause the output to be also [[Undefined]]
     * indicating that a lack of trials is the ultimate cause and can be situationally ignored
-    * @param causes all direct causes of this throwable
-    * @param foldUnary not recommended to set to false, should use Wrapper() directly for type safety
+    * @param causes
+    *   all direct causes of this throwable
+    * @param foldUnary
+    *   not recommended to set to false, should use Wrapper() directly for type safety
     * @return
     */
   def parallel(causes: Seq[Throwable], foldUnary: Boolean = true): Throwable = {

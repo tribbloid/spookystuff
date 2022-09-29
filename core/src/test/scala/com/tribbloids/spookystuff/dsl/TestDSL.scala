@@ -9,7 +9,7 @@ import com.tribbloids.spookystuff.row.{DataRow, FetchedRow, Field, SquashedFetch
 import com.tribbloids.spookystuff.testutils.LocalPathDocsFixture
 
 /**
-  *  Created by peng on 12/3/14.
+  * Created by peng on 12/3/14.
   */
 class TestDSL extends SpookyEnvFixture with LocalPathDocsFixture {
 
@@ -81,6 +81,6 @@ class TestDSL extends SpookyEnvFixture with LocalPathDocsFixture {
 
     val plan = ds.plan
     assert(plan.rdd() == spooky._blankRowRDD)
-    assert(!(plan.spooky eq spooky)) //configs should be deep copied
+    assert(!(plan.spooky eq spooky)) // configs should be deep copied
   }
 }

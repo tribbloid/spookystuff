@@ -21,7 +21,10 @@ object NullSafe {
 
     override def asOption: Option[T] = _self
 
-    def :=(v: T)(implicit ev: M <:< Var): Unit = {
+    def :=(v: T)(
+        implicit
+        ev: M <:< Var
+    ): Unit = {
       _self = Option(v)
     }
   }
@@ -49,7 +52,10 @@ object NullSafe {
 
     override def asOption: Some[T] = Some(value)
 
-    def :=(value: T)(implicit ev: M <:< Var): Unit = {
+    def :=(value: T)(
+        implicit
+        ev: M <:< Var
+    ): Unit = {
       validate(value)
 
       this.value = value

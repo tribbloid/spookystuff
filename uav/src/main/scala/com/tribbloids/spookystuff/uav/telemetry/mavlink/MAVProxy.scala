@@ -18,15 +18,13 @@ object MAVProxy {
 }
 
 /**
-  * MAVProxy: https://github.com/ArduPilot/MAVProxy
-  * outlives any python driver
-  * not to be confused with dsl.WebProxy
+  * MAVProxy: https://github.com/ArduPilot/MAVProxy outlives any python driver not to be confused with dsl.WebProxy
   * CAUTION: each MAVProxy instance contains 2 python processes, keep that in mind when debugging
   */
 //TODO: MAVProxy supports multiple master for multiple telemetry backup
 case class MAVProxy(
     master: String,
-    outs: Seq[String], //first member is always used by DK.
+    outs: Seq[String], // first member is always used by DK.
     baudRate: Int,
     ssid: Int = UAVConf.PROXY_SSID,
     name: String
@@ -39,7 +37,7 @@ case class MAVProxy(
   assert(!outs.contains(master))
   override lazy val _resourceIDs = Map(
     "master" -> Set(master),
-    "firstOut" -> outs.headOption.toSet //need at least 1 out for executor
+    "firstOut" -> outs.headOption.toSet // need at least 1 out for executor
   )
 
   @volatile var _started: FutureInterruptable[String] = _
@@ -72,7 +70,7 @@ case class MAVProxy(
       //      }
 
       Try(Await.result(attempt, 5 -> TimeUnit.SECONDS)) match {
-        case Failure(e: TimeoutException) => //normal
+        case Failure(e: TimeoutException) => // normal
         case Failure(e: Throwable) =>
           throw new UAVException(errorInfo, e)
         case Success(v) => sys.error("IMPOSSIBLE!")
@@ -94,7 +92,7 @@ case class MAVProxy(
     _started = null
   }
 
-  override def chainClean: Seq[Cleanable] = Nil //interpreter is blocked and cannot run any delete code
+  override def chainClean: Seq[Cleanable] = Nil // interpreter is blocked and cannot run any delete code
 }
 
 //object MAVProxy {

@@ -43,7 +43,8 @@ trait Memoize[T, R] extends (T => R) with Serializable {
 
   def getIfNotExpire(x: T, expireAfter: Long): R = {
     get(
-      x, { tuple =>
+      x,
+      { tuple =>
         val elapsed = System.currentTimeMillis() - tuple._2
         elapsed > expireAfter
       }
@@ -52,7 +53,8 @@ trait Memoize[T, R] extends (T => R) with Serializable {
 
   def getLaterThan(x: T, timestamp: Long): R = {
     get(
-      x, { tuple =>
+      x,
+      { tuple =>
         tuple._2 > timestamp
       }
     )

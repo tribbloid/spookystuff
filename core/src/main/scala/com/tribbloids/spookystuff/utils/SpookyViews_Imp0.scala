@@ -11,14 +11,20 @@ import scala.reflect.ClassTag
 
 abstract class SpookyViews_Imp0 extends CommonViews {
 
-  //TODO: the following 2 can be merged into 1
-  implicit class TraversableLikeView[A, Repr](self: TraversableLike[A, Repr])(implicit ctg: ClassTag[A]) {
+  // TODO: the following 2 can be merged into 1
+  implicit class TraversableLikeView[A, Repr](self: TraversableLike[A, Repr])(
+      implicit
+      ctg: ClassTag[A]
+  ) {
 
     def filterByType[B: ClassTag]: FilterByType[B] = new FilterByType[B]
 
     class FilterByType[B: ClassTag] {
 
-      def get[That](implicit bf: CanBuildFrom[Repr, B, That]): That = {
+      def get[That](
+          implicit
+          bf: CanBuildFrom[Repr, B, That]
+      ): That = {
         self.flatMap { v =>
           SpookyUtils.typedOrNone[B](v)
         }(bf)
@@ -39,12 +45,11 @@ abstract class SpookyViews_Imp0 extends CommonViews {
         )
       } else {
         sc.parallelize(
-            self.toSeq,
-            sliceOpt.getOrElse(sc.defaultParallelism)
-          )
-          .map(
-            f
-          )
+          self.toSeq,
+          sliceOpt.getOrElse(sc.defaultParallelism)
+        ).map(
+          f
+        )
       }
     }
   }
@@ -105,24 +110,20 @@ abstract class SpookyViews_Imp0 extends CommonViews {
       val sampled = sampler(values)
 
       val cleaned = self - key
-      val result = sampled.toSeq.map(
-        tuple => (cleaned + (key -> tuple._1)) -> tuple._2
-      )
+      val result = sampled.toSeq.map(tuple => (cleaned + (key -> tuple._1)) -> tuple._2)
 
       result
     }
 
-    def canonizeKeysToColumnNames: scala.collection.Map[String, V] = self.map(
-      tuple => {
-        val keyName: String = tuple._1 match {
-          case symbol: scala.Symbol =>
-            symbol.name //TODO: remove, this feature should no longer work after dataframe integration
-          case _ =>
-            tuple._1.toString
-        }
-        (SpookyUtils.canonizeColumnName(keyName), tuple._2)
+    def canonizeKeysToColumnNames: scala.collection.Map[String, V] = self.map(tuple => {
+      val keyName: String = tuple._1 match {
+        case symbol: scala.Symbol =>
+          symbol.name // TODO: remove, this feature should no longer work after dataframe integration
+        case _ =>
+          tuple._1.toString
       }
-    )
+      (SpookyUtils.canonizeColumnName(keyName), tuple._2)
+    })
 
     def sortBy[B: Ordering](fn: ((K, V)) => B): ListMap[K, V] = {
       val tuples = self.toList.sortBy(fn)

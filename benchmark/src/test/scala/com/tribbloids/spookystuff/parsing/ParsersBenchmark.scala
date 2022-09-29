@@ -270,7 +270,7 @@ object ParsersBenchmark {
       interpolation(str)(replace)
     }
 
-    //measuring speed only, result is jibberish
+    // measuring speed only, result is jibberish
     def speedRef(): String = {
       str.map(identity)
 //      str

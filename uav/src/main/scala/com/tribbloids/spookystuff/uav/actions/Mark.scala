@@ -24,7 +24,8 @@ case class Mark() extends Export with UAVAction {
           exe.link.uav.uris.head,
           jsonStr.getBytes("UTF8"),
           Some(s"${ContentType.APPLICATION_JSON}; charset=UTF-8")
-        ))
+        )
+      )
     } catch {
       case e: NoPythonDriverException =>
         Nil

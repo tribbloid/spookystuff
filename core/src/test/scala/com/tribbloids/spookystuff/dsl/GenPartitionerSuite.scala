@@ -47,9 +47,7 @@ class GenPartitionerSuite extends SpookyEnvFixture {
 
     val zipped1 = ref1
       .map(_._2)
-      .zipPartitions(ref2.map(_._2))(
-        (i1, i2) => Iterator(i1.toSet == i2.toSet)
-      )
+      .zipPartitions(ref2.map(_._2))((i1, i2) => Iterator(i1.toSet == i2.toSet))
       .collect()
 
     assert(zipped1.length > zipped1.count(identity))
@@ -58,9 +56,7 @@ class GenPartitionerSuite extends SpookyEnvFixture {
     val grouped1 = gp.groupByKey(ref1, beaconOpt).flatMap(_._2)
     val grouped2 = gp.groupByKey(ref2, beaconOpt).flatMap(_._2)
 
-    val zipped2RDD = grouped1.zipPartitions(grouped2)(
-      (i1, i2) => Iterator(i1.toSet == i2.toSet)
-    )
+    val zipped2RDD = grouped1.zipPartitions(grouped2)((i1, i2) => Iterator(i1.toSet == i2.toSet))
     val zipped2 = zipped2RDD.collect()
     assert(zipped2.length == zipped2.count(identity))
     assert(zipped2RDD.partitions.length == numPartitions)

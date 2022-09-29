@@ -116,16 +116,17 @@ These special characters are often called "metacharacters".
   }
 
   def typedOrNone[B: ClassTag](v: Any): Option[B] = {
-    val array = try {
-      Array[B](v.asInstanceOf[B])
-    } catch {
-      case e: Exception =>
-        Array[B]()
-    }
+    val array =
+      try {
+        Array[B](v.asInstanceOf[B])
+      } catch {
+        case e: Exception =>
+          Array[B]()
+      }
     array.headOption
   }
 
-  //TODO: move to class & try @Specialized?
+  // TODO: move to class & try @Specialized?
   def asArray[T <: Any: ClassTag](obj: Any): Array[T] = {
 
     val canon: Array[_] = obj match {
@@ -155,7 +156,7 @@ These special characters are often called "metacharacters".
     }
   }
 
-  //TODO: need test, or its already superceded by try catch?
+  // TODO: need test, or its already superceded by try catch?
   def javaUnbox(boxed: Any): Any = {
     boxed match {
       case n: java.lang.Byte =>
@@ -203,7 +204,7 @@ These special characters are often called "metacharacters".
       if (Files.isDirectory(src)) {
         try {
           Files.copy(src, dst, options: _*)
-          //TODO: how to flush dst?
+          // TODO: how to flush dst?
         } catch {
           case e: DirectoryNotEmptyException =>
         }
@@ -213,11 +214,15 @@ These special characters are often called "metacharacters".
 
         LoggerFactory.getLogger(this.getClass).debug(pathsStr + " no need to copy directory")
       } else {
-        Files.copy(src, dst, options: _*) //this will either 1. copy file if src is a file. 2. create empty dir if src is a dir.
-        //TODO: how to flush dst?
+        Files.copy(
+          src,
+          dst,
+          options: _*
+        ) // this will either 1. copy file if src is a file. 2. create empty dir if src is a dir.
+        // TODO: how to flush dst?
 
-        //assert(Files.exists(dst))
-        //NIO copy should use non-NIO for validation to eliminate stream caching
+        // assert(Files.exists(dst))
+        // NIO copy should use non-NIO for validation to eliminate stream caching
         val dstContent = LocalResolver.input(dst.toString) { in =>
           IOUtils.toByteArray(in.stream)
         }
@@ -245,7 +250,7 @@ These special characters are often called "metacharacters".
     }
   }
 
-  //TODO: this is not tested on workers
+  // TODO: this is not tested on workers
 //  def extractResource(resource: URL, dst: String): Unit = {
 //
 //    resource.getProtocol match {
@@ -306,8 +311,7 @@ These special characters are often called "metacharacters".
   case object RDDs {
 
     /**
-      * much faster than reducing many rdds independently
-      * genetic algorithm depends on it
+      * much faster than reducing many rdds independently genetic algorithm depends on it
       */
     def batchReduce[T](
         rdds: Seq[RDD[T]]

@@ -14,7 +14,10 @@ object Col {
 
   import com.tribbloids.spookystuff.dsl.DSL._
 
-  implicit def fromLiteral[T: TypeTag, V](v: V)(implicit ev: V => T): Col[T] = {
+  implicit def fromLiteral[T: TypeTag, V](v: V)(
+      implicit
+      ev: V => T
+  ): Col[T] = {
     val ex = v match {
       //      case str: String if ctg <:< ClassTag(classOf[String]) =>
       case str: String =>

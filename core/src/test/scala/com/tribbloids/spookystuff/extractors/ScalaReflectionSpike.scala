@@ -235,7 +235,7 @@ class ScalaReflectionSpike extends FunSpecx {
     }
   }
 
-  //TODO: this doesn't matter as its only used after scala reflection-based method, but should be fixed in the future
+  // TODO: this doesn't matter as its only used after scala reflection-based method, but should be fixed in the future
   ignore("getMethodByJava should return None if parameter Type is incorrect") {
     val dynamic = ScalaDynamic(
       "fn"

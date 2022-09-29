@@ -68,7 +68,8 @@ abstract class AbstractTestTrace extends SpookyEnvFixture with FunSpecx {
         Visit("dummy"),
         Snapshot() ~ 'A,
         Click("dummy")
-      ))
+      )
+    )
 
     assert(trace.rewriteGlobally(defaultSchema) == List(trace +> Snapshot()))
   }
@@ -76,12 +77,15 @@ abstract class AbstractTestTrace extends SpookyEnvFixture with FunSpecx {
   it("TraceView.autoSnapshot should append Snapshot to non-empty Trace that has no output") {
 
     val trace = TraceView(
-      List(Visit("dummy"),
-           Snapshot() ~ 'A,
-           Loop(
-             TextInput("dummy", 'dummy) +>
-               Click("dummy")
-           )))
+      List(
+        Visit("dummy"),
+        Snapshot() ~ 'A,
+        Loop(
+          TextInput("dummy", 'dummy) +>
+            Click("dummy")
+        )
+      )
+    )
 
     assert(trace.rewriteGlobally(defaultSchema) == List(trace +> Snapshot()))
   }
@@ -138,7 +142,7 @@ abstract class AbstractTestTrace extends SpookyEnvFixture with FunSpecx {
   //    println(json)
   //  }
 
-  //TODO: enable these
+  // TODO: enable these
   //  test("Action.toJSON should work") {
   //    val actions = Loop(
   //      Click("next")
@@ -251,7 +255,7 @@ abstract class AbstractTestTrace extends SpookyEnvFixture with FunSpecx {
     assert(code.contains("Wikipedia"))
   }
 
-  //TODO: the following 2 has external site dependencies, should be removed
+  // TODO: the following 2 has external site dependencies, should be removed
   ignore("css selector should work") {
 
     val results = (

@@ -35,7 +35,8 @@ trait BinaryDeployment extends Serializable {
             Seq(
               { () =>
                 verifyLocalPath
-              }, { () =>
+              },
+              { () =>
                 // download from remoteURI to localURI
                 val remoteResolver = URLConnectionResolver(10000)
                 val localResolver = LocalExeResolver
@@ -73,19 +74,18 @@ trait BinaryDeployment extends Serializable {
   }
 
   /**
-    * do nothing if local already exists.
-    * otherwise download from driver
-    * never download from worker(s)! assuming no connection and cached local file
+    * do nothing if local already exists. otherwise download from driver never download from worker(s)! assuming no
+    * connection and cached local file
     */
   lazy val verifiedLocalPath: String = {
 
     val result: Option[String] = TreeThrowable.|||^(
       Seq(
-        //already exists
+        // already exists
         { () =>
           verifyLocalPath
         },
-        //copy from Spark local file
+        // copy from Spark local file
         { () =>
           copySparkFile2Local(localFileName, localPath)
           verifyLocalPath

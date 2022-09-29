@@ -8,15 +8,15 @@ import org.apache.spark.SparkConf
 object Dir extends PluginSystem {
 
   case class Conf(
-      var root: String = null, //System.getProperty("spooky.dirs.root"),
+      var root: String = null, // System.getProperty("spooky.dirs.root"),
       var localRoot: String = null,
-      var autoSave: String = null, //System.getProperty("spooky.dirs.autosave"),
-      var cache: String = null, //System.getProperty("spooky.dirs.cache"),
-      var errorDump: String = null, //System.getProperty("spooky.dirs.errordump"),
-      var errorScreenshot: String = null, //System.getProperty("spooky.dirs.errorscreenshot"),
-      var checkpoint: String = null, //System.getProperty("spooky.dirs.checkpoint"),
-      var errorDumpLocal: String = null, //System.getProperty("spooky.dirs.errordump.local"),
-      var errorScreenshotLocal: String = null //System.getProperty("spooky.dirs.errorscreenshot.local")
+      var autoSave: String = null, // System.getProperty("spooky.dirs.autosave"),
+      var cache: String = null, // System.getProperty("spooky.dirs.cache"),
+      var errorDump: String = null, // System.getProperty("spooky.dirs.errordump"),
+      var errorScreenshot: String = null, // System.getProperty("spooky.dirs.errorscreenshot"),
+      var checkpoint: String = null, // System.getProperty("spooky.dirs.checkpoint"),
+      var errorDumpLocal: String = null, // System.getProperty("spooky.dirs.errordump.local"),
+      var errorScreenshotLocal: String = null // System.getProperty("spooky.dirs.errorscreenshot.local")
   ) extends MutableConfLike {
 
     import com.tribbloids.spookystuff.utils.SpookyViews._

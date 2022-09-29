@@ -21,9 +21,7 @@ object TrieNode {
       val value = map.toMap.get(Seq(triplet._1))
       val children = buildChildren[K, V](
         triplet._2
-          .map(
-            tuple => tuple._1.slice(1, Int.MaxValue) -> tuple._2
-          )
+          .map(tuple => tuple._1.slice(1, Int.MaxValue) -> tuple._2)
           .filter(_._1.nonEmpty),
         key,
         depth + 1

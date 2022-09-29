@@ -18,7 +18,7 @@ class WaypointIT extends APMQuadFixture {
     val move = Waypoint(wp1)
 
     move.prettyJSON.shouldBe(
-      //TODO: missing
+      // TODO: missing
     )
   }
 
@@ -45,7 +45,7 @@ class WaypointIT extends APMQuadFixture {
       .toObjectRDD(S.formattedCode)
       .collect()
 
-    result.foreach(println) //TODO: validate location
+    result.foreach(println) // TODO: validate location
   }
 
   it("Run 1.5 track per drone") {

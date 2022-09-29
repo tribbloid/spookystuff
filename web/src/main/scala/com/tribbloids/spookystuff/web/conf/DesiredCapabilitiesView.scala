@@ -27,7 +27,7 @@ object DesiredCapabilitiesView {
       val caps = new DesiredCapabilities()
       caps.setPlatform(Platform.ANY)
 
-      caps.setJavascriptEnabled(true); //< not really needed: JS enabled by default
+      caps.setJavascriptEnabled(true); // < not really needed: JS enabled by default
 
       caps.setCapability(CapabilityType.LOGGING_PREFS, logPrefs)
 

@@ -22,7 +22,9 @@ trait AbstractDocCache {
         val similarTrace = dryRun.find(_ == pageBacktrace).get
 
         TraceView(pageBacktrace)
-          .injectFrom(TraceView(similarTrace)) //this is to allow actions in backtrace to have different name than those cached
+          .injectFrom(
+            TraceView(similarTrace)
+          ) // this is to allow actions in backtrace to have different name than those cached
         page.updated(
           uid = page.uid.copy()(name = Option(page.uid.output).map(_.name).orNull)
         )

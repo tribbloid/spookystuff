@@ -15,8 +15,8 @@ trait CodecLevel1 {
 
   def formats: Formats = Codec.defaultFormats
 
-  type M //Message type
-  protected implicit def messageMF: Manifest[M]
+  type M // Message type
+  implicit protected def messageMF: Manifest[M]
 
   //  implicit def proto2Message(m: M): MessageWriter[M] = {
   //    MessageWriter[M](m, this.formats)
@@ -24,26 +24,21 @@ trait CodecLevel1 {
 }
 
 /**
-  * mixin to allow converting to a message object and back
-  * used to delegate ser/de tasks (from/to xml, json, Dataset encoding, protobuf) to the case class with a fixed schema
-  * all concreate subclasses must be singletons.
+  * mixin to allow converting to a message object and back used to delegate ser/de tasks (from/to xml, json, Dataset
+  * encoding, protobuf) to the case class with a fixed schema all concreate subclasses must be singletons.
   *
   * Where to find implicit conversions?
   *
-First look in current scope
-
-Implicits defined in current scope
-Explicit imports
-wildcard imports
-
-Now look at associated types in
-
-Companion objects of a type
-  - include companion objects of an object's self type, all supertypes, all parameter types, all parameter types' supertypes
-Implicit scope of an argument’s type (2.9.1) - e.g. Companion objects
-Implicit scope of type arguments (2.8.0) - e.g. Companion objects
-Outer objects for nested types
-
+  * First look in current scope
+  *
+  * Implicits defined in current scope Explicit imports wildcard imports
+  *
+  * Now look at associated types in
+  *
+  * Companion objects of a type
+  * \- include companion objects of an object's self type, all supertypes, all parameter types, all parameter types'
+  * supertypes Implicit scope of an argument’s type (2.9.1) - e.g. Companion objects Implicit scope of type arguments
+  * (2.8.0) - e.g. Companion objects Outer objects for nested types
   */
 abstract class Codec[Proto] extends CodecLevel1 with HasRootTag {
 
@@ -99,7 +94,7 @@ abstract class Codec[Proto] extends CodecLevel1 with HasRootTag {
       case JArray(vs) =>
         _fromJValue[T](vs.head)
       case _ =>
-        _fromJValue[T](jv) //TODO: not possible!
+        _fromJValue[T](jv) // TODO: not possible!
     }
   }
   final def _fromXML[T: Codec](xml: String): T = {
@@ -124,7 +119,7 @@ abstract class Codec[Proto] extends CodecLevel1 with HasRootTag {
   }
 
   final def xmlStr2Node(xml: String): Elem = {
-    val bomRemoved = xml.replaceAll("[^\\x20-\\x7e]", "").trim //remove BOM (byte order mark)
+    val bomRemoved = xml.replaceAll("[^\\x20-\\x7e]", "").trim // remove BOM (byte order mark)
     val prologRemoved = bomRemoved.replaceFirst("[^<]*(?=<)", "")
     val result = XML.loadString(prologRemoved)
     result

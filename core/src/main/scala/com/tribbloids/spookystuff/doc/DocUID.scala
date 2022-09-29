@@ -13,5 +13,6 @@ case class DocUID(
     //                    sessionStartTime: Long,
     blockIndex: Int = 0,
     blockSize: Int = 1
-)( //number of pages in a block output,
-  val name: String = Option(output).map(_.name).orNull) {}
+)( // number of pages in a block output,
+    val name: String = Option(output).map(_.name).orNull
+) {}

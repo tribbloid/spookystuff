@@ -15,7 +15,7 @@ case class UAV(
     frame: Option[String] = None,
     baudRate: Int = UAVConf.DEFAULT_BAUDRATE,
     groundSSID: Int = UAVConf.EXECUTOR_SSID,
-    protocol: Protocol = Protocol.MAVLink, //currently useless.
+    protocol: Protocol = Protocol.MAVLink, // currently useless.
     name: String = "DRONE"
 ) {
 

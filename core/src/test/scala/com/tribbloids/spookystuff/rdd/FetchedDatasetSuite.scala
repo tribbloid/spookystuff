@@ -240,9 +240,8 @@ class FetchedDatasetSuite extends SpookyEnvFixture with LocalPathDocsFixture {
     ds.spooky.spookyMetrics.resetAll()
 
     ds.wget(
-        JSON_URL
-      )
-      .count()
+      JSON_URL
+    ).count()
 
     assert(ds.spooky.spookyMetrics.pagesFetched.value == 1)
   }
@@ -260,9 +259,8 @@ class FetchedDatasetSuite extends SpookyEnvFixture with LocalPathDocsFixture {
     ds.spooky.spookyMetrics.resetAll()
 
     ds.wget(
-        JSON_URL
-      )
-      .count()
+      JSON_URL
+    ).count()
 
     assert(ds.spooky.spookyMetrics.pagesFetched.value == 1)
   }
@@ -282,9 +280,8 @@ class FetchedDatasetSuite extends SpookyEnvFixture with LocalPathDocsFixture {
     ds.spooky.spookyMetrics.resetAll()
 
     ds.wget(
-        JSON_URL
-      )
-      .count()
+      JSON_URL
+    ).count()
 
     assert(ds.spooky.spookyMetrics.pagesFetched.value == 1)
   }
@@ -304,9 +301,8 @@ class FetchedDatasetSuite extends SpookyEnvFixture with LocalPathDocsFixture {
     ds.spooky.spookyMetrics.resetAll()
 
     ds.wget(
-        JSON_URL
-      )
-      .count()
+      JSON_URL
+    ).count()
 
     assert(ds.spooky.spookyMetrics.pagesFetched.value == 1)
   }

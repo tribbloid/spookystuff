@@ -24,10 +24,10 @@ object TraceView {
 
 case class TraceView(
     override val children: Trace = Nil,
-    keyBy: Trace => Any = identity //used by custom keyBy arg in fetch and explore.
+    keyBy: Trace => Any = identity // used by custom keyBy arg in fetch and explore.
 ) extends Actions
     with TraceAPI
-    with IDMixin { //remember trace is not a block! its the super container that cannot be wrapped
+    with IDMixin { // remember trace is not a block! its the super container that cannot be wrapped
 
   @transient override lazy val asTrace: Trace = children
 
@@ -36,7 +36,7 @@ case class TraceView(
   override def toString: String = children.mkString("{ ", " -> ", " }")
 
   @volatile @transient private var docs: Seq[DocOption] = _
-  //override, cannot be shipped, lazy evaluated TODO: not volatile?
+  // override, cannot be shipped, lazy evaluated TODO: not volatile?
   def docsOpt: Option[Seq[DocOption]] = Option(docs)
 
   override def apply(session: Session): Seq[DocOption] = {
@@ -97,7 +97,7 @@ case class TraceView(
     result.toList
   }
 
-  //always has output (Sometimes Empty) to handle left join
+  // always has output (Sometimes Empty) to handle left join
   override def doInterpolate(row: FetchedRow, schema: SpookySchema): Option[this.type] = {
     val seq = this.doInterpolateSeq(row, schema)
 
@@ -112,7 +112,7 @@ case class TraceView(
   }
 
   def interpolateAndRewriteLocally(row: FetchedRow, schema: SpookySchema): Seq[TraceView] = {
-    //TODO: isolate interploation into an independent rewriter?
+    // TODO: isolate interploation into an independent rewriter?
     val interpolatedOpt: Option[Trace] = interpolate(row, schema)
       .map(_.children)
     interpolatedOpt.toSeq.flatMap { v =>
@@ -125,13 +125,13 @@ case class TraceView(
     RewriteRule.Rules(localRewriteRules(schema)).rewriteAll(Seq(this))
   }
 
-  //the minimal equivalent action that can be put into backtrace
+  // the minimal equivalent action that can be put into backtrace
   override def skeleton: Option[TraceView.this.type] =
     Some(new TraceView(this.childrenSkeleton).asInstanceOf[this.type])
 
   class WithSpooky(spooky: SpookyContext) {
 
-    //fetched may yield very large documents and should only be
+    // fetched may yield very large documents and should only be
     // loaded lazily and not shuffled or persisted (unless in-memory)
     def getDoc: Seq[DocOption] = TraceView.this.synchronized {
       docsOpt.getOrElse {

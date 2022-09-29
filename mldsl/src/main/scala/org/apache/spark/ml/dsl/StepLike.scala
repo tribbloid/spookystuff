@@ -25,10 +25,10 @@ trait StepLike extends DFDComponent {
 
   override def replicate(suffix: String = ""): StepLike
 
-  //TODO: generalized into Map[Param, Seq[String]]
+  // TODO: generalized into Map[Param, Seq[String]]
   def dependencyIDs: Seq[String]
 
-  //unlike inIDs, sequence of outIDs & parameter types (if not InputCol(s)) are not important
+  // unlike inIDs, sequence of outIDs & parameter types (if not InputCol(s)) are not important
   def usageIDs: Set[String]
   def canBeHead: Boolean
 
@@ -102,7 +102,7 @@ object Step extends MessageRelay[Step] {
       Step(stage)
     }
 
-    //TODO: can we merge this into MessageRelay?
+    // TODO: can we merge this into MessageRelay?
     def getAndSetParams(instance: Params, params: JValue): Unit = {
 //      implicit val format = Xml.defaultFormats
       params match {
@@ -210,7 +210,8 @@ trait Connector extends StepLike
 
 case class Source(
     name: String,
-    dataTypes: Set[DataType] = Set.empty, //used to validate & fail early when stages for different data types are appended.
+    dataTypes: Set[DataType] =
+      Set.empty, // used to validate & fail early when stages for different data types are appended.
     usageIDs: Set[String] = Set.empty
 ) extends ColumnName(name)
     with Connector {
@@ -241,7 +242,7 @@ case object PASSTHROUGH extends Connector {
 
   override def name: String = this.getClass.getSimpleName.stripSuffix("$")
 
-  override val id: String = name //unique & cannot be referenced by others
+  override val id: String = name // unique & cannot be referenced by others
 
   def dependencyIDs: Seq[String] = Nil
   def usageIDs: Set[String] = Set.empty

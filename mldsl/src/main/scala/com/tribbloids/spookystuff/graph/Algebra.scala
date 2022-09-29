@@ -9,7 +9,7 @@ trait Algebra[T <: Domain] extends Algebra.TypeAliases[T] {
   def edgeAlgebra: DataAlgebra[EdgeData]
 
   trait _Aliases extends Algebra.Aliases[T] {
-    override implicit val algebra: Algebra[T] = Algebra.this
+    implicit override val algebra: Algebra[T] = Algebra.this
   }
   object _Aliases extends _Aliases
 

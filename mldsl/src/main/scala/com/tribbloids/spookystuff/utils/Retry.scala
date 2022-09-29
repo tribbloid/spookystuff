@@ -21,9 +21,14 @@ object Retry {
         silent: Boolean = false,
         callerStr: String = null
     ): Retry =
-      Retry(n, { _ =>
-        interval
-      }, silent, callerStr)
+      Retry(
+        n,
+        { _ =>
+          interval
+        },
+        silent,
+        callerStr
+      )
   }
 
   object ExponentialBackoff {
@@ -35,9 +40,14 @@ object Retry {
         silent: Boolean = false,
         callerStr: String = null
     ): Retry = {
-      Retry(n, { n =>
-        (longestInterval.doubleValue() / Math.pow(expBase, n - 2)).asInstanceOf[Long]
-      }, silent, callerStr)
+      Retry(
+        n,
+        { n =>
+          (longestInterval.doubleValue() / Math.pow(expBase, n - 2)).asInstanceOf[Long]
+        },
+        silent,
+        callerStr
+      )
     }
   }
 
@@ -57,7 +67,7 @@ object Retry {
 
       import retryOvrd._
 
-      //TODO: merge with CommonUtils
+      // TODO: merge with CommonUtils
       lazy val _callerShowStr = {
         Option(showStr).getOrElse {
           DSLUtils
@@ -69,7 +79,7 @@ object Retry {
       }
 
       lazy val interval = intervalFactory(n)
-      Try { fn() } match {
+      Try(fn()) match {
         case Success(x) =>
           x
         case Failure(cc: ControlThrowable) =>
@@ -107,9 +117,7 @@ object Retry {
           g(v)
       }
 
-      val result: RetryImpl[T2] = this.copy(
-        () => effectiveG(Try { fn() })
-      )
+      val result: RetryImpl[T2] = this.copy(() => effectiveG(Try(fn())))
       result
     }
 

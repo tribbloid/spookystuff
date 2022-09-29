@@ -294,6 +294,6 @@ class RDDDisperseSuite extends SpookyEnvFixture {
 
   it("Benchmark: can be much faster than ") {
 
-    //TODO: move to benchmark and implement!
+    // TODO: move to benchmark and implement!
   }
 }

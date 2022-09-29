@@ -8,7 +8,7 @@ import org.apache.spark.ml.dsl.utils.messaging.CodecRegistry
   */
 trait PyConverter {
 
-  def scala2py(v: Any): (Seq[PyRef], String) //preprocessing -> definition
+  def scala2py(v: Any): (Seq[PyRef], String) // preprocessing -> definition
 
   def scala2ref(v: Any): (Seq[PyRef], String) = {
     v match {
@@ -19,7 +19,7 @@ trait PyConverter {
     }
   }
 
-  //won't take missing parameter
+  // won't take missing parameter
   def args2Ref(vs: Iterable[Any]): (Seq[PyRef], String) = {
     val pys = vs.map { v =>
       scala2ref(v)
@@ -32,7 +32,7 @@ trait PyConverter {
     deps -> code
   }
 
-  //takes optional parameter, treat as missing if value of the option is None
+  // takes optional parameter, treat as missing if value of the option is None
   def kwargs2Code(vs: Iterable[(String, Any)]): (Seq[PyRef], String) = {
     val pys: Iterable[(Seq[PyRef], String)] = vs
       .flatMap { tuple =>
@@ -62,9 +62,8 @@ object PyConverter {
   final val QQQ = "\"\"\""
 
   /**
-    * convert scala object to python sourcecode
-    * case class is convert to Python Constructor or variable
-    * other types => JSON => Python types
+    * convert scala object to python sourcecode case class is convert to Python Constructor or variable other types =>
+    * JSON => Python types
     */
   object JSON extends PyConverter {
 

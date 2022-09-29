@@ -88,17 +88,15 @@ object DriverFactory {
   }
 
   /**
-    * delegate create & destroy to PerSessionFactory
-    * first get() create a driver as usual
-    * calling get() without release() reboot the driver
-    * first release() return driver to the pool to be used by the same Spark Task
-    * call any function with a new Spark Task ID will add a cleanup TaskCompletionListener to the Task that destroy all drivers
+    * delegate create & destroy to PerSessionFactory first get() create a driver as usual calling get() without
+    * release() reboot the driver first release() return driver to the pool to be used by the same Spark Task call any
+    * function with a new Spark Task ID will add a cleanup TaskCompletionListener to the Task that destroy all drivers
     */
   case class TaskLocal[D <: DriverLike](
       delegate: Transient[D]
   ) extends DriverFactory[D] {
 
-    //taskOrThreadIDs -> (driver, busy)
+    // taskOrThreadIDs -> (driver, busy)
     @transient lazy val taskLocals: ConcurrentMap[Seq[BatchID], DriverStatus[D]] = {
       ConcurrentMap()
     }

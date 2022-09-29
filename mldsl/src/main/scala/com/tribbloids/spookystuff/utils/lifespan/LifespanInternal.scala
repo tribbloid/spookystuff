@@ -16,9 +16,9 @@ abstract class LifespanInternal extends BeforeAndAfterShipping with IDMixin {
     initOnce
   }
 
-  @transient private final var isInitialised: LifespanInternal = _
-  @transient protected final lazy val initOnce: Unit = {
-    //always generate on construction or deserialization
+  @transient final private var isInitialised: LifespanInternal = _
+  @transient final protected lazy val initOnce: Unit = {
+    // always generate on construction or deserialization
 
     doInit()
     isInitialised = this

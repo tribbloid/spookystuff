@@ -39,9 +39,7 @@ case class DummyPyAction(
     a.resolve(schema)
       .lift
       .apply(pageRow)
-      .map(
-        v => this.copy(a = Lit.erased(v)).asInstanceOf[this.type]
-      )
+      .map(v => this.copy(a = Lit.erased(v)).asInstanceOf[this.type])
   }
 }
 
@@ -68,7 +66,7 @@ class PythonActionSuite extends SpookyEnvFixture {
     val doc = action.fetch(spooky)
     doc.flatMap(_.asInstanceOf[Doc].code).mkString("\n").shouldBe("6")
 
-    //assuming that lazy interpret is effective
+    // assuming that lazy interpret is effective
     assert(spooky.spookyMetrics.pythonInterpretationSuccess.value <= 3)
 
     //    val processes = JProcesses.getProcessList()
@@ -83,7 +81,8 @@ class PythonActionSuite extends SpookyEnvFixture {
     val df = sql
       .createDataFrame(
         (0 to 16)
-          .map(v => Tuple1(v)))
+          .map(v => Tuple1(v))
+      )
     val ds = spooky.create(
       df
     )

@@ -14,8 +14,8 @@ import com.tribbloids.spookystuff.utils.ShippingMarks
 import scala.concurrent.duration.Duration
 
 /**
-  * useless in DSL, cannot be shipped, prepend by GenPartitioner only.
-  * does NOT fail when the Link is unreachable (hence prefer), will try any available alternative instead.
+  * useless in DSL, cannot be shipped, prepend by GenPartitioner only. does NOT fail when the Link is unreachable (hence
+  * prefer), will try any available alternative instead.
   */
 private[uav] case class PreferUAV(
     uavStatus: LinkStatus,

@@ -9,10 +9,10 @@ import scala.language.implicitConversions
 import scala.reflect.ClassTag
 
 /**
-  * represents a mapping from 1 position or reference to another position given a CRS
-  * subclasses MUST define a CRS or worthless
-  * NOT a CRS: Coordinate Reference System (CRS) definitions as coordinate systems related to the earth through datum.
-  * Coordinate System (CS) definitions as the set of coordinate system axes that spans the coordinate space.
+  * represents a mapping from 1 position or reference to another position given a CRS subclasses MUST define a CRS or
+  * worthless NOT a CRS: Coordinate Reference System (CRS) definitions as coordinate systems related to the earth
+  * through datum. Coordinate System (CS) definitions as the set of coordinate system axes that spans the coordinate
+  * space.
   */
 trait CoordinateSystem extends Serializable {
 
@@ -27,10 +27,10 @@ trait CoordinateSystem extends Serializable {
 
   lazy val name: String = this.getClass.getSimpleName.stripSuffix("$")
 
-  //to save time we avoid using proj4 string parsing and implement our own alternative conversion rule if Projection is not available.
+  // to save time we avoid using proj4 string parsing and implement our own alternative conversion rule if Projection is not available.
   def get2DProj(a: Anchor, ic: SearchHistory): Option[Projection]
 
-  //TODO: this is unmathical, should be superceded by reverse operator
+  // TODO: this is unmathical, should be superceded by reverse operator
   def zeroOpt: Option[Coordinate] = None
 
   //  def fromXYZ(x: Double, y: Double, z: Double, existingOpt: Option[TrellisPoint] = None): TrellisPoint = {
@@ -42,7 +42,7 @@ trait CoordinateSystem extends Serializable {
 
   def fromVec(vector: Vec, sh: SearchHistory = SearchHistory()) = {
     val result = fromXYZ(vector(0), vector(1), vector(2), sh)
-    assert(result.vector == vector) //TODO: remove
+    assert(result.vector == vector) // TODO: remove
     result
   }
   def fromXYZ(

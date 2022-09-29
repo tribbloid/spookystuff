@@ -317,7 +317,7 @@ class FlowLayoutSuite extends FunSpecx {
       val n2: Op = Some("B")
       val n3: Op = Some("C")
 
-      val rr = (n1 :>> n2 <<: n3)
+      val rr = n1 :>> n2 <<: n3
 
       rr.visualise().showStr() shouldBe
         """

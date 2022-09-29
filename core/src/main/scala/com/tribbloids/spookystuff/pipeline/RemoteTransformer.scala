@@ -40,19 +40,19 @@ trait RemoteTransformer extends RemoteTransformerLike with Dynamic {
     } else throw new IllegalArgumentException(s"function $methodName doesn't exist")
   }
 
-  //example value of parameters used for testing
+  // example value of parameters used for testing
   val exampleParamMap: ParamMap = ParamMap.empty
 
   def exampleInput(spooky: SpookyContext): FetchedDataset = spooky
 
-  protected final def setExample(paramPairs: ParamPair[_]*): this.type = {
+  final protected def setExample(paramPairs: ParamPair[_]*): this.type = {
     paramPairs.foreach { p =>
       setExample(p.param.asInstanceOf[Param[Any]], p.value)
     }
     this
   }
 
-  protected final def setExample[T](param: Param[T], value: T): this.type = {
+  final protected def setExample[T](param: Param[T], value: T): this.type = {
     exampleParamMap.put(param -> value)
     this
   }
@@ -71,7 +71,7 @@ trait RemoteTransformer extends RemoteTransformerLike with Dynamic {
   override def test(spooky: SpookyContext): Unit = {
 
     val names = this.params.map(_.name)
-    assert(names.length == names.distinct.length) //ensure that there is no name duplicity
+    assert(names.length == names.distinct.length) // ensure that there is no name duplicity
 
     this.exampleParamMap.toSeq.foreach { pair =>
       this.set(pair)

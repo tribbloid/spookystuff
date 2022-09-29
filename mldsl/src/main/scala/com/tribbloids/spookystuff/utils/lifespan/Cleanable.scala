@@ -84,11 +84,10 @@ object Cleanable {
 }
 
 /**
-  * This is a trait that unifies resource cleanup on both Spark Driver & Executors
-  * instances created on Executors are cleaned by Spark TaskCompletionListener
-  * instances created otherwise are cleaned by JVM shutdown hook
-  * finalizer helps but is not always reliable
-  * can be serializable, but in which case implementation has to allow deserialized copy on a different machine to be cleanable as well.
+  * This is a trait that unifies resource cleanup on both Spark Driver & Executors instances created on Executors are
+  * cleaned by Spark TaskCompletionListener instances created otherwise are cleaned by JVM shutdown hook finalizer helps
+  * but is not always reliable can be serializable, but in which case implementation has to allow deserialized copy on a
+  * different machine to be cleanable as well.
   */
 trait Cleanable extends Closeable {
 
@@ -97,8 +96,8 @@ trait Cleanable extends Closeable {
   @transient lazy val stateLock: StateLock = StateLock()
 
   /**
-    * taskOrThreadOnCreation is incorrect in withDeadline or threads not created by Spark
-    * Override this to correct such problem
+    * taskOrThreadOnCreation is incorrect in withDeadline or threads not created by Spark Override this to correct such
+    * problem
     */
   def _lifespan: Lifespan = Lifespan.JVM()
   final val lifespan = _lifespan
@@ -111,7 +110,7 @@ trait Cleanable extends Closeable {
     }
   }
 
-  //each can only be cleaned once
+  // each can only be cleaned once
   @volatile protected var _isCleaned: Boolean = false
   def isCleaned: Boolean = stateLock.synchronized {
     _isCleaned

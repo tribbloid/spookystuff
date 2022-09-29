@@ -14,9 +14,8 @@ import org.slf4j.LoggerFactory
 import scala.collection.mutable.ArrayBuffer
 
 /**
-  * Only for complex workflow control,
-  * each defines a nested/non-linear subroutine that may or may not be executed
-  * once or multiple times depending on situations.
+  * Only for complex workflow control, each defines a nested/non-linear subroutine that may or may not be executed once
+  * or multiple times depending on situations.
   */
 abstract class Block(override val children: Trace) extends Actions with Named with WaybackLike {
 
@@ -110,7 +109,7 @@ object ClusterRetry {
       } catch {
         case e: Exception =>
           val logger = LoggerFactory.getLogger(this.getClass)
-          //avoid endless retry if tcOpt is missing
+          // avoid endless retry if tcOpt is missing
           val timesLeft = retries - session.taskContextOpt.map(_.attemptNumber()).getOrElse(Int.MaxValue)
           if (timesLeft > 0) {
             throw new RetryingException(
@@ -165,14 +164,14 @@ object LocalRetry {
         }
       } catch {
         case _: Exception =>
-          CommonUtils.retry(retries)({
+          CommonUtils.retry(retries) {
             val retriedPages = new ArrayBuffer[DocOption]()
 
             for (action <- children) {
               retriedPages ++= action.exe(session)
             }
             retriedPages
-          })
+          }
       }
 
       pages
@@ -189,11 +188,13 @@ object LocalRetry {
 object Loop {}
 
 /**
-  * Contains several sub-actions that are iterated for multiple times
-  * Will iterate until max iteration is reached or execution is impossible (sub-action throws an exception)
+  * Contains several sub-actions that are iterated for multiple times Will iterate until max iteration is reached or
+  * execution is impossible (sub-action throws an exception)
   *
-  * @param limit max iteration, default to Const.fetchLimit
-  * @param children a list of actions being iterated through
+  * @param limit
+  *   max iteration, default to Const.fetchLimit
+  * @param children
+  *   a list of actions being iterated through
   */
 final case class Loop(
     override val children: Trace,

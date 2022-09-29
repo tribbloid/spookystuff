@@ -25,7 +25,7 @@ case class Visualisation[D <: Domain](
 
   object Tree extends Impl {
 
-    //todo: merge following 2
+    // todo: merge following 2
     def showForward(
         startingFrom: Seq[Element[D]]
     ): String = {
@@ -101,11 +101,10 @@ case class Visualisation[D <: Domain](
 
       val bufferList = buffer.toList
 
-      val bufferSet = ListMap(bufferList.map(v => v -> Unit): _*)
-        .keySet
+      val bufferSet = ListMap(bufferList.map(v => v -> Unit): _*).keySet
 
       {
-        //TODO: don't remove! set ordering varies depending on scala versions
+        // TODO: don't remove! set ordering varies depending on scala versions
         assert(
           bufferSet.toList == bufferList,
           (
@@ -168,7 +167,7 @@ object Visualisation {
     explicitAsciiBends = true
   )
 
-  //TODO: merge into algebra?
+  // TODO: merge into algebra?
   case class Format[D <: Domain](
       showNode: Element.NodeLike[D] => String = CommonUtils.toStrNullSafe _,
       showEdge: Element.Edge[D] => String = CommonUtils.toStrNullSafe _,

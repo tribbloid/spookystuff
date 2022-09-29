@@ -68,12 +68,12 @@ class ComposeSuite extends AbstractDFDSuite {
     val flow1 = (
       new VectorAssembler()
         <<: (new HashingTF()
-        <<=: (
-        PASSTHROUGH
-          U new StopWordsRemover()
-      )
-        <<: new Tokenizer()
-        <<: 'input)
+          <<=: (
+            PASSTHROUGH
+              U new StopWordsRemover()
+          )
+          <<: new Tokenizer()
+          <<: 'input)
     )
     val part1 = declare(
       new Tokenizer() <<: 'input
@@ -105,8 +105,7 @@ class ComposeSuite extends AbstractDFDSuite {
 
     flow
       .show(showID = false, compactionOpt = compactionOpt)
-      .treeNodeShouldBe(
-        """
+      .treeNodeShouldBe("""
         |\ left >
         |> ForwardNode (HEAD)(TAIL>) [input$Tokenizer$HashingTF] > VectorAssembler > [input$Tokenizer$HashingTF$VectorAssembler]
         |> ForwardNode (TAIL>) [input]
@@ -248,9 +247,9 @@ class ComposeSuite extends AbstractDFDSuite {
     val flow = (
       new VectorAssembler()
         <<: (
-        PASSTHROUGH
-          U new StopWordsRemover()
-      )
+          PASSTHROUGH
+            U new StopWordsRemover()
+        )
         <<: new Tokenizer()
         <<: 'input
     )

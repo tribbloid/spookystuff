@@ -33,11 +33,10 @@ object FetchedDataset {
 }
 
 /**
-  * Created by peng on 8/29/14.
-  * Core component, abstraction of distributed Page + schemaless KVStore to represent all stages of remote resource discovery
-  * CAUTION: for bug tracking purpose it is important for all RDDs having their names set to their {function name}.{variable names}
-  * CAUTION: naming convention:
-  * all function ended with _! will be executed immediately, others will yield a logical plan that can be optimized & lazily executed
+  * Created by peng on 8/29/14. Core component, abstraction of distributed Page + schemaless KVStore to represent all
+  * stages of remote resource discovery CAUTION: for bug tracking purpose it is important for all RDDs having their
+  * names set to their {function name}.{variable names} CAUTION: naming convention: all function ended with _! will be
+  * executed immediately, others will yield a logical plan that can be optimized & lazily executed
   */
 case class FetchedDataset(
     plan: ExecutionPlan
@@ -63,7 +62,7 @@ case class FetchedDataset(
     )
   }
 
-  //TODO: use reflection for more clear API
+  // TODO: use reflection for more clear API
   def setConf(f: SpookyConf => Unit): this.type = {
     f(spooky.spookyConf)
     this
@@ -81,9 +80,7 @@ case class FetchedDataset(
   }
 
   def rdd: RDD[FR] = unsquashedRDD
-  def unsquashedRDD: RDD[FetchedRow] = this.squashedRDD.flatMap(
-    v => v.WSchema(schema).unsquash
-  )
+  def unsquashedRDD: RDD[FetchedRow] = this.squashedRDD.flatMap(v => v.WSchema(schema).unsquash)
 
   def docRDD: RDD[Seq[DocOption]] = {
 
@@ -112,18 +109,17 @@ case class FetchedDataset(
 
   def dataRDDSorted: RDD[DataRow] = {
 
-    import scala.Ordering.Implicits._ //DO NOT DELETE!
+    import scala.Ordering.Implicits._ // DO NOT DELETE!
 
     val sortIndices: List[Field] = plan.allSortIndices.map(_._1.self)
 
     val dataRDD = this.dataRDD
     plan.persist(dataRDD)
 
-    val sorted = dataRDD.sortBy { _.sortIndex(sortIndices) }
+    val sorted = dataRDD.sortBy(_.sortIndex(sortIndices))
     sorted.setName("sort")
 
-    sorted.foreachPartition { _ =>
-      } //force execution
+    sorted.foreachPartition { _ => } // force execution
     plan.scratchRDDs.unpersist(dataRDD)
 
     sorted
@@ -162,7 +158,7 @@ case class FetchedDataset(
     //        ExpressionEncoder.apply()(ttg)
     //    }
 
-    //TOOD: how to make it serializable so it can be reused by different partitions?
+    // TOOD: how to make it serializable so it can be reused by different partitions?
     @transient lazy val field2Converter: Map[Field, Any => Any] = spookySchema.fieldTypes.mapValues { tpe =>
       val reified = tpe.reified
       val converter = CatalystTypeConverters.createToCatalystConverter(reified)
@@ -197,7 +193,7 @@ case class FetchedDataset(
       result
     }
 
-  //TODO: cleanup
+  // TODO: cleanup
   //  @Deprecated
   //  def toDFLegacy(sort: Boolean = false, tableName: String = null): DataFrame =
   //    sparkContext.withJob(s"toDF(sort=$sort, name=$tableName)") {
@@ -233,9 +229,7 @@ case class FetchedDataset(
 
     val _ex = newResolver.include(ex.toStr).head
 
-    unsquashedRDD.map(
-      v => _ex.applyOrElse[FetchedRow, String](v, _ => default)
-    )
+    unsquashedRDD.map(v => _ex.applyOrElse[FetchedRow, String](v, _ => default))
   }
 
   def toObjectRDD[T: ClassTag](
@@ -271,23 +265,22 @@ case class FetchedDataset(
       overwrite: Boolean = false
   ): this.type = {
     val saved = savePages(path, extension, page, overwrite)
-    saved.foreach { _ =>
-      }
+    saved.foreach { _ => }
     this
   }
 
   /**
-    * save each page to a designated directory
-    * support many file systems including but not limited to HDFS, S3 and local HDD
+    * save each page to a designated directory support many file systems including but not limited to HDFS, S3 and local
+    * HDD
     *
-    * @param overwrite if a file with the same name already exist:
-    *                  true: overwrite it
-    *                  false: append an unique suffix to the new file name
+    * @param overwrite
+    *   if a file with the same name already exist: true: overwrite it false: append an unique suffix to the new file
+    *   name
     */
-  //always use the same path pattern for filtered pages, if you want pages to be saved with different path, use multiple saveContent with different names
+  // always use the same path pattern for filtered pages, if you want pages to be saved with different path, use multiple saveContent with different names
   def savePages(
       path: Col[String],
-      extension: Col[String] = null, //set to
+      extension: Col[String] = null, // set to
       page: Col[Doc] = S,
       overwrite: Boolean = false
   ): FetchedDataset = {
@@ -322,10 +315,11 @@ case class FetchedDataset(
 
   /**
     * break each page into 'shards', used to extract structured data from tables
-    * @param on denotes enclosing elements of each shards
+    * @param on
+    *   denotes enclosing elements of each shards
     */
   def flatExtract(
-      on: Extractor[Any], //TODO: used to be Iterable[Unstructured], any tradeoff?
+      on: Extractor[Any], // TODO: used to be Iterable[Unstructured], any tradeoff?
       isLeft: Boolean = true,
       ordinalField: Field = null,
       sampler: Sampler[Any] = spooky.spookyConf.defaultFlattenSampler
@@ -336,13 +330,13 @@ case class FetchedDataset(
   }
 
   def flatSelect(
-      on: Extractor[Any], //TODO: used to be Iterable[Unstructured], any tradeoff?
+      on: Extractor[Any], // TODO: used to be Iterable[Unstructured], any tradeoff?
       ordinalField: Field = null,
       sampler: Sampler[Any] = spooky.spookyConf.defaultFlattenSampler,
       isLeft: Boolean = true
   )(exprs: Extractor[Any]*): FetchedDataset = flatExtract(on, isLeft, ordinalField, sampler)(exprs: _*)
 
-  //TODO: test
+  // TODO: test
   def agg(exprs: Seq[FetchedRow => Any], reducer: RowReducer): FetchedDataset = AggPlan(plan, exprs, reducer)
   def distinctBy(exprs: FetchedRow => Any*): FetchedDataset = agg(exprs, (v1, v2) => v1)
 
@@ -378,7 +372,7 @@ case class FetchedDataset(
     FetchPlan(plan, _traces, keyBy, genPartitioner)
   }
 
-  //shorthand of fetch
+  // shorthand of fetch
   def wget(
       on: Col[String],
       cooldown: Option[Duration] = None,
@@ -400,9 +394,9 @@ case class FetchedDataset(
   }
 
   def join(
-      on: Extractor[Any], //name is discarded
+      on: Extractor[Any], // name is discarded
       joinType: JoinType = spooky.spookyConf.defaultJoinType,
-      ordinalField: Field = null, //left & idempotent parameters are missing as they are always set to true
+      ordinalField: Field = null, // left & idempotent parameters are missing as they are always set to true
       sampler: Sampler[Any] = spooky.spookyConf.defaultJoinSampler
   )(
       traces: Set[Trace],
@@ -417,15 +411,16 @@ case class FetchedDataset(
   }
 
   /**
-    * same as join, but avoid launching a browser by using direct http GET (wget) to download new pages
-    * much faster and less stressful to both crawling and target server(s)
+    * same as join, but avoid launching a browser by using direct http GET (wget) to download new pages much faster and
+    * less stressful to both crawling and target server(s)
     *
-    * @return RDD[Page]
+    * @return
+    *   RDD[Page]
     */
   def wgetJoin(
       on: Extractor[Any],
       joinType: JoinType = spooky.spookyConf.defaultJoinType,
-      ordinalField: Field = null, //left & idempotent parameters are missing as they are always set to true
+      ordinalField: Field = null, // left & idempotent parameters are missing as they are always set to true
       sampler: Sampler[Any] = spooky.spookyConf.defaultJoinSampler,
       cooldown: Option[Duration] = None,
       keyBy: Trace => Any = identity,
@@ -446,7 +441,7 @@ case class FetchedDataset(
     )
   }
 
-  //TODO: how to unify this with join?
+  // TODO: how to unify this with join?
   def explore(
       on: Extractor[Any],
       joinType: JoinType = spooky.spookyConf.defaultJoinType,
@@ -463,7 +458,7 @@ case class FetchedDataset(
       checkpointInterval: Int = spooky.spookyConf.checkpointInterval // set to Int.MaxValue to disable checkpointing,
   )(
       extracts: Extractor[_]*
-      //apply immediately after depth selection, this include depth0
+      // apply immediately after depth selection, this include depth0
   ): FetchedDataset = {
 
     val params = Params(depthField, ordinalField, range)

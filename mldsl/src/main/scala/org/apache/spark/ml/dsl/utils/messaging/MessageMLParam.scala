@@ -4,8 +4,7 @@ import org.apache.spark.annotation.DeveloperApi
 import org.json4s._
 
 /**
-  * :: DeveloperApi ::
-  * ML Param only supports string & vectors, this class extends support to all objects
+  * :: DeveloperApi :: ML Param only supports string & vectors, this class extends support to all objects
   */
 @DeveloperApi
 class MessageMLParam[Obj](

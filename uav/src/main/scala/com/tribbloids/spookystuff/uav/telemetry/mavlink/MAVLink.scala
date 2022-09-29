@@ -16,19 +16,15 @@ object MAVLink {
     val subs = Cleanable.getTyped[Endpoint] ++ Cleanable.getTyped[MAVProxy]
     val refSubs = Cleanable.getTyped[MAVLink].flatMap(_.chainClean)
     assert(
-      subs.intersect(refSubs).size <= refSubs.size, {
-        "INTERNAL ERROR: dangling endpoint or proxy without MAVLink!"
-      }
+      subs.intersect(refSubs).size <= refSubs.size,
+      "INTERNAL ERROR: dangling endpoint or proxy without MAVLink!"
     )
   }
 }
 
 /**
-Contains 0 or 1 proxy and several endpoints to be used by executor.
-GCS:UDP:xxx ------------------------> Proxy:TCP:xxx -> Drone
-                                   /
-TaskProcess -> Connection:UDP:xx -/
-            /
+  * Contains 0 or 1 proxy and several endpoints to be used by executor. GCS:UDP:xxx ------------------------>
+  * Proxy:TCP:xxx -> Drone / TaskProcess -> Connection:UDP:xx -/ /
   */
 case class MAVLink(
     uav: UAV,
@@ -61,7 +57,7 @@ case class MAVLink(
         direct.copy(uri = out)(direct.driverTemplate)
       }
     }
-    //always initialized in Python when created from companion object
+    // always initialized in Python when created from companion object
     val primary: Endpoint = executors.head
     val GCSs: Seq[Endpoint] = {
       toGCS.map { out =>
@@ -188,7 +184,7 @@ case class MAVLink(
     }
 
     def clearanceAlt(alt: Double): Unit = {
-      Endpoints.primary.PY.assureClearanceAlt(alt) //TODO: should have both maxAlt and minAlt
+      Endpoints.primary.PY.assureClearanceAlt(alt) // TODO: should have both maxAlt and minAlt
     }
 
     override def goto(location: Location): Unit = {

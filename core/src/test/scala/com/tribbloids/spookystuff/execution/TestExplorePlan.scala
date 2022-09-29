@@ -124,7 +124,7 @@ class TestExplorePlan extends SpookyEnvFixture with LocalPathDocsFixture {
     assert(ds.spooky.spookyMetrics.pagesFetched.value == 4)
 
     assert(ds.rdd.count() == 4)
-    assert(ds.spooky.spookyMetrics.pagesFetched.value <= 5) //TODO: this can be reduced further
+    assert(ds.spooky.spookyMetrics.pagesFetched.value <= 5) // TODO: this can be reduced further
   }
 
   describe("When using custom keyBy function, explore plan can") {
@@ -145,7 +145,7 @@ class TestExplorePlan extends SpookyEnvFixture with LocalPathDocsFixture {
       assert(ds.spooky.spookyMetrics.pagesFetched.value == 2)
 
       assert(ds.rdd.count() == 2)
-      assert(ds.spooky.spookyMetrics.pagesFetched.value <= 3) //TODO: this can be reduced further
+      assert(ds.spooky.spookyMetrics.pagesFetched.value <= 3) // TODO: this can be reduced further
 
       ds.squashedRDD.foreach { squashedRow =>
         Predef.assert(squashedRow.traceView.keyBy == TestExplorePlan.CustomKeyBy)

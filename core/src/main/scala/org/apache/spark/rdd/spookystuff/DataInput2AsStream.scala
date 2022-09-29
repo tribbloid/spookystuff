@@ -5,8 +5,7 @@ import org.mapdb.DataInput2
 import java.io._
 
 /**
-  * Wraps [[DataInput]] into [[InputStream]]
-  * see https://github.com/jankotek/mapdb/issues/971
+  * Wraps [[DataInput]] into [[InputStream]] see https://github.com/jankotek/mapdb/issues/971
   */
 case class DataInput2AsStream(in: DataInput2) extends InputStream {
 
@@ -52,7 +51,7 @@ case class DataInput2AsStream(in: DataInput2) extends InputStream {
 
   override def skip(n: Long): Long = {
     val _n = Math.min(n, Integer.MAX_VALUE)
-    //$DELAY$
+    // $DELAY$
     in.skipBytes(_n.toInt)
   }
 

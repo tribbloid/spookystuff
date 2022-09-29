@@ -24,14 +24,13 @@ abstract class TestHelper extends LocalCleanable {
     Try {
       properties.load(ClassLoader.getSystemResourceAsStream(".rootkey.csv"))
     }.recoverWith {
-        case _: Exception =>
-          Try {
-            properties.load(ClassLoader.getSystemResourceAsStream("rootkey.csv"))
-          }
-      }
-      .getOrElse {
-        println("rootkey.csv is missing")
-      }
+      case _: Exception =>
+        Try {
+          properties.load(ClassLoader.getSystemResourceAsStream("rootkey.csv"))
+        }
+    }.getOrElse {
+      println("rootkey.csv is missing")
+    }
 
     properties
   }
@@ -75,7 +74,7 @@ abstract class TestHelper extends LocalCleanable {
     if (S3Path.isDefined) println("Test on AWS S3 with credentials provided by rootkey.csv")
 
     AWSAccessKeyId.foreach {
-      System.setProperty("fs.s3.awsAccessKeyId", _) //TODO: useless here? set in conf directly?
+      System.setProperty("fs.s3.awsAccessKeyId", _) // TODO: useless here? set in conf directly?
     }
     AWSSecretKey.foreach {
       System.setProperty("fs.s3.awsSecretAccessKey", _)
@@ -179,8 +178,8 @@ abstract class TestHelper extends LocalCleanable {
   )
 
   /**
-    * @return local mode: None -> local[n, 4]
-    *         cluster simulation mode: Some(SPARK_HOME) -> local-cluster[m,n, mem]
+    * @return
+    *   local mode: None -> local[n, 4] cluster simulation mode: Some(SPARK_HOME) -> local-cluster[m,n, mem]
     */
   lazy val coreSettings: Map[String, String] = {
     val masterEnv = System.getenv("SPARK_MASTER")
@@ -238,11 +237,11 @@ abstract class TestHelper extends LocalCleanable {
     )
   }
 
-  //if SPARK_PATH & ClusterSize in rootkey.csv is detected, use local-cluster simulation mode
-  //otherwise use local mode
+  // if SPARK_PATH & ClusterSize in rootkey.csv is detected, use local-cluster simulation mode
+  // otherwise use local mode
   lazy val TestSparkConf: SparkConf = {
 
-    //always use KryoSerializer, it is less stable than Native Serializer
+    // always use KryoSerializer, it is less stable than Native Serializer
     val conf: SparkConf = new SparkConf(false)
 
     conf.setAll(coreSettings)
@@ -371,7 +370,7 @@ abstract class TestHelper extends LocalCleanable {
     }
   }
 
-  //TODO: clean up S3 as well
+  // TODO: clean up S3 as well
   // also, this should become a class that inherit cleanable
   def cleanTempDirs(paths: Seq[String] = Seq(CommonConst.USER_TEMP_DIR)): Unit = {
     paths.filter(_ != null).foreach { path =>

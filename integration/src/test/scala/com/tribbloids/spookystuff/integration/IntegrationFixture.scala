@@ -66,7 +66,7 @@ abstract class IntegrationFixture extends SpookyEnvFixture with LocalURIDocsFixt
     }
   }
 
-  //TODO: for local-cluster mode, some of these metrics may have higher than expected results because.
+  // TODO: for local-cluster mode, some of these metrics may have higher than expected results because.
   def assertBeforeCache(): Unit = {
     val metrics: SpookyMetrics = spooky.spookyMetrics
     val metricsJSON: String = metrics.toNestedMap.toJSON()

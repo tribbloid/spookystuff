@@ -77,8 +77,10 @@ object DFD extends MessageRelay[DFD] {
         children.foreach(treeNodeReprToLink)
       }
 
-      for (graph <- flowLines;
-           tree <- graph.flowLine) {
+      for (
+        graph <- flowLines;
+        tree <- graph.flowLine
+      ) {
         treeNodeReprToLink(tree)
       }
 
@@ -213,7 +215,7 @@ case class DFD(
     leftTailIDs: Seq[String],
     rightTailIDs: Seq[String],
     headIDs: Seq[String],
-    fromIDsOpt: Option[Seq[String]] = None //overrridden by using "from" function
+    fromIDsOpt: Option[Seq[String]] = None // overrridden by using "from" function
 ) extends DFDComponent {
 
   override def fromIDs: Seq[String] = fromIDsOpt.getOrElse(headIDs)

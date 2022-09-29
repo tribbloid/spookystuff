@@ -15,7 +15,10 @@ object ElementToArrayDeserializer extends XMLWeakDeserializer[Any] {
   val setClass: Class[Set[_]] = classOf[Set[_]]
   val arrayListClass: Class[util.ArrayList[_]] = classOf[java.util.ArrayList[_]]
 
-  override def _deserialize(implicit format: Formats): PartialFunction[(TypeInfo, JValue), Any] = {
+  override def _deserialize(
+      implicit
+      format: Formats
+  ): PartialFunction[(TypeInfo, JValue), Any] = {
 
     case (ti @ TypeInfo(this.listClass | this.seqClass, _), jv) if !jv.isInstanceOf[JArray] =>
       extractInner(ti, jv, format).toList
@@ -37,12 +40,11 @@ object ElementToArrayDeserializer extends XMLWeakDeserializer[Any] {
     import java.lang.reflect.Array.{newInstance => newArray}
 
     a.foldLeft((newArray(typeArg.erasure, a.length), 0)) { (tuple, e) =>
-        {
-          java.lang.reflect.Array.set(tuple._1, tuple._2, e)
-          (tuple._1, tuple._2 + 1)
-        }
+      {
+        java.lang.reflect.Array.set(tuple._1, tuple._2, e)
+        (tuple._1, tuple._2 + 1)
       }
-      ._1
+    }._1
   }
 
   def extractInner(ti: TypeInfo, jv: JValue, format: Formats): Option[Any] = {

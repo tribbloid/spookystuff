@@ -51,15 +51,15 @@ trait EAVBuilder[I <: EAV] {
     fromUntypedTuples(kvMapFlattenOpt: _*)
   }
 
-  lazy final val proto: Impl = apply()
+  final lazy val proto: Impl = apply()
 
   final def fromEAV(v: EAV): I = Impl.fromCore(v.core)
 
-  final implicit def fromEAVImplicitly(v: EAV.ImplicitSrc): I = Impl.fromCore(v.core)
+  implicit final def fromEAVImplicitly(v: EAV.ImplicitSrc): I = Impl.fromCore(v.core)
 
-  final implicit def fromEAVOptImplicitly(vOpt: Option[EAV.ImplicitSrc]): Option[I] = vOpt.map(fromEAVImplicitly)
+  implicit final def fromEAVOptImplicitly(vOpt: Option[EAV.ImplicitSrc]): Option[I] = vOpt.map(fromEAVImplicitly)
 
-  final implicit def fromMap(map: Iterable[(_, VV)]): I = {
+  implicit final def fromMap(map: Iterable[(_, VV)]): I = {
 
     fromUntypedTuples(map.toSeq: _*)
   }

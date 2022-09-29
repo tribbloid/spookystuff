@@ -11,12 +11,11 @@ import org.slf4j.LoggerFactory
 class ActionUDT extends ScalaUDT[Action]
 
 /**
-  * These are the same actions a human would do to get to the data page,
-  * their order of execution is identical to that they are defined.
-  * Many supports **Cell Interpolation**: you can embed cell reference in their constructor
-  * by inserting keys enclosed by `'{}`, in execution they will be replaced with values they map to.
-  * This is used almost exclusively in typing into an url bar or textbox, but it's flexible enough to be used anywhere.
-  * extends Product to make sure all subclasses are case classes
+  * These are the same actions a human would do to get to the data page, their order of execution is identical to that
+  * they are defined. Many supports **Cell Interpolation**: you can embed cell reference in their constructor by
+  * inserting keys enclosed by `'{}`, in execution they will be replaced with values they map to. This is used almost
+  * exclusively in typing into an url bar or textbox, but it's flexible enough to be used anywhere. extends Product to
+  * make sure all subclasses are case classes
   */
 //TODO: merging with Extractor[Seq[Fetched]]?
 @SQLUserDefinedType(udt = classOf[ActionUDT])
@@ -25,7 +24,7 @@ trait Action extends ActionLike with TraceAPI {
   override def children: Trace = Nil
   @transient override lazy val asTrace: Trace = List(this)
 
-  var timeElapsed: Long = -1 //only set once
+  var timeElapsed: Long = -1 // only set once
 
   override def dryRun: List[List[Action]] = {
     if (hasOutput) {
@@ -35,7 +34,7 @@ trait Action extends ActionLike with TraceAPI {
     }
   }
 
-  //execute errorDumps as side effects
+  // execute errorDumps as side effects
   protected def getSessionExceptionMessage(
       session: Session,
       docOpt: Option[Doc] = None
@@ -54,21 +53,22 @@ trait Action extends ActionLike with TraceAPI {
     message
   }
 
-  //this should handle autoSave, cache and errorDump
+  // this should handle autoSave, cache and errorDump
   final override def apply(session: Session): Seq[DocOption] = {
 
-    val results = try {
-      exe(session)
-    } catch {
-      case e: Exception =>
-        val message: String = getSessionExceptionMessage(session)
+    val results =
+      try {
+        exe(session)
+      } catch {
+        case e: Exception =>
+          val message: String = getSessionExceptionMessage(session)
 
-        val ex = e match {
-          case ae: ActionException => ae
-          case _                   => new ActionException(message, e)
-        }
-        throw ex
-    }
+          val ex = e match {
+            case ae: ActionException => ae
+            case _                   => new ActionException(message, e)
+          }
+          throw ex
+      }
 
     this.timeElapsed = System.currentTimeMillis() - session.startTimeMillis
     session.spooky.spookyMetrics.pagesFetchedFromRemote += results.count(_.isInstanceOf[Doc])

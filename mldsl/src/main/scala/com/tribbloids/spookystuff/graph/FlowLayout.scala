@@ -12,7 +12,7 @@ trait FlowLayout[D <: Domain] extends Layout[D] {
 
   trait DSL extends super.DSL {
 
-    private implicit def core2Operand[M <: _Module](v: Core[M]): Operand[M] = create(v)
+    implicit private def core2Operand[M <: _Module](v: Core[M]): Operand[M] = create(v)
 
     trait OperandLike[+M <: _Module] extends super.OperandLike[M] {
 
@@ -37,19 +37,19 @@ trait FlowLayout[D <: Domain] extends Layout[D] {
 
 //      final def >(right: OperandLike[_]) = merge_>(right)
 
-      //TODO: fast-forward handling: if right is reused for many times,
+      // TODO: fast-forward handling: if right is reused for many times,
       // ensure that only the part that doesn't overlap with this got duplicated (conditional duplicate)
       def mapHead_>(right: OperandLike[_]): Operand[_Module] = RightOps.mapHead(right.core)
 
       final def :=>>(right: OperandLike[_]): Operand[_Module] = mapHead_>(right)
 
-      //this is really kind of ambiguous
+      // this is really kind of ambiguous
       def append_>(right: OperandLike[_]): Operand[_Module] = RightOps.append(right.core)
 
       final def :->(right: OperandLike[_]): Operand[_Module] = append_>(right)
 
       // left < right
-      //TODO: follow :>> & <<: convention
+      // TODO: follow :>> & <<: convention
 
       def compose_<(left: OperandLike[_]): Operand[GG] = LeftOps.compose(left.core)
 

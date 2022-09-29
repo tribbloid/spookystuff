@@ -11,12 +11,11 @@ import scala.collection.mutable.ArrayBuffer
 import scala.util.Try
 
 /**
-  * @return a link that fulfills ALL of the following conditions:
-  * 1. NOT owned by an ongoing LifespanContext (task or thread not completed)
-  * 2. NOT locked, or locked by the same mutexID (if provided)
-  * 3. in uavList
-  * if multiple links are available, the one with highest priority is chosen:
-  *   threadLocal > prefer > others
+  * @return
+  *   a link that fulfills ALL of the following conditions:
+  *   1. NOT owned by an ongoing LifespanContext (task or thread not completed) 2. NOT locked, or locked by the same
+  *      mutexID (if provided) 3. in uavList if multiple links are available, the one with highest priority is chosen:
+  *      threadLocal > prefer > others
   */
 case class Dispatcher(
     uavList: List[UAV],

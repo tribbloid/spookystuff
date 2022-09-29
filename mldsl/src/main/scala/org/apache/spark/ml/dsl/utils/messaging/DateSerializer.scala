@@ -7,9 +7,13 @@ import java.sql.Date
 
 object DateSerializer
     extends CustomSerializer[Date](format =>
-      ({
-        case JString(s) => Date.valueOf(s)
-        case JNull      => null
-      }, {
-        case d: Date => JString(d.toString)
-      }))
+      (
+        {
+          case JString(s) => Date.valueOf(s)
+          case JNull      => null
+        },
+        {
+          case d: Date => JString(d.toString)
+        }
+      )
+    )

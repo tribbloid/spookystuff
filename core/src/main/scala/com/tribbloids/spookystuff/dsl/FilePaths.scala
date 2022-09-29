@@ -50,7 +50,7 @@ object FilePaths {
     }
   }
 
-  //only from Page
+  // only from Page
   case class UUIDName(encoder: ByTrace[Any]) extends ByDoc[String] {
     override def apply(page: Doc): String =
       CommonUtils.\\\(encoder(page.uid.backtrace).toString, UUID.randomUUID().toString)

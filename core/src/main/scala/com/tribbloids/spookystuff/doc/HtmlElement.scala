@@ -30,16 +30,17 @@ object HtmlElement {
 
     val metadata = new Metadata()
     val stream = TikaInputStream.get(content, metadata)
-    val html = try {
-      metadata.set(HttpHeaders.CONTENT_ENCODING, charSet)
-      metadata.set(HttpHeaders.CONTENT_TYPE, mimeType)
-      val parser = new AutoDetectParser()
-      val context = new ParseContext()
-      parser.parse(stream, handler, metadata, context)
-      handler.toString
-    } finally {
-      stream.close()
-    }
+    val html =
+      try {
+        metadata.set(HttpHeaders.CONTENT_ENCODING, charSet)
+        metadata.set(HttpHeaders.CONTENT_TYPE, mimeType)
+        val parser = new AutoDetectParser()
+        val context = new ParseContext()
+        parser.parse(stream, handler, metadata, context)
+        handler.toString
+      } finally {
+        stream.close()
+      }
     HtmlElement.apply(html, uri)
   }
 }
@@ -53,7 +54,7 @@ class HtmlElement private (
 
   import JavaConverters._
 
-  //constructor for HtmlElement returned by .children()
+  // constructor for HtmlElement returned by .children()
   private def this(_parsed: Element) = this(
     _parsed, {
       _parsed.ownerDocument().outputSettings().prettyPrint(false)
@@ -91,7 +92,8 @@ class HtmlElement private (
         .select(selector)
         .asScala
         .map(new HtmlElement(_))
-        .toList)
+        .toList
+    )
 
   override def findAllWithSiblings(selector: String, range: Range) = {
 
@@ -127,7 +129,7 @@ class HtmlElement private (
     val found: Seq[Element] = parsed
       .select(selector)
       .asScala
-      .filter(elem => parsed.children().contains(elem)) //TODO: switch to more efficient NodeFilter
+      .filter(elem => parsed.children().contains(elem)) // TODO: switch to more efficient NodeFilter
     new Elements(found.map(new HtmlElement(_)).toList)
   }
 
@@ -136,7 +138,7 @@ class HtmlElement private (
     val found: Seq[Element] = parsed
       .select(selector)
       .asScala
-      .filter(elem => parsed.children().contains(elem)) //TODO: ditto
+      .filter(elem => parsed.children().contains(elem)) // TODO: ditto
     expand(found, range)
   }
 
@@ -165,7 +167,9 @@ class HtmlElement private (
   }
 
   override def href =
-    attr("abs:href") //TODO: if this is identical to the uri itself, it should be considered an inline/invalid link and have None output
+    attr(
+      "abs:href"
+    ) // TODO: if this is identical to the uri itself, it should be considered an inline/invalid link and have None output
 
   override def src = attr("abs:src")
 

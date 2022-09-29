@@ -17,7 +17,7 @@ trait TraceAPI extends TraceSetAPI {
 
   @transient final lazy val asTraceSet: Set[Trace] = Set(asTrace)
 
-  //many-to-one
+  // many-to-one
   def +>(another: Action): TraceView = TraceView(asTrace :+ another)
   def +>(others: Trace): TraceView = TraceView(asTrace ++ others)
 }

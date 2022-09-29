@@ -17,7 +17,7 @@ class ChainedFlatSelectIT extends IntegrationFixture {
 
     val r1 = spooky
       .fetch(
-        Wget("http://localhost:10092/test-sites/e-commerce/allinone") //this site is unstable, need to revise
+        Wget("http://localhost:10092/test-sites/e-commerce/allinone") // this site is unstable, need to revise
       )
       .flatExtract(S"div.thumbnail", ordinalField = 'i1)(
         A"p".attr("class") ~ 'p_class
@@ -29,8 +29,12 @@ class ChainedFlatSelectIT extends IntegrationFixture {
       )
 
     val result = r2
-      .flatExtract(S"notexist", ordinalField = 'notexist_key)( //this is added to ensure that temporary joinKey in KV store won't be used.
-        'A.attr("class") ~ 'notexist_class)
+      .flatExtract(
+        S"notexist",
+        ordinalField = 'notexist_key
+      )( // this is added to ensure that temporary joinKey in KV store won't be used.
+        'A.attr("class") ~ 'notexist_class
+      )
       .toDF(sort = true)
 
     result.schema.treeString.shouldBe(

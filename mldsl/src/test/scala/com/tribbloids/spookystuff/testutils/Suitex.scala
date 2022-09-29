@@ -16,7 +16,7 @@ trait Suitex {
 
   @transient implicit class TestStringView(str: String) {
 
-    //TODO: use reflection to figure out test name and annotate
+    // TODO: use reflection to figure out test name and annotate
     def shouldBe(
         gd: String = null,
         sort: Boolean = false,
@@ -59,7 +59,7 @@ trait Suitex {
       }
     }
 
-    //ignore sequence
+    // ignore sequence
 //    def jsonShouldBe(
 //        gd: String = null,
 //        mode: JSONCompareMode = JSONCompareMode.LENIENT
@@ -154,7 +154,7 @@ trait Suitex {
     }
   }
 
-  //TODO: update to be on par with scalatest supported by IDE
+  // TODO: update to be on par with scalatest supported by IDE
   case class AssertionErrorObject(actual: List[String], expected: List[String]) {
 
     lazy val actualStr: String = actual.mkString("\n")
@@ -162,8 +162,9 @@ trait Suitex {
       actualStr
 
     lazy val expectedStr: String = expected.mkString("\n")
-    lazy val expectedInfo: String = s"\n=============================== $EXPECTED ================================\n\n" +
-      expectedStr
+    lazy val expectedInfo: String =
+      s"\n=============================== $EXPECTED ================================\n\n" +
+        expectedStr
 
     override lazy val toString: String = {
 

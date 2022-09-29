@@ -41,8 +41,7 @@ class SlowRDDSpike extends FunSpecx {
           ii
         }
 
-      mapped2.foreach { _ =>
-        }
+      mapped2.foreach { _ => }
 
 //      Thread.sleep(1000000)
     }
@@ -70,8 +69,7 @@ class SlowRDDSpike extends FunSpecx {
         ii
       }
 
-    mapped2.foreach { _ =>
-      }
+    mapped2.foreach { _ => }
 
 //    Thread.sleep(1000000)
 

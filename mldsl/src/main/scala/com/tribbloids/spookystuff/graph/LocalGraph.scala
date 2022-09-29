@@ -14,7 +14,8 @@ case class LocalGraph[D <: Domain] private (
     nodeMap: mutable.Map[D#ID, NodeTriplet[D]],
     edgeMap: MultiMapView.Mutable[(D#ID, D#ID), Edge[D]]
 )(
-    override implicit val algebra: Algebra[D]
+    implicit
+    override val algebra: Algebra[D]
 ) extends StaticGraph[D] {
 
   override def _replicate(m: DataMutator)(
@@ -82,7 +83,8 @@ case class LocalGraph[D <: Domain] private (
 object LocalGraph {
 
   class BuilderImpl[D <: Domain](
-      implicit override val algebra: Algebra[D]
+      implicit
+      override val algebra: Algebra[D]
   ) extends StaticGraph.Builder[D] {
 
     type GG = LocalGraph[D]

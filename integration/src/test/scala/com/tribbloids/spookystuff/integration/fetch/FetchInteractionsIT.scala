@@ -36,13 +36,14 @@ class FetchInteractionsIT extends IntegrationFixture {
     val uri = pageRows(0).docs.head.uri
     assert(
       (uri endsWith "zh.wikipedia.org/wiki/深度学习") || (uri endsWith "zh.wikipedia.org/wiki/" + URLEncoder
-        .encode("深度学习", "UTF-8")))
+        .encode("深度学习", "UTF-8"))
+    )
     assert(pageRows(0).docs.head.name === Snapshot(DocFilterImpl.MustHaveTitle).toString)
     val pageTime = pageRows(0).fetched.head.timeMillis
     assert(pageTime < finishTime)
-    assert(pageTime > finishTime - 120000) //long enough even after the second time it is retrieved from s3 cache
+    assert(pageTime > finishTime - 120000) // long enough even after the second time it is retrieved from s3 cache
 
-    Thread.sleep(10000) //this delay is necessary to circumvent eventual consistency of HDFS-based cache
+    Thread.sleep(10000) // this delay is necessary to circumvent eventual consistency of HDFS-based cache
 
     val RDD2 = RDD
       .fetch(

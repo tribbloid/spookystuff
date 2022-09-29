@@ -5,7 +5,6 @@ import com.tribbloids.spookystuff.row.{SquashedFetchedRDD, SquashedFetchedRow}
 import org.apache.spark.rdd.{RDD, UnionRDD}
 import org.apache.spark.storage.StorageLevel
 
-
 case class CoalescePlan(
     override val child: ExecutionPlan,
     numPartitions: RDD[_] => Int,
@@ -24,7 +23,7 @@ case class UnionPlan(
     override val children: Seq[ExecutionPlan]
 ) extends ExecutionPlan(children) {
 
-  //TODO: also use PartitionerAwareUnionRDD
+  // TODO: also use PartitionerAwareUnionRDD
   def doExecute(): SquashedFetchedRDD = {
     new UnionRDD(
       spooky.sparkContext,
@@ -52,7 +51,8 @@ trait FetchedRDDAPI {
       },
       shuffle: Boolean = false
   )(
-      implicit ord: Ordering[SquashedFetchedRow] = null
+      implicit
+      ord: Ordering[SquashedFetchedRow] = null
   ): FetchedDataset = this.copy(
     CoalescePlan(plan, numPartitions, shuffle, ord)
   )
@@ -61,18 +61,23 @@ trait FetchedRDDAPI {
       numPartitions: Int,
       shuffle: Boolean = false
   )(
-      implicit ord: Ordering[SquashedFetchedRow] = null
+      implicit
+      ord: Ordering[SquashedFetchedRow] = null
   ): FetchedDataset = {
 
-    _coalesce({ v =>
-      numPartitions
-    }, shuffle)(ord)
+    _coalesce(
+      { v =>
+        numPartitions
+      },
+      shuffle
+    )(ord)
   }
 
   def repartition(
       numPartitions: Int
   )(
-      implicit ord: Ordering[SquashedFetchedRow] = null
+      implicit
+      ord: Ordering[SquashedFetchedRow] = null
   ): FetchedDataset = {
 
     coalesce(numPartitions, shuffle = true)(ord)
@@ -112,8 +117,8 @@ trait FetchedRDDAPI {
   //
   //  def intersection(other: RDD[SquashedPageRow], numPartitions: Int): PageRowRDD = selfRDD.intersection(other, numPartitions)
 
-  //TODO: advanced caching: persist an Execution Plan and make its deep copies reusable.
-  //cache & persist wont' execute plans immediately, they only apply to the result of doExecute() once finished
+  // TODO: advanced caching: persist an Execution Plan and make its deep copies reusable.
+  // cache & persist wont' execute plans immediately, they only apply to the result of doExecute() once finished
   def cache(): this.type = persist()
 
   def persist(): this.type = this.persist(plan.spooky.spookyConf.defaultStorageLevel)
@@ -131,7 +136,7 @@ trait FetchedRDDAPI {
     this
   }
 
-  //In contrast, checkpoint is action-like that will doExecute() immediately.
+  // In contrast, checkpoint is action-like that will doExecute() immediately.
   def checkpoint(): Unit = {
     squashedRDD.checkpoint()
   }

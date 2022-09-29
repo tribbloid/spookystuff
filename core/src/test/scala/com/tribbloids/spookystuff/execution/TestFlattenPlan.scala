@@ -127,7 +127,9 @@ class TestFlattenPlan extends SpookyEnvFixture {
         Array(
           StructField("_1", StringType, nullable = true),
           StructField("_2", IntegerType, nullable = false)
-        )))
+        )
+      )
+    )
   }
 
   it("FlattenPlan should work on extracted Seq") {
@@ -154,7 +156,9 @@ class TestFlattenPlan extends SpookyEnvFixture {
         Array(
           StructField("_1", StringType, nullable = true),
           StructField("_2", IntegerType, nullable = false)
-        )))
+        )
+      )
+    )
   }
 
   it("FlattenPlan should work on extracted List") {
@@ -181,7 +185,9 @@ class TestFlattenPlan extends SpookyEnvFixture {
         Array(
           StructField("_1", StringType, nullable = true),
           StructField("_2", IntegerType, nullable = false)
-        )))
+        )
+      )
+    )
   }
 
   it("flatExtract is equivalent to flatten + extract") {

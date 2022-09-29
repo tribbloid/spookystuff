@@ -117,15 +117,16 @@ object Doc {
 @SQLUserDefinedType(udt = classOf[UnstructuredUDT])
 case class Doc(
     override val uid: DocUID,
-    uri: String, //redirected
+    uri: String, // redirected
     raw: Array[Byte],
     declaredContentType: Option[String] = None,
     //                 cookie: Seq[SerializableCookie] = Nil,
     override val timeMillis: Long = System.currentTimeMillis(),
-    saved: scala.collection.mutable.Set[String] = scala.collection.mutable.Set(), //TODO: move out of constructor
+    saved: scala.collection.mutable.Set[String] = scala.collection.mutable.Set(), // TODO: move out of constructor
     override val cacheLevel: DocCacheLevel.Value = DocCacheLevel.All,
     httpStatus: Option[StatusLine] = None,
-    override val metadata: ResourceMetadata = ResourceMetadata.proto //for customizing parsing TODO: remove, delegate to CSVElement.
+    override val metadata: ResourceMetadata =
+      ResourceMetadata.proto // for customizing parsing TODO: remove, delegate to CSVElement.
 ) extends DocOption
     with IDMixin {
 
@@ -194,15 +195,15 @@ case class Doc(
   }
 
   override type RootType = Unstructured
-  //TODO: use reflection to find any element implementation that can resolve supplied MIME type
+  // TODO: use reflection to find any element implementation that can resolve supplied MIME type
   @transient override lazy val root: Unstructured = {
     val effectiveCharset = charset.orNull
 
     val contentStr = new String(raw, effectiveCharset)
     if (mimeType.contains("html") || mimeType.contains("xml") || mimeType.contains("directory")) {
-      HtmlElement(contentStr, uri) //not serialize, parsing is faster
+      HtmlElement(contentStr, uri) // not serialize, parsing is faster
     } else if (mimeType.contains("json")) {
-      JsonElement(contentStr, null, uri) //not serialize, parsing is faster
+      JsonElement(contentStr, null, uri) // not serialize, parsing is faster
     } else if (mimeType.contains("csv")) {
       val csvFormat: CSVFormat = this.metadata.asMap
         .get(Doc.CSV_FORMAT)
@@ -212,9 +213,9 @@ case class Doc(
         }
         .getOrElse(Doc.defaultCSVFormat)
 
-      CSVBlock.apply(contentStr, uri, csvFormat) //not serialize, parsing is faster
+      CSVBlock.apply(contentStr, uri, csvFormat) // not serialize, parsing is faster
     } else if (mimeType.contains("plain") || mimeType.contains("text")) {
-      PlainElement(contentStr, uri) //not serialize, parsing is faster
+      PlainElement(contentStr, uri) // not serialize, parsing is faster
     } else {
       HtmlElement.fromBytes(raw, effectiveCharset, mimeType, uri)
     }
@@ -233,7 +234,7 @@ case class Doc(
   }
   def defaultFileExtension: Option[String] = fileExtensions.headOption
 
-  //---------------------------------------------------------------------------------------------------
+  // ---------------------------------------------------------------------------------------------------
 
   def save(
       pathParts: Seq[String],
@@ -246,13 +247,14 @@ case class Doc(
       val fullPath = new Path(path)
       val fs = fullPath.getFileSystem(spooky.hadoopConf)
       //      if (!overwrite && fs.exists(fullPath)) fullPath = new Path(path + "-" + UUID.randomUUID())
-      val fos = try {
-        fs.create(fullPath, overwrite)
-      } catch {
-        case _: Exception =>
-          val altPath = new Path(path + "-" + UUID.randomUUID())
-          fs.create(altPath, overwrite)
-      }
+      val fos =
+        try {
+          fs.create(fullPath, overwrite)
+        } catch {
+          case _: Exception =>
+            val altPath = new Path(path + "-" + UUID.randomUUID())
+            fs.create(altPath, overwrite)
+        }
 
       val os = progress.WrapOStream(fos)
 
@@ -275,7 +277,7 @@ case class Doc(
       overwrite
     )(spooky)
 
-  //TODO: merge into cascade retries
+  // TODO: merge into cascade retries
   def errorDump(
       spooky: SpookyContext,
       overwrite: Boolean = false

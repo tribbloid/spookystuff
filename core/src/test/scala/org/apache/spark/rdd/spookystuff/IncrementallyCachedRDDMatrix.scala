@@ -43,7 +43,8 @@ class IncrementallyCachedRDDMatrix extends FunSpecx with BeforeAndAfterAll {
         def useCollect: TestSubject[Int] = TestSubject(intRDD)
 
         def useToLocalItr: TestSubject[Int] = TestSubject(
-          intRDD, { rdd =>
+          intRDD,
+          { rdd =>
             PreemptiveLocalOps(8).ForRDD(rdd).toLocalIterator.toList
           }
         )
@@ -51,7 +52,8 @@ class IncrementallyCachedRDDMatrix extends FunSpecx with BeforeAndAfterAll {
         def onInternalRows: TestSubject[InternalRow] = {
 
           TestSubject(
-            rowRDD, { rdd =>
+            rowRDD,
+            { rdd =>
               rdd
                 .map(v => v.getInt(0))
                 .collect()
@@ -60,7 +62,7 @@ class IncrementallyCachedRDDMatrix extends FunSpecx with BeforeAndAfterAll {
           )
         }
 
-        //TODO: this doesn't work at the moment, fix and enable
+        // TODO: this doesn't work at the moment, fix and enable
         def onPersisted = TestSubject(persistedSrc)
 
         def onCheckpointed = TestSubject(checkpointedSrc)

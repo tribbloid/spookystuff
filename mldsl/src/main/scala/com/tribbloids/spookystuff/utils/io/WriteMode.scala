@@ -10,7 +10,7 @@ object WriteMode extends Enumeration {
 
   object ReadOnly extends WriteMode
 
-  //TODO: add back with some high-level implementation using apache-io NullOutputStream
+  // TODO: add back with some high-level implementation using apache-io NullOutputStream
   object Ignore extends WriteMode
 }
 

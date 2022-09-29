@@ -3,20 +3,8 @@ package com.tribbloids.spookystuff.doc
 import org.apache.commons.csv.{CSVFormat, CSVParser}
 
 /**
-  * equivalent to the following xml:
-  * <splitter>
-  *   <row>
-  *     <header1>datum1</header1>
-  *     <header2>datum2</header2>
-  *     ...
-  *   </row>
-  *   <row>
-  *     <header2>datum1</header2>
-  *     <header2>datum1</header2>
-  *     ...
-  *   </row>
-  *   ...
-  * </splitter>
+  * equivalent to the following xml: <splitter> <row> <header1>datum1</header1> <header2>datum2</header2> ... </row>
+  * <row> <header2>datum1</header2> <header2>datum1</header2> ... </row> ... </splitter>
   */
 case class CSVBlock(
     _text: String,

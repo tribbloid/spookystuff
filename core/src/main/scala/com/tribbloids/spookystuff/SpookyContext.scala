@@ -36,7 +36,7 @@ object SpookyContext {
 }
 
 case class SpookyContext(
-    @transient sqlContext: SQLContext //can't be used on executors, TODO: change to SparkSession
+    @transient sqlContext: SQLContext // can't be used on executors, TODO: change to SparkSession
 ) extends ShippingMarks {
 
   // can be shipped to executors to determine behaviours of actions
@@ -47,7 +47,7 @@ case class SpookyContext(
   object Plugins extends PluginRegistry.Factory {
 
     type UB = PluginSystem
-    override implicit lazy val ubEv: ClassTag[UB] = ClassTag(classOf[UB])
+    implicit override lazy val ubEv: ClassTag[UB] = ClassTag(classOf[UB])
 
     override type Out[T <: PluginSystem] = T#Plugin
     override def compute[T <: PluginSystem](v: T): v.Plugin = {
@@ -59,7 +59,7 @@ case class SpookyContext(
     def deployAll(): Unit = {
       createEnabled()
       val trials = cache.values.toList.map { plugin =>
-        Try { plugin.deploy() }
+        Try(plugin.deploy())
       }
       TreeThrowable.&&&(trials)
     }
@@ -142,7 +142,7 @@ case class SpookyContext(
   def create(df: DataFrame): FetchedDataset = this.dsl.dfToFetchedDS(df)
   def create[T: TypeTag](rdd: RDD[T]): FetchedDataset = this.dsl.rddToFetchedDS(rdd)
 
-  //TODO: merge after 2.0.x
+  // TODO: merge after 2.0.x
   def create[T: TypeTag](
       seq: TraversableOnce[T]
   ): FetchedDataset = {
@@ -200,7 +200,7 @@ case class SpookyContext(
       )
     }
 
-    //every input or noInput will generate a new metrics
+    // every input or noInput will generate a new metrics
     implicit def rddToFetchedDS[T: TypeTag](rdd: RDD[T]): FetchedDataset = {
 
       val ttg = implicitly[TypeTag[T]]
@@ -209,19 +209,14 @@ case class SpookyContext(
         // RDD[Map] => JSON => DF => ..
         case _ if ttg.tpe <:< typeOf[Map[_, _]] =>
           //        classOf[Map[_,_]].isAssignableFrom(classTag[T].runtimeClass) => //use classOf everywhere?
-          val canonRdd = rdd.map(
-            map => map.asInstanceOf[Map[_, _]].canonizeKeysToColumnNames
-          )
+          val canonRdd = rdd.map(map => map.asInstanceOf[Map[_, _]].canonizeKeysToColumnNames)
 
-          val jsonDS = sqlContext.createDataset[String](
-            canonRdd.map(
-              map => MessageWriter(map).compactJSON
-            ))
+          val jsonDS = sqlContext.createDataset[String](canonRdd.map(map => MessageWriter(map).compactJSON))
           val dataFrame = sqlContext.read.json(jsonDS)
           dfToFetchedDS(dataFrame)
 
         // RDD[SquashedFetchedRow] => ..
-        //discard schema
+        // discard schema
         case _ if ttg.tpe <:< typeOf[SquashedFetchedRow] =>
           //        case _ if classOf[SquashedFetchedRow] == classTag[T].runtimeClass =>
           val self = rdd.asInstanceOf[SquashedFetchedRDD]

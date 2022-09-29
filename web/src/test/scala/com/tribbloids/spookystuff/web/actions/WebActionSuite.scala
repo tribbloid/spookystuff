@@ -23,7 +23,7 @@ class WebActionSuite extends SpookyEnvFixture {
     )
   )
 
-  //TODO: finish assertion
+  // TODO: finish assertion
   exampleActionList.foreach { a =>
     it(s"${a.getClass.getSimpleName} has an UDT") {
       val rdd: RDD[(Selector, Action)] = sc.parallelize(Seq(("1": Selector) -> a))
@@ -40,7 +40,7 @@ class WebActionSuite extends SpookyEnvFixture {
     val action = Click("o1")
 
     it("-> JSON") {
-      val str = action.prettyJSON() //TODO: add as a trait
+      val str = action.prettyJSON() // TODO: add as a trait
       str.shouldBe(
         """
           |{
@@ -53,7 +53,7 @@ class WebActionSuite extends SpookyEnvFixture {
     }
 
     it("-> memberStrPretty") {
-      val str = action.memberStrPretty //TODO: add as a trait
+      val str = action.memberStrPretty // TODO: add as a trait
 
 //      val codec: MessageWriter[_] = action
 

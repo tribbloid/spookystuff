@@ -43,10 +43,9 @@ case class Screenshot(
 object Screenshot {
 
   object QuickScreenshot extends Screenshot(DocFilterImpl.Bypass)
-  object ErrorScreenshot
-      extends Screenshot(DocFilterImpl.Bypass)
-      //  with MessageAPI
-      {
+  object ErrorScreenshot extends Screenshot(DocFilterImpl.Bypass)
+  //  with MessageAPI
+  {
 
     //  override def proto = "ErrorScreenshot"
   }

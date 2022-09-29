@@ -29,7 +29,7 @@ case class UnpackResources(
         LocalResolver.execute(unpackedParent),
         WriteMode.Overwrite
       )
-    Thread.sleep(5000) //for eventual consistency
+    Thread.sleep(5000) // for eventual consistency
   }
 
   def deleteUnpackedParent(): Unit = {
@@ -46,7 +46,7 @@ case class UnpackResources(
   }
 
   def unpackedURL(resourcePath: String): URL = {
-    new URL("file://" + unpacked(resourcePath)) //TODO: change to File(..).getURL?
+    new URL("file://" + unpacked(resourcePath)) // TODO: change to File(..).getURL?
   }
 
   override protected def cleanImpl(): Unit = deleteUnpackedParent()

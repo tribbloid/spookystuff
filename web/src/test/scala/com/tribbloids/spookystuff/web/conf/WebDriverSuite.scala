@@ -15,11 +15,10 @@ class WebDriverSuite extends SpookyEnvFixture with LocalPathDocsFixture {
 
   it("PhantomJS DriverFactory can degrade gracefully if remote URI is unreachable") {
 
-    val dummyPhantomJS = WebDriverFactory.PhantomJS(
-      _ =>
-        WebDriverFactory.PhantomJSDeployment(
-          "dummy/file",
-          "dummy.org/file"
+    val dummyPhantomJS = WebDriverFactory.PhantomJS(_ =>
+      WebDriverFactory.PhantomJSDeployment(
+        "dummy/file",
+        "dummy.org/file"
       )
     )
 

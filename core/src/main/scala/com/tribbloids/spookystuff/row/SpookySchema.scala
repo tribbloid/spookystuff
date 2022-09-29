@@ -74,9 +74,7 @@ case class SpookySchema(
       }
 
       val revised = crOpt
-        .map(
-          cr => field.copy(conflictResolving = cr)
-        )
+        .map(cr => field.copy(conflictResolving = cr))
         .getOrElse(field)
 
       revised
@@ -103,9 +101,7 @@ case class SpookySchema(
         case _ =>
           val names = buffer.keys.toSeq.map(_.name)
           val i = (1 to Int.MaxValue)
-            .find(
-              i => !names.contains("_c" + i)
-            )
+            .find(i => !names.contains("_c" + i))
             .get
           ex withAlias Field("_c" + i)
       }
@@ -151,7 +147,7 @@ case class SpookySchema(
     }
   }
 
-  //use it after Row-based data representation
+  // use it after Row-based data representation
   object ImplicitLookup {
     implicit def fieldToTyped(field: Field): TypedField = SpookySchema.this.typedFor(field).get
     implicit def fieldToIndexed(field: Field): IndexedField = SpookySchema.this.indexedFor(field).get

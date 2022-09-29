@@ -7,8 +7,8 @@ import com.tribbloids.spookystuff.graph._
 import com.tribbloids.spookystuff.parsing
 
 /**
-  * State-machine based parser combinator that takes a graph and compile into a deterministic decision process
-  * ... that consumes a stream of tokens and mutates state/output
+  * State-machine based parser combinator that takes a graph and compile into a deterministic decision process ... that
+  * consumes a stream of tokens and mutates state/output
   */
 trait FSMParserGraph extends Domain {
 

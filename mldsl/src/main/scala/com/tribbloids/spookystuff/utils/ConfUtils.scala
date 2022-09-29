@@ -8,7 +8,8 @@ object ConfUtils {
   def getPropertyOrEnv(
       property: String
   )(
-      implicit sparkConf: SparkConf = {
+      implicit
+      sparkConf: SparkConf = {
         Option(SparkEnv.get)
           .map(_.conf)
           .getOrElse(
@@ -65,7 +66,8 @@ object ConfUtils {
       property: String,
       default: String = null
   )(
-      implicit sparkConf: SparkConf = Option(SparkEnv.get)
+      implicit
+      sparkConf: SparkConf = Option(SparkEnv.get)
         .map(_.conf)
         .getOrElse(
           new SparkConf()
@@ -79,8 +81,7 @@ object ConfUtils {
   }
 
   /**
-    * change UnmodifiableMap System.getenv() for tests
-    * NOT stable! Only for testing
+    * change UnmodifiableMap System.getenv() for tests NOT stable! Only for testing
     */
   def overrideEnv(key: String, value: String): Unit = {
     val field = System.getenv().getClass.getDeclaredField("m")

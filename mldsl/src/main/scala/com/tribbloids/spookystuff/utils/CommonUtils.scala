@@ -89,7 +89,6 @@ abstract class CommonUtils {
     }
   }
 
-
   @scala.annotation.tailrec
   final def unboxException[T <: Throwable: ClassTag](e: Throwable): Throwable = {
     e match {
@@ -121,7 +120,7 @@ abstract class CommonUtils {
   def toStrNullSafe(v: Any): String = "" + v
 
   def tryParseBoolean(str: => String): Try[Boolean] = {
-    Try { str }.flatMap { v =>
+    Try(str).flatMap { v =>
       v.toLowerCase match {
         case "true" | "1" | ""    => Success(true)
         case "false" | "0" | "-1" => Success(false)

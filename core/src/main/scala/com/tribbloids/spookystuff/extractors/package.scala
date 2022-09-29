@@ -2,7 +2,6 @@ package com.tribbloids.spookystuff
 
 import com.tribbloids.spookystuff.row.FetchedRow
 
-
 /**
   * Created by peng on 12/2/14.
   */
@@ -17,7 +16,7 @@ package object extractors {
   type Resolved[+R] = GenResolved[FR, R]
   def Resolved = GenResolved
 
-  //TODO: clean up, didn't fix the problem
+  // TODO: clean up, didn't fix the problem
 //  implicit def Closure1[T, R](self: T => R): Function1[T, R] = self match {
 //    case v: Function1[T, R] => v
 //    case _ => new Function1[T, R] {

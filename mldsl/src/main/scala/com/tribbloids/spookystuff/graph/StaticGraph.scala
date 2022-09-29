@@ -20,7 +20,10 @@ object StaticGraph {
   trait Builder[D <: Domain] extends Algebra.Aliases[D] {
 
     type GG <: StaticGraph[D]
-    protected def getCtg(implicit ev: ClassTag[GG]) = ev
+    protected def getCtg(
+        implicit
+        ev: ClassTag[GG]
+    ) = ev
     implicit def ctg: ClassTag[GG]
     final lazy val _ctg = ctg
 
@@ -42,12 +45,15 @@ object StaticGraph {
     }
     def union(v1: GG, v2: GG, node_+ : CommonTypes.Binary[NodeData] = nodeAlgebra.+): GG
 
-    //TODO: this API need to change to facilitate big Heads and Tails in the format of RDD
+    // TODO: this API need to change to facilitate big Heads and Tails in the format of RDD
     /**
       * heads of base & tails of top are superseded by their merged result
-      * @param node_+ binary operation to combine data from 2 nodes
-      * @param edge_+ binary operation to combine data from 2 edges
-      * @return merged graph -> mappings that converts evicted edges to created edges
+      * @param node_+
+      *   binary operation to combine data from 2 nodes
+      * @param edge_+
+      *   binary operation to combine data from 2 edges
+      * @return
+      *   merged graph -> mappings that converts evicted edges to created edges
       */
     def serial(
         base: (GG, _Heads),
@@ -64,8 +70,10 @@ object StaticGraph {
 
       val edgeConversion = mutable.Map[_Edge, _Edge]()
 
-      for (src <- base._2.seq;
-           tgt <- top._2.seq) {
+      for (
+        src <- base._2.seq;
+        tgt <- top._2.seq
+      ) {
 
         val reduced = Edge[D](
           edge_+(src.data, tgt.data),

@@ -20,7 +20,7 @@ case class AssertWeaklySerializable[T <: AnyRef: ClassTag](
     Try {
       val serInstance = ser.newInstance()
       val binary: ByteBuffer = serInstance.serialize(element)
-      assert(binary.array().length > 8) //min object overhead length
+      assert(binary.array().length > 8) // min object overhead length
       val element2 = serInstance.deserialize[T](binary)
       //      assert(!element.eq(element2))
       condition(element, element2)

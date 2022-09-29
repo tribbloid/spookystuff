@@ -6,7 +6,7 @@ import org.apache.spark.sql.catalyst.expressions.GenericRowWithSchema
 
 package object row {
 
-  type Data = Map[Field, Any] //TODO: change to SQL Row
+  type Data = Map[Field, Any] // TODO: change to SQL Row
 
   implicit val Data: Map.type = Map
 
@@ -14,7 +14,7 @@ package object row {
 
   type BeaconRDD[K] = RDD[(K, Unit)]
 
-  type Sampler[T] = Iterable[(T, Int)] => Iterable[(T, Int)] //with index
+  type Sampler[T] = Iterable[(T, Int)] => Iterable[(T, Int)] // with index
 
   type RowReducer = (Iterable[DataRow], Iterable[DataRow]) => Iterable[DataRow]
 

@@ -17,7 +17,7 @@ import org.apache.spark.ml.uav.Vec
   */
 trait UAVNavigation extends Interaction with UAVAction with HasCost {
 
-  //TODO: change to Option
+  // TODO: change to Option
   def getLocation(schema: SpookySchema): Location
 
   //  def vector(trace: Trace, schema: DataRowSchema): DenseVector[Double] = {

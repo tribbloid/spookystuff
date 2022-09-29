@@ -161,8 +161,8 @@ case class IncrementallyCachedRDD[T: ClassTag](
               case e: Exception =>
                 logError(
                   s"Partition ${p.index} in task ${active.taskCtx
-                    .taskAttemptId()} - stage ${active.taskCtx
-                    .stageId()} is broken at ${_primary.offset}, fallback to use ${_backup.getClass}\n" +
+                      .taskAttemptId()} - stage ${active.taskCtx
+                      .stageId()} is broken at ${_primary.offset}, fallback to use ${_backup.getClass}\n" +
                     s"cause by $e"
                 )
                 logDebug("", e)
@@ -218,7 +218,7 @@ case class IncrementallyCachedRDD[T: ClassTag](
           }
 
           logDebug(s"recommissioning ${fromTask.taskAttemptId()}: -> ${byTask
-            .taskAttemptId()}, accumulators ${from.accumulatorMap.keys.map(v => "#" + v).mkString(",")}")
+              .taskAttemptId()}, accumulators ${from.accumulatorMap.keys.map(v => "#" + v).mkString(",")}")
 
           from._commissionHistory += by
         }
@@ -237,7 +237,7 @@ case class IncrementallyCachedRDD[T: ClassTag](
                 case None =>
                   logDebug(
                     s"Accumulator ${newAcc.toString()} cannot be found in task ${fromTask
-                      .stageId()}/${fromTask.taskAttemptId()}"
+                        .stageId()}/${fromTask.taskAttemptId()}"
                   )
               }
             }
@@ -427,7 +427,7 @@ object IncrementallyCachedRDD {
           drop(k)
         }
 
-        //TODO: This will render all CachedIterators to be broken and force all
+        // TODO: This will render all CachedIterators to be broken and force all
         // CacheOrComputeActiveOrComputeFromScratch to use the last resort
         // is it possible to improve?
       }

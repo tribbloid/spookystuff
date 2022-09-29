@@ -76,7 +76,7 @@ trait Layout[D <: Domain] extends Algebra.Aliases[D] {
 
   case class Core[+M <: _Module](
       self: M,
-      //tails or heads that doesn't belong to edges in self is tolerable
+      // tails or heads that doesn't belong to edges in self is tolerable
       tails: Map[Facet, _Tails] = Map.empty,
       heads: _Heads = Heads[D](),
       fromOverride: Option[_Heads] = None
@@ -109,14 +109,21 @@ trait Layout[D <: Domain] extends Algebra.Aliases[D] {
       val latentGraph =
         defaultGraphBuilder.fromSeq(Seq(algebra.DANGLING), (latentTails ++ latentHeads).distinct)
 
-      defaultGraphBuilder.union(_graph, latentGraph, { (v1, v2) =>
-        v1 // nodes in latentGraph should have incorrect data
-      })
+      defaultGraphBuilder.union(
+        _graph,
+        latentGraph,
+        { (v1, v2) =>
+          v1 // nodes in latentGraph should have incorrect data
+        }
+      )
     }
 
     lazy val from: _Heads = fromOverride.getOrElse(heads)
 
-    def replicate(m: DataMutator = DataAlgebra.Mutator.identity)(implicit idRotator: Rotator[ID]): Core[M] = {
+    def replicate(m: DataMutator = DataAlgebra.Mutator.identity)(
+        implicit
+        idRotator: Rotator[ID]
+    ): Core[M] = {
 
       this.copy(
         self.replicate(m),
@@ -193,7 +200,7 @@ trait Layout[D <: Domain] extends Algebra.Aliases[D] {
         }
       }
 
-      //this is really kind of ambiguous, remove it?
+      // this is really kind of ambiguous, remove it?
       def append(top: Core[_]): Core[_Module] = {
 
         val intakes = top.tails
@@ -329,7 +336,7 @@ trait Layout[D <: Domain] extends Algebra.Aliases[D] {
         }
       }
 
-      //TODO: add operation to render all lazy val eagerly
+      // TODO: add operation to render all lazy val eagerly
     }
 
     case class EdgeView(
@@ -384,25 +391,30 @@ trait Layout[D <: Domain] extends Algebra.Aliases[D] {
         create(
           core.copy(
             fromOverride = Some(newFrom)
-          ))
+          )
+        )
       }
 
-      //TODO: these symbols are lame
+      // TODO: these symbols are lame
       final def >-[N >: M <: _Module](filter: EdgeFilter[D]): Operand[M] = from(filter)
 
-      //TODO: should be part of EdgeFilter
+      // TODO: should be part of EdgeFilter
       def and(filter: EdgeFilter[D]): Operand[M] = {
         val newFrom = Heads[D](filter(core._graph))
         val mergedFrom = Heads[D](core.from.seq ++ newFrom.seq)
         create(
           core.copy(
             fromOverride = Some(mergedFrom)
-          ))
+          )
+        )
       }
 
       final def <>-(filter: EdgeFilter[D]): Operand[M] = and(filter)
 
-      def replicate(m: DataMutator = DataAlgebra.Mutator.identity)(implicit idRotator: Rotator[ID]): Operand[M] = {
+      def replicate(m: DataMutator = DataAlgebra.Mutator.identity)(
+          implicit
+          idRotator: Rotator[ID]
+      ): Operand[M] = {
         create(
           core.replicate(m)(idRotator)
         )

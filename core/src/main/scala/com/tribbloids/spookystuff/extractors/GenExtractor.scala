@@ -38,7 +38,7 @@ object GenExtractor extends AutomaticRelay[GenExtractor[_, _]] with GenExtractor
     def child: GenExtractor[_, _]
   }
 
-  //TODO: possibility to merge into Spark Resolved expression?
+  // TODO: possibility to merge into Spark Resolved expression?
   trait StaticType[T, +R] extends GenExtractor[T, R] {
     val dataType: DataType
     final def resolveType(tt: DataType): DataType = dataType
@@ -61,7 +61,7 @@ object GenExtractor extends AutomaticRelay[GenExtractor[_, _]] with GenExtractor
       _resolveType: DataType => DataType,
       name: Option[String] = None
   ) extends Leaf[T, R] {
-    //resolve to a Spark SQL DataType according to an exeuction plan
+    // resolve to a Spark SQL DataType according to an exeuction plan
     override def resolveType(tt: DataType): DataType = _resolveType(tt)
 
     override def resolve(tt: DataType): PartialFunction[T, R] = _resolve(tt)
@@ -75,7 +75,7 @@ object GenExtractor extends AutomaticRelay[GenExtractor[_, _]] with GenExtractor
       meta: Option[Any] = None
   ) extends GenExtractor[A, C] {
 
-    //resolve to a Spark SQL DataType according to an exeuction plan
+    // resolve to a Spark SQL DataType according to an exeuction plan
     override def resolveType(tt: DataType): DataType = b.resolveType(a.resolveType(tt))
 
     override def resolve(tt: DataType): PartialFunction[A, C] = {
@@ -84,7 +84,7 @@ object GenExtractor extends AutomaticRelay[GenExtractor[_, _]] with GenExtractor
       Unlift(af.lift.andThen(_.flatMap(v => bf.lift(v))))
     }
 
-    //TODO: changing to Unary? Like Spark SQL Expression
+    // TODO: changing to Unary? Like Spark SQL Expression
     override def _args: Seq[GenExtractor[_, _]] = Seq(a, b)
   }
 
@@ -92,12 +92,12 @@ object GenExtractor extends AutomaticRelay[GenExtractor[_, _]] with GenExtractor
       arg1: GenExtractor[T, R1],
       arg2: GenExtractor[T, R2]
   ) extends GenExtractor[T, (R1, R2)] {
-    //resolve to a Spark SQL DataType according to an execution plan
+    // resolve to a Spark SQL DataType according to an execution plan
     override def resolveType(tt: DataType): DataType = locked {
       val t1 = arg1.resolveType(tt)
       val t2 = arg2.resolveType(tt)
 
-      //TODO: need to figure out how to implement this kind of pattern matching with unapply API
+      // TODO: need to figure out how to implement this kind of pattern matching with unapply API
       val ttg = (
         ScalaType.FromCatalystType(t1).asTypeTag,
         ScalaType.FromCatalystType(t2).asTypeTag
@@ -114,16 +114,13 @@ object GenExtractor extends AutomaticRelay[GenExtractor[_, _]] with GenExtractor
     override def resolve(tt: DataType): PartialFunction[T, (R1, R2)] = {
       val r1 = arg1.resolve(tt).lift
       val r2 = arg2.resolve(tt).lift
-      Unlift({ t =>
+      Unlift { t =>
         r1.apply(t)
-          .flatMap(
-            v =>
-              r2.apply(t)
-                .map(
-                  vv => v -> vv
-              )
+          .flatMap(v =>
+            r2.apply(t)
+              .map(vv => v -> vv)
           )
-      })
+      }
     }
 
     override def _args: Seq[GenExtractor[_, _]] = Seq(arg1, arg2)
@@ -156,7 +153,7 @@ trait GenExtractor[T, +R] extends Product with ReflectionLock with Serializable 
 
   protected def _args: Seq[GenExtractor[_, _]]
 
-  //resolve to a Spark SQL DataType according to an exeuction plan
+  // resolve to a Spark SQL DataType according to an exeuction plan
   def resolveType(tt: DataType): DataType
   def resolve(tt: DataType): PartialFunction[T, R]
 
@@ -191,7 +188,7 @@ trait GenExtractor[T, +R] extends Product with ReflectionLock with Serializable 
   //  final def named_!(field: Field) = _named(field.!)
   //  final def named_*(field: Field) = _named(field.*)
 
-  //will not rename an already-named Alias.
+  // will not rename an already-named Alias.
   def withAliasIfMissing(field: Field): Alias[T, R] = {
     this match {
       case alias: Alias[T, R] => alias
@@ -227,7 +224,7 @@ trait GenExtractor[T, +R] extends Product with ReflectionLock with Serializable 
       meta: Option[Any] = None
   ): GenExtractor[T, A] = andTyped(Unlift(g), resolveType, meta)
 
-  //TODO: extract subroutine and use it to avoid obj creation overhead
+  // TODO: extract subroutine and use it to avoid obj creation overhead
   def typed[A: TypeTag]: GenExtractor[T, A] = {
     implicit val ctg: ClassTag[A] = ScalaType.FromTypeTag[A].asClassTag
 

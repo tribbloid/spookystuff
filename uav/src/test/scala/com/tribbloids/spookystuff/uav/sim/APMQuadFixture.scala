@@ -34,7 +34,7 @@ class TestAPMQuad extends APMQuadFixture {
 
     val processes = JProcesses.getProcessList().asScala
 
-    //ensure all apm processes are running
+    // ensure all apm processes are running
     val apmPs = processes.filter(_.getName == "apm")
     assert(apmPs.size == parallelism)
   }

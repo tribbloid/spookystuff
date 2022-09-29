@@ -11,7 +11,7 @@ trait LowerPriorityDefault {
 
 object Default extends LowerPriorityDefault {
   implicit object DefaultDouble extends Default[Double](0.0)
-  implicit object DefaultFloat extends Default[Float](0.0F)
+  implicit object DefaultFloat extends Default[Float](0.0f)
   implicit object DefaultInt extends Default[Int](0)
   implicit object DefaultLong extends Default[Long](0L)
   implicit object DefaultShort extends Default[Short](0)
@@ -25,5 +25,8 @@ object Default extends LowerPriorityDefault {
   implicit def defaultMap[A, B]: Default[Map[A, B]] = new Default[Map[A, B]](Map[A, B]())
   implicit def defaultOption[A]: Default[Option[A]] = new Default[Option[A]](None)
 
-  def value[A](implicit value: Default[A]): A = value.default
+  def value[A](
+      implicit
+      value: Default[A]
+  ): A = value.default
 }

@@ -73,9 +73,8 @@ trait Link extends LocalCleanable with ConflictDetection {
 
       val inserted = Link.registered.getOrElseUpdate(uav, this)
       assert(
-        inserted eq this, {
-          s"Multiple Links created for UAV $uav"
-        }
+        inserted eq this,
+        s"Multiple Links created for UAV $uav"
       )
 
       this
@@ -115,7 +114,7 @@ trait Link extends LocalCleanable with ConflictDetection {
   //    unlock()
   //  }
 
-  //finalizer may kick in and invoke it even if its in Link.existing
+  // finalizer may kick in and invoke it even if its in Link.existing
   override protected def cleanImpl(): Unit = {
 
     val existingOpt = Link.registered.get(uav)
@@ -132,10 +131,10 @@ trait Link extends LocalCleanable with ConflictDetection {
                  |====================================================
                  |and this link is registered with a diffferent UAV:
                  |${registeredThis
-                 .map { tuple =>
-                   s"${tuple._1} -> ${tuple._2}"
-                 }
-                 .mkString("\n")}
+                .map { tuple =>
+                  s"${tuple._1} -> ${tuple._2}"
+                }
+                .mkString("\n")}
               """.stripMargin
           }
         )
@@ -163,9 +162,7 @@ trait Link extends LocalCleanable with ConflictDetection {
 
   private def connectRetries: Int =
     spookyOpt
-      .map(
-        spooky => spooky.getConf[UAVConf].connectionRetries
-      )
+      .map(spooky => spooky.getConf[UAVConf].connectionRetries)
       .getOrElse(UAVConf.FAST_CONNECTION_RETRIES)
 
   @volatile var lastFailureOpt: Option[(Throwable, Long)] = None
@@ -173,17 +170,19 @@ trait Link extends LocalCleanable with ConflictDetection {
   protected def detectConflicts(): Unit = {
     val notMe: Seq[Link] = Link.registered.values.toList.filterNot(_ eq this)
 
-    for (myURI <- this.resourceURIs;
-         notMe1 <- notMe) {
+    for (
+      myURI <- this.resourceURIs;
+      notMe1 <- notMe
+    ) {
       val notMyURIs = notMe1.resourceURIs
       assert(!notMyURIs.contains(myURI), s"'$myURI' is already used by link ${notMe1.uav}")
     }
   }
 
   /**
-    * A utility function that all implementation should ideally be enclosed
-    * Telemetry are inheritively unstable, so its better to reconnect if anything goes wrong.
-    * after all retries are exhausted will try to detect URL conflict and give a report as informative as possible.
+    * A utility function that all implementation should ideally be enclosed Telemetry are inheritively unstable, so its
+    * better to reconnect if anything goes wrong. after all retries are exhausted will try to detect URL conflict and
+    * give a report as informative as possible.
     */
   def withConn[T](n: Int = connectRetries, interval: Long = 0, silent: Boolean = false)(
       fn: => T
@@ -238,9 +237,7 @@ trait Link extends LocalCleanable with ConflictDetection {
 
   private def blacklistDuration: Long =
     spookyOpt
-      .map(
-        spooky => spooky.getConf[UAVConf].blacklistResetAfter
-      )
+      .map(spooky => spooky.getConf[UAVConf].blacklistResetAfter)
       .getOrElse(UAVConf.BLACKLIST_RESET_AFTER)
       .toMillis
 
@@ -303,7 +300,7 @@ trait Link extends LocalCleanable with ConflictDetection {
     result
   }
 
-  //================== COMMON API ==================
+  // ================== COMMON API ==================
 
   // will retry 6 times, try twice for Vehicle.connect() in python, if failed, will restart proxy and try again (3 times).
   // after all attempts failed will stop proxy and add endpoint into blacklist.
@@ -334,7 +331,7 @@ trait Link extends LocalCleanable with ConflictDetection {
     LinkStatus(uav, lock, home, current)
   }
 
-  //====================== Synchronous API ======================
+  // ====================== Synchronous API ======================
   // TODO this should be abandoned and mimic by Asynch API
 
   val synchAPI: SynchronousAPI
@@ -345,7 +342,7 @@ trait Link extends LocalCleanable with ConflictDetection {
     def goto(location: Location): Unit
   }
 
-  //====================== Asynchronous API =====================
+  // ====================== Asynchronous API =====================
 
   //  val Asynch: AsynchronousAPI
   //  abstract class AsynchronousAPI {

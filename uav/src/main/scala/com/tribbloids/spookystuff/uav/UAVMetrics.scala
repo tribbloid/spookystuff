@@ -18,5 +18,5 @@ case class UAVMetrics(
 
 object UAVMetrics extends Submodules.Builder[UAVMetrics] {
 
-  override implicit def default: UAVMetrics = UAVMetrics()
+  implicit override def default: UAVMetrics = UAVMetrics()
 }

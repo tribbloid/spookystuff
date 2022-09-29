@@ -12,8 +12,8 @@ class CommonConst {
   val driverClosingTimeout: FiniteDuration = 5.seconds
   val driverClosingRetries: Int = 5
 
-  val localResourceLocalRetries = 3 //In-node/partition retries
-  val remoteResourceLocalRetries = 2 //In-node/partition retries
+  val localResourceLocalRetries = 3 // In-node/partition retries
+  val remoteResourceLocalRetries = 2 // In-node/partition retries
   val DFSLocalRetries = 2
   val clusterRetries = 3
 

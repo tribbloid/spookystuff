@@ -8,7 +8,7 @@ object ReflectionUtils extends ReflectionLock {
 
   import org.apache.spark.sql.catalyst.ScalaReflection.universe._
 
-  //TODO: move most of them to ScalaType
+  // TODO: move most of them to ScalaType
   def getCaseAccessorSymbols(tt: ScalaType[_]): List[MethodSymbol] = locked {
     val accessors = tt.asType.members.toList.reverse
       .flatMap(filterCaseAccessors)

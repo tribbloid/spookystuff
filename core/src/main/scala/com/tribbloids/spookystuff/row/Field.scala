@@ -30,8 +30,8 @@ object Field {
 }
 
 /**
-  * basic index in data row structure, similar to "Column" in Spark SQL but can refer to schemaless data as well.
-  * DSL can implicitly convert symbol/SQL Column reference to this.
+  * basic index in data row structure, similar to "Column" in Spark SQL but can refer to schemaless data as well. DSL
+  * can implicitly convert symbol/SQL Column reference to this.
   */
 case class Field(
     name: String,
@@ -43,8 +43,8 @@ case class Field(
     // declare it to ensure that its value won't interfere with downstream execution.
     isReserved: Boolean = false,
     conflictResolving: Field.ConflictResolving = Field.Error,
-    isOrdinal: Boolean = false, //represents ordinal index in flatten/explore
-    depthRangeOpt: Option[Range] = None, //represents depth in explore
+    isOrdinal: Boolean = false, // represents ordinal index in flatten/explore
+    depthRangeOpt: Option[Range] = None, // represents depth in explore
 
     isSelectedOverride: Option[Boolean] = None
 ) extends IDMixin
@@ -71,9 +71,9 @@ case class Field(
         Field.Overwrite
       case Field.Replace =>
         Field.Replace
-      case _ => //Field.Error
+      case _ => // Field.Error
         if (existing.isWeak) Field.Replace
-        else throw new QueryException(s"Field '${existing.name}' already exist") //fail early
+        else throw new QueryException(s"Field '${existing.name}' already exist") // fail early
     }
 
     effectiveCR

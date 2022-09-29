@@ -29,7 +29,7 @@ case class Zipped[T1, +T2](
     val r1 = arg1.resolve(tt).lift
     val r2 = arg2.resolve(tt).lift
 
-    Unlift({ row =>
+    Unlift { row =>
       val z1Option = r1.apply(row)
       val z2Option = r2.apply(row)
 
@@ -38,10 +38,11 @@ case class Zipped[T1, +T2](
         val map: ListMap[T1, T2] = ListMap(
           z1Option.get.toSeq.zip(
             z2Option.get.toSeq
-          ): _*)
+          ): _*
+        )
 
         Some(map)
       }
-    })
+    }
   }
 }

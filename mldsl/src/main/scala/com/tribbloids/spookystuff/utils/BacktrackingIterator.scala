@@ -3,9 +3,9 @@ package com.tribbloids.spookystuff.utils
 import scala.collection.mutable.ArrayBuffer
 
 /**
-  * heavily stateful iterator that can revert to any previous state using time machine
-  * currently, maxBacktracking is forced to infinite, which consumes huge amount of memory
-  * this will need further optimisation if streaming support is on the map
+  * heavily stateful iterator that can revert to any previous state using time machine currently, maxBacktracking is
+  * forced to infinite, which consumes huge amount of memory this will need further optimisation if streaming support is
+  * on the map
   */
 case class BacktrackingIterator[T](
     self: Iterator[T],

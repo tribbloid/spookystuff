@@ -6,7 +6,7 @@ class TestTrace_HtmlUnit extends AbstractTestTrace {
 
   override lazy val driverFactory: WebDriverFactory.HtmlUnit = WebDriverFactory.HtmlUnit()
 
-  //TODO: find the cause and a more stable test case
+  // TODO: find the cause and a more stable test case
 //  test("click should not double click") {
 //    spooky.conf.remoteResourceTimeout = 180.seconds
 //

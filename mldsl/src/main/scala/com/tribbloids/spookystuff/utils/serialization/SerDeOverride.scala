@@ -19,13 +19,13 @@ object SerDeOverride {
       .registerKryoClasses(Array(classOf[TypeTag[_]]))
 
     @transient lazy val javaSerializer = new JavaSerializer(_conf)
-    @transient lazy val javaOverride: () => Some[SerializerInstance] = { //TODO: use singleton?
+    @transient lazy val javaOverride: () => Some[SerializerInstance] = { // TODO: use singleton?
       () =>
         Some(javaSerializer.newInstance())
     }
 
     @transient lazy val kryoSerializer = new KryoSerializer(_conf)
-    @transient lazy val kryoOverride: () => Some[SerializerInstance] = { //TODO: use singleton?
+    @transient lazy val kryoOverride: () => Some[SerializerInstance] = { // TODO: use singleton?
       () =>
         Some(kryoSerializer.newInstance())
     }
@@ -41,9 +41,8 @@ object SerDeOverride {
 }
 
 /**
-  * automatically wrap with SerializableWritable when being serialized
-  * discard original value
-  * wrapping & unwrapping is lazy
+  * automatically wrap with SerializableWritable when being serialized discard original value wrapping & unwrapping is
+  * lazy
   */
 case class SerDeOverride[T: ClassTag](
     // TODO: replace with twitter MeatLocker?
@@ -63,7 +62,8 @@ case class SerDeOverride[T: ClassTag](
       new SerializableWritable(ww)
     case _ =>
       throw new UnsupportedOperationException(
-        s"${_original}: ${_original.getClass.getCanonicalName} is not Serializable or Writable")
+        s"${_original}: ${_original.getClass.getCanonicalName} is not Serializable or Writable"
+      )
   }
 
   val delegate: Either[io.Serializable, Array[Byte]] = {

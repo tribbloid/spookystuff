@@ -9,22 +9,20 @@ import com.tribbloids.spookystuff.row.Field
 import scala.language.implicitConversions
 
 /**
-  * this hierarchy aims to create a short DSL for selecting components from PageRow, e.g.:
-  * 'abc:  cells with key "abc", tempkey precedes ordinary key
-  * 'abc.S("div#a1"): all children of an unstructured field (either a page or element) that match the selector
-  * S("div#a1"): all children of the only page that match the selector, if multiple page per row, throws an exception
-  * S_*("div#a1"): all children of all pages that match the selector.
-  * 'abc.S("div#a1").head: first child of an unstructured field (either a page or element) that match the selector
-  * 'abc.S("div#a1").text: first text of an unstructured field that match the selector
-  * 'abc.S("div#a1").texts: all texts of an unstructured field that match the selector
-  * 'abc.S("div#a1").attr("src"): first "src" attribute of an unstructured field that match the selector
-  * 'abc.S("div#a1").attrs("src"): first "src" attribute of an unstructured field that match the selector
+  * this hierarchy aims to create a short DSL for selecting components from PageRow, e.g.: 'abc: cells with key "abc",
+  * tempkey precedes ordinary key 'abc.S("div#a1"): all children of an unstructured field (either a page or element)
+  * that match the selector S("div#a1"): all children of the only page that match the selector, if multiple page per
+  * row, throws an exception S_*("div#a1"): all children of all pages that match the selector. 'abc.S("div#a1").head:
+  * first child of an unstructured field (either a page or element) that match the selector 'abc.S("div#a1").text: first
+  * text of an unstructured field that match the selector 'abc.S("div#a1").texts: all texts of an unstructured field
+  * that match the selector 'abc.S("div#a1").attr("src"): first "src" attribute of an unstructured field that match the
+  * selector 'abc.S("div#a1").attrs("src"): first "src" attribute of an unstructured field that match the selector
   */
 sealed trait Level2 {
 
   import GenExtractor._
 
-  //--------------------------------------------------
+  // --------------------------------------------------
 
   implicit def symbol2Field(symbol: Symbol): Field =
     Option(symbol).map(v => Field(v.name)).orNull

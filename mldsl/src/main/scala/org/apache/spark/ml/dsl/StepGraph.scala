@@ -22,7 +22,7 @@ trait StepGraph {
       suffix: String = "",
       condition: ((String, StepLike)) => Boolean = { _: (String, StepLike) =>
         true
-      } //TODO: use it!
+      } // TODO: use it!
   ): StepMap[String, StepLike] = {
 
     val replicatedSteps = coll.map { tuple =>
@@ -57,11 +57,13 @@ trait StepGraph {
     updatedSteps
   }
 
-  //TODO: optimize
+  // TODO: optimize
   def connectAll(fromIDs: Seq[String], toIDs: Seq[String]): StepMap[String, StepLike] = {
     var result = coll
-    for (i <- fromIDs;
-         j <- toIDs) {
+    for (
+      i <- fromIDs;
+      j <- toIDs
+    ) {
       result = result.connect(i, j)
     }
     result
@@ -118,19 +120,19 @@ object StepGraph {
       case v: Connector => v
     }
 
-    //root: has no src itself & is not a right tail
+    // root: has no src itself & is not a right tail
     final lazy val leftRoots: Seq[StepLike] = leftTails.collect {
       case v if v.dependencyIDs.isEmpty && (!rightTails.contains(v)) => v
     }
 
-    //detached: a source that has no target, it is a tail but already end of the lineage
-    //always a source
+    // detached: a source that has no target, it is a tail but already end of the lineage
+    // always a source
     final lazy val leftDetached: Seq[Source] = leftTails.collect {
       case v: Source if v.usageIDs.isEmpty => v
     }
 
-    //intake: if tail is a source (rather than a step) go 1 step ahead to reach the real step
-    //always a step
+    // intake: if tail is a source (rather than a step) go 1 step ahead to reach the real step
+    // always a step
     final lazy val leftIntakes: Seq[Step] = leftTails.flatMap {
       case tail: Step =>
         Seq(tail)
@@ -175,9 +177,9 @@ object StepGraph {
     final lazy val heads = headIDs.map(coll)
     final lazy val PASSTHROUGHOutput: Option[Connector] = heads.find(_ == PASSTHROUGH) map (_.asInstanceOf[Connector])
     final lazy val hasPASSTHROUGHOutput: Boolean = heads.contains(PASSTHROUGH)
-    //all heads must have outIDs
+    // all heads must have outIDs
 
-    //TODO: separate outlet (head with outIDs) with head, which should simply denotes end of a pipe
+    // TODO: separate outlet (head with outIDs) with head, which should simply denotes end of a pipe
     heads.foreach(v => require(v.canBeHead))
 
     protected def checkConnectivity_>(fromIDs: Seq[String], right: MayHaveTails): Unit = {

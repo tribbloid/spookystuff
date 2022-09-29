@@ -13,7 +13,7 @@ object GenPartitioners {
 
   case object Passthrogh extends GenPartitionerLike.PassThrough
 
-  //this won't merge identical traces and do lookup, only used in case each resolve may yield different result
+  // this won't merge identical traces and do lookup, only used in case each resolve may yield different result
   case object Narrow extends AnyGenPartitioner {
 
     def getInstance[K: ClassTag](schema: SpookySchema): Instance[K] = {
@@ -21,7 +21,8 @@ object GenPartitioners {
     }
 
     case class Inst[K]()(
-        implicit val ctg: ClassTag[K]
+        implicit
+        val ctg: ClassTag[K]
     ) extends Instance[K] {
 
       override def reduceByKey[V: ClassTag](
@@ -31,7 +32,7 @@ object GenPartitioners {
       ): RDD[(K, V)] = {
         rdd.mapPartitions { itr =>
           itr.toTraversable
-            .groupBy(_._1) //TODO: is it memory efficient? Write a test case for it
+            .groupBy(_._1) // TODO: is it memory efficient? Write a test case for it
             .map(v => v._1 -> v._2.map(_._2).reduce(reducer))
             .iterator
         }
@@ -50,10 +51,11 @@ object GenPartitioners {
     }
 
     case class Inst[K]()(
-        implicit val ctg: ClassTag[K]
+        implicit
+        val ctg: ClassTag[K]
     ) extends Instance[K] {
 
-      //this is faster and saves more memory
+      // this is faster and saves more memory
       override def reduceByKey[V: ClassTag](
           rdd: RDD[(K, V)],
           reducer: (V, V) => V,
@@ -65,8 +67,8 @@ object GenPartitioners {
     }
   }
 
-  //group identical ActionPlans, execute in parallel, and duplicate result pages to match their original contexts
-  //reduce workload by avoiding repeated access to the same url caused by duplicated context or diamond links (A->B,A->C,B->D,C->D)
+  // group identical ActionPlans, execute in parallel, and duplicate result pages to match their original contexts
+  // reduce workload by avoiding repeated access to the same url caused by duplicated context or diamond links (A->B,A->C,B->D,C->D)
   case class DocCacheAware(
       partitionerFactory: RDD[_] => Partitioner = {
         PartitionerFactories.SamePartitioner
@@ -80,7 +82,8 @@ object GenPartitioners {
     case class Inst[K](
         ec: SpookyExecutionContext
     )(
-        implicit val ctg: ClassTag[K]
+        implicit
+        val ctg: ClassTag[K]
     ) extends Instance[K] {
 
       override def _createBeaconRDD(
@@ -114,5 +117,5 @@ object GenPartitioners {
     }
   }
 
-  //case object AutoDetect extends QueryOptimizer
+  // case object AutoDetect extends QueryOptimizer
 }

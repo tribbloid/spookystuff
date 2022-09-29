@@ -7,9 +7,7 @@ import com.tribbloids.spookystuff.uav.utils.Binding
 import com.tribbloids.spookystuff.utils.IDMixin
 
 /**
-  * Created by peng on 24/02/17.
-  * Link is not shippable
-  * But LinkStatus is!
+  * Created by peng on 24/02/17. Link is not shippable But LinkStatus is!
   */
 case class LinkStatus(
     uav: UAV,

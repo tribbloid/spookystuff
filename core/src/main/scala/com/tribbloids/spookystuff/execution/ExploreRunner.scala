@@ -16,15 +16,16 @@ import scala.language.implicitConversions
   * NOT serializable: expected to be constructed on Executors
   */
 class ExploreRunner(
-    val itr: Iterator[(TraceView, Open_Visited)], //TODO: change to TraceView,
+    val itr: Iterator[(TraceView, Open_Visited)], // TODO: change to TraceView,
     val impl: ExploreAlgorithm.Impl,
     val keyBy: Trace => Any
 ) extends NOTSerializable {
 
   import dsl._
 
-  //TODO: add fast sort implementation
-  val open: ConcurrentMap[NodeKey, Iterable[DataRow]] = ConcurrentMap() //TODO: Change to ConcurrentMap[TraceView, Array[DataRow]]
+  // TODO: add fast sort implementation
+  val open: ConcurrentMap[NodeKey, Iterable[DataRow]] =
+    ConcurrentMap() // TODO: Change to ConcurrentMap[TraceView, Array[DataRow]]
 
   //  val openVs = mutable.SortedSet[(TraceView, Array[DataRow])] = mutable.SortedSet()
   val visited: ConcurrentMap[NodeKey, Iterable[DataRow]] = ConcurrentMap()
@@ -56,8 +57,8 @@ class ExploreRunner(
       spooky: SpookyContext
   )(
       rowFn: SquashedFetchedRow => SquashedFetchedRow
-      //apply immediately after depth selection, this include depth0
-      //should include flatten & extract
+      // apply immediately after depth selection, this include depth0
+      // should include flatten & extract
   ): Unit = {
 
     import impl._
@@ -107,7 +108,7 @@ class ExploreRunner(
     }
   }
 
-  //TODO: need unit test if this preserve keyBy
+  // TODO: need unit test if this preserve keyBy
   def run(
       resolved: Resolved[Any],
       sampler: Sampler[Any],
@@ -119,8 +120,8 @@ class ExploreRunner(
       spooky: SpookyContext
   )(
       rowMapper: SquashedFetchedRow => SquashedFetchedRow
-      //apply immediately after depth selection, this include depth0
-      //should include flatten & extract
+      // apply immediately after depth selection, this include depth0
+      // should include flatten & extract
   ): Iterator[(TraceView, Open_Visited)] =
     try {
 

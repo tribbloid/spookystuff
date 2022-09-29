@@ -55,14 +55,13 @@ object ConflictDetection {
                   s"""
                          |${tuple._1}: resource ${vs.head} is used by ${vs.size} objects:
                          |${allObj
-                       .filter(
-                         v =>
-                           v.resourceIDs
-                             .getOrElse(tuple._1, Set.empty)
-                             .contains(vs.head)
-                       )
-                       .map(v => s"$v -> ${vs.head}")
-                       .mkString("\n")}
+                      .filter(v =>
+                        v.resourceIDs
+                          .getOrElse(tuple._1, Set.empty)
+                          .contains(vs.head)
+                      )
+                      .map(v => s"$v -> ${vs.head}")
+                      .mkString("\n")}
                      """.stripMargin
                 }
               )

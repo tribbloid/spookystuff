@@ -131,7 +131,7 @@ abstract class AbstractURIResolverSuite extends FunSpecx with LocalPathDocsFixtu
       val resolver: URIResolver = this.resolver
       val HTML_URL = this.HTML_URL
       val mdRDD = rdd.map { i =>
-        val md = resolver.input(HTML_URL) { _.metadata.all }
+        val md = resolver.input(HTML_URL)(_.metadata.all)
         md
       }
       val mds = mdRDD.collect().map {
@@ -325,7 +325,7 @@ abstract class AbstractURIResolverSuite extends FunSpecx with LocalPathDocsFixtu
     }
   }
 
-  //TODO: doesn't work, no guarantee
+  // TODO: doesn't work, no guarantee
   ignore("move different files to the same target should be sequential") {
     existingFile.requireEmptyFile {
       val pathStr = existingFile.absolutePathStr

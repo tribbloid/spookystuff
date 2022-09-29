@@ -103,8 +103,11 @@ class TestExtractPlan extends SpookyEnvFixture {
     )
 
     assert(
-      extracted.toMapRDD().collect().toSeq == Seq(Map("_1" -> 1, "_2" -> Seq("a")),
-                                                  Map("_1" -> 2, "_2" -> Seq("b", "2"))))
+      extracted.toMapRDD().collect().toSeq == Seq(
+        Map("_1" -> 1, "_2" -> Seq("a")),
+        Map("_1" -> 2, "_2" -> Seq("b", "2"))
+      )
+    )
 
     extracted.toDF().show(false)
   }
@@ -144,7 +147,7 @@ class TestExtractPlan extends SpookyEnvFixture {
         } ~ '_3.*
       }
       .extract(
-        '_3 ~ '_3 //force output
+        '_3 ~ '_3 // force output
       )
 
     extracted.schema.structType.treeString.shouldBe(
@@ -158,8 +161,8 @@ class TestExtractPlan extends SpookyEnvFixture {
     )
 
     assert(
-      extracted.toMapRDD().collect().toSeq == Seq(Map("_1" -> 1, "_2" -> "a"),
-                                                  Map("_1" -> 2, "_2" -> "b", "_3" -> "2")))
+      extracted.toMapRDD().collect().toSeq == Seq(Map("_1" -> 1, "_2" -> "a"), Map("_1" -> 2, "_2" -> "b", "_3" -> "2"))
+    )
 
     extracted.toDF().show(false)
   }
@@ -190,8 +193,11 @@ class TestExtractPlan extends SpookyEnvFixture {
     )
 
     assert(
-      extracted.toMapRDD().collect().toSeq == Seq(Map("_1" -> 1, "_2" -> "a", "_3" -> "a"),
-                                                  Map("_1" -> 2, "_2" -> "b", "_3" -> "2")))
+      extracted.toMapRDD().collect().toSeq == Seq(
+        Map("_1" -> 1, "_2" -> "a", "_3" -> "a"),
+        Map("_1" -> 2, "_2" -> "b", "_3" -> "2")
+      )
+    )
 
     extracted.toDF().show(false)
   }

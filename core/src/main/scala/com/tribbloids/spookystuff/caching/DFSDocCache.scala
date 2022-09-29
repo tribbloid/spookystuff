@@ -9,8 +9,7 @@ import org.apache.hadoop.fs.Path
 import java.util.UUID
 
 /**
-  * Backed by a WeakHashMap, the web cache temporarily store all trace -> Array[Page] until next GC.
-  * Always enabled
+  * Backed by a WeakHashMap, the web cache temporarily store all trace -> Array[Page] until next GC. Always enabled
   */
 object DFSDocCache extends AbstractDocCache {
 

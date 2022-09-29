@@ -16,10 +16,9 @@ import scala.collection.mutable
 import scala.concurrent.duration.Duration
 
 /**
-  * Interact with the browser (e.g. click a button or type into a search box) to reach the data page.
-  * these will be logged into target page's backtrace.
-  * failed interactive will trigger an error dump by snapshot.
-  * has an option to be delayed to
+  * Interact with the browser (e.g. click a button or type into a search box) to reach the data page. these will be
+  * logged into target page's backtrace. failed interactive will trigger an error dump by snapshot. has an option to be
+  * delayed to
   */
 @SerialVersionUID(-6784287573066896999L)
 abstract class WebInteraction(
@@ -59,7 +58,7 @@ object WebInteraction {
 
       val result = input match {
         case d: JavascriptExecutor => d.executeScript(script)
-        case _                     => throw new UnsupportedOperationException("this web browser driver is not supported")
+        case _ => throw new UnsupportedOperationException("this web browser driver is not supported")
       }
 
       result == "complete"
@@ -70,7 +69,8 @@ object WebInteraction {
 /**
   * Type into browser's url bar and click "goto"
   *
-  * @param uri support cell interpolation
+  * @param uri
+  *   support cell interpolation
   */
 case class Visit(
     uri: Col[String],
@@ -97,17 +97,15 @@ case class Visit(
       case other                 => None
     }
 
-    uriStr.map(
-      str => this.copy(uri = Lit.erased(str)).asInstanceOf[this.type]
-    )
+    uriStr.map(str => this.copy(uri = Lit.erased(str)).asInstanceOf[this.type])
   }
 }
 
 /**
   * Wait until at least one particular element appears, otherwise throws an exception
   *
-  * @param selector css selector of the element
-  *              after which it will throw an exception!
+  * @param selector
+  *   css selector of the element after which it will throw an exception!
   */
 case class WaitFor(selector: Selector) extends WebInteraction(null, false) {
 
@@ -119,7 +117,7 @@ case class WaitFor(selector: Selector) extends WebInteraction(null, false) {
 case object WaitForDocumentReady extends WebInteraction(null, true) {
 
   override def exeNoOutput(session: Session): Unit = {
-    //do nothing
+    // do nothing
   }
 }
 
@@ -154,7 +152,8 @@ case object WaitForDocumentReady extends WebInteraction(null, true) {
 /**
   * Click an element with your mouse pointer.
   *
-  * @param selector css selector of the element, only the first element will be affected
+  * @param selector
+  *   css selector of the element, only the first element will be affected
   */
 case class Click(
     selector: Selector,
@@ -171,12 +170,13 @@ case class Click(
 /**
   * Click an element with your mouse pointer.
   *
-  * @param selector css selector of the element, only the first element will be affected
+  * @param selector
+  *   css selector of the element, only the first element will be affected
   */
 case class ClickNext(
     selector: Selector,
     exclude: Seq[String],
-    //TODO: remove this, and supercede with Selector
+    // TODO: remove this, and supercede with Selector
     override val cooldown: Duration = Const.Interaction.delayMin,
     override val blocking: Boolean = Const.Interaction.blocking
 ) extends WebInteraction(cooldown, blocking) {
@@ -232,7 +232,8 @@ case class ClickNext(
 /**
   * Submit a form, wait until new content returned by the submission has finished loading
   *
-  * @param selector css selector of the element, only the first element will be affected
+  * @param selector
+  *   css selector of the element, only the first element will be affected
   */
 case class Submit(
     selector: Selector,
@@ -250,8 +251,10 @@ case class Submit(
 /**
   * Type into a textbox
   *
-  * @param selector css selector of the textbox, only the first element will be affected
-  * @param text support cell interpolation
+  * @param selector
+  *   css selector of the textbox, only the first element will be affected
+  * @param text
+  *   support cell interpolation
   */
 case class TextInput(
     selector: Selector,
@@ -277,17 +280,17 @@ case class TextInput(
       case other                 => None
     }
 
-    textStr.map(
-      str => this.copy(text = Lit.erased(str)).asInstanceOf[this.type]
-    )
+    textStr.map(str => this.copy(text = Lit.erased(str)).asInstanceOf[this.type])
   }
 }
 
 /**
   * Select an item from a drop down list
   *
-  * @param selector css selector of the drop down list, only the first element will be affected
-  * @param value support cell interpolation
+  * @param selector
+  *   css selector of the drop down list, only the first element will be affected
+  * @param value
+  *   support cell interpolation
   */
 case class DropDownSelect(
     selector: Selector,
@@ -313,18 +316,16 @@ case class DropDownSelect(
       case other                 => None
     }
 
-    valueStr.map(
-      str => this.copy(value = Lit.erased(str)).asInstanceOf[this.type]
-    )
+    valueStr.map(str => this.copy(value = Lit.erased(str)).asInstanceOf[this.type])
   }
 }
 
 /**
-  * Request browser to change focus to a frame/iframe embedded in the global page,
-  * after which only elements inside the focused frame/iframe can be selected.
-  * Can be used multiple times to switch focus back and forth
+  * Request browser to change focus to a frame/iframe embedded in the global page, after which only elements inside the
+  * focused frame/iframe can be selected. Can be used multiple times to switch focus back and forth
   *
-  * @param selector css selector of the frame/iframe, only the first element will be affected
+  * @param selector
+  *   css selector of the frame/iframe, only the first element will be affected
   */
 //TODO: not possible to switch back, need a better abstraction
 case class ToFrame(selector: Selector) extends WebInteraction(null, false) {
@@ -339,8 +340,10 @@ case class ToFrame(selector: Selector) extends WebInteraction(null, false) {
 /**
   * Execute a javascript snippet
   *
-  * @param script support cell interpolation
-  * @param selector selector of the element this script is executed against, if null, against the entire page
+  * @param script
+  *   support cell interpolation
+  * @param selector
+  *   selector of the element this script is executed against, if null, against the entire page
   */
 case class ExeScript(
     script: Col[String],
@@ -374,17 +377,17 @@ case class ExeScript(
       case other                 => None
     }
 
-    scriptStr.map(
-      str => this.copy(script = Lit.erased(str)).asInstanceOf[this.type]
-    )
+    scriptStr.map(str => this.copy(script = Lit.erased(str)).asInstanceOf[this.type])
   }
 }
 
 /**
-  *
-  * @param selector selector of the slide bar
-  * @param percentage distance and direction of moving of the slider handle, positive number is up/right, negative number is down/left
-  * @param handleSelector selector of the slider
+  * @param selector
+  *   selector of the slide bar
+  * @param percentage
+  *   distance and direction of moving of the slider handle, positive number is up/right, negative number is down/left
+  * @param handleSelector
+  *   selector of the slider
   */
 case class DragSlider(
     selector: Selector,

@@ -112,13 +112,12 @@ class AppendSuite extends AbstractDFDSuite {
 
   it("<-: Stage is cast to rebase") {
 
-    val flow = (
+    val flow =
       new SQLTransformer() <-:
         new NGram() <-: (
-        new StopWordsRemover() <-: new Tokenizer() <-: 'input
-      ).from("Tokenizer")
-        .and("StopWordsRemover")
-    )
+          new StopWordsRemover() <-: new Tokenizer() <-: 'input
+        ).from("Tokenizer")
+          .and("StopWordsRemover")
 
     flow
       .show(showID = false, compactionOpt = compactionOpt)

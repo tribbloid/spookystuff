@@ -53,7 +53,7 @@ object CompoundResolver {
         case "ftp" | "ftps" =>
           ftp
         case "local" =>
-          LocalResolver //TODO: useless? identical to "file://"
+          LocalResolver // TODO: useless? identical to "file://"
         case _ =>
           hdfs
       }

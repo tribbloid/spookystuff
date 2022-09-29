@@ -25,6 +25,6 @@ class TestOAuth extends TestWget {
         "consumerSecret",
         "token",
         "tokenSecret"
-    )
+      )
   }
 }

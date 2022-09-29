@@ -11,8 +11,7 @@ import org.json4s.jackson.JsonMethods.parse
 import scala.language.dynamics
 
 /**
-  * bind to a session
-  * may be necessary to register with PythonDriver shutdown listener
+  * bind to a session may be necessary to register with PythonDriver shutdown listener
   */
 class PyBinding(
     val ref: PyRef,
@@ -43,7 +42,7 @@ class PyBinding(
     ref.driverToBindingsAlive += driver -> this
   }
 
-  //TODO: rename to something that is illegal in python syntax
+  // TODO: rename to something that is illegal in python syntax
   def $STR: Option[String] = {
     referenceOpt.flatMap { ref =>
       driver.evalExpr(ref)

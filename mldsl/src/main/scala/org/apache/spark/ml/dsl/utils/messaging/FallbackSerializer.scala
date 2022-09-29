@@ -15,7 +15,10 @@ abstract class FallbackSerializer(
 
   val VID = -47597349821L
 
-  def deserialize(implicit format: Formats): PartialFunction[(TypeInfo, JValue), Any] = {
+  def deserialize(
+      implicit
+      format: Formats
+  ): PartialFunction[(TypeInfo, JValue), Any] = {
     Function.unlift {
       case (ti, JString(str)) =>
         LoggerFactory
@@ -42,7 +45,10 @@ abstract class FallbackSerializer(
     }
   }
 
-  def serialize(implicit format: Formats): PartialFunction[Any, JValue] = {
+  def serialize(
+      implicit
+      format: Formats
+  ): PartialFunction[Any, JValue] = {
     Function.unlift {
       case v: Serializable =>
         LoggerFactory

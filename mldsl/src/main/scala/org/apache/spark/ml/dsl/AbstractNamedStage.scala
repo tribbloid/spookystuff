@@ -10,14 +10,14 @@ case class AbstractNamedStage[+T <: PipelineStage](
     stage: T,
     name: String,
     tags: Set[String] = Set(),
-    outputColOverride: Option[String] = None, //set to manually override output column name
+    outputColOverride: Option[String] = None, // set to manually override output column name
     //                       intermediate: Boolean = false //TODO: enable
-    _id: String = "" + Random.nextLong() //TODO: multiple Stages with same uid can't be used together?
+    _id: String = "" + Random.nextLong() // TODO: multiple Stages with same uid can't be used together?
 ) {
 
   import ShimViews._
 
-  //create a new PipelineStage that doesn't share the same parameter
+  // create a new PipelineStage that doesn't share the same parameter
   def replicate: AbstractNamedStage[T] = {
     val result = this.copy(
       stage = this.stage.copy(ParamMap.empty).asInstanceOf[T],
@@ -35,7 +35,7 @@ case class AbstractNamedStage[+T <: PipelineStage](
       None
   }
   def hasOutputs = stage match {
-    case s: HasOutputCol => true //TODO: do we really need this? implementation is inconsistent
+    case s: HasOutputCol => true // TODO: do we really need this? implementation is inconsistent
     case _               => false
   }
   def setOutput(v: String) = {
@@ -48,14 +48,14 @@ case class AbstractNamedStage[+T <: PipelineStage](
     case _                => Seq()
   }
 
-  //always have inputs
+  // always have inputs
   //  def hasInputs = stage match {
   //    case s: HasInputCol => true
   //    case ss: HasInputCols => true
   //    case _ => false
   //  }
   def setInputs(v: Seq[String]) = {
-    if (v.nonEmpty) { //otherwise it can be assumed that the input of this stage is already set.
+    if (v.nonEmpty) { // otherwise it can be assumed that the input of this stage is already set.
       stage.trySetInputCols(v)
     }
     this
@@ -67,23 +67,25 @@ case class AbstractNamedStage[+T <: PipelineStage](
       showOutput: Boolean = true
   ): String = {
 
-    val in = try {
-      inputs
-    } catch {
-      case e: Exception =>
-        Seq("Pending...")
-    }
+    val in =
+      try {
+        inputs
+      } catch {
+        case e: Exception =>
+          Seq("Pending...")
+      }
 
     val inStr = if (showInputs) {
       in.mkString("[", ",", "]") + " > "
     } else ""
 
-    val out = try {
-      outputOpt
-    } catch {
-      case e: Exception =>
-        Some("Pending...")
-    }
+    val out =
+      try {
+        outputOpt
+      } catch {
+        case e: Exception =>
+          Some("Pending...")
+      }
 
     val outStr = if (showOutput) {
       " > " + out.mkString("[", ",", "]")

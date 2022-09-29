@@ -31,7 +31,7 @@ abstract class MessageRelay[Proto: ClassTag] extends Codec[Proto] {
 
   override def messageMF: Manifest[M] = intrinsicManifestTry.get
 
-  //TODO: it only works if impl of MessageRelay is an object
+  // TODO: it only works if impl of MessageRelay is an object
   // maybe switching to M.<get companion class>?
   final lazy val intrinsicManifestTry: Try[Manifest[this.M]] = Try {
 

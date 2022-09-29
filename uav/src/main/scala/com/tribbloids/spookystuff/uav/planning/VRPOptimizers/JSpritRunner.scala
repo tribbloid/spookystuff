@@ -39,20 +39,23 @@ object JSpritRunner {
 
     val costEstimator = schema.ec.spooky.getConf[UAVConf].costEstimator
 
-    val dMat = for (i <- trace_indices;
-                    j <- trace_indices) yield {
-      if (i._2 == j._2)
-        (i._2, j._2, 0.0)
-      else {
-        val traceView: TraceView = i._1
-        val trace = traceView.children
-        val last = trace.collect { case v: UAVNavigation => v }.last
-        val lastLocation = last.getEnd(schema)
-        val realTrace = List(Waypoint(lastLocation)) ++ j._1.children
-        val cost = costEstimator.estimate(realTrace, schema)
-        (i._2, j._2, cost)
+    val dMat =
+      for (
+        i <- trace_indices;
+        j <- trace_indices
+      ) yield {
+        if (i._2 == j._2)
+          (i._2, j._2, 0.0)
+        else {
+          val traceView: TraceView = i._1
+          val trace = traceView.children
+          val last = trace.collect { case v: UAVNavigation => v }.last
+          val lastLocation = last.getEnd(schema)
+          val realTrace = List(Waypoint(lastLocation)) ++ j._1.children
+          val cost = costEstimator.estimate(realTrace, schema)
+          (i._2, j._2, cost)
+        }
       }
-    }
 
     val size = trace_indices.length
     val jRoutingCostMat: FastVehicleRoutingTransportCostsMatrix = {
@@ -74,8 +77,8 @@ object JSpritRunner {
     val stateManager: StateManager = new StateManager(vrp)
 
     val stateId: StateId = stateManager.createStateId("max-transport-time")
-    //introduce a new state called "max-transport-time"
-    //add a default-state for "max-transport-time"
+    // introduce a new state called "max-transport-time"
+    // add a default-state for "max-transport-time"
     //    stateManager.putProblemState(stateId, classOf[Double], 0.0)
     //
     stateManager.addStateUpdater(new MinimaxStateUpdater(stateManager, vrp, stateId))
@@ -132,7 +135,7 @@ object JSpritRunner {
     }
     val home = schema.ec.spooky.getConf[UAVConf]._home
     for (nav <- navs) {
-      val opt = Try { nav.getLocation(schema) }.toOption.flatMap {
+      val opt = Try(nav.getLocation(schema)).toOption.flatMap {
         _.getCoordinate(NED, home)
       }
       if (opt.nonEmpty) return opt.get

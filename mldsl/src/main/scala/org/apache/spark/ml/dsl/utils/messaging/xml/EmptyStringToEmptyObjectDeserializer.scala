@@ -8,7 +8,10 @@ import org.json4s.reflect.TypeInfo
 // <tag/> => tag: {}
 object EmptyStringToEmptyObjectDeserializer extends XMLWeakDeserializer[Any] {
 
-  override def _deserialize(implicit format: Formats): PartialFunction[(TypeInfo, JValue), Any] = Function.unlift {
+  override def _deserialize(
+      implicit
+      format: Formats
+  ): PartialFunction[(TypeInfo, JValue), Any] = Function.unlift {
 
     case (ti @ TypeInfo(cc, _), jv @ JString(str)) if !cc.isAssignableFrom(classOf[String]) && str.trim.isEmpty =>
       //      wrapException(ti, jv, format) {

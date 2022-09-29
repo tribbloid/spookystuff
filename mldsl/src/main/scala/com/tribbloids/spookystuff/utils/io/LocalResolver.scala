@@ -27,7 +27,7 @@ case class LocalResolver(
     val absolutePath: Path = path.toAbsolutePath
 
     // this is an old IO object, usage should be minimised
-    //TODO: should embrace NIO 100%?
+    // TODO: should embrace NIO 100%?
     // https://java7fs.fandom.com/wiki/Why_File_sucks
     @transient lazy val file: File = path.toFile
 

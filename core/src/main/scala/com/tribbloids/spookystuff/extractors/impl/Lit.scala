@@ -23,9 +23,9 @@ case class Lit[T, +R](value: R, dataType: DataType) extends Static[T, R] with ID
     .map(_.toString)
     .getOrElse("NULL")
 
-  override val partialFunction: PartialFunction[T, R] = Unlift({ _: T =>
+  override val partialFunction: PartialFunction[T, R] = Unlift { _: T =>
     valueOpt
-  })
+  }
 }
 
 object Lit extends Relay_>>[Lit[_, _]] {

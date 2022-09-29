@@ -26,7 +26,7 @@ class NullSafeSuite extends FunSpecx {
 
     validate(Some("abc"): String ! _)
 
-    //this will fail
+    // this will fail
 //    validate(Option("abc"): String ! _)
   }
 
@@ -37,7 +37,7 @@ class NullSafeSuite extends FunSpecx {
       v
     }
 
-    //this will fail
+    // this will fail
 //    val v: String ? _ = "def"
 //    v := "abc"
   }

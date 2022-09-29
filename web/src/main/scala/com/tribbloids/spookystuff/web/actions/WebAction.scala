@@ -14,7 +14,7 @@ trait WebAction extends Action {
     Web.enableOnce
   }
 
-  //execute errorDumps as side effects
+  // execute errorDumps as side effects
   override protected def getSessionExceptionMessage(
       session: Session,
       docOpt: Option[Doc] = None

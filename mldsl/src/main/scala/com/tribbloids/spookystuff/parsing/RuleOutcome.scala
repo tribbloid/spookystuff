@@ -6,11 +6,12 @@ trait RuleOutcome[+R] {
 
   /**
     * mutate PhaseVec
-    * @return has 4 outcomes:
-    *         Normal -> jump to next state, with ParsingRun updated
-    *         [[com.tribbloids.spookystuff.parsing.PhaseVec.NoOp]] -> no change to ParsingRun, keep searching using upcoming rules or even rules yields from upcoming tokens
-    *         throw [[com.tribbloids.spookystuff.parsing.exception.BacktrackableFailure]] -> backtrack, captured by previous step processing and becomes an NoOp
-    *         throw other Exceptions -> fail immediately, no backtracking
+    * @return
+    *   has 4 outcomes: Normal -> jump to next state, with ParsingRun updated
+    *   [[com.tribbloids.spookystuff.parsing.PhaseVec.NoOp]] -> no change to ParsingRun, keep searching using upcoming
+    *   rules or even rules yields from upcoming tokens throw
+    *   [[com.tribbloids.spookystuff.parsing.exception.BacktrackableFailure]] -> backtrack, captured by previous step
+    *   processing and becomes an NoOp throw other Exceptions -> fail immediately, no backtracking
     */
   def nextPhaseVec: PhaseVec
 

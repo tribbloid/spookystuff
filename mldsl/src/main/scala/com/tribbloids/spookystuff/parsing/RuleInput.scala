@@ -29,7 +29,7 @@ case class RuleInput(
     override lazy val nextPhaseVec: PhaseVec = prevPhase._2
   }
 
-  //TODO: remove rendered useless by !!.--
+  // TODO: remove rendered useless by !!.--
   //    object Skip extends Outcome[Nothing] {
   //
   //      override lazy val export: Option[Nothing] = None

@@ -47,7 +47,8 @@ case class IndexingLocalityImpl[K: ClassTag, V: ClassTag](
         { (u, tuple) =>
           u += tuple.swap
           u
-        }, { (u1, u2) =>
+        },
+        { (u1, u2) =>
           u1 ++ u2
         }
       )
@@ -64,11 +65,12 @@ case class IndexingLocalityImpl[K: ClassTag, V: ClassTag](
           v
       }
       val map = new AppendOnlyMap[K, ArrayBuffer[V2]]()
-      //TODO: change to ExternalAppendOnlyMap
-      //TODO: change to CompactBuffer
+      // TODO: change to ExternalAppendOnlyMap
+      // TODO: change to CompactBuffer
       partition2.foreach { tuple =>
         map.changeValue(
-          tuple._1, {
+          tuple._1,
+          {
             case (hasNull, old) =>
               if (!hasNull) ArrayBuffer(tuple._2)
               else old += tuple._2

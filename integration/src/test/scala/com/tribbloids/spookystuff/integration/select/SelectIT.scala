@@ -46,8 +46,8 @@ class SelectIT extends IntegrationFixture {
     assert(rows.head.size === 5)
     assert(rows.head.getString(0) contains "testutils/files/Wikipedia.html")
     val parsedTime = rows.head.getTimestamp(1).getTime
-    assert(parsedTime < finishTime + 2000) //due to round-off error
-    assert(parsedTime > finishTime - 60000) //long enough even after the second time it is retrieved from the cache
+    assert(parsedTime < finishTime + 2000) // due to round-off error
+    assert(parsedTime > finishTime - 60000) // long enough even after the second time it is retrieved from the cache
     val title = rows.head.getString(2)
     assert(title === "The Free Encyclopedia")
     val langs = rows.head(3).asInstanceOf[Iterable[String]]

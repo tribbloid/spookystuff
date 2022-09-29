@@ -30,7 +30,7 @@ abstract class ExecutionPlan(
   def spooky: SpookyContext = ec.spooky
   def scratchRDDs: ScratchRDDs = ec.scratchRDDs
 
-  //Cannot be lazy, always defined on construction
+  // Cannot be lazy, always defined on construction
   val schema: SpookySchema = SpookySchema(
     ec,
     fieldTypes = children
@@ -47,9 +47,9 @@ abstract class ExecutionPlan(
 
   def firstChildOpt: Option[ExecutionPlan] = children.headOption
 
-  //beconRDD is always empty, with fixed partitioning, cogroup with it to maximize Local Cache hitting chance
-  //by default, inherit from the first child
-  protected final def inheritedBeaconRDDOpt: Option[BeaconRDD[NodeKey]] =
+  // beconRDD is always empty, with fixed partitioning, cogroup with it to maximize Local Cache hitting chance
+  // by default, inherit from the first child
+  final protected def inheritedBeaconRDDOpt: Option[BeaconRDD[NodeKey]] =
     firstChildOpt.flatMap(_.beaconRDDOpt)
 
   lazy val beaconRDDOpt: Option[BeaconRDD[TraceView]] = inheritedBeaconRDDOpt

@@ -22,7 +22,6 @@ object ExploreAlgorithm {
     val schema: SpookySchema
 
     /**
-      *
       */
     def openReducer: RowReducer
 
@@ -33,9 +32,8 @@ object ExploreAlgorithm {
     ): (NodeKey, Iterable[DataRow])
 
     /**
-      *
       */
-    def visitedReducer: RowReducer //precede eliminator
+    def visitedReducer: RowReducer // precede eliminator
 
     def visitedReducerBetweenEpochs: RowReducer = visitedReducer
   }
@@ -43,23 +41,21 @@ object ExploreAlgorithm {
   trait EliminatingImpl extends Impl {
 
     /**
-      *
       */
     val ordering: RowOrdering
 
     /**
-      *
       */
     def eliminator(
         open: Iterable[DataRow],
         visited: Iterable[DataRow]
     ): Iterable[DataRow]
 
-    override final def nextOpenSelector(
+    final override def nextOpenSelector(
         open: ConcurrentMap[NodeKey, Iterable[DataRow]]
     ): (NodeKey, Iterable[DataRow]) = {
 
-      //Should I use pre-sorted collection? Or is it overengineering?
+      // Should I use pre-sorted collection? Or is it overengineering?
       val bestOpenBeforeElimination: (NodeKey, Iterable[DataRow]) = open.min(ordering)
       val bestOpenNodeID = bestOpenBeforeElimination._1
 
@@ -140,8 +136,8 @@ object ExploreAlgorithms {
     }
   }
 
-  //move reduce of openSet to elimination, should have identical result
-  //case class ShortestPathImpl2(
+  // move reduce of openSet to elimination, should have identical result
+  // case class ShortestPathImpl2(
   //                              depthField: IndexedField,
   //                              ordinalField: IndexedField,
   //                              extracts: Seq[Expression[Any]]
@@ -175,7 +171,7 @@ object ExploreAlgorithms {
   //      if (filtered.isEmpty) filtered
   //      else Some(filtered.minBy(_.sortIndex(Seq(depthField, ordinalField))))
   //  }
-  //}
+  // }
 
   case object DepthFirst extends ExploreAlgorithm {
 
@@ -185,22 +181,18 @@ object ExploreAlgorithms {
     case class Impl(params: Params, schema: SpookySchema) extends EliminatingImpl {
 
       /**
-        *
         */
       override val ordering: RowOrdering = ???
 
       /**
-        *
         */
       override def eliminator(open: Iterable[DataRow], visited: Iterable[DataRow]): Iterable[DataRow] = ???
 
       /**
-        *
         */
       override val openReducer: RowReducer = ???
 
       /**
-        *
         */
       override val visitedReducer: RowReducer = ???
     }

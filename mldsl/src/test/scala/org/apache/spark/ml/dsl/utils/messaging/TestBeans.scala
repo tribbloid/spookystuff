@@ -21,7 +21,7 @@ object TestBeans {
 
   object Multipart extends MessageReader[Multipart] {}
 
-  //case object ObjectExample1 extends AbstractObjectExample
+  // case object ObjectExample1 extends AbstractObjectExample
 
   case class WithCodec(str: String)
 

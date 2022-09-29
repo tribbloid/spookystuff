@@ -8,16 +8,20 @@ object DSLUtils {
   def cartesianProductSet[T](xss: Seq[Set[T]]): Set[List[T]] = xss match {
     case Nil => Set(Nil)
     case h :: t =>
-      for (xh <- h;
-           xt <- cartesianProductSet(t))
+      for (
+        xh <- h;
+        xt <- cartesianProductSet(t)
+      )
         yield xh :: xt
   }
 
   def cartesianProductList[T](xss: Seq[Seq[T]]): Seq[List[T]] = xss match {
     case Nil => List(Nil)
     case h :: t =>
-      for (xh <- h;
-           xt <- cartesianProductList(t))
+      for (
+        xh <- h;
+        xt <- cartesianProductList(t)
+      )
         yield xh :: xt
   }
 
@@ -41,7 +45,7 @@ object DSLUtils {
       .mkString("\n\t< ")
   }
 
-  private final val breakpointInfoBlacklist = {
+  final private val breakpointInfoBlacklist = {
     Seq(
       this.getClass.getCanonicalName,
       classOf[Thread].getCanonicalName

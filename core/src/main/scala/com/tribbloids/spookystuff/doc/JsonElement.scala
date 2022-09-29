@@ -46,7 +46,7 @@ class JsonElement private (
     jValueToElements(selector, selected)
   }
 
-  //TODO: how to implement?
+  // TODO: how to implement?
   override def findAllWithSiblings(selector: CSSQuery, range: Range) = {
     val found = this.findAll(selector).seq
     new Elements(found.map(unstructured => new Siblings(List(unstructured))))
@@ -55,12 +55,12 @@ class JsonElement private (
   private def jValueToElements(defaultFieldName: String, selected: JValue): Elements[JsonElement] = {
     selected match {
       case obj: JObject =>
-        if (obj.obj.map(_._1).distinct.size <= 1) { //if the JObject contains many fields with identical names they are combined from many different places
+        if (obj.obj.map(_._1).distinct.size <= 1) { // if the JObject contains many fields with identical names they are combined from many different places
           val jsonElements = obj.obj.map { field =>
             new JsonElement(field, this.uri)
           }
           new Elements(jsonElements)
-        } else { //otherwise its a single object from the beginning
+        } else { // otherwise its a single object from the beginning
           new Elements(
             List(new JsonElement(defaultFieldName -> selected, this.uri))
           )
@@ -131,7 +131,7 @@ class JsonElement private (
     case _             => Some(field._2.values.toString)
   }
 
-  override def boilerPipe: Option[String] = None //TODO: unsupported, does it make sense
+  override def boilerPipe: Option[String] = None // TODO: unsupported, does it make sense
 
   override def toString: String = code.get
 

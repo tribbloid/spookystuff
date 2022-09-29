@@ -4,10 +4,10 @@ import com.tribbloids.spookystuff.utils.lifespan.LifespanContext
 import org.slf4j.LoggerFactory
 
 /**
-  * use primary until it is drained or broken, then use backup
-  * if primary cannot be created then use backup directly
+  * use primary until it is drained or broken, then use backup if primary cannot be created then use backup directly
   * will discard primary immediately once backup is taking over
-  * @tparam T type of element
+  * @tparam T
+  *   type of element
   */
 trait FallbackIterator[T] extends FastForwardingIterator[T] with ConsumedIterator {
 
@@ -93,10 +93,11 @@ trait FallbackIterator[T] extends FastForwardingIterator[T] with ConsumedIterato
   }
 
   /**
-    * @return has 3 values:
-    * - Some(true): use primary as it still has more item
-    * - Some(false): terminate immediately
-    * - None: backup should take over
+    * @return
+    *   has 3 values:
+    *   - Some(true): use primary as it still has more item
+    *   - Some(false): terminate immediately
+    *   - None: backup should take over
     */
   final protected def primaryHasNext: Option[Boolean] = {
 

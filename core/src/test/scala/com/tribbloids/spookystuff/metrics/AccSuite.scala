@@ -5,7 +5,7 @@ import org.apache.spark.util.LongAccumulator
 
 class AccSuite extends FunSpecx {
 
-  //TODO: it is not working
+  // TODO: it is not working
 //  it("FromType") {
 //
 //    val acc = Acc.FromType[EventTimeStatsAccum]()

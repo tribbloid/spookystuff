@@ -9,17 +9,19 @@ object CachingUtils {
   import scala.collection.JavaConverters._
 
   /**
-    * A cache designed for multithreaded usage in cases where values (not keys) contained in
-    * this map will not necessarily be cleanly removed. This map uses weak references for contained values
-    * (not keys) in order to ensure that the existance of a reference to that object in this cache
-    * will not prevent the garbage collection of the contained object.
+    * A cache designed for multithreaded usage in cases where values (not keys) contained in this map will not
+    * necessarily be cleanly removed. This map uses weak references for contained values (not keys) in order to ensure
+    * that the existance of a reference to that object in this cache will not prevent the garbage collection of the
+    * contained object.
     *
-    * <p><b>Warning:</b> DO NOT use .weakKeys()!. Otherwise, the resulting map will use identity ({@code ==})
-    * comparison to determine equality of keys, which is a technical violation of the {@link Map}
-    * specification, and may not be what you expect.
+    * <p><b>Warning:</b> DO NOT use .weakKeys()!. Otherwise, the resulting map will use identity ({@code ==}) comparison
+    * to determine equality of keys, which is a technical violation of the {@link Map} specification, and may not be
+    * what you expect.
     *
-    * @throws IllegalStateException if the key strength was already set
-    * @see WeakReference
+    * @throws IllegalStateException
+    *   if the key strength was already set
+    * @see
+    *   WeakReference
     */
   type ConcurrentCache[K, V] = scala.collection.concurrent.Map[K, V]
   def ConcurrentCache[K, V](): ConcurrentCache[K, V] = {
@@ -68,15 +70,16 @@ object CachingUtils {
 
     def getOrUpdateSync(key: K)(value: => V): V = {
 
-      self.getOrElse(key, {
-        self.synchronized {
-          self.getOrElseUpdate(
-            key, {
+      self.getOrElse(
+        key, {
+          self.synchronized {
+            self.getOrElseUpdate(
+              key,
               value
-            }
-          )
+            )
+          }
         }
-      })
+      )
     }
   }
 }

@@ -4,13 +4,14 @@ import org.apache.spark.sql.catalyst.ScalaReflection.universe._
 import org.apache.spark.sql.types._
 
 /**
-  * Can only exist in DataRowSchema & extractor to remember ScalaType
-  * Not allowed to be used in DataFrame schema
-  * WARNING: this cannot be completely superceded by ScalaUDT
-  * the later has to be abstract and not generic, and discoverable through annotation
+  * Can only exist in DataRowSchema & extractor to remember ScalaType Not allowed to be used in DataFrame schema
+  * WARNING: this cannot be completely superceded by ScalaUDT the later has to be abstract and not generic, and
+  * discoverable through annotation
   */
-class UnreifiedObjectType[T]()(implicit val self: ScalaType[T])
-    extends ObjectType(self.asClass)
+class UnreifiedObjectType[T]()(
+    implicit
+    val self: ScalaType[T]
+) extends ObjectType(self.asClass)
     with ScalaType.CatalystTypeMixin[T] {
 
 //  override def simpleString: String = "(unreified) " + ev.asType
@@ -22,7 +23,10 @@ class UnreifiedObjectType[T]()(implicit val self: ScalaType[T])
 
 object UnreifiedObjectType {
 
-  def summon[T](implicit ttg: TypeTag[T]): DataType = {
+  def summon[T](
+      implicit
+      ttg: TypeTag[T]
+  ): DataType = {
     if (ttg == TypeTag.Null) NullType
     else {
       new UnreifiedObjectType[T]()

@@ -17,14 +17,13 @@ trait TraceSetAPI {
   @transient lazy val asTraceViewSet: Set[TraceView] = asTraceSet.map(v => TraceView(v))
 
   def *>[T: ClassTag](others: TraversableOnce[T]): TraceSetView = {
-    val result = asTraceSet.flatMap(
-      trace =>
-        others.map {
-          case otherAction: Action => trace :+ otherAction
-          case otherList: List[_] =>
-            trace ++ otherList.collect {
-              case v: Action => v
-            }
+    val result = asTraceSet.flatMap(trace =>
+      others.map {
+        case otherAction: Action => trace :+ otherAction
+        case otherList: List[_] =>
+          trace ++ otherList.collect {
+            case v: Action => v
+          }
       }
     )
     TraceSetView(result)

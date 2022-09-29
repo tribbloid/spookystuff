@@ -20,7 +20,7 @@ class SpookyKryoRegistrator extends KryoRegistrator {
 
   override def registerClasses(kryo: Kryo): Unit = {
     val array: Array[Class[_]] = Array(
-      //used by PageRow
+      // used by PageRow
       classOf[TypeTag[_]],
       classOf[FetchedRow],
       classOf[ListMap[_, _]],
@@ -33,15 +33,15 @@ class SpookyKryoRegistrator extends KryoRegistrator {
 //      classOf[UnknownElement],
 //      classOf[ExploreStage],
 
-      //used by broadcast & accumulator
+      // used by broadcast & accumulator
       classOf[SpookyConf],
       classOf[Dir.Conf],
       classOf[SpookyContext],
       classOf[SpookyMetrics],
-      //used by Expressions
+      // used by Expressions
       //      classOf[NamedFunction1]
 
-      //parameters
+      // parameters
       classOf[FiniteDuration],
       classOf[TimeUnit],
       FilePaths.getClass,

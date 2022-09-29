@@ -9,7 +9,7 @@ import com.tribbloids.spookystuff.session.Session
 @SerialVersionUID(-3444865880420843541L)
 abstract class Assertion extends Action {
 
-  final override def skeleton = None //can be omitted
+  final override def skeleton = None // can be omitted
 
   final override def doExe(session: Session): Seq[Doc] = {
 

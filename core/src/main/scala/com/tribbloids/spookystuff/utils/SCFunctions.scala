@@ -44,23 +44,22 @@ case class SCFunctions(sc: SparkContext) {
 
     sc.setJobGroup(_groupID, _description)
 
-    val result = try {
-      fn
-    } finally {
+    val result =
+      try {
+        fn
+      } finally {
 
-      sc.setJobGroup(old.groupID, old.description)
-    }
+        sc.setJobGroup(old.groupID, old.description)
+      }
 
     result
   }
 
   /**
-    * similar to .parallelize(), except that order of each datum is preserved,
-    * and locality is preserved even if the RDD is computed many times.
-    * Also, the RDD is distributed to executor cores as evenly as possible.
-    * If parallesism > self.defaultParallelism then theoretically it is
-    * guaranteed to have at least 1 datum on each executor thread, however
-    * this is not tested thoroughly in large scale, and may be nullified by Spark optimization.
+    * similar to .parallelize(), except that order of each datum is preserved, and locality is preserved even if the RDD
+    * is computed many times. Also, the RDD is distributed to executor cores as evenly as possible. If parallesism >
+    * self.defaultParallelism then theoretically it is guaranteed to have at least 1 datum on each executor thread,
+    * however this is not tested thoroughly in large scale, and may be nullified by Spark optimization.
     */
   def seed[T: ClassTag](
       seq: Seq[T],
@@ -122,7 +121,7 @@ case class SCFunctions(sc: SparkContext) {
     seed(uuids, parallelismOpt, mustHaveNonEmptyPartitions = true)
   }
 
-  //TODO: this should be superseded by https://github.com/apache/spark/pull/22192
+  // TODO: this should be superseded by https://github.com/apache/spark/pull/22192
   def runEverywhere[T: ClassTag](alsoOnDriver: Boolean = true)(f: ((Int, UUID)) => T): Seq[T] = {
     val localFuture: Option[Future[T]] =
       if (alsoOnDriver) Some(Future[T] {
@@ -134,7 +133,7 @@ case class SCFunctions(sc: SparkContext) {
 
     val n = sc.defaultParallelism * SpookyViewsConst.REPLICATING_FACTOR
     val onExecutors = uuidSeed(Some(n))
-      .mapOncePerWorker { f }
+      .mapOncePerWorker(f)
       .collect()
       .toSeq
 
@@ -165,7 +164,7 @@ case class SCFunctions(sc: SparkContext) {
 
   }
 
-  //TODO: remove! not useful
+  // TODO: remove! not useful
   //    def allExecutorCoreIDs = {
   //      mapAtLeastOncePerExecutorCore {
   //        val thread = Thread.currentThread()

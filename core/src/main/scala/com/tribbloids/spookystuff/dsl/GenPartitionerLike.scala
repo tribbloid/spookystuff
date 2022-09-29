@@ -38,15 +38,13 @@ object GenPartitionerLike {
         ref: RDD[_]
     ): Option[BeaconRDD[K]] = None
 
-    //TODO: comparing to old implementation, does this create too much object overhead?
+    // TODO: comparing to old implementation, does this create too much object overhead?
     def groupByKey[V: ClassTag](
         rdd: RDD[(K, V)],
         beaconRDDOpt: Option[BeaconRDD[K]] = None
     ): RDD[(K, Iterable[V])] = {
       val itrRDD = rdd.mapValues(v => Iterable(v))
-      reduceByKey(itrRDD, {
-        _ ++ _
-      }, beaconRDDOpt)
+      reduceByKey(itrRDD, _ ++ _, beaconRDDOpt)
     }
 
     def reduceByKey[V: ClassTag](
@@ -66,7 +64,10 @@ object GenPartitionerLike {
   /**
     * only need to defined a key repartitioning function
     */
-  abstract class RepartitionKeyImpl[K](implicit val ctg: ClassTag[K]) extends Instance[K] {
+  abstract class RepartitionKeyImpl[K](
+      implicit
+      val ctg: ClassTag[K]
+  ) extends Instance[K] {
 
     def schema: SpookySchema
 
@@ -77,7 +78,7 @@ object GenPartitionerLike {
     ): RDD[(K, V)] = {
 
       val ec = schema.ec
-      ec.persist(rdd) //TODO: optional?
+      ec.persist(rdd) // TODO: optional?
       val keys = rdd.keys
 
       val keysRepartitioned = repartitionKey(keys, beaconRDDOpt)
@@ -104,7 +105,8 @@ object GenPartitionerLike {
     }
 
     case class Inst[K]()(
-        implicit val ctg: ClassTag[K]
+        implicit
+        val ctg: ClassTag[K]
     ) extends Instance[K] {
 
       override def reduceByKey[V: ClassTag](

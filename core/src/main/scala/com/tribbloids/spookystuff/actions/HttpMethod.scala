@@ -29,7 +29,7 @@ abstract class HttpMethod(
       .resolve(schema)
       .lift(pageRow)
       .flatMap(SpookyUtils.asOption[Any])
-    //TODO: no need to resolve array output?
+    // TODO: no need to resolve array output?
 
     val uriStr: Option[String] = first.flatMap {
       case element: Unstructured => element.href

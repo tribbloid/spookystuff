@@ -79,8 +79,10 @@ case class AvoidGradient(
     val Array(encoded1, encoded2) = encoded1_2
 
     var cumViolation = 0.0
-    for (i <- 0 until (encoded1.size - 1);
-         j <- 0 until (encoded2.size - 1)) {
+    for (
+      i <- 0 until (encoded1.size - 1);
+      j <- 0 until (encoded2.size - 1)
+    ) {
 
       case class Notation(v: VectorEncodedNav) {
 
@@ -101,7 +103,7 @@ case class AvoidGradient(
 
         val scaling = {
           //          val ratio = violation/D //L2 loss
-          val ratio = 1 / D //hinge loss
+          val ratio = 1 / D // hinge loss
           ratio
         }
 

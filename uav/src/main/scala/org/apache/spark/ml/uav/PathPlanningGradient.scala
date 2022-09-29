@@ -26,7 +26,7 @@ trait PathPlanningGradient extends Gradient {
       .mapValues { traces: Seq[Trace] =>
         traces.map { trace: Trace =>
           val encoded: Trace = trace.map { action =>
-            //TODO: CAUTION! scala 2.10 compiler will trigger a bug once switching to match
+            // TODO: CAUTION! scala 2.10 compiler will trigger a bug once switching to match
             if (action.isInstanceOf[UAVNavigation]) {
               val nav = action.asInstanceOf[UAVNavigation]
               val wi = weightDim until (weightDim + nav.vectorDim)
@@ -51,19 +51,16 @@ trait PathPlanningGradient extends Gradient {
   lazy val flatten: Seq[(Int, Trace)] = {
     val seq = id2Traces_withEncoded.toSeq
     val result = seq
-      .flatMap(
-        tuple => tuple._2.map(tuple._1 -> _)
-      )
+      .flatMap(tuple => tuple._2.map(tuple._1 -> _))
     result
   }
   lazy val numTraces = flatten.size
 
   /**
-    * yield spark vector RDD
-    * non-zero index representing the participating index of traces
-    * index of 1 represents the first
-    * index of 1 also represents the second
-    * @return RDD[Label (always 0) -> SparseVector (index of operand trace in expanded)]
+    * yield spark vector RDD non-zero index representing the participating index of traces index of 1 represents the
+    * first index of 1 also represents the second
+    * @return
+    *   RDD[Label (always 0) -> SparseVector (index of operand trace in expanded)]
     */
   def generateDataRDD: RDD[(Double, MLVec)] = {
 
@@ -90,7 +87,7 @@ trait PathPlanningGradient extends Gradient {
       case _ =>
         None
     }
-    val withLabelRDD: RDD[(Double, MLVec)] = dataRDD.map { 0.0 -> _ }
+    val withLabelRDD: RDD[(Double, MLVec)] = dataRDD.map(0.0 -> _)
     withLabelRDD
   }
 

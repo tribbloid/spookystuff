@@ -21,7 +21,10 @@ object TypeUtils extends ReflectionLock {
 
   def summon[T: TypeTag](a: T): TypeTag[T] = implicitly[TypeTag[T]]
 
-  def tryCatalystTypeFor[T](implicit ttg: TypeTag[T]): scala.util.Try[DataType] = locked {
+  def tryCatalystTypeFor[T](
+      implicit
+      ttg: TypeTag[T]
+  ): scala.util.Try[DataType] = locked {
     scala.util
       .Try {
         if (ttg == TypeTag.Null) NullType
@@ -35,12 +38,14 @@ object TypeUtils extends ReflectionLock {
             new SparkException(
               s"Cannot find catalyst type for $ttg",
               e
-            ))
+            )
+          )
       }
   }
 
   /**
-    * @param t if t is already an option won't yeild Option[ Option[_] ] again
+    * @param t
+    *   if t is already an option won't yeild Option[ Option[_] ] again
     * @return
     */
 //  private def selfAndOptionTypeIfNotAlready(t: TypeTag[_]): Seq[TypeTag[_]] = locked {
@@ -84,9 +89,7 @@ object TypeUtils extends ReflectionLock {
         else {
           val fa: Boolean = tt1
             .zip(tt2)
-            .forall(
-              tuple => tuple._1 <:< tuple._2
-            )
+            .forall(tuple => tuple._1 <:< tuple._2)
           fa
         }
       case (None, None) =>
@@ -95,7 +98,7 @@ object TypeUtils extends ReflectionLock {
     }
   }
 
-  //TODO: TypeCreator is not in Developer's API and usage is not recommended
+  // TODO: TypeCreator is not in Developer's API and usage is not recommended
   def createTypeTag_fast[T](
       tpe: Type,
       mirror: Mirror
@@ -106,7 +109,7 @@ object TypeUtils extends ReflectionLock {
     )
   }
 
-  //TODO: this needs improvement due to:
+  // TODO: this needs improvement due to:
   // https://stackoverflow.com/questions/59473734/in-scala-2-12-why-none-of-the-typetag-created-in-runtime-is-serializable
   def createTypeTag_slowButSerializable[T](
       tpe: Type,

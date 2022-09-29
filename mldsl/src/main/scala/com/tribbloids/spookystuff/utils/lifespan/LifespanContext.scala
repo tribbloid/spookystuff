@@ -64,7 +64,8 @@ case class LifespanContext(
     }
 
   /**
-    * @return true if any of the thread is dead OR the task is completed
+    * @return
+    *   true if any of the thread is dead OR the task is completed
     */
   def isCompleted: Boolean = {
     !thread.isAlive ||

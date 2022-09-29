@@ -2,7 +2,6 @@ package com.tribbloids.spookystuff.extractors
 
 import com.tribbloids.spookystuff.row.Field
 
-
 trait Alias[T, +R] extends GenExtractor[T, R] {
 
   def field: Field

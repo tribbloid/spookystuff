@@ -37,9 +37,11 @@ object LinkSuite {
         s"${status.uav}\t${status.lockStr}"
       }
       .mkString("\n")
-    if (uavs.length != spooky.sparkContext.defaultParallelism ||
-        uavs.length != uavs.distinct.length ||
-        uris.length != uris.distinct.length) {
+    if (
+      uavs.length != spooky.sparkContext.defaultParallelism ||
+      uavs.length != uavs.distinct.length ||
+      uris.length != uris.distinct.length
+    ) {
       throw new AssertionError(info)
     }
 
@@ -55,10 +57,10 @@ object LinkSuite {
         s""""
              |multiple UAVs sharing the same uris:
              |${v
-             .map { vv =>
-               s"${vv._2.uav} @ ${vv._2.lockStr}"
-             }
-             .mkString("\n")}
+            .map { vv =>
+              s"${vv._2.uav} @ ${vv._2.lockStr}"
+            }
+            .mkString("\n")}
              """.stripMargin
       )
     }
@@ -137,14 +139,14 @@ trait LinkSuite extends UAVFixture {
         val uavs = linkRDD.map(_.uav).collect().toSeq
         println(s"=== $i\t===: " + uavs.mkString("\t"))
 
-        //should be registered in both Link and Cleanable
+        // should be registered in both Link and Cleanable
         spooky.sparkContext.runEverywhere() { _ =>
           val registered = Link.registered.values.toSet
           val cleanable = Cleanable.getTyped[Link].toSet
           Predef.assert(registered.subsetOf(cleanable))
         }
 
-        //Link should use different UAVs
+        // Link should use different UAVs
         val uris = uavs.map(_.primaryURI)
         Predef.assert(uris.size == this.parallelism, "Duplicated URIs:\n" + uris.mkString("\n"))
         Predef.assert(uris.size == uris.distinct.size, "Duplicated URIs:\n" + uris.mkString("\n"))
@@ -170,19 +172,19 @@ trait LinkSuite extends UAVFixture {
             fleet,
             session
           ).get
-          Thread.sleep(5000) //otherwise a task will complete so fast such that another task hasn't start yet.
+          Thread.sleep(5000) // otherwise a task will complete so fast such that another task hasn't start yet.
           val result = link1 == link2
           result
         }
         .collect()
       assert(spooky.getMetrics[UAVMetrics].linkCreated.value == parallelism)
       assert(spooky.getMetrics[UAVMetrics].linkDestroyed.value == 0)
-      linkStrs.foreach { Predef.assert }
+      linkStrs.foreach(Predef.assert)
     }
 
     for (routing2 <- routings) {
 
-      //TODO Recurring error in DispatcherSuite! need inspection
+      // TODO Recurring error in DispatcherSuite! need inspection
       it(
         s"~> ${routing2.getClass.getSimpleName}:" +
           s" available Link can be recommissioned in another Task"
@@ -271,7 +273,7 @@ abstract class SimLinkSuite extends SITLFixture with LinkSuite {
         }
       }
 
-      //wait for zombie process to be deregistered
+      // wait for zombie process to be deregistered
       CommonUtils.retry(5, 2000) {
         sc.runEverywhere() { _ =>
           SpookyEnvFixture.processShouldBeClean(Seq(LinkSuite.processCondition), cleanSweepDrivers = false)

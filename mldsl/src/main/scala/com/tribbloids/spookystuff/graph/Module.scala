@@ -36,7 +36,10 @@ object Module {
 
     implicit def copyImplicitly(v: Seq[Edge[T]]): Self
 
-    def replicate(m: DataMutator)(implicit idRotator: IDRotator): Self = {
+    def replicate(m: DataMutator)(
+        implicit
+        idRotator: IDRotator
+    ): Self = {
       seq.map(_.replicate(m))
     }
 
@@ -60,7 +63,7 @@ object Module {
       }
     }
 
-    override implicit def copyImplicitly(v: Seq[Edge[T]]): Heads[T] = copy(v.filter(_.canBeHead))
+    implicit override def copyImplicitly(v: Seq[Edge[T]]): Heads[T] = copy(v.filter(_.canBeHead))
   }
 
   case class Tails[T <: Domain](seq: Seq[Edge[T]] = Nil) extends Edges[T, Tails[T]] {
@@ -72,6 +75,6 @@ object Module {
       }
     }
 
-    override implicit def copyImplicitly(v: Seq[Edge[T]]): Tails[T] = copy(v.filter(_.canBeTail))
+    implicit override def copyImplicitly(v: Seq[Edge[T]]): Tails[T] = copy(v.filter(_.canBeTail))
   }
 }

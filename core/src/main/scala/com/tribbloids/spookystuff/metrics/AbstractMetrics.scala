@@ -37,7 +37,7 @@ abstract class AbstractMetrics extends MetricLike {
     }
   }
 
-  //Only allowed on Master
+  // Only allowed on Master
   def resetAll(): Unit = {
 
     symbol2children.foreach {
@@ -86,7 +86,7 @@ object AbstractMetrics {
 
     def initialise(): Unit = {
 
-      //lazy members has to be initialised before shipping
+      // lazy members has to be initialised before shipping
       extraMembers
     }
 
@@ -126,7 +126,7 @@ object AbstractMetrics {
       extra
     }
 
-    protected override def _symbol2children: List[(String, Any)] = {
+    override protected def _symbol2children: List[(String, Any)] = {
 
       super._symbol2children ++ extraMembers
     }

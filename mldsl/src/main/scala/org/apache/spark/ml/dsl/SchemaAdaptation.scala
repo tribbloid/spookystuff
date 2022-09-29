@@ -7,7 +7,7 @@ sealed abstract class SchemaAdaptation
 
 object SchemaAdaptation {
 
-  //disable schema validations ( e.g. Transformer.transformSchema)
+  // disable schema validations ( e.g. Transformer.transformSchema)
   sealed trait TypeUnsafe extends SchemaAdaptation
 
   sealed trait FailOnInconsistentSchema extends SchemaAdaptation
@@ -16,7 +16,7 @@ object SchemaAdaptation {
   object FailFast extends FailOnInconsistentSchema with FailOnNonExistingInputCol
   object FailFast_TypeUnsafe extends FailOnNonExistingInputCol with TypeUnsafe
 
-  //allow incomplete output
+  // allow incomplete output
   sealed abstract class IgnoreIrrelevant extends SchemaAdaptation
 
   object IgnoreIrrelevant extends IgnoreIrrelevant

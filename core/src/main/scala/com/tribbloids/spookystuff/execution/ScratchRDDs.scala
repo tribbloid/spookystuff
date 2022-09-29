@@ -20,7 +20,7 @@ import scala.util.Random
 object ScratchRDDs {
   val prefix = "temp_"
 
-  //TODO: this name should be validated against current DB to ensure that such name doesn't exist
+  // TODO: this name should be validated against current DB to ensure that such name doesn't exist
   def tempTableName(): String = {
     prefix + Math.abs(Random.nextInt())
   }
@@ -49,9 +49,8 @@ object ScratchRDDs {
         if (scopeIDs.isEmpty) root
         else {
           children.getOrElseUpdate(
-            scopeIDs, {
-              ScratchRDDs(defaultStorageLevel = root.defaultStorageLevel)
-            }
+            scopeIDs,
+            ScratchRDDs(defaultStorageLevel = root.defaultStorageLevel)
           )
         }
 
@@ -192,8 +191,8 @@ case class ScratchRDDs(
     tempRDDs -= rdd
   }
 
-  //TODO: add a utility function to make RDD to be uncached automatically once a number of downstream RDDs (can be filtered) are caculated.
-  //This manual GC is important for some memory intensive workflow.
+  // TODO: add a utility function to make RDD to be uncached automatically once a number of downstream RDDs (can be filtered) are caculated.
+  // This manual GC is important for some memory intensive workflow.
 
   def dropTempViews(): Unit = {
     tempTables.foreach { tuple =>

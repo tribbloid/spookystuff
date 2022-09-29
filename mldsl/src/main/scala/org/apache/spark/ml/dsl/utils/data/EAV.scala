@@ -17,7 +17,10 @@ import scala.util.Try
 trait EAV extends Serializable with IDMixin {
 
   type VV
-  protected def getCtg(implicit v: ClassTag[VV]) = v
+  protected def getCtg(
+      implicit
+      v: ClassTag[VV]
+  ) = v
   def ctg: ClassTag[VV]
   final lazy val _ctg = ctg
 
@@ -40,7 +43,7 @@ trait EAV extends Serializable with IDMixin {
   def asMap: Map[String, VV] = asOriginalMap
   def asStrMap: Map[String, String] = asMap.mapValues(v => Option(v).map(_.toString).orNull)
 
-  //TODO: change to declaredAttrs?
+  // TODO: change to declaredAttrs?
   override def _id: Any = asMap
 
   def asProperties: Properties = {
@@ -54,8 +57,7 @@ trait EAV extends Serializable with IDMixin {
   }
 
   /**
-    * favor the key-value pair in first operand
-    * attempt to preserve sequence as much as possible
+    * favor the key-value pair in first operand attempt to preserve sequence as much as possible
     */
   def :++(other: EAV): EAV.Impl = {
 
@@ -63,15 +65,14 @@ trait EAV extends Serializable with IDMixin {
   }
 
   /**
-    * favor the key-value pair in second operand
-    * operands suffixed by : are reversed
+    * favor the key-value pair in second operand operands suffixed by : are reversed
     */
   final def ++:(other: EAV): EAV.Impl = {
 
     :++(other)
   }
 
-  //TODO: move to superclass
+  // TODO: move to superclass
   final def +=+(
       other: EAV,
       include: List[Any] = Nil
@@ -141,7 +142,7 @@ trait EAV extends Serializable with IDMixin {
     }
   }
 
-  //TODO: cleanup for being too redundant! not encouraged to use
+  // TODO: cleanup for being too redundant! not encouraged to use
 
   def tryGet(k: String, nullable: Boolean = false): Try[VV] = Try {
     val result = asMap.getOrElse(
@@ -180,15 +181,17 @@ trait EAV extends Serializable with IDMixin {
 
   def --(vs: Iterable[Magnets.K]): EAV.Impl = dropAll(vs)
 
-  //TODO: support mixing param and map definition? While still being serializable?
+  // TODO: support mixing param and map definition? While still being serializable?
   class Attr[T](
       // should only be used in setters
       val aliases: List[String] = Nil,
       nullable: Boolean = false,
       default: T ? _ = None,
       primaryNameOverride: String ? _ = None
-  )(implicit ev: T <:< VV)
-      extends AttrLike[T]
+  )(
+      implicit
+      ev: T <:< VV
+  ) extends AttrLike[T]
       with ScalaNameMixin {
 
     override def toString: String = {
@@ -202,10 +205,11 @@ trait EAV extends Serializable with IDMixin {
     final def primaryName: String = primaryNameOverride.getOrElse(objectSimpleName)
 
     def explicitValue: T = {
-      val trials: Seq[() => T] = allNames.map { name =>
-        { () =>
-          outer.apply(name, nullable).asInstanceOf[T]
-        }
+      val trials: Seq[() => T] = allNames.map {
+        name =>
+          { () =>
+            outer.apply(name, nullable).asInstanceOf[T]
+          }
       }
 
       TreeThrowable
@@ -217,7 +221,10 @@ trait EAV extends Serializable with IDMixin {
       throw new UnsupportedOperationException(s"Undefined default value for $primaryName")
     }
 
-    def tryGetEnum[EE <: Enumeration](enum: EE)(implicit ev: T <:< String): Try[EE#Value] = {
+    def tryGetEnum[EE <: Enumeration](enum: EE)(
+        implicit
+        ev: T <:< String
+    ): Try[EE#Value] = {
       tryGet
         .flatMap { v =>
           Try {
@@ -225,16 +232,28 @@ trait EAV extends Serializable with IDMixin {
           }
         }
     }
-    def getEnum[EE <: Enumeration](enum: EE)(implicit ev: T <:< String) = tryGetEnum(enum).toOption
+    def getEnum[EE <: Enumeration](enum: EE)(
+        implicit
+        ev: T <:< String
+    ) = tryGetEnum(enum).toOption
 
-    def tryGetBoolean(implicit ev: T <:< String): Try[Boolean] = {
+    def tryGetBoolean(
+        implicit
+        ev: T <:< String
+    ): Try[Boolean] = {
       tryGet.map { v =>
         CommonUtils.tryParseBoolean(v).get
       }
     }
-    def getBoolean(implicit ev: T <:< String) = tryGetBoolean.toOption
+    def getBoolean(
+        implicit
+        ev: T <:< String
+    ) = tryGetBoolean.toOption
 
-    def tryGetBoolOrInt(implicit ev: T <:< String): Try[Int] = {
+    def tryGetBoolOrInt(
+        implicit
+        ev: T <:< String
+    ): Try[Int] = {
 
       tryGet
         .map(v => ev(v).toInt)
@@ -247,12 +266,15 @@ trait EAV extends Serializable with IDMixin {
               }
         }
     }
-    def getBoolOrInt(implicit ev: T <:< String) = tryGetBoolOrInt.toOption
+    def getBoolOrInt(
+        implicit
+        ev: T <:< String
+    ) = tryGetBoolOrInt.toOption
   }
 
   object Attr {
 
-    //TODO: is it useless due to being path dependent?
+    // TODO: is it useless due to being path dependent?
     implicit def fromStr(v: String): Attr[VV] = new Attr[VV](primaryNameOverride = v)
   }
 

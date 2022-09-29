@@ -5,8 +5,7 @@ import com.tribbloids.spookystuff.uav.dsl.{Routing, Routings}
 import org.scalatest.Ignore
 
 /**
-  * Created by peng on 6/20/17.
-  * purpose is only testing the concurent execution of Dispatchers
+  * Created by peng on 6/20/17. purpose is only testing the concurent execution of Dispatchers
   */
 class DispatcherSuite extends DummyUAVFixture with LinkSuite {
 

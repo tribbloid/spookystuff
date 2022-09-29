@@ -31,14 +31,13 @@ object ParsingRun {
 
 // only applies to interpolation parser, there should be many others
 /**
-  * heavily stateful book-keeping object that tracks progress of parsing process
-  * WIHTOUT object creation overhead! 1 object for 1 complete parsing run!
-  * Resembles Fastparse 2.1.0 object with the same name
+  * heavily stateful book-keeping object that tracks progress of parsing process WIHTOUT object creation overhead! 1
+  * object for 1 complete parsing run! Resembles Fastparse 2.1.0 object with the same name
   */
 case class ParsingRun(
     stream: Seq[Char],
     initialFState: FState,
-    maxBacktracking: Int = 5 //TODO: enable it!
+    maxBacktracking: Int = 5 // TODO: enable it!
 ) {
 
   val input: Seq[Token] = {

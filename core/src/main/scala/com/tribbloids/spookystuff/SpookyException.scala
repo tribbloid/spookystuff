@@ -5,8 +5,7 @@ import java.io.IOException
 import com.tribbloids.spookystuff.utils.TreeThrowable
 
 /**
-  * Created by peng on 9/11/14.
-  * doesn't have to catch it every time
+  * Created by peng on 9/11/14. doesn't have to catch it every time
   */
 ////TODO: merge with MultiCauses
 //class TreeCauses(

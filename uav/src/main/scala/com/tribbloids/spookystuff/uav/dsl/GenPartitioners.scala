@@ -39,11 +39,14 @@ object GenPartitioners {
       Inst(schema).asInstanceOf[Instance[K]]
     }
 
-    case class Inst(schema: SpookySchema)(implicit val ctg: ClassTag[TraceView]) extends Instance[TraceView] {
+    case class Inst(schema: SpookySchema)(
+        implicit
+        val ctg: ClassTag[TraceView]
+    ) extends Instance[TraceView] {
 
       type K = TraceView
 
-      //gather all UAVActions to driver and use a local solver (JSprit) to rearrange them.
+      // gather all UAVActions to driver and use a local solver (JSprit) to rearrange them.
       override def reduceByKey[V: ClassTag](
           rdd: RDD[(K, V)],
           reducer: (V, V) => V,
@@ -75,7 +78,7 @@ object GenPartitioners {
 
         var optimizedRDD: RDD[(TraceView, V)] = {
           val instance = optimizer.apply(VRP.this, schema)
-          instance.reduceByKey(hasCostRDD, reducer, None) //add beaconRDD
+          instance.reduceByKey(hasCostRDD, reducer, None) // add beaconRDD
         }
 
         optimizedRDD = optimizedRDD.mapPartitions { itr =>

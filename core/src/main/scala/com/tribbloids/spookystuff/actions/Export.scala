@@ -10,8 +10,8 @@ import com.tribbloids.spookystuff.session.Session
 import java.util.Date
 
 /**
-  * Export a page from the browser or http client
-  * the page an be anything including HTML/XML file, image, PDF file or JSON string.
+  * Export a page from the browser or http client the page an be anything including HTML/XML file, image, PDF file or
+  * JSON string.
   */
 @SerialVersionUID(564570120183654L)
 abstract class Export extends Named {
@@ -20,7 +20,7 @@ abstract class Export extends Named {
 
   final override def outputNames: Set[CSSQuery] = Set(this.name)
 
-  final override def skeleton: Option[Export.this.type] = None //have not impact to driver
+  final override def skeleton: Option[Export.this.type] = None // have not impact to driver
 
   final def doExe(session: Session): Seq[DocOption] = {
     val results = doExeNoName(session)
@@ -66,7 +66,7 @@ trait Wayback extends WaybackLike {
 
   def waybackToTimeMillis(date: Long): this.type = this.waybackToTimeMillis(Lit(date))
 
-  //has to be used after copy
+  // has to be used after copy
   protected def injectWayback(
       wayback: Extractor[Long],
       pageRow: FetchedRow,

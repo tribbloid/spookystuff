@@ -16,7 +16,7 @@ object ActionLike extends AutomaticRelay[ActionLike] {
 
   override lazy val formats: Formats = super.formats + DurationJSONSerializer
 
-  //TODO: aggregate all object that has children
+  // TODO: aggregate all object that has children
   case class TreeNodeView(
       actionLike: ActionLike
   ) extends TreeView[TreeNodeView] {
@@ -39,9 +39,9 @@ abstract class ActionLike extends Product with Serializable with Verbose {
   def globalRewriteRules(schema: SpookySchema): Seq[RewriteRule[TraceView]] = Nil
 
   /**
-    * invoked on executors, immediately after interpolation
-    * *IMPORTANT!* may be called several times, before or after GenPartitioner.
-    **/
+    * invoked on executors, immediately after interpolation *IMPORTANT!* may be called several times, before or after
+    * GenPartitioner.
+    */
   def localRewriteRules(schema: SpookySchema): Seq[RewriteRule[TraceView]] = Nil
 
   final def interpolate(row: FetchedRow, schema: SpookySchema): Option[this.type] = {
@@ -52,18 +52,18 @@ abstract class ActionLike extends Product with Serializable with Verbose {
     result
   }
 
-  //TODO: use reflection to simplify
+  // TODO: use reflection to simplify
   /**
     * convert all extractor constructor parameters to Literals
     */
   def doInterpolate(row: FetchedRow, schema: SpookySchema): Option[this.type] = Some(this)
 
   def injectFrom(same: ActionLike): Unit = {}
-  //TODO: change to immutable pattern to avoid one Trace being used twice with different names
+  // TODO: change to immutable pattern to avoid one Trace being used twice with different names
 
   //  final def injectTo(same: ActionLike): Unit = same.injectFrom(this)
 
-  //used to determine if snapshot needs to be appended or if possible to be executed lazily
+  // used to determine if snapshot needs to be appended or if possible to be executed lazily
   final def hasOutput: Boolean = outputNames.nonEmpty
 
   def outputNames: Set[String] = Set.empty
@@ -74,7 +74,7 @@ abstract class ActionLike extends Product with Serializable with Verbose {
     */
   def dryRun: DryRun
 
-  //the minimal equivalent action that can be put into backtrace
+  // the minimal equivalent action that can be put into backtrace
   def skeleton: Option[this.type] = Some(this)
 
   def apply(session: Session): Seq[DocOption]

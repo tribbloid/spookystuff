@@ -74,7 +74,7 @@ object SpookyEnvFixture {
   ): Unit = {
 
     if (cleanSweepDrivers) {
-      //this is necessary as each suite won't automatically cleanup drivers NOT in task when finished
+      // this is necessary as each suite won't automatically cleanup drivers NOT in task when finished
       Cleanable.All.cleanSweep(
         condition = {
           case _: DriverLike => true
@@ -152,7 +152,8 @@ abstract class SpookyEnvFixture
 
   override def withFixture(test: NoArgTest): Outcome = {
     if (isRetryable(test))
-      CommonUtils.retry(4) { super.withFixture(test) } else
+      CommonUtils.retry(4)(super.withFixture(test))
+    else
       super.withFixture(test)
   }
 
@@ -162,12 +163,13 @@ abstract class SpookyEnvFixture
   final lazy val conditions = {
     val _processNames = this._processNames
     val exitingPIDs = this.exitingPIDs
-    _processNames.map { name =>
-      { process: ProcessInfo =>
-        val c1 = process.getName == name
-        val c2 = !exitingPIDs.contains(process.getPid)
-        c1 && c2
-      }
+    _processNames.map {
+      name =>
+        { process: ProcessInfo =>
+          val c1 = process.getName == name
+          val c2 = !exitingPIDs.contains(process.getPid)
+          c1 && c2
+        }
     }
   }
 

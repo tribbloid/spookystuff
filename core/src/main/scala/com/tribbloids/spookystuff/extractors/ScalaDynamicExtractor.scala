@@ -18,7 +18,7 @@ case class ScalaDynamic(
   def getMethodsByCatalystType(dType: DataType): List[MethodSymbol] = locked {
     val tpe = dType.asTypeTag_casted.tpe
 
-    //Java reflection preferred as more battle tested?
+    // Java reflection preferred as more battle tested?
     val allMembers = tpe.members.toList
 
     val members = allMembers
@@ -37,16 +37,14 @@ case class ScalaDynamic(
           List(v.asTypeTag_casted.tpe)
         }
         val cartesian = DSLUtils.cartesianProductList(tpess)
-        cartesian.map(
-          v => Some(v)
-        )
+        cartesian.map(v => Some(v))
       case None =>
         Seq(None)
     }
     expectedTypeList
   }
 
-  //2 cases: argDTypesOpt = None: call by .name
+  // 2 cases: argDTypesOpt = None: call by .name
   // argDTypesOpt = Some(List()) call by .name()
   def getMethodByScala(baseDType: DataType, argDTypesOpt: Option[List[DataType]]): MethodSymbol = locked {
     val methods = getMethodsByCatalystType(baseDType)
@@ -62,7 +60,7 @@ case class ScalaDynamic(
       val firstTypeOpt = actualTypess.headOption
 
       if (actualTypess.size > 1)
-        None //no currying
+        None // no currying
       else {
         if (expectedTypeCombinations.exists(v => TypeUtils.fitIntoArgs(v, firstTypeOpt)))
           Some(method)
@@ -87,8 +85,8 @@ case class ScalaDynamic(
   }
 
   /**
-    * due to type erasure, the java-based type validation in this function is much looser.
-    * Should always validate by getMethodByScala to fail fast
+    * due to type erasure, the java-based type validation in this function is much looser. Should always validate by
+    * getMethodByScala to fail fast
     */
   def getMethodByJava(baseDType: DataType, argDTypesOpt: Option[List[DataType]]): Method = {
 
@@ -100,9 +98,7 @@ case class ScalaDynamic(
           List(v.asClass) :+ classOf[Object]
         }
         val cartesian = DSLUtils.cartesianProductList(classess)
-        cartesian.map(
-          v => Some(v)
-        )
+        cartesian.map(v => Some(v))
       case None =>
         Seq(None)
     }
@@ -147,10 +143,10 @@ case class ScalaDynamicExtractor[T](
 
   val dynamic: ScalaDynamic = ScalaDynamic(methodName)
 
-  //only used to show TreeNode
+  // only used to show TreeNode
   override protected def _args: Seq[GenExtractor[_, _]] = Seq(base) ++ argsOpt.toList.flatten
 
-  //resolve to a Spark SQL DataType according to an exeuction plan
+  // resolve to a Spark SQL DataType according to an exeuction plan
   override def resolveType(tt: DataType): DataType = locked {
     val tag: TypeTag[Any] = _resolveTypeTag(tt)
 
@@ -158,7 +154,7 @@ case class ScalaDynamicExtractor[T](
   }
 
   private def _resolveTypeTag(tt: DataType): TypeTag[Any] = locked {
-    //TODO: merge
+    // TODO: merge
     val baseDType: DataType = base.resolveType(tt)
     val argDTypes = argsOpt.map {
       _.map { v =>
@@ -179,9 +175,7 @@ case class ScalaDynamicExtractor[T](
     val resolvedFn = resolveUsingScala(tt)
 
     val lifted = if (_resolveTypeTag(tt).tpe <:< typeOf[Option[Any]]) {
-      resolvedFn.andThen(
-        v => v.asInstanceOf[Option[Option[Any]]].flatten
-      )
+      resolvedFn.andThen(v => v.asInstanceOf[Option[Option[Any]]].flatten)
     } else resolvedFn
 
     Unlift(lifted)
@@ -203,9 +197,8 @@ case class ScalaDynamicExtractor[T](
   }
 
   /**
-    * for performance test, keep it simple
-    * use base/args.resolve.lift to get arg values, use them if none of them is None
-    * extend to handle None case in the future
+    * for performance test, keep it simple use base/args.resolve.lift to get arg values, use them if none of them is
+    * None extend to handle None case in the future
     */
   def resolveUsingJava(tt: DataType): T => Option[Any] = {
     val baseDType: DataType = base.resolveType(tt)
@@ -245,7 +238,7 @@ case class ScalaDynamicExtractor[T](
               baseVal,
               effectiveArgs.map(_.apply(vv).asInstanceOf[Object]): _*
             )
-            Option(result) //TODO: handle option output!
+            Option(result) // TODO: handle option output!
           } catch {
             case e: MatchError =>
               None
@@ -300,8 +293,8 @@ case class ScalaResolvedFunction[T](
 }
 
 /**
-  * this complex mixin enables many scala functions of Docs & Unstructured to be directly called on Extraction shortcuts.
-  * supersedes many implementations
+  * this complex mixin enables many scala functions of Docs & Unstructured to be directly called on Extraction
+  * shortcuts. supersedes many implementations
   */
 @Deprecated // no type safety
 trait ScalaDynamicMixin[T, +R] extends Dynamic with ReflectionLock {

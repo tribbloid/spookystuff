@@ -8,7 +8,7 @@ package object utils {
 
   type ![T, M] = NullSafe.CannotBeNull[T, M]
 
-  //TODO: the following should be obsolete
+  // TODO: the following should be obsolete
   type Nullable[T] = NullSafe.CanBeNull[T, Any]
 
   object Nullable {

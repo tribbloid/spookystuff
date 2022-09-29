@@ -54,7 +54,7 @@ class Python3DriverSuite extends SpookyEnvFixture {
 
   override def afterAll(): Unit = {
 
-    Thread.sleep(3000) //wait for zombie process to die
+    Thread.sleep(3000) // wait for zombie process to die
     super.afterAll()
   }
 
@@ -125,7 +125,7 @@ class Python3DriverSuite extends SpookyEnvFixture {
   }
 
   it("interpret should throw an exception if interpreter raises a syntax error") {
-    //TODO: this syntax error is really weird
+    // TODO: this syntax error is really weird
 
     runIterable(1 to 10) { (i, proc) =>
       intercept[PyInterpretationException] {

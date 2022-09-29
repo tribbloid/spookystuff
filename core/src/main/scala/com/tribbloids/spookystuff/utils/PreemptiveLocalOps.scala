@@ -18,7 +18,8 @@ object PreemptiveLocalOps {
 }
 
 case class PreemptiveLocalOps(capacity: Int)(
-    implicit exeCtx: ExecutionContext = PartitionExecution.exeCtx
+    implicit
+    exeCtx: ExecutionContext = PartitionExecution.exeCtx
 ) {
 
   import PreemptiveLocalOps._
@@ -61,7 +62,8 @@ case class PreemptiveLocalOps(capacity: Int)(
               LoggerFactory.getLogger(this.getClass).debug(s"Submitting:\t [$exe]\t\t- $jobText")
               exe.AsArray.start // non-blocking
               buffer.put( // may be blocking due to capacity
-                Success(exe))
+                Success(exe)
+              )
             }
         }
 

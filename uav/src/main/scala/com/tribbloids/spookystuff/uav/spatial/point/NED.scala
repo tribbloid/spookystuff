@@ -8,14 +8,12 @@ import org.locationtech.proj4j.proj.{EquidistantAzimuthalProjection, Projection}
 import scala.language.implicitConversions
 
 /**
-  * x = east (always east/horizontal)
-  * y = north (always north/vertical)
-  * z = -down (always up/altitude)
-  * use Azimuthal projection (NOT Cartisian but a mere approximation)
+  * x = east (always east/horizontal) y = north (always north/vertical) z = -down (always up/altitude) use Azimuthal
+  * projection (NOT Cartisian but a mere approximation)
   */
 object NED extends CoordinateSystem {
 
-  //to save time we avoid using proj4 string parsing and implement our own alternative conversion rule if Projection is not available.
+  // to save time we avoid using proj4 string parsing and implement our own alternative conversion rule if Projection is not available.
   override def get2DProj(a: Anchor, ic: SearchHistory): Option[Projection] = {
     a match {
       case p: Location =>

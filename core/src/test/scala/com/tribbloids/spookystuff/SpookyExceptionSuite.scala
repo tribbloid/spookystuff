@@ -14,7 +14,8 @@ class SpookyExceptionSuite extends FunSpecx {
           Seq(
             new AssertionError("2"),
             new AssertionError("1")
-          ))
+          )
+        )
       )
 
       ee.getMessage.shouldBe(

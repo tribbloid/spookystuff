@@ -4,16 +4,13 @@ import com.tribbloids.spookystuff.actions._
 import com.tribbloids.spookystuff.row.SpookySchema
 
 /**
-  * Do many things:
-  * Globally
-  * 1. add takeoff to the beginning of the trace if it is missing
+  * Do many things: Globally
+  *   1. add takeoff to the beginning of the trace if it is missing
   *
-  * Locally
-  * 2. replace Anchors.Home with UAVConf.home
-  * 3. replace Anchors.HomeLevelProjection with previous action._end minus its relative altitude to UAVConf.home
-  * 4. replace Anchors.MSLProjection with previous action._end minus its absolute altitude to Anchors.Geodetic
-  * 5. (pending) replace Anchors.GroundProjection with previous action._end
-  *     minus its relative altitude to ground elevation directly under it (query from various terrian API or DB)
+  * Locally 2. replace Anchors.Home with UAVConf.home 3. replace Anchors.HomeLevelProjection with previous action._end
+  * minus its relative altitude to UAVConf.home 4. replace Anchors.MSLProjection with previous action._end minus its
+  * absolute altitude to Anchors.Geodetic 5. (pending) replace Anchors.GroundProjection with previous action._end minus
+  * its relative altitude to ground elevation directly under it (query from various terrian API or DB)
   */
 object AutoTakeoffRule extends RewriteRule[Trace] {
 

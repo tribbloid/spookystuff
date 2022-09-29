@@ -6,8 +6,7 @@ import com.tribbloids.spookystuff.doc.DocOption
 import com.tribbloids.spookystuff.utils.CachingUtils.ConcurrentCache
 
 /**
-  * Backed by a WeakHashMap, the web cache temporarily store all trace -> Array[Page] until next GC.
-  * Always enabled
+  * Backed by a WeakHashMap, the web cache temporarily store all trace -> Array[Page] until next GC. Always enabled
   */
 object InMemoryDocCache extends AbstractDocCache {
 
@@ -20,9 +19,11 @@ object InMemoryDocCache extends AbstractDocCache {
   def getImpl(k: TraceView, spooky: SpookyContext): Option[Seq[DocOption]] = {
     val candidate = internal.get(k)
     candidate.flatMap { v =>
-      if (v.exists { vv =>
-            !inTimeRange(k.last, vv, spooky)
-          })
+      if (
+        v.exists { vv =>
+          !inTimeRange(k.last, vv, spooky)
+        }
+      )
         None
       else
         Some(v)

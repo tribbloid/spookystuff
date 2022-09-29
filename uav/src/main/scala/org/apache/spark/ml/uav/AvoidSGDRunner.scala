@@ -32,8 +32,8 @@ case class AvoidSGDRunner(
   val gradient = AvoidGradient(this)
   val updater = new SquaredL2Updater()
 
-  //TODO: result may be a very large object that requires shipping
-  //should optimize after PoC
+  // TODO: result may be a very large object that requires shipping
+  // should optimize after PoC
   lazy val conversion: Seq[(Trace, Trace)] = {
 
     val data = gradient.generateDataRDD

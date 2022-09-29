@@ -77,8 +77,8 @@ object HTTPResolver {
           .setConnectionManager(cm)
           .setDefaultRequestConfig(requestConfig)
           .setRedirectStrategy(new ResilientRedirectStrategy())
-          .setSslcontext(sslContext) //WARNING: keep until Spark get rid of httpclient 4.3
-          .setHostnameVerifier(hostVerifier) //WARNING: keep until Spark get rid of httpclient 4.3
+          .setSslcontext(sslContext) // WARNING: keep until Spark get rid of httpclient 4.3
+          .setHostnameVerifier(hostVerifier) // WARNING: keep until Spark get rid of httpclient 4.3
           .build
 
         httpClient
@@ -86,8 +86,8 @@ object HTTPResolver {
         val httpClient = HttpClients.custom
           .setDefaultRequestConfig(requestConfig)
           .setRedirectStrategy(new ResilientRedirectStrategy())
-          .setSslcontext(sslContext) //WARNING: keep until Spark get rid of httpclient 4.3
-          .setHostnameVerifier(hostVerifier) //WARNING: keep until Spark get rid of httpclient 4.3
+          .setSslcontext(sslContext) // WARNING: keep until Spark get rid of httpclient 4.3
+          .setHostnameVerifier(hostVerifier) // WARNING: keep until Spark get rid of httpclient 4.3
           .build()
 
         httpClient

@@ -5,10 +5,8 @@ import com.tribbloids.spookystuff.uav.spatial.point.Location
 import com.tribbloids.spookystuff.uav.system.UAV
 
 /**
-  * Created by peng on 24/02/17.
-  * Only used in tests
-  * DON'T merge with UAVStatus!
-  * despite similarity, all Links are subjected to resource control and automatic resource cleanup
+  * Created by peng on 24/02/17. Only used in tests DON'T merge with UAVStatus! despite similarity, all Links are
+  * subjected to resource control and automatic resource cleanup
   */
 case class DummyLink(
     uav: UAV,
@@ -19,7 +17,7 @@ case class DummyLink(
   override val resourceURIs: Set[String] = uav.uris.toSet
 
   override protected def _connect(): Unit = {
-    Thread.sleep(1000) //simulate telemetry delay
+    Thread.sleep(1000) // simulate telemetry delay
   }
 
   override protected def _disconnect(): Unit = {}

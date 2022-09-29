@@ -9,14 +9,14 @@ class ParsingRunSuite extends FunSpecx {
 
   /**
     * TODO:
-    * - test that entry node is automatically added to both tails if missing
-    * - test that EOP node is automatically added to head if missing.
-    * - use simple DSL to union >3 rules into 1 state
-    * - test that SubRules cache is organised to include all cases
+    *   - test that entry node is automatically added to both tails if missing
+    *   - test that EOP node is automatically added to head if missing.
+    *   - use simple DSL to union >3 rules into 1 state
+    *   - test that SubRules cache is organised to include all cases
     */
   describe("linear") {
 
-    //TODO: should use ioMapToString in all assertions
+    // TODO: should use ioMapToString in all assertions
     it("for 1 rule") {
       val p = P_*('$').!- :~> FINISH
 

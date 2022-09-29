@@ -1,7 +1,8 @@
 package com.tribbloids.spookystuff.utils
 
 /**
-  * @param iterators must have identical arities
+  * @param iterators
+  *   must have identical arities
   */
 class InterleavedIterator[T](iterators: List[Iterator[T]]) extends Iterator[Seq[T]] {
   assert(iterators.nonEmpty, "iterator list is empty")

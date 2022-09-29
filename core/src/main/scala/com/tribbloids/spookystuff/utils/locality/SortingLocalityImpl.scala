@@ -38,7 +38,7 @@ case class SortingLocalityImpl[K: ClassTag, V: ClassTag](
       .mapPartitions { itr =>
         itr.toSeq
           .sortBy(_._2._1)
-          .iterator //TODO: may cause OOM! optimize later
+          .iterator // TODO: may cause OOM! optimize later
           .map {
             case (k, v) =>
               k -> (v._2 -> v._3)

@@ -2,7 +2,6 @@ package com.tribbloids.spookystuff.actions
 
 import com.tribbloids.spookystuff.row.SpookySchema
 
-
 object TraceSetView {}
 
 //The precedence of an inﬁx operator is determined by the operator’s ﬁrst character.
@@ -23,7 +22,7 @@ object TraceSetView {}
 //put all narrow transformation closures here
 case class TraceSetView(asTraceSet: Set[Trace]) extends TraceSetAPI {
 
-  //many-to-one
+  // many-to-one
   def +>(another: Action): TraceSetView = TraceSetView(asTraceSet.map(trace => trace :+ another))
   def +>(others: Trace): TraceSetView = TraceSetView(asTraceSet.map(trace => trace ++ others))
 

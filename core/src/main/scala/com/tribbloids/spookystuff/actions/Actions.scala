@@ -4,7 +4,7 @@ import com.tribbloids.spookystuff.row.{FetchedRow, SpookySchema}
 
 trait Actions extends ActionLike {
 
-  override final def outputNames: Set[String] = {
+  final override def outputNames: Set[String] = {
     val names = children.map(_.outputNames)
     names.reduceLeftOption(_ ++ _).getOrElse(Set())
   }
@@ -14,13 +14,13 @@ trait Actions extends ActionLike {
   final protected def doInterpolateSeq(pr: FetchedRow, schema: SpookySchema): Trace =
     Actions.doInterpolateSeq(children, pr, schema: SpookySchema)
 
-  //names are not encoded in PageUID and are injected after being read from cache
+  // names are not encoded in PageUID and are injected after being read from cache
   override def injectFrom(same: ActionLike): Unit = {
     super.injectFrom(same)
     val zipped = this.children.zip(same.asInstanceOf[Actions].children)
 
     for (tuple <- zipped) {
-      tuple._1.injectFrom(tuple._2.asInstanceOf[tuple._1.type]) //recursive
+      tuple._1.injectFrom(tuple._2.asInstanceOf[tuple._1.type]) // recursive
     }
   }
 }

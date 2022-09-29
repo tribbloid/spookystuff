@@ -27,10 +27,9 @@ object SquashedFetchedRow {
 
 /**
   * the main data structure in execution plan, representing:
-  * 1. several DataRows combined together
-  * 2. several arrays of abstract pages.
-  * any extractions will be casted into applying to cartesian products of the above two
-  * this is due to the fact that 90% of time is spent on fetching. < 5% on parsing & extraction.
+  *   1. several DataRows combined together 2. several arrays of abstract pages. any extractions will be casted into
+  *      applying to cartesian products of the above two this is due to the fact that 90% of time is spent on fetching.
+  *      < 5% on parsing & extraction.
   */
 case class SquashedFetchedRow(
     dataRows: Array[DataRow] = Array(),
@@ -77,12 +76,12 @@ case class SquashedFetchedRow(
         }
         buffer += page
       }
-      grandBuffer += buffer.toList //always left, have at least 1 member
+      grandBuffer += buffer.toList // always left, have at least 1 member
       buffer.clear()
       grandBuffer.toArray
     }
 
-    //outer: dataRows, inner: grouped pages
+    // outer: dataRows, inner: grouped pages
     def semiUnsquash: Array[Array[FetchedRow]] = dataRows.map { dataRow =>
       val groupID = UUID.randomUUID()
       groupedDocs.zipWithIndex.map { tuple =>
@@ -98,63 +97,63 @@ case class SquashedFetchedRow(
     def unsquash: Array[FetchedRow] = semiUnsquash.flatten
 
     /**
-      * yield 1 SquashedPageRow, but the size of dataRows may increase according to the following rules:
-      * each dataRow yield >= 1 dataRows.
-      * each dataRow yield <= {groupedFetched.size} dataRows.
-      * if a groupedFetched doesn't yield any new data it is omitted
-      * if 2 groupedFetched yield identical results only the first is preserved? TODO: need more test on this one
-      * handling of previous values with identical field id is determined by new Field.conflictResolving.
+      * yield 1 SquashedPageRow, but the size of dataRows may increase according to the following rules: each dataRow
+      * yield >= 1 dataRows. each dataRow yield <= {groupedFetched.size} dataRows. if a groupedFetched doesn't yield any
+      * new data it is omitted if 2 groupedFetched yield identical results only the first is preserved? TODO: need more
+      * test on this one handling of previous values with identical field id is determined by new
+      * Field.conflictResolving.
       */
-    //TODO: special optimization for Expression that only use pages
+    // TODO: special optimization for Expression that only use pages
     private def _extract(
         exs: Seq[Resolved[Any]],
         filterEmpty: Boolean = true,
         distinct: Boolean = true
     ): SquashedFetchedRow = {
 
-      val allUpdatedDataRows: Array[DataRow] = semiUnsquash.flatMap { PageRows => //each element contains a different page group, CAUTION: not all of them are used: page group that yield no new datum will be removed, if all groups yield no new datum at least 1 row is preserved
-        val dataRow_KVOpts = PageRows.map { pageRow =>
-          val dataRow = pageRow.dataRow
-          val KVOpts: Seq[(Field, Option[Any])] = exs.flatMap { expr =>
-            val resolving = expr.field.conflictResolving
-            val k = expr.field
-            val vOpt = expr.lift.apply(pageRow)
-            resolving match {
-              case Field.Replace => Some(k -> vOpt)
-              case _             => vOpt.map(v => k -> Some(v))
+      val allUpdatedDataRows: Array[DataRow] = semiUnsquash.flatMap {
+        PageRows => // each element contains a different page group, CAUTION: not all of them are used: page group that yield no new datum will be removed, if all groups yield no new datum at least 1 row is preserved
+          val dataRow_KVOpts = PageRows.map { pageRow =>
+            val dataRow = pageRow.dataRow
+            val KVOpts: Seq[(Field, Option[Any])] = exs.flatMap { expr =>
+              val resolving = expr.field.conflictResolving
+              val k = expr.field
+              val vOpt = expr.lift.apply(pageRow)
+              resolving match {
+                case Field.Replace => Some(k -> vOpt)
+                case _             => vOpt.map(v => k -> Some(v))
+              }
             }
-          }
-          dataRow -> KVOpts
-        }
-
-        val filteredDataRow_KVOpts =
-          if (!filterEmpty) dataRow_KVOpts
-          else {
-            val filtered = dataRow_KVOpts.filter(_._2.exists(_._2.nonEmpty))
-            if (filtered.isEmpty) dataRow_KVOpts.headOption.toArray
-            else filtered
-          }
-        val distinctDataRow_KVOpts =
-          if (!distinct) filteredDataRow_KVOpts
-          else {
-            filteredDataRow_KVOpts.groupBy(_._2).map(_._2.head).toArray
+            dataRow -> KVOpts
           }
 
-        val updatedDataRows: Array[DataRow] = distinctDataRow_KVOpts.map { tuple =>
-          val K_VOrRemoves = tuple._2
-          val dataRow = tuple._1
-          val newKVs = K_VOrRemoves.collect {
-            case (field, Some(v)) => field -> v
-          }
-          val removeKs = K_VOrRemoves.collect {
-            case (field, None) => field
-          }
-          val updatedDataRow = dataRow ++ newKVs -- removeKs
+          val filteredDataRow_KVOpts =
+            if (!filterEmpty) dataRow_KVOpts
+            else {
+              val filtered = dataRow_KVOpts.filter(_._2.exists(_._2.nonEmpty))
+              if (filtered.isEmpty) dataRow_KVOpts.headOption.toArray
+              else filtered
+            }
+          val distinctDataRow_KVOpts =
+            if (!distinct) filteredDataRow_KVOpts
+            else {
+              filteredDataRow_KVOpts.groupBy(_._2).map(_._2.head).toArray
+            }
 
-          updatedDataRow
-        }
+          val updatedDataRows: Array[DataRow] = distinctDataRow_KVOpts.map { tuple =>
+            val K_VOrRemoves = tuple._2
+            val dataRow = tuple._1
+            val newKVs = K_VOrRemoves.collect {
+              case (field, Some(v)) => field -> v
+            }
+            val removeKs = K_VOrRemoves.collect {
+              case (field, None) => field
+            }
+            val updatedDataRow = dataRow ++ newKVs -- removeKs
 
-        updatedDataRows
+            updatedDataRow
+          }
+
+          updatedDataRows
       }
       SquashedFetchedRow.this.copy(dataRows = allUpdatedDataRows)
     }
@@ -174,28 +173,29 @@ case class SquashedFetchedRow(
         distinct: Boolean = true
     ): Array[(TraceView, DataRow)] = {
 
-      val dataRows_traces = semiUnsquash.flatMap { rows => //each element contains a different page group, CAUTION: not all of them are used: page group that yield no new datum will be removed, if all groups yield no new datum at least 1 row is preserved
-        val dataRows_traces = rows.flatMap { row =>
-          traces.map { trace =>
-            val rewritten: Seq[TraceView] = TraceView(trace).interpolateAndRewriteLocally(row, schema)
-            row.dataRow -> rewritten
-          //always discard old pages & temporary data before repartition, unlike flatten
-          }
-        }
-
-        val filteredDataRows_traces =
-          if (!filterEmpty) dataRows_traces
-          else {
-            val result = dataRows_traces.filter(_._2.nonEmpty)
-            if (result.isEmpty) dataRows_traces.headOption.toArray
-            else result
+      val dataRows_traces = semiUnsquash.flatMap {
+        rows => // each element contains a different page group, CAUTION: not all of them are used: page group that yield no new datum will be removed, if all groups yield no new datum at least 1 row is preserved
+          val dataRows_traces = rows.flatMap { row =>
+            traces.map { trace =>
+              val rewritten: Seq[TraceView] = TraceView(trace).interpolateAndRewriteLocally(row, schema)
+              row.dataRow -> rewritten
+            // always discard old pages & temporary data before repartition, unlike flatten
+            }
           }
 
-        val mergedDataRows_traces =
-          if (!distinct) filteredDataRows_traces
-          else filteredDataRows_traces.groupBy(_._2).map(_._2.head).toArray
+          val filteredDataRows_traces =
+            if (!filterEmpty) dataRows_traces
+            else {
+              val result = dataRows_traces.filter(_._2.nonEmpty)
+              if (result.isEmpty) dataRows_traces.headOption.toArray
+              else result
+            }
 
-        mergedDataRows_traces
+          val mergedDataRows_traces =
+            if (!distinct) filteredDataRows_traces
+            else filteredDataRows_traces.groupBy(_._2).map(_._2.head).toArray
+
+          mergedDataRows_traces
       }
 
       dataRows_traces.flatMap { v =>

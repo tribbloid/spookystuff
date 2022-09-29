@@ -15,7 +15,8 @@ class UDFTransformerSuite extends FunSpecx {
     Seq(
       User("Reza$", 25),
       User("Holden$", 25)
-    ))
+    )
+  )
 
   val tokenizer = new Tokenizer().setInputCol("name").setOutputCol("name_token")
   val stemming = udf { v: Seq[String] =>

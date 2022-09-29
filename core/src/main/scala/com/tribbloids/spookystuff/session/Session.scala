@@ -15,8 +15,7 @@ import scala.reflect.ClassTag
 import scala.util.Try
 
 /**
-  * the only implementation
-  * should be manually cleaned By ActionLike, so don't set lifespan unless absolutely necessary
+  * the only implementation should be manually cleaned By ActionLike, so don't set lifespan unless absolutely necessary
   */
 class Session(
     val spooky: SpookyContext,
@@ -43,7 +42,7 @@ class Session(
   object Drivers extends PluginRegistry.Factory {
 
     type UB = PluginSystem.WithDriver
-    override implicit lazy val ubEv: ClassTag[UB] = ClassTag(classOf[UB])
+    implicit override lazy val ubEv: ClassTag[UB] = ClassTag(classOf[UB])
 
     override type Out[V <: UB] = V#Driver
 
@@ -84,8 +83,7 @@ class Session(
     }
 
     /**
-      * all drivers will be terminated, not released (as in cleanImpl)
-      * currently useless
+      * all drivers will be terminated, not released (as in cleanImpl) currently useless
       */
     def shutdownAll(): Unit = {
 

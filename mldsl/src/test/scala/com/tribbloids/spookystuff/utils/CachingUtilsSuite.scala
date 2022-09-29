@@ -65,7 +65,7 @@ class CachingUtilsSuite extends FunSpecx with BeforeAndAfterEach {
         myVal = null
 
         System.gc()
-        Thread.sleep(10) //delay to allow gc
+        Thread.sleep(10) // delay to allow gc
 
         assert(count == 1)
       }

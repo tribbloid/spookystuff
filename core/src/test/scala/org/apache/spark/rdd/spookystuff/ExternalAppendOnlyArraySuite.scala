@@ -112,11 +112,8 @@ case class ExternalAppendOnlyArraySuite(
     def delayToEliminateRace(i: Int): Unit = {
 
       /**
-        * the purpose of this line is to avoid no children other than the first one to compute
-        * others always read cached values without racing
-        * 1: C1 C2 C3 C4
-        * 2: -> C1 C2 C3
-        * 3: -> -> C1 C2
+        * the purpose of this line is to avoid no children other than the first one to compute others always read cached
+        * values without racing 1: C1 C2 C3 C4 2: -> C1 C2 C3 3: -> -> C1 C2
         */
       // TODO: this setting still can't guarantee 100% of the time when parallelism is high
       //  for Disk IO the write speed is much slower than read, thus allowing later tasks to catch up

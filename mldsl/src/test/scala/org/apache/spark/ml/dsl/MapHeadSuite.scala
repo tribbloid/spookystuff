@@ -97,11 +97,11 @@ class MapHeadSuite extends AbstractDFDSuite {
     val flow = (
       new NGram()
         <<=: (
-        new StopWordsRemover()
-          <<: new Tokenizer()
-          <<: 'input
-      ).from("Tokenizer")
-        .and("StopWordsRemover")
+          new StopWordsRemover()
+            <<: new Tokenizer()
+            <<: 'input
+        ).from("Tokenizer")
+          .and("StopWordsRemover")
     )
 
     flow
@@ -157,11 +157,11 @@ class MapHeadSuite extends AbstractDFDSuite {
       new HashingTF()
         <<=: new NGram()
         <<=: (
-        new StopWordsRemover()
-          <<: new Tokenizer()
-          <<: 'input
-      ).from("Tokenizer")
-        .and("StopWordsRemover")
+          new StopWordsRemover()
+            <<: new Tokenizer()
+            <<: 'input
+        ).from("Tokenizer")
+          .and("StopWordsRemover")
     )
 
     flow

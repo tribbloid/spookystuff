@@ -38,7 +38,8 @@ case class PartitionExecution[T](
       val future = rdd.context.submitJob[T, Array[T], Array[T]](
         rdd,
         _.toArray,
-        Seq(partitionID), { (_, data) =>
+        Seq(partitionID),
+        { (_, data) =>
           result = data
         },
         result

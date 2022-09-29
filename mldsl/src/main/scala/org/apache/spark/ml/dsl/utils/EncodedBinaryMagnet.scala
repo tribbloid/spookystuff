@@ -37,10 +37,16 @@ abstract class EncodedBinaryMagnet[T <: EncodedBinaryMagnet[T]] extends Product 
 
   def toAESKey(lengthOpt: Option[Int] = Some(16)): SecretKeySpec = toSecretKeySpec("AES", lengthOpt)
 
-  def map(f: String => String)(implicit ev: EncodedBinaryMagnet.Companion[T]): T =
+  def map(f: String => String)(
+      implicit
+      ev: EncodedBinaryMagnet.Companion[T]
+  ): T =
     ev.fromStr(f(this.strEncoding_nullSafe))
 
-  def as[TT <: EncodedBinaryMagnet[TT]](implicit ev: EncodedBinaryMagnet.Companion[TT]): TT = {
+  def as[TT <: EncodedBinaryMagnet[TT]](
+      implicit
+      ev: EncodedBinaryMagnet.Companion[TT]
+  ): TT = {
     ev.apply(asBytes)
   }
 }
@@ -68,11 +74,11 @@ object EncodedBinaryMagnet {
       apply(blob)
     }
 
-    final implicit def fromBytes(v: Array[Byte]): T = apply(v)
+    implicit final def fromBytes(v: Array[Byte]): T = apply(v)
 
-    final implicit def fromStr(v: String): T = apply(v)
+    implicit final def fromStr(v: String): T = apply(v)
 
-    final implicit def fromKey(key: Key): T = {
+    implicit final def fromKey(key: Key): T = {
       fromBytes(key.getEncoded)
     }
 
@@ -90,7 +96,7 @@ object EncodedBinaryMagnet {
       DatatypeConverter.parseBase64Binary(v)
   }
 
-  //TODO: this is defective as new Base64Magnet("AM28t0").asBase64Str = "AM28", same problem may happen to other impl, need to fix properly!
+  // TODO: this is defective as new Base64Magnet("AM28t0").asBase64Str = "AM28", same problem may happen to other impl, need to fix properly!
   case class Base64 private (asBytes: Array[Byte]) extends EncodedBinaryMagnet[Base64] {
 
     @transient override lazy val strEncoding: String = DatatypeConverter.printBase64Binary(asBytes)

@@ -18,10 +18,12 @@ import org.slf4j.LoggerFactory
 import scala.reflect.ClassTag
 
 /**
-  * WARNING: scraped on job completion, if you want it to keep it across multiple tasks you need to
-  * launch a job with `spark.task.cpus = 0`
-  * @param ctag used to automatically determine serializer being used
-  * @tparam T affects ctg which is used in Ser/De
+  * WARNING: scraped on job completion, if you want it to keep it across multiple tasks you need to launch a job with
+  * `spark.task.cpus = 0`
+  * @param ctag
+  *   used to automatically determine serializer being used
+  * @tparam T
+  *   affects ctg which is used in Ser/De
   */
 class ExternalAppendOnlyArray[T] private[spookystuff] (
     id: String,
@@ -29,7 +31,8 @@ class ExternalAppendOnlyArray[T] private[spookystuff] (
     serializerFactory: () => serializer.Serializer,
     override val _lifespan: Lifespan = Lifespan.JVM.apply()
 )(
-    implicit val ctag: ClassTag[T]
+    implicit
+    val ctag: ClassTag[T]
 ) extends LocalCleanable {
 
   val INCREMENT = 1024
@@ -214,7 +217,8 @@ class ExternalAppendOnlyArray[T] private[spookystuff] (
 
   /**
     * NOT thread safe
-    * @param index iterator starts here
+    * @param index
+    *   iterator starts here
     */
   case class StartingFrom(index: Int = 0) {
 
@@ -361,9 +365,8 @@ object ExternalAppendOnlyArray {
 
       existing
         .getOrElseUpdate(
-          id, {
-            ExternalAppendOnlyArray(id, storageLevel, serializerFactory)
-          }
+          id,
+          ExternalAppendOnlyArray(id, storageLevel, serializerFactory)
         )
         .asInstanceOf[ExternalAppendOnlyArray[T]]
     }

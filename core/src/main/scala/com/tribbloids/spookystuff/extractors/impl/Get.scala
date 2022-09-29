@@ -26,18 +26,15 @@ case class Get(field: Field) extends Leaf[FR, Any] {
       throw new UnsupportedOperationException("Can only resolve type against SchemaContext")
   }
 
-  override def resolve(tt: DataType): PartialFunction[FR, Any] = Unlift(
-    v => v.dataRow.orWeak(field)
-  )
+  override def resolve(tt: DataType): PartialFunction[FR, Any] = Unlift(v => v.dataRow.orWeak(field))
 
   def GetSeq: GenExtractor[FR, Seq[Any]] = this.andOptionTyped[Any, Seq[Any]](
     {
       case v: TraversableOnce[Any] => Some(v.toSeq)
       case v: Array[Any]           => Some(v.toSeq)
       case _                       => None
-    }, {
-      _.ensureArray
-    }
+    },
+    _.ensureArray
   )
 
   def AsSeq: GenExtractor[FR, Seq[Any]] = this.andOptionTyped[Any, Seq[Any]](
@@ -45,8 +42,7 @@ case class Get(field: Field) extends Leaf[FR, Any] {
       case v: TraversableOnce[Any] => Some(v.toSeq)
       case v: Array[Any]           => Some(v.toSeq)
       case v @ _                   => Some(Seq(v))
-    }, {
-      _.asArray
-    }
+    },
+    _.asArray
   )
 }

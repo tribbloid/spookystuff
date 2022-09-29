@@ -18,8 +18,10 @@ abstract class UDFTransformerLike extends Transformer with HasOutputCol with Dyn
     _udfImpl.inputTypes.toSeq.flatten.foreach { dataType =>
       assert(!dataType.isInstanceOf[VectorUDT], s"UDF input type ${classOf[VectorUDT].getCanonicalName} is obsolete!")
     }
-    assert(!_udfImpl.dataType.isInstanceOf[VectorUDT],
-           s"UDF output type ${classOf[VectorUDT].getCanonicalName} is obsolete!")
+    assert(
+      !_udfImpl.dataType.isInstanceOf[VectorUDT],
+      s"UDF output type ${classOf[VectorUDT].getCanonicalName} is obsolete!"
+    )
     this.setUDF(_udfImpl)
   }
 
@@ -30,7 +32,8 @@ abstract class UDFTransformerLike extends Transformer with HasOutputCol with Dyn
   override def transform(dataset: Dataset[_]): DataFrame = {
     val newCol = udfImpl(
       (getInputCols: Array[String])
-        .map(v => col(v)): _*)
+        .map(v => col(v)): _*
+    )
 
     val result = dataset.withColumn(outputCol, newCol)
     result
@@ -50,8 +53,7 @@ object UDFTransformer extends DefaultParamsReadable[UDFTransformer] {
 }
 
 /**
-  * Created by peng on 09/04/16.
-  * TODO: use UDF registry's name as uid & name
+  * Created by peng on 09/04/16. TODO: use UDF registry's name as uid & name
   */
 case class UDFTransformer(
     uid: String = Identifiable.randomUID("udf")

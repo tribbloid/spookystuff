@@ -28,7 +28,8 @@ object Element {
       from_to: (T#ID, T#ID)
       //      tt: EdgeType = EdgeType.`->`,
   )(
-      implicit val algebra: Algebra[T]
+      implicit
+      val algebra: Algebra[T]
   ) extends Element[T] {
 
     def from: ID = from_to._1
@@ -109,7 +110,8 @@ object Element {
       data: T#NodeData,
       _id: T#ID
   )(
-      implicit val algebra: Algebra[T]
+      implicit
+      val algebra: Algebra[T]
   ) extends NodeLike[T] {
 
     override def _replicate(m: DataMutator)(

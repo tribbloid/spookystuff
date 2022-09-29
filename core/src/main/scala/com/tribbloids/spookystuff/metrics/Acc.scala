@@ -27,7 +27,10 @@ trait Acc[T <: AccumulatorV2[_, _]] extends MetricLike {
     result
   }
 
-  final def +=[V0](v: V0)(implicit canBuild: Acc.CanInit[V0, T]): Unit = {
+  final def +=[V0](v: V0)(
+      implicit
+      canBuild: Acc.CanInit[V0, T]
+  ): Unit = {
     canBuild.add(self, v)
   }
 }
@@ -54,7 +57,8 @@ object Acc {
       override val displayNameOvrd: Option[String] = None,
       @transient override val sparkContext: SparkContext = SparkSession.active.sparkContext
   )(
-      implicit canBuild: CanInit[V0, T]
+      implicit
+      canBuild: CanInit[V0, T]
   ) extends Acc[T] {
 
     override def _self: T = canBuild.initialise(v0)
@@ -82,31 +86,49 @@ object Acc {
 
   abstract class CanBuild_Level1 extends CanBuild_Level2 {
 
-    case class Long2Stats[IN]()(implicit ev: IN => Long) extends CanInit[IN, EventTimeStatsAccum] {
+    case class Long2Stats[IN]()(
+        implicit
+        ev: IN => Long
+    ) extends CanInit[IN, EventTimeStatsAccum] {
 
       override def build: EventTimeStatsAccum = new EventTimeStatsAccum()
 
       override def add(self: EventTimeStatsAccum, v: IN): Unit = self.add(v)
     }
-    implicit def long2Stats[IN](implicit ev: IN => Long): Long2Stats[IN] = Long2Stats()(ev)
+    implicit def long2Stats[IN](
+        implicit
+        ev: IN => Long
+    ): Long2Stats[IN] = Long2Stats()(ev)
 
-    case class FromDouble[IN]()(implicit ev: IN => Double) extends CanInit[IN, DoubleAccumulator] {
+    case class FromDouble[IN]()(
+        implicit
+        ev: IN => Double
+    ) extends CanInit[IN, DoubleAccumulator] {
       override def build: DoubleAccumulator = new DoubleAccumulator()
 
       override def add(self: DoubleAccumulator, v: IN): Unit = self.add(v)
     }
-    implicit def double2Double[IN](implicit ev: IN => Double): FromDouble[IN] = FromDouble()(ev)
+    implicit def double2Double[IN](
+        implicit
+        ev: IN => Double
+    ): FromDouble[IN] = FromDouble()(ev)
   }
 
   abstract class CanBuild_Level0 extends CanBuild_Level1 {
 
-    case class FromLong[IN]()(implicit ev: IN => Long) extends CanInit[IN, LongAccumulator] {
+    case class FromLong[IN]()(
+        implicit
+        ev: IN => Long
+    ) extends CanInit[IN, LongAccumulator] {
 
       override def build: LongAccumulator = new LongAccumulator()
 
       override def add(self: LongAccumulator, v: IN): Unit = self.add(v)
     }
-    implicit def long2Long[IN](implicit ev: IN => Long): FromLong[IN] = FromLong()(ev)
+    implicit def long2Long[IN](
+        implicit
+        ev: IN => Long
+    ): FromLong[IN] = FromLong()(ev)
 
     case class FromMap[K, V]() extends CanInit[collection.Map[K, V], MapAccumulator[K, V]] {
 
@@ -123,19 +145,22 @@ object Acc {
   }
 
   def create[IN, T <: AccumulatorV2[_, _]](value: IN, displayNameOvrd: String ? _ = None)(
-      implicit canBuild: CanInit[IN, T]
+      implicit
+      canBuild: CanInit[IN, T]
   ): Acc[T] = {
     FromV0(value, displayNameOvrd.asOption)
   }
 
   implicit def fromV0[IN, T <: AccumulatorV2[_, _]](value: IN)(
-      implicit canBuild: CanInit[IN, T]
+      implicit
+      canBuild: CanInit[IN, T]
   ): Acc[T] = {
     create(value)
   }
 
   implicit def fromKV0[IN, T <: AccumulatorV2[_, _]](kv: (String, IN))(
-      implicit canBuild: CanInit[IN, T]
+      implicit
+      canBuild: CanInit[IN, T]
   ): Acc[T] = {
 
     create(kv._2, kv._1)

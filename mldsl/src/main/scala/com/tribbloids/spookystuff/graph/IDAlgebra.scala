@@ -55,9 +55,9 @@ object IDAlgebra {
 
     abstract class WithFixedPoint[ID](fixed: Set[ID]) extends Rotator[ID] {
 
-      //TODO: need local caching?
+      // TODO: need local caching?
 
-      override final def apply(v: ID): ID = {
+      final override def apply(v: ID): ID = {
         if (fixed.contains(v)) v
         else _doApply(v)
       }

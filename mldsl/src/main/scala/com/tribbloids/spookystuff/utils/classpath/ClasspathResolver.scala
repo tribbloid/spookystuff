@@ -2,7 +2,7 @@ package com.tribbloids.spookystuff.utils.classpath
 
 import com.tribbloids.spookystuff.utils.CommonUtils
 import com.tribbloids.spookystuff.utils.io.Resource.{DIR, FILE}
-import com.tribbloids.spookystuff.utils.io.{ResourceMetadata, URIResolver, WriteMode, Resource => IOResource}
+import com.tribbloids.spookystuff.utils.io.{Resource => IOResource, ResourceMetadata, URIResolver, WriteMode}
 import com.tribbloids.spookystuff.utils.lifespan.Cleanable
 import io.github.classgraph.{ClassGraph, Resource, ResourceList, ScanResult}
 import org.apache.commons.lang.StringUtils
@@ -25,7 +25,7 @@ case class ClasspathResolver(
     ResourceMetadata.ReflectionParser[Resource]()
 
   lazy val graph: ClassGraph = {
-    var base = new ClassGraph() //.enableClassInfo.ignoreClassVisibility
+    var base = new ClassGraph() // .enableClassInfo.ignoreClassVisibility
 
     elementsOverride.foreach { oo =>
       base = base.overrideClasspath(oo)
@@ -171,7 +171,7 @@ case class ClasspathResolver(
 
         v.copyTo(targetRootExe.outer.execute(dst), mode)
       }
-      Thread.sleep(5000) //for eventual consistency
+      Thread.sleep(5000) // for eventual consistency
     }
 
   }
@@ -203,12 +203,10 @@ case class ClasspathResolver(
         )
     ): Unit = {
 
-      {
-        val resolvedInfos = fileNames.map { v =>
-          _Execution(v).referenceInfo
-        }
-        println("resolving files in classpath ...\n" + resolvedInfos.mkString("\n"))
+      val resolvedInfos = fileNames.map { v =>
+        _Execution(v).referenceInfo
       }
+      println("resolving files in classpath ...\n" + resolvedInfos.mkString("\n"))
     }
 
     object Files {
@@ -243,23 +241,24 @@ case class ClasspathResolver(
     object Conflicts {
 
       lazy val raw: Map[String, List[String]] = {
-        val seen = try {
+        val seen =
+          try {
 
-          val resources = scanResult.getAllResources.asScala
+            val resources = scanResult.getAllResources.asScala
 
-          val result = resources
-            .groupBy { resource =>
-              resource.getPath
-            }
-            .map {
-              case (k, vs) =>
-                k -> vs.map { v =>
-                  val filePath = v.getClasspathElementURI.toString
-                  StringUtils.split(filePath, File.separator).last
-                }
-            }
-          result
-        }
+            val result = resources
+              .groupBy { resource =>
+                resource.getPath
+              }
+              .map {
+                case (k, vs) =>
+                  k -> vs.map { v =>
+                    val filePath = v.getClasspathElementURI.toString
+                    StringUtils.split(filePath, File.separator).last
+                  }
+              }
+            result
+          }
 
         val result = seen.flatMap {
           case (k, v) =>

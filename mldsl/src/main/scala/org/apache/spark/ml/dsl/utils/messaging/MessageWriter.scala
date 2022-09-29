@@ -20,20 +20,44 @@ class MessageWriter[M](
     Codec.getRootTag(message)
   )
 
-  //TODO: move into case class WFormats(.) and enable lazy val
-  def toJValue(implicit formats: Formats = formats): JValue = Extraction.decompose(message)
-  def compactJSON(implicit formats: Formats = formats): String = compact(render(toJValue))
-  def prettyJSON(implicit formats: Formats = formats): String = pretty(render(toJValue))
-  def toJSON(pretty: Boolean = true)(implicit formats: Formats = formats): String = {
+  // TODO: move into case class WFormats(.) and enable lazy val
+  def toJValue(
+      implicit
+      formats: Formats = formats
+  ): JValue = Extraction.decompose(message)
+  def compactJSON(
+      implicit
+      formats: Formats = formats
+  ): String = compact(render(toJValue))
+  def prettyJSON(
+      implicit
+      formats: Formats = formats
+  ): String = pretty(render(toJValue))
+  def toJSON(pretty: Boolean = true)(
+      implicit
+      formats: Formats = formats
+  ): String = {
     if (pretty) prettyJSON(formats)
     else compactJSON(formats)
   }
 
-  def toXMLNode(implicit formats: Formats = formats): NodeSeq =
+  def toXMLNode(
+      implicit
+      formats: Formats = formats
+  ): NodeSeq =
     Xml.toXml(JObject(rootTag -> toJValue))
-  def compactXML(implicit formats: Formats = formats): String = toXMLNode.toString().replaceAllLiterally("\n", "")
-  def prettyXML(implicit formats: Formats = formats): String = XMLFormats.defaultXMLPrinter.formatNodes(toXMLNode)
-  def toXMLStr(pretty: Boolean = true)(implicit formats: Formats = formats): String = {
+  def compactXML(
+      implicit
+      formats: Formats = formats
+  ): String = toXMLNode.toString().replaceAllLiterally("\n", "")
+  def prettyXML(
+      implicit
+      formats: Formats = formats
+  ): String = XMLFormats.defaultXMLPrinter.formatNodes(toXMLNode)
+  def toXMLStr(pretty: Boolean = true)(
+      implicit
+      formats: Formats = formats
+  ): String = {
     if (pretty) prettyXML
     else compactXML
   }
@@ -42,7 +66,7 @@ class MessageWriter[M](
     MessageReader._fromJValue[T](toJValue(formats))
   }
 
-  //TODO: delegate to Nested
+  // TODO: delegate to Nested
   def getMemberStr(
       start: String = "(",
       sep: String = ",",
@@ -121,9 +145,14 @@ class MessageWriter[M](
   lazy val memberStr: String = this.getMemberStr()
   lazy val memberStr_\\\ : String = this.getMemberStr(File.separator, File.separator, File.separator)
   lazy val memberStr_/:/ : String = this.getMemberStr("/", "/", "/")
-  lazy val memberStrPretty: String = this.getMemberStr("(\n", ",\n", "\n)", { _ =>
-    "\t"
-  })
+  lazy val memberStrPretty: String = this.getMemberStr(
+    "(\n",
+    ",\n",
+    "\n)",
+    { _ =>
+      "\t"
+    }
+  )
 }
 
 object MessageWriter {

@@ -22,7 +22,10 @@ abstract class CommonViews {
     }
   }
 
-  implicit class GenTraversableOnceView[A](self: GenTraversableOnce[A])(implicit ctg: ClassTag[A]) {
+  implicit class GenTraversableOnceView[A](self: GenTraversableOnce[A])(
+      implicit
+      ctg: ClassTag[A]
+  ) {
 
     def longSize: Long = {
       var result = 0L

@@ -35,6 +35,6 @@ object Spatial {
       }
     }
     geomTry.get
-    //TODO: parse non-geometric spatial
+    // TODO: parse non-geometric spatial
   }
 }

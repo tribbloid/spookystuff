@@ -13,7 +13,7 @@ package object spatial {
   type JTSGeom = geom.Geometry
   type JTSPoint = geom.Point
 
-  type TrellisGeom = Geometry //wraps jts Geometry
+  type TrellisGeom = Geometry // wraps jts Geometry
   type TrellisPoint = Point
 
   type Coordinate = Geom[TrellisPoint]

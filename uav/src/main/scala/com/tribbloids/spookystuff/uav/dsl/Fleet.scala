@@ -27,7 +27,7 @@ object Fleet {
   /**
     * will do a pre-scan to determine the availabiliy of all vehicles
     */
-  //TODO: implement later
+  // TODO: implement later
   case class Discover(
       delegate: Fleet
 //                       base: BaseLocator

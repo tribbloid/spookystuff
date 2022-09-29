@@ -4,11 +4,9 @@ import com.tribbloids.spookystuff.uav.spatial.point.{CoordinateSystem, LLA}
 import com.tribbloids.spookystuff.uav.spatial.util.SearchHistory
 
 /**
-  * Created by peng on 15/02/17.
-  * An Anchor maps a data structure (e.g. coordinate, voxel map, point cloud etc.)
-  * to a real world space.
-  * An Anchor can be a location, a location with bearing,
-  * an estimation of a location with PDF, or a completely unknown hypothesis
+  * Created by peng on 15/02/17. An Anchor maps a data structure (e.g. coordinate, voxel map, point cloud etc.) to a
+  * real world space. An Anchor can be a location, a location with bearing, an estimation of a location with PDF, or a
+  * completely unknown hypothesis
   */
 trait Anchor extends Serializable {
   import Anchors._

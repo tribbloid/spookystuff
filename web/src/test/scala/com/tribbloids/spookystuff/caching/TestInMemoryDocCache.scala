@@ -22,7 +22,9 @@ class TestInMemoryDocCache extends SpookyEnvFixture with LocalPathDocsFixture {
   def wgetPage: Seq[Doc] =
     wget
       .fetch(spooky)
-      .map(_.asInstanceOf[Doc].updated(cacheLevel = DocCacheLevel.All)) //By default wget from DFS are only cached in-memory
+      .map(
+        _.asInstanceOf[Doc].updated(cacheLevel = DocCacheLevel.All)
+      ) // By default wget from DFS are only cached in-memory
 
   it("cache and restore") {
     val visitPage = this.visitPage
@@ -97,7 +99,7 @@ class TestInMemoryDocCache extends SpookyEnvFixture with LocalPathDocsFixture {
 //    assert(page2.head.code === page2.head.code)
   }
 
-  //TODO: test trace, block and more complex cases
+  // TODO: test trace, block and more complex cases
 //  test ("s3 cache") {
 //
 //    spooky.setRoot(s"s3n://spooky-unit/")

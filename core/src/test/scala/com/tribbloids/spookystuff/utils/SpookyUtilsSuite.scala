@@ -41,21 +41,17 @@ class SpookyUtilsSuite extends FunSpecx {
 
       val (_, time) = CommonUtils.timed {
         TestHelper.intercept[TimeoutException] {
-          CommonUtils.withTimeout(10.seconds, 1.second)(
-            {
-              Thread.sleep(20000)
-            }
-          )
+          CommonUtils.withTimeout(10.seconds, 1.second) {
+            Thread.sleep(20000)
+          }
         }
       }
       Predef.assert(time < 12000)
 
       val (_, time2) = CommonUtils.timed {
-        CommonUtils.withTimeout(10.seconds, 1.second)(
-          {
-            Thread.sleep(5000)
-          }
-        )
+        CommonUtils.withTimeout(10.seconds, 1.second) {
+          Thread.sleep(5000)
+        }
       }
       assert(time2 < 6000)
     }
@@ -67,9 +63,7 @@ class SpookyUtilsSuite extends FunSpecx {
       val (_, time) = CommonUtils.timed {
         TestHelper.intercept[TimeoutException] {
           CommonUtils.withTimeout(10.seconds, 1.second)(
-            {
-              Thread.sleep(20000)
-            },
+            Thread.sleep(20000),
             AwaitWithHeartbeat.Heartbeat.WrapWithInfo { i: Int =>
               log += i
               true
@@ -83,9 +77,7 @@ class SpookyUtilsSuite extends FunSpecx {
       log.clear()
       val (_, time2) = CommonUtils.timed {
         CommonUtils.withTimeout(10.seconds, 1.second)(
-          {
-            Thread.sleep(5000)
-          },
+          Thread.sleep(5000),
           AwaitWithHeartbeat.Heartbeat.WrapWithInfo { i: Int =>
             log += i
             true

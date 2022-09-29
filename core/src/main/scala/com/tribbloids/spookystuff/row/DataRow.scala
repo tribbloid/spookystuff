@@ -8,9 +8,9 @@ import org.apache.spark.ml.dsl.utils.messaging.ProtoAPI
 import scala.reflect.ClassTag
 
 /**
-  * data container that is persisted through different stages of execution plan.
-  * has no schema information, user are required to refer to schema from driver and use the index number to access element.
-  * schema |x| field => index => value
+  * data container that is persisted through different stages of execution plan. has no schema information, user are
+  * required to refer to schema from driver and use the index number to access element. schema |x| field => index =>
+  * value
   */
 //TODO: change to wrap DataFrame Row/InternalRow?
 //TODO: also carry PageUID & property type (Vertex/Edge) for GraphX or GraphFrame
@@ -18,13 +18,13 @@ import scala.reflect.ClassTag
 case class DataRow(
     data: Data = Data.empty,
     groupID: Option[UUID] = None,
-    groupIndex: Int = 0, //set to 0...n for each page group after SquashedPageRow.semiUnsquash/unsquash
-    freeze: Boolean = false //if set to true PageRow.extract won't insert anything into it, used in merge/replace join
+    groupIndex: Int = 0, // set to 0...n for each page group after SquashedPageRow.semiUnsquash/unsquash
+    freeze: Boolean = false // if set to true PageRow.extract won't insert anything into it, used in merge/replace join
 ) extends AbstractSpookyRow
     with ProtoAPI {
 
   {
-    assert(data.isInstanceOf[Serializable]) //fail early
+    assert(data.isInstanceOf[Serializable]) // fail early
   }
 
   import SpookyViews._
@@ -75,9 +75,9 @@ case class DataRow(
     result
   }
 
-  //retain old pageRow,
-  //always left
-  //TODO: add test to ensure that ordinalField is added BEFORE sampling
+  // retain old pageRow,
+  // always left
+  // TODO: add test to ensure that ordinalField is added BEFORE sampling
   def flatten(
       field: Field,
       ordinalField: Field,
@@ -88,7 +88,7 @@ case class DataRow(
     val newValues_Indices = data.flattenByKey(field, sampler)
 
     if (left && newValues_Indices.isEmpty) {
-      Seq(this.copy(data = data - field)) //you don't lose the remainder of a row because an element is empty
+      Seq(this.copy(data = data - field)) // you don't lose the remainder of a row because an element is empty
     } else {
       val result: Seq[(DataRow, Int)] = newValues_Indices.map(tuple => this.copy(data = tuple._1.toMap) -> tuple._2)
 
@@ -117,8 +117,8 @@ case class DataRow(
   //    this -- tempFields
   //  }
 
-  //T cannot <: AnyVal otherwise will run into https://issues.scala-lang.org/browse/SI-6967
-  //getIntIterable cannot use it for the same reason
+  // T cannot <: AnyVal otherwise will run into https://issues.scala-lang.org/browse/SI-6967
+  // getIntIterable cannot use it for the same reason
   def getTypedArray[T <: Any: ClassTag](field: Field): Option[Array[T]] = {
     val result = data.get(field).map { v =>
       SpookyUtils.asArray[T](v)
@@ -127,7 +127,7 @@ case class DataRow(
   }
   def getArray(field: Field): Option[Array[Any]] = getTypedArray[Any](field)
 
-  //TODO: cleanup getters after this line, they are useless
+  // TODO: cleanup getters after this line, they are useless
   def getIntArray(field: Field): Option[Array[Int]] = getTypedArray[Int](field)
 
   def getTypedIterable[T <: Any: ClassTag](field: Field): Option[Iterable[T]] = {
@@ -139,7 +139,7 @@ case class DataRow(
   def getIterable(field: Field): Option[Iterable[Any]] = getTypedIterable[Any](field)
   def getIntIterable(field: Field): Option[Iterable[Int]] = getTypedIterable[Int](field)
 
-  //replace each '{key} in a string with their respective value in cells
+  // replace each '{key} in a string with their respective value in cells
   def replaceInto(
       str: String,
       interpolation: Interpolation = Interpolation.`'`

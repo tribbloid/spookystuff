@@ -15,8 +15,10 @@ trait MultiMapView[K, +V] {
 
     val operands: Seq[collection.Map[K, Seq[V2]]] = Seq(this.self, other.self)
 
-    for (map <- operands;
-         (k, vs) <- map) {
+    for (
+      map <- operands;
+      (k, vs) <- map
+    ) {
 
       buffer.putN(k, vs)
     }

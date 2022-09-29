@@ -132,7 +132,7 @@ object WebDriverFactory {
           .usingPhantomJSExecutable(new File(pathStr))
           .withEnvironment(
             Map(
-              "OPENSSL_CONF" -> "/dev/null" //https://github.com/bazelbuild/rules_closure/issues/351
+              "OPENSSL_CONF" -> "/dev/null" // https://github.com/bazelbuild/rules_closure/issues/351
             ).asJava
           )
           .withLogFile(new File(s"${session.SessionLog.dirPath}/PhantomJSDriver.log"))
@@ -160,7 +160,7 @@ object WebDriverFactory {
 
     }
 
-    //called from executors
+    // called from executors
     override def _createImpl(session: Session, lifespan: Lifespan): CleanWebDriver = PhantomJS.synchronized {
       // synchronized to avoid 2 builders competing for the same port
       val creation = DriverCreation(session, lifespan)

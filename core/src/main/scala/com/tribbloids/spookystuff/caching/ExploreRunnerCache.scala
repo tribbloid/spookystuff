@@ -6,8 +6,8 @@ import com.tribbloids.spookystuff.row.{DataRow, RowReducer}
 import com.tribbloids.spookystuff.utils.CachingUtils.{ConcurrentCache, ConcurrentMap, ConcurrentSet}
 
 /**
-  * Singleton, always in the JVM and shared by all executors on the same machine
-  * This is a makeshift implementation, faster implementation will be based on Google Guava library
+  * Singleton, always in the JVM and shared by all executors on the same machine This is a makeshift implementation,
+  * faster implementation will be based on Google Guava library
   */
 object ExploreRunnerCache {
 
@@ -15,7 +15,8 @@ object ExploreRunnerCache {
   // exeID is used to segment Squashed Rows from different jobs
   val committedVisited: ConcurrentCache[(NodeKey, ExeID), Iterable[DataRow]] = ConcurrentCache()
 
-  val onGoings: ConcurrentMap[ExeID, ConcurrentSet[ExploreRunner]] = ConcurrentMap() //executionID -> running ExploreStateView
+  val onGoings: ConcurrentMap[ExeID, ConcurrentSet[ExploreRunner]] =
+    ConcurrentMap() // executionID -> running ExploreStateView
 
   def getOnGoingRunners(exeID: ExeID): ConcurrentSet[ExploreRunner] = {
     //    onGoings.synchronized{

@@ -16,7 +16,7 @@ package object actions {
 
   type DryRun = List[Trace]
 
-  type DocFilter = Lambda[(Doc, Session), Doc] //TODO: merge with Selector[Doc]
+  type DocFilter = Lambda[(Doc, Session), Doc] // TODO: merge with Selector[Doc]
 
-  type DocCondition = Lambda[(Doc, Session), Boolean] //TODO: merge with Selector[Doc]
+  type DocCondition = Lambda[(Doc, Session), Boolean] // TODO: merge with Selector[Doc]
 }

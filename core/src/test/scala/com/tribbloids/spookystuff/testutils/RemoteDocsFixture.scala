@@ -7,7 +7,7 @@ trait RemoteDocsFixture {
 
   def HTML_URL = "http://tribbloid.github.io/spookystuff/test/Wikipedia.html"
   def JSON_URL = "http://tribbloid.github.io/spookystuff/test/tribbloid.json"
-  //TODO: add this after fetch can semi-auto-detect content-type
+  // TODO: add this after fetch can semi-auto-detect content-type
   //  def jsonUrlIncorrectContentType = "https://raw.githubusercontent.com/tribbloid/spookystuff/master/core/src/test/resources/site/tribbloid.json"
   def PNG_URL = "http://tribbloid.github.io/spookystuff/test/logo11w.png"
   def PDF_URL = "http://tribbloid.github.io/spookystuff/test/Test.pdf"

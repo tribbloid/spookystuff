@@ -9,10 +9,8 @@ import com.tribbloids.spookystuff.session.Session
 import com.tribbloids.spookystuff.web.conf.Web
 
 /**
-  * Export the current page from the browser
-  * interact with the browser to load the target page first
-  * only for html page, please use wget for images and pdf files
-  * always export as UTF8 charset
+  * Export the current page from the browser interact with the browser to load the target page first only for html page,
+  * please use wget for images and pdf files always export as UTF8 charset
   */
 case class Snapshot(
     override val filter: DocFilter = Const.defaultDocumentFilter
@@ -43,10 +41,9 @@ case class Snapshot(
 
 object Snapshot {
 
-  //this is used to save GC when invoked by anothor component
+  // this is used to save GC when invoked by anothor component
   object QuickSnapshot extends Snapshot(DocFilterImpl.Bypass)
-  object ErrorDump
-      extends Snapshot(DocFilterImpl.Bypass)
-      //  with MessageAPI
-      {}
+  object ErrorDump extends Snapshot(DocFilterImpl.Bypass)
+  //  with MessageAPI
+  {}
 }

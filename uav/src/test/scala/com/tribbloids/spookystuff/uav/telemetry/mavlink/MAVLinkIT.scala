@@ -34,9 +34,10 @@ class MAVLinkIT extends LinkITFixture with APMQuadFixture {
     val rdd = sc.parallelize(fleetURIs).map { connStr =>
       val drones = List(UAV(Seq(connStr)))
       val session = new Session(spooky)
-      val link = Dispatcher( //refitting
-                            drones,
-                            session).get
+      val link = Dispatcher( // refitting
+        drones,
+        session
+      ).get
         .asInstanceOf[MAVLink]
 
       val endpoint1 = link.Endpoints.primary

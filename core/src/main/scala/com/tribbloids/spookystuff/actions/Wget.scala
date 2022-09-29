@@ -12,12 +12,12 @@ import org.apache.commons.io.IOUtils
 import org.apache.http.client.methods.HttpGet
 
 /**
-  * use an http GET to fetch a remote resource deonted by url
-  * http client is much faster than browser, also load much less resources
-  * recommended for most static pages.
-  * actions for more complex http/restful API call will be added per request.
+  * use an http GET to fetch a remote resource deonted by url http client is much faster than browser, also load much
+  * less resources recommended for most static pages. actions for more complex http/restful API call will be added per
+  * request.
   *
-  * @param uri support cell interpolation
+  * @param uri
+  *   support cell interpolation
   */
 @SerialVersionUID(-8687280136721213696L)
 case class Wget(
@@ -34,7 +34,8 @@ case class Wget(
     val resolver = new OmniResolver(
       () => hadoopConf,
       timeout,
-      proxy, { uri =>
+      proxy,
+      { uri =>
         val headers = session.spooky.spookyConf.httpHeadersFactory()
 
         val request = new HttpGet(uri)
@@ -85,8 +86,6 @@ case class Wget(
   override def doInterpolate(pageRow: FetchedRow, schema: SpookySchema): Option[this.type] = {
     val uriLit: Option[Lit[FR, String]] = resolveURI(pageRow, schema)
 
-    uriLit.flatMap(
-      lit => this.copy(uri = lit).asInstanceOf[this.type].injectWayback(this.wayback, pageRow, schema)
-    )
+    uriLit.flatMap(lit => this.copy(uri = lit).asInstanceOf[this.type].injectWayback(this.wayback, pageRow, schema))
   }
 }

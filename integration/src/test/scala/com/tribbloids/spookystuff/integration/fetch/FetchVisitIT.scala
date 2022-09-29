@@ -23,7 +23,7 @@ class FetchVisitIT extends IntegrationFixture {
     assert(pageRows(0).docs.head.name === Snapshot(DocFilterImpl.MustHaveTitle).toString)
     val pageTime = pageRows(0).docs.head.timeMillis
     assert(pageTime < finishTime)
-    assert(pageTime > finishTime - 60000) //long enough even after the second time it is retrieved from s3 cache
+    assert(pageTime > finishTime - 60000) // long enough even after the second time it is retrieved from s3 cache
 
     val RDD2 = RDD
       .fetch(
@@ -37,7 +37,8 @@ class FetchVisitIT extends IntegrationFixture {
     assert(unionRows.length === 2)
     assert(
       unionRows(0).docs.head.copy(timeMillis = 0, raw = null, saved = null)
-        === unionRows(1).docs.head.copy(timeMillis = 0, raw = null, saved = null))
+        === unionRows(1).docs.head.copy(timeMillis = 0, raw = null, saved = null)
+    )
 
     assert(unionRows(0).docs.head.timeMillis === unionRows(1).docs.head.timeMillis)
     assert(unionRows(0).docs.head.raw === unionRows(1).docs.head.raw)
@@ -45,7 +46,7 @@ class FetchVisitIT extends IntegrationFixture {
     assert(unionRows(0).getOnlyDoc.get.name === Snapshot(DocFilterImpl.MustHaveTitle).toString)
     assert(unionRows(1).getOnlyDoc.get.name === "b")
 
-    //this is to ensure that an invalid expression (with None interpolation result) won't cause loss of information
+    // this is to ensure that an invalid expression (with None interpolation result) won't cause loss of information
     val RDDfetchNone = unionRDD
       .fetch(
         Visit('noSuchField) +> Snapshot() ~ 'c

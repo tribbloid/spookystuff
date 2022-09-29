@@ -14,7 +14,7 @@ import scala.reflect.ClassTag
 
 trait EAVRelay[I <: EAV] extends MessageRelay[I] with EAVBuilder[I] {
 
-  override final type Impl = I
+  final override type Impl = I
   final override def Impl: EAVRelay[I] = this
 
   override def getRootTag(protoOpt: Option[I], messageOpt: Option[Map[String, JValue]]): String = "root"
@@ -27,7 +27,7 @@ trait EAVRelay[I <: EAV] extends MessageRelay[I] with EAVBuilder[I] {
     jv
   }
 
-  //TODO: too much boilerplates! should use the overriding pattern in:
+  // TODO: too much boilerplates! should use the overriding pattern in:
   // https://stackoverflow.com/questions/55801443/in-scala-how-can-an-inner-case-class-consistently-override-a-method
   def fromCore(v: EAV.Impl): I
 
@@ -40,14 +40,17 @@ trait EAVRelay[I <: EAV] extends MessageRelay[I] with EAVBuilder[I] {
         case (k, v) =>
           val mapped = Nested[Any](v).map[JValue] { elem: Any =>
             TreeThrowable
-              .|||^[JValue](Seq(
-                { () =>
-                  val codec = CodecRegistry.Default.findCodecOrDefault[Any](v)
-                  assertWellFormed(codec.toWriter_>>(elem).toJValue)
-                }, { () =>
-                  JString(elem.toString)
-                }
-              ))
+              .|||^[JValue](
+                Seq(
+                  { () =>
+                    val codec = CodecRegistry.Default.findCodecOrDefault[Any](v)
+                    assertWellFormed(codec.toWriter_>>(elem).toJValue)
+                  },
+                  { () =>
+                    JString(elem.toString)
+                  }
+                )
+              )
               .get
           }
           k -> MessageWriter(mapped.self).toJValue
@@ -60,10 +63,13 @@ trait EAVRelay[I <: EAV] extends MessageRelay[I] with EAVBuilder[I] {
     val map = m.toSeq
       .map {
         case (k, jv) =>
-          val mapped = Nested[Any](jv).map(fn = identity, preproc = {
-            case v: JValue => v.values
-            case v @ _     => v
-          })
+          val mapped = Nested[Any](jv).map(
+            fn = identity,
+            preproc = {
+              case v: JValue => v.values
+              case v @ _     => v
+            }
+          )
           k -> mapped.self
         //          RecursiveTransform(jv, failFast = true)(
         //            {

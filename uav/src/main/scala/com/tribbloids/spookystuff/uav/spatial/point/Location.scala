@@ -51,7 +51,7 @@ case class Location(
   def replaceAnchors(fn: PartialFunction[Anchor, Anchor]): Location = {
 
     val cs = definedBy.map { assoc =>
-      //TODO: unnecessary copy if out of fn domain
+      // TODO: unnecessary copy if out of fn domain
       val replaced: Anchor = fn.applyOrElse(assoc.anchor, (_: Anchor) => assoc.anchor)
       val taggedReplaced = assoc.anchor -> replaced match {
         case (t: Anchors.Alias, v: Location) => v.copy(aliasOpt = Some(t))
@@ -66,7 +66,7 @@ case class Location(
 
   @transient lazy val _mnemonics: ArrayBuffer[GeoRef[Coordinate]] = {
     val result = ArrayBuffer.empty[GeoRef[Coordinate]]
-    result ++= definedBy //preset
+    result ++= definedBy // preset
     result
   }
 
@@ -78,11 +78,9 @@ case class Location(
   }
 
   /**
-    * always add result into buffer to avoid repeated computation
-    * recursively search through its relations to deduce the coordinate.
-    * TODO: this implementation is not designed to infer each dimension individually
-    * (e.g. when try to get LLA coord but only has NED to home with altitude known
-    * the result can still be (NaN, NaN, Alt) )
+    * always add result into buffer to avoid repeated computation recursively search through its relations to deduce the
+    * coordinate. TODO: this implementation is not designed to infer each dimension individually (e.g. when try to get
+    * LLA coord but only has NED to home with altitude known the result can still be (NaN, NaN, Alt) )
     * @param system
     * @param from
     * @param sh
@@ -110,8 +108,10 @@ case class Location(
     }
 
     _mnemonics.foreach { rel =>
-      if (rel.geom.system == system &&
-          rel.anchor == from) {
+      if (
+        rel.geom.system == system &&
+        rel.anchor == from
+      ) {
         return Some(rel.geom.asInstanceOf[system.Coordinate])
       }
     }
@@ -134,22 +134,24 @@ case class Location(
         return cacheAndYield(direct)
       }
 
-      //use chain rule for inference
+      // use chain rule for inference
       rel.anchor match {
         case relay: Location if relay != this && relay != from =>
-          for (c2 <- {
-                 sh.getCoordinate(SearchAttempt(relay, system, this))
-               };
-               c1 <- {
-                 sh.getCoordinate(SearchAttempt(from, system, relay))
-               }) {
+          for (
+            c2 <- {
+              sh.getCoordinate(SearchAttempt(relay, system, this))
+            };
+            c1 <- {
+              sh.getCoordinate(SearchAttempt(from, system, relay))
+            }
+          ) {
             return cacheAndYield(c1.asInstanceOf[system.Coordinate] :+ c2.asInstanceOf[system.Coordinate])
           }
         case _ =>
       }
     }
 
-    //TODO: add reverse deduction.
+    // TODO: add reverse deduction.
 
     None
   }

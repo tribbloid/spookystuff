@@ -14,7 +14,8 @@ class ScalaTypeSpike extends FunSpecx {
   import ScalaReflection.universe._
 
   /**
-    * please keep this test to quickly identify any potential problems caused by changes in scala reflection API in the future
+    * please keep this test to quickly identify any potential problems caused by changes in scala reflection API in the
+    * future
     */
   it("scala reflection can be used to get type of Array[String].headOption") {
 
@@ -38,7 +39,7 @@ class ScalaTypeSpike extends FunSpecx {
     assert(cls == fnCls2)
   }
 
-  //this will definitely break
+  // this will definitely break
   ignore("can reflect lambda") {
 
     val ll = { v: String =>
@@ -78,7 +79,10 @@ class ScalaTypeSpike extends FunSpecx {
       v.toInt
     }
 
-    def sniff[T](v: T)(implicit ev: TypeTag[T]) = ev.tpe.toString
+    def sniff[T](v: T)(
+        implicit
+        ev: TypeTag[T]
+    ) = ev.tpe.toString
 
     val ss = sniff(ll)
 
@@ -92,7 +96,10 @@ class ScalaTypeSpike extends FunSpecx {
       override def apply(v: String) = v.toInt
     }
 
-    def sniff[T](v: T)(implicit ev: TypeTag[T]) = ev.tpe.toString
+    def sniff[T](v: T)(
+        implicit
+        ev: TypeTag[T]
+    ) = ev.tpe.toString
 
     val ss = sniff(ll)
 

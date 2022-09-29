@@ -22,12 +22,15 @@ class JSpritRunnerSuite extends VRPFixture {
   it("getCostMatrix") {
     val mat: FastVehicleRoutingTransportCostsMatrix = JSpritRunner
       .getCostMatrix(defaultSchema, waypoints.zipWithIndex)
-    //TODO: add assertion
+    // TODO: add assertion
 
-    val mat2 = for (i <- mat.getMatrix.toList.zipWithIndex;
-                    j <- i._1.toList.zipWithIndex) yield {
-      (i._2, j._2, j._1.toList.map(v => (v * 1000.0).toInt))
-    }
+    val mat2 =
+      for (
+        i <- mat.getMatrix.toList.zipWithIndex;
+        j <- i._1.toList.zipWithIndex
+      ) yield {
+        (i._2, j._2, j._1.toList.map(v => (v * 1000.0).toInt))
+      }
 
     mat2
       .mkString("\n")

@@ -30,13 +30,13 @@ case class MapPlan(
 
 object MapPlan {
 
-  type RowMapperBase = (SquashedFetchedRow => SquashedFetchedRow)
+  type RowMapperBase = SquashedFetchedRow => SquashedFetchedRow
 
   trait RowMapper extends RowMapperBase with Serializable {
     def schema: SpookySchema
   }
 
-  type RowMapperFactory = (SpookySchema => RowMapper)
+  type RowMapperFactory = SpookySchema => RowMapper
 
   def optimised(
       child: ExecutionPlan,
@@ -52,10 +52,11 @@ object MapPlan {
   }
 
   /**
-    * extract parts of each Page and insert into their respective context
-    * if a key already exist in old context it will be replaced with the new one.
+    * extract parts of each Page and insert into their respective context if a key already exist in old context it will
+    * be replaced with the new one.
     *
-    * @return new PageRowRDD
+    * @return
+    *   new PageRowRDD
     */
   case class Extract(exs: Seq[Extractor[_]])(val childSchema: SpookySchema) extends RowMapper {
 

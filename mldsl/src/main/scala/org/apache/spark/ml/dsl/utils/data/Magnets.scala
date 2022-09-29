@@ -14,7 +14,10 @@ object Magnets {
     implicit def fromTuple1[T](kv: (String, T)): KV[T] = KV(kv._1, Some(kv._2))
     implicit def fromTuple2[T](kv: (AttrLike[T], T)): KV[T] = KV(kv._1.primaryName, Some(kv._2))
 
-    implicit def fromItr[T, Src](kvs: Iterable[Src])(implicit ev: Src => KV[T]): Iterable[KV[T]] = kvs.map(ev)
+    implicit def fromItr[T, Src](kvs: Iterable[Src])(
+        implicit
+        ev: Src => KV[T]
+    ): Iterable[KV[T]] = kvs.map(ev)
   }
 
   case class KVOpt[+T](
@@ -30,7 +33,10 @@ object Magnets {
     implicit def fromTuple1[T](kv: (String, Option[T])): KVOpt[T] = KVOpt(kv._1, kv._2)
     implicit def fromTuple2[T](kv: (AttrLike[T], Option[T])): KVOpt[T] = KVOpt(kv._1.primaryName, kv._2)
 
-    implicit def fromItr[T, Src](kvs: Iterable[Src])(implicit ev: Src => KVOpt[T]): Iterable[KVOpt[T]] = kvs.map(ev)
+    implicit def fromItr[T, Src](kvs: Iterable[Src])(
+        implicit
+        ev: Src => KVOpt[T]
+    ): Iterable[KVOpt[T]] = kvs.map(ev)
   }
 
   case class K(names: Seq[String])
@@ -40,6 +46,9 @@ object Magnets {
     implicit def fromStr(v: String): K = K(Seq(v))
     implicit def fromAttr(v: AttrLike[_]): K = K(v.allNames)
 
-    implicit def fromItr[Src](kss: Iterable[Src])(implicit ev: Src => K): Iterable[K] = kss.map(ev)
+    implicit def fromItr[Src](kss: Iterable[Src])(
+        implicit
+        ev: Src => K
+    ): Iterable[K] = kss.map(ev)
   }
 }

@@ -8,7 +8,7 @@ class FilePathsSuite extends SpookyEnvFixture {
 
   import scala.concurrent.duration._
 
-  //TODO: add more non-primary-construtor params
+  // TODO: add more non-primary-construtor params
   val doc1 = spooky
     .fetch(
       Visit(HTML_URL) +>
@@ -40,7 +40,7 @@ class FilePathsSuite extends SpookyEnvFixture {
     FilePaths.UUIDName(FilePaths.Hierarchical)
   )
 
-  //TODO: merge repetition
+  // TODO: merge repetition
   byTraces.foreach { byTrace =>
     val encoded1 = byTrace.apply(doc1.uid.backtrace)
     val encoded2 = byTrace.apply(doc2.uid.backtrace)

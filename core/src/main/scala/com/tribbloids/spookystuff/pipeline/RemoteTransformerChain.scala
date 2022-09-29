@@ -11,11 +11,10 @@ import org.apache.spark.ml.param.ParamMap
   */
 class RemoteTransformerChain(
     self: Seq[RemoteTransformer],
-    override val uid: String =
-      classOf[RemoteTransformerChain].getCanonicalName + "_" + UUID.randomUUID().toString
+    override val uid: String = classOf[RemoteTransformerChain].getCanonicalName + "_" + UUID.randomUUID().toString
 ) extends RemoteTransformerLike {
 
-  //this is mandatory for Params.defaultCopy()
+  // this is mandatory for Params.defaultCopy()
   def this(uid: String) = this(Nil, uid)
 
   override def transform(dataset: FetchedDataset): FetchedDataset = self.foldLeft(dataset) { (rdd, transformer) =>

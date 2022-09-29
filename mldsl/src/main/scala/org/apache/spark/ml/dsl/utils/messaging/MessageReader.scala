@@ -8,11 +8,15 @@ import org.json4s.JValue
   */
 sealed trait MessageReaderLevel1 {
 
-  implicit def fromMF[T](implicit mf: Manifest[T]) = new MessageReader[T]()(mf)
+  implicit def fromMF[T](
+      implicit
+      mf: Manifest[T]
+  ) = new MessageReader[T]()(mf)
 }
 
 class MessageReader[Self](
-    implicit override val messageMF: Manifest[Self] //TODO: change to ScalaType
+    implicit
+    override val messageMF: Manifest[Self] // TODO: change to ScalaType
 ) extends Codec[Self] {
   type M = Self
 

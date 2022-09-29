@@ -14,8 +14,7 @@ import scala.reflect.ClassTag
 import scala.util.Random
 
 /**
-  * Created by peng on 11/7/14.
-  * implicit conversions in this package are used for development only
+  * Created by peng on 11/7/14. implicit conversions in this package are used for development only
   */
 abstract class SpookyViews extends SpookyViews_Imp0 {
 
@@ -29,9 +28,7 @@ abstract class SpookyViews extends SpookyViews_Imp0 {
 
     def collectPerPartition: Array[List[T]] =
       self
-        .mapPartitions(
-          v => Iterator(v.toList)
-        )
+        .mapPartitions(v => Iterator(v.toList))
         .collect()
 
     def multiPassMap[U: ClassTag](f: T => Option[U]): RDD[U] = {
@@ -39,9 +36,9 @@ abstract class SpookyViews extends SpookyViews_Imp0 {
       multiPassFlatMap(f.andThen(v => v.map(Traversable(_))))
     }
 
-    //if the function returns None for it will be retried as many times as it takes to get rid of them.
-    //core problem is optimization: how to SPILL properly and efficiently?
-    //TODO: this is the first implementation, simple but may not the most efficient
+    // if the function returns None for it will be retried as many times as it takes to get rid of them.
+    // core problem is optimization: how to SPILL properly and efficiently?
+    // TODO: this is the first implementation, simple but may not the most efficient
     def multiPassFlatMap[U: ClassTag](f: T => Option[TraversableOnce[U]]): RDD[U] = {
 
       val counter = sc.longAccumulator
@@ -149,9 +146,10 @@ abstract class SpookyViews extends SpookyViews_Imp0 {
     }
 
     /**
-      *
-      * @param f function applied on each element
-      * @tparam R result type
+      * @param f
+      *   function applied on each element
+      * @tparam R
+      *   result type
       * @return
       */
     def mapOncePerCore[R: ClassTag](f: T => R): RDD[R] = {
@@ -218,11 +216,11 @@ abstract class SpookyViews extends SpookyViews_Imp0 {
 
   implicit class StringRDDView(val self: RDD[String]) {
 
-    //csv has to be headerless, there is no better solution as header will be shuffled to nowhere
+    // csv has to be headerless, there is no better solution as header will be shuffled to nowhere
     def csvToMap(headerRow: String, splitter: String = ","): RDD[Map[String, String]] = {
       val headers = headerRow.split(splitter)
 
-      //cannot handle when a row is identical to headerline, but whatever
+      // cannot handle when a row is identical to headerline, but whatever
       self.map { str =>
         {
           val values = str.split(splitter)
@@ -238,8 +236,8 @@ abstract class SpookyViews extends SpookyViews_Imp0 {
   implicit class PairRDDView[K: ClassTag, V: ClassTag](val self: RDD[(K, V)]) {
 
     import RDD._
-    //get 3 RDDs that shares key partitioning: leftExclusive, intersection, rightExclusive
-    //all 3 can be zipped directly as if joined by key, this has many applications like getting union, intersection and subtraction
+    // get 3 RDDs that shares key partitioning: leftExclusive, intersection, rightExclusive
+    // all 3 can be zipped directly as if joined by key, this has many applications like getting union, intersection and subtraction
     //    def logicalCombinationsByKey[S](
     //                                     other: RDD[(K, V)])(
     //                                     innerReducer: (V, V) => V)(

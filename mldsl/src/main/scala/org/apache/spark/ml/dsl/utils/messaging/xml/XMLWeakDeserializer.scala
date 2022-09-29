@@ -68,7 +68,10 @@ abstract class XMLWeakDeserializer[T: Manifest] extends Serializer[T] {
   import XMLWeakDeserializer._
 
   // cannot serialize
-  override def serialize(implicit format: Formats): PartialFunction[Any, JValue] = PartialFunction.empty
+  override def serialize(
+      implicit
+      format: Formats
+  ): PartialFunction[Any, JValue] = PartialFunction.empty
 
   def exceptionMetadata(
       jValue: JValue,
@@ -110,7 +113,10 @@ abstract class XMLWeakDeserializer[T: Manifest] extends Serializer[T] {
     }
   }
 
-  override final def deserialize(implicit format: Formats): PartialFunction[(TypeInfo, JValue), T] = {
+  final override def deserialize(
+      implicit
+      format: Formats
+  ): PartialFunction[(TypeInfo, JValue), T] = {
     val result: ((TypeInfo, JValue)) => Option[T] = {
       case (ti, jv) =>
         wrapException(ti, jv, format) {
@@ -120,5 +126,8 @@ abstract class XMLWeakDeserializer[T: Manifest] extends Serializer[T] {
     Function.unlift(result)
   }
 
-  def _deserialize(implicit format: Formats): PartialFunction[(TypeInfo, JValue), T]
+  def _deserialize(
+      implicit
+      format: Formats
+  ): PartialFunction[(TypeInfo, JValue), T]
 }

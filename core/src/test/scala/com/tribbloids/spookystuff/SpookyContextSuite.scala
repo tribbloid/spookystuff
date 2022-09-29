@@ -154,15 +154,18 @@ class SpookyContextSuite extends SpookyEnvFixture with LocalPathDocsFixture {
 
     import dirs._
     assert(
-      !Seq(root,
-           localRoot,
-           autoSave,
-           cache,
-           errorDump,
-           errorScreenshot,
-           checkpoint,
-           errorDumpLocal,
-           errorScreenshotLocal).contains(null))
+      !Seq(
+        root,
+        localRoot,
+        autoSave,
+        cache,
+        errorDump,
+        errorScreenshot,
+        checkpoint,
+        errorDumpLocal,
+        errorScreenshotLocal
+      ).contains(null)
+    )
   }
 
   it("when sharedMetrics=false, new SpookyContext created from default SpookyConf should have default dir configs") {
@@ -176,15 +179,18 @@ class SpookyContextSuite extends SpookyEnvFixture with LocalPathDocsFixture {
 
     import dirs._
     assert(
-      !Seq(root,
-           localRoot,
-           autoSave,
-           cache,
-           errorDump,
-           errorScreenshot,
-           checkpoint,
-           errorDumpLocal,
-           errorScreenshotLocal).contains(null))
+      !Seq(
+        root,
+        localRoot,
+        autoSave,
+        cache,
+        errorDump,
+        errorScreenshot,
+        checkpoint,
+        errorDumpLocal,
+        errorScreenshotLocal
+      ).contains(null)
+    )
   }
 
   it("when sharedMetrics=true, new SpookyContext created from default SpookyConf should have default dir configs") {
@@ -208,6 +214,7 @@ class SpookyContextSuite extends SpookyEnvFixture with LocalPathDocsFixture {
         checkpoint,
         errorDumpLocal,
         errorScreenshotLocal
-      ).contains(null))
+      ).contains(null)
+    )
   }
 }

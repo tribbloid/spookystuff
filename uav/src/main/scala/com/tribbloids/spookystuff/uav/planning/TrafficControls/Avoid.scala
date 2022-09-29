@@ -13,7 +13,7 @@ import scala.reflect.ClassTag
 
 case class Avoid(
     traffic: Option[Double] = Some(1.0),
-    terrain: Option[Double] = None, //TODO: enable later
+    terrain: Option[Double] = None, // TODO: enable later
     resampler: Option[Resampler] = None,
     constraint: Option[Constraint] = Some(Constraints.AltitudeOnly)
 ) extends TrafficControl {
@@ -23,8 +23,10 @@ case class Avoid(
   override def getInstance[K >: TraceView <: TraceView: ClassTag](schema: SpookySchema) =
     Inst(schema).asInstanceOf[Instance[K]]
 
-  case class Inst(schema: SpookySchema)(implicit val ctg: ClassTag[TraceView])
-      extends GenPartitionerLike.Instance[TraceView] {
+  case class Inst(schema: SpookySchema)(
+      implicit
+      val ctg: ClassTag[TraceView]
+  ) extends GenPartitionerLike.Instance[TraceView] {
 
     override def reduceByKey[V: ClassTag](
         rdd: RDD[(TraceView, V)],
@@ -41,7 +43,7 @@ case class Avoid(
           Iterator(result)
         }
 
-      val runner = AvoidSGDRunner(pid2TracesRDD, schema, Avoid.this) //TODO: not general enough for distributed runner
+      val runner = AvoidSGDRunner(pid2TracesRDD, schema, Avoid.this) // TODO: not general enough for distributed runner
       val conversionMap_broadcast = runner.conversionMap_broadcast
       val result = rdd.map {
         case (trace, v) =>

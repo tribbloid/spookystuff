@@ -43,17 +43,21 @@ case class InsertWP(
           }
           result
         }
-        .map(identity) //don't detete! or only MapView remains, and buffer will be recreated, scala is not cool
+        .map(identity) // don't detete! or only MapView remains, and buffer will be recreated, scala is not cool
 
       val keys = resamplingBuffers.keys
-      for (i <- keys;
-           j <- keys) {
+      for (
+        i <- keys;
+        j <- keys
+      ) {
         if (i != j) {
           val iLines = resamplingBuffers(i)
           val jLines = resamplingBuffers(j)
 
-          for (iLine <- iLines;
-               jLine <- jLines) {
+          for (
+            iLine <- iLines;
+            jLine <- jLines
+          ) {
             val twoLines = TwoLines(iLine.from._1, iLine.to._1, jLine.from._1, jLine.to._1)
             import twoLines._
 

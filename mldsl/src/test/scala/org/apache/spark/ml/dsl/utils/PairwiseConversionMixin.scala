@@ -37,7 +37,8 @@ trait PairwiseConversionMixin extends FunSpecx {
           val description = s"${from.classStr}: ${from.valueStr}"
           registryKeys += description
           registry.put1(
-            description, { () =>
+            description,
+            { () =>
               to match {
                 case Repr(opt, l2) if l2 >= 0 && l2 == l1 =>
                   it(s"<==> ${to.classStr}") {

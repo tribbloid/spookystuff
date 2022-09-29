@@ -52,13 +52,10 @@ object SparkHelper {
   }
 
   /**
-    * From doc of org.apache.spark.scheduler.TaskLocation
-    * Create a TaskLocation from a string returned by getPreferredLocations.
-    * These strings have the form executor_[hostname]_[executorid], [hostname], or
-    * hdfs_cache_[hostname], depending on whether the location is cached.
-    * def apply(str: String): TaskLocation
-    * ...
-    * Not sure if it will change in future Spark releases
+    * From doc of org.apache.spark.scheduler.TaskLocation Create a TaskLocation from a string returned by
+    * getPreferredLocations. These strings have the form executor_[hostname]_[executorid], [hostname], or
+    * hdfs_cache_[hostname], depending on whether the location is cached. def apply(str: String): TaskLocation ... Not
+    * sure if it will change in future Spark releases
     */
   def taskLocationStrOpt: Option[String] = {
 

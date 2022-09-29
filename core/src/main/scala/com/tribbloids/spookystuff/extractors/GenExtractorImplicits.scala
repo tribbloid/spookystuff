@@ -22,7 +22,8 @@ trait GenExtractorImplicits {
   import universe.TypeTag
 
   implicit class ExView[R: ClassTag](self: Extractor[R])(
-      implicit val defaultV: Default[R]
+      implicit
+      val defaultV: Default[R]
   ) extends Serializable {
 
     def into(field: Field) = Append.create[R](field, self)
@@ -138,14 +139,17 @@ trait GenExtractorImplicits {
     def last: Extractor[T] = self.andOptionTyped((v: Iterable[T]) => v.lastOption, _.unboxArrayOrMap)
 
     def get(i: Int): Extractor[T] =
-      self.andOptionTyped({ (v: Iterable[T]) =>
-        val realIdx =
-          if (i >= 0) i
-          else v.size - i
+      self.andOptionTyped(
+        { (v: Iterable[T]) =>
+          val realIdx =
+            if (i >= 0) i
+            else v.size - i
 
-        if (realIdx >= v.size || realIdx < 0) None
-        else Some(v.toSeq.apply(realIdx))
-      }, _.unboxArrayOrMap)
+          if (realIdx >= v.size || realIdx < 0) None
+          else Some(v.toSeq.apply(realIdx))
+        },
+        _.unboxArrayOrMap
+      )
 
     def size: Extractor[Int] = self.andFn(_.size)
 
@@ -157,7 +161,7 @@ trait GenExtractorImplicits {
 
     def mkString(start: String, sep: String, end: String): Extractor[String] = self.andFn(_.mkString(start, sep, end))
 
-    //TODO: Why IterableExView.filter cannot be applied on ZippedExpr? is the scala compiler malfunctioning?
+    // TODO: Why IterableExView.filter cannot be applied on ZippedExpr? is the scala compiler malfunctioning?
     def zipWithKeys(keys: Extractor[Any]): Zipped[Any, T] =
       new Zipped[Any, T](keys.typed[Iterable[_]], self)
 
@@ -172,7 +176,8 @@ trait GenExtractorImplicits {
       val keyType = UnreifiedObjectType.summon[K]
 
       self.andTyped(
-        groupByImpl(f), { t =>
+        groupByImpl(f),
+        { t =>
           MapType(keyType, t)
         }
       )
@@ -191,24 +196,19 @@ trait GenExtractorImplicits {
     def distinctBy[K](f: T => K): Extractor[Iterable[T]] = {
       self.andTyped(
         groupByImpl(f)
-          .andThen(
-            v =>
-              v.values.flatMap {
-                case repr: Traversable[T] => repr.headOption
-                case _                    => None //TODO: what's the point of this? removed
+          .andThen(v =>
+            v.values.flatMap {
+              case repr: Traversable[T] => repr.headOption
+              case _                    => None // TODO: what's the point of this? removed
             }
           ),
         identity
       )
     }
 
-    def map[B: TypeTag](f: T => B): Extractor[Seq[B]] = self.andFn(
-      v => v.toSeq.map(f)
-    )
+    def map[B: TypeTag](f: T => B): Extractor[Seq[B]] = self.andFn(v => v.toSeq.map(f))
 
-    def flatMap[B: TypeTag](f: T => GenTraversableOnce[B]): Extractor[Seq[B]] = self.andFn(
-      v => v.toSeq.flatMap(f)
-    )
+    def flatMap[B: TypeTag](f: T => GenTraversableOnce[B]): Extractor[Seq[B]] = self.andFn(v => v.toSeq.flatMap(f))
   }
 }
 

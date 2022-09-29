@@ -82,7 +82,7 @@ trait GeomMixin extends SpookyEnvFixture {
             case e: Exception =>
               originalErrors += e
 
-              Try { actualRepr.shouldBe(gd) }
+              Try(actualRepr.shouldBe(gd))
           }
         }
         TreeThrowable.|||(trials.toSeq, extra = originalErrors)

@@ -13,10 +13,10 @@ import scala.language.{existentials, higherKinds, implicitConversions}
 import scala.reflect.ClassTag
 
 /**
-  * interface that unifies TypeTag, ClassTag, Class & DataType
-  * Also a subclass of Spark SQL DataType but NOT recommended to use directly in DataFrame, can cause compatibility issues.
-  * either use tryReify to attempt converting to a native DataType. Or use UnoptimizedScalaUDT (which is abandoned in Spark 2.x)
-  * Will be simplified again once Spark 2.2 introduces UserDefinedType V2.
+  * interface that unifies TypeTag, ClassTag, Class & DataType Also a subclass of Spark SQL DataType but NOT recommended
+  * to use directly in DataFrame, can cause compatibility issues. either use tryReify to attempt converting to a native
+  * DataType. Or use UnoptimizedScalaUDT (which is abandoned in Spark 2.x) Will be simplified again once Spark 2.2
+  * introduces UserDefinedType V2.
   */
 //TODO: change to ThreadLocal to bypass thread safety?
 //TODO: this should be a codec
@@ -147,12 +147,14 @@ sealed abstract class ScalaType_Level1 {
 
     protected lazy val cache: ConcurrentCache[I[_], ScalaType[_]] = ConcurrentCache[I[_], ScalaType[_]]()
 
-    final def apply[T](implicit v: I[T]): ScalaType[T] = {
+    final def apply[T](
+        implicit
+        v: I[T]
+    ): ScalaType[T] = {
       cache
         .getOrElseUpdate(
-          v, {
-            createNew[T](v)
-          }
+          v,
+          createNew[T](v)
         )
         .asInstanceOf[ScalaType[T]]
     }
@@ -163,9 +165,12 @@ sealed abstract class ScalaType_Level1 {
     override def createNew[T](v: Class[T]): ScalaType[T] = new FromClassTag(ClassTag(v))
   }
 
-  //TODO: how to get rid of these boilerplates?
+  // TODO: how to get rid of these boilerplates?
   implicit def _fromClass[T](v: Class[T]): ScalaType[T] = FromClass(v)
-  implicit def __fromClass[T](implicit v: Class[T]): ScalaType[T] = FromClass(v)
+  implicit def __fromClass[T](
+      implicit
+      v: Class[T]
+  ): ScalaType[T] = FromClass(v)
 }
 
 sealed abstract class ScalaType_Level2 extends ScalaType_Level1 {
@@ -176,7 +181,10 @@ sealed abstract class ScalaType_Level2 extends ScalaType_Level1 {
   }
 
   implicit def _fromClassTag[T](v: ClassTag[T]): ScalaType[T] = FromClassTag(v)
-  implicit def __fromClassTag[T](implicit v: ClassTag[T]): ScalaType[T] = FromClassTag(v)
+  implicit def __fromClassTag[T](
+      implicit
+      v: ClassTag[T]
+  ): ScalaType[T] = FromClassTag(v)
 }
 
 object ScalaType extends ScalaType_Level2 {
@@ -203,7 +211,10 @@ object ScalaType extends ScalaType_Level2 {
   }
 
   implicit def _fromTypeTag[T](v: TypeTag[T]): ScalaType[T] = FromTypeTag.apply(v)
-  implicit def __fromTypeTag[T](implicit v: TypeTag[T]): ScalaType[T] = FromTypeTag.apply(v)
+  implicit def __fromTypeTag[T](
+      implicit
+      v: TypeTag[T]
+  ): ScalaType[T] = FromTypeTag.apply(v)
 
   def fromType[T](tpe: Type, mirror: Mirror): FromTypeTag[T] = {
 
@@ -212,7 +223,10 @@ object ScalaType extends ScalaType_Level2 {
     new FromTypeTag(ttg)
   }
 
-  def summon[T](implicit ev: ScalaType[T]): ScalaType[T] = ev
+  def summon[T](
+      implicit
+      ev: ScalaType[T]
+  ): ScalaType[T] = ev
 
   def getRuntimeType(v: Any): ScalaType[_] = {
     v match {
@@ -301,7 +315,7 @@ object ScalaType extends ScalaType_Level2 {
             case 3 => Some(typeTag[Product3[Any, Any, Any]])
             case 4 => Some(typeTag[Product4[Any, Any, Any, Any]])
             case 5 => Some(typeTag[Product5[Any, Any, Any, Any, Any]])
-            //TODO: keep going for this, OR find more general solution, using shapeless?
+            // TODO: keep going for this, OR find more general solution, using shapeless?
             case _ => None
           }
         case _ =>
@@ -312,7 +326,8 @@ object ScalaType extends ScalaType_Level2 {
     @transient lazy val asTypeTag: TypeTag[_] = {
       getTypeTagOpt.getOrElse {
         throw new UnsupportedOperationException(
-          s"cannot convert Catalyst type $dataType to Scala type: TypeTag=${dataType.getTypeTagOpt}")
+          s"cannot convert Catalyst type $dataType to Scala type: TypeTag=${dataType.getTypeTagOpt}"
+        )
       }
     }
 
@@ -356,7 +371,9 @@ object ScalaType extends ScalaType_Level2 {
               Array(
                 StructField("_1", keyType),
                 StructField("_2", valueType, valueContainsNull)
-              )))
+              )
+            )
+          )
         case _ =>
           None
       }

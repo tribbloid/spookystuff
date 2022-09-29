@@ -14,7 +14,7 @@ case class Interpolate(parts: Seq[String], _args: Seq[Extractor[Any]])
   override def resolve(tt: DataType): PartialFunction[FR, String] = {
     val rs = _args.map(_.resolve(tt).lift)
 
-    Unlift({ row =>
+    Unlift { row =>
       val iParts = parts.map(row.dataRow.replaceInto(_))
 
       val vs = rs.map(_.apply(row))
@@ -23,7 +23,7 @@ case class Interpolate(parts: Seq[String], _args: Seq[Extractor[Any]])
         else Some(iParts.zip(vs).map(tpl => tpl._1.get + tpl._2.get).mkString + iParts.last.get)
 
       result
-    })
+    }
   }
 
   override val dataType: DataType = StringType

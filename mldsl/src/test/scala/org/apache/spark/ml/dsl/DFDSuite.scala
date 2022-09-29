@@ -49,7 +49,8 @@ class DFDSuite extends AbstractDFDSuite {
         (9L, "a e c l", 0.0),
         (10L, "spark compile", 1.0),
         (11L, "hadoop software", 0.0)
-      ))
+      )
+    )
     .toDF("id", "input", "label")
 
   it("Flow can build Pipeline") {
@@ -322,7 +323,8 @@ class DFDSuite extends AbstractDFDSuite {
   }
 
   it(
-    "If adaptation = IgnoreIrrelevant, Flow can build an incomplete pipeline when some of the sources have inconsistent type") {
+    "If adaptation = IgnoreIrrelevant, Flow can build an incomplete pipeline when some of the sources have inconsistent type"
+  ) {
 
     val incomplete = ((validPart U typeInconsistentPart) :>> new VectorAssembler())
       .build(
@@ -341,7 +343,8 @@ class DFDSuite extends AbstractDFDSuite {
   }
 
   it(
-    "If adaptation = IgnoreIrrelevant_TypeUnsafe, Flow can still build a full pipeline when some of the sources have inconsistent type") {
+    "If adaptation = IgnoreIrrelevant_TypeUnsafe, Flow can still build a full pipeline when some of the sources have inconsistent type"
+  ) {
 
     val incomplete = ((validPart U typeInconsistentPart) :>> new VectorAssembler())
       .build(
@@ -424,7 +427,8 @@ class DFDSuite extends AbstractDFDSuite {
   }
 
   it(
-    "If adaptation = FailFast_TypeUnsafe, Flow can still build a full pipeline when some of the sources have inconsistent type") {
+    "If adaptation = FailFast_TypeUnsafe, Flow can still build a full pipeline when some of the sources have inconsistent type"
+  ) {
 
     val incomplete = ((validPart U typeInconsistentPart) :>> new VectorAssembler())
       .build(
@@ -445,7 +449,8 @@ class DFDSuite extends AbstractDFDSuite {
   }
 
   it(
-    "If adaption = IgnoreIrrelevant_ValidateSchema, Flow can build an incomplete pipeline when some of the sources are missing") {
+    "If adaption = IgnoreIrrelevant_ValidateSchema, Flow can build an incomplete pipeline when some of the sources are missing"
+  ) {
 
     val incomplete = ((validPart U irrelevantPart) :>> new VectorAssembler())
       .build(
@@ -464,7 +469,8 @@ class DFDSuite extends AbstractDFDSuite {
   }
 
   it(
-    "If adaption = IgnoreIrrelevant_ValidateSchema, throw an exception when some of the sources have inconsistent type") {
+    "If adaption = IgnoreIrrelevant_ValidateSchema, throw an exception when some of the sources have inconsistent type"
+  ) {
 
     intercept[IllegalArgumentException](
       ((validPart U typeInconsistentPart) :>> new VectorAssembler())

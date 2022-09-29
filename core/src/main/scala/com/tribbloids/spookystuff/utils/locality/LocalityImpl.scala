@@ -32,7 +32,8 @@ trait LocalityImpl[K, V] extends Product with Serializable {
   def join[V2: ClassTag](
       rdd2: RDD[(K, V2)]
   )(
-      implicit ev: ClassTag[K]
+      implicit
+      ev: ClassTag[K]
   ): RDD[(K, (V, V2))] = {
 
     val base: RDD[(K, (V, Iterable[V2]))] = cogroupBase(rdd2)
@@ -46,8 +47,7 @@ trait LocalityImpl[K, V] extends Product with Serializable {
 }
 
 /**
-  * result of any function should preserve locality of partitions AND
-  * ordering of elements inside each partition of rdd1
+  * result of any function should preserve locality of partitions AND ordering of elements inside each partition of rdd1
   * @tparam K
   * @tparam V
   */

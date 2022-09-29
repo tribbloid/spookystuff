@@ -70,7 +70,7 @@ class TestWget extends SpookyEnvFixture {
     results.head.asInstanceOf[Doc].code.get
   }
 
-  //TODO: add canonized URI check
+  // TODO: add canonized URI check
   it("wget should encode malformed url") {
     spooky.spookyConf.webProxy = WebProxyFactories.NoProxy
 
@@ -81,7 +81,7 @@ class TestWget extends SpookyEnvFixture {
     assert(doc.uri.contains("?q=giant+robot") || doc.uri.contains("?q=giant%20robot"))
   }
 
-  //TODO: find a new way to test it!
+  // TODO: find a new way to test it!
   //  test("wget should encode redirection to malformed url") {
   //
   //    spooky.conf.proxy = ProxyFactories.NoProxy
@@ -97,7 +97,7 @@ class TestWget extends SpookyEnvFixture {
   //    assert(page.uri.contains("www.sigmaaldrich.com/catalog/AdvancedSearchPage"))
   //  }
 
-  //TODO: find a new way to test it!
+  // TODO: find a new way to test it!
   //  test("wget should correct redirection to relative url path") {
   //    spooky.conf.proxy = ProxyFactories.NoProxy
   //
@@ -111,7 +111,7 @@ class TestWget extends SpookyEnvFixture {
   //    assert(page.uri.contains("www.sigmaaldrich.com/labware"))
   //  }
 
-  //TODO: how to simulate circular redirection?
+  // TODO: how to simulate circular redirection?
   //  test("wget should smoothly fail on circular redirection") {
   //    spooky.conf.proxy = ProxyFactories.NoProxy
   //
@@ -136,7 +136,7 @@ class TestWget extends SpookyEnvFixture {
     assert(results.head.uid.backtrace.last == wget(HTML_URL))
   }
 
-  //TODO: how to simulate a PKIX exception page?
+  // TODO: how to simulate a PKIX exception page?
   //  test("wget should handle PKIX exception") {
   //    spooky.conf.proxy = ProxyFactories.NoProxy
   //

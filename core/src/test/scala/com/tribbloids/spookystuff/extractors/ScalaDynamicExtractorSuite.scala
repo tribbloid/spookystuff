@@ -70,7 +70,7 @@ class ScalaDynamicExtractorSuite extends SpookyEnvFixture with LocalPathDocsFixt
     assert(dynamicResult == result)
   }
 
-  //useless at the moment
+  // useless at the moment
   it("can resolve Action.dryrun") {
 
     val action: Action = Wget(HTML_URL)
@@ -177,10 +177,13 @@ class ScalaDynamicExtractorSuite extends SpookyEnvFixture with LocalPathDocsFixt
     )
     val staticFn: (FR) => Option[Any] = { fr =>
       val dr = fr.dataRow
-      val result = for (a <- dr.get('A);
-                        b <- dr.get('B)) yield {
-        a.asInstanceOf[Example].fn(b.asInstanceOf[Int])
-      }
+      val result =
+        for (
+          a <- dr.get('A);
+          b <- dr.get('B)
+        ) yield {
+          a.asInstanceOf[Example].fn(b.asInstanceOf[Int])
+        }
       result
     }
 
@@ -197,10 +200,13 @@ class ScalaDynamicExtractorSuite extends SpookyEnvFixture with LocalPathDocsFixt
     )
     val staticFn: (FR) => Option[Any] = { fr =>
       val dr = fr.dataRow
-      val result = for (a <- dr.get('A);
-                        b <- dr.get('B)) yield {
-        a.asInstanceOf[Example].fnOpt(b.asInstanceOf[Int])
-      }
+      val result =
+        for (
+          a <- dr.get('A);
+          b <- dr.get('B)
+        ) yield {
+          a.asInstanceOf[Example].fnOpt(b.asInstanceOf[Int])
+        }
       result.flatten
     }
 
@@ -288,7 +294,7 @@ class ScalaDynamicExtractorSuite extends SpookyEnvFixture with LocalPathDocsFixt
   //    assert(result.isEmpty)
   //  }
 
-  //TODO: this will change in the future
+  // TODO: this will change in the future
   it("cannot resolve function when base type is NULL") {
 
     def dynamic = ScalaDynamicExtractor(
@@ -381,7 +387,7 @@ class ScalaDynamicExtractorSuite extends SpookyEnvFixture with LocalPathDocsFixt
     }
   }
 
-  //TODO: remove or optimize Java implementation
+  // TODO: remove or optimize Java implementation
   ignore("Performance test: Java reflection should be faster than ScalaReflection") {
     val int2Str: GenExtractor[Int, String] = { i: Int =>
       "" + i
@@ -400,24 +406,18 @@ class ScalaDynamicExtractorSuite extends SpookyEnvFixture with LocalPathDocsFixt
 
     val pfScala = dynamic.resolveUsingScala(IntegerType)
     val (scalaRes, scalaTime) = CommonUtils.timed(
-      ints.map(
-        i => pfScala.apply(i).get.asInstanceOf[Boolean]
-      )
+      ints.map(i => pfScala.apply(i).get.asInstanceOf[Boolean])
     )
     println(scalaTime)
 
     val pfJava = dynamic.resolveUsingScala(IntegerType)
     val (javaRes, javaTime) = CommonUtils.timed(
-      ints.map(
-        i => pfJava.apply(i).get.asInstanceOf[Boolean]
-      )
+      ints.map(i => pfJava.apply(i).get.asInstanceOf[Boolean])
     )
     println(javaTime)
 
     val (nativeRes, nativeTime) = CommonUtils.timed(
-      ints.map(
-        i => int2Str(i).startsWith(int2_10(i))
-      )
+      ints.map(i => int2Str(i).startsWith(int2_10(i)))
     )
     println(nativeTime)
 

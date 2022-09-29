@@ -115,7 +115,7 @@ class SpookyViewsSuite extends SpookyEnvFixture {
     assert(array.count(v => v._1 == v._2) == array.length)
   }
 
-  //TODO: doesn't work by now
+  // TODO: doesn't work by now
   ignore("... even if the RDD is not Serializable") {
 
     val rdd1: RDD[WithID] = sc
@@ -182,13 +182,13 @@ class SpookyViewsSuite extends SpookyEnvFixture {
     }
     result.foreach(println)
     assert(result.length === TestHelper.numWorkers + 1, result.mkString("\n"))
-    //+- 1 is for local mode where everything is on driver
+    // +- 1 is for local mode where everything is on driver
     assert(result.map(_.blockManagerID).distinct.length === TestHelper.numComputers, result.mkString("\n"))
     assert(result.map(_.taskAttemptID).distinct.length === TestHelper.numWorkers + 1, result.mkString("\n"))
   }
 
   it("result of allTaskLocationStrs can be used as partition's preferred location") {
-    //TODO: change to more succinct ignore
+    // TODO: change to more succinct ignore
     if (org.apache.spark.SPARK_VERSION.replaceAllLiterally(".", "").toInt >= 160) {
       val tlStrs = sc.allTaskLocationStrs
       tlStrs.foreach(println)
@@ -199,7 +199,7 @@ class SpookyViewsSuite extends SpookyEnvFixture {
       }
 
       val created = sc.makeRDD[(Int, String)](seq)
-      //TODO: this RDD is extremely partitioned, can we use coalesce to reduce it?
+      // TODO: this RDD is extremely partitioned, can we use coalesce to reduce it?
       val conditions = created
         .map { tuple =>
           tuple._2 == SparkHelper.taskLocationStrOpt.get

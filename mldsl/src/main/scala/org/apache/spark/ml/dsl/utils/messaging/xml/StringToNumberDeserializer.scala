@@ -7,7 +7,10 @@ import org.json4s.reflect.TypeInfo
 // <tag>12</tag> => tag: 12
 object StringToNumberDeserializer extends XMLWeakDeserializer[Any] {
 
-  override def _deserialize(implicit format: Formats): PartialFunction[(TypeInfo, JValue), Any] = Function.unlift {
+  override def _deserialize(
+      implicit
+      format: Formats
+  ): PartialFunction[(TypeInfo, JValue), Any] = Function.unlift {
 
     case (ti @ TypeInfo(cc, _), JString(v)) =>
       val parsed = cc match {
@@ -20,7 +23,7 @@ object StringToNumberDeserializer extends XMLWeakDeserializer[Any] {
         case java.lang.Double.TYPE    => v.toDouble
         case java.lang.Boolean.TYPE   => v.toBoolean
         case _                        => null
-        //TODO: add boxed type, or use try/errorToNone
+        // TODO: add boxed type, or use try/errorToNone
       }
       Option(parsed)
     case _ => None

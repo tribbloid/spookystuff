@@ -8,10 +8,8 @@ import org.locationtech.proj4j.proj.Projection
 import scala.language.implicitConversions
 
 /**
-  * x = longitude (always east/horizontal)
-  * y = latitude (always north/vertical)
-  * z = altitude (always up/altitude)
-  * use WGS84/EPSG:4326 projection, more will come
+  * x = longitude (always east/horizontal) y = latitude (always north/vertical) z = altitude (always up/altitude) use
+  * WGS84/EPSG:4326 projection, more will come
   */
 object LLA extends CoordinateSystem {
 
@@ -20,7 +18,7 @@ object LLA extends CoordinateSystem {
     Some(proj)
   }
 
-  //to save time we avoid using proj4 string parsing and implement our own alternative conversion rule if Projection is not available.
+  // to save time we avoid using proj4 string parsing and implement our own alternative conversion rule if Projection is not available.
   override def get2DProj(a: Anchor, ic: SearchHistory): Option[Projection] = {
     projOpt
   }

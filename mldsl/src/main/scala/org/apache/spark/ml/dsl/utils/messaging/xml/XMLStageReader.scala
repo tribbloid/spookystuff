@@ -7,7 +7,11 @@ import org.apache.spark.util.Utils
 import org.json4s.JsonAST.JObject
 import org.json4s.jackson.JsonMethods._
 
-class XMLStageReader[T <: Params](implicit val mf: Manifest[T]) extends MLReader[T] with XMLReaderMixin[T] {
+class XMLStageReader[T <: Params](
+    implicit
+    val mf: Manifest[T]
+) extends MLReader[T]
+    with XMLReaderMixin[T] {
 
   override def load(path: String): T = {
     val metadata = DefaultParamsReader.loadMetadata(path, sc)
@@ -19,8 +23,8 @@ class XMLStageReader[T <: Params](implicit val mf: Manifest[T]) extends MLReader
   }
 
   /**
-    * Extract Params from metadata, and set them in the instance.
-    * This works if all Params implement org.apache.spark.ml.param.Param.jsonDecode().
+    * Extract Params from metadata, and set them in the instance. This works if all Params implement
+    * org.apache.spark.ml.param.Param.jsonDecode().
     */
   def getAndSetParams(instance: T, metadata: Metadata): Unit = {
     metadata.params match {

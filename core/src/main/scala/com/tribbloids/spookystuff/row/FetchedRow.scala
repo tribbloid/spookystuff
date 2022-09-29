@@ -26,15 +26,15 @@ object FetchedRow {
 }
 
 /**
-  * abstracted data structure where expression can be resolved.
-  * not the main data structure in execution plan, SquashedPageRow is
+  * abstracted data structure where expression can be resolved. not the main data structure in execution plan,
+  * SquashedPageRow is
   */
 case class FetchedRow(
     dataRow: DataRow = DataRow(),
     fetched: Seq[DocOption] = Seq()
 ) extends AbstractSpookyRow {
 
-  //TODO: trace implementation is not accurate: the last backtrace has all previous exports removed
+  // TODO: trace implementation is not accurate: the last backtrace has all previous exports removed
   def squash(spooky: SpookyContext): SquashedFetchedRow = SquashedFetchedRow(
     Array(dataRow),
     TraceView.withDocs(docs = fetched)
