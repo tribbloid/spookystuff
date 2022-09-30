@@ -327,11 +327,4 @@ object ClasspathResolver {
   }
 
   implicit def toDefault(v: this.type): ClasspathResolver = v.default
-
-  def main(args: Array[String]): Unit = {
-
-    default.withOverview { o =>
-      println(o.completeReport)
-    }
-  }
 }
