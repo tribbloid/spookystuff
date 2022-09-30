@@ -4,10 +4,7 @@ import com.tribbloids.spookystuff.utils.serialization.BeforeAndAfterShipping.Con
 
 import java.io.NotSerializableException
 
-/**
-  * Any subclass in the closure cleaned by Spark ClosureCleaner will trigger a runtime error.
-  */
-trait NOTSerializable {
+trait NOTSerializable extends BeforeAndAfterShipping {
 
   import NOTSerializable._
 
