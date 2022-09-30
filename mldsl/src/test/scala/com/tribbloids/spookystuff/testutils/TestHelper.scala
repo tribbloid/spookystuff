@@ -73,11 +73,13 @@ abstract class TestHelper extends LocalCleanable {
 
     if (S3Path.isDefined) println("Test on AWS S3 with credentials provided by rootkey.csv")
 
-    AWSAccessKeyId.foreach {
-      System.setProperty("fs.s3.awsAccessKeyId", _) // TODO: useless here? set in conf directly?
-    }
-    AWSSecretKey.foreach {
-      System.setProperty("fs.s3.awsSecretAccessKey", _)
+    Seq("s3,s3n,s3a").foreach { n =>
+      AWSAccessKeyId.foreach {
+        System.setProperty(s"spark.hadoop.fs.$n.awsAccessKeyId", _) // TODO: useless here? set in conf directly?
+      }
+      AWSSecretKey.foreach {
+        System.setProperty(s"spark.hadoop.fs.$n.awsSecretAccessKey", _)
+      }
     }
 
     cleanBeforeAndAfter()
@@ -177,16 +179,15 @@ abstract class TestHelper extends LocalCleanable {
     //    "SPARK_LOCAL_HOSTNAME" -> "localhost"
   )
 
-  /**
-    * @return
-    *   local mode: None -> local[n, 4] cluster simulation mode: Some(SPARK_HOME) -> local-cluster[m,n, mem]
-    */
-  lazy val coreSettings: Map[String, String] = {
-    val masterEnv = System.getenv("SPARK_MASTER")
+  case object CoreSettings {
 
-    val masterStr = if (masterEnv != null) {
+    lazy val masterEnv: String = System.getenv("SPARK_MASTER")
+
+    lazy val isLocal: Boolean = clusterSizeOpt.isEmpty || numCoresPerWorkerOpt.isEmpty
+
+    lazy val masterStr: String = if (masterEnv != null) {
       masterEnv
-    } else if (clusterSizeOpt.isEmpty || numCoresPerWorkerOpt.isEmpty) {
+    } else if (isLocal) {
       val masterStr = s"local[$numCores,$maxFailures]"
       println("initializing SparkContext in local mode:" + masterStr)
       masterStr
@@ -212,29 +213,38 @@ abstract class TestHelper extends LocalCleanable {
       masterStr
     }
 
-    val base = if (masterStr.startsWith("local[")) {
-      Map(
+    /**
+      * @return
+      *   local mode: None -> local[n, 4] cluster simulation mode: Some(SPARK_HOME) -> local-cluster[m,n, mem]
+      */
+    lazy val asMap: Map[String, String] = {
+
+      val base1 = Map(
         "spark.master" -> masterStr
       )
-    } else {
-      Map(
-        "spark.master" -> masterStr,
-        "spark.home" -> SPARK_HOME,
-        //        "spark.executor.memory" -> (executorMemoryOpt.get + "m"),
-        "spark.driver.extraClassPath" -> sys.props("java.class.path"),
-        "spark.executor.extraClassPath" -> sys.props("java.class.path"),
-        "spark.task.maxFailures" -> maxFailures.toString
+
+      val base2 = if (CoreSettings.isLocal) {
+        base1
+      } else {
+        base1 ++ Map(
+          "spark.master" -> masterStr,
+          "spark.home" -> SPARK_HOME,
+          //        "spark.executor.memory" -> (executorMemoryOpt.get + "m"),
+          "spark.driver.extraClassPath" -> sys.props("java.class.path"),
+          "spark.executor.extraClassPath" -> sys.props("java.class.path"),
+          "spark.task.maxFailures" -> maxFailures.toString
+        )
+      }
+
+      base2 ++ Map(
+        "spark.serializer" -> "org.apache.spark.serializer.KryoSerializer",
+        //      .set("spark.kryo.registrator", "com.tribbloids.spookystuff.SpookyRegistrator")Incomplete for the moment
+        "spark.kryoserializer.buffer.max" -> "512m",
+        "spark.sql.warehouse.dir" -> WAREHOUSE_PATH,
+        //      "hive.metastore.warehouse.dir" -> WAREHOUSE_PATH,
+        "dummy.property" -> "dummy"
       )
     }
-
-    base ++ Map(
-      "spark.serializer" -> "org.apache.spark.serializer.KryoSerializer",
-      //      .set("spark.kryo.registrator", "com.tribbloids.spookystuff.SpookyRegistrator")Incomplete for the moment
-      "spark.kryoserializer.buffer.max" -> "512m",
-      "spark.sql.warehouse.dir" -> WAREHOUSE_PATH,
-//      "hive.metastore.warehouse.dir" -> WAREHOUSE_PATH,
-      "dummy.property" -> "dummy"
-    )
   }
 
   // if SPARK_PATH & ClusterSize in rootkey.csv is detected, use local-cluster simulation mode
@@ -244,18 +254,19 @@ abstract class TestHelper extends LocalCleanable {
     // always use KryoSerializer, it is less stable than Native Serializer
     val conf: SparkConf = new SparkConf(false)
 
-    conf.setAll(coreSettings)
+    conf.setAll(CoreSettings.asMap)
 
-    Option(System.getProperty("fs.s3.awsAccessKeyId")).foreach { v =>
-      conf.set("spark.hadoop.fs.s3.awsAccessKeyId", v)
-      conf.set("spark.hadoop.fs.s3n.awsAccessKeyId", v)
-      conf.set("spark.hadoop.fs.s3a.awsAccessKeyId", v)
-    }
-    Option(System.getProperty("fs.s3.awsSecretAccessKey")).foreach { v =>
-      conf.set("spark.hadoop.fs.s3.awsSecretAccessKey", v)
-      conf.set("spark.hadoop.fs.s3n.awsSecretAccessKey", v)
-      conf.set("spark.hadoop.fs.s3a.awsSecretAccessKey", v)
-    }
+    // TODO: remove, should be set by users
+//    Option(System.getProperty("fs.s3.awsAccessKeyId")).foreach { v =>
+//      conf.set("spark.hadoop.fs.s3.awsAccessKeyId", v)
+//      conf.set("spark.hadoop.fs.s3n.awsAccessKeyId", v)
+//      conf.set("spark.hadoop.fs.s3a.awsAccessKeyId", v)
+//    }
+//    Option(System.getProperty("fs.s3.awsSecretAccessKey")).foreach { v =>
+//      conf.set("spark.hadoop.fs.s3.awsSecretAccessKey", v)
+//      conf.set("spark.hadoop.fs.s3n.awsSecretAccessKey", v)
+//      conf.set("spark.hadoop.fs.s3a.awsSecretAccessKey", v)
+//    }
 
     conf.setAppName("Test")
 
