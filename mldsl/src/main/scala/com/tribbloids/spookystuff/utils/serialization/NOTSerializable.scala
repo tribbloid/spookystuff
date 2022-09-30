@@ -7,7 +7,7 @@ import java.io.NotSerializableException
 /**
   * Any subclass in the closure cleaned by Spark ClosureCleaner will trigger a runtime error.
   */
-trait NOTSerializable extends BeforeAndAfterShipping {
+trait NOTSerializable {
 
   import NOTSerializable._
 

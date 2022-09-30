@@ -89,7 +89,7 @@ object Cleanable {
   * but is not always reliable can be serializable, but in which case implementation has to allow deserialized copy on a
   * different machine to be cleanable as well.
   */
-trait Cleanable extends Closeable {
+trait Cleanable extends AutoCloseable {
 
   import Cleanable._
 

@@ -56,7 +56,7 @@ case class ClasspathResolver(
     v
   }
 
-  trait UseScan extends Cleanable {
+  trait Scanning extends Cleanable {
 
     // TODO: this may not be efficient as every new _Execution requires a new can, but for safety ...
     lazy val _scanResult: LazyVar[ScanResult] = LazyVar {
@@ -93,7 +93,7 @@ case class ClasspathResolver(
 
     override def absolutePathStr: String = pathStr
 
-    case class _Resource(mode: WriteMode) extends IOResource with UseScan {
+    case class _Resource(mode: WriteMode) extends IOResource with Scanning {
 
       lazy val _refs: LazyVar[ResourceList] = LazyVar {
         scanResult.getResourcesWithPath(pathStr)
@@ -193,7 +193,7 @@ case class ClasspathResolver(
         val exceptions = Set.empty[String]
         v.endsWith(".class") && (!exceptions.contains(v))
       }
-  ) extends UseScan {
+  ) extends Scanning {
 
     def debugConfFiles(
         fileNames: Seq[String] = List(

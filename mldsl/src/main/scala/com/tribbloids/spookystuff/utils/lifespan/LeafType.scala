@@ -2,12 +2,6 @@ package com.tribbloids.spookystuff.utils.lifespan
 
 import com.tribbloids.spookystuff.utils.CachingUtils.ConcurrentMap
 import com.tribbloids.spookystuff.utils.lifespan.Cleanable.Batch
-import com.tribbloids.spookystuff.utils.serialization.BeforeAndAfterShipping
-
-abstract class LifespanType extends Serializable with Product {
-
-  type ID
-}
 
 abstract class LeafType extends LifespanType {
 
@@ -17,8 +11,7 @@ abstract class LeafType extends LifespanType {
   class Internal(
       val nameOpt: Option[String] = None,
       val ctxFactory: () => LifespanContext = () => LifespanContext()
-  ) extends LifespanInternal
-      with BeforeAndAfterShipping {
+  ) extends LifespanInternal {
 
     def _type: LeafType = LeafType.this
 
