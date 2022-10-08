@@ -8,13 +8,14 @@ import org.apache.spark.{SparkEnv, TaskContext}
 
 object ExternalAppendOnlyArraySuite {}
 
-class ExternalAppendOnlyArraySuite(
+abstract class ExternalAppendOnlyArraySuite(
     parallelism: Int,
     taskSize: Int = 100,
     numTestRuns: Int = 10,
     storageLevel: StorageLevel = StorageLevel.MEMORY_AND_DISK_SER
 ) extends FunSpecx
-    with SparkUISupport {
+    with SparkUISupport
+    with SubSuite {
 
   import com.tribbloids.spookystuff.testutils.TestHelper._
 

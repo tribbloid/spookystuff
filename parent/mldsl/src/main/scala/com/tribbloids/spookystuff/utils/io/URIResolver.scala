@@ -2,7 +2,6 @@ package com.tribbloids.spookystuff.utils.io
 
 import com.tribbloids.spookystuff.utils.Retry
 import com.tribbloids.spookystuff.utils.io.lock.{Lock, LockExpired}
-import com.tribbloids.spookystuff.utils.lifespan.LocalCleanable
 import org.apache.commons.io.IOUtils
 
 import java.io._
@@ -24,7 +23,7 @@ abstract class URIResolver extends Serializable {
     * all implementations must be stateless, such that a single execution can be used for multiple I/O operations,
     * potentially in different threads
     */
-  trait Execution extends LocalCleanable {
+  trait Execution {
 
     type _Resource <: Resource
     def _Resource: WriteMode => _Resource
@@ -126,7 +125,7 @@ abstract class URIResolver extends Serializable {
       fn(v.OutputView)
     }
 
-    override protected def cleanImpl(): Unit = {}
+//    override protected def cleanImpl(): Unit = {}
   }
 
   type _Execution <: Execution

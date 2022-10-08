@@ -67,7 +67,7 @@ allprojects {
     version = vs.projectV
 
     repositories {
-//        mavenLocal()
+        mavenLocal()
         mavenCentral()
 //        jcenter()
 //        maven("https://dl.bintray.com/kotlin/kotlin-dev")

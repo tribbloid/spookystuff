@@ -67,8 +67,10 @@ abstract class TestHelper extends LocalCleanable {
   @transient var sparkSessionInitialised: Boolean = false
 
   {
-    val report: String = ClasspathResolver.withOverview { o =>
-      o.completeReport
+    val (defaultReport: String, shortReport: String) = ClasspathResolver.debug { o =>
+      o.default.Files.debugConfs()
+
+      o.default.completeReport -> o.fileNameOnly.completeReport
     }
 
     if (S3Path.isDefined) println("Test on AWS S3 with credentials provided by rootkey.csv")

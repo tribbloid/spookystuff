@@ -24,12 +24,12 @@ object ExternalAppendOnlyArrayMatrix {
 
   import com.tribbloids.spookystuff.testutils.TestHelper._
 
-  object S1
+  case object S1
       extends ExternalAppendOnlyArraySuite(
         Random.shuffle(1 to TestSC.defaultParallelism).head
       )
 
-  object S2
+  case object S2
       extends ExternalAppendOnlyArraySuite(
         Random.shuffle((1 + TestSC.defaultParallelism) to (TestSC.defaultParallelism * 4)).head
       )

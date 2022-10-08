@@ -10,8 +10,10 @@ class JarHellDetection extends AnyFunSpec {
   // TODO: remove, already have an independent reporting step for every submodule
   ignore("jars conflict") {
 
-    ClasspathResolver.withOverview { overview =>
-      val detected = overview.Conflicts.aggregated
+    ClasspathResolver.debug { overview =>
+      val display = overview.default
+
+      val detected = display.Conflicts.aggregated
 
       val info = detected
         .map {

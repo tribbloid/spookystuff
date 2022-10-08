@@ -15,14 +15,12 @@ import scala.util.Random
 abstract class IncrementallyCachedRDDSuite[T](
     numPartitions: Int
 ) extends FunSpecx
-    with SparkUISupport {
+    with SparkUISupport
+    with SubSuite {
 
   TestHelper.enableCheckpoint
 
   import org.apache.spark.rdd.spookystuff.IncrementallyCachedRDDSuite._
-
-  override lazy val suiteId: String = this.getClass.getName + " - " + numPartitions
-  override def suiteName: String = suiteId
 
   def getFacet: TestSubject[T]#Facet
 
