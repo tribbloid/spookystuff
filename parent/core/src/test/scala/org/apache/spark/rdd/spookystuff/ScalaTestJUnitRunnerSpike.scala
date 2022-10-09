@@ -15,7 +15,7 @@ class ScalaTestJUnitRunnerSpike extends AnyFunSpec {
   object C1 extends Child()
   object C2 extends Child()
 
-  override val nestedSuites: immutable.IndexedSeq[Suite] = {
+  override lazy val nestedSuites: immutable.IndexedSeq[Suite] = {
 
 //    immutable.IndexedSeq(Child(), Child()) // will trigger runner error due to duplicate names
     immutable.IndexedSeq(C1, C2) // will not

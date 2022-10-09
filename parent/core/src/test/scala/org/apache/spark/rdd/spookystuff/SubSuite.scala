@@ -4,13 +4,25 @@ import org.scalatest.Suite
 
 import java.util.concurrent.atomic.AtomicInteger
 
-trait SubSuite extends Suite with Product {
+trait SubSuite extends Suite {
 
-  override def suiteId: String =
-    (this.getClass.getName +: productIterator.toList :+ SubSuite.incrementalSuffixes.getAndIncrement())
+  private lazy val _class: Class[_ <: SubSuite] = this.getClass
+
+  private lazy val _idParts: List[String] = {
+    List(_class.getName)
+  }
+
+  override lazy val suiteName: String = _class.getName.stripPrefix(_class.getPackage.getName).stripPrefix(".")
+
+  private lazy val _suiteId: String = {
+    val result = (_idParts :+ SubSuite.incrementalSuffixes.getAndIncrement())
       .mkString("-")
+    result
+  }
 
-  override def suiteName: String = suiteId
+  override def suiteId: String = {
+    _suiteId
+  }
 }
 
 object SubSuite {
