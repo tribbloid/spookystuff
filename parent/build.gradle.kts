@@ -68,6 +68,8 @@ subprojects {
 
         // TODO: alpha project, switch to mature solution once https://github.com/scalatest/scalatest/issues/1454 is solved
         testRuntimeOnly("co.helmethair:scalatest-junit-runner:0.2.0")
+//        testRuntimeOnly("org.junit.platform:junit-platform-launcher:1.10.0-SNAPSHOT")
+//        testRuntimeOnly("org.junit.platform:junit-platform-engine:1.10.0-SNAPSHOT")
 
         testImplementation("org.scalacheck:scalacheck_${vs.scalaBinaryV}:1.17.0")
 
