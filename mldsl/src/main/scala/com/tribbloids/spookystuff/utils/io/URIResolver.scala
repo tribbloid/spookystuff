@@ -2,7 +2,6 @@ package com.tribbloids.spookystuff.utils.io
 
 import com.tribbloids.spookystuff.utils.Retry
 import com.tribbloids.spookystuff.utils.io.lock.{Lock, LockExpired}
-import com.tribbloids.spookystuff.utils.lifespan.LocalCleanable
 import org.apache.commons.io.IOUtils
 
 import java.io._
@@ -104,8 +103,7 @@ abstract class URIResolver extends Serializable {
     }
 
     final def input[T](fn: _Resource#InputView => T): T = io() { v =>
-      if (!v.isExisting)
-        throw new IOException(s"Resource ${absolutePathStr} does not exist")
+      v.tryRequireExisting.get
 
       fn(v.InputView)
     }

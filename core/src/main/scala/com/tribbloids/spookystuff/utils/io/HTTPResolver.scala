@@ -126,7 +126,13 @@ case class HTTPResolver(
 
   case class _Execution(pathStr: String) extends Execution {
 
-    override def absolutePathStr: String = pathStr
+    lazy val readRequest: HttpUriRequest = {
+
+      val uri = HttpUtils.uri(pathStr)
+      readRequestFactory(uri)
+    }
+
+    override def absolutePathStr: String = readRequest.getURI.toString
 
     override def _delete(mustExist: Boolean): Unit = {
       unsupported("delete")
@@ -137,19 +143,13 @@ case class HTTPResolver(
 
     case class _Resource(mode: WriteMode) extends Resource with MimeTypeMixin {
 
-      lazy val readRequest: HttpUriRequest = {
-
-        val uri = HttpUtils.uri(pathStr)
-        readRequestFactory(uri)
-      }
+      override protected def _outer: URIExecution = _Execution.this
 
       lazy val _readResponse: LazyVar[HttpResponse] = LazyVar {
         client.execute(readRequest, context)
       }
 
       lazy val entity: HttpEntity = _readResponse.value.getEntity
-
-      override lazy val getURI: String = readRequest.getURI.toString
 
       override lazy val getName: String = entity.getContentType.getName
 
@@ -185,6 +185,7 @@ case class HTTPResolver(
 
         unsupported("write")
       }
+
     }
   }
 }

@@ -75,9 +75,9 @@ case class HDFSResolver(
 
     case class _Resource(mode: WriteMode) extends Resource {
 
-      lazy val status: FileStatus = fc.getFileStatus(path)
+      override protected def _outer: URIExecution = _Execution.this
 
-      override lazy val getURI: String = absolutePathStr
+      lazy val status: FileStatus = fc.getFileStatus(path)
 
       override lazy val getName: String = status.getPath.getName
 
@@ -88,7 +88,7 @@ case class HDFSResolver(
         else UNKNOWN
       }
 
-      override def isExisting: Boolean = fc.util().exists(path)
+      override def _requireExisting(): Unit = require(fc.util().exists(path))
 
       override lazy val getContentType: String = {
         if (isDirectory) DIR_MIME_OUT

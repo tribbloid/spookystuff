@@ -40,12 +40,12 @@ case class URLConnectionResolver(
 
     case class _Resource(mode: WriteMode) extends Resource with MimeTypeMixin {
 
+      override protected def _outer: URIExecution = _Execution.this
+
       lazy val conn: URLConnection = {
         _conn.connect()
         _conn
       }
-
-      override lazy val getURI: String = pathStr
 
       override lazy val getName: String = null
 
