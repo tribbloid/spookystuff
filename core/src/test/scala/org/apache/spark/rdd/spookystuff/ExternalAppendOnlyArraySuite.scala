@@ -9,7 +9,7 @@ import org.apache.spark.{SparkEnv, TaskContext}
 
 object ExternalAppendOnlyArraySuite {}
 
-case class ExternalAppendOnlyArraySuite(
+abstract class ExternalAppendOnlyArraySuite(
     parallelism: Int,
     taskSize: Int = 100,
     numTestRuns: Int = 10,
