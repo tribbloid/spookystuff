@@ -24,7 +24,7 @@ abstract class URIResolver extends Serializable {
     * all implementations must be stateless, such that a single execution can be used for multiple I/O operations,
     * potentially in different threads
     */
-  trait Execution extends LocalCleanable {
+  trait Execution {
 
     type _Resource <: Resource
     def _Resource: WriteMode => _Resource
@@ -126,7 +126,7 @@ abstract class URIResolver extends Serializable {
       fn(v.OutputView)
     }
 
-    override protected def cleanImpl(): Unit = {}
+//    override protected def cleanImpl(): Unit = {}
   }
 
   type _Execution <: Execution
