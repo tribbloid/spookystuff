@@ -35,7 +35,7 @@ case class LocalResolver(
 
     case class _Resource(mode: WriteMode) extends Resource {
 
-      override lazy val getURI: String = absolutePathStr
+      override protected def _outer: URIExecution = _Execution.this
 
       override lazy val getName: String = path.getFileName.toString
 
@@ -47,9 +47,7 @@ case class LocalResolver(
         else throw new NoSuchFileException(s"File $path doesn't exist")
       }
 
-      override def isExisting: Boolean = {
-        file.exists()
-      }
+      override def _requireExisting(): Unit = require(file.exists())
 
       override lazy val getContentType: String = {
         if (isDirectory) DIR_MIME_OUT

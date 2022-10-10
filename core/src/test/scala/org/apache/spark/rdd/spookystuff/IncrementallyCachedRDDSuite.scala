@@ -16,13 +16,11 @@ abstract class IncrementallyCachedRDDSuite[T](
     numPartitions: Int
 ) extends FunSpecx
     with SparkUISupport
-    with Product {
+    with SubSuite {
 
   TestHelper.enableCheckpoint
 
   import org.apache.spark.rdd.spookystuff.IncrementallyCachedRDDSuite._
-
-  override def suiteName: String = productPrefix + " - " + numPartitions
 
   def getFacet: TestSubject[T]#Facet
 
@@ -41,7 +39,7 @@ abstract class IncrementallyCachedRDDSuite[T](
     assert(u.count == datasetSize)
   }
 
-  val stopwatch = Stopwatch()
+  val stopwatch: Stopwatch = Stopwatch()
 
   describe("should behave identically to RDD.persist") {
 

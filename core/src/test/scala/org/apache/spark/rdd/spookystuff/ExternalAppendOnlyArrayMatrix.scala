@@ -16,9 +16,9 @@ class ExternalAppendOnlyArrayMatrix extends FunSpecx {
   override val nestedSuites: immutable.IndexedSeq[Suite] = {
 
     immutable.IndexedSeq(
-      ExternalAppendOnlyArraySuite(p1),
-//      ExternalAppendOnlyArraySuite(TestSC.defaultParallelism),
-      ExternalAppendOnlyArraySuite(p2)
+      new ExternalAppendOnlyArraySuite(p1) {},
+      //      ExternalAppendOnlyArraySuite(TestSC.defaultParallelism),
+      new ExternalAppendOnlyArraySuite(p2) {}
     )
   }
 }

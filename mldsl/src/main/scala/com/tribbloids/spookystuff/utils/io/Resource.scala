@@ -1,11 +1,11 @@
 package com.tribbloids.spookystuff.utils.io
 
-import java.io.{InputStream, OutputStream}
 import com.tribbloids.spookystuff.utils.lifespan.LocalCleanable
 import org.apache.commons.io.output.NullOutputStream
 import org.apache.spark.ml.dsl.utils.LazyVar
 import org.apache.spark.ml.dsl.utils.data.{EAV, EAVCore}
 
+import java.io.{IOException, InputStream, OutputStream}
 import scala.language.implicitConversions
 import scala.util.Try
 
@@ -16,7 +16,9 @@ abstract class Resource extends LocalCleanable {
   import Resource._
 
   protected def _newIStream: InputStream
-  protected def newIStream: InputStream = _newIStream
+  protected def newIStream: InputStream = {
+    _newIStream
+  }
 
   protected def _newOStream: OutputStream
   protected def newOStream: OutputStream = mode match {
@@ -42,20 +44,43 @@ abstract class Resource extends LocalCleanable {
   object OutputView extends _IOView(() => newOStream) {}
   type OutputView = OutputView.type
 
-  def getURI: String
+  protected def _outer: URIExecution
+
+  lazy val getURI: String = _outer.absolutePathStr
 
   def getName: String
 
   def getType: String
   final lazy val isDirectory: Boolean = getType == DIR
 
+  protected def _requireExisting(): Unit = {
+    getType
+  }
+
+  final def tryRequireExisting: Try[Unit] = Try {
+    try {
+      _requireExisting()
+    } catch {
+      case e: Exception =>
+        val bothPaths = Seq(_outer.absolutePathStr, getURI).distinct.mkString(" ~> ")
+        throw new IOException(s"Resource ${bothPaths} does not exist", e)
+    }
+  }
+
+  final def isExisting: Boolean = Try(_requireExisting()).isSuccess
+
+//    try {
+//    requireExisting
+//  } catch {
+//    case e: Exception =>
+////      throw new IOException(s"Resource ${getURI} does not exist", e)
+//  }
+
   def getContentType: String
   def getLength: Long
   def getStatusCode: Option[Int] = None
 
   def getLastModified: Long
-
-  def isExisting: Boolean = Try(getType).isSuccess
 
   protected def _metadata: ResourceMetadata
 

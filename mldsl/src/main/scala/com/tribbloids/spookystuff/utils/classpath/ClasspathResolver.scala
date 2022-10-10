@@ -2,7 +2,13 @@ package com.tribbloids.spookystuff.utils.classpath
 
 import com.tribbloids.spookystuff.utils.CommonUtils
 import com.tribbloids.spookystuff.utils.io.Resource.{DIR, FILE}
-import com.tribbloids.spookystuff.utils.io.{Resource => IOResource, ResourceMetadata, URIResolver, WriteMode}
+import com.tribbloids.spookystuff.utils.io.{
+  Resource => IOResource,
+  ResourceMetadata,
+  URIExecution,
+  URIResolver,
+  WriteMode
+}
 import com.tribbloids.spookystuff.utils.lifespan.Cleanable
 import io.github.classgraph.{ClassGraph, Resource, ResourceList, ScanResult}
 import org.apache.commons.lang.StringUtils
@@ -94,6 +100,8 @@ case class ClasspathResolver(
     override def absolutePathStr: String = pathStr
 
     case class _Resource(mode: WriteMode) extends IOResource with Scanning {
+
+      override protected def _outer: URIExecution = _Execution.this
 
       lazy val _refs: LazyVar[ResourceList] = LazyVar {
         scanResult.getResourcesWithPath(pathStr)
