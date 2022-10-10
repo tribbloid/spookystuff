@@ -71,7 +71,7 @@ subprojects {
 //        testRuntimeOnly("org.junit.platform:junit-platform-launcher:1.10.0-SNAPSHOT")
 //        testRuntimeOnly("org.junit.platform:junit-platform-engine:1.10.0-SNAPSHOT")
 
-        testImplementation("org.scalacheck:scalacheck_${vs.scalaBinaryV}:1.17.0")
+//        testImplementation("org.scalacheck:scalacheck_${vs.scalaBinaryV}:1.17.0")
 
         testImplementation("com.lihaoyi:fastparse_${vs.scalaBinaryV}:2.3.3")
 
