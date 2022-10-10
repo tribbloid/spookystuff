@@ -53,12 +53,12 @@ subprojects {
 
 //        api("org.json4s:json4s-jackson_${vs.scalaBinaryV}:3.5.5")
 
-        bothImpl("${vs.scalaGroup}:scala-compiler:${vs.scalaV}")
-        bothImpl("${vs.scalaGroup}:scala-library:${vs.scalaV}")
-        bothImpl("${vs.scalaGroup}:scala-reflect:${vs.scalaV}")
+        bothProvided("${vs.scalaGroup}:scala-compiler:${vs.scalaV}")
+        bothProvided("${vs.scalaGroup}:scala-library:${vs.scalaV}")
+        bothProvided("${vs.scalaGroup}:scala-reflect:${vs.scalaV}")
 
-        bothImpl("org.apache.spark:spark-sql_${vs.scalaBinaryV}:${vs.sparkV}")
-        bothImpl("org.apache.spark:spark-mllib_${vs.scalaBinaryV}:${vs.sparkV}")
+        bothProvided("org.apache.spark:spark-sql_${vs.scalaBinaryV}:${vs.sparkV}")
+        bothProvided("org.apache.spark:spark-mllib_${vs.scalaBinaryV}:${vs.sparkV}")
 
         testRuntimeOnly("org.apache.spark:spark-yarn_${vs.scalaBinaryV}:${vs.sparkV}")
 
