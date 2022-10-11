@@ -102,6 +102,12 @@ subprojects {
                 testLogging {
                     events("passed", "skipped", "failed")
                 }
+
+                val p = this@subprojects
+
+                if (p.hasProperty("notLocal") ) {
+                    excludeTags("com.tribbloids.spookystuff.testutils.LocalOnly")
+                }
             }
 
         }
