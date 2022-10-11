@@ -137,7 +137,7 @@
           <plugin>
             <groupId>io.github.evis</groupId>
             <artifactId>scalafix-maven-plugin_${scala.binary.version}</artifactId>
-            <version>0.1.6_0.10.0</version>
+            <version>0.1.7_0.10.3</version>
           </plugin>
         </plugins>
       </build>

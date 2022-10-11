@@ -1,7 +1,7 @@
 package com.tribbloids.spookystuff.testutils
 
 import com.tribbloids.spookystuff.utils.classpath.ClasspathResolver
-import com.tribbloids.spookystuff.utils.io.{LocalResolver, Resource, WriteMode}
+import com.tribbloids.spookystuff.utils.io.{LocalResolver, WriteMode}
 import com.tribbloids.spookystuff.utils.lifespan.Cleanable
 import com.tribbloids.spookystuff.utils.{CommonConst, CommonUtils}
 

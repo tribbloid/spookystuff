@@ -2,8 +2,7 @@ package com.tribbloids.spookystuff.utils
 
 import com.tribbloids.spookystuff.utils.AwaitWithHeartbeat.Heartbeat
 
-import java.io.{File, InputStream, PrintWriter, StringWriter}
-import java.net.URL
+import java.io.{File, PrintWriter, StringWriter}
 import org.apache.spark.SparkEnv
 import org.apache.spark.ml.dsl.utils.DSLUtils
 import org.apache.spark.storage.BlockManagerId

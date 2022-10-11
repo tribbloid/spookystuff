@@ -3,7 +3,6 @@ package com.tribbloids.spookystuff.utils.lifespan
 import com.tribbloids.spookystuff.utils.CachingUtils._
 import org.slf4j.{Logger, LoggerFactory}
 
-import java.io.Closeable
 import scala.reflect.ClassTag
 
 object Cleanable {
