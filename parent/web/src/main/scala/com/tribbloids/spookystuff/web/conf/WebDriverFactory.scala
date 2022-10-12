@@ -72,6 +72,7 @@ object WebDriverFactory {
 
     final def DEFAULT_PATH: String = System.getProperty("user.home") \\ ".spookystuff" \\ "phantomjs"
 
+    // TODO: move to BinaryDeployment
     def verifyExe(pathStr: String): Try[String] = Try {
       val isExists = LocalResolver.execute(pathStr).satisfy { v =>
         v.getLength >= 1024 * 1024 * 60

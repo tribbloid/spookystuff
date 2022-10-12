@@ -17,8 +17,10 @@
 .history/
 .lib/
 dist/*
-lib_managed/
-src_managed/
+target/
+**/target/
+**/lib_managed/
+**/src_managed/
 project/boot/
 project/plugins/project/
 
@@ -61,8 +63,10 @@ foo
 **.crc
 **.lock
 
-#aws key
-**/rootkey.csv
+# test logs
+*.log
+**/log
+**/logs
 
 #publish
 dev/publish.sh
