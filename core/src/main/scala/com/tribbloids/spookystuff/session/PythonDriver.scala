@@ -22,7 +22,7 @@ object PythonDriver {
 
   import com.tribbloids.spookystuff.utils.SpookyViews._
 
-  final val DEFAULT_PYTHON_PATH = System.getProperty("user.home") \\ ".spookystuff" \\ "python"
+  final val DEFAULT_PYTHON_PATH = CommonConst.USER_HOME \\ ".spookystuff" \\ "python"
   //  final val MODULE_NAME = "pyspookystuff"
   //  final val MODULE_RESOURCE = "com/tribbloids/" :/ MODULE_NAME
   final val PYTHON_RESOURCE = "python"

@@ -5,7 +5,7 @@ import com.tribbloids.spookystuff.SpookyContext
 import com.tribbloids.spookystuff.conf.DriverFactory
 import com.tribbloids.spookystuff.dsl.BinaryDeployment
 import com.tribbloids.spookystuff.session.{Session, WebProxySetting}
-import com.tribbloids.spookystuff.utils.ConfUtils
+import com.tribbloids.spookystuff.utils.{CommonConst, ConfUtils}
 import com.tribbloids.spookystuff.utils.io.LocalResolver
 import com.tribbloids.spookystuff.utils.lifespan.Cleanable.Lifespan
 import com.tribbloids.spookystuff.web.session.CleanWebDriver
@@ -62,7 +62,6 @@ object WebDriverFactory {
       override val remoteURL: String = PhantomJS.defaultRemoteURL
   ) extends BinaryDeployment {
 
-    override def verifyLocalPath: String = PhantomJS.verifyExe(localPath).get
   }
 
   object PhantomJS {
@@ -70,15 +69,7 @@ object WebDriverFactory {
     // TODO: separate win/mac/linux32/linux64 versions
     final val defaultRemoteURL = "https://docs.google.com/uc?export=download&id=1tHWQTXy471_MTu5XBYwgvN6zEg741cD8"
 
-    final def DEFAULT_PATH: String = System.getProperty("user.home") \\ ".spookystuff" \\ "phantomjs"
-
-    def verifyExe(pathStr: String): Try[String] = Try {
-      val isExists = LocalResolver.execute(pathStr).satisfy { v =>
-        v.getLength >= 1024 * 1024 * 60
-      }
-      assert(isExists, s"PhantomJS executable at $pathStr doesn't exist")
-      pathStr
-    }
+    final def DEFAULT_PATH: String = CommonConst.USER_HOME \\ ".spookystuff" \\ "phantomjs"
 
     def defaultLocalPath: String = {
       ConfUtils.getOrDefault("phantomjs.path", DEFAULT_PATH)
