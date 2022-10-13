@@ -63,12 +63,16 @@ trait BinaryDeployment extends Serializable {
 
       val localFileName = CommonUtils.uri2fileName(downloaded)
 
-      Try {
-        SparkFiles.get(localFileName)
-      }.recover {
-        case _: Exception =>
-          sparkContext.addFile(downloaded)
-          LoggerFactory.getLogger(this.getClass).info(s"Deployed to $downloaded")
+      val existingFiles = sparkContext.listFiles()
+      val noNeedToAdd = existingFiles.contains(localFileName)
+
+      if (noNeedToAdd) {
+
+        LoggerFactory.getLogger(this.getClass).info(s"Source `$localFileName` is already already deployed")
+      } else {
+
+        LoggerFactory.getLogger(this.getClass).info(s"Deploying `$localFileName` from `$downloaded``")
+        sparkContext.addFile(downloaded)
       }
     }
   }

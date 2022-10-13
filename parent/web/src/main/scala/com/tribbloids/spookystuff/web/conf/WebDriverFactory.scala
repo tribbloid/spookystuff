@@ -5,7 +5,7 @@ import com.tribbloids.spookystuff.SpookyContext
 import com.tribbloids.spookystuff.conf.DriverFactory
 import com.tribbloids.spookystuff.dsl.BinaryDeployment
 import com.tribbloids.spookystuff.session.{Session, WebProxySetting}
-import com.tribbloids.spookystuff.utils.ConfUtils
+import com.tribbloids.spookystuff.utils.{CommonConst, ConfUtils}
 import com.tribbloids.spookystuff.utils.io.LocalResolver
 import com.tribbloids.spookystuff.utils.lifespan.Cleanable.Lifespan
 import com.tribbloids.spookystuff.web.session.CleanWebDriver
@@ -70,7 +70,7 @@ object WebDriverFactory {
     // TODO: separate win/mac/linux32/linux64 versions
     final val defaultRemoteURL = "https://docs.google.com/uc?export=download&id=1tHWQTXy471_MTu5XBYwgvN6zEg741cD8"
 
-    final def DEFAULT_PATH: String = System.getProperty("user.home") \\ ".spookystuff" \\ "phantomjs"
+    final def DEFAULT_PATH: String = CommonConst.USER_HOME \\ ".spookystuff" \\ "phantomjs"
 
     // TODO: move to BinaryDeployment
     def verifyExe(pathStr: String): Try[String] = Try {

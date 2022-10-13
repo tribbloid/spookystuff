@@ -26,6 +26,7 @@ class CommonConst {
 
   val hardTerminateOverhead: Duration = 20.seconds
 
+  val USER_HOME: String = System.getProperty("user.home")
   val USER_DIR: String = System.getProperty("user.dir")
 
   val TEMP = "temp"
