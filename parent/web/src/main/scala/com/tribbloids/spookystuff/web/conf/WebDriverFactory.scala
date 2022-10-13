@@ -62,7 +62,6 @@ object WebDriverFactory {
       override val remoteURL: String = PhantomJS.defaultRemoteURL
   ) extends BinaryDeployment {
 
-    override def verifyLocalPath: String = PhantomJS.verifyExe(localPath).get
   }
 
   object PhantomJS {
@@ -71,15 +70,6 @@ object WebDriverFactory {
     final val defaultRemoteURL = "https://docs.google.com/uc?export=download&id=1tHWQTXy471_MTu5XBYwgvN6zEg741cD8"
 
     final def DEFAULT_PATH: String = CommonConst.USER_HOME \\ ".spookystuff" \\ "phantomjs"
-
-    // TODO: move to BinaryDeployment
-    def verifyExe(pathStr: String): Try[String] = Try {
-      val isExists = LocalResolver.execute(pathStr).satisfy { v =>
-        v.getLength >= 1024 * 1024 * 60
-      }
-      assert(isExists, s"PhantomJS executable at $pathStr doesn't exist")
-      pathStr
-    }
 
     def defaultLocalPath: String = {
       ConfUtils.getOrDefault("phantomjs.path", DEFAULT_PATH)

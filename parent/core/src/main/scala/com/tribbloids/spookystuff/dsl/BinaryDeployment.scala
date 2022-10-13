@@ -19,9 +19,7 @@ trait BinaryDeployment extends Serializable {
 
   import BinaryDeployment._
 
-  val MIN_SIZE_K: Double = 1024.0
-
-  def verifyLocalPath: String
+  def verifyLocalPath: String = BinaryDeployment.verifyExe(localPath).get
 
   case class OnDriver(sparkContext: SparkContext) {
 
@@ -63,16 +61,22 @@ trait BinaryDeployment extends Serializable {
 
       val localFileName = CommonUtils.uri2fileName(downloaded)
 
-      val existingFiles = sparkContext.listFiles()
-      val noNeedToAdd = existingFiles.contains(localFileName)
+      def binaryExists: Boolean = {
 
-      if (noNeedToAdd) {
+        val existingFiles = sparkContext.listFiles()
+        val result = existingFiles.exists(ss => ss.endsWith(localFileName))
+        result
+      }
+
+      if (binaryExists) {
 
         LoggerFactory.getLogger(this.getClass).info(s"Source `$localFileName` is already already deployed")
       } else {
 
-        LoggerFactory.getLogger(this.getClass).info(s"Deploying `$localFileName` from `$downloaded``")
+        LoggerFactory.getLogger(this.getClass).info(s"Deploying `$localFileName` from `$downloaded`")
         sparkContext.addFile(downloaded)
+
+        require(binaryExists, "Deploying `$localFileName` from `$downloaded` is not effective")
       }
     }
   }
@@ -119,5 +123,15 @@ object BinaryDeployment {
     SpookyUtils.ifFileNotExist(dstStr) {
       SpookyUtils.treeCopy(srcFile.toPath, dstFile.toPath)
     }
+  }
+
+  val MIN_SIZE_K: Double = 1024.0 * 60
+
+  def verifyExe(pathStr: String): Try[String] = Try {
+    val isExists = LocalResolver.execute(pathStr).satisfy { v =>
+      v.getLength >= MIN_SIZE_K * 1024
+    }
+    assert(isExists, s"PhantomJS executable at $pathStr doesn't exist")
+    pathStr
   }
 }
