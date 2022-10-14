@@ -9,7 +9,7 @@ source "${CRDIR}/.mvn-common.sh"
 
 mvn --version
 
-mvn clean install --errors -f "$FWDIR"/repackaged/selenium-bundle/pom.xml "$@"
+mvn clean install --errors -f "$FWDIR"/repack/selenium-bundle/pom.xml "$@"
 "${CRDIR}/tree.sh" "$@"
 
 mvn clean install --errors -f "$FWDIR"/pom.xml -Pdist "$@"

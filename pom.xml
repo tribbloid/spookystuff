@@ -33,13 +33,7 @@
   </scm>
 
   <modules>
-    <module>test-resources</module>
-    <module>mldsl</module>
-    <module>core</module>
-    <module>web</module>
-    <module>integration</module>
-    <!--<module>pipeline</module>-->
-    <module>assembly</module>
+    <module>parent</module>
   </modules>
 
   <properties>
@@ -75,6 +69,14 @@
   </properties>
 
   <profiles>
+
+    <profile>
+      <id>showcase</id>
+      <modules>
+        <module>spookystuff-showcase</module>
+      </modules>
+    </profile>
+
     <profile>
       <id>java8</id>
       <activation>
@@ -163,21 +165,6 @@
     </profile>
 
     <profile>
-      <id>benchmark</id>
-      <modules>
-        <module>benchmark</module>
-      </modules>
-    </profile>
-
-
-    <profile>
-      <id>showcase</id>
-      <modules>
-        <module>spookystuff-showcase</module>
-      </modules>
-    </profile>
-
-    <profile>
       <id>release-sign-artifacts</id>
       <build>
         <plugins>
@@ -199,12 +186,6 @@
       </build>
     </profile>
 
-    <profile>
-      <id>uav</id>
-      <modules>
-        <module>uav</module>
-      </modules>
-    </profile>
   </profiles>
 
 

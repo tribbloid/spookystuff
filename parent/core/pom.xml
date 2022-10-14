@@ -1,0 +1,123 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<project xmlns="http://maven.apache.org/POM/4.0.0"
+         xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+         xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 http://maven.apache.org/xsd/maven-4.0.0.xsd">
+  <parent>
+    <artifactId>spookystuff-parent</artifactId>
+    <groupId>com.tribbloids.spookystuff</groupId>
+    <version>${revision}</version>
+    <relativePath>../pom.xml</relativePath>
+  </parent>
+  <modelVersion>4.0.0</modelVersion>
+
+  <artifactId>spookystuff-core</artifactId>
+
+  <dependencies>
+
+    <dependency>
+      <groupId>com.tribbloids.spookystuff</groupId>
+      <artifactId>spookystuff-test-resources</artifactId>
+      <version>${project.version}</version>
+      <scope>test</scope>
+    </dependency>
+
+    <dependency>
+      <groupId>com.tribbloids.spookystuff</groupId>
+      <artifactId>spookystuff-mldsl</artifactId>
+      <version>${project.version}</version>
+    </dependency>
+    <dependency>
+      <groupId>com.tribbloids.spookystuff</groupId>
+      <artifactId>spookystuff-mldsl</artifactId>
+      <version>${project.version}</version>
+      <type>test-jar</type>
+      <scope>test</scope>
+    </dependency>
+
+    <dependency>
+      <groupId>oauth.signpost</groupId>
+      <artifactId>signpost-core</artifactId>
+      <version>1.2.1.2</version>
+    </dependency>
+    <dependency>
+      <groupId>org.apache.commons</groupId>
+      <artifactId>commons-csv</artifactId>
+      <version>1.5</version>
+    </dependency>
+
+    <dependency>
+      <groupId>org.apache.tika</groupId>
+      <artifactId>tika-core</artifactId>
+      <version>${tika.version}</version>
+    </dependency>
+    <dependency>
+      <groupId>org.apache.tika</groupId>
+      <artifactId>tika-parsers-standard-package</artifactId>
+      <version>${tika.version}</version>
+      <scope>test</scope>
+    </dependency>
+
+    <dependency>
+      <groupId>com.googlecode.juniversalchardet</groupId>
+      <artifactId>juniversalchardet</artifactId>
+      <version>1.0.3</version>
+    </dependency>
+    <dependency>
+      <groupId>org.jsoup</groupId>
+      <artifactId>jsoup</artifactId>
+      <version>1.11.2</version>
+    </dependency>
+
+    <!--content extraction lib-->
+    <dependency>
+      <groupId>com.syncthemall</groupId>
+      <artifactId>boilerpipe</artifactId>
+      <version>1.2.2</version>
+    </dependency>
+
+    <dependency>
+      <groupId>org.mapdb</groupId>
+      <artifactId>mapdb</artifactId>
+      <version>3.0.8</version>
+      <exclusions>
+        <!--        included in Spark as org.lz4:lz4-java:jar:1.4.0:provided-->
+        <exclusion>
+          <groupId>net.jpountz.lz4</groupId>
+          <artifactId>lz4</artifactId>
+        </exclusion>
+      </exclusions>
+    </dependency>
+
+  </dependencies>
+
+  <build>
+    <plugins>
+
+      <!--      <plugin>-->
+      <!--        <groupId>org.apache.maven.plugins</groupId>-->
+      <!--        <artifactId>maven-source-plugin</artifactId>-->
+      <!--      </plugin>-->
+      <!--      <plugin>-->
+      <!--        <groupId>org.apache.maven.plugins</groupId>-->
+      <!--        <artifactId>maven-javadoc-plugin</artifactId>-->
+      <!--      </plugin>-->
+
+      <!--      <plugin>-->
+      <!--        <groupId>org.apache.maven.plugins</groupId>-->
+      <!--        <artifactId>maven-jar-plugin</artifactId>-->
+      <!--      </plugin>-->
+
+      <plugin>
+        <groupId>org.xolstice.maven.plugins</groupId>
+        <artifactId>protobuf-maven-plugin</artifactId>
+      </plugin>
+
+      <!--<plugin>-->
+      <!--<groupId>com.github.igor-petruk.protobuf</groupId>-->
+      <!--<artifactId>protobuf-maven-plugin</artifactId>-->
+      <!--</plugin>-->
+
+    </plugins>
+  </build>
+
+</project>

@@ -1,0 +1,130 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<project xmlns="http://maven.apache.org/POM/4.0.0"
+         xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+         xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 http://maven.apache.org/xsd/maven-4.0.0.xsd">
+  <parent>
+    <artifactId>spookystuff-parent</artifactId>
+    <groupId>com.tribbloids.spookystuff</groupId>
+    <version>${revision}</version>
+    <relativePath>../pom.xml</relativePath>
+  </parent>
+  <modelVersion>4.0.0</modelVersion>
+
+  <artifactId>spookystuff-assembly</artifactId>
+
+  <properties>
+    <assembly.jar.dir>scala-${scala.binary.version}</assembly.jar.dir>
+    <assembly.jar.suffix>spark${spark.assembly.version}</assembly.jar.suffix>
+    <assembly.jar.basename>${project.artifactId}-${project.version}-${assembly.jar.suffix}.jar</assembly.jar.basename>
+    <example.jar.basename>${project.parent.artifactId}-example-${project.version}-${assembly.jar.suffix}.jar</example.jar.basename>
+  </properties>
+
+  <profiles>
+    <profile>
+      <id>dist</id>
+      <activation>
+        <activeByDefault>true</activeByDefault>
+      </activation>
+      <!-- This profile uses the assembly plugin to create a special "dist" package -->
+      <build>
+        <plugins>
+          <plugin>
+            <groupId>org.apache.maven.plugins</groupId>
+            <artifactId>maven-assembly-plugin</artifactId>
+          </plugin>
+        </plugins>
+      </build>
+    </profile>
+
+<!--    <profile>-->
+<!--      <id>uav</id>-->
+<!--      <dependencies>-->
+<!--        <dependency>-->
+<!--          <groupId>com.tribbloids.spookystuff</groupId>-->
+<!--          <artifactId>spookystuff-uav</artifactId>-->
+<!--          <version>${project.version}</version>-->
+<!--        </dependency>-->
+<!--      </dependencies>-->
+<!--    </profile>-->
+  </profiles>
+
+  <dependencies>
+
+    <!--TODO: remove this dependency: useless-->
+    <dependency>
+      <groupId>org.apache.spark</groupId>
+      <artifactId>spark-repl_${scala.binary.version}</artifactId>
+      <version>${spark.version}</version>
+      <scope>provided</scope>
+    </dependency>
+    <dependency>
+      <groupId>com.tribbloids.spookystuff</groupId>
+      <artifactId>spookystuff-core</artifactId>
+      <version>${project.version}</version>
+      <!--<classifier>${project.classifier}</classifier>-->
+    </dependency>
+    <!--<dependency>-->
+    <!--<groupId>com.tribbloids.spookystuff</groupId>-->
+    <!--<artifactId>spookystuff-pipeline</artifactId>-->
+    <!--<version>${project.version}</version>-->
+    <!--</dependency>-->
+    <!--<dependency>-->
+    <!--<groupId>com.tribbloids.spookystuff</groupId>-->
+    <!--<artifactId>spookystuff-uav</artifactId>-->
+    <!--<version>${project.version}</version>-->
+    <!--</dependency>-->
+
+    <dependency>
+      <groupId>com.tribbloids.spookystuff</groupId>
+      <artifactId>spookystuff-test-resources</artifactId>
+      <version>${project.version}</version>
+      <scope>test</scope>
+    </dependency>
+
+  </dependencies>
+
+  <build>
+    <plugins>
+      <plugin>
+        <groupId>org.apache.maven.plugins</groupId>
+        <artifactId>maven-javadoc-plugin</artifactId>
+      </plugin>
+
+      <plugin>
+        <groupId>org.apache.maven.plugins</groupId>
+        <artifactId>maven-shade-plugin</artifactId>
+        <configuration>
+          <outputFile>${project.build.directory}/${assembly.jar.dir}/${assembly.jar.basename}</outputFile>
+          <filters>
+            <filter>
+              <artifact>*:*</artifact>
+              <excludes>
+                <exclude>META-INF/*.SF</exclude>
+                <exclude>META-INF/*.DSA</exclude>
+                <exclude>META-INF/*.RSA</exclude>
+              </excludes>
+            </filter>
+          </filters>
+        </configuration>
+        <executions>
+          <execution>
+            <phase>package</phase>
+            <goals>
+              <goal>shade</goal>
+            </goals>
+            <configuration>
+              <createDependencyReducedPom>false</createDependencyReducedPom>
+              <shadedClassifierName>${spark.classifier}</shadedClassifierName>
+              <relocations>
+                <relocation>
+                  <pattern>org.apache.http</pattern>
+                  <shadedPattern>spookystuff-project.org.apache.http</shadedPattern>
+                </relocation>
+              </relocations>
+            </configuration>
+          </execution>
+        </executions>
+      </plugin>
+    </plugins>
+  </build>
+</project>
