@@ -33,7 +33,13 @@
   </scm>
 
   <modules>
-    <module>parent</module>
+    <module>parent/test-resources</module>
+    <module>parent/mldsl</module>
+    <module>parent/core</module>
+    <module>parent/web</module>
+    <module>parent/integration</module>
+    <!--<module>parent/pipeline</module>-->
+    <module>parent/assembly</module>
   </modules>
 
   <properties>
@@ -54,7 +60,7 @@
     <spark.assembly.version>${spark.binary.version}</spark.assembly.version>
     <spark.classifier>spark${spark.binary.version}</spark.classifier>
 
-<!--    <selenium.version>3.141.59</selenium.version>-->
+    <!--    <selenium.version>3.141.59</selenium.version>-->
     <selenium.version>4.1.4</selenium.version>
     <tika.version>2.4.0</tika.version>
 
@@ -139,7 +145,7 @@
           <plugin>
             <groupId>io.github.evis</groupId>
             <artifactId>scalafix-maven-plugin_${scala.binary.version}</artifactId>
-            <version>0.1.7_0.10.3</version>
+            <version>0.1.4_0.9.31</version>
           </plugin>
         </plugins>
       </build>
@@ -374,8 +380,8 @@
       <scope>test</scope>
     </dependency>
 
-<!--   2 required by scalatest html report-->
-<!--    https://github.com/scalatest/scalatest-maven-plugin/issues/88-->
+    <!--   2 required by scalatest html report-->
+    <!--    https://github.com/scalatest/scalatest-maven-plugin/issues/88-->
     <dependency>
       <groupId>org.pegdown</groupId>
       <artifactId>pegdown</artifactId>
@@ -386,7 +392,7 @@
       <groupId>com.vladsch.flexmark</groupId>
       <artifactId>flexmark-all</artifactId>
       <version>0.62.2</version>
-<!--      latest version compatible to Java 8-->
+      <!--      latest version compatible to Java 8-->
       <scope>test</scope>
     </dependency>
 
@@ -781,13 +787,13 @@
         </executions>
         <configuration>
 
-<!--          <compilerPlugins>-->
-<!--            <compilerPlugin>-->
-<!--              <groupId>org.scalameta</groupId>-->
-<!--              <artifactId>semanticdb-scalac_${scala.version}</artifactId>-->
-<!--              <version>4.5.6</version>-->
-<!--            </compilerPlugin>-->
-<!--          </compilerPlugins>-->
+          <!--          <compilerPlugins>-->
+          <!--            <compilerPlugin>-->
+          <!--              <groupId>org.scalameta</groupId>-->
+          <!--              <artifactId>semanticdb-scalac_${scala.version}</artifactId>-->
+          <!--              <version>4.5.6</version>-->
+          <!--            </compilerPlugin>-->
+          <!--          </compilerPlugins>-->
 
           <scalaVersion>${scala.version}</scalaVersion>
           <scalaCompatVersion>${scala.binary.version}</scalaCompatVersion>
