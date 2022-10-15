@@ -7,4 +7,4 @@ source "${CRDIR}/profiles/apache-latest/.common.sh"
 source "${CRDIR}/.shared.sh"
 
 cd "${FWDIR}" || exit
-exec "${FWDIR}"/gradlew clean scalafix "${BUILD_PROFILES[@]}"
+exec "${FWDIR}"/gradlew checkScalafix "${BUILD_PROFILES[@]}"

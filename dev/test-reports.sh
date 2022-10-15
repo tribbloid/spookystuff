@@ -12,7 +12,8 @@ FWDIR="$(cd "`dirname "$0"`"/..; pwd)"
 #
 ##find cannot use symbolic link, so cd is used
 ##see https://unix.stackexchange.com/questions/93857/find-does-not-work-on-symlinked-path
-#find . -wholename "**/scalatest/scalatest-report.txt" -print -exec cat {} \;
+
+# TODO: this is now obsolete, all tests are in html format. Need to publish it instead of print in the console
 
 echo ""
 echo "###############"

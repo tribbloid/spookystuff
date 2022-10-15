@@ -63,7 +63,7 @@ case class DesiredCapabilitiesView(
 
     def base: DesiredCapabilitiesView = {
       fork().configure { caps =>
-        val proxyOpt = Option(spooky.spookyConf.webProxy()).map { v =>
+        val proxyOpt = Option(spooky.spookyConf.webProxy(())).map { v =>
           asSeleniumProxy(v)
         }
 
