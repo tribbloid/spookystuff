@@ -1,9 +1,9 @@
-package com.tribbloids.spookystuff.utils
+package com.tribbloids.spookystuff.testutils
+
+import com.tribbloids.spookystuff.utils.SCFunctions
+import org.scalatest.{Status, Suite}
 
 import java.util.concurrent.atomic.AtomicInteger
-
-import com.tribbloids.spookystuff.testutils.TestHelper
-import org.scalatest.{Status, Suite}
 
 trait SparkUISupport extends Suite {
 

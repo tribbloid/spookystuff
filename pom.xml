@@ -45,7 +45,8 @@
   <properties>
     <revision.base>0.7.0</revision.base>
     <!--    https://maven.apache.org/maven-ci-friendly.html-->
-    <revision>${revision.base}_${scala.binary.version}${version.suffix}-SNAPSHOT</revision>
+    <revision.version>${revision.base}_${scala.binary.version}${version.suffix}</revision.version>
+    <revision>${revision.version}-SNAPSHOT</revision>
     <version.suffix/>
 
     <project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
@@ -80,6 +81,20 @@
       <id>showcase</id>
       <modules>
         <module>spookystuff-showcase</module>
+      </modules>
+    </profile>
+
+    <profile>
+      <id>uav</id>
+      <modules>
+        <module>parent/uav</module>
+      </modules>
+    </profile>
+
+    <profile>
+      <id>benchmark</id>
+      <modules>
+        <module>parent/benchmark</module>
       </modules>
     </profile>
 

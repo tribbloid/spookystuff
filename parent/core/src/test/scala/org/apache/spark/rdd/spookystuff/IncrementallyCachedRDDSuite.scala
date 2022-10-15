@@ -1,8 +1,8 @@
 package org.apache.spark.rdd.spookystuff
 
 import com.tribbloids.spookystuff.testutils.TestHelper.TestSC
-import com.tribbloids.spookystuff.testutils.{FunSpecx, TestHelper}
-import com.tribbloids.spookystuff.utils.{SparkUISupport, Stopwatch}
+import com.tribbloids.spookystuff.testutils.{FunSpecx, SparkUISupport, TestHelper}
+import com.tribbloids.spookystuff.utils.Stopwatch
 import org.apache.spark.rdd.RDD
 import org.apache.spark.sql.execution.UnsafeRowSerializer
 import org.apache.spark.util.LongAccumulator

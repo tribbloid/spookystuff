@@ -2,7 +2,7 @@ package org.apache.spark.ml.dsl.utils.messaging
 
 import org.apache.spark.ml.param.{ParamMap, Params}
 import org.apache.spark.ml.util._
-import org.json4s.JsonAST.JObject
+import org.json4s.JObject
 
 import scala.language.existentials
 
@@ -81,7 +81,8 @@ case class MessageMLWriter[T](message: MessageWriter[T]) extends MLWriter with S
 
     val instance = new MessageParams(Identifiable.randomUID(message.message.getClass.getSimpleName))
 
-    DefaultParamsWriter.saveMetadata(instance, path, sc, extraMetadata = Some(JObject("metadata" -> message.toJValue)))
+    val jV = JObject("metadata" -> message.toJValue)
+    DefaultParamsWriter.saveMetadata(instance, path, sc, extraMetadata = Some(jV))
 
     // Save stages
     //    val stagesDir = new Path(path, "stages").toString

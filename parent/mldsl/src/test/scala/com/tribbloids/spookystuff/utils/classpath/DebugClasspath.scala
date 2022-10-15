@@ -4,8 +4,8 @@ object DebugClasspath {
 
   def main(args: Array[String]): Unit = {
 
-    ClasspathResolver.default.withOverview { o =>
-      println(o.completeReport)
+    ClasspathResolver.debug { o =>
+      println(o.default.completeReport)
     }
   }
 }

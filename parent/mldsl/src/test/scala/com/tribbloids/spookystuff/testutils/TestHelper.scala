@@ -67,8 +67,10 @@ abstract class TestHelper extends LocalCleanable {
   @transient var sparkSessionInitialised: Boolean = false
 
   {
-    val report: String = ClasspathResolver.withOverview { o =>
-      o.completeReport
+    val (defaultReport: String, shortReport: String) = ClasspathResolver.debug { o =>
+      o.default.Files.debugConfs()
+
+      o.default.completeReport -> o.fileNameOnly.completeReport
     }
 
     if (S3Path.isDefined) println("Test on AWS S3 with credentials provided by rootkey.csv")
@@ -256,16 +258,16 @@ abstract class TestHelper extends LocalCleanable {
     conf.setAll(CoreSettings.asMap)
 
     // TODO: remove, should be set by users
-//    Option(System.getProperty("fs.s3.awsAccessKeyId")).foreach { v =>
-//      conf.set("spark.hadoop.fs.s3.awsAccessKeyId", v)
-//      conf.set("spark.hadoop.fs.s3n.awsAccessKeyId", v)
-//      conf.set("spark.hadoop.fs.s3a.awsAccessKeyId", v)
-//    }
-//    Option(System.getProperty("fs.s3.awsSecretAccessKey")).foreach { v =>
-//      conf.set("spark.hadoop.fs.s3.awsSecretAccessKey", v)
-//      conf.set("spark.hadoop.fs.s3n.awsSecretAccessKey", v)
-//      conf.set("spark.hadoop.fs.s3a.awsSecretAccessKey", v)
-//    }
+    //    Option(System.getProperty("fs.s3.awsAccessKeyId")).foreach { v =>
+    //      conf.set("spark.hadoop.fs.s3.awsAccessKeyId", v)
+    //      conf.set("spark.hadoop.fs.s3n.awsAccessKeyId", v)
+    //      conf.set("spark.hadoop.fs.s3a.awsAccessKeyId", v)
+    //    }
+    //    Option(System.getProperty("fs.s3.awsSecretAccessKey")).foreach { v =>
+    //      conf.set("spark.hadoop.fs.s3.awsSecretAccessKey", v)
+    //      conf.set("spark.hadoop.fs.s3n.awsSecretAccessKey", v)
+    //      conf.set("spark.hadoop.fs.s3a.awsSecretAccessKey", v)
+    //    }
 
     conf.setAppName("Test")
 

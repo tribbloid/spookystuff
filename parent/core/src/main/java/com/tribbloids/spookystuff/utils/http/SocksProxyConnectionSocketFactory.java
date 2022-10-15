@@ -20,5 +20,4 @@ public class SocksProxyConnectionSocketFactory extends PlainConnectionSocketFact
         Proxy proxy = new Proxy(Proxy.Type.SOCKS, socksaddr);
         return new Socket(proxy);
     }
-
 }

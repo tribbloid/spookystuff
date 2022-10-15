@@ -1,6 +1,6 @@
 package com.tribbloids.spookystuff.dsl
 
-import com.tribbloids.spookystuff.SpookyEnvFixture
+import com.tribbloids.spookystuff.testutils.SpookyEnvFixture
 import org.apache.spark.HashPartitioner
 import org.apache.spark.rdd.RDD
 

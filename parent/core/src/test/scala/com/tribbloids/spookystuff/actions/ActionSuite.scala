@@ -5,8 +5,9 @@ import com.tribbloids.spookystuff.dsl._
 import com.tribbloids.spookystuff.extractors.impl.Lit
 import com.tribbloids.spookystuff.row.{DataRow, FetchedRow, Field}
 import com.tribbloids.spookystuff.session.Session
+import com.tribbloids.spookystuff.testutils.SpookyEnvFixture
 import com.tribbloids.spookystuff.utils.{CommonUtils, Timeout}
-import com.tribbloids.spookystuff.{ActionException, Const, SpookyEnvFixture}
+import com.tribbloids.spookystuff.{ActionException, Const}
 
 import scala.collection.immutable.ListMap
 import scala.concurrent.{duration, TimeoutException}

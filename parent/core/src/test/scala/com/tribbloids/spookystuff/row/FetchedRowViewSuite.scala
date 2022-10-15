@@ -1,8 +1,8 @@
 package com.tribbloids.spookystuff.row
 
 import com.tribbloids.spookystuff.actions.Wget
-import com.tribbloids.spookystuff.testutils.LocalPathDocsFixture
-import com.tribbloids.spookystuff.{dsl, SpookyEnvFixture}
+import com.tribbloids.spookystuff.testutils.{LocalPathDocsFixture, SpookyEnvFixture}
+import com.tribbloids.spookystuff.dsl
 
 /**
   * Created by peng on 12/3/14.

@@ -4,6 +4,7 @@ import org.apache.spark.ml.param.Params
 import org.apache.spark.ml.util.DefaultParamsReader.Metadata
 import org.apache.spark.ml.util.{DefaultParamsReader, MLReader}
 import org.apache.spark.util.Utils
+import org.json4s.JValue
 import org.json4s.JsonAST.JObject
 import org.json4s.jackson.JsonMethods._
 
@@ -30,7 +31,7 @@ class XMLStageReader[T <: Params](
     metadata.params match {
       case JObject(pairs) =>
         pairs.foreach {
-          case (paramName, jValue) =>
+          case (paramName, jValue: JValue) =>
             val param = instance.getParam(paramName)
             val value = param.jsonDecode(compact(render(jValue)))
             instance.set(param, value)

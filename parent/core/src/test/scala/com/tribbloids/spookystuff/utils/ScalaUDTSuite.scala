@@ -1,9 +1,8 @@
 package com.tribbloids.spookystuff.utils
 
-import com.tribbloids.spookystuff.SpookyEnvFixture
 import com.tribbloids.spookystuff.actions.Action
 import com.tribbloids.spookystuff.doc.{Doc, DocOption, Unstructured}
-import com.tribbloids.spookystuff.testutils.FunSpecx
+import com.tribbloids.spookystuff.testutils.{FunSpecx, SpookyEnvFixture}
 import com.tribbloids.spookystuff.utils.serialization.AssertSerializable
 import org.apache.spark.ml.dsl.utils.refl.{TypeUtils, UnreifiedObjectType}
 import org.apache.spark.sql.types.DataType

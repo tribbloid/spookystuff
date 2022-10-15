@@ -4,7 +4,8 @@ import com.tribbloids.spookystuff.actions._
 import com.tribbloids.spookystuff.doc.DocOption
 import com.tribbloids.spookystuff.session.Session
 import com.tribbloids.spookystuff.web.conf.Web
-import com.tribbloids.spookystuff.{ActionException, SpookyEnvFixture}
+import com.tribbloids.spookystuff.ActionException
+import com.tribbloids.spookystuff.testutils.SpookyEnvFixture
 import org.apache.spark.rdd.RDD
 
 import scala.concurrent.duration

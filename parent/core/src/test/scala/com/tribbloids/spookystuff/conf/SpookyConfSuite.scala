@@ -1,6 +1,6 @@
 package com.tribbloids.spookystuff.conf
 
-import com.tribbloids.spookystuff.SpookyEnvFixture
+import com.tribbloids.spookystuff.testutils.SpookyEnvFixture
 import com.tribbloids.spookystuff.utils.ConfUtils
 import com.tribbloids.spookystuff.utils.serialization.AssertSerializable
 import org.apache.spark.SparkConf

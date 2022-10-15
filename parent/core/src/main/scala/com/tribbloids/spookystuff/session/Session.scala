@@ -32,7 +32,7 @@ class Session(
 
     lazy val level2: String = SpookyUtils.canonizeFileName(startTimeMillis.toString, noDash = true)
 
-    lazy val dirPath: String = s"target/logs/$level1/$level2"
+    lazy val dirPath: String = s"logs/$level1/$level2"
   }
 
   def taskContextOpt: Option[TaskContext] = lifespan.ctx.taskOpt

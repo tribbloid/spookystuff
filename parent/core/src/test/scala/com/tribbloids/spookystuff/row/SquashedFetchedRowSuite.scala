@@ -1,7 +1,7 @@
 package com.tribbloids.spookystuff.row
 
-import com.tribbloids.spookystuff.SpookyEnvFixture
 import com.tribbloids.spookystuff.actions.Wget
+import com.tribbloids.spookystuff.testutils.SpookyEnvFixture
 
 /**
   * Created by peng on 05/04/16.

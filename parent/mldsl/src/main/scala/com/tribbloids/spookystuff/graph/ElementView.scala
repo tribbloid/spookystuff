@@ -1,4 +1,5 @@
 package com.tribbloids.spookystuff.graph
+
 import com.tribbloids.spookystuff.graph.Layout.Facet
 import com.tribbloids.spookystuff.utils.IDMixin
 

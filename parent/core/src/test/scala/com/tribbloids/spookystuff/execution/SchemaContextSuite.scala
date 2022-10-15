@@ -1,8 +1,8 @@
 package com.tribbloids.spookystuff.execution
 
-import com.tribbloids.spookystuff.SpookyEnvFixture
 import com.tribbloids.spookystuff.extractors.impl.Lit
 import com.tribbloids.spookystuff.row.SpookySchema
+import com.tribbloids.spookystuff.testutils.SpookyEnvFixture
 
 /**
   * Created by peng on 14/06/16.

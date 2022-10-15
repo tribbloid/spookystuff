@@ -1,9 +1,9 @@
 package com.tribbloids.spookystuff.web.actions
 
-import com.tribbloids.spookystuff.SpookyEnvFixture
 import com.tribbloids.spookystuff.actions.{ClusterRetry, Delay, Loop, Wget}
 import com.tribbloids.spookystuff.extractors.impl.Lit
 import com.tribbloids.spookystuff.session.Session
+import com.tribbloids.spookystuff.testutils.SpookyEnvFixture
 import com.tribbloids.spookystuff.web.conf.Web
 
 import java.util.Date

@@ -1,13 +1,12 @@
 package com.tribbloids.spookystuff.extractors
 
-import com.tribbloids.spookystuff.SpookyEnvFixture
 import com.tribbloids.spookystuff.actions.{Action, ActionUDT, Wget}
 import com.tribbloids.spookystuff.doc.{Doc, DocOption, Unstructured}
 import com.tribbloids.spookystuff.extractors.impl.{Get, Lit}
 import com.tribbloids.spookystuff.TestBeans.Example
 import com.tribbloids.spookystuff.rdd.FetchedDataset
 import com.tribbloids.spookystuff.row.SpookySchema
-import com.tribbloids.spookystuff.testutils.LocalPathDocsFixture
+import com.tribbloids.spookystuff.testutils.{LocalPathDocsFixture, SpookyEnvFixture}
 import com.tribbloids.spookystuff.utils.CommonUtils
 import org.apache.spark.rdd.RDD
 import org.apache.spark.sql.DataFrame

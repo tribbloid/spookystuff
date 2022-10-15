@@ -22,7 +22,7 @@ trait CompoundResolver extends URIResolver {
 
     override def moveTo(target: String, force: Boolean = false): Unit = impl.moveTo(target, force)
 
-//    override def mkDirs(): Unit = impl.mkDirs()
+    //    override def mkDirs(): Unit = impl.mkDirs()
     override type _Resource = impl._Resource
 
     override def _Resource: WriteMode => impl._Resource = { v =>
@@ -30,12 +30,13 @@ trait CompoundResolver extends URIResolver {
     }
   }
 
-//  override def lockAccessDuring[T](pathStr: String)(f: String => T) =
-//    getImpl(pathStr).lockAccessDuring(pathStr)(f)
+  //  override def lockAccessDuring[T](pathStr: String)(f: String => T) =
+  //    getImpl(pathStr).lockAccessDuring(pathStr)(f)
 }
 
 object CompoundResolver {
 
+  // TODO: should be "FileService"
   class FSResolver(
       hadoopConfFactory: () => Configuration,
       timeoutMillis: Int
@@ -60,6 +61,7 @@ object CompoundResolver {
     }
   }
 
+  // TODO: should be "Omni"
   class OmniResolver(
       hadoopConfFactory: () => Configuration,
       timeoutMillis: Int,

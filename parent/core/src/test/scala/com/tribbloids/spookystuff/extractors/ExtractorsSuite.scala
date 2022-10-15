@@ -1,7 +1,7 @@
 package com.tribbloids.spookystuff.extractors
 
-import com.tribbloids.spookystuff.SpookyEnvFixture
 import com.tribbloids.spookystuff.extractors.impl.Lit
+import com.tribbloids.spookystuff.testutils.SpookyEnvFixture
 
 /**
   * Created by peng on 15/06/16.

@@ -6,7 +6,6 @@ import com.tribbloids.spookystuff.conf.DriverFactory
 import com.tribbloids.spookystuff.dsl.BinaryDeployment
 import com.tribbloids.spookystuff.session.{Session, WebProxySetting}
 import com.tribbloids.spookystuff.utils.{CommonConst, ConfUtils}
-import com.tribbloids.spookystuff.utils.io.LocalResolver
 import com.tribbloids.spookystuff.utils.lifespan.Cleanable.Lifespan
 import com.tribbloids.spookystuff.web.session.CleanWebDriver
 import org.apache.commons.io.FileUtils
@@ -15,7 +14,6 @@ import org.openqa.selenium.htmlunit.HtmlUnitDriver
 import org.openqa.selenium.phantomjs.{PhantomJSDriver, PhantomJSDriverService}
 
 import java.io.File
-import scala.util.Try
 
 abstract class WebDriverFactory extends DriverFactory.Transient[CleanWebDriver] {
 

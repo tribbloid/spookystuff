@@ -1,8 +1,7 @@
 package com.tribbloids.spookystuff.doc
 
-import com.tribbloids.spookystuff.SpookyEnvFixture
 import com.tribbloids.spookystuff.actions._
-import com.tribbloids.spookystuff.testutils.LocalPathDocsFixture
+import com.tribbloids.spookystuff.testutils.{LocalPathDocsFixture, SpookyEnvFixture}
 import com.tribbloids.spookystuff.utils.serialization.AssertSerializable
 import org.apache.spark.SparkEnv
 

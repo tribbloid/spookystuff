@@ -1,12 +1,11 @@
 package com.tribbloids.spookystuff.dsl
 
-import com.tribbloids.spookystuff.SpookyEnvFixture
 import com.tribbloids.spookystuff.actions.Wget
 import com.tribbloids.spookystuff.doc.DocOption
 import com.tribbloids.spookystuff.extractors.Alias
 import com.tribbloids.spookystuff.rdd.FetchedDataset
 import com.tribbloids.spookystuff.row.{DataRow, FetchedRow, Field, SquashedFetchedRow}
-import com.tribbloids.spookystuff.testutils.LocalPathDocsFixture
+import com.tribbloids.spookystuff.testutils.{LocalPathDocsFixture, SpookyEnvFixture}
 
 /**
   * Created by peng on 12/3/14.

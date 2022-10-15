@@ -1,8 +1,8 @@
 package com.tribbloids.spookystuff.actions
 
-import com.tribbloids.spookystuff.SpookyEnvFixture
 import com.tribbloids.spookystuff.extractors.impl.Lit
 import com.tribbloids.spookystuff.session.Session
+import com.tribbloids.spookystuff.testutils.SpookyEnvFixture
 
 import java.util.Date
 

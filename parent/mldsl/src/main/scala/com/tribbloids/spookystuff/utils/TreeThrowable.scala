@@ -102,25 +102,19 @@ object TreeThrowable {
       extra: Seq[Throwable] = Nil
   ): Option[T] = {
 
-//    val buffer = ArrayBuffer[Try[T]]()
-
     if (trials.isEmpty) return None
 
-    val results = for (fn <- trials) yield {
+    val errors = for (fn <- trials) yield {
 
       val result = Try(fn())
       result match {
         case Success(t) => return Some(t)
-        case _          =>
-      }
-      result
-    }
-
-    if (results.nonEmpty) {
-      val es = results.flatMap(_.toOption).collect {
         case Failure(e) => e
       }
-      throw agg(extra.flatMap(v => Option(v)) ++ es)
+    }
+
+    if (errors.nonEmpty) {
+      throw agg(extra.flatMap(v => Option(v)) ++ errors)
     } else {
       throw new UnknownError("IMPOSSIBLE!")
     }

@@ -107,11 +107,14 @@ trait Suitex {
           try {
             a.zipAll(b, null, null).foreach { tuple =>
               val fixes = tuple._2.split("[.]{6,}", 2)
+              lazy val errorMsg = s"${tuple._1} doesn't look like ${tuple._2}"
               Predef.assert(
-                tuple._1.startsWith(fixes.head)
+                tuple._1.startsWith(fixes.head),
+                errorMsg
               )
               Predef.assert(
-                tuple._1.endsWith(fixes.last)
+                tuple._1.endsWith(fixes.last),
+                errorMsg
               )
             }
           } catch {

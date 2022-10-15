@@ -1,7 +1,6 @@
 package com.tribbloids.spookystuff.utils
 
-import com.tribbloids.spookystuff.SpookyEnvFixture
-import com.tribbloids.spookystuff.testutils.TestHelper
+import com.tribbloids.spookystuff.testutils.{SpookyEnvFixture, TestHelper}
 import org.apache.spark.ml.dsl.utils.ScalaNameMixin
 import org.apache.spark.rdd.RDD
 import org.apache.spark.storage.StorageLevel

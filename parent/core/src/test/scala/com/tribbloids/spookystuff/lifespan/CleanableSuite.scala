@@ -1,6 +1,6 @@
 package com.tribbloids.spookystuff.lifespan
 
-import com.tribbloids.spookystuff.SpookyEnvFixture
+import com.tribbloids.spookystuff.testutils.SpookyEnvFixture
 import com.tribbloids.spookystuff.utils.CommonUtils
 import com.tribbloids.spookystuff.utils.lifespan.Cleanable.Lifespan
 import com.tribbloids.spookystuff.utils.lifespan.{Cleanable, LeafType, LocalCleanable}

@@ -2,9 +2,9 @@ package com.tribbloids.spookystuff.execution
 
 import com.tribbloids.spookystuff.actions.Wget
 import com.tribbloids.spookystuff.extractors.impl.Lit
-import com.tribbloids.spookystuff.testutils.LocalPathDocsFixture
+import com.tribbloids.spookystuff.testutils.{LocalPathDocsFixture, SpookyEnvFixture}
 import com.tribbloids.spookystuff.utils.serialization.AssertWeaklySerializable
-import com.tribbloids.spookystuff.{dsl, SpookyEnvFixture}
+import com.tribbloids.spookystuff.dsl
 import org.apache.spark.HashPartitioner
 
 /**

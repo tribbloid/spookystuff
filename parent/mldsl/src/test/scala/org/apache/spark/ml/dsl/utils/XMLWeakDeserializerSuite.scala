@@ -2,7 +2,7 @@ package org.apache.spark.ml.dsl.utils
 
 import org.apache.spark.ml.dsl.AbstractDFDSuite
 import org.apache.spark.ml.dsl.utils.messaging.xml.XMLFormats
-import org.json4s.Formats
+import org.json4s.{DefaultFormats, Formats, JObject}
 
 object XMLWeakDeserializerSuite {
   case class StrStr(
@@ -46,6 +46,16 @@ class XMLWeakDeserializerSuite extends AbstractDFDSuite {
 
   import XMLWeakDeserializerSuite._
   import org.json4s.Extraction._
+
+  it("sanity test") {
+
+    implicit val formats: Formats = DefaultFormats
+
+    val d1 = StrInt("a", 12)
+    val json = decompose(d1)
+
+    assert(json != JObject(Nil))
+  }
 
   it("int to String") {
 

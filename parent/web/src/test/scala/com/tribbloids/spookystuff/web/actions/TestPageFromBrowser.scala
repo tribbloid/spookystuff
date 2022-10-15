@@ -3,7 +3,8 @@ package com.tribbloids.spookystuff.web.actions
 import com.tribbloids.spookystuff.doc.{Doc, DocUtils}
 import com.tribbloids.spookystuff.session.Session
 import com.tribbloids.spookystuff.web.conf.Web
-import com.tribbloids.spookystuff.{dsl, SpookyEnvFixture}
+import com.tribbloids.spookystuff.dsl
+import com.tribbloids.spookystuff.testutils.SpookyEnvFixture
 
 class TestPageFromBrowser extends SpookyEnvFixture {
 

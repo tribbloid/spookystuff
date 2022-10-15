@@ -101,7 +101,7 @@ trait BinaryDeployment extends Serializable {
       ),
       agg = { seq =>
         new IllegalStateException(
-          s"${this.getClass.getSimpleName} cannot find deploymed binary",
+          s"${this.getClass.getSimpleName} cannot find deployed binary",
           TreeThrowable.combine(seq)
         )
       }

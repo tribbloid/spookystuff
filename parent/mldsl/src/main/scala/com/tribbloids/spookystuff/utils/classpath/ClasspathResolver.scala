@@ -44,24 +44,6 @@ case class ClasspathResolver(
     base
   }
 
-  lazy val dependencyRoots: Seq[String] = Seq(
-    ".m2/repository",
-    ".gradle/caches",
-    "jre/lib",
-    "jdk/lib"
-  )
-
-  def prunePath(v: String): String = {
-
-    for (root <- dependencyRoots) {
-
-      if (v.contains(root))
-        return v.split(Pattern.quote(root)).last
-    }
-
-    v
-  }
-
   trait Scanning extends Cleanable {
 
     // TODO: this may not be efficient as every new _Execution requires a new can, but for safety ...
@@ -184,10 +166,8 @@ case class ClasspathResolver(
 
   }
 
-//  def overview: Overview = Overview()
-
-  def withOverview[T](fn: Overview => T): T = {
-    val o = Overview()
+  def debug[T](fn: Debugging => T): T = {
+    val o = Debugging()
 
     try {
       fn(o)
@@ -196,120 +176,121 @@ case class ClasspathResolver(
     }
   }
 
-  case class Overview(
-      pathConflictFilter: String => Boolean = { v =>
-        val exceptions = Set.empty[String]
-        v.endsWith(".class") && (!exceptions.contains(v))
-      }
-  ) extends Scanning {
+  case class Debugging() extends Scanning {
 
-    def debugConfFiles(
-        fileNames: Seq[String] = List(
-          "log4j.properties",
-          "rootkey.csv",
-          ".rootkey.csv"
-        )
-    ): Unit = {
+    case class Display(
+        pathConflictFilter: String => Boolean = { v =>
+          val exceptions = Set.empty[String]
+          v.endsWith(".class") &&
+          (!v.startsWith("module-info")) &&
+          (!exceptions.contains(v))
+        },
+        pathFormatting: String => String = identity
+    ) {
 
-      val resolvedInfos = fileNames.map { v =>
-        _Execution(v).referenceInfo
-      }
-      println("resolving files in classpath ...\n" + resolvedInfos.mkString("\n"))
-    }
+      object Files {
 
-    object Files {
-
-      lazy val paths: Seq[String] = {
-        elementsOverride.getOrElse {
-          scanResult.getClasspathURIs.asScala.toList.map(_.toString)
-        }
-      }
-
-      lazy val prunedPaths: Seq[String] = {
-
-        val pruned = paths.map { v =>
-          prunePath(v)
-        }
-        val sorted = pruned.sorted
-        sorted
-
-      }
-
-      lazy val names: Seq[String] = {
-        val name = paths.flatMap { v =>
-          StringUtils.split(v, File.separator).lastOption
-        }
-        val sorted = name.sorted
-        sorted
-      }
-
-      lazy val formatted: String = names.mkString("\n")
-    }
-
-    object Conflicts {
-
-      lazy val raw: Map[String, List[String]] = {
-        val seen =
-          try {
-
-            val resources = scanResult.getAllResources.asScala
-
-            val result = resources
-              .groupBy { resource =>
-                resource.getPath
-              }
-              .map {
-                case (k, vs) =>
-                  k -> vs.map { v =>
-                    val filePath = v.getClasspathElementURI.toString
-                    StringUtils.split(filePath, File.separator).last
-                  }
-              }
-            result
+        lazy val paths: Seq[String] = {
+          elementsOverride.getOrElse {
+            scanResult.getClasspathURIs.asScala.toList.map(_.toString)
           }
-
-        val result = seen.flatMap {
-          case (k, v) =>
-            if (!pathConflictFilter(k)) None
-            else if (v.size == 1) None
-            else Some(k -> v.toList.sorted)
         }
 
-        result
+        lazy val displayPath: Seq[String] = {
+
+          val pruned = paths.map { v =>
+            pathFormatting(v)
+          }
+          val sorted = pruned.sorted
+          sorted
+        }
+
+        lazy val formatted: String = displayPath.mkString("\n")
+
+        def debugConfs(
+            fileNames: Seq[String] = List(
+              "log4j.properties",
+              "rootkey.csv",
+              ".rootkey.csv"
+            )
+        ): Unit = {
+
+          val resolvedInfos = fileNames.map { v =>
+            _Execution(v).referenceInfo
+          }
+          println("resolving files in classpath ...\n" + resolvedInfos.mkString("\n"))
+        }
       }
 
-      lazy val aggregated: Map[List[String], List[String]] = raw.toList
-        .groupBy {
-          case (_, vs) =>
-            vs
-        }
-        .map { kvs =>
-          kvs._2.map(_._1).sorted -> kvs._1
-        }
+      object Conflicts {
 
-      lazy val formatted: String = {
+        lazy val raw: Map[String, List[String]] = {
+          val seen =
+            try {
 
-        val info = aggregated
-          .map {
+              val resources = scanResult.getAllResources.asScala
+
+              val result = resources
+                .groupBy { resource =>
+                  resource.getPath
+                }
+                .map {
+                  case (k, vs) =>
+                    k -> vs.map { v =>
+                      val filePath = v.getClasspathElementURI.toString
+                      pathFormatting(filePath)
+                    }
+                }
+              result
+            }
+
+          val result = seen.flatMap {
             case (k, v) =>
-              s"""
-                 |${k.mkString("", "\n", "")}:
-                 |${v.mkString("\t", "\n\t", "")}
-                 |""".stripMargin.trim
+              if (!pathConflictFilter(k)) None
+              else if (v.size == 1) None
+              else Some(k -> v.toList.sorted)
           }
-          .mkString("\n\n")
-        info
+
+          result
+        }
+
+        lazy val aggregated: Map[List[String], List[String]] = raw.toList
+          .groupBy {
+            case (_, vs) =>
+              vs
+          }
+          .map { kvs =>
+            kvs._2.map(_._1).sorted -> kvs._1
+          }
+
+        lazy val formatted: String = {
+
+          val info = aggregated
+            .map {
+              case (k, v) =>
+                s"""
+                     |${k.mkString("", "\n", "")}:
+                     |${v.mkString("\t", "\n\t", "")}
+                     |""".stripMargin.trim
+            }
+            .mkString("\n\n")
+          info
+        }
       }
+
+      lazy val completeReport: String =
+        s"""
+             | === CONFLICTS ===
+             |${Conflicts.formatted}
+             | 
+             | === FILES ====
+             |${Files.formatted}
+             |""".stripMargin.trim
     }
 
-    lazy val completeReport: String =
-      s"""
-         | === CONFLICTS ===
-         |${Conflicts.formatted}
-         | 
-         | === FILES ====
-         |${Files.formatted}
-         |""".stripMargin.trim
+    lazy val default: Display = Display()
+
+    lazy val fileNameOnly: Display = Display(pathFormatting = ClasspathResolver.getName)
   }
 
 }
@@ -335,4 +316,30 @@ object ClasspathResolver {
   }
 
   implicit def toDefault(v: this.type): ClasspathResolver = v.default
+
+  lazy val localRepoRoot: Seq[String] = Seq(
+    ".m2/repository",
+    ".gradle/caches",
+    "jre/lib",
+    "jdk/lib"
+  )
+
+  def getLocalRepoPath(v: String): String = {
+
+    for (root <- localRepoRoot) {
+
+      if (v.contains(root))
+        return v.split(Pattern.quote(root)).last
+    }
+
+    v
+  }
+
+  def getName(v: String): String = {
+
+    StringUtils
+      .split(v, File.separator)
+      .lastOption
+      .getOrElse(s"file path $v is empty")
+  }
 }

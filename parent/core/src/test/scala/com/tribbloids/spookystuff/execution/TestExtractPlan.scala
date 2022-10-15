@@ -1,6 +1,7 @@
 package com.tribbloids.spookystuff.execution
 
-import com.tribbloids.spookystuff.{dsl, SpookyEnvFixture}
+import com.tribbloids.spookystuff.dsl
+import com.tribbloids.spookystuff.testutils.SpookyEnvFixture
 
 /**
   * Created by peng on 02/04/16.

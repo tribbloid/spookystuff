@@ -1,4 +1,5 @@
 package com.tribbloids.spookystuff.graph
+
 import com.tribbloids.spookystuff.graph.Element.{Edge, NodeTriplet}
 import com.tribbloids.spookystuff.graph.IDAlgebra.Rotator
 import com.tribbloids.spookystuff.utils.{CommonTypes, MultiMapView}

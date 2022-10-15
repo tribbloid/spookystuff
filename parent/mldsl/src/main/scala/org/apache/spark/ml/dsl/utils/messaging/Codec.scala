@@ -35,10 +35,9 @@ trait CodecLevel1 {
   *
   * Now look at associated types in
   *
-  * Companion objects of a type
-  * \- include companion objects of an object's self type, all supertypes, all parameter types, all parameter types'
-  * supertypes Implicit scope of an argument’s type (2.9.1) - e.g. Companion objects Implicit scope of type arguments
-  * (2.8.0) - e.g. Companion objects Outer objects for nested types
+  * Companion objects of a type \- include companion objects of an object's self type, all supertypes, all parameter
+  * types, all parameter types' supertypes Implicit scope of an argument’s type (2.9.1) - e.g. Companion objects
+  * Implicit scope of type arguments (2.8.0) - e.g. Companion objects Outer objects for nested types
   */
 abstract class Codec[Proto] extends CodecLevel1 with HasRootTag {
 
@@ -62,8 +61,6 @@ abstract class Codec[Proto] extends CodecLevel1 with HasRootTag {
   }
 
   def selfType: ScalaType[Proto]
-
-  //  Catalog.AllInclusive.registry += selfType -> this
 
   def toMessage_>>(v: Proto): M
   def toProto_<<(v: M, rootTag: String): Proto

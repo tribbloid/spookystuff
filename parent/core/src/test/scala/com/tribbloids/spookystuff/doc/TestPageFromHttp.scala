@@ -1,7 +1,7 @@
 package com.tribbloids.spookystuff.doc
 
-import com.tribbloids.spookystuff.SpookyEnvFixture
 import com.tribbloids.spookystuff.actions.Wget
+import com.tribbloids.spookystuff.testutils.SpookyEnvFixture
 import com.tribbloids.spookystuff.utils.CommonUtils
 import org.apache.commons.csv.CSVFormat
 

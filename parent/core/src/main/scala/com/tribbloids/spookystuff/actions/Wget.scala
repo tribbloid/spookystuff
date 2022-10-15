@@ -29,7 +29,7 @@ case class Wget(
 
     val timeout = this.timeout(session).max.toMillis.toInt
     val hadoopConf = session.spooky.hadoopConf
-    val proxy = session.spooky.spookyConf.webProxy()
+    val proxy = session.spooky.spookyConf.webProxy(Unit)
 
     val resolver = new OmniResolver(
       () => hadoopConf,

@@ -1,8 +1,7 @@
 package com.tribbloids.spookystuff.web.conf
 
-import com.tribbloids.spookystuff.SpookyEnvFixture
 import com.tribbloids.spookystuff.actions.Wget
-import com.tribbloids.spookystuff.testutils.LocalPathDocsFixture
+import com.tribbloids.spookystuff.testutils.{LocalPathDocsFixture, SpookyEnvFixture}
 import com.tribbloids.spookystuff.web.actions.Visit
 import org.apache.spark.SparkException
 

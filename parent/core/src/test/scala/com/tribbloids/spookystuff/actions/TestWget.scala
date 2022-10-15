@@ -1,11 +1,10 @@
 package com.tribbloids.spookystuff.actions
 
 import java.sql.Timestamp
-import com.tribbloids.spookystuff.SpookyEnvFixture
 import com.tribbloids.spookystuff.actions.Delay.RandomDelay
 import com.tribbloids.spookystuff.doc.Doc
 import com.tribbloids.spookystuff.rdd.FetchedDataset
-import com.tribbloids.spookystuff.testutils.LocalOnly
+import com.tribbloids.spookystuff.testutils.{LocalOnly, SpookyEnvFixture}
 import org.scalatest.Tag
 import org.scalatest.tags.Retryable
 
