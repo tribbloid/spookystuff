@@ -130,7 +130,7 @@ abstract class AbstractURIResolverSuite extends FunSpecx with LocalPathDocsFixtu
 
       val resolver: URIResolver = this.resolver
       val HTML_URL = this.HTML_URL
-      val mdRDD = rdd.map { i =>
+      val mdRDD = rdd.map { _ =>
         val md = resolver.input(HTML_URL)(_.metadata.all)
         md
       }
@@ -383,7 +383,7 @@ abstract class AbstractURIResolverSuite extends FunSpecx with LocalPathDocsFixtu
 
       val ss = SequentialCheck(sc)
       val errors = rdd
-        .map { i =>
+        .map { _ =>
           resolver.retry {
             resolver
               .execute(pathStr)
@@ -420,7 +420,7 @@ abstract class AbstractURIResolverSuite extends FunSpecx with LocalPathDocsFixtu
 
       val ss = SequentialCheck(sc)
       val errors = rdd
-        .map { i =>
+        .map { _ =>
           resolver.lock(url) { _ =>
             val r1 = ss.acquire().failed.toOption.toSeq
             Thread.sleep(Random.nextInt(10))

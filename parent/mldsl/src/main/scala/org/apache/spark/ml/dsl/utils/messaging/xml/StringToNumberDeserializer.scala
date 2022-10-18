@@ -12,7 +12,7 @@ object StringToNumberDeserializer extends XMLWeakDeserializer[Any] {
       format: Formats
   ): PartialFunction[(TypeInfo, JValue), Any] = Function.unlift {
 
-    case (ti @ TypeInfo(cc, _), JString(v)) =>
+    case (TypeInfo(cc, _), JString(v)) =>
       val parsed = cc match {
         case java.lang.Byte.TYPE      => v.toByte
         case java.lang.Short.TYPE     => v.toShort

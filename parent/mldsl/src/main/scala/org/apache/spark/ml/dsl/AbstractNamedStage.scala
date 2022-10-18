@@ -35,7 +35,7 @@ case class AbstractNamedStage[+T <: PipelineStage](
       None
   }
   def hasOutputs = stage match {
-    case s: HasOutputCol => true // TODO: do we really need this? implementation is inconsistent
+    case _: HasOutputCol => true // TODO: do we really need this? implementation is inconsistent
     case _               => false
   }
   def setOutput(v: String) = {
@@ -71,7 +71,7 @@ case class AbstractNamedStage[+T <: PipelineStage](
       try {
         inputs
       } catch {
-        case e: Exception =>
+        case _: Exception =>
           Seq("Pending...")
       }
 
@@ -83,7 +83,7 @@ case class AbstractNamedStage[+T <: PipelineStage](
       try {
         outputOpt
       } catch {
-        case e: Exception =>
+        case _: Exception =>
           Some("Pending...")
       }
 

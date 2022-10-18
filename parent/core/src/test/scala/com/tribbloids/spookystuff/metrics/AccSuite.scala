@@ -14,7 +14,7 @@ class AccSuite extends FunSpecx {
 //  }
 
   it("Simple") {
-    val acc = Acc.Simple(new LongAccumulator)
+    Acc.Simple(new LongAccumulator)
   }
 
   it("FromV0") {

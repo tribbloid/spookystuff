@@ -28,7 +28,7 @@ case class DataInput2AsStream(in: DataInput2) extends InputStream {
     } catch {
 
       // inefficient way
-      case e: RuntimeException =>
+      case _: RuntimeException =>
         //          Option(in.internalByteBuffer()).foreach { v =>
         //            v.rewind()
         //            v.position(pos2Opt.get)

@@ -338,7 +338,7 @@ case class FetchedDataset(
 
   // TODO: test
   def agg(exprs: Seq[FetchedRow => Any], reducer: RowReducer): FetchedDataset = AggPlan(plan, exprs, reducer)
-  def distinctBy(exprs: FetchedRow => Any*): FetchedDataset = agg(exprs, (v1, v2) => v1)
+  def distinctBy(exprs: FetchedRow => Any*): FetchedDataset = agg(exprs, (v1, _) => v1)
 
   protected def _defaultCooldown(v: Option[Duration]): Trace = {
     val _delay: Trace = v.map { dd =>

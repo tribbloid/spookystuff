@@ -116,7 +116,7 @@ trait EAVRelay[I <: EAV] extends MessageRelay[I] with EAVBuilder[I] {
           tuple._2.setAccessible(true)
           Some(tuple._1 -> tuple._2.invoke(obj).asInstanceOf[Any])
         } catch {
-          case e: InvocationTargetException =>
+          case _: InvocationTargetException =>
             None
         }
       }.toList

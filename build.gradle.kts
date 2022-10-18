@@ -31,6 +31,8 @@ plugins {
     id("project-report")
 
     id("com.github.johnrengelman.shadow") version "7.1.2"
+
+    id("io.github.cosmicsilence.scalafix") version "0.1.14"
 }
 
 val sonatypeApiUser = providers.gradleProperty("sonatypeApiUser")
@@ -112,6 +114,8 @@ subprojects {
 
     apply(plugin = "com.github.johnrengelman.shadow")
 //    apply(plugin = "ru.tinkoff.gradle.jarjar")
+
+    apply(plugin = "io.github.cosmicsilence.scalafix")
 
     // resolving version conflicts
     // TODO: remove, already defined in `constraints` as below

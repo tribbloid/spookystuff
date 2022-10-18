@@ -33,7 +33,7 @@ object FilePaths {
 
     override def apply(trace: Trace): String = {
 
-      val msgs = trace.map(_.message)
+      trace.map(_.message)
       val actionStrs = trace.map(v => v.memberStr_\\\)
 
       val actionConcat = if (actionStrs.size > 4) {

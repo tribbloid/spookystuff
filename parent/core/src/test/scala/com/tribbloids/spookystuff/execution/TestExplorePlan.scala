@@ -66,7 +66,7 @@ class TestExplorePlan extends SpookyEnvFixture with LocalPathDocsFixture {
     val rdd2 = rdd1
       .explore('dummy)(
         Wget(HTML_URL),
-        genPartitioner = GenPartitioners.DocCacheAware(v => partitioner2)
+        genPartitioner = GenPartitioners.DocCacheAware(_ => partitioner2)
       )()
 
     assert(rdd2.plan.beaconRDDOpt.get.partitioner.get eq partitioner)

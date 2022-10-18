@@ -109,7 +109,7 @@ case class ScalaDynamic(
         val method = baseClz.getMethod(encodedMethodName, classs.getOrElse(Nil): _*)
         Some(method)
       } catch {
-        case e: NoSuchMethodException => None
+        case _: NoSuchMethodException => None
       }
     }
 
@@ -240,7 +240,7 @@ case class ScalaDynamicExtractor[T](
             )
             Option(result) // TODO: handle option output!
           } catch {
-            case e: MatchError =>
+            case _: MatchError =>
               None
           }
         }
@@ -278,7 +278,7 @@ case class ScalaResolvedFunction[T](
     else {
       baseOpt.map { baseVal =>
         val loader = Option(baseVal)
-          .map { v =>
+          .map { _ =>
             baseVal.getClass.getClassLoader
           }
           .getOrElse(return None)

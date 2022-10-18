@@ -18,7 +18,7 @@ trait EAVBuilder[I <: EAV] {
         k.primaryName -> v
       case (k: String, v) =>
         k -> v
-      case (k, v) =>
+      case (k, _) =>
         throw new UnsupportedOperationException(s"unsupported key type for $k")
     }
 

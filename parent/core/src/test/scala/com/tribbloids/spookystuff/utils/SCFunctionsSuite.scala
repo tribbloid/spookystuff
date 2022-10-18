@@ -44,7 +44,7 @@ class SCFunctionsSuite extends FunSpecx with BeforeAndAfterAll {
 
         SCFunctions.withJob("bbb", "bbb") {
 
-          val ugi = UserGroupInformation.createRemoteUser("ccc")
+          UserGroupInformation.createRemoteUser("ccc")
 
           TestHelper.TestSC.parallelize(1 to 100).map(v => v * v).collect()
 

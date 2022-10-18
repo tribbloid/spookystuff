@@ -8,7 +8,7 @@ import scala.concurrent.duration.Duration
   * Different from json4s.ext.DurationSerializer in that it doesn't serialize to long value
   */
 object DurationJSONSerializer
-    extends CustomSerializer[Duration](format =>
+    extends CustomSerializer[Duration](_ =>
       (
         {
           case JString(d) => Duration(d)

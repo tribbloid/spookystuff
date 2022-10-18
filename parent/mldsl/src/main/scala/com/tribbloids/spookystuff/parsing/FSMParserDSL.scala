@@ -178,7 +178,7 @@ object FSMParserDSL extends DSL {
       }
     }
 
-    lazy val -- : Parser[Nothing] = `!!`.^^ { v =>
+    lazy val -- : Parser[Nothing] = `!!`.^^ { _ =>
       None
     }
   }

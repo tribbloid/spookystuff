@@ -108,7 +108,7 @@ object WebDriverFactory {
         val deployment = deploy(session.spooky)
         val pathStr = deployment.verifiedLocalPath
 
-        val proxyOpt = Option(session.spooky.spookyConf.webProxy()).map { v =>
+        val proxyOpt = Option(session.spooky.spookyConf.webProxy(())).map { v =>
           asSeleniumProxy(v)
         }
 

@@ -262,7 +262,7 @@ trait DFDComponent extends MayHaveHeads with MayHaveTails {
     val intakes = right.leftIntakes
     require(intakes.size <= 1, "non-linear right operand, please use compose_>, mapHead_> or union instead")
     intakes.headOption match {
-      case Some(intake) =>
+      case Some(_) =>
         this.mapHead_>(right)
       case _ =>
         this.union(right)
@@ -275,7 +275,7 @@ trait DFDComponent extends MayHaveHeads with MayHaveTails {
     val intakes = left.rightIntakes
     require(intakes.size <= 1, "non-linear left operand, please use compose_<, mapHead_< or union instead")
     intakes.headOption match {
-      case Some(step) =>
+      case Some(_) =>
         this.mapHead_<(left)
       case _ =>
         this.union(left)

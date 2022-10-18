@@ -18,7 +18,7 @@ class TestWayback extends SpookyEnvFixture {
     spooky.spookyConf.cacheWrite = true
     spooky.spookyConf.IgnoreCachedDocsBefore = Some(new Date())
 
-    val dates: Seq[Long] = (0 to 2).map { i =>
+    val dates: Seq[Long] = (0 to 2).map { _ =>
       val pages = (Delay(10.seconds) +> Wget(HTML_URL)).fetch(spooky) // 5s is long enough
       assert(pages.size == 1)
       pages.head.timeMillis
@@ -43,7 +43,7 @@ class TestWayback extends SpookyEnvFixture {
     spooky.spookyConf.cacheWrite = true
     spooky.spookyConf.IgnoreCachedDocsBefore = Some(new Date())
 
-    val dates: Seq[Long] = (0 to 2).map { i =>
+    val dates: Seq[Long] = (0 to 2).map { _ =>
       val pages = (
         Delay(10.seconds)
           +> Visit(HTML_URL)
@@ -73,7 +73,7 @@ class TestWayback extends SpookyEnvFixture {
     spooky.spookyConf.cacheWrite = true
     spooky.spookyConf.IgnoreCachedDocsBefore = Some(new Date())
 
-    val dates: Seq[Long] = (0 to 2).map { i =>
+    val dates: Seq[Long] = (0 to 2).map { _ =>
       val pages = (Delay(10.seconds)
         +> Visit(HTML_URL)
         +> Screenshot()).fetch(spooky) // 5s is long enough

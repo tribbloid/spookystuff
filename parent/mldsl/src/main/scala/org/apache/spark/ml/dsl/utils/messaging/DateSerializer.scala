@@ -6,7 +6,7 @@ import org.json4s.{CustomSerializer, JNull}
 import java.sql.Date
 
 object DateSerializer
-    extends CustomSerializer[Date](format =>
+    extends CustomSerializer[Date](_ =>
       (
         {
           case JString(s) => Date.valueOf(s)

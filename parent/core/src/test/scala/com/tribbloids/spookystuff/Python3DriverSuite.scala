@@ -107,7 +107,7 @@ class Python3DriverSuite extends SpookyEnvFixture {
 
   it("interpret should throw an exception if interpreter raises a multi-line error") {
 
-    runIterable(1 to 10) { (i, proc) =>
+    runIterable(1 to 10) { (_, proc) =>
       intercept[PyInterpretationException] {
         proc.interpret(
           s"""
@@ -128,7 +128,7 @@ class Python3DriverSuite extends SpookyEnvFixture {
   it("interpret should throw an exception if interpreter raises a syntax error") {
     // TODO: this syntax error is really weird
 
-    runIterable(1 to 10) { (i, proc) =>
+    runIterable(1 to 10) { (_, proc) =>
       intercept[PyInterpretationException] {
         proc.interpret(
           s"""
@@ -164,7 +164,7 @@ class Python3DriverSuite extends SpookyEnvFixture {
   }
 
   it("can use the correct python version") {
-    runIterable(1 to 1) { (i, proc) =>
+    runIterable(1 to 1) { (_, proc) =>
       val r = proc.eval(
         """
             |import sys
@@ -179,7 +179,7 @@ class Python3DriverSuite extends SpookyEnvFixture {
 
   it("CommonUtils.withDeadline can interrupt python execution that blocks indefinitely") {
 
-    runIterable(1 to 3) { (i, proc) =>
+    runIterable(1 to 3) { (_, proc) =>
       proc.batchImport(Seq("import time"))
       val (_, time) = CommonUtils.timed {
         Try {
@@ -199,9 +199,9 @@ class Python3DriverSuite extends SpookyEnvFixture {
 
   it("clean() won't be blocked indefinitely by ongoing python execution") {
 
-    runIterable(1 to 3) { (i, proc) =>
+    runIterable(1 to 3) { (_, proc) =>
       proc.batchImport(Seq("import time"))
-      val f = Future {
+      Future {
         proc.interpret(s"""
                |for i in range(40, 1, -1):
                |  print("sleeping:", i, "second(s) left")

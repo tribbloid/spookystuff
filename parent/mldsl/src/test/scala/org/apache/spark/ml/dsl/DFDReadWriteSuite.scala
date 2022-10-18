@@ -3,7 +3,6 @@ package org.apache.spark.ml.dsl
 import com.tribbloids.spookystuff.testutils.TestHelper
 import org.apache.spark.ml.feature._
 import org.apache.spark.ml.{Pipeline, PipelineModel}
-import org.json4s.JValue
 import org.json4s.JsonAST.JObject
 
 /**
@@ -81,7 +80,7 @@ class DFDReadWriteSuite extends AbstractDFDSuite {
       tf -> 'tf :->
       new IDF() -> 'idf
 
-    val jValue: JValue = JObject("root" -> flow.write.message.toJValue)
+    JObject("root" -> flow.write.message.toJValue)
 //    val jValue2 = Xml.toJson(Xml.toXml(jValue))
 
     //    pretty(jValue).shouldBe(pretty(jValue2))

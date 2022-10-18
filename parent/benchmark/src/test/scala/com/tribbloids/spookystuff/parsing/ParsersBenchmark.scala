@@ -220,7 +220,7 @@ object ParsersBenchmark {
     override def iterator: Iterator[String] = {
 
       random.setSeed(seed)
-      base.iterator.map { i =>
+      base.iterator.map { _ =>
         generate
       }
     }
@@ -290,7 +290,7 @@ object ParsersBenchmark {
     val runners: Stream[UTRunner] = {
 
       val runners = strs.zipWithIndex.map {
-        case (str, i) =>
+        case (str, _) =>
           new ParsersBenchmark.UTRunner(str)
       }
 

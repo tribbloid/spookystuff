@@ -303,7 +303,7 @@ class ScalaDynamicExtractorSuite extends SpookyEnvFixture with LocalPathDocsFixt
     )
 
     intercept[UnsupportedOperationException] {
-      val fn = dynamic.resolve(emptySchema)
+      dynamic.resolve(emptySchema)
     }
   }
 
@@ -316,7 +316,7 @@ class ScalaDynamicExtractorSuite extends SpookyEnvFixture with LocalPathDocsFixt
     )
 
     intercept[UnsupportedOperationException] {
-      val fn = dynamic.resolve(emptySchema)
+      dynamic.resolve(emptySchema)
     }
   }
 
@@ -392,7 +392,7 @@ class ScalaDynamicExtractorSuite extends SpookyEnvFixture with LocalPathDocsFixt
       "" + i
     }
 
-    val int2_10: GenExtractor[Int, String] = { i: Int =>
+    val int2_10: GenExtractor[Int, String] = { _: Int =>
       "10"
     }
     def dynamic = ScalaDynamicExtractor[Int](

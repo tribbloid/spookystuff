@@ -1,8 +1,10 @@
-##!/usr/bin/env bash
-#
-#CRDIR="$(cd "`dirname "$0"`"; pwd)"
-#
-#source "${CRDIR}/profiles/apache-latest/.shared.sh"
-#
-#"$CRDIR"/mvn-install.sh "${BUILD_PROFILES[@]}" -Pscalafix
-#
+#!/usr/bin/env bash
+
+CRDIR="$(cd "`dirname "$0"`"; pwd)"
+FWDIR="$(cd "`dirname "$0"`"/..; pwd)"
+
+source "${CRDIR}/profiles/apache-latest/.common.sh"
+source "${CRDIR}/.shared.sh"
+
+exec "${FWDIR}"/gradlew scalafix "${BUILD_PROFILES[@]}"
+

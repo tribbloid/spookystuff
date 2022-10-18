@@ -40,7 +40,7 @@ class CachingUtilsSuite extends FunSpecx with BeforeAndAfterEach {
 
       val f: Future[Unit] = Future {
 
-        val v1 = CacheTestData()
+        CacheTestData()
       }
       Await.result(f, Duration.Inf)
 

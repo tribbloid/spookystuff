@@ -49,7 +49,7 @@ class ScalaUDTSuite extends SpookyEnvFixture with FunSpecx {
 
     val reified = getAndTestReifiedType[Action]
 
-    val typeName = reified.typeName
+    reified.typeName
     reified.toString.shouldBe(
       """
         |ActionUDT

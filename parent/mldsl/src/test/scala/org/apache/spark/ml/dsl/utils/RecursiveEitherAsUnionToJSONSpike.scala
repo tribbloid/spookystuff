@@ -67,6 +67,6 @@ class RecursiveEitherAsUnionToJSONSpike extends FunSpecx {
         assert(back == opt)
       }
 
-    val exclusive = InclusiveOpt(None, "xyz")
+    InclusiveOpt(None, "xyz")
   }
 }

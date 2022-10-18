@@ -302,7 +302,7 @@ case class IncrementallyCachedRDD[T: ClassTag](
 
       try {
 
-        val dependency = {
+        {
 
           var result = findDependency(split)
           if (result.externalCacheArray.isCleaned) {

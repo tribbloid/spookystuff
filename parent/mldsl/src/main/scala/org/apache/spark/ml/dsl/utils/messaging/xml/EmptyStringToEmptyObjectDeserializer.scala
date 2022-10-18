@@ -13,7 +13,7 @@ object EmptyStringToEmptyObjectDeserializer extends XMLWeakDeserializer[Any] {
       format: Formats
   ): PartialFunction[(TypeInfo, JValue), Any] = Function.unlift {
 
-    case (ti @ TypeInfo(cc, _), jv @ JString(str)) if !cc.isAssignableFrom(classOf[String]) && str.trim.isEmpty =>
+    case (ti @ TypeInfo(cc, _), JString(str)) if !cc.isAssignableFrom(classOf[String]) && str.trim.isEmpty =>
       //      wrapException(ti, jv, format) {
       Some(extract(JObject(), ti)(format))
     //      }

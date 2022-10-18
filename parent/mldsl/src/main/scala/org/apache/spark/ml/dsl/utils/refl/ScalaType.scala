@@ -124,7 +124,7 @@ sealed abstract class ScalaType_Level1 {
       try {
         mirror.classSymbol(_class)
       } catch {
-        case e: AssertionError =>
+        case _: AssertionError =>
           val superclass = Seq(_class.getSuperclass).filter { v =>
             v != classOf[AnyRef]
           }

@@ -37,7 +37,7 @@ abstract class FallbackSerializer(
           )
           Some(de)
         } catch {
-          case e: Exception =>
+          case _: Exception =>
             None
         }
       case _ =>
@@ -70,7 +70,7 @@ abstract class FallbackSerializer(
 
           Some(JString(str))
         } catch {
-          case e: Exception =>
+          case _: Exception =>
             None
         }
       //        }
