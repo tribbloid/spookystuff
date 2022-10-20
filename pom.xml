@@ -68,7 +68,7 @@
     <protobuf.version>2.5.0</protobuf.version>
 
     <cxf.version>3.0.16</cxf.version>
-    <jackson.version>2.9.10</jackson.version>
+    <jackson.version>2.12.6.1</jackson.version>
 
     <!--    <jmh.version>1.21</jmh.version>-->
 
@@ -341,7 +341,7 @@
       <dependency>
         <groupId>com.fasterxml.jackson.core</groupId>
         <artifactId>jackson-databind</artifactId>
-        <version>${jackson.version}.5</version>
+        <version>${jackson.version}</version>
       </dependency>
       <dependency>
         <groupId>com.fasterxml.jackson.core</groupId>
