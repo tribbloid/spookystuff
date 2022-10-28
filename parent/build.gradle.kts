@@ -1,7 +1,16 @@
 
 val vs = versions()
 
-subprojects {
+plugins {
+
+    scala
+    id("io.github.cosmicsilence.scalafix") version "0.1.14"
+}
+
+allprojects {
+
+    apply(plugin = "scala")
+    apply(plugin = "io.github.cosmicsilence.scalafix")
 
     configurations.all {
 
@@ -13,6 +22,131 @@ subprojects {
 //            force("org.scala-lang.modules:scala-xml_${vs.scalaBinaryV}:1.0.6")
 //            force("commons-codec:commons-codec:1.9")
 //            force("org.json4s:json4s-jackson_${vs.scalaBinaryV}:3.5.5")
+        }
+    }
+
+    sourceSets {
+        main {
+            scala {
+                setSrcDirs(srcDirs + listOf("src/main/java"))
+            }
+            java {
+                setSrcDirs(emptyList<String>())
+            }
+        }
+
+        testFixtures {
+            scala {
+                setSrcDirs(srcDirs + listOf("src/testFixtures/java"))
+            }
+            java {
+                setSrcDirs(emptyList<String>())
+            }
+        }
+
+        test {
+            scala {
+                setSrcDirs(srcDirs + listOf("src/test/java"))
+            }
+            java {
+                setSrcDirs(emptyList<String>())
+            }
+        }
+    }
+
+    tasks {
+
+        withType<ScalaCompile> {
+
+//            targetCompatibility = jvmTarget
+
+            scalaCompileOptions.apply {
+
+                loggingLevel = "verbose"
+
+                val compilerOptions =
+
+                        mutableListOf(
+
+                                "-encoding", "UTF-8",
+                                "-unchecked", "-deprecation", "-feature",
+
+                                // CAUTION: DO NOT DOWNGRADE:
+                                // json4s, jackson-scala & paranamer depends on it
+                                "-g:vars",
+
+                                "-language:higherKinds",
+
+                                "-Xlint",
+                                "-Ywarn-unused",
+
+//                        "-Wunused:imports",
+
+//                        "-Ylog",
+//                        "-Ydebug",
+//                        "-Vissue", "-Yissue-debug",
+
+//                    "-Xlog-implicits",
+//                    "-Xlog-implicit-conversions",
+//                    "-Xlint:poly-implicit-overload",
+//                    "-Xlint:option-implicit",
+//                    "-Xlint:implicit-not-found",
+//                    "-Xlint:implicit-recursion"
+                        )
+
+//                if (vs.splainV.isNotEmpty()) {
+//                    compilerOptions.addAll(
+//                        listOf(
+//                            "-Vimplicits", "-Vimplicits-verbose-tree", "-Vtype-diffs"
+//                        )
+//                    )
+//                }
+
+                additionalParameters = compilerOptions
+
+                forkOptions.apply {
+
+                    memoryInitialSize = "1g"
+                    memoryMaximumSize = "4g"
+
+                    // this may be over the top but the test code in macro & core frequently run implicit search on church encoded Nat type
+                    jvmArgs = listOf(
+                            "-Xss256m"
+                    )
+                }
+            }
+        }
+
+        test {
+
+            minHeapSize = "1024m"
+            maxHeapSize = "4096m"
+
+            testLogging {
+
+                showExceptions = true
+                exceptionFormat = org.gradle.api.tasks.testing.logging.TestExceptionFormat.FULL
+
+                showCauses = true
+                showStackTraces = true
+
+                // stdout is used for occasional manual verification
+                showStandardStreams = true
+            }
+
+            useJUnitPlatform {
+                includeEngines("scalatest")
+                testLogging {
+                    events("passed", "skipped", "failed")
+                }
+
+                val p = this@allprojects
+
+                if (p.hasProperty("notLocal") ) {
+                    excludeTags("com.tribbloids.spookystuff.testutils.LocalOnly")
+                }
+            }
+
         }
     }
 
@@ -76,40 +210,5 @@ subprojects {
         testImplementation("com.lihaoyi:fastparse_${vs.scalaBinaryV}:2.3.3")
 
         testImplementation("com.vladsch.flexmark:flexmark:0.62.2")
-    }
-
-    tasks {
-
-        test {
-
-            minHeapSize = "1024m"
-            maxHeapSize = "4096m"
-
-            testLogging {
-
-                showExceptions = true
-                exceptionFormat = org.gradle.api.tasks.testing.logging.TestExceptionFormat.FULL
-
-                showCauses = true
-                showStackTraces = true
-
-                // stdout is used for occasional manual verification
-                showStandardStreams = true
-            }
-
-            useJUnitPlatform {
-                includeEngines("scalatest")
-                testLogging {
-                    events("passed", "skipped", "failed")
-                }
-
-                val p = this@subprojects
-
-                if (p.hasProperty("notLocal") ) {
-                    excludeTags("com.tribbloids.spookystuff.testutils.LocalOnly")
-                }
-            }
-
-        }
     }
 }

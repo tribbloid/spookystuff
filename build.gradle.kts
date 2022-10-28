@@ -6,8 +6,6 @@ buildscript {
         mavenCentral()
     }
 
-//    val vs = versions()
-
 //    dependencies {
 //        classpath("ch.epfl.scala:gradle-bloop_2.12:1.5.3") // suffix is always 2.12, weird
 //    }
@@ -18,7 +16,6 @@ plugins {
     `java-library`
     `java-test-fixtures`
 
-    scala
 //    kotlin("jvm") version "1.6.10" // TODO: remove?
 
     idea
@@ -31,8 +28,6 @@ plugins {
     id("project-report")
 
     id("com.github.johnrengelman.shadow") version "7.1.2"
-
-    id("io.github.cosmicsilence.scalafix") version "0.1.14"
 }
 
 val sonatypeApiUser = providers.gradleProperty("sonatypeApiUser")
@@ -106,7 +101,6 @@ allprojects {
 subprojects {
 
     apply(plugin = "java-test-fixtures")
-    apply(plugin = "scala")
 
     apply(plugin = "signing")
     apply(plugin = "maven-publish")
@@ -114,8 +108,6 @@ subprojects {
 
     apply(plugin = "com.github.johnrengelman.shadow")
 //    apply(plugin = "ru.tinkoff.gradle.jarjar")
-
-    apply(plugin = "io.github.cosmicsilence.scalafix")
 
     // resolving version conflicts
     // TODO: remove, already defined in `constraints` as below
@@ -130,35 +122,6 @@ subprojects {
 //    }
 
 //    https://stackoverflow.com/questions/23261075/compiling-scala-before-alongside-java-with-gradle
-    sourceSets {
-        main {
-            scala {
-                setSrcDirs(srcDirs + listOf("src/main/java"))
-            }
-            java {
-                setSrcDirs(emptyList<String>())
-            }
-        }
-
-        testFixtures {
-            scala {
-                setSrcDirs(srcDirs + listOf("src/testFixtures/java"))
-            }
-            java {
-                setSrcDirs(emptyList<String>())
-            }
-        }
-
-        test {
-            scala {
-                setSrcDirs(srcDirs + listOf("src/test/java"))
-            }
-            java {
-                setSrcDirs(emptyList<String>())
-            }
-        }
-    }
-
 
     task("dependencyTree") {
 
@@ -171,67 +134,6 @@ subprojects {
         htmlDependencyReport {
 
             reports.html.outputLocation.set(File("build/reports/dependencyTree/htmlReport"))
-        }
-
-        withType<ScalaCompile> {
-
-//            targetCompatibility = jvmTarget
-
-            scalaCompileOptions.apply {
-
-                loggingLevel = "verbose"
-
-                val compilerOptions =
-
-                    mutableListOf(
-
-                        "-encoding", "UTF-8",
-                        "-unchecked", "-deprecation", "-feature",
-
-                        // CAUTION: DO NOT DOWNGRADE:
-                        // json4s, jackson-scala & paranamer depends on it
-                        "-g:vars",
-
-                        "-language:higherKinds",
-
-                        "-Xlint",
-                        "-Ywarn-unused",
-
-//                        "-Wunused:imports",
-
-//                        "-Ylog",
-//                        "-Ydebug",
-//                        "-Vissue", "-Yissue-debug",
-
-//                    "-Xlog-implicits",
-//                    "-Xlog-implicit-conversions",
-//                    "-Xlint:poly-implicit-overload",
-//                    "-Xlint:option-implicit",
-//                    "-Xlint:implicit-not-found",
-//                    "-Xlint:implicit-recursion"
-                    )
-
-//                if (vs.splainV.isNotEmpty()) {
-//                    compilerOptions.addAll(
-//                        listOf(
-//                            "-Vimplicits", "-Vimplicits-verbose-tree", "-Vtype-diffs"
-//                        )
-//                    )
-//                }
-
-                additionalParameters = compilerOptions
-
-                forkOptions.apply {
-
-                    memoryInitialSize = "1g"
-                    memoryMaximumSize = "4g"
-
-                    // this may be over the top but the test code in macro & core frequently run implicit search on church encoded Nat type
-                    jvmArgs = listOf(
-                        "-Xss256m"
-                    )
-                }
-            }
         }
 
         withType<AbstractArchiveTask> {
