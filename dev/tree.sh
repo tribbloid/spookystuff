@@ -5,4 +5,7 @@
 CRDIR="$(cd "`dirname "$0"`"; pwd)"
 FWDIR="$(cd "`dirname "$0"`"/..; pwd)"
 
+source "${CRDIR}/.shared.sh"
+
+mkdir -p ${FWDIR}/logs/dependencyTree
 ${FWDIR}/gradlew -q dependencyTree "${@}" > ${FWDIR}/logs/dependencyTree/"$DATE".log
