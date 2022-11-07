@@ -5,6 +5,6 @@
 CRDIR="$(cd "`dirname "$0"`"; pwd)"
 
 echo "[COMPILING]" && \
-"${CRDIR}"/make-all.sh "${@}" && \
+"${CRDIR}"/make-all.sh --console=plain "${@}" && \
 echo "[RUNNING TESTS]" && \
-"${CRDIR}"/test.sh "${@}"
+"${CRDIR}"/test.sh --console=plain "${@}"
