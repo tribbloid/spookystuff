@@ -106,7 +106,6 @@ subprojects {
     apply(plugin = "maven-publish")
     apply(plugin = "project-report")
 
-    apply(plugin = "com.github.johnrengelman.shadow")
 //    apply(plugin = "ru.tinkoff.gradle.jarjar")
 
     // resolving version conflicts

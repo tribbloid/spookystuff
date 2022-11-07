@@ -1,4 +1,8 @@
 
+//apply(plugin = "com.github.johnrengelman.shadow")
+plugins {
+    id("com.github.johnrengelman.shadow")
+}
 
 dependencies {
 

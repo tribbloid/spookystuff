@@ -1,6 +1,11 @@
 
 val vs = versions()
 
+//apply(plugin = "com.github.johnrengelman.shadow")
+plugins {
+    id("com.github.johnrengelman.shadow")
+}
+
 dependencies {
 
     api(project(":parent:web"))
@@ -9,6 +14,7 @@ dependencies {
 }
 
 tasks {
+
     shadowJar {
         exclude("META-INF/*.SF")
         exclude("META-INF/*.DSA")

@@ -13,4 +13,4 @@ ${FWDIR}/gradlew clean
 
 ${FWDIR}/gradlew -q dependencyTree "${@}" > ${FWDIR}/logs/dependencyTree/"$DATE".log
 
-${FWDIR}/gradlew testClasses "${@}"
+${FWDIR}/gradlew testClasses shadow "${@}"
