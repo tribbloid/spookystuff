@@ -1,12 +1,12 @@
 package com.tribbloids.spookystuff.utils.lifespan
 
-import com.tribbloids.spookystuff.utils.IDMixin
+import com.tribbloids.spookystuff.utils.EqualBy
 import com.tribbloids.spookystuff.utils.lifespan.Cleanable.{Batch, BatchID}
 import com.tribbloids.spookystuff.utils.serialization.BeforeAndAfterShipping
 
 import scala.util.Try
 
-abstract class LifespanInternal extends BeforeAndAfterShipping with IDMixin {
+abstract class LifespanInternal extends BeforeAndAfterShipping with EqualBy {
 
   {
     initOnce
@@ -48,7 +48,7 @@ abstract class LifespanInternal extends BeforeAndAfterShipping with IDMixin {
   protected def _registerBatches_CleanSweepHooks: Seq[(BatchID, Batch)]
   @transient final lazy val registeredBatches = _registerBatches_CleanSweepHooks
   @transient final lazy val registeredIDs: Seq[BatchID] = registeredBatches.map(v => v._1)
-  final protected def _id: Seq[BatchID] = registeredIDs
+  final protected def _equalBy: Seq[BatchID] = registeredIDs
 
   def nameOpt: Option[String]
   override def toString: String = {

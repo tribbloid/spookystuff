@@ -27,7 +27,7 @@ object FSMParserDSL extends DSL {
 
     lazy val root: Operand[_Node] = {
 
-      val node: algebra._Node = algebra.createNode(FState.ROOT, Some(entry.self._id))
+      val node: algebra._Node = algebra.createNode(FState.ROOT, Some(entry.self._equalBy))
       create(node)
     }
 
@@ -67,7 +67,7 @@ object FSMParserDSL extends DSL {
       val e2 = another.entryNode
 
       val collapseEntryNodes = proto.core.replicate() {
-        case e2._id => e1._id
+        case e2._equalBy => e1._equalBy
         case v @ _  => v
       }
 

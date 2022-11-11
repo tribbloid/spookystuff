@@ -2,7 +2,7 @@ package org.apache.spark.ml.dsl.utils.data
 
 import java.util.Properties
 
-import com.tribbloids.spookystuff.utils.{CommonUtils, IDMixin, TreeThrowable}
+import com.tribbloids.spookystuff.utils.{CommonUtils, EqualBy, TreeThrowable}
 import org.apache.spark.ml.dsl.utils.{?, ScalaNameMixin}
 import org.apache.spark.sql.catalyst.util.CaseInsensitiveMap
 
@@ -14,13 +14,13 @@ import scala.util.Try
 /**
   * entity-(with)-attribute-value
   */
-trait EAV extends Serializable with IDMixin {
+trait EAV extends Serializable with EqualBy {
 
   type VV
   protected def getCtg(
       implicit
       v: ClassTag[VV]
-  ) = v
+  ): ClassTag[VV] = v
   def ctg: ClassTag[VV]
   final lazy val _ctg = ctg
 
@@ -44,7 +44,7 @@ trait EAV extends Serializable with IDMixin {
   def asStrMap: Map[String, String] = asMap.mapValues(v => Option(v).map(_.toString).orNull)
 
   // TODO: change to declaredAttrs?
-  override def _id: Any = asMap
+  override def _equalBy: Any = asMap
 
   def asProperties: Properties = {
     val properties = new Properties()

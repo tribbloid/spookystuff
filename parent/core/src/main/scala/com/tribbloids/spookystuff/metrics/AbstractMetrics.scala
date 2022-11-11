@@ -18,7 +18,7 @@ abstract class AbstractMetrics extends MetricLike {
 
   @transient final lazy val symbol2children = _symbol2children
 
-  override def _id: (String, List[(String, Any)]) = displayName -> symbol2children
+  override def _equalBy: (String, List[(String, Any)]) = displayName -> symbol2children
 
   /**
     * slow, should not be used too often

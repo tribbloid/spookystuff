@@ -4,7 +4,7 @@ import com.tribbloids.spookystuff.utils.CachingUtils.ConcurrentMap
 import com.tribbloids.spookystuff.utils.accumulator.MapAccumulator
 import com.tribbloids.spookystuff.utils.lifespan.Cleanable.Lifespan
 import com.tribbloids.spookystuff.utils.lifespan.{Cleanable, LocalCleanable}
-import com.tribbloids.spookystuff.utils.{CachingUtils, IDMixin, Retry, SCFunctions}
+import com.tribbloids.spookystuff.utils.{CachingUtils, EqualBy, Retry, SCFunctions}
 import org.apache.spark
 import org.apache.spark.broadcast.Broadcast
 import org.apache.spark.internal.Logging
@@ -68,7 +68,7 @@ case class IncrementallyCachedRDD[T: ClassTag](
 
     @volatile var _active: InTask = _
 
-    case class InTask(taskCtx: TaskContext) extends IDMixin {
+    case class InTask(taskCtx: TaskContext) extends EqualBy {
 
       //      {'
       //        if (_activeTask == null) _activeTask = this
@@ -76,7 +76,7 @@ case class IncrementallyCachedRDD[T: ClassTag](
 
       lazy val semaphore = new Semaphore(1) // cannot be shared by >1 threads
 
-      override protected lazy val _id: Any = taskCtx.taskAttemptId()
+      override protected lazy val _equalBy: Any = taskCtx.taskAttemptId()
 
       lazy val uncleanTask: UncleanTaskContext = UncleanTaskContext(taskCtx)
 

@@ -3,7 +3,7 @@ package com.tribbloids.spookystuff.extractors.impl
 import com.tribbloids.spookystuff.extractors
 import com.tribbloids.spookystuff.extractors.GenExtractor.Static
 import com.tribbloids.spookystuff.extractors._
-import com.tribbloids.spookystuff.utils.IDMixin
+import com.tribbloids.spookystuff.utils.EqualBy
 import org.apache.spark.ml.dsl.utils.messaging.Relay_>>
 import org.apache.spark.ml.dsl.utils.refl.UnreifiedObjectType
 import org.apache.spark.sql.catalyst.ScalaReflection.universe.TypeTag
@@ -13,9 +13,9 @@ import org.apache.spark.sql.types._
   * Created by peng on 7/3/17.
   */
 //TODO: Message JSON conversion discard dataType info, is it wise?
-case class Lit[T, +R](value: R, dataType: DataType) extends Static[T, R] with IDMixin {
+case class Lit[T, +R](value: R, dataType: DataType) extends Static[T, R] with EqualBy {
 
-  def _id = value
+  def _equalBy = value
 
   def valueOpt: Option[R] = Option(value)
 

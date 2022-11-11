@@ -2,7 +2,7 @@ package com.tribbloids.spookystuff.graph
 
 import com.tribbloids.spookystuff.graph.IDAlgebra.Rotator
 import com.tribbloids.spookystuff.graph.Module.{Heads, Tails}
-import com.tribbloids.spookystuff.utils.{CommonTypes, IDMixin}
+import com.tribbloids.spookystuff.utils.{CommonTypes, EqualBy}
 
 import scala.collection.mutable
 
@@ -55,8 +55,8 @@ object Element {
         )
     }
 
-    lazy val canBeHead = to == algebra.DANGLING._id
-    lazy val canBeTail = from == algebra.DANGLING._id
+    lazy val canBeHead = to == algebra.DANGLING._equalBy
+    lazy val canBeTail = from == algebra.DANGLING._equalBy
     lazy val isDetached = canBeHead && canBeTail
 
     override def toHeads(info: EdgeData): Module.Heads[T] =
@@ -69,16 +69,16 @@ object Element {
 
   /////////////////////////////////////
 
-  trait NodeLike[T <: Domain] extends Element[T] with IDMixin {
+  trait NodeLike[T <: Domain] extends Element[T] with EqualBy {
 
     def isDangling: Boolean = {
-      _id == algebra.idAlgebra.DANGLING
+      _equalBy == algebra.idAlgebra.DANGLING
     }
 
     def data: NodeData
-    def _id: ID
+    def _equalBy: ID
 
-    def idStr: String = idAlgebra.id2Str(_id)
+    def idStr: String = idAlgebra.id2Str(_equalBy)
     def dataStr: String = "" + data
 
     override def toString = s"$idStr: $data"
@@ -89,7 +89,7 @@ object Element {
         case v: _Node =>
           graphOpt match {
             case Some(graph) =>
-              val result = graph.getLinkedNodes(Seq(v._id)).values.head
+              val result = graph.getLinkedNodes(Seq(v._equalBy)).values.head
               assert(result.data == this.data)
               result
             case _ =>
@@ -100,15 +100,15 @@ object Element {
     lazy val asLinked = toLinked(None)
 
     def toHeads(info: EdgeData): Module.Heads[T] =
-      Module.Heads(Seq(Edge[T](info, Nil, this._id -> algebra.DANGLING._id)))
+      Module.Heads(Seq(Edge[T](info, Nil, this._equalBy -> algebra.DANGLING._equalBy)))
 
     def toTails(info: EdgeData): Module.Tails[T] =
-      Module.Tails(Seq(Edge[T](info, Nil, algebra.DANGLING._id -> this._id)))
+      Module.Tails(Seq(Edge[T](info, Nil, algebra.DANGLING._equalBy -> this._equalBy)))
   }
 
   case class Node[T <: Domain](
-      data: T#NodeData,
-      _id: T#ID
+                                data: T#NodeData,
+                                _equalBy: T#ID
   )(
       implicit
       val algebra: Algebra[T]
@@ -119,8 +119,8 @@ object Element {
         idRotator: Rotator[ID],
         node_+ : CommonTypes.Binary[NodeData]
     ) = {
-      val newID = idRotator(this._id)
-      if (newID == this._id)
+      val newID = idRotator(this._equalBy)
+      if (newID == this._equalBy)
         this
       else
         Node[T](
@@ -154,14 +154,14 @@ object Element {
 
     override def data: D#NodeData = node.data
 
-    override def _id: ID = node._id
+    override def _equalBy: ID = node._equalBy
 
     def inboundIDPairs = inbound.toSeq.map { v =>
-      v -> node._id
+      v -> node._equalBy
     }
 
     def outboundIDPairs = outbound.toSeq.map { v =>
-      node._id -> v
+      node._equalBy -> v
     }
   }
 }

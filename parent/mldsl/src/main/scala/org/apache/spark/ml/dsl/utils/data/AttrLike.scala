@@ -1,11 +1,11 @@
 package org.apache.spark.ml.dsl.utils.data
 
-import com.tribbloids.spookystuff.utils.{IDMixin, TreeThrowable}
+import com.tribbloids.spookystuff.utils.{EqualBy, TreeThrowable}
 import org.apache.spark.ml.dsl.utils.?
 
 import scala.util.Try
 
-trait AttrLike[T] extends Serializable with IDMixin {
+trait AttrLike[T] extends Serializable with EqualBy {
 
   def primaryName: String
   def aliases: List[String]
@@ -41,7 +41,7 @@ trait AttrLike[T] extends Serializable with IDMixin {
   final def get: Option[T] = tryGet.toOption
   final def value: T = tryGet.get
 
-  override def _id: Any = this.allNames -> get
+  override def _equalBy: Any = this.allNames -> get
 }
 
 object AttrLike {

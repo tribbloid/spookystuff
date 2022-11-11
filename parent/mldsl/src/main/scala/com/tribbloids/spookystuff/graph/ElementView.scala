@@ -1,7 +1,7 @@
 package com.tribbloids.spookystuff.graph
 
 import com.tribbloids.spookystuff.graph.Layout.Facet
-import com.tribbloids.spookystuff.utils.IDMixin
+import com.tribbloids.spookystuff.utils.EqualBy
 
 import scala.collection.mutable.ArrayBuffer
 import scala.language.implicitConversions
@@ -16,7 +16,7 @@ object ElementView {
   }
 }
 
-trait ElementView[D <: Domain] extends Algebra.Aliases[D] with IDMixin {
+trait ElementView[D <: Domain] extends Algebra.Aliases[D] with EqualBy {
 
   val core: Layout[D]#Core[_]
   final override def algebra: Algebra[D] = core.algebra
@@ -26,7 +26,7 @@ trait ElementView[D <: Domain] extends Algebra.Aliases[D] with IDMixin {
   def inbound: Seq[ElementView[D]]
   def outbound: Seq[ElementView[D]]
 
-  final override def _id: _Element = element
+  final override def _equalBy: _Element = element
 
   lazy val (prefixes, positioning): (Seq[String], Seq[Int]) = {
     element match {

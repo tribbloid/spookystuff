@@ -2,7 +2,7 @@ package com.tribbloids.spookystuff.utils.serialization
 
 import java.io
 import java.nio.ByteBuffer
-import com.tribbloids.spookystuff.utils.IDMixin
+import com.tribbloids.spookystuff.utils.EqualBy
 import org.apache.hadoop.io.Writable
 import org.apache.spark.serializer.{JavaSerializer, KryoSerializer, Serializer, SerializerInstance}
 import org.apache.spark.sql.catalyst.ScalaReflection.universe.TypeTag
@@ -49,7 +49,7 @@ case class SerDeOverride[T: ClassTag](
     @transient private val _original: T,
     overrideImpl: () => Option[SerializerInstance] = () => None // no override by default
 ) extends Serializable
-    with IDMixin {
+    with EqualBy {
 
   @transient lazy val serOpt: Option[SerializerInstance] = overrideImpl.apply
 
@@ -90,5 +90,5 @@ case class SerDeOverride[T: ClassTag](
     }
   }
 
-  override def _id: Any = value
+  override def _equalBy: Any = value
 }

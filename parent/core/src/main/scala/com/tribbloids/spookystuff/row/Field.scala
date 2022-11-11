@@ -2,7 +2,7 @@ package com.tribbloids.spookystuff.row
 
 import com.tribbloids.spookystuff.QueryException
 import com.tribbloids.spookystuff.row.Field.ConflictResolving
-import com.tribbloids.spookystuff.utils.IDMixin
+import com.tribbloids.spookystuff.utils.EqualBy
 import org.apache.spark.ml.dsl.utils.messaging.ProtoAPI
 import org.apache.spark.sql.types.{DataType, Metadata, StructField}
 
@@ -47,10 +47,10 @@ case class Field(
     depthRangeOpt: Option[Range] = None, // represents depth in explore
 
     isSelectedOverride: Option[Boolean] = None
-) extends IDMixin
+) extends EqualBy
     with ProtoAPI {
 
-  lazy val _id = (name, isWeak, isInvisible, isReserved)
+  lazy val _equalBy = (name, isWeak, isInvisible, isReserved)
 
   def ! = this.copy(conflictResolving = Field.Overwrite)
   def !! = this.copy(conflictResolving = Field.Replace)

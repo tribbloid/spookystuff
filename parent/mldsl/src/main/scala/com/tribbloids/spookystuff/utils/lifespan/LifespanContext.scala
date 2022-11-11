@@ -1,6 +1,6 @@
 package com.tribbloids.spookystuff.utils.lifespan
 
-import com.tribbloids.spookystuff.utils.IDMixin
+import com.tribbloids.spookystuff.utils.EqualBy
 import org.apache.spark.sql.utils.SparkHelper
 import org.apache.spark.storage.BlockManagerId
 import org.apache.spark.{SparkEnv, TaskContext}
@@ -10,7 +10,7 @@ object LifespanContext {}
 case class LifespanContext(
     @transient _task: TaskContext = TaskContext.get(),
     @transient thread: Thread = Thread.currentThread()
-) extends IDMixin {
+) extends EqualBy {
 
   @transient lazy val taskOpt: Option[TaskContext] = Option(_task)
 
@@ -27,7 +27,7 @@ case class LifespanContext(
   val blockManagerID: Option[BlockManagerId] = _sparkEnvOpt.map(_.blockManager.blockManagerId)
   val executorID: Option[String] = _sparkEnvOpt.map(_.executorId)
 
-  override val _id: (Option[Long], Long) = taskAttemptID -> threadID
+  override val _equalBy: (Option[Long], Long) = taskAttemptID -> threadID
 
   val threadStr: String = {
     "Thread-" + thread.getId + s"[${thread.getName}]" + {

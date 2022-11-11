@@ -3,7 +3,7 @@ package org.apache.spark.ml.dsl.utils
 import java.security.Key
 
 import javax.xml.bind.DatatypeConverter
-import com.tribbloids.spookystuff.utils.IDMixin
+import com.tribbloids.spookystuff.utils.EqualBy
 import javax.crypto.spec.SecretKeySpec
 
 import scala.language.implicitConversions
@@ -11,13 +11,13 @@ import scala.language.implicitConversions
 /**
   * Created by peng on 31/10/16.
   */
-abstract class EncodedBinaryMagnet[T <: EncodedBinaryMagnet[T]] extends Product with Serializable with IDMixin {
+abstract class EncodedBinaryMagnet[T <: EncodedBinaryMagnet[T]] extends Product with Serializable with EqualBy {
 
   def asBytes: Array[Byte]
 
   def asBytesOrEmpty = Option(asBytes).getOrElse(Array.empty)
 
-  @transient lazy val _id: List[Byte] = asBytesOrEmpty.toList
+  @transient lazy val _equalBy: List[Byte] = asBytesOrEmpty.toList
 
   def strEncoding: String
 

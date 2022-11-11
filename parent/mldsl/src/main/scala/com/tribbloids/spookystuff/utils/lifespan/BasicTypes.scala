@@ -1,7 +1,7 @@
 package com.tribbloids.spookystuff.utils.lifespan
 
 import com.tribbloids.spookystuff.utils.lifespan.Cleanable.{Batch, BatchID}
-import com.tribbloids.spookystuff.utils.{CommonUtils, IDMixin}
+import com.tribbloids.spookystuff.utils.{CommonUtils, EqualBy}
 
 import scala.util.Try
 
@@ -12,7 +12,7 @@ trait BasicTypes {
 
   case object Task extends LeafType {
 
-    case class ID(id: Long) extends IDMixin.ForProduct {
+    case class ID(id: Long) extends EqualBy.Fields {
       override def toString: String = s"Task-$id"
     }
 
@@ -31,7 +31,7 @@ trait BasicTypes {
 
     val MAX_NUMBER_OF_SHUTDOWN_HOOKS: Int = CommonUtils.numLocalCores
 
-    case class ID(id: Int) extends IDMixin.ForProduct {
+    case class ID(id: Int) extends EqualBy.Fields {
       override def toString: String = s"JVM-$id"
     }
 

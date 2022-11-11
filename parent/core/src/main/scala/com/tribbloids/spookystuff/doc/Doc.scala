@@ -7,7 +7,7 @@ import com.tribbloids.spookystuff._
 import com.tribbloids.spookystuff.actions._
 import com.tribbloids.spookystuff.caching.DocCacheLevel
 import com.tribbloids.spookystuff.utils.io.ResourceMetadata
-import com.tribbloids.spookystuff.utils.{CommonUtils, IDMixin}
+import com.tribbloids.spookystuff.utils.{CommonUtils, EqualBy}
 import org.apache.commons.csv.CSVFormat
 import org.apache.hadoop.fs.Path
 import org.apache.http.StatusLine
@@ -128,11 +128,11 @@ case class Doc(
     override val metadata: ResourceMetadata =
       ResourceMetadata.proto // for customizing parsing TODO: remove, delegate to CSVElement.
 ) extends DocOption
-    with IDMixin {
+    with EqualBy {
 
   import scala.collection.JavaConverters._
 
-  lazy val _id: Any = (uid, uri, declaredContentType, timeMillis, httpStatus.toString)
+  lazy val _equalBy: Any = (uid, uri, declaredContentType, timeMillis, httpStatus.toString)
 
   override def updated(
       uid: DocUID = this.uid,

@@ -5,7 +5,7 @@ import com.tribbloids.spookystuff.caching.{DFSDocCache, InMemoryDocCache}
 import com.tribbloids.spookystuff.doc.{Doc, DocOption}
 import com.tribbloids.spookystuff.row.{FetchedRow, SpookySchema}
 import com.tribbloids.spookystuff.session.Session
-import com.tribbloids.spookystuff.utils.IDMixin
+import com.tribbloids.spookystuff.utils.EqualBy
 
 import scala.collection.mutable.ArrayBuffer
 
@@ -27,11 +27,11 @@ case class TraceView(
     keyBy: Trace => Any = identity // used by custom keyBy arg in fetch and explore.
 ) extends Actions
     with TraceAPI
-    with IDMixin { // remember trace is not a block! its the super container that cannot be wrapped
+    with EqualBy { // remember trace is not a block! its the super container that cannot be wrapped
 
   @transient override lazy val asTrace: Trace = children
 
-  val _id: Any = keyBy(children)
+  val _equalBy: Any = keyBy(children)
 
   override def toString: String = children.mkString("{ ", " -> ", " }")
 

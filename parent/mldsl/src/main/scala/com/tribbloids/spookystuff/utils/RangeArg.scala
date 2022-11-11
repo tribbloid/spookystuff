@@ -7,8 +7,8 @@ import scala.language.implicitConversions
 
 case class RangeArg(
     delegate: math.LongRange
-) extends IDMixin {
-  override def _id: Any = delegate
+) extends EqualBy {
+  override def _equalBy: Any = delegate
 
   override lazy val toString: String = {
     val startOpt = Option(start).filter(_ != Long.MinValue)

@@ -1,6 +1,6 @@
 package com.tribbloids.spookystuff.utils.lifespan
 
-import com.tribbloids.spookystuff.utils.IDMixin
+import com.tribbloids.spookystuff.utils.EqualBy
 import com.tribbloids.spookystuff.utils.serialization.NOTSerializable
 import org.apache.spark.SparkContext
 import org.apache.spark.scheduler.{SparkListener, SparkListenerApplicationEnd}
@@ -16,7 +16,7 @@ trait SparkTypes {
       sparkContext
     }
 
-    case class ID(id: String) extends IDMixin.ForProduct {
+    case class ID(id: String) extends EqualBy.Fields {
       override def toString: String = s"Spark.$productPrefix-$id"
     }
   }

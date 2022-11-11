@@ -1,6 +1,6 @@
 package com.tribbloids.spookystuff.utils.lifespan
 
-import com.tribbloids.spookystuff.utils.IDMixin
+import com.tribbloids.spookystuff.utils.EqualBy
 import com.tribbloids.spookystuff.utils.lifespan.Cleanable.Lifespan
 import org.apache.hadoop.fs.FileSystem
 import org.apache.hadoop.util.ShutdownHookManager
@@ -11,7 +11,7 @@ trait HadoopTypes {
 
   case class HadoopShutdown(priority: Int) extends HadoopType {
 
-    case class ID(id: Int) extends IDMixin.ForProduct {
+    case class ID(id: Int) extends EqualBy.Fields {
       override def toString: String = s"JVM-$id"
     }
 

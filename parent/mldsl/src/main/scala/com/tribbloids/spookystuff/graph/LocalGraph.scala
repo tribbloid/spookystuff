@@ -97,7 +97,7 @@ object LocalGraph {
         node_+ : CommonTypes.Binary[NodeData]
     ): GG = {
 
-      val existingIDs = nodes.map(_._id).toSet
+      val existingIDs = nodes.map(_._equalBy).toSet
 
       val missingIDs: Seq[D#ID] = edges
         .flatMap { v =>
@@ -114,15 +114,15 @@ object LocalGraph {
         case nn: _NodeTriplet =>
           nn
         case nn: _Node =>
-          val inbound = mutable.LinkedHashSet(edges.filter(_.to == nn._id).map(_.from): _*)
-          val outbound = mutable.LinkedHashSet(edges.filter(_.from == nn._id).map(_.to): _*)
+          val inbound = mutable.LinkedHashSet(edges.filter(_.to == nn._equalBy).map(_.from): _*)
+          val outbound = mutable.LinkedHashSet(edges.filter(_.from == nn._equalBy).map(_.to): _*)
           val result = new _NodeTriplet(nn, inbound, outbound)
           result
       }
 
       val nodeMap: MultiMapView.Mutable[ID, _NodeTriplet] = MultiMapView.Mutable.empty
       for (nn <- linkedNodes) {
-        nodeMap.put1(nn._id, nn)
+        nodeMap.put1(nn._equalBy, nn)
       }
 
       val reducedNodeMap: mutable.Map[ID, _NodeTriplet] = {
@@ -152,9 +152,9 @@ object LocalGraph {
         node_+ : CommonTypes.Binary[NodeData]
     ): _NodeTriplet = {
 
-      require(v1._id == v2._id, s"ID mismatch, ${v1._id} ~= ${v2._id}")
+      require(v1._equalBy == v2._equalBy, s"ID mismatch, ${v1._equalBy} ~= ${v2._equalBy}")
 
-      val node = algebra.createNode(node_+(v1.data, v2.data), Some(v1._id))
+      val node = algebra.createNode(node_+(v1.data, v2.data), Some(v1._equalBy))
 
       val inbound = v1.inbound ++ v2.inbound
       val outbound = v1.outbound ++ v2.outbound

@@ -1,6 +1,6 @@
 package org.apache.spark.ml.dsl.utils
 
-import com.tribbloids.spookystuff.utils.IDMixin
+import com.tribbloids.spookystuff.utils.EqualBy
 
 import scala.language.implicitConversions
 
@@ -14,7 +14,7 @@ import scala.language.implicitConversions
 class LazyVar[T](
     fn: => T
 ) extends Serializable
-    with IDMixin {
+    with EqualBy {
 
   protected val cached: T ? Var = None
 
@@ -39,7 +39,7 @@ class LazyVar[T](
 
   def isCached: Boolean = cached.asOption.nonEmpty
 
-  override def _id: Any = value
+  override def _equalBy: Any = value
 
   override def toString: String = value.toString
 }
