@@ -1,11 +1,11 @@
 package org.apache.spark.ml.dsl.utils.data
 
 import java.util.Properties
-
 import com.tribbloids.spookystuff.utils.{CommonUtils, EqualBy, TreeThrowable}
 import org.apache.spark.ml.dsl.utils.{?, ScalaNameMixin}
 import org.apache.spark.sql.catalyst.util.CaseInsensitiveMap
 
+import scala.collection.MapView
 import scala.collection.immutable.ListMap
 import scala.language.implicitConversions
 import scala.reflect.ClassTag
@@ -41,7 +41,7 @@ trait EAV extends Serializable with EqualBy {
   lazy val asCaseInsensitiveMap: CaseInsensitiveMap[VV] = CaseInsensitiveMap(asOriginalMap)
 
   def asMap: Map[String, VV] = asOriginalMap
-  def asStrMap: Map[String, String] = asMap.mapValues(v => Option(v).map(_.toString).orNull)
+  def asStrMap: MapView[String, String] = asMap.view.mapValues(v => Option(v).map(_.toString).orNull)
 
   // TODO: change to declaredAttrs?
   override def _equalBy: Any = asMap

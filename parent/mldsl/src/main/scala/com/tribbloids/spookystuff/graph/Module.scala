@@ -17,7 +17,7 @@ trait Module[T <: Domain] extends Algebra.Aliases[T] {
   def replicate(m: DataMutator = DataAlgebra.Mutator.identity)(
       implicit
       idRotator: Rotator[ID],
-      node_+ : CommonTypes.Binary[NodeData] = nodeAlgebra.+
+      node_+ : CommonTypes.Binary[NodeData] = nodeAlgebra.add
   ): this.type =
     _replicate(m).asInstanceOf[this.type]
 }

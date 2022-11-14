@@ -8,6 +8,7 @@ import org.json4s.JsonAST.JObject
 import org.json4s.jackson.JsonMethods._
 import org.json4s.{Extraction, Formats, JValue}
 
+import scala.collection.MapView
 import scala.xml.NodeSeq
 
 class MessageWriter[M](
@@ -87,8 +88,8 @@ class MessageWriter[M](
         }
     }
 
-    def mapRecursion[T](map: Map[T, Any]): Map[T, String] = {
-      map
+    def mapRecursion[T](map: Map[T, Any]): MapView[T, String] = {
+      map.view
         .mapValues { vv =>
           MessageWriter(vv).getMemberStr(start, sep, end, indentFn, recursion + 1)
         }

@@ -145,7 +145,7 @@ trait DFDComponent extends MayHaveHeads with MayHaveTails {
       newSteps,
       leftTailIDs = newLeftTailIDs,
       rightTailIDs = newRightTailIDs,
-      headIDs = newHeadIDs
+      headIDs = newHeadIDs.toSeq
     )
 
     result.validateOnSources()
@@ -191,8 +191,8 @@ trait DFDComponent extends MayHaveHeads with MayHaveTails {
     val allSteps = (coll ++ left.coll).remove(obsoleteIDs: _*)
     val newSteps = allSteps.connectAll(effectiveFromIDs, toIDs)
 
-    val newHeadIDs = if (left.headExists) {
-      this.headIDs.toBuffer -- fromIDs ++ left.heads.flatMap {
+    val newHeadIDs: Seq[String] = if (left.headExists) {
+      this.headIDs.toBuffer.--=(fromIDs).toSeq ++ left.heads.flatMap {
         case PASSTHROUGH => effectiveFromIDs
         case v: StepLike => Seq(v.id)
       }
@@ -204,7 +204,7 @@ trait DFDComponent extends MayHaveHeads with MayHaveTails {
       newSteps,
       leftTailIDs = newLeftTailIDs,
       rightTailIDs = newRightTailIDs,
-      headIDs = newHeadIDs
+      headIDs = newHeadIDs.toSeq
     )
 
     result.validateOnSources()
@@ -304,7 +304,7 @@ trait DFDComponent extends MayHaveHeads with MayHaveTails {
           if (isRightTail) buffer += "<TAIL"
         }
         //      }
-        buffer
+        buffer.toSeq
       } else Nil
 
     override def toString: String = prefixes.map("(" + _ + ")").mkString("") + " " + {
@@ -384,7 +384,7 @@ trait DFDComponent extends MayHaveHeads with MayHaveTails {
             val withSuffix = lastName + withIndex._2
             val namesWithSuffix = names.slice(0, names.size - 1) :+ withSuffix
             id -> namesWithSuffix
-          }
+          }.toMap
         } else coNamed
         revised
       }
@@ -401,7 +401,7 @@ trait DFDComponent extends MayHaveHeads with MayHaveTails {
     val compactNames = lookup.values.toSeq
     require(compactNames.size == compactNames.distinct.size)
 
-    val ids_compactNames = ids_MultiPartNames.mapValues(lookup)
+    val ids_compactNames = ids_MultiPartNames.mapValues(lookup).toMap
     val ids_disambiguatedNames = disambiguateNames(ids_compactNames)
     val disambiguatedNames = ids_disambiguatedNames.values.toSeq
     require(disambiguatedNames.size == disambiguatedNames.distinct.size)

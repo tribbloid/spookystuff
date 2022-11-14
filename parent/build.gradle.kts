@@ -191,6 +191,10 @@ allprojects {
         bothProvided("${vs.scalaGroup}:scala-library:${vs.scalaV}")
         bothProvided("${vs.scalaGroup}:scala-reflect:${vs.scalaV}")
 
+        bothProvided(
+            "org.scala-lang.modules:scala-collection-compat_${vs.scalaBinaryV}:2.8.1"
+        )
+
         bothProvided("org.apache.spark:spark-sql_${vs.scalaBinaryV}:${vs.sparkV}")
         bothProvided("org.apache.spark:spark-mllib_${vs.scalaBinaryV}:${vs.sparkV}")
 

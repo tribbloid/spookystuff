@@ -112,7 +112,7 @@ case class ClasspathResolver(
         val result = list.map { v =>
           _Execution(v)
         }
-        result
+        result.toSeq
       }
 
       override lazy val children: Seq[_Execution] = find(childPattern)

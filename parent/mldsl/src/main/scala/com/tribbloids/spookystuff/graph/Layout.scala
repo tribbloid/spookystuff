@@ -112,7 +112,7 @@ trait Layout[D <: Domain] extends Algebra.Aliases[D] {
       defaultGraphBuilder.union(
         _graph,
         latentGraph,
-        { (v1, v2) =>
+        { (v1, _) =>
           v1 // nodes in latentGraph should have incorrect data
         }
       )
@@ -206,7 +206,7 @@ trait Layout[D <: Domain] extends Algebra.Aliases[D] {
         val intakes = top.tails
         assert(intakes.size <= 1, "non-linear right operand, please use merge, rebase or union instead")
         intakes.headOption match {
-          case Some(intake) =>
+          case Some(_) =>
             this.mapHead(top)
           case _ =>
             this.union(top)

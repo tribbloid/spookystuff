@@ -7,7 +7,7 @@ import scala.collection.mutable
 
 //Strongly typed! Should totally replace Nested
 //TreeNode with names!
-trait NestedMapLike[V, Self <: NestedMapLike[V, Self]] extends mutable.ListMap[String, Either[V, Self]] {
+trait NestedMapLike[V, Self <: NestedMapLike[V, Self]] extends mutable.LinkedHashMap[String, Either[V, Self]] {
 
 //  def self: mutable.ListMap[String, Either[T, Self]]
 }
