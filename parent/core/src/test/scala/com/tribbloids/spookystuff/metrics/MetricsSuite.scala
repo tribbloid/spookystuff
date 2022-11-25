@@ -33,7 +33,7 @@ class MetricsSuite extends FunSpecx {
   it("can be converted to JSON") {
     Seq(DummyMetrics(), DummyMetrics_HasMembers()).foreach { v =>
       val m = v.View
-      m.toNestedMap
+      m.toRelayIR
         .toJSON()
         .shouldBe(
           """
@@ -49,7 +49,7 @@ class MetricsSuite extends FunSpecx {
 
   it("tree can be converted to JSON") {
     val m = DummyTreeMetrics().View_AccessorName
-    m.toNestedMap
+    m.toRelayIR
       .toJSON()
       .shouldBe(
         """

@@ -105,7 +105,8 @@ class SpookyContextSuite extends SpookyEnvFixture with LocalPathDocsFixture {
       )
     rdd2.count()
 
-    rdd1.spooky.spookyMetrics.toNestedMap shouldBe rdd2.spooky.spookyMetrics.toNestedMap
+    rdd1.spooky.spookyMetrics.toRelayIR.treeView.treeString shouldBe
+      rdd2.spooky.spookyMetrics.toRelayIR.treeView.treeString
   }
 
   it("can create PageRow from String") {

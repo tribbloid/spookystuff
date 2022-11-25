@@ -6,14 +6,6 @@ import org.json4s.JValue
 /**
   * a simple MessageRelay that use object directly as Message
   */
-sealed trait MessageReaderLevel1 {
-
-  implicit def fromMF[T](
-      implicit
-      mf: Manifest[T]
-  ) = new MessageReader[T]()(mf)
-}
-
 class MessageReader[Self](
     implicit
     override val messageMF: Manifest[Self] // TODO: change to ScalaType
@@ -22,7 +14,7 @@ class MessageReader[Self](
 
   override def selfType: ScalaType[Self] = messageMF
 
-  override def toMessage_>>(v: Self) = v
+  override def toMessage_>>(v: Self): Self = v
   override def toProto_<<(v: Self, rootTag: String): Self = v
 }
 

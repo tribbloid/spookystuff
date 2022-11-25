@@ -8,6 +8,7 @@ import scala.util.{Failure, Success, Try}
 
 object TreeThrowable {
 
+  // TODO: rename to _TreeVew, keep consistency
   case class TreeNodeView(self: Throwable) extends TreeView.Immutable[TreeNodeView] {
     override def children: Seq[TreeNodeView] = {
       val result = self match {
@@ -29,8 +30,8 @@ object TreeThrowable {
       }
     }
 
-    override protected lazy val argStrings: Seq[String] = {
-      DSLUtils.stackTracesShowStr(self.getStackTrace).split("\n")
+    override protected def stringArgs: Iterator[String] = {
+      DSLUtils.stackTracesShowStr(self.getStackTrace).split("\n").iterator
     }
   }
 

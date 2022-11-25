@@ -1,14 +1,13 @@
 package org.apache.spark.ml.dsl.utils.data
 
-import java.lang.reflect.{InvocationTargetException, Method}
-
 import com.tribbloids.spookystuff.utils.TreeThrowable
 import org.apache.spark.ml.dsl.utils.DSLUtils
-import org.apache.spark.ml.dsl.utils.messaging.{CodecRegistry, MessageRelay, MessageWriter, Nested}
+import org.apache.spark.ml.dsl.utils.messaging.{CodecRegistry, MessageRelay, RelayIR}
 import org.apache.spark.ml.dsl.utils.refl.ScalaType
 import org.json4s
 import org.json4s.JsonAST.{JObject, JString, JValue}
 
+import java.lang.reflect.{InvocationTargetException, Method}
 import scala.collection.immutable.ListMap
 import scala.reflect.ClassTag
 
@@ -38,22 +37,27 @@ trait EAVRelay[I <: EAV] extends MessageRelay[I] with EAVBuilder[I] {
     val result: Seq[(String, json4s.JValue)] = md.asMap.toSeq
       .map {
         case (k, v) =>
-          val mapped = Nested[Any](v).map[JValue] { elem: Any =>
-            TreeThrowable
-              .|||^[JValue](
-                Seq(
-                  { () =>
-                    val codec = CodecRegistry.Default.findCodecOrDefault[Any](v)
-                    assertWellFormed(codec.toWriter_>>(elem).toJValue)
-                  },
-                  { () =>
-                    JString(elem.toString)
-                  }
-                )
-              )
-              .get
-          }
-          k -> MessageWriter(mapped.self).toJValue
+          val ir = RelayIR
+            .Value(v)
+            .depthFirstTransform(
+              onValue = { elem: md.VV =>
+                TreeThrowable
+                  .|||^[JValue](
+                    Seq(
+                      { () =>
+                        val codec = CodecRegistry.Default.findCodecOrDefault[Any](v)
+                        assertWellFormed(codec.toWriter_>>(elem).toJValue)
+                      },
+                      { () =>
+                        JString(elem.toString)
+                      }
+                    )
+                  )
+                  .get
+              }
+            )
+
+          k -> ir.toJValue
       }
 
     ListMap(result: _*)
@@ -63,20 +67,16 @@ trait EAVRelay[I <: EAV] extends MessageRelay[I] with EAVBuilder[I] {
     val map = m.toSeq
       .map {
         case (k, jv) =>
-          val mapped = Nested[Any](jv).map(
-            fn = identity,
-            preproc = {
-              case v: JValue => v.values
-              case v @ _     => v
-            }
-          )
-          k -> mapped.self
-        //          RecursiveTransform(jv, failFast = true)(
-        //            {
-        //              case v: JValue => v.values
-        //              case v@ _ => v
-        //            }
-        //          )
+          val parsed = RelayIR.Codec().fromJValue(jv)
+//
+//          RelayIR(jv).map(
+//            fn = identity,
+//            preproc = {
+//              case v: JValue => v.values
+//              case v @ _     => v
+//            }
+//          )
+          k -> parsed.self
       }
     fromUntypedTuples(map: _*)
   }

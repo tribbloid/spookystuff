@@ -1,10 +1,12 @@
 package com.tribbloids.spookystuff.metrics
 
-import org.apache.spark.ml.dsl.utils.NestedMap
+import com.tribbloids.spookystuff.utils.CommonUtils
+import org.apache.spark.ml.dsl.utils.messaging.RelayIR
 import org.apache.spark.ml.dsl.utils.refl.ReflectionUtils
 import org.apache.spark.util.AccumulatorV2
 
 import java.lang.reflect.Modifier
+import scala.collection.mutable
 import scala.language.implicitConversions
 import scala.util.Try
 
@@ -52,25 +54,27 @@ abstract class AbstractMetrics extends MetricLike {
       useDisplayName: Boolean = true
   ) {
 
-    def toNestedMap: NestedMap[T] = {
-      val result = NestedMap[T]()
+    def toRelayIR: RelayIR.Obj[T] = {
+      val cache = mutable.LinkedHashMap.empty[String, RelayIR[T]]
       val list = namedChildren(useDisplayName)
       list.foreach {
         case (_name: String, acc: Acc[_]) =>
-          fn(acc).foreach(v => result += _name -> Left(v))
+          fn(acc).foreach(v => cache += _name -> v)
 
         case (_name: String, nested: AbstractMetrics) =>
           val name = nested.displayNameOvrd.getOrElse(_name)
           val nestedView = nested.View(fn, useDisplayName)
-          result += name -> Right(nestedView.toNestedMap)
+          cache += name -> nestedView.toRelayIR
 
         case _ =>
           None
       }
-      result
+      RelayIR.buildFromKVs(cache.toSeq: _*)
     }
 
-    def toMap: Map[String, T] = toNestedMap.leafMap
+    def toMap: Map[String, T] = toRelayIR.pathToValueMap.map {
+      case (k, v) => CommonUtils./:/(k: _*) -> v
+    }
   }
 
   object View extends View[Any](v => Some(v.value), true)
@@ -90,10 +94,10 @@ object AbstractMetrics {
       extraMembers
     }
 
-    final protected def writeReplace(): Any = {
-      initialise()
-      this
-    }
+//    final protected def writeReplace(): Any = {
+//      initialise()
+//      this
+//    }
 
     @transient private lazy val extraMembers: List[(String, MetricLike)] = {
       val methods = this.getClass.getMethods.toList

@@ -8,17 +8,16 @@ abstract class TreeView[BaseType <: TreeView[BaseType]] extends TreeNode[BaseTyp
   // due to the limitation of Spark TreeNode impl
   // every element must have only 1 row
   // this may change in the future once this class switch to an implementation with better support to multiple rows
-  protected def argStrings: Seq[String] = Nil
+  override protected def stringArgs: Iterator[Any] = Iterator.empty
 
   final override def verboseString(maxFields: Int): String = {
-    val argBlock =
-      if (argStrings.isEmpty) ""
-      else argStrings.mkString("[", ", ", "]")
-    simpleString(maxFields) + argBlock
+//    val argBlock =
+//      if (stringArgs.isEmpty) ""
+//      else stringArgs.mkString("[", ", ", "]")
+    simpleString(maxFields)
   }
 
   final override def simpleStringWithNodeId(): String = simpleString(0)
-
 }
 
 object TreeView {

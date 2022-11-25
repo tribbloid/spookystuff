@@ -11,17 +11,7 @@ import org.slf4j.LoggerFactory
 import scala.language.implicitConversions
 import scala.xml.{Elem, NodeSeq, XML}
 
-trait CodecLevel1 {
 
-  def formats: Formats = Codec.defaultFormats
-
-  type M // Message type
-  implicit protected def messageMF: Manifest[M]
-
-  //  implicit def proto2Message(m: M): MessageWriter[M] = {
-  //    MessageWriter[M](m, this.formats)
-  //  }
-}
 
 /**
   * mixin to allow converting to a message object and back used to delegate ser/de tasks (from/to xml, json, Dataset

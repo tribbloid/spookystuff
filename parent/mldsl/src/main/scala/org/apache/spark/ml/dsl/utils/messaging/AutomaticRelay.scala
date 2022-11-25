@@ -4,31 +4,40 @@ import org.apache.spark.ml.dsl.utils.refl.{ReflectionUtils, RuntimeTypeOverride,
 
 import scala.collection.immutable.ListMap
 
-//TODO: add type information
-case class GenericProduct[T <: Product: Manifest](
-    override val productPrefix: String,
-    kvs: ListMap[String, Any],
-    runtimeType: ScalaType[_]
-) extends MessageAPI
-    with Map[String, Any]
-    with RuntimeTypeOverride {
+object AutomaticRelay {
 
-  override def rootTag: String = productPrefix
+  // TODO: add type information, and merge into RelayIR
+  case class GenericProduct[T <: Product: Manifest](
+      override val productPrefix: String,
+      kvs: ListMap[String, Any],
+      runtimeType: ScalaType[_]
+  ) extends MessageAPI
+      with Map[String, Any]
+      with RuntimeTypeOverride {
 
-  override def productElement(n: Int): Any = kvs.toSeq(n)._2
+    override def rootTag: String = productPrefix
 
-  override def productArity: Int = kvs.size
+    override def productElement(n: Int): Any = kvs.toSeq(n)._2
 
-  override def +[B1 >: Any](kv: (String, B1)): Map[String, B1] = this.copy(kvs = kvs + kv)
+    override def productArity: Int = kvs.size
 
-  override def get(key: String): Option[Any] = kvs.get(key)
+    override def +[B1 >: Any](kv: (String, B1)): Map[String, B1] = this.copy(kvs = kvs + kv)
 
-  override def iterator: Iterator[(String, Any)] = kvs.iterator
+    override def get(key: String): Option[Any] = kvs.get(key)
 
-  override def -(key: String): Map[String, Any] = this.copy(kvs = kvs - key)
+    override def iterator: Iterator[(String, Any)] = kvs.iterator
+
+    override def -(key: String): Map[String, Any] = this.copy(kvs = kvs - key)
+  }
+
 }
 
+// use reflection to find most qualified relay for the type of each field from their respective companion objects
+// slow in runtime, and unreliable
+// TODO: in the next version, should be rewritten using shapeless Generic and prover through implicits
 abstract class AutomaticRelay[T <: Product: Manifest] extends MessageRelay[T] {
+
+  import AutomaticRelay._
 
   override type M = GenericProduct[T]
   override def messageMF: Manifest[GenericProduct[T]] = implicitly[Manifest[M]]
@@ -38,11 +47,14 @@ abstract class AutomaticRelay[T <: Product: Manifest] extends MessageRelay[T] {
     val kvs = Map(ReflectionUtils.getCaseAccessorMap(v): _*)
 
     val transformedKVs = kvs.mapValues { v =>
-      Nested[Any](v)
-        .map[Any] { v: Any =>
-          val codec = CodecRegistry.Default.findCodecOrDefault(v)
-          codec.toMessage_>>(v)
-        }
+      RelayIR
+        .Value(v)
+        .depthFirstTransform(
+          onValue = { v: Any =>
+            val codec = CodecRegistry.Default.findCodecOrDefault(v)
+            codec.toMessage_>>(v)
+          }
+        )
         .self
     }
 
