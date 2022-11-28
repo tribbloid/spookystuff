@@ -2,9 +2,9 @@ package org.apache.spark.ml.dsl.utils.messaging
 
 import com.tribbloids.spookystuff.testutils.FunSpecx
 
-class RelayIRSuite extends FunSpecx {
+class TreeIRSuite extends FunSpecx {
 
-  import RelayIRSuite._
+  import TreeIRSuite._
 
   describe("from/to JSON") {
 
@@ -26,7 +26,7 @@ class RelayIRSuite extends FunSpecx {
           |""".stripMargin
       )
 
-      val reader = RelayIR.Codec[Any]()
+      val reader = TreeIR.Codec[Any]()
       val back = reader.fromJSON(jv)
 
       val jv2 = back.toJSON()
@@ -50,11 +50,11 @@ class RelayIRSuite extends FunSpecx {
   }
 }
 
-object RelayIRSuite {
+object TreeIRSuite {
 
-  val o1 = RelayIR.buildFromKVs("a" -> 1, "b" -> 2.0)
+  val o1 = TreeIR.fromKVs("a" -> 1, "b" -> 2.0)
 
-  val o2 = RelayIR.buildFromKVs[Any]("c" -> Long.MaxValue, "d" -> o1)
+  val o2 = TreeIR.fromKVs[Any]("c" -> Long.MaxValue, "d" -> o1)
 
-  val o3 = RelayIR.buildFromKVs[Any]("e" -> o2, "f" -> "FF")
+  val o3 = TreeIR.fromKVs[Any]("e" -> o2, "f" -> "FF")
 }

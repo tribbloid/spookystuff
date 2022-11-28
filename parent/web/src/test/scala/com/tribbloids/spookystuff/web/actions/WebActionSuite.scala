@@ -63,9 +63,9 @@ class WebActionSuite extends SpookyEnvFixture {
         .shouldBe(
           """
           |Click(
-          |	By.sizzleCssSelector: o1,
-          |	0 seconds,
-          |	true
+          |  selector = By.sizzleCssSelector: o1,
+          |  cooldown = 0 seconds,
+          |  blocking = true
           |)
         """.stripMargin
         )

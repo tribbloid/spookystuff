@@ -230,7 +230,7 @@ object ScalaType extends ScalaType_Level2 {
 
   def getRuntimeType(v: Any): ScalaType[_] = {
     v match {
-      case v: RuntimeTypeOverride => v.runtimeType
+      case v: RuntimeTypeTagged => v.runtimeType
       case _                      => v.getClass
     }
   }

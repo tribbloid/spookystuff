@@ -1,7 +1,7 @@
 package com.tribbloids.spookystuff.metrics
 
 import com.tribbloids.spookystuff.utils.CommonUtils
-import org.apache.spark.ml.dsl.utils.messaging.RelayIR
+import org.apache.spark.ml.dsl.utils.messaging.TreeIR
 import org.apache.spark.ml.dsl.utils.refl.ReflectionUtils
 import org.apache.spark.util.AccumulatorV2
 
@@ -54,8 +54,8 @@ abstract class AbstractMetrics extends MetricLike {
       useDisplayName: Boolean = true
   ) {
 
-    def toRelayIR: RelayIR.Obj[T] = {
-      val cache = mutable.LinkedHashMap.empty[String, RelayIR[T]]
+    def toRelayIR: TreeIR.Obj[T] = {
+      val cache = mutable.LinkedHashMap.empty[String, TreeIR[T]]
       val list = namedChildren(useDisplayName)
       list.foreach {
         case (_name: String, acc: Acc[_]) =>
@@ -69,7 +69,7 @@ abstract class AbstractMetrics extends MetricLike {
         case _ =>
           None
       }
-      RelayIR.buildFromKVs(cache.toSeq: _*)
+      TreeIR.fromKVs(cache.toSeq: _*)
     }
 
     def toMap: Map[String, T] = toRelayIR.pathToValueMap.map {

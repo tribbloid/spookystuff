@@ -70,8 +70,8 @@ class ActionSuite extends SpookyEnvFixture {
       str.shouldBe(
         """
           |Wget(
-          |	http://dummy.com,
-          |	MustHaveTitle
+          |  uri = http://dummy.com,
+          |  filter = MustHaveTitle
           |)
         """.stripMargin
       )

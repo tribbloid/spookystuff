@@ -6,12 +6,7 @@ trait Relay_>>[T] extends MessageRelay[T] {
   override def messageMF: Manifest[Any] = implicitly[Manifest[Any]]
 }
 
-trait HasRootTag {
-
-  def rootTag: String = Codec.getDefaultRootTag(this)
-}
-
-trait ProtoAPI extends HasRootTag {
+trait ProtoAPI extends RootTagged {
 
   def toMessage_>> : Any
 }
@@ -21,7 +16,7 @@ object ProtoAPI extends Relay_>>[ProtoAPI] {
   override def toMessage_>>(v: ProtoAPI): Any = v.toMessage_>>
 }
 
-trait MessageAPI extends HasRootTag with Serializable {}
+trait MessageAPI extends RootTagged with Serializable {}
 
 object MessageAPI extends MessageReader[MessageAPI] {}
 

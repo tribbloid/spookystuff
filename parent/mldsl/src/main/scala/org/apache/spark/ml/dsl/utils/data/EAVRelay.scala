@@ -2,7 +2,7 @@ package org.apache.spark.ml.dsl.utils.data
 
 import com.tribbloids.spookystuff.utils.TreeThrowable
 import org.apache.spark.ml.dsl.utils.DSLUtils
-import org.apache.spark.ml.dsl.utils.messaging.{CodecRegistry, MessageRelay, RelayIR}
+import org.apache.spark.ml.dsl.utils.messaging.{CodecRegistry, MessageRelay, TreeIR}
 import org.apache.spark.ml.dsl.utils.refl.ScalaType
 import org.json4s
 import org.json4s.JsonAST.{JObject, JString, JValue}
@@ -16,7 +16,7 @@ trait EAVRelay[I <: EAV] extends MessageRelay[I] with EAVBuilder[I] {
   final override type Impl = I
   final override def Impl: EAVRelay[I] = this
 
-  override def getRootTag(protoOpt: Option[I], messageOpt: Option[Map[String, JValue]]): String = "root"
+//  override def getRootTag(protoOpt: Option[I], messageOpt: Option[Map[String, JValue]]): String = "root"
 
   private val jvBlacklist: Set[JValue] = Set(
     JObject()
@@ -37,7 +37,7 @@ trait EAVRelay[I <: EAV] extends MessageRelay[I] with EAVBuilder[I] {
     val result: Seq[(String, json4s.JValue)] = md.asMap.toSeq
       .map {
         case (k, v) =>
-          val ir = RelayIR
+          val ir = TreeIR
             .Value(v)
             .depthFirstTransform(
               onValue = { elem: md.VV =>
@@ -67,7 +67,7 @@ trait EAVRelay[I <: EAV] extends MessageRelay[I] with EAVBuilder[I] {
     val map = m.toSeq
       .map {
         case (k, jv) =>
-          val parsed = RelayIR.Codec().fromJValue(jv)
+          val parsed = TreeIR.Codec().fromJValue(jv)
 //
 //          RelayIR(jv).map(
 //            fn = identity,

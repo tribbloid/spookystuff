@@ -1,24 +1,24 @@
 package org.apache.spark.ml.dsl.utils.messaging
 
-import java.io.File
 import org.apache.spark.ml.dsl.utils._
-import org.apache.spark.ml.dsl.utils.messaging.AutomaticRelay.GenericProduct
 import org.apache.spark.ml.dsl.utils.messaging.xml.{XMLFormats, Xml}
 import org.apache.spark.ml.dsl.utils.refl.ScalaType
 import org.json4s.JsonAST.JObject
 import org.json4s.jackson.JsonMethods._
 import org.json4s.{Extraction, Formats, JValue}
 
+import java.io.File
 import scala.xml.NodeSeq
 
 class MessageWriter[M](
     val message: M,
     val formats: Formats = XMLFormats.defaultFormats,
     rootTagOverride: Option[String] = None
-) extends Serializable {
+) extends Serializable
+    with RootTagged {
 
-  def rootTag: String = rootTagOverride.getOrElse(
-    Codec.getRootTag(message)
+  override lazy val rootTag: String = rootTagOverride.getOrElse(
+    Codec.RootTagOf(message).fallback
   )
 
   // TODO: move into case class WFormats(.) and enable lazy val
@@ -81,20 +81,17 @@ class MessageWriter[M](
     def listRecursion(elems: Traversable[Any]): List[String] = {
       elems.toList
         .map { vv =>
-          MessageWriter(vv).getMemberStr(start, sep, end, indentFn, recursion + 1)
-        }
-        .map { str =>
+          val str = MessageWriter(vv).getMemberStr(start, sep, end, indentFn, recursion + 1)
           DSLUtils.indent(str, indentStr)
         }
     }
 
-    def mapRecursion[T](map: Map[T, Any]): Map[T, String] = {
-      map
-        .mapValues { vv =>
-          MessageWriter(vv).getMemberStr(start, sep, end, indentFn, recursion + 1)
-        }
-        .mapValues { str =>
-          DSLUtils.indent(str, indentStr)
+    def mapRecursion[T](map: Map[T, Any]): Seq[String] = {
+      map.toSeq
+        .map {
+          case (kk, vv) =>
+            val vvStr = MessageWriter(vv).getMemberStr(start, sep, end, indentFn, recursion + 1)
+            DSLUtils.indent(s"$kk = $vvStr", indentStr)
         }
     }
 
@@ -113,8 +110,6 @@ class MessageWriter[M](
     }
 
     message match {
-      case v: GenericProduct[_] =>
-        product2Str(v)
 
       case is: Map[_, _] =>
         val strs = mapRecursion(is)
@@ -139,7 +134,6 @@ class MessageWriter[M](
 
       case _ =>
         "" + message // TODO: should we allow this fallback?
-
     }
   }
 
@@ -151,7 +145,7 @@ class MessageWriter[M](
     ",\n",
     "\n)",
     { _ =>
-      "\t"
+      "  "
     }
   )
 }
