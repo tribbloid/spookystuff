@@ -103,17 +103,17 @@ class WebActionSuite extends SpookyEnvFixture {
         .shouldBe(
           """
           |Loop(
-          |	List(
-          |		Click(
-          |			By.sizzleCssSelector: o1,
-          |			0 seconds,
-          |			true
-          |		),
-          |		Snapshot(
-          |			MustHaveTitle
-          |		)
-          |	),
-          |	2147483647
+          |  children = List(
+          |    Map(
+          |      selector = By.sizzleCssSelector: o1,
+          |      cooldown = 0 seconds,
+          |      blocking = true
+          |    ),
+          |    Map(
+          |      filter = MustHaveTitle
+          |    )
+          |  ),
+          |  limit = 2147483647
           |)
         """.stripMargin
         )

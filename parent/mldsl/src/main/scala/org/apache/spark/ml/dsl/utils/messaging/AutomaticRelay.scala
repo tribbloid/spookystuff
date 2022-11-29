@@ -18,15 +18,28 @@ abstract class AutomaticRelay[T <: Product: Manifest] extends MessageRelay[T] {
     val kvs = Map(ReflectionUtils.getCaseAccessorMap(v): _*)
 
     val relayedKVs = kvs.mapValues { v =>
-      TreeIR
-        .Value(v)
-        .depthFirstTransform(
-          onValue = { v: Any =>
-            val codec = CodecRegistry.Default.findCodecOrDefault(v)
-            codec.toMessage_>>(v)
+      val ir: TreeIR.Value[Any] = TreeIR.Value(v)
+      ir.depthFirstTransform(
+        onValue = { v: Any =>
+          v match {
+            case vs: Seq[_] =>
+              vs.map { v: Any =>
+                val codec = CodecRegistry.Default.findCodecOrDefault(v)
+                codec.toMessage_>>(v)
+              }
+            case m: Map[_, _] =>
+              m.map {
+                case (k: Any, v: Any) =>
+                  val codec = CodecRegistry.Default.findCodecOrDefault(v)
+                  k -> codec.toMessage_>>(v)
+              }
+            case v: Any =>
+              val codec = CodecRegistry.Default.findCodecOrDefault(v)
+              codec.toMessage_>>(v)
           }
-        )
-        .self
+
+        }
+      ).self
     }
 
     val relayed = TreeIR.fromKVs(relayedKVs.toSeq: _*)
