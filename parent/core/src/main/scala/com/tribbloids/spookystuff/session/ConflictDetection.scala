@@ -31,7 +31,7 @@ object ConflictDetection {
 
     val allResourceIDs: Map[String, Seq[Any]] = allObj
       .map {
-        _.resourceIDs.mapValues(_.toSeq)
+        _.resourceIDs.view.mapValues(_.toSeq).toMap
       }
       .reduceOption { (m1, m2) =>
         val keys = (m1.keys ++ m2.keys).toSeq.distinct

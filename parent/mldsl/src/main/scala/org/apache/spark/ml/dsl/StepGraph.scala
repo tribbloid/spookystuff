@@ -83,7 +83,7 @@ trait StepGraph {
     val outSteps = step.usageIDs.map(coll)
     coll +
       (id -> step.wth(usageIDs = Set.empty)) ++
-      outSteps.map(out => out.id -> out.wth(dependencyIDs = out.dependencyIDs.toBuffer - id))
+      outSteps.map(out => out.id -> out.wth(dependencyIDs = out.dependencyIDs.toBuffer.-=(id).toSeq))
   }
 
   def remove1(id: String): StepMap[String, StepLike] = {

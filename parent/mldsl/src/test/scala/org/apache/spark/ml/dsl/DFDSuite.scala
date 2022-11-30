@@ -9,7 +9,7 @@ import org.apache.spark.sql.functions._
 
 object DFDSuite {
 
-  val TOKEN = 'token
+  val TOKEN: Symbol = Symbol("token")
   val STEMMED: String = "stemmed"
   val TF: String = "tf"
   val IDF: String = "idf"
@@ -118,8 +118,8 @@ class DFDSuite extends AbstractDFDSuite {
         |(Tokenizer,input,token)
         |(StopWordsRemover,token,stemmed)
         |(HashingTF,stemmed,tf)
-        |(UDFTransformer,stemmed|tf,tf_zipped)
         |(IDF,tf,idf)
+        |(UDFTransformer,stemmed|tf,tf_zipped)
         |(UDFTransformer,stemmed|idf,idf_zipped)
       """.stripMargin
       )
@@ -277,19 +277,19 @@ class DFDSuite extends AbstractDFDSuite {
       .mkString("\n")
       .shouldBe(
         """
-          |[0,a b c d e spark,1.0,WrappedArray(a, b, c, d, e, spark),WrappedArray(b, c, d, e, spark),(262144,[74920,89530,148981,167694,173558],[1.0,1.0,1.0,1.0,1.0]),WrappedArray([b,1.0], [c,1.0], [d,1.0], [e,1.0], [spark,1.0])]
-          |[1,b d,0.0,WrappedArray(b, d),WrappedArray(b, d),(262144,[89530,148981],[1.0,1.0]),WrappedArray([b,1.0], [d,1.0])]
-          |[2,spark f g h,1.0,WrappedArray(spark, f, g, h),WrappedArray(spark, f, g, h),(262144,[36803,173558,209078,228158],[1.0,1.0,1.0,1.0]),WrappedArray([spark,1.0], [f,1.0], [g,1.0], [h,1.0])]
-          |[3,hadoop mapreduce,0.0,WrappedArray(hadoop, mapreduce),WrappedArray(hadoop, mapreduce),(262144,[132966,198017],[1.0,1.0]),WrappedArray([hadoop,1.0], [mapreduce,1.0])]
-          |[3,hadoop mapreduce,1.0,WrappedArray(hadoop, mapreduce),WrappedArray(hadoop, mapreduce),(262144,[132966,198017],[1.0,1.0]),WrappedArray([hadoop,1.0], [mapreduce,1.0])]
-          |[4,b spark who,1.0,WrappedArray(b, spark, who),WrappedArray(b, spark),(262144,[148981,173558],[1.0,1.0]),WrappedArray([b,1.0], [spark,1.0])]
-          |[5,g d a y,0.0,WrappedArray(g, d, a, y),WrappedArray(g, d, y),(262144,[36803,89530,220451],[1.0,1.0,1.0]),WrappedArray([g,1.0], [d,1.0], [y,1.0])]
-          |[6,spark fly,1.0,WrappedArray(spark, fly),WrappedArray(spark, fly),(262144,[39928,173558],[1.0,1.0]),WrappedArray([spark,1.0], [fly,1.0])]
-          |[7,was mapreduce,0.0,WrappedArray(was, mapreduce),WrappedArray(mapreduce),(262144,[132966],[1.0]),WrappedArray([mapreduce,1.0])]
-          |[8,e spark program,1.0,WrappedArray(e, spark, program),WrappedArray(e, spark, program),(262144,[76285,167694,173558],[1.0,1.0,1.0]),WrappedArray([e,1.0], [spark,1.0], [program,1.0])]
-          |[9,a e c l,0.0,WrappedArray(a, e, c, l),WrappedArray(e, c, l),(262144,[1303,74920,167694],[1.0,1.0,1.0]),WrappedArray([e,1.0], [c,1.0], [l,1.0])]
-          |[10,spark compile,1.0,WrappedArray(spark, compile),WrappedArray(spark, compile),(262144,[109869,173558],[1.0,1.0]),WrappedArray([spark,1.0], [compile,1.0])]
-          |[11,hadoop software,0.0,WrappedArray(hadoop, software),WrappedArray(hadoop, software),(262144,[123474,198017],[1.0,1.0]),WrappedArray([hadoop,1.0], [software,1.0])]
+          |[0,a b c d e spark,1.0,ArraySeq(a, b, c, d, e, spark),ArraySeq(b, c, d, e, spark),(262144,[74920,89530,148981,167694,173558],[1.0,1.0,1.0,1.0,1.0]),ArraySeq([b,1.0], [c,1.0], [d,1.0], [e,1.0], [spark,1.0])]
+          |[1,b d,0.0,ArraySeq(b, d),ArraySeq(b, d),(262144,[89530,148981],[1.0,1.0]),ArraySeq([b,1.0], [d,1.0])]
+          |[2,spark f g h,1.0,ArraySeq(spark, f, g, h),ArraySeq(spark, f, g, h),(262144,[36803,173558,209078,228158],[1.0,1.0,1.0,1.0]),ArraySeq([spark,1.0], [f,1.0], [g,1.0], [h,1.0])]
+          |[3,hadoop mapreduce,0.0,ArraySeq(hadoop, mapreduce),ArraySeq(hadoop, mapreduce),(262144,[132966,198017],[1.0,1.0]),ArraySeq([hadoop,1.0], [mapreduce,1.0])]
+          |[3,hadoop mapreduce,1.0,ArraySeq(hadoop, mapreduce),ArraySeq(hadoop, mapreduce),(262144,[132966,198017],[1.0,1.0]),ArraySeq([hadoop,1.0], [mapreduce,1.0])]
+          |[4,b spark who,1.0,ArraySeq(b, spark, who),ArraySeq(b, spark),(262144,[148981,173558],[1.0,1.0]),ArraySeq([b,1.0], [spark,1.0])]
+          |[5,g d a y,0.0,ArraySeq(g, d, a, y),ArraySeq(g, d, y),(262144,[36803,89530,220451],[1.0,1.0,1.0]),ArraySeq([g,1.0], [d,1.0], [y,1.0])]
+          |[6,spark fly,1.0,ArraySeq(spark, fly),ArraySeq(spark, fly),(262144,[39928,173558],[1.0,1.0]),ArraySeq([spark,1.0], [fly,1.0])]
+          |[7,was mapreduce,0.0,ArraySeq(was, mapreduce),ArraySeq(mapreduce),(262144,[132966],[1.0]),ArraySeq([mapreduce,1.0])]
+          |[8,e spark program,1.0,ArraySeq(e, spark, program),ArraySeq(e, spark, program),(262144,[76285,167694,173558],[1.0,1.0,1.0]),ArraySeq([e,1.0], [spark,1.0], [program,1.0])]
+          |[9,a e c l,0.0,ArraySeq(a, e, c, l),ArraySeq(e, c, l),(262144,[1303,74920,167694],[1.0,1.0,1.0]),ArraySeq([e,1.0], [c,1.0], [l,1.0])]
+          |[10,spark compile,1.0,ArraySeq(spark, compile),ArraySeq(spark, compile),(262144,[109869,173558],[1.0,1.0]),ArraySeq([spark,1.0], [compile,1.0])]
+          |[11,hadoop software,0.0,ArraySeq(hadoop, software),ArraySeq(hadoop, software),(262144,[123474,198017],[1.0,1.0]),ArraySeq([hadoop,1.0], [software,1.0])]
           |""".stripMargin
       )
 

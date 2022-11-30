@@ -3,7 +3,6 @@ package com.tribbloids.spookystuff.utils
 import java.security.PrivilegedAction
 
 import scala.collection.{mutable, GenTraversableOnce}
-import scala.reflect.ClassTag
 
 abstract class CommonViews {
 
@@ -22,17 +21,17 @@ abstract class CommonViews {
     }
   }
 
-  implicit class GenTraversableOnceView[A](self: GenTraversableOnce[A])(
-      implicit
-      ctg: ClassTag[A]
-  ) {
-
-    def longSize: Long = {
-      var result = 0L
-      for (x <- self) result += 1
-      result
-    }
-  }
+//  implicit class GenTraversableOnceView[A](self: GenTraversableOnce[A])(
+//      implicit
+//      ctg: ClassTag[A]
+//  ) {
+//
+//    def longSize: Long = {
+//      var result = 0L
+//      for (x <- self) result += 1
+//      result
+//    }
+//  }
 
   implicit class MutableMapView[K, V](self: mutable.Map[K, V]) {
 

@@ -10,8 +10,11 @@ trait FormattedText {
 
   def useColor: Boolean
   lazy val basePrinter: PPrinter = {
-    if (useColor) PPrinter.Color
-    else PPrinter.BlackWhite
+    val base =
+      if (useColor) PPrinter.Color
+      else PPrinter.BlackWhite
+
+    base.copy(defaultShowFieldNames = false)
   }
 
   def printer: PPrinter

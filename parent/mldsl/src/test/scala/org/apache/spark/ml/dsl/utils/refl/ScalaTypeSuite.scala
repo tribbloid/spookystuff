@@ -188,7 +188,7 @@ class ScalaTypeSuite extends FunSpecx with PairwiseConversionMixin {
         ),
         Repr(
           Some(
-            ClassTag(classOf[Tuple2[_, _]])
+            ClassTag(classOf[(_, _)])
           ),
           1
         )

@@ -1,7 +1,7 @@
 package org.apache.spark.ml.dsl
 
 import org.apache.spark.ml.PipelineStage
-import org.apache.spark.ml.param.ParamMap
+import org.apache.spark.ml.param.{ParamMap, Params}
 import org.apache.spark.ml.param.shared.{HasInputCol, HasInputCols, HasOutputCol}
 
 import scala.util.Random
@@ -26,7 +26,7 @@ case class AbstractNamedStage[+T <: PipelineStage](
     result
   }
 
-  def id = outputColOverride.getOrElse(_id)
+  def id: String = outputColOverride.getOrElse(_id)
 
   def outputOpt: Option[String] = stage match {
     case s: HasOutputCol =>
@@ -34,11 +34,11 @@ case class AbstractNamedStage[+T <: PipelineStage](
     case _ =>
       None
   }
-  def hasOutputs = stage match {
-    case s: HasOutputCol => true // TODO: do we really need this? implementation is inconsistent
+  def hasOutputs: Boolean = stage match {
+    case _: HasOutputCol => true // TODO: do we really need this? implementation is inconsistent
     case _               => false
   }
-  def setOutput(v: String) = {
+  def setOutput(v: String): Params = {
     stage.trySetOutputCol(v)
   }
 
@@ -54,7 +54,7 @@ case class AbstractNamedStage[+T <: PipelineStage](
   //    case ss: HasInputCols => true
   //    case _ => false
   //  }
-  def setInputs(v: Seq[String]) = {
+  def setInputs(v: Seq[String]): AbstractNamedStage[T] = {
     if (v.nonEmpty) { // otherwise it can be assumed that the input of this stage is already set.
       stage.trySetInputCols(v)
     }
@@ -71,7 +71,7 @@ case class AbstractNamedStage[+T <: PipelineStage](
       try {
         inputs
       } catch {
-        case e: Exception =>
+        case _: Exception =>
           Seq("Pending...")
       }
 
@@ -83,7 +83,7 @@ case class AbstractNamedStage[+T <: PipelineStage](
       try {
         outputOpt
       } catch {
-        case e: Exception =>
+        case _: Exception =>
           Some("Pending...")
       }
 
@@ -99,5 +99,5 @@ case class AbstractNamedStage[+T <: PipelineStage](
     inStr + body + outStr
   }
 
-  override def toString = show()
+  override def toString: String = show()
 }

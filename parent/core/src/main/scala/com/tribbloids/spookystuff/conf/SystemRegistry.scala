@@ -27,16 +27,15 @@ trait SystemRegistry {
     def createEnabled(): Unit = {
       // ahead-of-time initialization based on parent
       // may take a long time then fail, only attempted once
-      val trials = enabled
-        .flatMap {
-          case v: UB =>
-            val result = scala.util.Try {
-              apply(v)
-            }
-            Some(result)
-          case _ =>
-            None
-        }
+      val trials = enabled.flatMap {
+        case v: UB =>
+          val result = scala.util.Try {
+            apply(v)
+          }
+          Some(result)
+        case _ =>
+          None
+      }.toSeq
 
       TreeThrowable.&&&(trials)
     }

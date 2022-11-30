@@ -57,28 +57,28 @@ class SpookyViewsSuite extends SpookyEnvFixture {
     assert(counter2.value > 100)
   }
 
-  it("TraversableLike.filterByType should work on primitive types") {
+  it("Seq/Set.filterByType should work on primitive types") {
 
-    assert(Seq(1, 2.2, "a").filterByType[Int].get == Seq(1))
-    assert(Seq(1, 2.2, "a").filterByType[java.lang.Integer].get == Seq(1: java.lang.Integer))
-    assert(Seq(1, 2.2, "a").filterByType[Double].get == Seq(2.2))
-    assert(Seq(1, 2.2, "a").filterByType[java.lang.Double].get == Seq(2.2: java.lang.Double))
-    assert(Seq(1, 2.2, "a").filterByType[String].get == Seq("a"))
+    assert(Seq(1, 2.2, "a").filterByType[Int] == Seq(1))
+    assert(Seq(1, 2.2, "a").filterByType[java.lang.Integer] == Seq(1: java.lang.Integer))
+    assert(Seq(1, 2.2, "a").filterByType[Double] == Seq(2.2))
+    assert(Seq(1, 2.2, "a").filterByType[java.lang.Double] == Seq(2.2: java.lang.Double))
+    assert(Seq(1, 2.2, "a").filterByType[String] == Seq("a"))
 
-    assert(Set(1, 2.2, "a").filterByType[Int].get == Set(1))
-    assert(Set(1, 2.2, "a").filterByType[java.lang.Integer].get == Set(1: java.lang.Integer))
-    assert(Set(1, 2.2, "a").filterByType[Double].get == Set(2.2))
-    assert(Set(1, 2.2, "a").filterByType[java.lang.Double].get == Set(2.2: java.lang.Double))
-    assert(Set(1, 2.2, "a").filterByType[String].get == Set("a"))
+    assert(TraverseOps(Set(1, 2.2, "a")).filterByType[Int] == Set(1))
+    assert(Set(1, 2.2, "a").filterByType[java.lang.Integer] == Set(1: java.lang.Integer))
+    assert(Set(1, 2.2, "a").filterByType[Double] == Set(2.2))
+    assert(Set(1, 2.2, "a").filterByType[java.lang.Double] == Set(2.2: java.lang.Double))
+    assert(Set(1, 2.2, "a").filterByType[String] == Set("a"))
   }
 
   it("Array.filterByType should work on primitive types") {
 
-    assert(Array(1, 2.2, "a").filterByType[Int].toSeq == Seq(1))
-    assert(Array(1, 2.2, "a").filterByType[java.lang.Integer].toSeq == Seq(1: java.lang.Integer))
-    assert(Array(1, 2.2, "a").filterByType[Double].toSeq == Seq(2.2))
-    assert(Array(1, 2.2, "a").filterByType[java.lang.Double].toSeq == Seq(2.2: java.lang.Double))
-    assert(Array(1, 2.2, "a").filterByType[String].toSeq == Seq("a"))
+    assert(Array(1, 2.2, "a").filterByType[Int] == Seq(1))
+    assert(Array(1, 2.2, "a").filterByType[java.lang.Integer] == Seq(1: java.lang.Integer))
+    assert(Array(1, 2.2, "a").filterByType[Double] == Seq(2.2))
+    assert(Array(1, 2.2, "a").filterByType[java.lang.Double] == Seq(2.2: java.lang.Double))
+    assert(Array(1, 2.2, "a").filterByType[String] == Seq("a"))
   }
 
   val nullStr: String = null: String
@@ -91,8 +91,6 @@ class SpookyViewsSuite extends SpookyEnvFixture {
 
     assert(nullStr \\ nullStr \\ "abc" \\ null \\ null == "abc")
   }
-
-  import com.tribbloids.spookystuff.utils.SpookyViews._
 
   it("injectPassthroughPartitioner should not move partitions") {
     val rdd1: RDD[WithID] = sc

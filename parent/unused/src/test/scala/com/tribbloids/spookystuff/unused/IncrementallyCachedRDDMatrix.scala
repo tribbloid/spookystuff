@@ -116,6 +116,6 @@ class IncrementallyCachedRDDMatrix extends FunSpecx with BeforeAndAfterAll {
       )
     }
 
-    result.to[Vector]
+    result.to(Vector)
   }
 }

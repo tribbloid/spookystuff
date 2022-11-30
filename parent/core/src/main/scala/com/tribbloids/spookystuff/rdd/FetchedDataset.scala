@@ -159,10 +159,11 @@ case class FetchedDataset(
     //    }
 
     // TOOD: how to make it serializable so it can be reused by different partitions?
-    @transient lazy val field2Converter: Map[Field, Any => Any] = spookySchema.fieldTypes.mapValues { tpe =>
-      val reified = tpe.reified
-      val converter = CatalystTypeConverters.createToCatalystConverter(reified)
-      converter
+    @transient lazy val field2Converter: Map[Field, Any => Any] = spookySchema.fieldTypes.map {
+      case (k, tpe) =>
+        val reified = tpe.reified
+        val converter = CatalystTypeConverters.createToCatalystConverter(reified)
+        k -> converter
     }
 
 //    val rowEncoder = RowEncoder.apply(spookySchema.structType)

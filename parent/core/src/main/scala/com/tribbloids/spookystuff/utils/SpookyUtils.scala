@@ -336,7 +336,7 @@ These special characters are often called "metacharacters".
           Iterator(reduced)
         }
         .reduce { (m1, m2) =>
-          val rr = (m1.iterator ++ m2.iterator).toSeq.groupBy(_._1).mapValues(_.map(_._2).reduce(reducer))
+          val rr = (m1.iterator ++ m2.iterator).toSeq.groupBy(_._1).view.mapValues(_.map(_._2).reduce(reducer)).toMap
           rr
         }
       reduced.sortBy(_._1).values.toSeq

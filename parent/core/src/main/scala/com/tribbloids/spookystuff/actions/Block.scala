@@ -122,7 +122,7 @@ object ClusterRetry {
           logger.debug("\t\\-->", e)
       }
 
-      pages
+      pages.toSeq
     }
 
     override def doInterpolate(pageRow: FetchedRow, schema: SpookySchema): Option[this.type] = {
@@ -174,7 +174,7 @@ object LocalRetry {
           }
       }
 
-      pages
+      pages.toSeq
     }
 
     override def doInterpolate(pageRow: FetchedRow, schema: SpookySchema): Option[this.type] = {
@@ -221,7 +221,7 @@ final case class Loop(
         LoggerFactory.getLogger(this.getClass).info("Aborted on exception: " + e)
     }
 
-    pages
+    pages.toSeq
   }
 
   override def doInterpolate(pageRow: FetchedRow, schema: SpookySchema): Option[this.type] = {

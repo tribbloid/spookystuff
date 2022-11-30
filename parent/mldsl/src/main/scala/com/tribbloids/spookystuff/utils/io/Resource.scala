@@ -95,11 +95,11 @@ abstract class Resource extends LocalCleanable {
         .map(exe => exe.input(in => in.metadata.root))
         .groupBy(_.asMap("Type").toString)
 
-      val childMaps: Map[String, Seq[Map[String, Any]]] = grouped.mapValues {
+      val childMaps: Map[String, Seq[Map[String, Any]]] = grouped.view.mapValues {
         _.map { md =>
           md.asMap
         }
-      }
+      }.toMap
 
       val result = root :++ ResourceMetadata._EAV(childMaps)
       result

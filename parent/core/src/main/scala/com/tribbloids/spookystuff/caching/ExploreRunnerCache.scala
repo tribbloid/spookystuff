@@ -58,7 +58,7 @@ object ExploreRunnerCache {
   }
 
   def register(v: ExploreRunner, exeID: ExeID): Unit = {
-    getOnGoingRunners(exeID) += v -> Unit
+    getOnGoingRunners(exeID) += v -> {}
   }
 
   def deregister(v: ExploreRunner, exeID: ExeID): Unit = {
@@ -87,7 +87,7 @@ object ExploreRunnerCache {
       }
       .getOrElse(Map.empty)
 
-    val commited: Map[NodeKey, Iterable[DataRow]] = committedVisited.toMap
+    val commited = committedVisited.toMap.view
       .filterKeys(_._2 == exeID)
       .map {
         case (k, v) =>

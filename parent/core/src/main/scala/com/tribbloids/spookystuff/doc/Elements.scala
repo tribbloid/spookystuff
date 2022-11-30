@@ -1,50 +1,49 @@
 package com.tribbloids.spookystuff.doc
 
-import scala.collection.mutable
 
 /**
   * Created by peng on 18/07/15.
   */
 object Elements {
 
-  def newBuilder[T <: Unstructured]: mutable.Builder[T, Elements[T]] = new mutable.Builder[T, Elements[T]] {
-
-    val buffer = new mutable.ArrayBuffer[T]()
-
-    override def +=(elem: T): this.type = {
-      buffer += elem
-      this
-    }
-
-    override def result(): Elements[T] = new Elements(buffer.toList)
-
-    override def clear(): Unit = buffer.clear()
-  }
+//  def newBuilder[T <: Unstructured]: mutable.Builder[T, Elements[T]] = new mutable.Builder[T, Elements[T]] {
+//
+//    val buffer = new mutable.ArrayBuffer[T]()
+//
+//    override def +=(elem: T): this.type = {
+//      buffer += elem
+//      this
+//    }
+//
+//    override def result(): Elements[T] = new Elements(buffer.toList)
+//
+//    override def clear(): Unit = buffer.clear()
+//  }
 
   object empty extends Elements[Nothing](Nil)
 }
 
-case class Elements[+T <: Unstructured](override val seq: List[T]) extends Unstructured with DelegateSeq[T] {
+case class Elements[+T <: Unstructured](override val delegate: List[T]) extends Unstructured with DelegateSeq[T] {
 
-  def uris: Seq[String] = seq.map(_.uri)
+  def uris: Seq[String] = delegate.map(_.uri)
 
-  def codes: Seq[String] = seq.flatMap(_.code)
+  def codes: Seq[String] = delegate.flatMap(_.code)
 
-  def formattedCodes: Seq[String] = seq.flatMap(_.formattedCode)
+  def formattedCodes: Seq[String] = delegate.flatMap(_.formattedCode)
 
-  def allAttrs: Seq[Map[String, String]] = seq.flatMap(_.allAttr)
+  def allAttrs: Seq[Map[String, String]] = delegate.flatMap(_.allAttr)
 
-  def attrs(attr: String, noEmpty: Boolean = true): Seq[String] = seq.flatMap(_.attr(attr, noEmpty))
+  def attrs(attr: String, noEmpty: Boolean = true): Seq[String] = delegate.flatMap(_.attr(attr, noEmpty))
 
-  def hrefs: List[String] = seq.flatMap(_.href)
+  def hrefs: List[String] = delegate.flatMap(_.href)
 
-  def srcs: List[String] = seq.flatMap(_.src)
+  def srcs: List[String] = delegate.flatMap(_.src)
 
-  def texts: Seq[String] = seq.flatMap(_.text)
+  def texts: Seq[String] = delegate.flatMap(_.text)
 
-  def ownTexts: Seq[String] = seq.flatMap(_.ownText)
+  def ownTexts: Seq[String] = delegate.flatMap(_.ownText)
 
-  def boilerPipes: Seq[String] = seq.flatMap(_.boilerPipe)
+  def boilerPipes: Seq[String] = delegate.flatMap(_.boilerPipe)
 
   override def uri: String = uris.headOption.orNull
 
@@ -54,15 +53,15 @@ case class Elements[+T <: Unstructured](override val seq: List[T]) extends Unstr
 
   override def formattedCode: Option[String] = formattedCodes.headOption
 
-  override def findAll(selector: String) = new Elements(seq.flatMap(_.findAll(selector)))
+  override def findAll(selector: String) = new Elements(delegate.flatMap(_.findAll(selector)))
 
   override def findAllWithSiblings(selector: String, range: Range) =
-    new Elements(seq.flatMap(_.findAllWithSiblings(selector, range)))
+    new Elements(delegate.flatMap(_.findAllWithSiblings(selector, range)))
 
-  override def children(selector: CSSQuery) = new Elements(seq.flatMap(_.children(selector)))
+  override def children(selector: CSSQuery) = new Elements(delegate.flatMap(_.children(selector)))
 
   override def childrenWithSiblings(selector: CSSQuery, range: Range) =
-    new Elements(seq.flatMap(_.childrenWithSiblings(selector, range)))
+    new Elements(delegate.flatMap(_.childrenWithSiblings(selector, range)))
 
   override def ownText: Option[String] = ownTexts.headOption
 
@@ -76,5 +75,5 @@ case class Elements[+T <: Unstructured](override val seq: List[T]) extends Unstr
 
   override def src: Option[String] = srcs.headOption
 
-  override def breadcrumb: Option[Seq[String]] = seq.head.breadcrumb
+  override def breadcrumb: Option[Seq[String]] = delegate.head.breadcrumb
 }

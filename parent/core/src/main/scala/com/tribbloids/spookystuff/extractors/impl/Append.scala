@@ -2,9 +2,8 @@ package com.tribbloids.spookystuff.extractors.impl
 
 import com.tribbloids.spookystuff.extractors._
 import com.tribbloids.spookystuff.row._
-import org.apache.spark.ml.dsl.utils.refl.ScalaType._
 import com.tribbloids.spookystuff.utils.SpookyUtils
-import org.apache.spark.sql.types._
+import org.apache.spark.ml.dsl.utils.refl.ScalaType._
 
 import scala.reflect.ClassTag
 
@@ -26,13 +25,14 @@ case class Append[+T: ClassTag] private (
     val getSeqResolved = get.AsSeq.resolve(tt).lift
     val exprResolved = expr.resolve(tt).lift
 
-    PartialFunction { v1: FR =>
-      val lastOption = exprResolved.apply(v1)
-      val oldOption = getSeqResolved.apply(v1)
+    {
+      case v1: FR =>
+        val lastOption = exprResolved.apply(v1)
+        val oldOption = getSeqResolved.apply(v1)
 
-      oldOption.toSeq.flatMap { old =>
-        SpookyUtils.asIterable[T](old)
-      } ++ lastOption
+        oldOption.toSeq.flatMap { old =>
+          SpookyUtils.asIterable[T](old)
+        } ++ lastOption
     }
   }
 

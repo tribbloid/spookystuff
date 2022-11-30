@@ -228,7 +228,7 @@ case class Doc(
   def contentType: String = parsedContentType.toString
 
   lazy val tikaMimeType: MimeType = MimeTypes.getDefaultMimeTypes.forName(mimeType)
-  lazy val fileExtensions: Seq[String] = tikaMimeType.getExtensions.asScala.map { str =>
+  lazy val fileExtensions: Seq[String] = tikaMimeType.getExtensions.asScala.toSeq.map { str =>
     if (str.startsWith(".")) str.splitAt(1)._2
     else str
   }

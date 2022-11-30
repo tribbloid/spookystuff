@@ -25,7 +25,6 @@ include(
     ":parent:core",
     ":parent:web",
     ":parent:integration",
-    ":parent:unused",
     ":spookystuff-showcase"
 )
 

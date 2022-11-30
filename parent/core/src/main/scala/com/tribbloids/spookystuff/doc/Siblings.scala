@@ -1,6 +1,5 @@
 package com.tribbloids.spookystuff.doc
 
-import scala.collection.mutable
 
 /**
   * Created by peng on 18/07/15.
@@ -15,26 +14,26 @@ object Siblings {
   //      override def apply(): mutable.Builder[T, Elements[T]] = newBuilder[T]
   //    }
 
-  def newBuilder[T <: Unstructured]: mutable.Builder[T, Siblings[T]] = new mutable.Builder[T, Siblings[T]] {
-
-    val buffer = new mutable.ArrayBuffer[T]()
-
-    override def +=(elem: T): this.type = {
-      buffer += elem
-      this
-    }
-
-    override def result(): Siblings[T] = new Siblings(buffer.toList)
-
-    override def clear(): Unit = buffer.clear()
-  }
+//  def newBuilder[T <: Unstructured]: mutable.Builder[T, Siblings[T]] = new mutable.Builder[T, Siblings[T]] {
+//
+//    val buffer = new mutable.ArrayBuffer[T]()
+//
+//    override def +=(elem: T): this.type = {
+//      buffer += elem
+//      this
+//    }
+//
+//    override def result(): Siblings[T] = new Siblings(buffer.toList)
+//
+//    override def clear(): Unit = buffer.clear()
+//  }
 }
 
 class Siblings[+T <: Unstructured](
-    override val seq: List[T],
+    override val delegate: List[T],
     val delimiter: String = " ",
     val formattedDelimiter: String = "\n"
-) extends Elements[T](seq) {
+) extends Elements[T](delegate) {
 
   override def text =
     if (texts.isEmpty) None

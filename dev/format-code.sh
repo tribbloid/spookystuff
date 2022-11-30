@@ -8,5 +8,7 @@ source "${CRDIR}/.shared.sh"
 
 cd "${FWDIR}" || exit
 
+"${FWDIR}"/gradlew clean scalafix -Dorg.gradle.parallel=false "${BUILD_PROFILES[@]}"
+ # consumes too much memory to run in parallel
+
 scalafmt
-exec "${FWDIR}"/gradlew clean scalafix "${BUILD_PROFILES[@]}"

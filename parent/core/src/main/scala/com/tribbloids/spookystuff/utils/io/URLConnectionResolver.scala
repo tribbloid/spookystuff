@@ -56,14 +56,13 @@ case class URLConnectionResolver(
       override lazy val getLastModified: Long = conn.getLastModified
 
       override lazy val _metadata: ResourceMetadata = {
-        val map = conn.getHeaderFields.asScala.toMap
-          .mapValues { _list =>
-            val list = _list.asScala
-            val result =
-              if (list.size == 1) list.head
-              else list
-            result.asInstanceOf[Any]
-          }
+        val map = conn.getHeaderFields.asScala.toMap.view.mapValues { _list =>
+          val list = _list.asScala
+          val result =
+            if (list.size == 1) list.head
+            else list
+          result.asInstanceOf[Any]
+        }.toMap
         ResourceMetadata._EAV(map)
       }
 

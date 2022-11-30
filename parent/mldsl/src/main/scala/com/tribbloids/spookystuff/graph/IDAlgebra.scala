@@ -13,7 +13,7 @@ trait IDAlgebra[ID, -NodeData, -EdgeData] {
 
   final def retryUntilNotReserved(fn: => ID): ID = {
 
-    for (i <- 1 to 10) {
+    for (_ <- 1 to 10) {
       val result = fn
       if (!reserved.contains(result)) return result
     }

@@ -32,7 +32,7 @@ object StaticGraph {
     def fromSeq(
         nodes: Seq[_NodeLike],
         edges: Seq[_Edge],
-        node_+ : CommonTypes.Binary[NodeData] = nodeAlgebra.+
+        node_+ : CommonTypes.Binary[NodeData] = nodeAlgebra.add
     ): GG
 
     final def fromModule(graph: _Module): GG = {
@@ -43,7 +43,7 @@ object StaticGraph {
         case _ctg(v)      => v
       }
     }
-    def union(v1: GG, v2: GG, node_+ : CommonTypes.Binary[NodeData] = nodeAlgebra.+): GG
+    def union(v1: GG, v2: GG, node_+ : CommonTypes.Binary[NodeData] = nodeAlgebra.add): GG
 
     // TODO: this API need to change to facilitate big Heads and Tails in the format of RDD
     /**
@@ -58,8 +58,8 @@ object StaticGraph {
     def serial(
         base: (GG, _Heads),
         top: (GG, _Tails),
-        node_+ : CommonTypes.Binary[NodeData] = nodeAlgebra.+,
-        edge_+ : CommonTypes.Binary[EdgeData] = edgeAlgebra.+
+        node_+ : CommonTypes.Binary[NodeData] = nodeAlgebra.add,
+        edge_+ : CommonTypes.Binary[EdgeData] = edgeAlgebra.add
     ): (GG, Map[_Edge, _Edge]) = {
 
       val uu: GG = union(base._1, top._1, node_+)

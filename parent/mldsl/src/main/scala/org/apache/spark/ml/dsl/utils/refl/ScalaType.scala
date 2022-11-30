@@ -9,7 +9,7 @@ import org.apache.spark.sql.catalyst.ScalaReflection.universe._
 import org.apache.spark.sql.types._
 
 import scala.collection.Map
-import scala.language.{existentials, higherKinds, implicitConversions}
+import scala.language.{existentials, implicitConversions}
 import scala.reflect.ClassTag
 
 /**
@@ -18,7 +18,8 @@ import scala.reflect.ClassTag
   * DataType. Or use UnoptimizedScalaUDT (which is abandoned in Spark 2.x) Will be simplified again once Spark 2.2
   * introduces UserDefinedType V2.
   */
-//TODO: change to ThreadLocal to bypass thread safety?
+//TODO: change to ThreadLocal to be faster?
+//TODO: should be named "TypeMagnet"
 //TODO: this should be a codec
 trait ScalaType[T] extends ReflectionLock with Serializable {
 
@@ -245,16 +246,16 @@ object ScalaType extends ScalaType_Level2 {
 
       val result = Seq[(Any, TypeTag[_])](
         Array(0: Byte),
-        false,
+        false: Boolean,
         new Date(0),
         new Timestamp(0),
-        0.0,
+        0.0: Double,
         0: Float,
         0: Byte,
         0: Int,
-        0L,
+        0L: Long,
         0: Short,
-        "a"
+        "a": String
       )
       result
     }

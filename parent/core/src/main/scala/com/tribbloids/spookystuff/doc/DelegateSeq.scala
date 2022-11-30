@@ -4,16 +4,16 @@ import scala.language.implicitConversions
 
 trait DelegateSeq[+T] extends Seq[T] {
 
-  def seq: Seq[T]
+  def delegate: Seq[T]
 
-  override def length: Int = seq.length
+  override def length: Int = delegate.length
 
-  override def iterator: Iterator[T] = seq.iterator
+  override def iterator: Iterator[T] = delegate.iterator
 
-  override def apply(idx: Int): T = seq.apply(idx)
+  override def apply(idx: Int): T = delegate.apply(idx)
 }
 
 object DelegateSeq {
 
-  implicit def unbox[T](v: DelegateSeq[T]): Seq[T] = v.seq
+  implicit def unbox[T](v: DelegateSeq[T]): Seq[T] = v.delegate
 }

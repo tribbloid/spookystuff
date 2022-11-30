@@ -7,6 +7,7 @@ import org.apache.spark.ml.dsl.utils.{?, HasEagerInnerObjects, ObjectSimpleNameM
 import org.apache.spark.sql.catalyst.util.CaseInsensitiveMap
 
 import java.util.Properties
+import scala.collection.MapView
 import scala.collection.immutable.ListMap
 import scala.language.implicitConversions
 import scala.util.Try
@@ -24,7 +25,7 @@ trait EAV extends HasEagerInnerObjects with EqualBy with RootTagged with Seriali
 
   override lazy val rootTag: String = Xml.ROOT
 
-  lazy val _asMap: ListMap[String, Bound] = {
+  private lazy val _asMap: ListMap[String, Bound] = {
 
     val keys = internal.keys.toSeq
     val kvs = keys.sorted.map { k =>
@@ -35,7 +36,7 @@ trait EAV extends HasEagerInnerObjects with EqualBy with RootTagged with Seriali
   lazy val asCaseInsensitiveMap: CaseInsensitiveMap[Bound] = CaseInsensitiveMap(_asMap)
 
   def asMap: Map[String, Bound] = _asMap
-  lazy val asMapOfString: Map[String, String] = asMap.mapValues(v => "" + v)
+  lazy val asMapOfString: MapView[String, String] = asMap.view.mapValues(v => "" + v)
 
   // TODO: change to declaredAttrs?
   override def _equalBy: Any = asMap

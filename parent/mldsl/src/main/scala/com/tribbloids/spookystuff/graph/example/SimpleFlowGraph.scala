@@ -22,7 +22,7 @@ object SimpleFlowGraph extends Algebra[SimpleFlowGraph] {
 
   object DataAlgebraProto extends DataAlgebra[String] {
 
-    override def +(v1: String, v2: String): String = v1 + v2
+    override def add(v1: String, v2: String): String = v1 + v2
   }
 
   override def nodeAlgebra: DataAlgebra[graph.example.SimpleFlowGraph.NodeData] = DataAlgebra.NoAmbiguity().ForSome

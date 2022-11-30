@@ -34,7 +34,7 @@ trait PairwiseConversionMixin extends FunSpecx {
     def register(): Unit = {
       from match {
         case Repr(Some(r1), l1) =>
-          val description = s"${from.classStr}: ${from.valueStr}"
+          val description = s"[${from.valueStr} <: ${from.classStr}]"
           registryKeys += description
           registry.put1(
             description,

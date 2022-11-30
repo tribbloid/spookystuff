@@ -21,7 +21,7 @@ object HtmlElement {
 
     import JavaConverters._
 
-    e.parents().asScala.map(_.tagName()).reverse :+ e.tagName()
+    e.parents().asScala.toSeq.map(_.tagName()).reverse :+ e.tagName()
   }
 
   def fromBytes(content: Array[Byte], charSet: String, mimeType: String, uri: String): HtmlElement = {
@@ -97,7 +97,7 @@ class HtmlElement private (
 
   override def findAllWithSiblings(selector: String, range: Range) = {
 
-    val found = parsed.select(selector).asScala
+    val found = parsed.select(selector).asScala.toSeq
     expand(found, range)
   }
 
@@ -129,6 +129,7 @@ class HtmlElement private (
     val found: Seq[Element] = parsed
       .select(selector)
       .asScala
+      .toSeq
       .filter(elem => parsed.children().contains(elem)) // TODO: switch to more efficient NodeFilter
     new Elements(found.map(new HtmlElement(_)).toList)
   }
@@ -138,6 +139,7 @@ class HtmlElement private (
     val found: Seq[Element] = parsed
       .select(selector)
       .asScala
+      .toSeq
       .filter(elem => parsed.children().contains(elem)) // TODO: ditto
     expand(found, range)
   }

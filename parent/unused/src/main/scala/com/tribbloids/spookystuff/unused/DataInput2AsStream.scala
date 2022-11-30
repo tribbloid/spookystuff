@@ -1,4 +1,4 @@
-package org.apache.spark.rdd.spookystuff
+package com.tribbloids.spookystuff.unused
 
 import org.mapdb.DataInput2
 

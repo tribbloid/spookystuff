@@ -62,10 +62,11 @@ case class DataRow(
 
   def getInt(field: Field): Option[Int] = getTyped[Int](field)
 
-  lazy val toMap: Map[String, Any] = data
+  lazy val toMap: Map[String, Any] = data.view
     .filterKeys(_.isSelected)
     .map(identity)
     .map(tuple => tuple._1.name -> tuple._2)
+    .toMap
 
   override def toMessage_>> : TreeIR.Leaf[Map[String, Any]] = {
 

@@ -39,10 +39,9 @@ class UDFTransformerSuite extends FunSpecx {
       .mkString("\n")
       .shouldBe(
         """
-        |[Reza$,25,WrappedArray(reza$),WrappedArray(reza)]
-        |[Holden$,25,WrappedArray(holden$),WrappedArray(holden)]
+        |[Reza$,25,ArraySeq(reza$),ArraySeq(reza)]
+        |[Holden$,25,ArraySeq(holden$),ArraySeq(holden)]
         |""".stripMargin
       )
-    //    end.show(false)
   }
 }

@@ -25,12 +25,12 @@ class TestFlattenPlan extends SpookyEnvFixture {
       .mkString("\n")
       .shouldBe(
         """
-        |Map(_1 -> WrappedArray(1, 2, 3), B -> 1)
-        |Map(_1 -> WrappedArray(4, 5, 6), _2 -> WrappedArray(b, c, d), B -> 4)
-        |Map(_1 -> WrappedArray(1, 2, 3), B -> 2)
-        |Map(_1 -> WrappedArray(4, 5, 6), _2 -> WrappedArray(b, c, d), B -> 5)
-        |Map(_1 -> WrappedArray(1, 2, 3), B -> 3)
-        |Map(_1 -> WrappedArray(4, 5, 6), _2 -> WrappedArray(b, c, d), B -> 6)
+        |Map(_1 -> ArraySeq(1, 2, 3), B -> 1)
+        |Map(_1 -> ArraySeq(4, 5, 6), _2 -> ArraySeq(b, c, d), B -> 4)
+        |Map(_1 -> ArraySeq(1, 2, 3), B -> 2)
+        |Map(_1 -> ArraySeq(4, 5, 6), _2 -> ArraySeq(b, c, d), B -> 5)
+        |Map(_1 -> ArraySeq(1, 2, 3), B -> 3)
+        |Map(_1 -> ArraySeq(4, 5, 6), _2 -> ArraySeq(b, c, d), B -> 6)
       """.stripMargin,
         sort = true
       )
@@ -46,12 +46,12 @@ class TestFlattenPlan extends SpookyEnvFixture {
       .mkString("\n")
       .shouldBe(
         """
-        |Map(_1 -> WrappedArray(1, 2, 3), A -> 1)
-        |Map(_1 -> WrappedArray(4, 5, 6), _2 -> WrappedArray(b, c, d), A -> 4)
-        |Map(_1 -> WrappedArray(1, 2, 3), A -> 2)
-        |Map(_1 -> WrappedArray(4, 5, 6), _2 -> WrappedArray(b, c, d), A -> 5)
-        |Map(_1 -> WrappedArray(1, 2, 3), A -> 3)
-        |Map(_1 -> WrappedArray(4, 5, 6), _2 -> WrappedArray(b, c, d), A -> 6)
+        |Map(_1 -> ArraySeq(1, 2, 3), A -> 1)
+        |Map(_1 -> ArraySeq(4, 5, 6), _2 -> ArraySeq(b, c, d), A -> 4)
+        |Map(_1 -> ArraySeq(1, 2, 3), A -> 2)
+        |Map(_1 -> ArraySeq(4, 5, 6), _2 -> ArraySeq(b, c, d), A -> 5)
+        |Map(_1 -> ArraySeq(1, 2, 3), A -> 3)
+        |Map(_1 -> ArraySeq(4, 5, 6), _2 -> ArraySeq(b, c, d), A -> 6)
       """.stripMargin,
         sort = true
       )
@@ -68,11 +68,11 @@ class TestFlattenPlan extends SpookyEnvFixture {
       .shouldBe(
         """
         |Map(_1 -> 1)
-        |Map(_2 -> WrappedArray(b, c, d), _1 -> 4)
+        |Map(_2 -> ArraySeq(b, c, d), _1 -> 4)
         |Map(_1 -> 2)
-        |Map(_2 -> WrappedArray(b, c, d), _1 -> 5)
+        |Map(_2 -> ArraySeq(b, c, d), _1 -> 5)
         |Map(_1 -> 3)
-        |Map(_2 -> WrappedArray(b, c, d), _1 -> 6)
+        |Map(_2 -> ArraySeq(b, c, d), _1 -> 6)
       """.stripMargin,
         sort = true
       )
@@ -88,10 +88,10 @@ class TestFlattenPlan extends SpookyEnvFixture {
       .mkString("\n")
       .shouldBe(
         """
-        |Map(_1 -> WrappedArray(1, 2, 3))
-        |Map(_1 -> WrappedArray(4, 5, 6), _2 -> WrappedArray(b, c, d), A -> b)
-        |Map(_1 -> WrappedArray(4, 5, 6), _2 -> WrappedArray(b, c, d), A -> c)
-        |Map(_1 -> WrappedArray(4, 5, 6), _2 -> WrappedArray(b, c, d), A -> d)
+        |Map(_1 -> ArraySeq(1, 2, 3))
+        |Map(_1 -> ArraySeq(4, 5, 6), _2 -> ArraySeq(b, c, d), A -> b)
+        |Map(_1 -> ArraySeq(4, 5, 6), _2 -> ArraySeq(b, c, d), A -> c)
+        |Map(_1 -> ArraySeq(4, 5, 6), _2 -> ArraySeq(b, c, d), A -> d)
       """.stripMargin,
         sort = true
       )
