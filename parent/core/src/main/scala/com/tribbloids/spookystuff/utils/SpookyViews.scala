@@ -124,13 +124,13 @@ abstract class SpookyViews extends SpookyViews_Imp0 {
       result
     }
 
-    def storageInfo: RDDInfo = {
-      val rddInfos = sc.getRDDStorageInfo
-      rddInfos.find(_.id == self.id).get
+    def storageInfoOpt: Option[RDDInfo] = {
+      val infos = sc.getRDDStorageInfo
+      infos.find(_.id == self.id)
     }
 
     def isPersisted: Boolean = {
-      storageInfo.storageLevel != StorageLevel.NONE
+      storageInfoOpt.forall(_.storageLevel != StorageLevel.NONE)
     }
 
     def assertIsBeacon(): Unit = {
