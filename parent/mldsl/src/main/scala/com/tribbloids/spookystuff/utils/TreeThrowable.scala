@@ -28,10 +28,6 @@ object TreeThrowable {
           self.getClass.getName + ": " + self.getMessage
       }
     }
-
-    override protected lazy val argStrings: Seq[String] = {
-      DSLUtils.stackTracesShowStr(self.getStackTrace).split("\n")
-    }
   }
 
   /**

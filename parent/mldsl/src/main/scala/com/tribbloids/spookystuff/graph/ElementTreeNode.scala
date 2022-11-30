@@ -35,8 +35,6 @@ trait ElementTreeNode[D <: Domain] extends TreeView.Immutable[ElementTreeNode[D]
 
   final override def simpleString(maxFields: Int): String = prefix + viewWFormat.toString
 
-  override protected def argStrings: Seq[String] = mergedPath
-
   lazy val paths: Seq[Seq[String]] = {
     val rootPath = Seq(viewWFormat.format.shortNameOf(view.element))
     if (children.nonEmpty) {

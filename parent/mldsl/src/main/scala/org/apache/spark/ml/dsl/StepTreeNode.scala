@@ -8,8 +8,6 @@ trait StepTreeNode[BaseType <: StepTreeNode[BaseType]] extends TreeView.Immutabl
 
   val self: StepLike
 
-  override protected def argStrings: Seq[String] = mergedPath
-
   lazy val paths: Seq[Seq[String]] = {
     val rootPath = Seq(self.name)
     if (children.nonEmpty) {
