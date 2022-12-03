@@ -2,7 +2,6 @@ package org.apache.spark.ml.dsl.utils.messaging
 
 import org.json4s.Formats
 
-import scala.language.implicitConversions
 
 trait CodecLevel1 {
 

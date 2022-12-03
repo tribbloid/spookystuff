@@ -1,7 +1,6 @@
 package org.apache.spark.ml.dsl.utils.data
 
 import com.tribbloids.spookystuff.testutils.FunSpecx
-import org.apache.hadoop.fs.Path
 import org.apache.spark.ml.dsl.utils.data.EAV.Impl
 
 import scala.reflect.ClassTag

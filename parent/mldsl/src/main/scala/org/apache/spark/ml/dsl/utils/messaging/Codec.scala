@@ -6,7 +6,6 @@ import org.apache.spark.ml.util.Identifiable
 import org.json4s.JsonAST.{JArray, JObject}
 import org.json4s.jackson.JsonMethods
 import org.json4s.{Extraction, Formats, JField, JValue}
-import org.slf4j.LoggerFactory
 
 import scala.language.implicitConversions
 import scala.xml.{Elem, NodeSeq, XML}
@@ -40,8 +39,6 @@ abstract class Codec[Proto] extends CodecLevel1 with RootTagged {
       Some(rootTagOvrd)
     )
   }
-
-  def selfType: ScalaType[Proto]
 
   def toMessage_>>(v: Proto): M
   def toProto_<<(v: M, rootTag: String): Proto
@@ -79,21 +76,6 @@ abstract class Codec[Proto] extends CodecLevel1 with RootTagged {
     val nodes: Elem = xmlStr2Node(xml)
 
     _fromXMLNode[T](nodes)
-  }
-  final def _toXMLAndBack[T: Codec](proto: T): T = {
-    val codec = implicitly[Codec[T]]
-    val xml = codec.toWriter_>>(proto).prettyXML
-    LoggerFactory
-      .getLogger(this.getClass)
-      .info(
-        s"""
-         |========================= XML ========================
-         |$xml
-         |======================== /XML ========================
-      """.stripMargin
-      )
-    val back = this._fromXML[T](xml)
-    back
   }
 
   final def xmlStr2Node(xml: String): Elem = {

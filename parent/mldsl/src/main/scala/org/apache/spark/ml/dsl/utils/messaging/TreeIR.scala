@@ -3,7 +3,6 @@ package org.apache.spark.ml.dsl.utils.messaging
 import com.tribbloids.spookystuff.tree.TreeView
 
 import scala.collection.immutable.ListMap
-import scala.language.implicitConversions
 
 /**
   * IR stands for "Intermediate Representation"

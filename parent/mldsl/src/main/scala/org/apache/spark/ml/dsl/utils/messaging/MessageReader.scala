@@ -1,6 +1,5 @@
 package org.apache.spark.ml.dsl.utils.messaging
 
-import org.apache.spark.ml.dsl.utils.refl.ScalaType
 import org.json4s.JValue
 
 /**
@@ -11,8 +10,6 @@ class MessageReader[Self](
     override val messageMF: Manifest[Self] // TODO: change to ScalaType
 ) extends Codec[Self] {
   type M = Self
-
-  override def selfType: ScalaType[Self] = messageMF
 
   override def toMessage_>>(v: Self): Self = v
   override def toProto_<<(v: Self, rootTag: String): Self = v

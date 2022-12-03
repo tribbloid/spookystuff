@@ -1,6 +1,5 @@
 package org.apache.spark.ml.dsl.utils.messaging
 
-import org.apache.spark.ml.dsl.utils.refl.ScalaType
 import org.apache.spark.util.Utils
 import org.json4s.Formats
 
@@ -8,8 +7,6 @@ import scala.reflect.ClassTag
 import scala.util.Try
 
 abstract class MessageRelay[Proto: ClassTag] extends Codec[Proto] {
-
-  override def selfType: ScalaType[Proto] = implicitly[ClassTag[Proto]]
 
   override def toMessage_>>(v: Proto): M = v match {
     case vv: ProtoAPI =>

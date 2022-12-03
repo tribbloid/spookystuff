@@ -2,7 +2,6 @@ package com.tribbloids.spookystuff.utils
 
 import com.tribbloids.spookystuff.tree.TreeView
 import com.tribbloids.spookystuff.utils.TreeThrowable.ExceptionWithCauses
-import org.apache.spark.ml.dsl.utils.DSLUtils
 
 import scala.util.{Failure, Success, Try}
 
