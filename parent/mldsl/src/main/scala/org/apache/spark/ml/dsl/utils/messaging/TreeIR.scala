@@ -67,10 +67,9 @@ object TreeIR {
 
   lazy val _CLASS_NAME: String = classOf[TreeIR[_]].getSimpleName
 
-  case class _Relay[V]() extends MessageRelay[TreeIR[V]] {
+  case class _Relay[V]() extends Relay.>>[TreeIR[V]] {
 
-    type M = Any
-    override val messageMF: Manifest[Any] = Manifest.Any
+    type Msg = Any
 
     override def toProto_<<(v: Any, rootTag: String): TreeIR[V] = {
 

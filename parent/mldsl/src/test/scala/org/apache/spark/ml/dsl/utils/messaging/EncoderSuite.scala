@@ -3,7 +3,7 @@ package org.apache.spark.ml.dsl.utils.messaging
 import com.tribbloids.spookystuff.testutils.FunSpecx
 import org.apache.spark.ml.dsl.utils.messaging.TestBeans._
 
-class MessageWriterSuite extends FunSpecx {
+class EncoderSuite extends FunSpecx {
 
   val user1 = User("1")
   val user2 = User("2", Some(Roles(Seq("r1", "r2"))))
@@ -12,7 +12,7 @@ class MessageWriterSuite extends FunSpecx {
   describe("memberStr") {
 
     it("can print nested case classes") {
-      val writer = MessageWriter(user1)
+      val writer = Encoder(user1)
       writer.memberStrPretty.shouldBe(
         """
           |User(
@@ -23,7 +23,7 @@ class MessageWriterSuite extends FunSpecx {
       )
     }
     it("can print nested seq") {
-      val writer = MessageWriter(user2)
+      val writer = Encoder(user2)
       writer.memberStrPretty.shouldBe(
         """
           |User(
@@ -42,7 +42,7 @@ class MessageWriterSuite extends FunSpecx {
     }
 
     it("can print nested map") {
-      val writer = MessageWriter(map)
+      val writer = Encoder(map)
       writer.memberStrPretty.shouldBe(
         """
           |Map2(

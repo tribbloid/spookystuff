@@ -58,7 +58,7 @@ trait DynamicParamsMixin extends Params with Dynamic {
 
     val reader = new MessageReader[T]() {
 
-      override def formats: Formats = super.formats + FallbackSerializer
+      override def fallbackFormats: Formats = super.fallbackFormats + FallbackSerializer
     }
 
     val result = reader.Param(this, name, doc)

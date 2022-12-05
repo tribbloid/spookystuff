@@ -9,7 +9,7 @@ import org.json4s.{Extraction, Formats, JValue}
 import java.io.File
 import scala.xml.NodeSeq
 
-case class MessageWriter[M](
+case class Encoder[M](
     message: M,
     formats: Formats = XMLFormats.defaultFormats,
     rootTagOverride: Option[String] = None
@@ -17,7 +17,7 @@ case class MessageWriter[M](
     with RootTagged {
 
   override lazy val rootTag: String = rootTagOverride.getOrElse(
-    Codec.RootTagOf(message).default
+    Relay.RootTagOf(message).default
   )
 
   // TODO: move into case class WFormats(.) and enable lazy val
@@ -62,11 +62,11 @@ case class MessageWriter[M](
     else compactXML
   }
 
-  def cast[T: Codec](formats: Formats = formats): T = {
-    MessageReader._fromJValue[T](toJValue(formats))
+  def cast[T](formats: Formats = formats)(reader: Relay[T]#Decoder): T = {
+    reader.fromJValue(toJValue(formats))
   }
 
-  // TODO: delegate to Nested
+  // TODO: delegate to TreeIR
   def getMemberStr(
       start: String = "(",
       sep: String = ",",
@@ -80,7 +80,7 @@ case class MessageWriter[M](
     def listRecursion(elems: Traversable[Any]): List[String] = {
       elems.toList
         .map { vv =>
-          val str = MessageWriter(vv).getMemberStr(start, sep, end, indentFn, recursion + 1)
+          val str = Encoder(vv).getMemberStr(start, sep, end, indentFn, recursion + 1)
           DSLUtils.indent(str, indentStr)
         }
     }
@@ -89,7 +89,7 @@ case class MessageWriter[M](
       map.toSeq
         .map {
           case (kk, vv) =>
-            val vvStr = MessageWriter(vv).getMemberStr(start, sep, end, indentFn, recursion + 1)
+            val vvStr = Encoder(vv).getMemberStr(start, sep, end, indentFn, recursion + 1)
             DSLUtils.indent(s"$kk=$vvStr", indentStr)
         }
     }
@@ -157,4 +157,4 @@ case class MessageWriter[M](
   )
 }
 
-object MessageWriter {}
+object Encoder {}

@@ -1,13 +1,13 @@
 package org.apache.spark.sql.utils
 
-import org.apache.spark.ml.dsl.utils.messaging.{MessageAPI_<<, MessageRelay}
+import org.apache.spark.ml.dsl.utils.messaging.{MessageAPI, Relay}
 import org.apache.spark.sql.types.DataType
 import org.json4s.JValue
 
 /**
   * Created by peng on 31/01/17.
   */
-object DataTypeRelay extends MessageRelay[DataType] {
+object DataTypeRelay extends Relay.<<[DataType] {
 
   def toJsonAST(dataType: DataType): JValue = {
     dataType.jsonValue
@@ -17,13 +17,13 @@ object DataTypeRelay extends MessageRelay[DataType] {
     DataType.parseDataType(jv)
   }
 
-  override def toMessage_>>(v: DataType): M = M(
+  override def toMessage_>>(v: DataType): Msg = Msg(
     toJsonAST(v)
   )
 
-  case class M(
+  case class Msg(
       dataType: JValue
-  ) extends MessageAPI_<< {
+  ) extends MessageAPI.<< {
 
     override def toProto_<< : DataType = fromJsonAST(dataType)
   }

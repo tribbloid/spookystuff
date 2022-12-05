@@ -39,7 +39,7 @@ class MessageReaderSuite extends AbstractDFDSuite {
   it("can read generated timestamp") {
     val obj = TimeWrapper(date)
 
-    val xmlStr = MessageWriter(obj).toXMLStr(pretty = false)
+    val xmlStr = Encoder(obj).toXMLStr(pretty = false)
     xmlStr.shouldBeLike(
       s"<TimeWrapper><time>......</time></TimeWrapper>"
     )
@@ -139,7 +139,7 @@ class MessageReaderSuite extends AbstractDFDSuite {
 
   it("reading an object from a converted string should work") {
 
-    val xmlStr = MessageWriter(User(name = "30")).toXMLStr(pretty = false)
+    val xmlStr = Encoder(User(name = "30")).toXMLStr(pretty = false)
     xmlStr.shouldBe(
       "<User><name>30</name></User>"
     )
@@ -169,7 +169,7 @@ class MessageReaderSuite extends AbstractDFDSuite {
 
   it("Multipart case class JSON read should be broken") {
     val ex = Multipart("aa", "bb")(3)
-    val jsonStr = MessageWriter(ex).toJSON()
+    val jsonStr = Encoder(ex).toJSON()
     jsonStr.shouldBe(
       s"""
          |{
@@ -182,7 +182,7 @@ class MessageReaderSuite extends AbstractDFDSuite {
     val reader = implicitly[MessageReader[Multipart]]
 
     intercept[MappingException] {
-      MessageReader._fromJSON[Multipart](jsonStr)(reader)
+      reader.fromJSON(jsonStr)
     }
   }
 }

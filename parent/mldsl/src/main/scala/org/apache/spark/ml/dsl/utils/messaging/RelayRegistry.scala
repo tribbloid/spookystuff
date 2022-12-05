@@ -8,10 +8,10 @@ import scala.util.{Failure, Success, Try}
 /**
   * add for runtime lookup of Relay/Reader in case implicit information for generic programming was erased.
   */
-trait CodecRegistry {
+trait RelayRegistry {
 
   // failed lookup won't be reattempted as it is still too slow.
-  val registry: mutable.Map[ScalaType[_], Try[Codec[_]]] = mutable.Map.empty
+  val registry: mutable.Map[ScalaType[_], Try[Relay[_]]] = mutable.Map.empty
 
   /**
     * this is a bunch of makeshift rules that allow type class pattern to be used in runtime
@@ -28,9 +28,9 @@ trait CodecRegistry {
     *
     * @return
     */
-  def tryFindCodecFor[T](v: T): Try[Codec[T]] = {
-    val result: Try[Codec[_]] = v match {
-      case v: Codec[_]#API =>
+  def tryFindCodecFor[T](v: T): Try[Relay[T]] = {
+    val result: Try[Relay[_]] = v match {
+      case v: Relay[_]#API =>
         Success(v.outer)
       case _ =>
         val clazz = v.getClass
@@ -39,9 +39,9 @@ trait CodecRegistry {
         registry.getOrElseUpdate(
           scalaType, {
             val companions = scalaType.utils.baseCompanionObjects
-            val codecOpt = companions.find(_.isInstanceOf[Codec[_]])
+            val codecOpt = companions.find(_.isInstanceOf[Relay[_]])
             codecOpt match {
-              case Some(codec: Codec[_]) =>
+              case Some(codec: Relay[_]) =>
                 Success(codec)
               case _ =>
                 Failure(new UnsupportedOperationException(s"$clazz has no companion Codec"))
@@ -49,22 +49,22 @@ trait CodecRegistry {
           }
         )
     }
-    result.map(_.asInstanceOf[Codec[T]])
+    result.map(_.asInstanceOf[Relay[T]])
   }
 
-  def findCodecFor[T](v: T): Codec[T] = tryFindCodecFor(v).get
+  def findCodecFor[T](v: T): Relay[T] = tryFindCodecFor(v).get
 
-  def findCodecOrDefault[T: Manifest](v: T): Codec[T] = tryFindCodecFor(v).getOrElse(
+  def findCodecOrDefault[T: Manifest](v: T): Relay[T] = tryFindCodecFor(v).getOrElse(
     new MessageReader[T]
   )
 }
 
-object CodecRegistry {
+object RelayRegistry {
 
   /**
     * the registry is empty at the beginning.
     */
-  object Default extends CodecRegistry {}
+  object Default extends RelayRegistry {}
 
 //  /**
 //    * the registry is populated by every codec on object creation

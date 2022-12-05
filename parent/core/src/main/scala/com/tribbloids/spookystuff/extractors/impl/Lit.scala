@@ -1,10 +1,11 @@
 package com.tribbloids.spookystuff.extractors.impl
 
+import com.tribbloids.spookystuff
 import com.tribbloids.spookystuff.extractors
 import com.tribbloids.spookystuff.extractors.GenExtractor.Static
 import com.tribbloids.spookystuff.extractors._
 import com.tribbloids.spookystuff.utils.EqualBy
-import org.apache.spark.ml.dsl.utils.messaging.Relay_>>
+import org.apache.spark.ml.dsl.utils.messaging.Relay
 import org.apache.spark.ml.dsl.utils.refl.UnreifiedObjectType
 import org.apache.spark.sql.catalyst.ScalaReflection.universe.TypeTag
 import org.apache.spark.sql.types._
@@ -19,7 +20,7 @@ case class Lit[T, +R](value: R, dataType: DataType) extends Static[T, R] with Eq
 
   def valueOpt: Option[R] = Option(value)
 
-  override lazy val toString = valueOpt
+  override lazy val toString: String = valueOpt
     .map(_.toString)
     .getOrElse("NULL")
 
@@ -28,7 +29,7 @@ case class Lit[T, +R](value: R, dataType: DataType) extends Static[T, R] with Eq
   }
 }
 
-object Lit extends Relay_>>[Lit[_, _]] {
+object Lit extends Relay[Lit[_, _]] {
 
   def apply[T: TypeTag](v: T): Lit[FR, T] = {
     apply[FR, T](v, UnreifiedObjectType.summon[T])
@@ -40,5 +41,8 @@ object Lit extends Relay_>>[Lit[_, _]] {
 
   lazy val NULL: Lit[FR, Null] = erased(null)
 
-  override def toMessage_>>(v: Lit[_, _]): extractors.impl.Lit.M = v.value
+  type Msg = Any
+  override def toMessage_>>(v: Lit[_, _]): extractors.impl.Lit.Msg = v.value
+
+  override def toProto_<<(v: spookystuff.extractors.impl.Lit.Msg, rootTag: String): Lit[_, _] = ???
 }

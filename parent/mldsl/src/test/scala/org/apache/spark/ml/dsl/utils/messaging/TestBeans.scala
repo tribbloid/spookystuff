@@ -1,5 +1,6 @@
 package org.apache.spark.ml.dsl.utils.messaging
 
+
 import java.util.Date
 
 object TestBeans {
@@ -25,13 +26,15 @@ object TestBeans {
 
   case class WithCodec(str: String)
 
-  object WithCodec extends MessageRelay[WithCodec] {
+  object WithCodec extends Relay[WithCodec] {
     override def toMessage_>>(v: WithCodec): String = v.str
 
-    override type M = String
+    override type Msg = String
+
+    override def toProto_<<(v: String, rootTag: String): WithCodec = ???
   }
 
   case class CodecWrapper(vs: WithCodec) extends MessageAPI
 
-  object CodecWrapper extends AutomaticRelay[CodecWrapper]
+  object CodecWrapper extends AutomaticRelay[CodecWrapper] {}
 }

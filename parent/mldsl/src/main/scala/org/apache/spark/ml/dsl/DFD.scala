@@ -1,13 +1,13 @@
 package org.apache.spark.ml.dsl
 
 import org.apache.spark.ml.PipelineStage
-import org.apache.spark.ml.dsl.utils.messaging.{MessageAPI_<<, MessageRelay}
+import org.apache.spark.ml.dsl.utils.messaging.{MessageAPI, Relay}
 import org.apache.spark.sql.types.StructField
 
 import scala.collection.mutable
 import scala.language.implicitConversions
 
-object DFD extends MessageRelay[DFD] {
+object DFD extends Relay.<<[DFD] {
 
   final val DEFAULT_COMPACTION: PathCompaction = Compactions.PruneDownPath
   final val DEFAULT_SCHEMA_ADAPTATION: SchemaAdaptation = SchemaAdaptation.FailFast
@@ -20,7 +20,7 @@ object DFD extends MessageRelay[DFD] {
   def apply(s: Symbol): Source = s
   def apply(s: StructField): Source = s
 
-  override def toMessage_>>(flow: DFD): M = {
+  override def toMessage_>>(flow: DFD): Msg = {
 
     flow.propagateCols(DFD.DEFAULT_COMPACTION)
 
@@ -34,7 +34,7 @@ object DFD extends MessageRelay[DFD] {
     val rightWrappers = flow.rightTails.map(SimpleStepWrapper)
     val rightTrees = rightWrappers.map(flow.ForwardNode)
 
-    this.M(
+    this.Msg(
       Declaration(
         steps.map(Step.toMessage_>>)
       ),
@@ -55,11 +55,11 @@ object DFD extends MessageRelay[DFD] {
   def FORWARD_RIGHT: String = "forwardRight"
   def FORWARD_LEFT: String = "forwardLeft"
 
-  case class M(
+  case class Msg(
       declarations: Declaration,
       flowLines: Seq[GraphRepr],
       headIDs: HeadIDs
-  ) extends MessageAPI_<< {
+  ) extends MessageAPI.<< {
 
     implicit def stepsToView(steps: StepMap[String, StepLike]): StepMapView = new StepMapView(steps)
 
@@ -68,7 +68,7 @@ object DFD extends MessageRelay[DFD] {
       val steps = declarations.stage.map(_.toProto_<<)
       var buffer: StepMap[String, StepLike] = StepMap(steps.map(v => v.id -> v): _*)
 
-      def treeNodeReprToLink(repr: StepTreeNode.M): Unit = {
+      def treeNodeReprToLink(repr: StepTreeNode.Msg): Unit = {
         if (!buffer.contains(repr.id)) {
           buffer = buffer.updated(repr.id, Source(repr.id, repr.dataTypes.map(_.toProto_<<)))
         }
@@ -97,11 +97,11 @@ object DFD extends MessageRelay[DFD] {
   }
 
   case class Declaration(
-      stage: Seq[Step.M]
+      stage: Seq[Step.Msg]
   )
 
   case class GraphRepr(
-      flowLine: Seq[StepTreeNode.M],
+      flowLine: Seq[StepTreeNode.Msg],
       `@direction`: Option[String] = None
   )
 

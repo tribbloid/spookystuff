@@ -8,10 +8,10 @@ class CodecRegistrySuite extends FunSpecx {
   it("findRuntimeCodec() can find Codec as companion object") {
 
     val v = Multipart("a", "b")()
-    val codec = CodecRegistry.Default.findCodecFor(v)
+    val codec = RelayRegistry.Default.findCodecFor(v)
     assert(codec == Multipart)
 
-    val codec2 = CodecRegistry.Default.findCodecFor(v)
+    val codec2 = RelayRegistry.Default.findCodecFor(v)
     assert(codec2 == Multipart)
   }
 
@@ -19,7 +19,7 @@ class CodecRegistrySuite extends FunSpecx {
 
     val v = User("a")
     intercept[UnsupportedOperationException] {
-      CodecRegistry.Default.findCodecFor(v)
+      RelayRegistry.Default.findCodecFor(v)
     }
   }
 }

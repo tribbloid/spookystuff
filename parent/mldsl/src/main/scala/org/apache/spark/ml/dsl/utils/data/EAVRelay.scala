@@ -1,13 +1,13 @@
 package org.apache.spark.ml.dsl.utils.data
 
 import org.apache.spark.ml.dsl.utils.DSLUtils
-import org.apache.spark.ml.dsl.utils.messaging.{MessageRelay, TreeIR}
+import org.apache.spark.ml.dsl.utils.messaging.{Relay, TreeIR}
 import org.apache.spark.ml.dsl.utils.refl.ScalaType
 
 import java.lang.reflect.{InvocationTargetException, Method}
 import scala.reflect.ClassTag
 
-trait EAVRelay[I <: EAV] extends MessageRelay[I] with EAVBuilder[I] {
+trait EAVRelay[I <: EAV] extends Relay[I] with EAVBuilder[I] {
 
   final override type Impl = I
   final override def Impl: EAVRelay[I] = this
@@ -16,10 +16,9 @@ trait EAVRelay[I <: EAV] extends MessageRelay[I] with EAVBuilder[I] {
   // https://stackoverflow.com/questions/55801443/in-scala-how-can-an-inner-case-class-consistently-override-a-method
   def fromCore(v: EAV.Impl): I
 
-  final type M = Any
-  override def messageMF: Manifest[M] = implicitly[Manifest[M]]
+  final type Msg = Any
 
-  override def toMessage_>>(eav: I): M = {
+  override def toMessage_>>(eav: I): Msg = {
     val raw: TreeIR.Leaf[I] = TreeIR.Leaf(eav)
 
     val expanded = raw.depthFirstTransform
@@ -40,7 +39,7 @@ trait EAVRelay[I <: EAV] extends MessageRelay[I] with EAVBuilder[I] {
     expanded.toMessage_>>
   }
 
-  override def toProto_<<(m: M, rootTag: String): I = {
+  override def toProto_<<(m: Msg, rootTag: String): I = {
 
     val relay = TreeIR._Relay[Any]()
     val ir: TreeIR[Any] = relay.toProto_<<(m, rootTag)

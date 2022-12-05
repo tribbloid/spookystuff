@@ -11,7 +11,7 @@ import com.tribbloids.spookystuff.utils.{ShippingMarks, TreeThrowable}
 import org.apache.hadoop.conf.Configuration
 import org.apache.spark._
 import org.apache.spark.broadcast.Broadcast
-import org.apache.spark.ml.dsl.utils.messaging.MessageWriter
+import org.apache.spark.ml.dsl.utils.messaging.Encoder
 import org.apache.spark.ml.dsl.utils.refl.ScalaType
 import org.apache.spark.rdd.RDD
 import org.apache.spark.sql.{DataFrame, SQLContext}
@@ -211,7 +211,7 @@ case class SpookyContext(
           //        classOf[Map[_,_]].isAssignableFrom(classTag[T].runtimeClass) => //use classOf everywhere?
           val canonRdd = rdd.map(map => map.asInstanceOf[Map[_, _]].canonizeKeysToColumnNames)
 
-          val jsonDS = sqlContext.createDataset[String](canonRdd.map(map => MessageWriter(map).compactJSON))
+          val jsonDS = sqlContext.createDataset[String](canonRdd.map(map => Encoder(map).compactJSON))
           val dataFrame = sqlContext.read.json(jsonDS)
           dfToFetchedDS(dataFrame)
 

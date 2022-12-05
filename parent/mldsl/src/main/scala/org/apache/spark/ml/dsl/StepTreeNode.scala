@@ -1,7 +1,7 @@
 package org.apache.spark.ml.dsl
 
 import com.tribbloids.spookystuff.tree.TreeView
-import org.apache.spark.ml.dsl.utils.messaging.{MessageAPI_<<, MessageRelay}
+import org.apache.spark.ml.dsl.utils.messaging.{MessageAPI, Relay}
 import org.apache.spark.sql.utils.DataTypeRelay
 
 trait StepTreeNode[BaseType <: StepTreeNode[BaseType]] extends TreeView.Immutable[StepTreeNode[BaseType]] {
@@ -46,29 +46,29 @@ trait StepTreeNode[BaseType <: StepTreeNode[BaseType]] extends TreeView.Immutabl
   }
 }
 
-object StepTreeNode extends MessageRelay[StepTreeNode[_]] {
+object StepTreeNode extends Relay.<<[StepTreeNode[_]] {
 
-  override def toMessage_>>(v: StepTreeNode[_]): M = {
+  override def toMessage_>>(v: StepTreeNode[_]): Msg = {
     val base = v.self match {
       case source: Source =>
-        M(
+        Msg(
           source.id,
           dataTypes = source.dataTypes
             .map(DataTypeRelay.toMessage_>>)
         )
       case _ =>
-        M(v.self.id)
+        Msg(v.self.id)
     }
     base.copy(
       stage = v.children.map(this.toMessage_>>)
     )
   }
 
-  case class M(
+  case class Msg(
       id: String,
-      dataTypes: Set[DataTypeRelay.M] = Set.empty,
-      stage: Seq[M] = Nil
-  ) extends MessageAPI_<< {
+      dataTypes: Set[DataTypeRelay.Msg] = Set.empty,
+      stage: Seq[Msg] = Nil
+  ) extends MessageAPI.<< {
     override def toProto_<< : StepTreeNode[_] = ???
   }
 }

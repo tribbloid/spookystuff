@@ -4,7 +4,7 @@ import com.tribbloids.spookystuff.SpookyContext
 import com.tribbloids.spookystuff.session.PythonDriver
 import com.tribbloids.spookystuff.utils.SpookyUtils
 import com.tribbloids.spookystuff.utils.lifespan.LocalCleanable
-import org.apache.spark.ml.dsl.utils.messaging.MessageWriter
+import org.apache.spark.ml.dsl.utils.messaging.Encoder
 import org.json4s.JsonAST.JValue
 import org.json4s.jackson.JsonMethods.parse
 
@@ -54,14 +54,14 @@ class PyBinding(
   }
 
   // TODO: so far, doesn't support nested object
-  def $MSG: Option[MessageWriter[JValue]] = {
+  def $MSG: Option[Encoder[JValue]] = {
 
     referenceOpt.flatMap { ref =>
       //        val jsonOpt = driver.evalExpr(s"$ref.__dict__")
       val jsonOpt = driver.evalExpr(s"json.dumps($ref.__dict__)")
       jsonOpt.map { json =>
         val jValue = parse(json)
-        MessageWriter(jValue)
+        Encoder(jValue)
       }
     }
   }

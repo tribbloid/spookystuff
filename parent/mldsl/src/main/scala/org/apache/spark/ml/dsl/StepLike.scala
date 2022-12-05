@@ -1,7 +1,7 @@
 package org.apache.spark.ml.dsl
 
 import org.apache.spark.ml.PipelineStage
-import org.apache.spark.ml.dsl.utils.messaging.{MessageAPI_<<, MessageRelay}
+import org.apache.spark.ml.dsl.utils.messaging.{MessageAPI, Relay}
 import org.apache.spark.ml.param.{ParamPair, Params}
 import org.apache.spark.sql.ColumnName
 import org.apache.spark.sql.types.DataType
@@ -45,11 +45,11 @@ trait StepLike extends DFDComponent {
   override def rightTailIDs: Seq[String] = Seq(id)
 }
 
-object Step extends MessageRelay[Step] {
+object Step extends Relay.<<[Step] {
 
   val paramMap: Option[JValue] = None
 
-  override def toMessage_>>(v: Step): M = {
+  override def toMessage_>>(v: Step): Msg = {
     import org.json4s.JsonDSL._
     import v._
 
@@ -64,7 +64,7 @@ object Step extends MessageRelay[Step] {
       )
     )
 
-    M(
+    Msg(
       id,
       stage.name,
       stage.tags,
@@ -75,7 +75,7 @@ object Step extends MessageRelay[Step] {
     )
   }
 
-  case class M(
+  case class Msg(
       id: String,
       name: String,
       tag: Set[String],
@@ -83,7 +83,7 @@ object Step extends MessageRelay[Step] {
       implementation: String,
       uid: Option[String] = None,
       params: Option[JValue] = None
-  ) extends MessageAPI_<< {
+  ) extends MessageAPI.<< {
 
     override lazy val toProto_<< : Step = {
 
@@ -102,7 +102,7 @@ object Step extends MessageRelay[Step] {
       Step(stage)
     }
 
-    // TODO: can we merge this into MessageRelay?
+    // TODO: can we merge this into Relay?
     def getAndSetParams(instance: Params, params: JValue): Unit = {
 //      implicit val format = Xml.defaultFormats
       params match {

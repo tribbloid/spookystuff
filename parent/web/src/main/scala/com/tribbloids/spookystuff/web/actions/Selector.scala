@@ -2,14 +2,14 @@ package com.tribbloids.spookystuff.web.actions
 
 import com.tribbloids.spookystuff.selenium.BySizzleSelector
 import com.tribbloids.spookystuff.utils.EqualBy
-import org.apache.spark.ml.dsl.utils.messaging.MessageRelay
+import org.apache.spark.ml.dsl.utils.messaging.Relay
 import org.apache.spark.ml.dsl.utils.refl.ScalaUDT
 import org.apache.spark.sql.types.SQLUserDefinedType
 import org.openqa.selenium.By
 
 import scala.language.implicitConversions
 
-object Selector extends MessageRelay[Selector] {
+object Selector extends Relay[Selector] {
 
   final val SCHEMA = "By.sizzleCssSelector"
 
@@ -47,9 +47,11 @@ object Selector extends MessageRelay[Selector] {
     Selector(bySizzle, v)
   }
 
-  override type M = String
+  override type Msg = String
 
   override def toMessage_>>(v: Selector): String = v.toString
+
+  override def toProto_<<(v: String, rootTag: String): Selector = ???
 }
 
 class SelectorUDT extends ScalaUDT[Selector]

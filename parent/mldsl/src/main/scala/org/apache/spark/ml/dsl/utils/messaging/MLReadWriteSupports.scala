@@ -11,7 +11,7 @@ import scala.language.existentials
   */
 object MLReadWriteSupports {
 
-  class MsgReadable[Obj: Codec]() extends MLReadable[Obj] {
+  class MsgReadable[Obj: Relay]() extends MLReadable[Obj] {
 
     //    object FlowReader extends MLReader[Flow] {
     //
@@ -30,28 +30,28 @@ object MLReadWriteSupports {
 
     override def read = {
 
-      implicitly[Codec[Obj]].toMLReader
+      implicitly[Relay[Obj]].toMLReader
     }
   }
 
-  implicit class MsgWritable[Obj: Codec](v: Obj) extends MLWritable {
+  implicit class MsgWritable[Obj: Relay](v: Obj) extends MLWritable {
 
     override def write = {
 
-      implicitly[Codec[Obj]].toMLWriter(v)
+      implicitly[Relay[Obj]].toMLWriter(v)
     }
   }
 
-  implicit class ReadWrite[Obj](val base: Codec[Obj]) {
+  implicit class ReadWrite[Obj](val base: Relay[Obj]) {
 
     def toMLReader: MLReader[Obj] = Reader(base)
 
     def toMLWriter(v: Obj) = {
-      Writer(base.toWriter_>>(v))
+      Writer(base.toEncoder_>>(v))
     }
   }
 
-  case class Reader[Obj](outer: Codec[Obj]) extends MLReader[Obj] {
+  case class Reader[Obj](outer: Relay[Obj]) extends MLReader[Obj] {
 
     // TODO: need impl
     override def load(path: String): Obj = {
@@ -65,7 +65,7 @@ object MLReadWriteSupports {
     }
   }
 
-  case class Writer[T](message: MessageWriter[T]) extends MLWriter with Serializable {
+  case class Writer[T](message: Encoder[T]) extends MLWriter with Serializable {
 
     //    def saveJSON(path: String): Unit = {
     //      val resolver = HDFSResolver(sc.hadoopConfiguration)
