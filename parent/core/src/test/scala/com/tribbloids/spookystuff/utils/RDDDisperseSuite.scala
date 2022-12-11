@@ -1,7 +1,7 @@
 package com.tribbloids.spookystuff.utils
 
 import com.tribbloids.spookystuff.testutils.{SpookyEnvFixture, TestHelper}
-import org.apache.spark.ml.dsl.utils.ScalaNameMixin
+import org.apache.spark.ml.dsl.utils.ObjectSimpleNameMixin
 import org.apache.spark.rdd.RDD
 import org.apache.spark.storage.StorageLevel
 import org.apache.spark.util.LongAccumulator
@@ -108,7 +108,7 @@ class RDDDisperseSuite extends SpookyEnvFixture {
     rdd.unpersist(true)
   }
 
-  trait Facet extends ScalaNameMixin {
+  trait Facet extends ObjectSimpleNameMixin {
 
     val acc: LongAccumulator = sc.longAccumulator(this.facetName)
     var nPart: Int = -1

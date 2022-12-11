@@ -12,14 +12,14 @@ trait AttrLike[T] extends Serializable with EqualBy {
 
   final lazy val allNames: Seq[String] = (Seq(primaryName) ++ aliases).distinct
 
-  def ->(v: T): Magnets.KV[T] = {
+  def ->(v: T): Magnets.AttrValueMag[T] = {
 
-    Magnets.KV[T](this.primaryName, Some(v))
+    Magnets.AttrValueMag[T](this.primaryName, Some(v))
   }
 
-  def -?>(vOpt: T `?` _): Magnets.KV[T] = {
+  def -?>(vOpt: T `?` _): Magnets.AttrValueMag[T] = {
 
-    Magnets.KV[T](this.primaryName, vOpt.asOption)
+    Magnets.AttrValueMag[T](this.primaryName, vOpt.asOption)
   }
 
   def explicitValue: T

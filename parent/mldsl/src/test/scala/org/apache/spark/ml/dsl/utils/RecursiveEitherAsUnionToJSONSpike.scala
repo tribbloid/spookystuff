@@ -2,7 +2,7 @@ package org.apache.spark.ml.dsl.utils
 
 import RecursiveEitherAsUnionToJSONSpike._
 import com.tribbloids.spookystuff.testutils.FunSpecx
-import org.apache.spark.ml.dsl.utils.messaging.{MessageReader, Encoder}
+import org.apache.spark.ml.dsl.utils.messaging.{Encoder, MessageReader}
 import org.scalatest.Ignore
 import org.slf4j.LoggerFactory
 

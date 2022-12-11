@@ -2,11 +2,11 @@ package org.apache.spark.ml.dsl.utils
 
 import com.tribbloids.spookystuff.testutils.FunSpecx
 
-class NullSafeSuite extends FunSpecx {
+class NullSafetySuite extends FunSpecx {
 
   val v = "abc"
 
-  def validate(nullSafe: => NullSafe.Magnet[String]): NullSafe.Magnet[String] = {
+  def validate(nullSafe: => NullSafety.Magnet[String]): NullSafety.Magnet[String] = {
 
     assert(nullSafe.asOption.get == v)
     nullSafe

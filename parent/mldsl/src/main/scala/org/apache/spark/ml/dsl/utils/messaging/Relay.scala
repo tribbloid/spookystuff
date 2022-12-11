@@ -32,7 +32,7 @@ abstract class Relay[Proto] extends RelayLevel1 with RootTagged {
 
   def fallbackFormats: Formats = Relay.defaultFormats
 
-  implicit def findCodec: Relay[Proto] = this
+  implicit def findRelay: Relay[Proto] = this
   implicit def toEncoder_>>(v: Proto): Encoder[Msg] = {
 
     val msg = toMessage_>>(v)

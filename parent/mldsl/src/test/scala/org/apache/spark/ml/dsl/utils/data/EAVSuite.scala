@@ -1,43 +1,37 @@
 package org.apache.spark.ml.dsl.utils.data
 
 import com.tribbloids.spookystuff.testutils.FunSpecx
-import org.apache.spark.ml.dsl.utils.data.EAV.Impl
-
-import scala.reflect.ClassTag
 
 class EAVSuite extends FunSpecx {
 
-  val wellformed = Impl(
+  import EAVSuite._
+  import EAVSystem.NoAttr._
+
+  val wellformed = EAVSystem.NoAttr.From(
     "int" -> 1,
     "double" -> 2.5,
     "itr" -> Seq("a", "b"),
-    "map" -> Impl("a" -> 1, "b" -> 2),
+    "map" -> EAVSystem.NoAttr.From("a" -> 1, "b" -> 2),
     "path" -> "file://home/dir"
   )
 
-  val nested = wellformed :++ Impl(
+  val nested = wellformed :++ EAVSystem.NoAttr.From(
     "children" -> wellformed
   )
 
-  val withNull = wellformed :++ Impl("nullable" -> null)
+  val withNull = wellformed :++ EAVSystem.NoAttr.From("nullable" -> null)
 
-  case class WithEnum(source: EAV) extends EAV {
-    override type VV = Any
-    override def ctg: ClassTag[Any] = getCtg
-
-    object enumField extends Attr[String]()
-  }
-
-  val withEnum: WithEnum = WithEnum(wellformed.updated("enumField" -> "bb"))
+  val withEnum = WithEnum._EAV(wellformed.updated("enumField" -> "bb").internal)
 
   it("wellformed <=> JSON") {
-    val o = wellformed
+
+    val o: _EAV = wellformed
     val json = o.toJSON()
     json.shouldBe(
       """
         |{
-        |  "int" : 1,
         |  "double" : 2.5,
+        |  "int" : 1,
         |  "itr" : [ "a", "b" ],
         |  "map" : {
         |    "a" : 1,
@@ -47,7 +41,7 @@ class EAVSuite extends FunSpecx {
         |}
       """.stripMargin
     )
-    val back: Impl = Impl.fromJSON(json)
+    val back = EAVSystem.NoAttr.relay.fromJSON(json)
     assert(back == o)
   }
 
@@ -78,7 +72,7 @@ class EAVSuite extends FunSpecx {
         |}
       """.stripMargin
     )
-    val back: Impl = Impl.fromJSON(json)
+    val back = EAVSystem.NoAttr.relay.fromJSON(json)
     assert(back == nested)
   }
 
@@ -101,7 +95,7 @@ class EAVSuite extends FunSpecx {
         |}
       """.stripMargin
     )
-    val back: Impl = Impl.fromJSON(json)
+    val back = EAVSystem.NoAttr.relay.fromJSON(json)
     assert(back == withNull)
   }
 
@@ -113,6 +107,15 @@ class EAVSuite extends FunSpecx {
 }
 
 object EAVSuite {
+
+  object WithEnum extends EAVSystem {
+
+    case class _EAV(internal: collection.Map[String, Any]) extends ThisEAV {
+      override type Bound = Any
+
+      object enumField extends Attr[String]()
+    }
+  }
 
   object EE extends Enumeration {
 

@@ -1,6 +1,5 @@
 package org.apache.spark.ml.dsl.utils.messaging
 
-
 trait RelayLevel1 {
 
 //  def formats: Formats = Codec.defaultFormats

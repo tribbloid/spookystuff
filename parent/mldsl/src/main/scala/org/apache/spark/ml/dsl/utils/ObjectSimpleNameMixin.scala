@@ -1,6 +1,6 @@
 package org.apache.spark.ml.dsl.utils
 
-trait ScalaNameMixin {
+trait ObjectSimpleNameMixin {
 
   @transient lazy val objectSimpleName: String = {
     this.getClass.getSimpleName

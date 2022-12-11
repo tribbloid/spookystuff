@@ -95,7 +95,8 @@ object Wpost {
         case _ =>
           impl.output(uri, WriteMode.Overwrite) { out =>
             val length = IOUtils.copy(entity.getContent, out.stream)
-            val md: ResourceMetadata = out.metadata.root.asMap.updated("length", length)
+
+            val md: ResourceMetadata = out.metadata.root.updated("length" -> length)
             NoDoc(
               backtrace = List(this),
               cacheLevel = DocCacheLevel.NoCache,

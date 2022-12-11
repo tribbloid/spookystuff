@@ -5,7 +5,7 @@ import scala.language.implicitConversions
 /**
   * a magnet wrapper for Option
   */
-object NullSafe {
+object NullSafety {
 
 //  object Val extends IsMutable
   final class Var extends Serializable

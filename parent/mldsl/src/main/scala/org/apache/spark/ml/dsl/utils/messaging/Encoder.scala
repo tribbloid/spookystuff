@@ -157,4 +157,13 @@ case class Encoder[M](
   )
 }
 
-object Encoder {}
+object Encoder {
+
+  trait HasEncoder[T] {
+
+    implicit def toEncoder(v: T)(
+        implicit
+        relay: Relay[T]
+    ): Encoder[relay.Msg] = relay.toEncoder_>>(v)
+  }
+}

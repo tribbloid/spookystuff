@@ -6,10 +6,10 @@ class ScalaNameMixinSuite extends FunSpecx {
 
   it("can process anonymous function dependent object") {
 
-    object impl extends ScalaNameMixin
+    object impl extends ObjectSimpleNameMixin
     def getImpl = {
 
-      object impl extends ScalaNameMixin
+      object impl extends ObjectSimpleNameMixin
 
       impl
     }

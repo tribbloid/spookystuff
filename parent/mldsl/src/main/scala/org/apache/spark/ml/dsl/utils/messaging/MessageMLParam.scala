@@ -7,13 +7,12 @@ import org.apache.spark.annotation.DeveloperApi
   */
 @DeveloperApi
 class MessageMLParam[Obj](
-                           outer: Relay[Obj]#Decoder,
-                           parent: String,
-                           name: String,
-                           doc: String,
-                           isValid: Obj => Boolean
+    outer: Relay[Obj]#Decoder,
+    parent: String,
+    name: String,
+    doc: String,
+    isValid: Obj => Boolean
 ) extends org.apache.spark.ml.param.Param[Obj](parent, name, doc, isValid) {
-
 
   override def jsonEncode(value: Obj): String = {
 

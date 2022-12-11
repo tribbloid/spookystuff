@@ -107,8 +107,8 @@ object Element {
   }
 
   case class Node[T <: Domain](
-                                data: T#NodeData,
-                                _equalBy: T#ID
+      data: T#NodeData,
+      _equalBy: T#ID
   )(
       implicit
       val algebra: Algebra[T]

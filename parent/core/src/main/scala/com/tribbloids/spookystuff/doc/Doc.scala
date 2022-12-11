@@ -58,7 +58,7 @@ case class NoDoc(
     backtrace: Trace,
     override val timeMillis: Long = System.currentTimeMillis(),
     override val cacheLevel: DocCacheLevel.Value = DocCacheLevel.All,
-    override val metadata: ResourceMetadata = Map.empty[String, Any]
+    override val metadata: ResourceMetadata = ResourceMetadata.empty
 ) extends Serializable
     with DocOption {
 
@@ -126,7 +126,7 @@ case class Doc(
     override val cacheLevel: DocCacheLevel.Value = DocCacheLevel.All,
     httpStatus: Option[StatusLine] = None,
     override val metadata: ResourceMetadata =
-      ResourceMetadata.proto // for customizing parsing TODO: remove, delegate to CSVElement.
+      ResourceMetadata.empty // for customizing parsing TODO: remove, delegate to CSVElement.
 ) extends DocOption
     with EqualBy {
 
@@ -306,7 +306,10 @@ case class Doc(
     )(spooky)
   }
 
-  def setMetadata(tuples: (String, Any)*): Doc = this.copy(
-    metadata = this.metadata.asMap ++ Map(tuples: _*)
-  )
+  def setMetadata(tuples: (String, Any)*): Doc = {
+
+    this.copy(
+      metadata = this.metadata ++: ResourceMetadata.From.tuple(tuples: _*)
+    )
+  }
 }

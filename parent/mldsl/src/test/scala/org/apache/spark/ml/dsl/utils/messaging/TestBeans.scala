@@ -1,6 +1,5 @@
 package org.apache.spark.ml.dsl.utils.messaging
 
-
 import java.util.Date
 
 object TestBeans {

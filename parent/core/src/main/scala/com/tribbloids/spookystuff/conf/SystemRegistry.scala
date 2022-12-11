@@ -40,18 +40,6 @@ trait SystemRegistry {
 
       TreeThrowable.&&&(trials)
     }
-
-//    def tryCreateEnabled(): Unit = {
-//
-//      try {
-//        createEnabled()
-//      } catch {
-//        case e: Throwable =>
-//          LoggerFactory
-//            .getLogger(this.getClass)
-//            .error("Initialization partially failed", e)
-//      }
-//    }
   }
 
   // useless at the moment

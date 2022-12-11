@@ -3,7 +3,6 @@ package com.tribbloids.spookystuff.utils.io
 import com.tribbloids.spookystuff.utils.lifespan.LocalCleanable
 import org.apache.commons.io.output.NullOutputStream
 import org.apache.spark.ml.dsl.utils.LazyVar
-import org.apache.spark.ml.dsl.utils.data.{EAV, EAVCore}
 
 import java.io.{IOException, InputStream, OutputStream}
 import scala.language.implicitConversions
@@ -69,13 +68,6 @@ abstract class Resource extends LocalCleanable {
 
   final def isExisting: Boolean = Try(_requireExisting()).isSuccess
 
-//    try {
-//    requireExisting
-//  } catch {
-//    case e: Exception =>
-////      throw new IOException(s"Resource ${getURI} does not exist", e)
-//  }
-
   def getContentType: String
   def getLength: Long
   def getStatusCode: Option[Int] = None
@@ -88,9 +80,13 @@ abstract class Resource extends LocalCleanable {
 
   case object metadata {
 
+    // TODO: this should not be necessary
+
     final lazy val root: ResourceMetadata = {
-      val reflective = Resource.resourceParser(Resource.this)
-      new ResourceMetadata(reflective ++: _metadata)
+
+      val reflective: ResourceMetadata = Resource.resourceParser.apply(Resource.this)
+      val result = reflective.++:(_metadata)
+      result
     }
 
     final lazy val all: ResourceMetadata = {
@@ -105,7 +101,7 @@ abstract class Resource extends LocalCleanable {
         }
       }
 
-      val result = new ResourceMetadata(root :++ childMaps)
+      val result = root :++ ResourceMetadata._EAV(childMaps)
       result
     }
 
@@ -122,7 +118,7 @@ abstract class Resource extends LocalCleanable {
   }
 }
 
-object Resource extends {
+object Resource {
 
   trait IOView {
 
@@ -134,7 +130,7 @@ object Resource extends {
     implicit def asResource[R <: Resource, T](io: R#_IOView[T]): R = io.outer
   }
 
-  val resourceParser: EAVCore.ReflectionParser[Resource] = EAV.Impl.ReflectionParser[Resource]()
+  val resourceParser = ResourceMetadata.ReflectionParser[Resource]()
 
   final val DIR = "directory"
   final val FILE = "file"

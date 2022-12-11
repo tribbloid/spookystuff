@@ -68,7 +68,7 @@ object FSMParserDSL extends DSL {
 
       val collapseEntryNodes = proto.core.replicate() {
         case e2._equalBy => e1._equalBy
-        case v @ _  => v
+        case v @ _       => v
       }
 
       new Operand(collapseEntryNodes, e1)

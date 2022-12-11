@@ -74,7 +74,7 @@ abstract class ExecutionPlan(
       case e: Throwable =>
         LoggerFactory
           .getLogger(this.getClass)
-          .error("Deploy partially failed", e)
+          .error("Deployment of some plugin(s) has failed", e)
     }
     rdd()
   }

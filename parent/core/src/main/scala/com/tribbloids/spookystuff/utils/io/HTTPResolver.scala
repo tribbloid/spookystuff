@@ -165,7 +165,7 @@ case class HTTPResolver(
         val mapped = _readResponse.getAllHeaders.map { header =>
           header.getName -> header.getValue
         }.toSeq
-        ResourceMetadata.fromUntypedTuples(mapped: _*)
+        ResourceMetadata.From.tuple(mapped: _*)
       }
 
       override def cleanImpl(): Unit = {
