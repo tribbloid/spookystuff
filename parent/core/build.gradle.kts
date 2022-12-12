@@ -18,5 +18,5 @@ dependencies {
     api("com.googlecode.juniversalchardet:juniversalchardet:1.0.3")
     api("org.jsoup:jsoup:1.15.3")
     api("com.syncthemall:boilerpipe:1.2.2")
-    api("org.mapdb:mapdb:3.0.8")
+    api("org.mapdb:mapdb:3.0.8") // Don't upgrade! last version compatible with Java 8
 }

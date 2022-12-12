@@ -58,27 +58,25 @@ allprojects {
 
         withType<ScalaCompile> {
 
-//            targetCompatibility = jvmTarget
-
             scalaCompileOptions.apply {
 
                 loggingLevel = "verbose"
 
                 val compilerOptions =
 
-                        mutableListOf(
+                    mutableListOf(
 
-                                "-encoding", "UTF-8",
-                                "-unchecked", "-deprecation", "-feature",
+                        "-encoding", "UTF-8",
+                        "-unchecked", "-deprecation", "-feature",
 
-                                // CAUTION: DO NOT DOWNGRADE:
-                                // json4s, jackson-scala & paranamer depends on it
-                                "-g:vars",
+                        // CAUTION: DO NOT DOWNGRADE:
+                        // json4s, jackson-scala & paranamer depends on it
+                        "-g:vars",
 
-                                "-language:higherKinds",
+                        "-language:higherKinds",
 
-                                "-Xlint",
-                                "-Ywarn-unused",
+                        "-Xlint",
+                        "-Ywarn-unused",
 
 //                        "-Wunused:imports",
 
@@ -92,7 +90,7 @@ allprojects {
 //                    "-Xlint:option-implicit",
 //                    "-Xlint:implicit-not-found",
 //                    "-Xlint:implicit-recursion"
-                        )
+                    )
 
 //                if (vs.splainV.isNotEmpty()) {
 //                    compilerOptions.addAll(
@@ -111,7 +109,7 @@ allprojects {
 
                     // this may be over the top but the test code in macro & core frequently run implicit search on church encoded Nat type
                     jvmArgs = listOf(
-                            "-Xss256m"
+                        "-Xss256m"
                     )
                 }
             }
@@ -175,11 +173,6 @@ allprojects {
         }
 
         // see https://github.com/gradle/gradle/issues/13067
-        fun bothImpl(constraintNotation: Any) {
-            implementation(constraintNotation)
-            testFixturesApi(constraintNotation)
-        }
-
         fun bothProvided(constraintNotation: Any) {
             compileOnlyApi(constraintNotation)
             testFixturesApi(constraintNotation)
@@ -191,9 +184,7 @@ allprojects {
         bothProvided("${vs.scalaGroup}:scala-library:${vs.scalaV}")
         bothProvided("${vs.scalaGroup}:scala-reflect:${vs.scalaV}")
 
-        bothProvided(
-            "org.scala-lang.modules:scala-collection-compat_${vs.scalaBinaryV}:2.8.1"
-        )
+        bothProvided("org.scala-lang.modules:scala-collection-compat_${vs.scalaBinaryV}:2.9.0")
 
         bothProvided("org.apache.spark:spark-sql_${vs.scalaBinaryV}:${vs.sparkV}")
         bothProvided("org.apache.spark:spark-mllib_${vs.scalaBinaryV}:${vs.sparkV}")
