@@ -56,8 +56,6 @@ class WebActionSuite extends SpookyEnvFixture {
     it("-> memberStrPretty") {
       val str = action.memberStrPretty // TODO: add as a trait
 
-//      val codec: MessageWriter[_] = action
-
       str
         .replaceAllLiterally("com.tribbloids.spookystuff.actions.", "")
         .shouldBe(

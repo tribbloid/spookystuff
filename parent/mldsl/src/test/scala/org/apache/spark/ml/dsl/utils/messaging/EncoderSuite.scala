@@ -65,11 +65,11 @@ class EncoderSuite extends FunSpecx {
         """.stripMargin
       )
     }
-    it("can resolve codec of nested object if augmented by AutomaticRelay") {
-      val wrapper = CodecWrapper(WithCodec("abc"))
+    it("can resolve relay of nested object if augmented by AutomaticRelay") {
+      val wrapper = Relayed2(Relayed("abc"))
       wrapper.memberStrPretty.shouldBe(
         """
-          |CodecWrapper(
+          |Relayed2(
           |  abc
           |)
         """.stripMargin

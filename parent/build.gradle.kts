@@ -155,7 +155,7 @@ allprojects {
             // TODO: some of the following may no longer be necessary
             api("org.apache.httpcomponents:httpclient:4.5.2")
 
-            api("com.google.guava:guava:16.0.1")
+//            api("com.google.guava:guava:16.0.1")
             api("org.apache.commons:commons-compress:1.19")
             api("com.google.protobuf:protobuf-java:2.5.0")
 

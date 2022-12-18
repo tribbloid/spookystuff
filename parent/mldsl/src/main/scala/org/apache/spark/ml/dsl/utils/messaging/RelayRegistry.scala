@@ -16,7 +16,7 @@ trait RelayRegistry {
   /**
     * this is a bunch of makeshift rules that allow type class pattern to be used in runtime
     *
-    * if extending MessageCodec.API, use it
+    * if extending Relay#API, use it
     *
     * otherwise use the corresponding codec if its already in the registry
     *
@@ -28,7 +28,7 @@ trait RelayRegistry {
     *
     * @return
     */
-  def tryFindCodecFor[T](v: T): Try[Relay[T]] = {
+  def tryLookupFor[T](v: T): Try[Relay[T]] = {
     val result: Try[Relay[_]] = v match {
       case v: Relay[_]#API =>
         Success(v.outer)
@@ -39,12 +39,12 @@ trait RelayRegistry {
         registry.getOrElseUpdate(
           scalaType, {
             val companions = scalaType.utils.baseCompanionObjects
-            val codecOpt = companions.find(_.isInstanceOf[Relay[_]])
-            codecOpt match {
-              case Some(codec: Relay[_]) =>
-                Success(codec)
+            val rrOpt = companions.find(_.isInstanceOf[Relay[_]])
+            rrOpt match {
+              case Some(rr: Relay[_]) =>
+                Success(rr)
               case _ =>
-                Failure(new UnsupportedOperationException(s"$clazz has no companion Codec"))
+                Failure(new UnsupportedOperationException(s"$clazz has no Relay"))
             }
           }
         )
@@ -52,9 +52,9 @@ trait RelayRegistry {
     result.map(_.asInstanceOf[Relay[T]])
   }
 
-  def findCodecFor[T](v: T): Relay[T] = tryFindCodecFor(v).get
+  def lookupFor[T](v: T): Relay[T] = tryLookupFor(v).get
 
-  def findCodecOrDefault[T: Manifest](v: T): Relay[T] = tryFindCodecFor(v).getOrElse(
+  def lookupOrDefault[T: Manifest](v: T): Relay[T] = tryLookupFor(v).getOrElse(
     new MessageReader[T]
   )
 }

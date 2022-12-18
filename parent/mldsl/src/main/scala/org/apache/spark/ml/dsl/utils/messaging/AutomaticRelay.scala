@@ -24,19 +24,19 @@ abstract class AutomaticRelay[T <: Product: Manifest] extends Relay[T] {
         v match {
           case vs: Seq[_] =>
             vs.map { v: Any =>
-              val codec = RelayRegistry.Default.findCodecOrDefault(v)
-              codec.toMessage_>>(v)
+              val rr = RelayRegistry.Default.lookupOrDefault(v)
+              rr.toMessage_>>(v)
             }
           case m: Map[_, _] =>
             val list = m.toList.map {
               case (k: Any, v: Any) =>
-                val codec = RelayRegistry.Default.findCodecOrDefault(v)
-                k -> codec.toMessage_>>(v)
+                val rr = RelayRegistry.Default.lookupOrDefault(v)
+                k -> rr.toMessage_>>(v)
             }
             ListMap(list: _*)
           case v: Any =>
-            val codec = RelayRegistry.Default.findCodecOrDefault(v)
-            codec.toMessage_>>(v)
+            val rr = RelayRegistry.Default.lookupOrDefault(v)
+            rr.toMessage_>>(v)
         }
 
       }.execute

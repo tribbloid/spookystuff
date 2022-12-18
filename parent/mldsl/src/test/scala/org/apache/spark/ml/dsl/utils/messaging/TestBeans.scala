@@ -23,17 +23,17 @@ object TestBeans {
 
   // case object ObjectExample1 extends AbstractObjectExample
 
-  case class WithCodec(str: String)
+  case class Relayed(str: String)
 
-  object WithCodec extends Relay[WithCodec] {
-    override def toMessage_>>(v: WithCodec): String = v.str
+  object Relayed extends Relay[Relayed] {
+    override def toMessage_>>(v: Relayed): String = v.str
 
     override type Msg = String
 
-    override def toProto_<<(v: String, rootTag: String): WithCodec = ???
+    override def toProto_<<(v: String, rootTag: String): Relayed = ???
   }
 
-  case class CodecWrapper(vs: WithCodec) extends MessageAPI
+  case class Relayed2(vs: Relayed) extends MessageAPI
 
-  object CodecWrapper extends AutomaticRelay[CodecWrapper] {}
+  object Relayed2 extends AutomaticRelay[Relayed2] {}
 }

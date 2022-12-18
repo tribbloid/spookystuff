@@ -71,8 +71,8 @@ object PyConverter {
     // as deep as not inspecting case class constructor, if you do it all hell break loose
     // this limits class constructor to use only JSON compatible weak types, which is not a big deal.
     def scala2py(v: Any): (Seq[PyRef], String) = {
-      val codec = RelayRegistry.Default.findCodecOrDefault(v)
-      val json = codec.toEncoder_>>(v).prettyJSON
+      val rr = RelayRegistry.Default.lookupOrDefault(v)
+      val json = rr.toEncoder_>>(v).prettyJSON
 
       val code =
         s"""
