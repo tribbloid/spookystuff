@@ -2,6 +2,7 @@ package org.apache.spark.ml.dsl.utils.data
 
 import com.tribbloids.spookystuff.utils.{CommonUtils, EqualBy, TreeThrowable}
 import org.apache.spark.ml.dsl.utils.messaging.RootTagged
+import org.apache.spark.ml.dsl.utils.messaging.xml.Xml
 import org.apache.spark.ml.dsl.utils.{?, HasEagerInnerObjects, ObjectSimpleNameMixin}
 import org.apache.spark.sql.catalyst.util.CaseInsensitiveMap
 
@@ -21,7 +22,7 @@ trait EAV extends HasEagerInnerObjects with EqualBy with RootTagged with Seriali
 
   def system: EAVSystem
 
-  override lazy val rootTag = "root"
+  override lazy val rootTag: String = Xml.ROOT
 
   lazy val _asMap: ListMap[String, Bound] = {
 

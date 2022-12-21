@@ -13,7 +13,7 @@ class DFDReadWriteSuite extends AbstractDFDSuite {
 
   import DFDComponent._
   import org.apache.spark.ml.dsl.DFDSuite._
-  import org.apache.spark.ml.dsl.utils.messaging.MLReadWriteSupports._
+  import org.apache.spark.ml.dsl.utils.messaging.io.MLReadWriteSupports._
 
   TestHelper.TestSC
 

@@ -55,7 +55,7 @@ trait RelayRegistry {
   def lookupFor[T](v: T): Relay[T] = tryLookupFor(v).get
 
   def lookupOrDefault[T: Manifest](v: T): Relay[T] = tryLookupFor(v).getOrElse(
-    new MessageReader[T]
+    new Relay.ToSelf[T]
   )
 }
 

@@ -1,7 +1,7 @@
 package org.apache.spark.ml.dsl
 
 import com.tribbloids.spookystuff.tree.TreeView
-import org.apache.spark.ml.dsl.utils.messaging.{MessageAPI, Relay}
+import org.apache.spark.ml.dsl.utils.messaging.{MessageAPI, Relay, TreeIR}
 import org.apache.spark.sql.utils.DataTypeRelay
 
 trait StepTreeNode[BaseType <: StepTreeNode[BaseType]] extends TreeView.Immutable[StepTreeNode[BaseType]] {
@@ -48,20 +48,23 @@ trait StepTreeNode[BaseType <: StepTreeNode[BaseType]] extends TreeView.Immutabl
 
 object StepTreeNode extends Relay.<<[StepTreeNode[_]] {
 
-  override def toMessage_>>(v: StepTreeNode[_]): Msg = {
+  override def toMessage_>>(v: StepTreeNode[_]): IR_>> = {
     val base = v.self match {
       case source: Source =>
         Msg(
           source.id,
           dataTypes = source.dataTypes
-            .map(DataTypeRelay.toMessage_>>)
+            .map(DataTypeRelay.toMessageBody)
         )
       case _ =>
         Msg(v.self.id)
     }
-    base.copy(
-      stage = v.children.map(this.toMessage_>>)
-    )
+    TreeIR
+      .leaf(
+        base.copy(
+          stage = v.children.map(this.toMessageBody)
+        )
+      )
   }
 
   case class Msg(

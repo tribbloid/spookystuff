@@ -19,21 +19,26 @@ object TestBeans {
 
   case class Multipart(a: String, b: String)(c: Int = 10)
 
-  object Multipart extends MessageReader[Multipart] {}
+  object Multipart extends Relay.ToSelf[Multipart] {}
 
   // case object ObjectExample1 extends AbstractObjectExample
 
   case class Relayed(str: String)
 
-  object Relayed extends Relay[Relayed] {
-    override def toMessage_>>(v: Relayed): String = v.str
+  object Relayed extends Relay.ToMsg[Relayed] {
 
     override type Msg = String
 
-    override def toProto_<<(v: String, rootTag: String): Relayed = ???
+    override def toMessage_>>(v: Relayed): IR.Aux[String] = TreeIR.leaf(v.str)
+
+    override def toProto_<<(v: IR.Aux[String]): Relayed = ???
   }
 
-  case class Relayed2(vs: Relayed) extends MessageAPI
+  case class Relayed2(
+      v: Relayed,
+      vs1: Seq[Relayed] = Nil,
+      vs2: Map[Int, Relayed] = Map.empty
+  ) extends MessageAPI
 
   object Relayed2 extends AutomaticRelay[Relayed2] {}
 }

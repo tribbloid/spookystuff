@@ -1,7 +1,7 @@
 package org.apache.spark.ml.dsl.utils.data
 
 import org.apache.spark.ml.dsl.utils.DSLUtils
-import org.apache.spark.ml.dsl.utils.messaging.Encoder.HasEncoder
+import org.apache.spark.ml.dsl.utils.messaging.io.Encoder.HasEncoder
 import org.apache.spark.ml.dsl.utils.messaging.{Relay, TreeIR}
 
 import java.lang.reflect.{InvocationTargetException, Method}
@@ -93,48 +93,55 @@ trait EAVSystem {
       cc: ClassTag[Bound]
   ) extends Relay[_EAV] {
 
-    final type Msg = Any
+    final type IR_>> = TreeIR[Any]
+    final type IR_<< = TreeIR.Leaf[Any]
 
-    override def toMessage_>>(eav: _EAV): Msg = {
-      val raw: TreeIR.Leaf[_EAV] = TreeIR.Leaf(eav)
+    override def toMessage_>>(eav: _EAV): IR_>> = {
+      val raw: TreeIR.Leaf[_EAV] = TreeIR.leaf(eav)
 
-      val expanded = raw.depthFirstTransform
+      val expanded = raw.DepthFirstTransform
         .down[Any] {
-          case TreeIR.Leaf(v: EAV) =>
+          case ll @ TreeIR.Leaf(v: EAV, _) =>
             val sub = v.asMap.toSeq
             val subNodes: Seq[(String, TreeIR.Leaf[Any])] = sub.map {
               case (kk, vv) =>
-                kk -> TreeIR.Leaf[Any](vv)
+                kk -> TreeIR.leaf[Any](vv)
             }
 
-            TreeIR.Struct.Builder().fromKVs(subNodes: _*)
+            TreeIR.Builder(Some(ll.rootTag)).struct(subNodes: _*)
           case others @ _ =>
             others
         }
         .execute
 
-      expanded.toMessage_>>
+      expanded
     }
 
-    override def toProto_<<(m: Msg, rootTag: String): _EAV = {
+    override def toProto_<<(m: IR_<<): _EAV = {
 
-      val relay = TreeIR._Relay[Any]()
-      val ir: TreeIR[Any] = relay.toProto_<<(m, rootTag)
+      val canonical = {
+        m.explode.explodeStringMap()
+      }
 
-      val collected = ir.depthFirstTransform
+      val folded = canonical.DepthFirstTransform
         .up[Any, TreeIR.Leaf[Any]] {
-          case struct: TreeIR.Struct[_] =>
-            val map = struct.toMessage_>>
-            val eav = From.any.iterableInternal(map)
-            TreeIR.Leaf(eav)
+          case struct: TreeIR.StructTree[_, _] =>
+            val map = struct.body
+            val stringMap = map.map {
+              case (k, v) =>
+                ("" + k) -> v
+            }
+            val eav = From.any.iterableInternal(stringMap)
+            TreeIR.Builder(Some(struct.rootTag)).leaf(eav)
+          case ll: TreeIR.ListTree[_] =>
+            TreeIR.Builder(Some(ll.rootTag)).leaf(ll.body)
           case ll: TreeIR.Leaf[_] =>
-            ll.asInstanceOf[TreeIR.Leaf[Any]]
+            ll.upcast[Any]
         }
         .execute
 
-      collected.repr.asInstanceOf[_EAV]
+      folded.body.asInstanceOf[_EAV]
     }
-
   }
 
   case class ReflectionParser[TT]()(

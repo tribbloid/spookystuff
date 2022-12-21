@@ -54,13 +54,13 @@ abstract class AbstractMetrics extends MetricLike {
       useDisplayName: Boolean = true
   ) {
 
-    def toTreeIR: TreeIR.Struct[T] = {
+    def toTreeIR: TreeIR.StructTree[String, T] = {
       val cache = mutable.LinkedHashMap.empty[String, TreeIR[T]]
       val list = namedChildren(useDisplayName)
       list.foreach {
 
         case (_name: String, acc: Acc[_]) =>
-          fn(acc).foreach(v => cache += _name -> TreeIR.Leaf(v))
+          fn(acc).foreach(v => cache += _name -> TreeIR.leaf(v))
 
         case (_name: String, nested: AbstractMetrics) =>
           val name = nested.displayNameOvrd.getOrElse(_name)
@@ -70,7 +70,7 @@ abstract class AbstractMetrics extends MetricLike {
         case _ =>
           None
       }
-      TreeIR.Struct.Builder(Some(AbstractMetrics.this.productPrefix)).fromKVs(cache.toSeq: _*)
+      TreeIR.Builder(Some(AbstractMetrics.this.productPrefix)).struct(cache.toSeq: _*)
     }
 
     def toMap: Map[String, T] = toTreeIR.pathToValueMap.map {

@@ -7,6 +7,7 @@ import org.json4s._
   */
 //TODO: need testing
 object Xml {
+
   import scala.xml._
 
   /**
@@ -118,6 +119,8 @@ object Xml {
     }
   }
 
+  lazy val ROOT = "root"
+
   /**
     * Convert given JSON to XML. <p> Following rules are used in conversion. <ul> <li>JSON primitives are converted to
     * XML leaf elements</li> <li>JSON objects are converted to XML elements</li> <li>JSON arrays are recursively
@@ -172,7 +175,7 @@ object Xml {
 
     json match {
       case JObject(fields) => fields flatMap { case (n, v) => toXml(n, v) }
-      case x               => toXml("root", x)
+      case x               => toXml(ROOT, x)
     }
   }
 

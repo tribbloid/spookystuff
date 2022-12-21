@@ -4,8 +4,9 @@ import com.tribbloids.spookystuff.SpookyContext
 import com.tribbloids.spookystuff.session.PythonDriver
 import com.tribbloids.spookystuff.utils.SpookyUtils
 import com.tribbloids.spookystuff.utils.lifespan.LocalCleanable
-import org.apache.spark.ml.dsl.utils.messaging.Encoder
-import org.json4s.JsonAST.JValue
+import org.apache.spark.ml.dsl.utils.messaging.TreeIR
+import org.apache.spark.ml.dsl.utils.messaging.io.Encoder
+import org.json4s
 import org.json4s.jackson.JsonMethods.parse
 
 import scala.language.dynamics
@@ -54,14 +55,14 @@ class PyBinding(
   }
 
   // TODO: so far, doesn't support nested object
-  def $MSG: Option[Encoder[JValue]] = {
+  def $MSG: Option[Encoder[TreeIR.Leaf[json4s.JValue]]] = {
 
     referenceOpt.flatMap { ref =>
       //        val jsonOpt = driver.evalExpr(s"$ref.__dict__")
       val jsonOpt = driver.evalExpr(s"json.dumps($ref.__dict__)")
       jsonOpt.map { json =>
         val jValue = parse(json)
-        Encoder(jValue)
+        Encoder.forValue(jValue)
       }
     }
   }

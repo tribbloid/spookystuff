@@ -1,5 +1,6 @@
-package org.apache.spark.ml.dsl.utils.messaging
+package org.apache.spark.ml.dsl.utils.messaging.io
 
+import org.apache.spark.ml.dsl.utils.messaging.{IR, Relay}
 import org.apache.spark.ml.param.{ParamMap, Params}
 import org.apache.spark.ml.util._
 import org.json4s.JObject
@@ -42,12 +43,13 @@ object MLReadWriteSupports {
     }
   }
 
-  implicit class ReadWrite[Obj](val base: Relay[Obj]) {
+  implicit class ReadWrite[Obj](val relay: Relay[Obj]) {
 
-    def toMLReader: MLReader[Obj] = Reader(base)
+    def toMLReader: MLReader[Obj] = Reader(relay)
 
-    def toMLWriter(v: Obj) = {
-      Writer(base.toEncoder_>>(v))
+    def toMLWriter(v: Obj): Writer[relay.IR_>>] = {
+      val enc: Encoder[relay.IR_>>] = relay.toEncoder_>>(v)
+      Writer(enc)
     }
   }
 
@@ -65,7 +67,7 @@ object MLReadWriteSupports {
     }
   }
 
-  case class Writer[T](message: Encoder[T]) extends MLWriter with Serializable {
+  case class Writer[T <: IR](message: Encoder[T]) extends MLWriter with Serializable {
 
     //    def saveJSON(path: String): Unit = {
     //      val resolver = HDFSResolver(sc.hadoopConfiguration)
@@ -78,7 +80,7 @@ object MLReadWriteSupports {
 
     override protected def saveImpl(path: String): Unit = {
 
-      val instance = new _Params(Identifiable.randomUID(message.message.getClass.getSimpleName))
+      val instance = new _Params(Identifiable.randomUID(message.ir.body.getClass.getSimpleName))
 
       val jV = JObject("metadata" -> message.toJValue)
       DefaultParamsWriter.saveMetadata(instance, path, sc, extraMetadata = Some(jV))

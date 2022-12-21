@@ -1,6 +1,7 @@
 package org.apache.spark.ml.dsl.utils.data
 
 import com.tribbloids.spookystuff.testutils.FunSpecx
+import org.apache.spark.ml.dsl.utils.messaging.Relay
 
 class EAVSuite extends FunSpecx {
 
@@ -23,6 +24,8 @@ class EAVSuite extends FunSpecx {
 
   val withEnum = WithEnum._EAV(wellformed.updated("enumField" -> "bb").internal)
 
+  val noAttrDecoderView = Relay.toFallbackDecoderView(EAVSystem.NoAttr.relay)
+
   it("wellformed <=> JSON") {
 
     val o: _EAV = wellformed
@@ -41,7 +44,7 @@ class EAVSuite extends FunSpecx {
         |}
       """.stripMargin
     )
-    val back = EAVSystem.NoAttr.relay.fromJSON(json)
+    val back = noAttrDecoderView.fromJSON(json)
     assert(back == o)
   }
 
@@ -72,7 +75,7 @@ class EAVSuite extends FunSpecx {
         |}
       """.stripMargin
     )
-    val back = EAVSystem.NoAttr.relay.fromJSON(json)
+    val back = noAttrDecoderView.fromJSON(json)
     assert(back == nested)
   }
 
@@ -95,7 +98,7 @@ class EAVSuite extends FunSpecx {
         |}
       """.stripMargin
     )
-    val back = EAVSystem.NoAttr.relay.fromJSON(json)
+    val back = noAttrDecoderView.fromJSON(json)
     assert(back == withNull)
   }
 

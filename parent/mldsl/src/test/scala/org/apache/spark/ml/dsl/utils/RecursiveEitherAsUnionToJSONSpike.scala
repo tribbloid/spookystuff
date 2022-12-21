@@ -1,8 +1,9 @@
 package org.apache.spark.ml.dsl.utils
 
-import RecursiveEitherAsUnionToJSONSpike._
 import com.tribbloids.spookystuff.testutils.FunSpecx
-import org.apache.spark.ml.dsl.utils.messaging.{Encoder, MessageReader}
+import org.apache.spark.ml.dsl.utils.RecursiveEitherAsUnionToJSONSpike._
+import org.apache.spark.ml.dsl.utils.messaging.Relay
+import org.apache.spark.ml.dsl.utils.messaging.io.Encoder
 import org.scalatest.Ignore
 import org.slf4j.LoggerFactory
 
@@ -35,9 +36,9 @@ class RecursiveEitherAsUnionToJSONSpike extends FunSpecx {
   it("JSON <=> Union of arity 3") {
 
     Seq(u1, u2, u3).foreach { u =>
-      val json = Encoder(u).prettyJSON
+      val json = Encoder.forValue(u).prettyJSON
       LoggerFactory.getLogger(this.getClass).info(json)
-      val back = new MessageReader[Union].fromJSON(json)
+      val back = new Relay.ToSelf[Union].fromJSON(json)
       assert(back == u)
     }
   }
@@ -46,9 +47,9 @@ class RecursiveEitherAsUnionToJSONSpike extends FunSpecx {
 
     Seq(u1, u2, u3).foreach { u =>
       val inclusie = Inclusive(u, "xyz")
-      val json = Encoder(inclusie).prettyJSON
+      val json = Encoder.forValue(inclusie).prettyJSON
       LoggerFactory.getLogger(this.getClass).info(json)
-      val back = new MessageReader[Inclusive].fromJSON(json)
+      val back = new Relay.ToSelf[Inclusive].fromJSON(json)
       assert(back == inclusie)
     }
   }
@@ -61,9 +62,9 @@ class RecursiveEitherAsUnionToJSONSpike extends FunSpecx {
 
     proto
       .foreach { opt =>
-        val json = Encoder(opt).prettyJSON
+        val json = Encoder.forValue(opt).prettyJSON
         LoggerFactory.getLogger(this.getClass).info(json)
-        val back = new MessageReader[InclusiveOpt].fromJSON(json)
+        val back = new Relay.ToSelf[InclusiveOpt].fromJSON(json)
         assert(back == opt)
       }
 

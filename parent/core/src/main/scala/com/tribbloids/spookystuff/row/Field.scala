@@ -3,7 +3,7 @@ package com.tribbloids.spookystuff.row
 import com.tribbloids.spookystuff.QueryException
 import com.tribbloids.spookystuff.row.Field.ConflictResolving
 import com.tribbloids.spookystuff.utils.EqualBy
-import org.apache.spark.ml.dsl.utils.messaging.ProtoAPI
+import org.apache.spark.ml.dsl.utils.messaging.{ProtoAPI, TreeIR}
 import org.apache.spark.sql.types.{DataType, Metadata, StructField}
 
 import scala.language.implicitConversions
@@ -79,16 +79,16 @@ case class Field(
     effectiveCR
   }
 
-  override def toString = toMessage_>>
+  override def toString: String = toMessage_>>.body
 
-  override def toMessage_>> : String = {
+  override def toMessage_>> : TreeIR.Leaf[String] = {
     val builder = StringBuilder.newBuilder
     builder append s"'$name"
     if (conflictResolving == Field.Overwrite) builder append " !"
     if (isWeak) builder append " *"
     if (isOrdinal) builder append " #"
     depthRangeOpt.foreach(range => builder append s" [${range.head}...${range.last}]")
-    builder.result()
+    TreeIR.Builder(Some(name)).leaf(builder.result())
   }
 }
 

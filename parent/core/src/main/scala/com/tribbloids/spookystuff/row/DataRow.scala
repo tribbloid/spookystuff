@@ -1,9 +1,8 @@
 package com.tribbloids.spookystuff.row
 
 import java.util.UUID
-
 import com.tribbloids.spookystuff.utils.{Interpolation, SpookyUtils, SpookyViews}
-import org.apache.spark.ml.dsl.utils.messaging.ProtoAPI
+import org.apache.spark.ml.dsl.utils.messaging.{ProtoAPI, TreeIR}
 
 import scala.reflect.ClassTag
 
@@ -68,7 +67,10 @@ case class DataRow(
     .map(identity)
     .map(tuple => tuple._1.name -> tuple._2)
 
-  override def toMessage_>> : Map[String, Any] = toMap
+  override def toMessage_>> : TreeIR.Leaf[Map[String, Any]] = {
+
+    TreeIR.leaf(toMap)
+  }
 
   def sortIndex(fields: Seq[Field]): Seq[Option[Iterable[Int]]] = {
     val result = fields.map(key => this.getIntIterable(key))

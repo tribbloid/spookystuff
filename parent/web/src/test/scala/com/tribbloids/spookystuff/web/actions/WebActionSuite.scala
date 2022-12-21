@@ -53,18 +53,17 @@ class WebActionSuite extends SpookyEnvFixture {
       )
     }
 
-    it("-> memberStrPretty") {
-      val str = action.memberStrPretty // TODO: add as a trait
+    it("-> treeText") {
+      val str = action.treeText // TODO: add as a trait
 
       str
         .replaceAllLiterally("com.tribbloids.spookystuff.actions.", "")
         .shouldBe(
           """
-          |Click(
-          |  By.sizzleCssSelector: o1,
-          |  0 seconds,
+          |Click
+          |  "By.sizzleCssSelector: o1"
+          |  0 seconds
           |  true
-          |)
         """.stripMargin
         )
     }
@@ -94,25 +93,21 @@ class WebActionSuite extends SpookyEnvFixture {
       )
     }
 
-    it("-> memberStrPretty") {
-      val str = action.memberStrPretty
+    it("-> treeText") {
+      val str = action.treeText
       str
         .replaceAllLiterally("com.tribbloids.spookystuff.actions.", "")
         .shouldBe(
           """
-          |Loop(
-          |  ::(
-          |    Click(
-          |      By.sizzleCssSelector: o1,
-          |      0 seconds,
+          |Loop
+          |  List
+          |    Click
+          |      "By.sizzleCssSelector: o1"
+          |      0 seconds
           |      true
-          |    ),
-          |    Snapshot(
-          |      MustHaveTitle
-          |    )
-          |  ),
+          |    Snapshot
+          |      MustHaveTitle()
           |  2147483647
-          |)
         """.stripMargin
         )
     }
@@ -136,8 +131,8 @@ class WebActionSuite extends SpookyEnvFixture {
     } catch {
       case e: ActionException =>
         println(e)
-        assert(e.getMessage.contains("Snapshot/Bypass/DefectiveWebExport"))
-        assert(e.getMessage.contains("Screenshot/Bypass/DefectiveWebExport"))
+        assert(e.getMessage.contains("Snapshot/Bypass()/DefectiveWebExport"))
+        assert(e.getMessage.contains("Screenshot/Bypass()/DefectiveWebExport"))
     }
   }
 
@@ -151,8 +146,8 @@ class WebActionSuite extends SpookyEnvFixture {
     } catch {
       case e: ActionException =>
         println(e)
-        assert(e.getMessage.contains("Delay/1_second/Snapshot/Bypass/DefectiveWebExport"))
-        assert(e.getMessage.contains("Delay/1_second/Screenshot/Bypass/DefectiveWebExport"))
+        assert(e.getMessage.contains("Delay/1_second/Snapshot/Bypass()/DefectiveWebExport"))
+        assert(e.getMessage.contains("Delay/1_second/Screenshot/Bypass()/DefectiveWebExport"))
     }
   }
 }

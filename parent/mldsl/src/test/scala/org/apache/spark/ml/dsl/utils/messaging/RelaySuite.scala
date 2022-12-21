@@ -3,17 +3,18 @@ package org.apache.spark.ml.dsl.utils.messaging
 import java.util.Date
 import org.apache.spark.ml.dsl.AbstractDFDSuite
 import org.apache.spark.ml.dsl.utils.messaging.TestBeans._
+import org.apache.spark.ml.dsl.utils.messaging.io.Encoder
 import org.json4s.MappingException
 import org.json4s.reflect.{Executable, ParanamerReader}
 
-class MessageReaderSuite extends AbstractDFDSuite {
+class RelaySuite extends AbstractDFDSuite {
 
   // TODO: disabled before FallbackSerializer is really put to use
   ignore("SerializingParam[Function1] should work") {
     val fn = { k: Int =>
       2 * k
     }
-    val reader = new MessageReader[Int => Int]()
+    val reader = new Relay.ToSelf[Int => Int]()
     val param = reader.Param("id", "name", "")
 
     val json = param.jsonEncode(fn)
@@ -39,12 +40,12 @@ class MessageReaderSuite extends AbstractDFDSuite {
   it("can read generated timestamp") {
     val obj = TimeWrapper(date)
 
-    val xmlStr = Encoder(obj).toXMLStr(pretty = false)
+    val xmlStr = Encoder.forValue(obj).toXMLStr(pretty = false)
     xmlStr.shouldBeLike(
       s"<TimeWrapper><time>......</time></TimeWrapper>"
     )
 
-    val reader = new MessageReader[TimeWrapper]()
+    val reader = new Relay.ToSelf[TimeWrapper]()
     val v = reader.fromXML(xmlStr)
     v.toString.shouldBe(s"TimeWrapper($date)")
   }
@@ -53,7 +54,7 @@ class MessageReaderSuite extends AbstractDFDSuite {
     val str = "2016-09-08T15:00:00.0Z"
     val xmlStr = s"<TimeWrapper><time>$str</time></TimeWrapper>"
 
-    val reader = new MessageReader[TimeWrapper]()
+    val reader = new Relay.ToSelf[TimeWrapper]()
     val v = reader.fromXML(xmlStr)
     v.toString.shouldBeLike("TimeWrapper(Thu Sep 08 15:00:00......)")
   }
@@ -62,7 +63,7 @@ class MessageReaderSuite extends AbstractDFDSuite {
     val str = "2016-09-08T15:00:00Z"
     val xmlStr = s"<TimeWrapper><time>$str</time></TimeWrapper>"
 
-    val reader = new MessageReader[TimeWrapper]()
+    val reader = new Relay.ToSelf[TimeWrapper]()
     val v = reader.fromXML(xmlStr)
     v.toString.shouldBeLike("TimeWrapper(Thu Sep 08 15:00:00......)")
   }
@@ -71,7 +72,7 @@ class MessageReaderSuite extends AbstractDFDSuite {
     val str = "2016-09-08T15:00"
     val xmlStr = s"<TimeWrapper><time>$str</time></TimeWrapper>"
 
-    val reader = new MessageReader[TimeWrapper]()
+    val reader = new Relay.ToSelf[TimeWrapper]()
     val v = reader.fromXML(xmlStr)
     v.toString.shouldBeLike("TimeWrapper(Thu Sep 08 15:00:00......)")
   }
@@ -80,7 +81,7 @@ class MessageReaderSuite extends AbstractDFDSuite {
 
     val xmlStr = s"<node><roles><role>DC</role></roles></node>"
 
-    val reader = new MessageReader[User]()
+    val reader = new Relay.ToSelf[User]()
     intercept[MappingException] {
       reader.fromXML(xmlStr)
     }
@@ -96,7 +97,7 @@ class MessageReaderSuite extends AbstractDFDSuite {
          |</users>
        """.stripMargin
 
-    val reader = new MessageReader[Users]()
+    val reader = new Relay.ToSelf[Users]()
     intercept[MappingException] {
       reader.fromXML(xmlStr)
     }
@@ -115,7 +116,7 @@ class MessageReaderSuite extends AbstractDFDSuite {
          |</node>
        """.stripMargin
 
-    val reader = new MessageReader[UsersWrapper]()
+    val reader = new Relay.ToSelf[UsersWrapper]()
     intercept[MappingException] {
       reader.fromXML(xmlStr)
     }
@@ -131,7 +132,7 @@ class MessageReaderSuite extends AbstractDFDSuite {
          |</users>
        """.stripMargin
 
-    val reader = new MessageReader[Users]()
+    val reader = new Relay.ToSelf[Users]()
     intercept[MappingException] {
       reader.fromXML(xmlStr)
     }
@@ -139,12 +140,12 @@ class MessageReaderSuite extends AbstractDFDSuite {
 
   it("reading an object from a converted string should work") {
 
-    val xmlStr = Encoder(User(name = "30")).toXMLStr(pretty = false)
+    val xmlStr = Encoder.forValue(User(name = "30")).toXMLStr(pretty = false)
     xmlStr.shouldBe(
       "<User><name>30</name></User>"
     )
 
-    val reader = new MessageReader[User]()
+    val reader = new Relay.ToSelf[User]()
     val v = reader.fromXML(xmlStr)
     v.toString.shouldBe("User(30,None)")
   }
@@ -153,7 +154,7 @@ class MessageReaderSuite extends AbstractDFDSuite {
 
     val xmlStr = s"<node><name>string</name><roles><role>DC</role></roles></node>"
 
-    val reader = new MessageReader[User]()
+    val reader = new Relay.ToSelf[User]()
     val v = reader.fromXML(xmlStr)
     v.toString.shouldBe("User(string,Some(Roles(List(DC))))")
   }
@@ -162,14 +163,14 @@ class MessageReaderSuite extends AbstractDFDSuite {
 
     val xmlStr = s"<node><name>string</name></node>"
 
-    val reader = new MessageReader[User]()
+    val reader = new Relay.ToSelf[User]()
     val v = reader.fromXML(xmlStr)
     v.toString.shouldBe("User(string,None)")
   }
 
   it("Multipart case class JSON read should be broken") {
     val ex = Multipart("aa", "bb")(3)
-    val jsonStr = Encoder(ex).toJSON()
+    val jsonStr = Encoder.forValue(ex).toJSON()
     jsonStr.shouldBe(
       s"""
          |{
@@ -179,7 +180,7 @@ class MessageReaderSuite extends AbstractDFDSuite {
       """.stripMargin
     )
 
-    val reader = implicitly[MessageReader[Multipart]]
+    val reader = implicitly[Relay.ToSelf[Multipart]]
 
     intercept[MappingException] {
       reader.fromJSON(jsonStr)

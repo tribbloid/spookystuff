@@ -7,7 +7,7 @@ import org.apache.spark.annotation.DeveloperApi
   */
 @DeveloperApi
 class MessageMLParam[Obj](
-    outer: Relay[Obj]#Decoder,
+    outer: Relay[Obj]#DecoderView,
     parent: String,
     name: String,
     doc: String,
@@ -16,7 +16,7 @@ class MessageMLParam[Obj](
 
   override def jsonEncode(value: Obj): String = {
 
-    outer._outer.toEncoder_>>(value).compactJSON(outer.formats)
+    outer._outer.toEncoder_>>(value).compactJSON()
   }
 
   override def jsonDecode(json: String): Obj = {

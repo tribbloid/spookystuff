@@ -1,7 +1,7 @@
 package org.apache.spark.ml.dsl
 
 import org.apache.spark.ml.PipelineStage
-import org.apache.spark.ml.dsl.utils.messaging.{MessageAPI, Relay}
+import org.apache.spark.ml.dsl.utils.messaging.{MessageAPI, Relay, TreeIR}
 import org.apache.spark.ml.param.{ParamPair, Params}
 import org.apache.spark.sql.ColumnName
 import org.apache.spark.sql.types.DataType
@@ -49,7 +49,7 @@ object Step extends Relay.<<[Step] {
 
   val paramMap: Option[JValue] = None
 
-  override def toMessage_>>(v: Step): Msg = {
+  override def toMessage_>>(v: Step): IR_>> = {
     import org.json4s.JsonDSL._
     import v._
 
@@ -64,15 +64,18 @@ object Step extends Relay.<<[Step] {
       )
     )
 
-    Msg(
-      id,
-      stage.name,
-      stage.tags,
-      stage.outputColOverride,
-      instance.getClass.getCanonicalName,
-      Some(instance.uid),
-      params = Some(jsonParams)
-    )
+    TreeIR
+      .leaf(
+        Msg(
+          id,
+          stage.name,
+          stage.tags,
+          stage.outputColOverride,
+          instance.getClass.getCanonicalName,
+          Some(instance.uid),
+          params = Some(jsonParams)
+        )
+      )
   }
 
   case class Msg(

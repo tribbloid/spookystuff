@@ -1,7 +1,7 @@
 package org.apache.spark.ml.dsl
 
 import org.apache.spark.ml.PipelineStage
-import org.apache.spark.ml.dsl.utils.messaging.{MessageAPI, Relay}
+import org.apache.spark.ml.dsl.utils.messaging.{MessageAPI, Relay, TreeIR}
 import org.apache.spark.sql.types.StructField
 
 import scala.collection.mutable
@@ -20,7 +20,7 @@ object DFD extends Relay.<<[DFD] {
   def apply(s: Symbol): Source = s
   def apply(s: StructField): Source = s
 
-  override def toMessage_>>(flow: DFD): Msg = {
+  override def toMessage_>>(flow: DFD): IR_>> = {
 
     flow.propagateCols(DFD.DEFAULT_COMPACTION)
 
@@ -34,22 +34,25 @@ object DFD extends Relay.<<[DFD] {
     val rightWrappers = flow.rightTails.map(SimpleStepWrapper)
     val rightTrees = rightWrappers.map(flow.ForwardNode)
 
-    this.Msg(
-      Declaration(
-        steps.map(Step.toMessage_>>)
-      ),
-      Seq(
-        GraphRepr(
-          leftTrees.map(StepTreeNode.toMessage_>>),
-          `@direction` = Some(FORWARD_LEFT)
-        ),
-        GraphRepr(
-          rightTrees.map(StepTreeNode.toMessage_>>),
-          `@direction` = Some(FORWARD_RIGHT)
+    TreeIR
+      .leaf(
+        this.Msg(
+          Declaration(
+            steps.map(Step.toMessageBody)
+          ),
+          Seq(
+            GraphRepr(
+              leftTrees.map(StepTreeNode.toMessageBody),
+              `@direction` = Some(FORWARD_LEFT)
+            ),
+            GraphRepr(
+              rightTrees.map(StepTreeNode.toMessageBody),
+              `@direction` = Some(FORWARD_RIGHT)
+            )
+          ),
+          HeadIDs(flow.headIDs)
         )
-      ),
-      HeadIDs(flow.headIDs)
-    )
+      )
   }
 
   def FORWARD_RIGHT: String = "forwardRight"

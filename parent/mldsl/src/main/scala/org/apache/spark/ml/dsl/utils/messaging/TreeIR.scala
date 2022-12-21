@@ -1,102 +1,87 @@
 package org.apache.spark.ml.dsl.utils.messaging
 
 import com.tribbloids.spookystuff.tree.TreeView
+import org.apache.spark.ml.dsl.utils.messaging.io.Decoder
+import org.apache.spark.ml.dsl.utils.refl.ReflectionUtils
 
 import scala.collection.immutable.ListMap
+import scala.language.implicitConversions
 
-/**
-  * IR stands for "Intermediate Representation"
-  * @tparam LEAF
-  *   leaf type
-  */
-trait TreeIR[LEAF] extends Product with ProtoAPI {
+trait TreeIR[LEAF] extends IR with Product {
 
   import TreeIR._
 
   def children: Seq[TreeIR[LEAF]]
 
-  case class DepthFirstTransform[V1 >: LEAF, V2, RES <: TreeIR[V2]](
+  def upcast[_LEAF >: LEAF]: TreeIR[_LEAF]
+
+  class DepthFirstTransform[V1 >: LEAF, V2, RES <: TreeIR[V2]](
       val downFn: TreeIR[V1] => TreeIR[V1],
-      val onLeafFn: V1 => V2,
+      val onLeafFn: TreeIR.Leaf[V1] => TreeIR[V2],
       val upFn: TreeIR[V2] => RES
   ) {
 
     def execute: RES = {
 
-      val afterDown: TreeIR[V1] = downFn(TreeIR.this.asInstanceOf[TreeIR[V1]])
+      val afterDown: TreeIR[V1] = downFn(TreeIR.this.upcast[V1])
 
-      val transformed: TreeIR[V2] = afterDown match {
-        case sub: Struct[V1] =>
+      val afterOnLeaves: TreeIR[V2] = afterDown match {
+        case sub: StructTree[_, V1] =>
           sub.copy(
             sub.repr.map {
               case (k, v) =>
-                k -> v.DepthFirstTransform(downFn, onLeafFn, upFn).execute
-            }
-          )(sub.prefixOvrd)
-        case Leaf(v) =>
-          Leaf(onLeafFn(v))
+                k -> new v.DepthFirstTransform(downFn, onLeafFn, upFn).execute
+            },
+            sub.rootTagOvrd
+          )
+        case sub: ListTree[V1] =>
+          sub.copy(
+            sub.children.map { v =>
+              new v.DepthFirstTransform(downFn, onLeafFn, upFn).execute
+            },
+            sub.rootTagOvrd
+          )
+        case ll: Leaf[V1] =>
+          onLeafFn(ll)
       }
 
-      val afterUp = upFn(transformed)
+      val afterUp = upFn(afterOnLeaves)
 
       afterUp
     }
 
     def down[V1N >: LEAF](fn: TreeIR[V1N] => TreeIR[V1N]): DepthFirstTransform[V1N, V1N, TreeIR[V1N]] = { // reset onLeaf & up
-      DepthFirstTransform[V1N, V1N, TreeIR[V1N]](fn, identity _, identity _)
+      new DepthFirstTransform[V1N, V1N, TreeIR[V1N]](fn, identity _, identity _)
     }
 
-    def onLeaf[V2N](fn: V1 => V2N): DepthFirstTransform[V1, V2N, TreeIR[V2N]] = { // reset up
-      DepthFirstTransform(downFn, fn, identity _)
+    def onLeaves[V2N](fn: TreeIR.Leaf[V1] => TreeIR[V2N]): DepthFirstTransform[V1, V2N, TreeIR[V2N]] = { // reset up
+      new DepthFirstTransform(downFn, fn, identity _)
     }
 
     def up[V2N >: V2, RES <: TreeIR[V2N]](fn: TreeIR[V2N] => RES): DepthFirstTransform[V1, V2N, RES] = {
-      DepthFirstTransform(downFn, onLeafFn, fn)
+      new DepthFirstTransform(downFn, onLeafFn.andThen(_.upcast[V2N]), fn)
     }
   }
 
-  def depthFirstTransform: DepthFirstTransform[LEAF, LEAF, TreeIR[LEAF]] =
-    DepthFirstTransform[LEAF, LEAF, TreeIR[LEAF]](identity _, identity _, identity _)
+  object DepthFirstTransform extends DepthFirstTransform[LEAF, LEAF, TreeIR[LEAF]](identity _, identity _, identity _)
 
   def pathToValueMap: Map[Seq[String], LEAF]
 
   def treeView: _TreeView = _TreeView(this)
+
+  object explode {
+
+    import ExplodeRules._
+
+    def explodeStringMap(): TreeIR[Any] =
+      DepthFirstTransform.down(stringMap orElse preserve).execute
+
+    def explodeProductOrStringMap(): TreeIR[Any] =
+      DepthFirstTransform.down(product orElse stringMap orElse preserve).execute
+  }
 }
 
 object TreeIR {
-
-  lazy val _CLASS_NAME: String = classOf[TreeIR[_]].getSimpleName
-
-  case class _Relay[V]() extends Relay.>>[TreeIR[V]] {
-
-    type Msg = Any
-
-    override def toProto_<<(v: Any, rootTag: String): TreeIR[V] = {
-
-      v match {
-        case vs: collection.Map[String, Any] =>
-          val mapped = ListMap(vs.toSeq: _*).map {
-            case (kk, vv) =>
-              kk -> toProto_<<(vv, rootTag)
-          }
-          val prefixOpt = vs match {
-            case x: Product => Some(x.productPrefix)
-            case _          => None
-          }
-
-          Struct(mapped)(prefixOpt)
-
-        case vv: V =>
-          Leaf(vv)
-        case null =>
-          Leaf(null.asInstanceOf[V])
-        case _ =>
-          throw new UnsupportedOperationException(
-            s"JVM class ${v.getClass} cannot be mapped to ${_CLASS_NAME}"
-          )
-      }
-    }
-  }
 
   case class _TreeView(self: TreeIR[_]) extends TreeView.Immutable[_TreeView] {
     override lazy val nodeName: String = self.getClass.getSimpleName
@@ -108,74 +93,152 @@ object TreeIR {
       else Iterator.empty
   }
 
-  case class Leaf[LEAF](repr: LEAF) extends TreeIR[LEAF] {
+  case class Leaf[LEAF](
+      body: LEAF,
+      override val rootTagOvrd: Option[String]
+  ) extends TreeIR[LEAF] {
 
-    override def toMessage_>> : Any = repr
+    type Body = LEAF
+
+    override def rootTag: String = rootTagOvrd.getOrElse(RootTagged.Infer(body).default)
 
     override def children: Seq[TreeIR[LEAF]] = Nil
 
-    override lazy val pathToValueMap: ListMap[Seq[String], LEAF] = ListMap(Nil -> repr)
+    override lazy val pathToValueMap: ListMap[Seq[String], LEAF] = ListMap(Nil -> body)
+
+    override def upcast[_LEAF >: LEAF]: Leaf[_LEAF] = copy[_LEAF](body)
   }
 
-  case class Struct[LEAF](repr: ListMap[String, TreeIR[LEAF]])(val prefixOvrd: Option[String]) extends TreeIR[LEAF] {
+  trait Trunk[LEAF] extends TreeIR[LEAF] {
 
-    override lazy val productPrefix: String = prefixOvrd.getOrElse(
-      super.productPrefix
-    )
-
-    override lazy val toMessage_>> : ProductMap = {
-
-      val view = repr.map {
-        case (k, v) =>
-          k -> v.toMessage_>>
-      }
-
-      ProductMap(view, productPrefix)
-    }
-
-    override lazy val children: Seq[TreeIR[LEAF]] = repr.values.toSeq
+    def repr: ListMap[_, TreeIR[LEAF]]
 
     override lazy val pathToValueMap: ListMap[Seq[String], LEAF] = {
       repr.flatMap {
         case (k, v) =>
           v.pathToValueMap.map {
             case (kk, v) =>
-              (Seq(k) ++ kk) -> v
+              (Seq("" + k) ++ kk) -> v
           }
       }
     }
   }
 
-  object Struct {
+  case class ListTree[LEAF](
+      override val children: Seq[TreeIR[LEAF]],
+      override val rootTagOvrd: Option[String]
+  ) extends Trunk[LEAF] {
 
-    case class Builder(prefixOpt: Option[String] = None) {
+    override def rootTag: String = rootTagOvrd.getOrElse(children.stringPrefix)
 
-      def fromKVs[V](kvs: (String, TreeIR[_ <: V])*): Struct[V] = {
-        val _kvs = kvs.toSeq.map {
-          case (k, v) =>
-            k -> v.asInstanceOf[TreeIR[V]]
-        }
-        Struct(ListMap(_kvs: _*))(prefixOpt)
+    type Body = List[Any]
+    override def body: List[Any] = children.map(_.body).toList
+
+    override def repr: ListMap[Int, TreeIR[LEAF]] = ListMap(children.zipWithIndex.map(_.swap): _*)
+
+    override def upcast[_LEAF >: LEAF]: ListTree[_LEAF] = copy(
+      children = children.map(_.upcast[_LEAF])
+    )
+  }
+
+  case class StructTree[KEY, LEAF](
+      override val repr: ListMap[KEY, TreeIR[LEAF]],
+      override val rootTagOvrd: Option[String],
+      isSchemaless: Boolean = true
+  ) extends Trunk[LEAF] {
+
+    override def rootTag: String = rootTagOvrd.getOrElse(repr.stringPrefix)
+
+    type Body = ListMap[KEY, Any]
+
+    override lazy val body: Body = {
+
+      val view = repr.map {
+        case (k, v) =>
+          k -> v.body
       }
+      view
+    }
+
+    override lazy val children: Seq[TreeIR[LEAF]] = repr.values.toSeq
+
+    lazy val schematic: StructTree[KEY, LEAF] = this.copy(isSchemaless = false)
+    lazy val schemaless: StructTree[KEY, LEAF] = this.copy(isSchemaless = true)
+
+    override def upcast[_LEAF >: LEAF]: StructTree[KEY, _LEAF] = copy[KEY, _LEAF](
+      repr.map {
+        case (k, v) => k -> v.upcast[_LEAF]
+      }
+    )
+  }
+
+  case class Builder(rootTagOvrd: Option[String] = None) {
+
+    def leaf[V](v: V): Leaf[V] = {
+
+      Leaf(v, rootTagOvrd)
+    }
+
+    def list[V](vs: TreeIR[_ <: V]*): ListTree[V] = {
+      val _kvs = vs.map { v =>
+        v.upcast[V]
+      }
+
+      ListTree(_kvs.toList, rootTagOvrd)
+    }
+
+    def struct[K, V](kvs: (K, TreeIR[_ <: V])*): StructTree[K, V] = {
+      val _kvs = kvs.map {
+        case (k, v) =>
+          k -> v.upcast[V]
+      }
+
+      StructTree(ListMap(_kvs: _*), rootTagOvrd)
+    }
+
+  }
+
+  object EmptyBuilder extends Builder()
+
+  implicit def asDefaultBuilder(self: this.type): Builder = EmptyBuilder
+
+  object ExplodeRules {
+
+    protected def mapToFlatStruct(vs: Iterable[(String, Any)], tagOvrd: Option[String]): StructTree[String, Any] = {
+      val seq = vs.toSeq
+      val seqToLeaf: Seq[(String, Leaf[Any])] = seq.map {
+        case (k, v) =>
+          k -> EmptyBuilder.leaf(v)
+      }
+      Builder(tagOvrd).struct(
+        seqToLeaf: _*
+      )
+    }
+
+    def preserve: PartialFunction[TreeIR[Any], TreeIR[Any]] = {
+
+      case v => v
+    }
+
+    def stringMap: PartialFunction[TreeIR[Any], TreeIR[Any]] = {
+
+      case Leaf(map: collection.Map[String, Any], tag) =>
+        mapToFlatStruct(map, tag)
+    }
+
+    def product: PartialFunction[TreeIR[Any], TreeIR[Any]] = {
+
+      case Leaf(p: Product, tag) =>
+        val accessors = ReflectionUtils.getCaseAccessorMap(p)
+        mapToFlatStruct(accessors, tag).schematic
     }
   }
 
-  case class ProductMap(
-      self: ListMap[String, Any],
-      override val productPrefix: String
-  ) extends Map[String, Any] {
+  object _Relay extends IR._Relay[TreeIR[Any]] {
 
-    override def productElement(n: Int): Any = self.toSeq(n)._2
+    object DefaultDecoder extends Decoder.AnyTree
 
-    override def productArity: Int = self.size
-
-    override def +[B1 >: Any](kv: (String, B1)): Map[String, B1] = this.copy(self = self + kv)
-
-    override def get(key: String): Option[Any] = self.get(key)
-
-    override def iterator: Iterator[(String, Any)] = self.iterator
-
-    override def -(key: String): Map[String, Any] = this.copy(self = self - key)
+    implicit def asDecoderView(self: this.type): DecoderView = DecoderView(DefaultDecoder)
   }
 
 }

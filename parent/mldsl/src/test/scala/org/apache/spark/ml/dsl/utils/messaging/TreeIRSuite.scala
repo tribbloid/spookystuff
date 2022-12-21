@@ -26,8 +26,8 @@ class TreeIRSuite extends FunSpecx {
           |""".stripMargin
       )
 
-      val reader = TreeIR._Relay[Any]()
-      val back = reader.fromJSON(jv)
+      val relay = TreeIR._Relay
+      val back = relay.fromJSON(jv)
 
       val jv2 = back.toJSON()
 
@@ -37,10 +37,10 @@ class TreeIRSuite extends FunSpecx {
 
       back.treeView.treeString.shouldBe(
         """
-          |Struct
-          |:- Struct
+          |StructTree
+          |:- StructTree
           |:  :- Leaf 9223372036854775807
-          |:  +- Struct
+          |:  +- StructTree
           |:     :- Leaf 1
           |:     +- Leaf 2.0
           |+- Leaf FF
@@ -52,9 +52,9 @@ class TreeIRSuite extends FunSpecx {
 
 object TreeIRSuite {
 
-  val o1 = TreeIR.Struct.Builder().fromKVs("a" -> TreeIR.Leaf(1), "b" -> TreeIR.Leaf(2.0))
+  val o1 = TreeIR.struct("a" -> TreeIR.leaf(1), "b" -> TreeIR.leaf(2.0))
 
-  val o2 = TreeIR.Struct.Builder().fromKVs[Any]("c" -> TreeIR.Leaf(Long.MaxValue), "d" -> o1)
+  val o2 = TreeIR.struct("c" -> TreeIR.leaf(Long.MaxValue), "d" -> o1)
 
-  val o3 = TreeIR.Struct.Builder().fromKVs[Any]("e" -> o2, "f" -> TreeIR.Leaf("FF"))
+  val o3 = TreeIR.struct("e" -> o2, "f" -> TreeIR.leaf("FF"))
 }

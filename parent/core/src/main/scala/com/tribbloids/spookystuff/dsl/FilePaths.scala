@@ -13,7 +13,7 @@ object FilePaths {
 
     override def apply(trace: Trace): String = {
 
-      val actionStrs = trace.map(v => v.memberStr)
+      val actionStrs = trace.map(v => v.pathText_\)
 
       val actionConcat = if (actionStrs.size > 4) {
         val oneTwoThree = actionStrs.slice(0, 3)
@@ -33,8 +33,7 @@ object FilePaths {
 
     override def apply(trace: Trace): String = {
 
-      val msgs = trace.map(_.message)
-      val actionStrs = trace.map(v => v.memberStr_\\\)
+      val actionStrs = trace.map(v => v.pathText_\)
 
       val actionConcat = if (actionStrs.size > 4) {
         val oneTwoThree = actionStrs.slice(0, 3)

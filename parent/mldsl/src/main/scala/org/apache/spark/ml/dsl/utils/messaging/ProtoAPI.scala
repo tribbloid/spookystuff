@@ -1,25 +1,14 @@
 package org.apache.spark.ml.dsl.utils.messaging
-import org.apache.spark.ml.dsl.utils.messaging
 
-trait ProtoAPI extends RootTagged {
+trait ProtoAPI {
 
-  def toMessage_>> : Any
+  def toMessage_>> : IR
 }
 
 object ProtoAPI extends Relay[ProtoAPI] {
 
-  override type Msg = Any
+  override type IR_>> = IR
   override def toMessage_>>(v: ProtoAPI) = v.toMessage_>>
 
-  override def toProto_<<(v: messaging.ProtoAPI.Msg, rootTag: String): ProtoAPI = ???
-}
-
-trait MessageAPI extends RootTagged with Serializable {}
-
-object MessageAPI extends MessageReader[MessageAPI] {
-
-  trait << extends MessageAPI {
-
-    def toProto_<< : Any
-  }
+  override def toProto_<<(v: IR_<<): ProtoAPI = ???
 }

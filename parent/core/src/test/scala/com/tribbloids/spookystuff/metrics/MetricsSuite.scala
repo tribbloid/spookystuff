@@ -2,7 +2,7 @@ package com.tribbloids.spookystuff.metrics
 
 import com.tribbloids.spookystuff.metrics.MetricsSuite.{DummyMetrics, DummyMetrics_HasMembers, DummyTreeMetrics}
 import com.tribbloids.spookystuff.testutils.{FunSpecx, TestHelper}
-import org.apache.spark.ml.dsl.utils.messaging.Encoder
+import org.apache.spark.ml.dsl.utils.messaging.io.Encoder
 import org.apache.spark.sql.execution.streaming.EventTimeStatsAccum
 import org.apache.spark.util.{DoubleAccumulator, LongAccumulator}
 
@@ -67,7 +67,8 @@ class MetricsSuite extends FunSpecx {
         """.stripMargin
       )
 
-    Encoder(m.toMap)
+    Encoder
+      .forValue(m.toMap)
       .toJSON()
       .shouldBe(
         """

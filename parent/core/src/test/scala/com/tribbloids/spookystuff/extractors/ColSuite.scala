@@ -15,14 +15,17 @@ class ColSuite extends FunSpecx {
   it("Col(Lit).toString") {
 
     c1.toString.shouldBe(
-      "abc"
+      "\"abc\""
     )
-//    val k = cNonLit.ex.memberStr
-//    val msg = cNonLit.message
-//    val writer = cNonLit: MessageWriter[_]
-//    val mem = cNonLit.memberStr
+  }
+
+  it("Col(Symbol).toString") {
+
     cNonLit.toString.shouldBe(
-      "Get('A)"
+      """
+        |Get
+        |  "'A"
+        |""".stripMargin.trim
     )
   }
 

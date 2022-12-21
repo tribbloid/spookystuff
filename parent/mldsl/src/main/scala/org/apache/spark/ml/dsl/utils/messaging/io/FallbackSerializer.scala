@@ -1,4 +1,4 @@
-package org.apache.spark.ml.dsl.utils.messaging
+package org.apache.spark.ml.dsl.utils.messaging.io
 
 import org.apache.spark.ml.dsl.utils.DSLUtils
 import org.apache.spark.ml.dsl.utils.EncodedBinaryMagnet.Base64

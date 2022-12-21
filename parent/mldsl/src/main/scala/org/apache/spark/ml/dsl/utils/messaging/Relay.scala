@@ -1,11 +1,11 @@
 package org.apache.spark.ml.dsl.utils.messaging
 
+import org.apache.spark.ml.dsl.utils.messaging.io.{DateSerializer, Decoder, Encoder, FormattedText}
 import org.apache.spark.ml.dsl.utils.messaging.xml.{XMLFormats, Xml}
-import org.apache.spark.ml.dsl.utils.refl.ScalaType
 import org.apache.spark.ml.util.Identifiable
 import org.json4s.JsonAST.{JArray, JObject}
 import org.json4s.jackson.JsonMethods
-import org.json4s.{Extraction, Formats, JField, JValue}
+import org.json4s.{Formats, JField, JValue}
 
 import scala.language.implicitConversions
 import scala.xml.{Elem, NodeSeq, XML}
@@ -26,39 +26,64 @@ import scala.xml.{Elem, NodeSeq, XML}
   * types, all parameter types' supertypes Implicit scope of an argument’s type (2.9.1) - e.g. Companion objects
   * Implicit scope of type arguments (2.8.0) - e.g. Companion objects Outer objects for nested types
   */
-abstract class Relay[Proto] extends RelayLevel1 with RootTagged {
+abstract class Relay[Proto] {
+  // TODO: should be `BiRelay`
 
   import Relay._
+
+  type IR_>> <: IR
+  type IR_<< <: IR
 
   def fallbackFormats: Formats = Relay.defaultFormats
 
   implicit def findRelay: Relay[Proto] = this
-  implicit def toEncoder_>>(v: Proto): Encoder[Msg] = {
+  implicit def toEncoder_>>(v: Proto): Encoder[IR_>>] = {
 
-    val msg = toMessage_>>(v)
-    val rootTagOvrd = Relay.RootTagOf(v, msg, this).default
-    Encoder[Msg](
-      msg,
-      this.fallbackFormats,
-      Some(rootTagOvrd)
+    val ir = toMessage_>>(v)
+    Encoder[IR_>>](
+      ir,
+      this.fallbackFormats
     )
   }
 
-  def toMessage_>>(v: Proto): Msg
-  def toProto_<<(v: Msg, rootTag: String): Proto
+  implicit class ProtoOps(v: Proto) {
 
-  case class Decoder(formats: Formats = fallbackFormats)(
-      implicit
-      val messageMF: Manifest[Msg]
+    lazy val ir: IR_>> = toMessage_>>(v)
+
+    def treeText: String = {
+
+      val writer = FormattedText.NoColor_2.TreeWriter(ir)
+      writer.text
+    }
+
+    def pathText_\ : String = {
+
+      val writer = FormattedText.Path_\\\.TreeWriter(ir)
+      writer.text
+    }
+
+    def pathText_/ : String = {
+
+      val writer = FormattedText.Path_/:/.TreeWriter(ir)
+      writer.text
+    }
+  }
+
+  def toMessage_>>(v: Proto): IR_>>
+  def toMessageBody(v: Proto): IR_>> #Body = toMessage_>>(v).body
+
+  def toProto_<<(v: IR_<<): Proto
+
+  case class DecoderView(
+      decoder: Decoder[IR_<<]
   ) {
 
     def _outer: Relay[Proto] = Relay.this
 
     def jFieldToProto(jf: JField): Proto = {
 
-      val mf = this.messageMF
-      val m = Extraction.extract[Msg](jf._2)(formats, mf)
-      toProto_<<(m, jf._1)
+      val ir = decoder.apply(jf)
+      toProto_<<(ir)
     }
 
     final def fromJField(jf: JField): Proto = {
@@ -67,7 +92,7 @@ abstract class Relay[Proto] extends RelayLevel1 with RootTagged {
     }
 
     final def fromJValue(jv: JValue): Proto = {
-      val rootTag = _outer.rootTag
+      val rootTag = decoder.defaultRootTag
       fromJField(rootTag -> jv)
     }
 
@@ -118,44 +143,18 @@ object Relay {
 
   lazy val defaultFormats: Formats = XMLFormats.defaultFormats + DateSerializer
 
-  case class RootTagOf(chain: Any*) {
+  implicit def fallbackRelay[T: Manifest]: Relay[T] = new ToSelf[T]()
 
-    val first: Any = chain.head // sanity check
-
-    lazy val explicitOpt: Option[String] = {
-
-      val trials = chain.toStream.map {
-        case vv: RootTagged =>
-          Some(vv.rootTag)
-
-        case vv: Product =>
-          Some(vv.productPrefix)
-        case _ =>
-          None
-      }
-
-      trials.collectFirst {
-        case Some(v) => v
-      }
-    }
-
-    lazy val fallback: String = first match {
-
-//      case vv: GenTraversableLike[_, _] =>
-//        vv.stringPrefix
-      case _ =>
-        ScalaType.getRuntimeType(first).asClass.getSimpleName.stripSuffix("$")
-    }
-
-    lazy val default: String = explicitOpt.getOrElse(fallback)
-  }
-
-  implicit def fallbackRelay[T: Manifest]: Relay[T] = new MessageReader[T]()
-
-  implicit def asDecoder[Proto](v: Relay[Proto])(
+  // TODO: if chain summoning is stable, should only define `asDecoder`
+  implicit def toFallbackDecoderView[R <: Relay[_]](relay: R)(
       implicit
-      messageMF: Manifest[v.Msg]
-  ): v.Decoder = v.Decoder(v.fallbackFormats)(messageMF)
+      <:< : TreeIR.Leaf[relay.IR_<< #Body] <:< relay.IR_<<,
+      typeInfo: Manifest[relay.IR_<< #Body]
+  ): relay.DecoderView = {
+    val decoder: Decoder[TreeIR.Leaf[relay.IR_<< #Body]] =
+      Decoder.Plain[relay.IR_<< #Body](relay.fallbackFormats)(typeInfo)
+    relay.DecoderView(decoder.asInstanceOf[Decoder[relay.IR_<<]])
+  }
 
   final def xmlStr2Node(xml: String): Elem = {
     val bomRemoved = xml.replaceAll("[^\\x20-\\x7e]", "").trim // remove BOM (byte order mark)
@@ -166,19 +165,50 @@ object Relay {
 
   trait >>[Proto <: ProtoAPI] extends Relay[Proto] {
 
-    final override def toMessage_>>(vv: Proto): Msg = {
+    final override def toMessage_>>(vv: Proto): IR_>> = {
 
-      vv.toMessage_>>.asInstanceOf[Msg]
+      vv.toMessage_>>.asInstanceOf[IR_>>]
     }
   }
 
-  trait <<[Proto] extends Relay[Proto] {
+  trait Symmetric[Proto] extends Relay[Proto] {
+
+    final override type IR_<< = IR_>>
+  }
+
+  trait ToMsg[Proto] extends Symmetric[Proto] {
+
+    type Msg
+    final override type IR_>> = IR.Aux[Msg]
+  }
+
+  object ToMsg {}
+
+  trait <<[Proto] extends ToMsg[Proto] {
 
     override type Msg <: MessageAPI.<<
 
-    final override def toProto_<<(vv: Msg, rootTag: String): Proto = {
+    final override def toProto_<<(vv: IR.Aux[IR_>> #Body]): Proto = {
 
-      vv.toProto_<<.asInstanceOf[Proto]
+      vv.body.toProto_<<.asInstanceOf[Proto]
     }
   }
+
+  class ToSelf[Proto] extends ToMsg[Proto] {
+
+    final type Msg = Proto
+
+    override def toMessage_>>(v: Proto): TreeIR.Leaf[Proto] = TreeIR.leaf(v)
+
+    override def toProto_<<(v: IR.Aux[Proto]): Proto = v.body
+  }
+
+  trait ToSelf_Imp0 {
+
+    implicit def fallback[T]: ToSelf[T] = new ToSelf[T]()
+  }
+
+  object ToSelf extends ToSelf[Any] with ToSelf_Imp0
+
+  object JValueRelay extends ToSelf[JValue] with ToSelf_Imp0
 }

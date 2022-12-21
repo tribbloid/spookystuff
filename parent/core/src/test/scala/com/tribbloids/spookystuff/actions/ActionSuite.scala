@@ -65,14 +65,13 @@ class ActionSuite extends SpookyEnvFixture {
       )
     }
 
-    it("-> memberStrPretty") {
-      val str = action.memberStrPretty
+    it("-> treeText") {
+      val str = action.treeText
       str.shouldBe(
         """
-          |Wget(
-          |  http://dummy.com,
-          |  MustHaveTitle
-          |)
+          |Wget
+          |  "http://dummy.com"
+          |  MustHaveTitle()
         """.stripMargin
       )
     }

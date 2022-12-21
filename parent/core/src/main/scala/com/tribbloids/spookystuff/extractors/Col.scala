@@ -2,7 +2,7 @@ package com.tribbloids.spookystuff.extractors
 
 import com.tribbloids.spookystuff.Const
 import com.tribbloids.spookystuff.extractors.impl.{Extractors, Lit}
-import org.apache.spark.ml.dsl.utils.messaging.{ProtoAPI, RootTagged}
+import org.apache.spark.ml.dsl.utils.messaging.{ProtoAPI, RootTagged, TreeIR}
 import org.apache.spark.sql.catalyst.ScalaReflection.universe.TypeTag
 
 import scala.language.implicitConversions
@@ -52,7 +52,7 @@ case class Col[T](
 ) extends ProtoAPI
     with RootTagged {
 
-  override def toString: String = this.memberStr
+  override def toString: String = this.treeText
 
   def resolveType(tt: DataType): DataType = ex.resolveType(tt)
   def resolve(tt: DataType): PartialFunction[FR, _ >: T] = ex.resolve(tt)
@@ -64,13 +64,14 @@ case class Col[T](
     }
   }
 
-  override def toMessage_>> : Any = {
+  override lazy val rootTag: String = ex.productPrefix
+
+  override def toMessage_>> = {
     val result = ex match {
-      case v: Lit[_, T] => v.value
-      case _            => ex.message
+      case v: Lit[_, T] =>
+        TreeIR.Builder(Some(rootTag)).leaf(v.value)
+      case _ => GenExtractor.toMessage_>>(ex)
     }
     result
   }
-
-  override lazy val rootTag = ex.productPrefix
 }
