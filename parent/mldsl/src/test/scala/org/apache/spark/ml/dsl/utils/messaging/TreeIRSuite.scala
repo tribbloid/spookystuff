@@ -37,10 +37,10 @@ class TreeIRSuite extends FunSpecx {
 
       back.treeView.treeString.shouldBe(
         """
-          |StructTree
-          |:- StructTree
+          |MapTree
+          |:- MapTree
           |:  :- Leaf 9223372036854775807
-          |:  +- StructTree
+          |:  +- MapTree
           |:     :- Leaf 1
           |:     +- Leaf 2.0
           |+- Leaf FF
@@ -52,9 +52,9 @@ class TreeIRSuite extends FunSpecx {
 
 object TreeIRSuite {
 
-  val o1 = TreeIR.struct("a" -> TreeIR.leaf(1), "b" -> TreeIR.leaf(2.0))
+  val o1 = TreeIR.map("a" -> TreeIR.leaf(1), "b" -> TreeIR.leaf(2.0))
 
-  val o2 = TreeIR.struct("c" -> TreeIR.leaf(Long.MaxValue), "d" -> o1)
+  val o2 = TreeIR.map("c" -> TreeIR.leaf(Long.MaxValue), "d" -> o1)
 
-  val o3 = TreeIR.struct("e" -> o2, "f" -> TreeIR.leaf("FF"))
+  val o3 = TreeIR.map("e" -> o2, "f" -> TreeIR.leaf("FF"))
 }

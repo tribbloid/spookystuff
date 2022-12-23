@@ -1,5 +1,6 @@
 package org.apache.spark.ml.dsl.utils.messaging
 
+import org.apache.spark.ml.dsl.utils.ObjectSimpleNameMixin
 import org.apache.spark.ml.dsl.utils.refl.ReflectionUtils
 
 object AutomaticRelay {}
@@ -10,7 +11,7 @@ abstract class AutomaticRelay[T <: Product: Manifest] extends Relay[T] {
   //  slow in runtime, and unreliable
   //  in the next version, should be rewritten using shapeless Generic and prover through implicits
 
-  override type IR_>> = TreeIR.StructTree[String, Any]
+  override type IR_>> = TreeIR.MapTree[String, Any]
 
   override def toMessage_>>(v: T): IR_>> = {
     val prefix = v.productPrefix
@@ -29,14 +30,14 @@ abstract class AutomaticRelay[T <: Product: Manifest] extends Relay[T] {
                     rr.toMessage_>>(v).asInstanceOf[TreeIR[Any]]
                   // TODO: Cast may fail, IR should be an extendable interface
                   }
-                TreeIR.Builder(Some(vs.stringPrefix)).list(list: _*)
+                TreeIR.list(list: _*)
               case m: Map[_, _] =>
                 val list = m.toList.map {
                   case (k: Any, v: Any) =>
                     val rr = RelayRegistry.Default.lookupOrDefault(v)
                     k -> rr.toMessage_>>(v).asInstanceOf[TreeIR[_]]
                 }
-                TreeIR.Builder(Some(m.stringPrefix)).struct(list: _*)
+                TreeIR.map(list: _*)
               case v: Any =>
                 val rr = RelayRegistry.Default.lookupOrDefault(v)
                 rr.toMessage_>>(v).asInstanceOf[TreeIR[Any]]
@@ -48,7 +49,7 @@ abstract class AutomaticRelay[T <: Product: Manifest] extends Relay[T] {
         k -> newV
     }
 
-    val relayed = TreeIR.Builder(Some(prefix)).struct(relayedKVs.toSeq: _*).schematic
+    val relayed = TreeIR.Builder(Some(prefix)).map(relayedKVs.toSeq: _*).schematic
 
     relayed
   }

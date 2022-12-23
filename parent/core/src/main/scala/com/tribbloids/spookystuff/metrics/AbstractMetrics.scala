@@ -54,7 +54,7 @@ abstract class AbstractMetrics extends MetricLike {
       useDisplayName: Boolean = true
   ) {
 
-    def toTreeIR: TreeIR.StructTree[String, T] = {
+    def toTreeIR: TreeIR.MapTree[String, T] = {
       val cache = mutable.LinkedHashMap.empty[String, TreeIR[T]]
       val list = namedChildren(useDisplayName)
       list.foreach {
@@ -70,7 +70,7 @@ abstract class AbstractMetrics extends MetricLike {
         case _ =>
           None
       }
-      TreeIR.Builder(Some(AbstractMetrics.this.productPrefix)).struct(cache.toSeq: _*)
+      TreeIR.Builder(Some(AbstractMetrics.this.productPrefix)).map(cache.toSeq: _*)
     }
 
     def toMap: Map[String, T] = toTreeIR.pathToValueMap.map {

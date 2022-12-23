@@ -1,6 +1,7 @@
 package org.apache.spark.ml.dsl.utils.messaging
 
 import com.tribbloids.spookystuff.tree.TreeView
+import org.apache.spark.ml.dsl.utils.ObjectSimpleNameMixin
 import org.apache.spark.ml.dsl.utils.messaging.io.Decoder
 import org.apache.spark.ml.dsl.utils.refl.ReflectionUtils
 
@@ -26,7 +27,7 @@ trait TreeIR[LEAF] extends IR with Product {
       val afterDown: TreeIR[V1] = downFn(TreeIR.this.upcast[V1])
 
       val afterOnLeaves: TreeIR[V2] = afterDown match {
-        case sub: StructTree[_, V1] =>
+        case sub: MapTree[_, V1] =>
           sub.copy(
             sub.repr.map {
               case (k, v) =>
@@ -129,7 +130,7 @@ object TreeIR {
       override val rootTagOvrd: Option[String]
   ) extends Trunk[LEAF] {
 
-    override def rootTag: String = rootTagOvrd.getOrElse(children.stringPrefix)
+    override def rootTag: String = rootTagOvrd.getOrElse("List")
 
     type Body = List[Any]
     override def body: List[Any] = children.map(_.body).toList
@@ -141,13 +142,13 @@ object TreeIR {
     )
   }
 
-  case class StructTree[KEY, LEAF](
+  case class MapTree[KEY, LEAF](
       override val repr: ListMap[KEY, TreeIR[LEAF]],
       override val rootTagOvrd: Option[String],
       isSchemaless: Boolean = true
   ) extends Trunk[LEAF] {
 
-    override def rootTag: String = rootTagOvrd.getOrElse(repr.stringPrefix)
+    override def rootTag: String = rootTagOvrd.getOrElse("Map")
 
     type Body = ListMap[KEY, Any]
 
@@ -162,10 +163,10 @@ object TreeIR {
 
     override lazy val children: Seq[TreeIR[LEAF]] = repr.values.toSeq
 
-    lazy val schematic: StructTree[KEY, LEAF] = this.copy(isSchemaless = false)
-    lazy val schemaless: StructTree[KEY, LEAF] = this.copy(isSchemaless = true)
+    lazy val schematic: MapTree[KEY, LEAF] = this.copy(isSchemaless = false)
+    lazy val schemaless: MapTree[KEY, LEAF] = this.copy(isSchemaless = true)
 
-    override def upcast[_LEAF >: LEAF]: StructTree[KEY, _LEAF] = copy[KEY, _LEAF](
+    override def upcast[_LEAF >: LEAF]: MapTree[KEY, _LEAF] = copy[KEY, _LEAF](
       repr.map {
         case (k, v) => k -> v.upcast[_LEAF]
       }
@@ -187,13 +188,13 @@ object TreeIR {
       ListTree(_kvs.toList, rootTagOvrd)
     }
 
-    def struct[K, V](kvs: (K, TreeIR[_ <: V])*): StructTree[K, V] = {
+    def map[K, V](kvs: (K, TreeIR[_ <: V])*): MapTree[K, V] = {
       val _kvs = kvs.map {
         case (k, v) =>
           k -> v.upcast[V]
       }
 
-      StructTree(ListMap(_kvs: _*), rootTagOvrd)
+      MapTree(ListMap(_kvs: _*), rootTagOvrd)
     }
 
   }
@@ -204,13 +205,13 @@ object TreeIR {
 
   object ExplodeRules {
 
-    protected def mapToFlatStruct(vs: Iterable[(String, Any)], tagOvrd: Option[String]): StructTree[String, Any] = {
+    protected def mapToFlatStruct(vs: Iterable[(String, Any)], tagOvrd: Option[String]): MapTree[String, Any] = {
       val seq = vs.toSeq
       val seqToLeaf: Seq[(String, Leaf[Any])] = seq.map {
         case (k, v) =>
           k -> EmptyBuilder.leaf(v)
       }
-      Builder(tagOvrd).struct(
+      Builder(tagOvrd).map(
         seqToLeaf: _*
       )
     }

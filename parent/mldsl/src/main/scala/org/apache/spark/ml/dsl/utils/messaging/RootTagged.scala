@@ -32,8 +32,6 @@ object RootTagged {
 
     lazy val fallback: String = first match {
 
-      //      case vv: GenTraversableLike[_, _] =>
-      //        vv.stringPrefix
       case _ =>
         ScalaType.getRuntimeType(first).asClass.getSimpleName.stripSuffix("$")
     }

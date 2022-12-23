@@ -42,7 +42,7 @@ trait FormattedText {
             }
             val text = zipRows(ir, childrenRows)
             TreeIR.leaf(text)
-          case ir: TreeIR.StructTree[_, _] =>
+          case ir: TreeIR.MapTree[_, _] =>
             val childrenRows = ir.repr.toSeq.map {
               case (k, v: TreeIR.Leaf[_]) =>
                 if (ir.isSchemaless) {

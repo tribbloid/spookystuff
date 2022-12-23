@@ -108,7 +108,7 @@ trait EAVSystem {
                 kk -> TreeIR.leaf[Any](vv)
             }
 
-            TreeIR.Builder(Some(ll.rootTag)).struct(subNodes: _*)
+            TreeIR.Builder(Some(ll.rootTag)).map(subNodes: _*)
           case others @ _ =>
             others
         }
@@ -125,7 +125,7 @@ trait EAVSystem {
 
       val folded = canonical.DepthFirstTransform
         .up[Any, TreeIR.Leaf[Any]] {
-          case struct: TreeIR.StructTree[_, _] =>
+          case struct: TreeIR.MapTree[_, _] =>
             val map = struct.body
             val stringMap = map.map {
               case (k, v) =>
