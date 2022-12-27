@@ -108,6 +108,7 @@ object AbstractMetrics {
 
           returnTypeMatch && parameterMatch
         }
+        .sortBy(_.getName)
 
       val publicMethods = methods.filter { method =>
         val mod = method.getModifiers
