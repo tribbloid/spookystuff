@@ -1,10 +1,11 @@
-package org.apache.spark.rdd.spookystuff
+package com.tribbloids.spookystuff.unused
 
 import com.tribbloids.spookystuff.dsl.Samplers
 import com.tribbloids.spookystuff.testutils.FunSpecx
 import com.tribbloids.spookystuff.testutils.TestHelper.TestSC
 import com.tribbloids.spookystuff.utils.PreemptiveLocalOps
 import org.apache.spark.rdd.RDD
+import org.apache.spark.rdd.spookystuff.IncrementallyCachedRDDSuite
 import org.apache.spark.rdd.spookystuff.IncrementallyCachedRDDSuite.TestSubject
 import org.apache.spark.sql.catalyst.InternalRow
 import org.apache.spark.storage.StorageLevel

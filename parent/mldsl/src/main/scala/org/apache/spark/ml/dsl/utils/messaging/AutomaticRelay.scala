@@ -1,6 +1,5 @@
 package org.apache.spark.ml.dsl.utils.messaging
 
-import org.apache.spark.ml.dsl.utils.ObjectSimpleNameMixin
 import org.apache.spark.ml.dsl.utils.refl.ReflectionUtils
 
 object AutomaticRelay {}

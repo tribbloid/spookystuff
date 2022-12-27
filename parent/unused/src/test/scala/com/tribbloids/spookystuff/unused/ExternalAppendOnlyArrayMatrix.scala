@@ -1,4 +1,4 @@
-package org.apache.spark.rdd.spookystuff
+package com.tribbloids.spookystuff.unused
 
 import com.tribbloids.spookystuff.testutils.FunSpecx
 import org.scalatest.Suite

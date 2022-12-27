@@ -1,5 +1,6 @@
 package org.apache.spark.rdd.spookystuff
 
+import com.tribbloids.spookystuff.unused.ExternalAppendOnlyArray
 import com.tribbloids.spookystuff.utils.CachingUtils.ConcurrentMap
 import com.tribbloids.spookystuff.utils.accumulator.MapAccumulator
 import com.tribbloids.spookystuff.utils.lifespan.Cleanable.Lifespan

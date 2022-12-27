@@ -1,7 +1,6 @@
 package org.apache.spark.ml.dsl.utils.messaging
 
 import com.tribbloids.spookystuff.tree.TreeView
-import org.apache.spark.ml.dsl.utils.ObjectSimpleNameMixin
 import org.apache.spark.ml.dsl.utils.messaging.io.Decoder
 import org.apache.spark.ml.dsl.utils.refl.ReflectionUtils
 

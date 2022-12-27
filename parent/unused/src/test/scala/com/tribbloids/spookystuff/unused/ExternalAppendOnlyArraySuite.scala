@@ -1,6 +1,6 @@
-package org.apache.spark.rdd.spookystuff
+package com.tribbloids.spookystuff.unused
 
-import com.tribbloids.spookystuff.testutils.{FunSpecx, SparkUISupport}
+import com.tribbloids.spookystuff.testutils.{FunSpecx, SparkUISupport, SubSuite}
 import org.apache.spark.rdd.{RDD, UnionRDD}
 import org.apache.spark.storage.StorageLevel
 import org.apache.spark.util.{CollectionAccumulator, LongAccumulator}

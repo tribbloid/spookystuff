@@ -1,6 +1,7 @@
 
 val noAssembly: String? by settings
 val noBenchmark: String? by settings
+val noUnused: String? by settings
 val noUav: String? by settings
 
 fun isEnabled(profile: String?): Boolean {
@@ -24,6 +25,7 @@ include(
     ":parent:core",
     ":parent:web",
     ":parent:integration",
+    ":parent:unused",
     ":spookystuff-showcase"
 )
 
@@ -37,6 +39,12 @@ if (!isEnabled(noAssembly)) {
 if (!isEnabled(noBenchmark)) {
     include(
         ":parent:benchmark"
+    )
+}
+
+if (!isEnabled(noUnused)) {
+    include(
+        ":parent:unused"
     )
 }
 

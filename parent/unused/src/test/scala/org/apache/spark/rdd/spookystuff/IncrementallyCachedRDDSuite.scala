@@ -1,7 +1,7 @@
 package org.apache.spark.rdd.spookystuff
 
 import com.tribbloids.spookystuff.testutils.TestHelper.TestSC
-import com.tribbloids.spookystuff.testutils.{FunSpecx, SparkUISupport, TestHelper}
+import com.tribbloids.spookystuff.testutils.{FunSpecx, SparkUISupport, SubSuite, TestHelper}
 import com.tribbloids.spookystuff.utils.Stopwatch
 import org.apache.spark.rdd.RDD
 import org.apache.spark.sql.execution.UnsafeRowSerializer
@@ -20,7 +20,7 @@ abstract class IncrementallyCachedRDDSuite[T](
 
   TestHelper.enableCheckpoint
 
-  import org.apache.spark.rdd.spookystuff.IncrementallyCachedRDDSuite._
+  import IncrementallyCachedRDDSuite._
 
   def getFacet: TestSubject[T]#Facet
 
