@@ -40,7 +40,7 @@ trait PairwiseConversionMixin extends FunSpecx {
             description,
             { () =>
               to match {
-                case Repr(opt, l2) if l2 >= 0 && l2 == l1 =>
+                case Repr(_, l2) if l2 >= 0 && l2 == l1 =>
                   it(s"<==> ${to.classStr}") {
 
                     val _r2 = forward(r1)
@@ -50,7 +50,7 @@ trait PairwiseConversionMixin extends FunSpecx {
                     from.assertForallEquals(_r1)
                   }
 
-                case Repr(opt, l2) if l2 > 0 && l2 < l1 =>
+                case Repr(_, l2) if l2 > 0 && l2 < l1 =>
                   it(s"==> ${to.classStr} ==> ?") {
 
                     val _r2 = forward(r1)
@@ -59,7 +59,7 @@ trait PairwiseConversionMixin extends FunSpecx {
                     backward(_r2)
                   }
 
-                case Repr(opt, l2) if l2 == 0 && l2 < l1 =>
+                case Repr(_, l2) if l2 == 0 && l2 < l1 =>
                   it(s"==> ${to.classStr}") {
 
                     val _r2 = forward(r1)

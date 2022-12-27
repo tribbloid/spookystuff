@@ -45,7 +45,7 @@ trait EAVSystem {
           k.primaryName -> v
         case (k: String, v) =>
           k -> v
-        case (k, v) =>
+        case (k, _) =>
           throw new UnsupportedOperationException(s"unsupported key type for $k")
       }
 
@@ -180,7 +180,7 @@ trait EAVSystem {
           tuple._2.setAccessible(true)
           Some(tuple._1 -> tuple._2.invoke(obj).asInstanceOf[Any])
         } catch {
-          case e: InvocationTargetException =>
+          case _: InvocationTargetException =>
             None
         }
       }.toList

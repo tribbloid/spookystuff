@@ -7,7 +7,7 @@ class InterpolationSuite extends FunSpecx {
   it("interpolate can use common character as delimiter") {
 
     val original = "ORA'{TEST}"
-    val interpolated = Interpolation.`'`(original) { v =>
+    val interpolated = Interpolation.`'`(original) { _ =>
       "Replaced"
     }
     assert(interpolated == "ORAReplaced")
@@ -16,7 +16,7 @@ class InterpolationSuite extends FunSpecx {
   it("interpolate can use special regex character as delimiter") {
 
     val original = "ORA${TEST}"
-    val interpolated = Interpolation.`$`(original) { v =>
+    val interpolated = Interpolation.`$`(original) { _ =>
       "Replaced"
     }
     assert(interpolated == "ORAReplaced")
@@ -32,7 +32,7 @@ class InterpolationSuite extends FunSpecx {
 
     special.foreach { ss =>
       val original = s"ORA${ss}TEST"
-      val interpolated = Interpolation.`$`(original) { v =>
+      val interpolated = Interpolation.`$`(original) { _ =>
         "Replaced"
       }
       assert(interpolated == original)
@@ -40,7 +40,7 @@ class InterpolationSuite extends FunSpecx {
 
     special.foreach { ss =>
       val original = s"ORA$ss"
-      val interpolated = Interpolation.`$`(original) { v =>
+      val interpolated = Interpolation.`$`(original) { _ =>
         "Replaced"
       }
       assert(interpolated == original)
@@ -51,7 +51,7 @@ class InterpolationSuite extends FunSpecx {
 
     special.foreach { ss =>
       val original = "ORA" + ss + "${TEST}"
-      val interpolated = Interpolation.`$`(original) { v =>
+      val interpolated = Interpolation.`$`(original) { _ =>
         "Replaced"
       }
       assert(interpolated == original.replaceAllLiterally("$$", "$"))
@@ -59,7 +59,7 @@ class InterpolationSuite extends FunSpecx {
 
     special.foreach { ss =>
       val original = s"ORA" + ss + "${}"
-      val interpolated = Interpolation.`$`(original) { v =>
+      val interpolated = Interpolation.`$`(original) { _ =>
         "Replaced"
       }
       assert(interpolated == original.replaceAllLiterally("$$", "$"))

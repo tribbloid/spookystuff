@@ -1,9 +1,6 @@
 package org.apache.spark.rdd.spookystuff
 
-import org.scalatest.Suite
 import org.scalatest.funspec.AnyFunSpec
-
-import scala.collection.immutable
 
 class ScalaTestJUnitRunnerSpike extends AnyFunSpec {
 

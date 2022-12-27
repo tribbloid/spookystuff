@@ -23,7 +23,7 @@ case class UnpackResources(
 
   // run once and for all TODO: or clean up at shutdown hook
   lazy val unpackOnce: Unit = {
-    val offspring = ClasspathResolver
+    ClasspathResolver
       .execute(root)
       .treeExtractTo(
         LocalResolver.execute(unpackedParent),

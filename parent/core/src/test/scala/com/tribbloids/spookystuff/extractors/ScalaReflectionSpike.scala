@@ -231,7 +231,7 @@ class ScalaReflectionSpike extends FunSpecx {
     )
 
     intercept[UnsupportedOperationException] {
-      val paramLists = dynamic.getMethodByScala(exType, Some(List(StringType)))
+      dynamic.getMethodByScala(exType, Some(List(StringType)))
     }
   }
 
@@ -242,7 +242,7 @@ class ScalaReflectionSpike extends FunSpecx {
     )
 
     intercept[UnsupportedOperationException] {
-      val paramLists = dynamic.getMethodByJava(exType, Some(List(StringType)))
+      dynamic.getMethodByJava(exType, Some(List(StringType)))
     }
   }
 

@@ -88,7 +88,7 @@ object Xml {
             // XML attributes. Flattening keeps transformation more predictable.
             // <a><foo id="1">x</foo></a> -> {"a":{"foo":{"foo":"x","id":"1"}}} vs
             // <a><foo id="1">x</foo></a> -> {"a":{"foo":"x","id":"1"}}
-            case (XLeaf(v, x :: `xs`), o: JObject) => o.obj
+            case (XLeaf(_, _ :: `xs`), o: JObject) => o.obj
             case (_, json)                         => JField(name, json) :: Nil
           }
       }

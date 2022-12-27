@@ -11,8 +11,6 @@ import org.apache.spark.sql.catalyst.InternalRow
 import org.apache.spark.storage.StorageLevel
 import org.scalatest.BeforeAndAfterAll
 
-import scala.collection.immutable
-
 object IncrementallyCachedRDDMatrix {
 
   import com.tribbloids.spookystuff.testutils.TestHelper.TestSQL.implicits._

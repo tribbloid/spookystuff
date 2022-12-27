@@ -66,7 +66,7 @@ trait FetchedRDDAPI {
   ): FetchedDataset = {
 
     _coalesce(
-      { v =>
+      { _ =>
         numPartitions
       },
       shuffle

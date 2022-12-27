@@ -158,7 +158,7 @@ case class DataRow(
           .run()
       )
     } catch {
-      case e: NoSuchElementException => None
+      case _: NoSuchElementException => None
     }
   }
 

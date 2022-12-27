@@ -55,7 +55,7 @@ abstract class IncrementallyCachedRDDBenchmark extends FunSpecx with BeforeAndAf
 
     val elementSize = this.elementSize
 
-    val src = TestHelper.TestSC.parallelize(1 to datasetSize, numPartitions).map { i =>
+    val src = TestHelper.TestSC.parallelize(1 to datasetSize, numPartitions).map { _ =>
       Random.nextString(elementSize)
     }
     src.checkpoint()
@@ -70,7 +70,7 @@ abstract class IncrementallyCachedRDDBenchmark extends FunSpecx with BeforeAndAf
 
     val srcDF = TestHelper.TestSC
       .parallelize(1 to datasetSize, numPartitions)
-      .map { i =>
+      .map { _ =>
         (Random.nextInt(), Random.nextLong(), Random.nextDouble(), Random.nextString(elementSize))
       }
       .toDF()

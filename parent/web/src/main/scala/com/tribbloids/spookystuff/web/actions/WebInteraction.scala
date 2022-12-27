@@ -94,7 +94,7 @@ case class Visit(
       case element: Unstructured => element.href
       case str: String           => Option(str)
       case obj: Any              => Option(obj.toString)
-      case other                 => None
+      case _                     => None
     }
 
     uriStr.map(str => this.copy(uri = Lit.erased(str)).asInstanceOf[this.type])
@@ -277,7 +277,7 @@ case class TextInput(
       case element: Unstructured => element.text
       case str: String           => Option(str)
       case obj: Any              => Option(obj.toString)
-      case other                 => None
+      case _                     => None
     }
 
     textStr.map(str => this.copy(text = Lit.erased(str)).asInstanceOf[this.type])
@@ -313,7 +313,7 @@ case class DropDownSelect(
       case element: Unstructured => element.attr("value")
       case str: String           => Option(str)
       case obj: Any              => Option(obj.toString)
-      case other                 => None
+      case _                     => None
     }
 
     valueStr.map(str => this.copy(value = Lit.erased(str)).asInstanceOf[this.type])
@@ -374,7 +374,7 @@ case class ExeScript(
       case element: Unstructured => element.text
       case str: String           => Option(str)
       case obj: Any              => Option(obj.toString)
-      case other                 => None
+      case _                     => None
     }
 
     scriptStr.map(str => this.copy(script = Lit.erased(str)).asInstanceOf[this.type])

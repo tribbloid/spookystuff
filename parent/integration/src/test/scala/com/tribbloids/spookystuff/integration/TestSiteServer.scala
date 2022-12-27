@@ -4,7 +4,6 @@ import com.tribbloids.spookystuff.utils.CommonConst
 import org.sparkproject.jetty.server.handler.{DefaultHandler, HandlerList, HandlerWrapper, ResourceHandler}
 import org.sparkproject.jetty.server.{Request, Server}
 
-
 import javax.servlet.http.{HttpServletRequest, HttpServletResponse}
 
 object TestSiteServer {

@@ -126,9 +126,9 @@ class JsonElement private (
   override def text: Option[String] = Some(field._2.values.toString)
 
   override def ownText: Option[String] = field._2 match {
-    case obj: JObject  => None
-    case array: JArray => None
-    case _             => Some(field._2.values.toString)
+    case _: JObject => None
+    case _: JArray  => None
+    case _          => Some(field._2.values.toString)
   }
 
   override def boilerPipe: Option[String] = None // TODO: unsupported, does it make sense

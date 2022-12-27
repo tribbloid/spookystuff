@@ -1,6 +1,5 @@
 package com.tribbloids.spookystuff.doc
 
-
 /**
   * Created by peng on 18/07/15.
   */

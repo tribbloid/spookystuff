@@ -3,7 +3,6 @@ package com.tribbloids.spookystuff.unused
 import com.tribbloids.spookystuff.testutils.FunSpecx
 import org.scalatest.Suite
 
-import scala.collection.immutable
 import scala.util.Random
 
 class ExternalAppendOnlyArrayMatrix extends FunSpecx {

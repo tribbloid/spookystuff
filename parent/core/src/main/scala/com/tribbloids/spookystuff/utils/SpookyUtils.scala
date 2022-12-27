@@ -120,7 +120,7 @@ These special characters are often called "metacharacters".
       try {
         Array[B](v.asInstanceOf[B])
       } catch {
-        case e: Exception =>
+        case _: Exception =>
           Array[B]()
       }
     array.headOption
@@ -206,7 +206,7 @@ These special characters are often called "metacharacters".
           Files.copy(src, dst, options: _*)
           // TODO: how to flush dst?
         } catch {
-          case e: DirectoryNotEmptyException =>
+          case _: DirectoryNotEmptyException =>
         }
 
         val dstFile = new File(dst.toString)

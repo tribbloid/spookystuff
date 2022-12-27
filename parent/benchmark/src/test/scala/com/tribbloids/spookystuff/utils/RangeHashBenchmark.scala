@@ -7,7 +7,7 @@ class RangeHashBenchmark extends FunSpecx {
 
   it("range hash should be fast") {
 
-    val results = Seq(
+    Seq(
 //      CommonUtils.timed((0 until Int.MaxValue).hashCode()), // this will take forever
       CommonUtils.timed((0, Int.MaxValue).hashCode()),
       CommonUtils.timed(new IntRange(0, Int.MaxValue).hashCode()),

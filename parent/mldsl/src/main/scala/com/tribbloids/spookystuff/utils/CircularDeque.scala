@@ -20,7 +20,7 @@ case class CircularDeque[T](size: Int = 10) {
         delegate.addFirst(v)
         success = true
       } catch {
-        case e: IllegalStateException =>
+        case _: IllegalStateException =>
           delegate.removeLast()
       }
     }
@@ -36,7 +36,7 @@ case class CircularDeque[T](size: Int = 10) {
         delegate.addLast(v)
         success = true
       } catch {
-        case e: IllegalStateException =>
+        case _: IllegalStateException =>
           delegate.removeFirst()
       }
     }

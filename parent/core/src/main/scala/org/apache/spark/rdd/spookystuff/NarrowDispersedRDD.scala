@@ -206,7 +206,7 @@ class NarrowDispersedRDD[T: ClassTag](
     val p: PartitionImpl = partition.asInstanceOf[PartitionImpl]
     val prevRDD: RDD[T] = firstParent[T]
 
-    lazy val blockMgr = SparkEnv.get.blockManager
+    SparkEnv.get.blockManager
 
     val toPartitions = p.prevPartitions.zip(p.mappings).map {
       case (prevPartition, mapping) =>

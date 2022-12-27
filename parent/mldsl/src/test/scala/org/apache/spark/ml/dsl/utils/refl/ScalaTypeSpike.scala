@@ -68,7 +68,7 @@ class ScalaTypeSpike extends FunSpecx {
     val tpe = ttg.tpe
 
     val ttgSlow = TypeUtils.createTypeTag_slowButSerializable(tpe, ttg.mirror)
-    val ttgFast = TypeUtils.createTypeTag_fast(tpe, ttg.mirror)
+    TypeUtils.createTypeTag_fast(tpe, ttg.mirror)
 
     AssertSerializable(ttgSlow)
   }

@@ -75,7 +75,7 @@ class TestExtractPlan extends SpookyEnvFixture {
   it("ExtractPlan cannot partially overwrite old values with the same field id but different DataType") {
 
     intercept[IllegalArgumentException] {
-      val extracted = src
+      src
         .extract {
           '_1.typed[Int].andOptionFn { v =>
             if (v > 1) Some(v)
