@@ -1,6 +1,6 @@
-package org.apache.spark.rdd.spookystuff.IncrementallyCachedRDDBenchmark
+package org.apache.spark.rdd.spookystuff.benchmark
 
-import com.tribbloids.spookystuff.testutils.{FunSpecx, TestHelper}
+import com.tribbloids.spookystuff.testutils.{FunSpecx, SubSuite, TestHelper}
 import com.tribbloids.spookystuff.utils.Stopwatch
 import org.apache.spark.SparkEnv
 import org.apache.spark.rdd.RDD
@@ -13,7 +13,7 @@ import org.scalatest.BeforeAndAfterEach
 
 import scala.util.Random
 
-abstract class Abstract extends FunSpecx with BeforeAndAfterEach {
+abstract class IncrementallyCachedRDDBenchmark extends FunSpecx with BeforeAndAfterEach with SubSuite {
 
   import TestHelper.TestSQL.implicits._
 

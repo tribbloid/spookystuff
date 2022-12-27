@@ -13,9 +13,9 @@ class ExternalAppendOnlyArrayMatrix extends FunSpecx {
   val p1: Int = Random.shuffle(1 to TestSC.defaultParallelism).head
   val p2: Int = Random.shuffle((1 + TestSC.defaultParallelism) to (TestSC.defaultParallelism * 4)).head
 
-  override val nestedSuites: immutable.IndexedSeq[Suite] = {
+  override val nestedSuites: Vector[Suite] = {
 
-    immutable.IndexedSeq(
+    Vector(
       new ExternalAppendOnlyArraySuite(p1) {},
       //      ExternalAppendOnlyArraySuite(TestSC.defaultParallelism),
       new ExternalAppendOnlyArraySuite(p2) {}

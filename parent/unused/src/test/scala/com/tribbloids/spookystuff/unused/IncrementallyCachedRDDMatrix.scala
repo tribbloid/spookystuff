@@ -104,7 +104,7 @@ class IncrementallyCachedRDDMatrix extends FunSpecx with BeforeAndAfterAll {
 
   import IncrementallyCachedRDDMatrix._
 
-  override lazy val nestedSuites: immutable.IndexedSeq[IncrementallyCachedRDDSuite[_]] = {
+  override lazy val nestedSuites: Vector[IncrementallyCachedRDDSuite[_]] = {
 
     val result = Seq(GLess, GMore).flatMap { g =>
       Seq(
@@ -116,6 +116,6 @@ class IncrementallyCachedRDDMatrix extends FunSpecx with BeforeAndAfterAll {
       )
     }
 
-    result.to[immutable.IndexedSeq]
+    result.to[Vector]
   }
 }
