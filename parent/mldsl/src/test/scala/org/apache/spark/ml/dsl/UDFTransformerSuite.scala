@@ -3,6 +3,8 @@ package org.apache.spark.ml.dsl
 import com.tribbloids.spookystuff.testutils.{FunSpecx, TestHelper}
 import org.apache.spark.ml.feature.Tokenizer
 import org.apache.spark.sql.functions._
+import org.apache.spark.sql.DataFrame
+import org.apache.spark.sql.expressions.UserDefinedFunction
 
 case class User(
     name: String,
@@ -18,12 +20,12 @@ class UDFTransformerSuite extends FunSpecx {
     )
   )
 
-  val tokenizer = new Tokenizer().setInputCol("name").setOutputCol("name_token")
-  val stemming = udf { v: Seq[String] =>
+  val tokenizer: Tokenizer = new Tokenizer().setInputCol("name").setOutputCol("name_token")
+  val stemming: UserDefinedFunction = udf { v: Seq[String] =>
     v.map(_.stripSuffix("$"))
   }
   val arch = UDFTransformer().setUDFSafely(stemming).setInputCols(Array("name_token")).setOutputCol("name_stemmed")
-  val src = tokenizer.transform(df1)
+  val src: DataFrame = tokenizer.transform(df1)
 
   it("transformer has consistent schema") {
     val end = arch.transform(src)

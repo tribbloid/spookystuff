@@ -15,7 +15,7 @@ abstract class EncodedBinaryMagnet[T <: EncodedBinaryMagnet[T]] extends Product 
 
   def asBytes: Array[Byte]
 
-  def asBytesOrEmpty = Option(asBytes).getOrElse(Array.empty)
+  def asBytesOrEmpty: Array[Byte] = Option(asBytes).getOrElse(Array.empty)
 
   @transient lazy val _equalBy: List[Byte] = asBytesOrEmpty.toList
 
@@ -92,7 +92,7 @@ object EncodedBinaryMagnet {
 
   object Base64 extends EncodedBinaryMagnet.Companion[Base64] {
 
-    override def _str2Bytes(v: String) =
+    override def _str2Bytes(v: String): Array[Byte] =
       DatatypeConverter.parseBase64Binary(v)
   }
 
@@ -105,7 +105,7 @@ object EncodedBinaryMagnet {
 
   object Base16 extends EncodedBinaryMagnet.Companion[Base16] {
 
-    override def _str2Bytes(v: String) =
+    override def _str2Bytes(v: String): Array[Byte] =
       DatatypeConverter.parseHexBinary(v)
   }
 
@@ -117,7 +117,7 @@ object EncodedBinaryMagnet {
 
   object UTF8 extends EncodedBinaryMagnet.Companion[UTF8] {
 
-    override def _str2Bytes(v: String) =
+    override def _str2Bytes(v: String): Array[Byte] =
       v.getBytes("UTF-8")
   }
 

@@ -52,7 +52,7 @@ object WebInteraction {
 
   object DocumentReadyCondition extends ExpectedCondition[Boolean] {
 
-    final def script = "return document.readyState"
+    final def script: String = "return document.readyState"
 
     override def apply(input: WebDriver): Boolean = {
 

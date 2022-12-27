@@ -35,8 +35,8 @@ class ExternalAppendOnlyArray[T] private[spookystuff] (
     val ctag: ClassTag[T]
 ) extends LocalCleanable {
 
-  val INCREMENT = 1024
-  val INCREMENT_LARGE = 65536
+  val INCREMENT: Int = 1024
+  val INCREMENT_LARGE: Int = 65536
 
   import ExternalAppendOnlyArray._
 
@@ -185,7 +185,7 @@ class ExternalAppendOnlyArray[T] private[spookystuff] (
     list.size()
   }
 
-  @volatile var notLogged = true
+  @volatile var notLogged: Boolean = true
   def addIfNew(i: Int, v: T): Unit = synchronized {
 
     if (i == length) {
@@ -228,7 +228,7 @@ class ExternalAppendOnlyArray[T] private[spookystuff] (
 
     case object CachedIterator extends FastForwardingIterator[T] with ConsumedIterator with NOTSerializable {
 
-      protected val _offset = new AtomicInteger(index) // strictly incremental, index of the next pointer
+      protected val _offset: AtomicInteger = new AtomicInteger(index) // strictly incremental, index of the next pointer
       override def offset: Int = _offset.get()
 
       override protected def fastForward(n: Int): this.type = {
@@ -330,8 +330,8 @@ class ExternalAppendOnlyArray[T] private[spookystuff] (
 
 object ExternalAppendOnlyArray {
 
-  val INCREMENT = 1024
-  val INCREMENT_LARGE = 65536
+  val INCREMENT: Int = 1024
+  val INCREMENT_LARGE: Int = 65536
 
   val rootPath: String = CommonUtils.\\\(
     CommonConst.ROOT_TEMP_DIR,

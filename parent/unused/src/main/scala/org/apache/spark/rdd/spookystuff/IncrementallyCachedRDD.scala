@@ -75,7 +75,7 @@ case class IncrementallyCachedRDD[T: ClassTag](
       //        if (_activeTask == null) _activeTask = this
       //      }
 
-      lazy val semaphore = new Semaphore(1) // cannot be shared by >1 threads
+      lazy val semaphore: Semaphore = new Semaphore(1) // cannot be shared by >1 threads
 
       override protected lazy val _equalBy: Any = taskCtx.taskAttemptId()
 

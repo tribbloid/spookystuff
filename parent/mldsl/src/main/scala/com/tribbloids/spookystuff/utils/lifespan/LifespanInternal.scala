@@ -46,7 +46,7 @@ abstract class LifespanInternal extends BeforeAndAfterShipping with EqualBy {
   }
 
   protected def _registerBatches_CleanSweepHooks: Seq[(BatchID, Batch)]
-  @transient final lazy val registeredBatches = _registerBatches_CleanSweepHooks
+  @transient final lazy val registeredBatches: Seq[(BatchID, Batch)] = _registerBatches_CleanSweepHooks
   @transient final lazy val registeredIDs: Seq[BatchID] = registeredBatches.map(v => v._1)
   final protected def _equalBy: Seq[BatchID] = registeredIDs
 

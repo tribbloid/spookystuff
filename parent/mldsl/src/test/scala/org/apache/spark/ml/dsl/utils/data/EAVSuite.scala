@@ -22,7 +22,7 @@ class EAVSuite extends FunSpecx {
 
   val withNull = wellformed :++ EAVSystem.NoAttr.From("nullable" -> null)
 
-  val withEnum = WithEnum._EAV(wellformed.updated("enumField" -> "bb").internal)
+  val withEnum: WithEnum._EAV = WithEnum._EAV(wellformed.updated("enumField" -> "bb").internal)
 
   val noAttrDecoderView = Relay.toFallbackDecoderView(EAVSystem.NoAttr.relay)
 

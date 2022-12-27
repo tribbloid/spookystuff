@@ -19,10 +19,10 @@ abstract class IncrementallyCachedRDDBenchmark extends FunSpecx with BeforeAndAf
 
   TestHelper.enableCheckpoint
 
-  val datasetSize = 100000
-  val elementSize = 100
+  val datasetSize: Int = 100000
+  val elementSize: Int = 100
 
-  val numPartitions = 100
+  val numPartitions: Int = 100
 
   val storageLevel: StorageLevel = StorageLevel.DISK_ONLY
 

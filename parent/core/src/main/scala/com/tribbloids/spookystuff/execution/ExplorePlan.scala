@@ -129,7 +129,7 @@ case class ExplorePlan(
   //      _extracts.map(_.typedField)
   //  }
 
-  val impl = exploreAlgorithm.getImpl(_effectiveParams, this.schema)
+  val impl: ExploreAlgorithm.Impl = exploreAlgorithm.getImpl(_effectiveParams, this.schema)
 
   override def doExecute(): SquashedFetchedRDD = {
     assert(_effectiveParams.depthField != null)

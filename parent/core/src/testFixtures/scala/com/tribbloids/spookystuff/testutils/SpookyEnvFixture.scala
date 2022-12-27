@@ -160,7 +160,7 @@ abstract class SpookyEnvFixture
   import com.tribbloids.spookystuff.utils.SpookyViews._
 
   def _processNames: Seq[String] = Seq("phantomjs", s"${PythonDriverFactory.python3} -iu")
-  final lazy val conditions = {
+  final lazy val conditions: Seq[ProcessInfo => Boolean] = {
     val _processNames = this._processNames
     val exitingPIDs = this.exitingPIDs
     _processNames.map {

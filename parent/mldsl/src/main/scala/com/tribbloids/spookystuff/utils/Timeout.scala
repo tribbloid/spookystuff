@@ -8,7 +8,7 @@ case class Timeout(
     noProgress: Duration = 30.seconds
 ) {
 
-  override lazy val toString =
+  override lazy val toString: String =
     s"[$max / ${noProgress} if no progress]"
 }
 

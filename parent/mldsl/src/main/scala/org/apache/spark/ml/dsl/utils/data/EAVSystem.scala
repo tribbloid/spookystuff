@@ -12,7 +12,7 @@ trait EAVSystem {
 
   trait ThisEAV extends EAV {
 
-    final override def system = EAVSystem.this
+    final override def system: EAVSystem = EAVSystem.this
   }
 
   object ThisEAV extends HasEncoder[_EAV] {

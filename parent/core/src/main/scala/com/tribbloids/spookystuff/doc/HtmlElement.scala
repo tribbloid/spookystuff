@@ -86,7 +86,7 @@ class HtmlElement private (
     }
   }
 
-  override def findAll(selector: String) =
+  override def findAll(selector: String): Elements[HtmlElement] =
     new Elements(
       parsed
         .select(selector)
@@ -95,7 +95,7 @@ class HtmlElement private (
         .toList
     )
 
-  override def findAllWithSiblings(selector: String, range: Range) = {
+  override def findAllWithSiblings(selector: String, range: Range): Elements[Siblings[HtmlElement]] = {
 
     val found = parsed.select(selector).asScala.toSeq
     expand(found, range)
@@ -124,7 +124,7 @@ class HtmlElement private (
     new Elements(colls.toList)
   }
 
-  override def children(selector: CSSQuery) = {
+  override def children(selector: CSSQuery): Elements[HtmlElement] = {
 
     val found: Seq[Element] = parsed
       .select(selector)
@@ -168,12 +168,12 @@ class HtmlElement private (
     else Option(result)
   }
 
-  override def href =
+  override def href: Option[String] =
     attr(
       "abs:href"
     ) // TODO: if this is identical to the uri itself, it should be considered an inline/invalid link and have None output
 
-  override def src = attr("abs:src")
+  override def src: Option[String] = attr("abs:src")
 
   override def text: Option[String] = Option(parsed.text)
 

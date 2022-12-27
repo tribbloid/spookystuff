@@ -23,9 +23,9 @@ object StaticGraph {
     protected def getCtg(
         implicit
         ev: ClassTag[GG]
-    ) = ev
+    ): ClassTag[GG] = ev
     implicit def ctg: ClassTag[GG]
-    final lazy val _ctg = ctg
+    final lazy val _ctg: ClassTag[GG] = ctg
 
 //    implicit val algebra: Algebra[D]
 

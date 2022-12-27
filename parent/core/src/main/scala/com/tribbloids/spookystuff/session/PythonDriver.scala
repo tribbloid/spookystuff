@@ -174,7 +174,7 @@ class PythonDriver(
       .getOrElse(this.interrupt())
   }
 
-  final def PROMPTS = "^(>>> |\\.\\.\\. )+"
+  final def PROMPTS: String = "^(>>> |\\.\\.\\. )+"
 
   def removePrompts(str: String): String = {
     str.stripPrefix("\r").replaceAll(PROMPTS, "")

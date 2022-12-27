@@ -16,8 +16,8 @@ object DFDSuite {
   val TF_ZIPPED: String = "tf_zipped"
   val IDF_ZIPPED: String = "idf_zipped"
 
-  val stemming = new StopWordsRemover()
-  val tf = new HashingTF()
+  val stemming: StopWordsRemover = new StopWordsRemover()
+  val tf: HashingTF = new HashingTF()
 
   val zipping: UserDefinedFunction = udf { (v1s: Seq[String], v2: MLVector) =>
     v1s.map { v =>

@@ -18,7 +18,7 @@ import scala.util.Random
   * NOT serializable, can only run on driver
   */
 object ScratchRDDs {
-  val prefix = "temp_"
+  val prefix: String = "temp_"
 
   // TODO: this name should be validated against current DB to ensure that such name doesn't exist
   def tempTableName(): String = {

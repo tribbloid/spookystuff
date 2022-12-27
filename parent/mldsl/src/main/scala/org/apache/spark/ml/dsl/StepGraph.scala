@@ -116,7 +116,7 @@ object StepGraph {
   trait MayHaveTails extends StepGraph {
 
     def leftTailIDs: Seq[String]
-    final lazy val leftTails = leftTailIDs.map(coll)
+    final lazy val leftTails: Seq[StepLike] = leftTailIDs.map(coll)
     final lazy val leftConnectors: Seq[Connector] = leftTails.collect {
       case v: Connector => v
     }
@@ -145,7 +145,7 @@ object StepGraph {
     final def canConnectFromLeft: Boolean = leftIntakes.nonEmpty || leftTails.contains(PASSTHROUGH)
 
     def rightTailIDs: Seq[String]
-    final lazy val rightTails = rightTailIDs.map(coll)
+    final lazy val rightTails: Seq[StepLike] = rightTailIDs.map(coll)
     final lazy val rightConnectors: Seq[Connector] = rightTails.collect {
       case v: Connector => v
     }
@@ -175,7 +175,7 @@ object StepGraph {
     def fromIDs: Seq[String] = headIDs
     def headExists: Boolean = headIDs.nonEmpty
 
-    final lazy val heads = headIDs.map(coll)
+    final lazy val heads: Seq[StepLike] = headIDs.map(coll)
     final lazy val PASSTHROUGHOutput: Option[Connector] = heads.find(_ == PASSTHROUGH) map (_.asInstanceOf[Connector])
     final lazy val hasPASSTHROUGHOutput: Boolean = heads.contains(PASSTHROUGH)
     // all heads must have outIDs

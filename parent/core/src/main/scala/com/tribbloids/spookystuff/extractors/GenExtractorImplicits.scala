@@ -26,7 +26,7 @@ trait GenExtractorImplicits {
       val defaultV: Default[R]
   ) extends Serializable {
 
-    def into(field: Field) = Append.create[R](field, self)
+    def into(field: Field): Alias[FR, Seq[R]] = Append.create[R](field, self)
     def ~+(field: Field) = into(field)
   }
 
@@ -44,21 +44,21 @@ trait GenExtractorImplicits {
 
     def uri: Extractor[String] = self.andFn(_.uri)
 
-    def findAll(selector: String) = FindAllExpr(self, selector)
+    def findAll(selector: String): GenExtractor[FR, Elements[Unstructured]] = FindAllExpr(self, selector)
     def \\(selector: String) = findAll(selector)
-    def findFirst(selector: String) = findAll(selector).head
+    def findFirst(selector: String): Extractor[Unstructured] = findAll(selector).head
 
-    def children(selector: String) = ChildrenExpr(self, selector)
+    def children(selector: String): GenExtractor[FR, Elements[Unstructured]] = ChildrenExpr(self, selector)
     def \(selector: String) = children(selector)
-    def child(selector: String) = children(selector).head
+    def child(selector: String): Extractor[Unstructured] = children(selector).head
 
     def text: Extractor[String] = self.andOptionFn { v =>
       v.text
     }
 
-    def code = self.andOptionFn(_.code)
+    def code: GenExtractor[FR, String] = self.andOptionFn(_.code)
 
-    def formattedCode = self.andOptionFn(_.formattedCode)
+    def formattedCode: GenExtractor[FR, String] = self.andOptionFn(_.formattedCode)
 
     def ownText: Extractor[String] = self.andOptionFn(_.ownText)
 
@@ -68,13 +68,13 @@ trait GenExtractorImplicits {
     def attr(attrKey: String, noEmpty: Boolean = true): Extractor[String] =
       self.andOptionFn(_.attr(attrKey, noEmpty))
 
-    def href = self.andOptionFn(_.href)
+    def href: GenExtractor[FR, String] = self.andOptionFn(_.href)
 
-    def src = self.andOptionFn(_.src)
+    def src: GenExtractor[FR, String] = self.andOptionFn(_.src)
 
-    def boilerPipe = self.andOptionFn(_.boilerPipe)
+    def boilerPipe: GenExtractor[FR, String] = self.andOptionFn(_.boilerPipe)
 
-    def expand(range: Range) = {
+    def expand(range: Range): GenExtractor[FR, Elements[Siblings[Unstructured]]] = {
       self match {
         case AndThen(_, _, Some(FindAllMeta(argg, selector))) =>
           argg.andFn(_.findAllWithSiblings(selector, range))
@@ -102,11 +102,11 @@ trait GenExtractorImplicits {
     def attrs(attrKey: String, noEmpty: Boolean = true): Extractor[Seq[String]] =
       self.andFn(_.attrs(attrKey, noEmpty))
 
-    def hrefs = self.andFn(_.hrefs)
+    def hrefs: GenExtractor[FR, List[String]] = self.andFn(_.hrefs)
 
-    def srcs = self.andFn(_.srcs)
+    def srcs: GenExtractor[FR, List[String]] = self.andFn(_.srcs)
 
-    def boilerPipes = self.andFn(_.boilerPipes)
+    def boilerPipes: GenExtractor[FR, Seq[String]] = self.andFn(_.boilerPipes)
   }
 
   implicit class DocExView(self: Extractor[Doc]) extends UnstructuredExView(self.andFn(_.root)) {

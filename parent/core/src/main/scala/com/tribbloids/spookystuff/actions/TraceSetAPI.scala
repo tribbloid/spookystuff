@@ -13,7 +13,7 @@ object TraceSetAPI {
 trait TraceSetAPI {
 
   def asTraceSet: Set[Trace]
-  @transient final lazy val traceSetView = TraceSetView(asTraceSet)
+  @transient final lazy val traceSetView: TraceSetView = TraceSetView(asTraceSet)
   @transient lazy val asTraceViewSet: Set[TraceView] = asTraceSet.map(v => TraceView(v))
 
   def *>[T: ClassTag](others: TraversableOnce[T]): TraceSetView = {

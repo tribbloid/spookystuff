@@ -8,12 +8,13 @@ import org.apache.spark.sql.types.SQLUserDefinedType
 import org.openqa.selenium.By
 
 import scala.language.implicitConversions
+import scala.util.matching.Regex
 
 object Selector extends Relay.ToMsg[Selector] {
 
   final val SCHEMA = "By.sizzleCssSelector"
 
-  def bySizzle(v: String) = new BySizzleSelector(v)
+  def bySizzle(v: String): BySizzleSelector = new BySizzleSelector(v)
 
   final val factories: Seq[String => By] = {
     Seq(
@@ -28,7 +29,7 @@ object Selector extends Relay.ToMsg[Selector] {
       bySizzle(_)
     )
   }
-  final val factory_patterns = factories.map { fn =>
+  final val factory_patterns: Seq[(String => By, Regex)] = factories.map { fn =>
     fn -> fn("(.*)").toString.r
   }
 

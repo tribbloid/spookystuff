@@ -15,7 +15,7 @@ import org.apache.spark.sql.types._
 //TODO: Message JSON conversion discard dataType info, is it wise?
 case class Lit[T, +R](value: R, dataType: DataType) extends Static[T, R] with EqualBy {
 
-  def _equalBy = value
+  def _equalBy: R = value
 
   def valueOpt: Option[R] = Option(value)
 

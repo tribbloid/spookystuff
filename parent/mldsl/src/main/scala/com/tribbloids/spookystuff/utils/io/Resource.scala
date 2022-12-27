@@ -130,7 +130,7 @@ object Resource {
     implicit def asResource[R <: Resource, T](io: R#_IOView[T]): R = io.outer
   }
 
-  val resourceParser = ResourceMetadata.ReflectionParser[Resource]()
+  val resourceParser: ResourceMetadata.ReflectionParser[Resource] = ResourceMetadata.ReflectionParser[Resource]()
 
   final val DIR = "directory"
   final val FILE = "file"

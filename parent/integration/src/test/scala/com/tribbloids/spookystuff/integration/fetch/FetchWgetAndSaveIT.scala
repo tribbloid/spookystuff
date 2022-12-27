@@ -74,10 +74,10 @@ class FetchWgetAndSaveIT extends IntegrationFixture {
     assert(unionRows(1).docs.head.name === "b")
   }
 
-  override def numPages = spooky.spookyConf.defaultGenPartitioner match {
+  override def numPages: Long = spooky.spookyConf.defaultGenPartitioner match {
     //    case FetchOptimizers.WebCacheAware => 1
     case _ => 1
   }
 
-  override def pageFetchedCap = 36 // way too large
+  override def pageFetchedCap: Long = 36 // way too large
 }

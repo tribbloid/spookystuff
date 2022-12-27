@@ -22,8 +22,8 @@ case class RangeArg(
       .mkString("[", "..", "]")
   }
 
-  lazy val start = delegate.getMinimumLong
-  lazy val end = delegate.getMaximumLong
+  lazy val start: Long = delegate.getMinimumLong
+  lazy val end: Long = delegate.getMaximumLong
 }
 
 object RangeArg {

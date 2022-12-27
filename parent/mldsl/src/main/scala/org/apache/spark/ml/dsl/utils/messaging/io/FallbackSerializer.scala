@@ -13,7 +13,7 @@ abstract class FallbackSerializer(
     sparkSerializer: org.apache.spark.serializer.Serializer = DSLUtils.defaultJavaSerializer
 ) extends Serializer[Any] {
 
-  val VID = -47597349821L
+  val VID: Long = -47597349821L
 
   def deserialize(
       implicit

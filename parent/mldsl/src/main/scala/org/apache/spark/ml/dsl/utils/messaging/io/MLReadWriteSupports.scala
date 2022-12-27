@@ -29,7 +29,7 @@ object MLReadWriteSupports {
     //      }
     //    }
 
-    override def read = {
+    override def read: MLReader[Obj] = {
 
       implicitly[Relay[Obj]].toMLReader
     }

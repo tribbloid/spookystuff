@@ -60,6 +60,6 @@ class ExploreDirectoriesIT extends IntegrationFixture {
     )
   }
 
-  override def numPages = 4
-  override def pageFetchedCap = 16 // way too large
+  override def numPages: Long = 4
+  override def pageFetchedCap: Long = 16 // way too large
 }

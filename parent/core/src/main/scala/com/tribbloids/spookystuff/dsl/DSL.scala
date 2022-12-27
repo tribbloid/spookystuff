@@ -46,15 +46,16 @@ sealed trait Level1 extends Level2 {
 
   implicit class StrContextHelper(val strC: StringContext) extends Serializable {
 
-    def x(parts: Col[String]*) = Interpolate(strC.parts, parts.map(_.ex))
+    def x(parts: Col[String]*): Interpolate = Interpolate(strC.parts, parts.map(_.ex))
 
-    def CSS(parts: Col[String]*) = GetOnlyDocExpr.andFn(_.root).findAll(strC.s(parts: _*))
-    def S(parts: Col[String]*) = CSS(parts: _*)
+    def CSS(parts: Col[String]*): GenExtractor[FR, Elements[Unstructured]] =
+      GetOnlyDocExpr.andFn(_.root).findAll(strC.s(parts: _*))
+    def S(parts: Col[String]*): GenExtractor[FR, Elements[Unstructured]] = CSS(parts: _*)
 
     def CSS_*(parts: Col[String]*) = GetAllDocsExpr.findAll(strC.s(parts: _*))
     def S_*(parts: Col[String]*) = CSS_*(parts: _*)
 
-    def A(parts: Col[String]*) = 'A.findAll(strC.s(parts: _*))
+    def A(parts: Col[String]*): GenExtractor[FR, Elements[Unstructured]] = 'A.findAll(strC.s(parts: _*))
   }
 }
 
@@ -75,9 +76,9 @@ class DSL extends Level1 {
   //    new IterableExView(expr).get(i)
   //  }
 
-  def G = GroupIndexExpr
+  def G: GenExtractor[FR, Int] = GroupIndexExpr
 
-  def A(selector: String) = 'A.findAll(selector)
+  def A(selector: String): GenExtractor[FR, Elements[Unstructured]] = 'A.findAll(selector)
   def A(selector: String, i: Int): Extractor[Unstructured] = {
     val expr = 'A.findAll(selector)
     expr.get(i)

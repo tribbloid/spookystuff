@@ -17,7 +17,7 @@ class LocalityImplSuite extends SpookyEnvFixture {
   final val size = 100
   final val np = 9
 
-  val baseArray = {
+  val baseArray: IndexedSeq[(Int, Int)] = {
     val range = 1 to size
     val a1 = Random.shuffle(range)
     val a2 = Random.shuffle(range)
@@ -323,7 +323,7 @@ object LocalityImplSuite extends Assertions {
     first.persist()
     second.persist()
 
-    val allZipped_sorted = allZipped
+    val allZipped_sorted: RDD[List[List[V]]] = allZipped
       .map { v =>
         v.map(vv => vv.sortBy(_.hashCode))
       }

@@ -56,31 +56,31 @@ object IncrementallyCachedRDDMatrix {
       }
 
       // TODO: this doesn't work at the moment, fix and enable
-      def onPersisted = TestSubject(persistedSrc)
+      def onPersisted: TestSubject[Int] = TestSubject(persistedSrc)
 
-      def onCheckpointed = TestSubject(checkpointedSrc)
+      def onCheckpointed: TestSubject[Int] = TestSubject(checkpointedSrc)
     }
 
     object Collect {
 
       case object Ints extends IncrementallyCachedRDDSuite[Int](nPartition) {
 
-        override def getFacet = WithRDDs.useCollect.incCached
+        override def getFacet: TestSubject[Int]#Fast = WithRDDs.useCollect.incCached
       }
 
       case object InternalRows extends IncrementallyCachedRDDSuite[InternalRow](nPartition) {
 
-        override def getFacet = WithRDDs.onInternalRows.incCached
+        override def getFacet: TestSubject[InternalRow]#Fast = WithRDDs.onInternalRows.incCached
       }
 
       case object Unsafe extends IncrementallyCachedRDDSuite[InternalRow](nPartition) {
 
-        override def getFacet = WithRDDs.onInternalRows.incCached_unsafe
+        override def getFacet: TestSubject[InternalRow]#Fast = WithRDDs.onInternalRows.incCached_unsafe
       }
 
       case object Checkpointed extends IncrementallyCachedRDDSuite[Int](nPartition) {
 
-        override def getFacet = WithRDDs.onCheckpointed.incCached
+        override def getFacet: TestSubject[Int]#Fast = WithRDDs.onCheckpointed.incCached
       }
     }
 
@@ -88,7 +88,7 @@ object IncrementallyCachedRDDMatrix {
 
       case object Ints extends IncrementallyCachedRDDSuite[Int](nPartition) {
 
-        override def getFacet = WithRDDs.useToLocalItr.incCached
+        override def getFacet: TestSubject[Int]#Fast = WithRDDs.useToLocalItr.incCached
       }
     }
   }

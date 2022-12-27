@@ -87,7 +87,7 @@ object ExploreAlgorithms {
     override def getImpl(
         params: Params,
         schema: SpookySchema
-    ) = Impl(params, schema)
+    ): Impl = Impl(params, schema)
 
     case class Impl(
         override val params: Params,

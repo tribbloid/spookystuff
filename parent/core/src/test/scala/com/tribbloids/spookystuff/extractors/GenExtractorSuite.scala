@@ -7,7 +7,7 @@ import scala.runtime.AbstractPartialFunction
 
 object GenExtractorSuite {
 
-  var counter = 0
+  var counter: Int = 0
 
   val partialFn: scala.PartialFunction[String, Int] =
     new AbstractPartialFunction[String, Int] with Serializable {

@@ -6,6 +6,7 @@ import org.json4s.{DateFormat, DefaultFormats, Formats}
 import java.text.SimpleDateFormat
 import java.util.{Date, TimeZone}
 import scala.util.Try
+import scala.xml.PrettyPrinter
 
 object XMLFormats {
 
@@ -34,7 +35,7 @@ object XMLFormats {
       def dateFormats: Seq[SimpleDateFormat] = baseDataFormatsFactory.get()
     }
 
-    override val wantsBigDecimal = true
+    override val wantsBigDecimal: Boolean = true
   }
 
   def xmlFormats(base: Formats = BaseFormat): Formats =
@@ -48,5 +49,5 @@ object XMLFormats {
 
   lazy val defaultFormats: Formats = xmlFormats()
 
-  val defaultXMLPrinter = new scala.xml.PrettyPrinter(80, 2)
+  val defaultXMLPrinter: PrettyPrinter = new scala.xml.PrettyPrinter(80, 2)
 }

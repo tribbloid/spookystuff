@@ -87,17 +87,17 @@ class PyBinding(
 
   protected def dynamicDecorator(fn: => PyBinding): PyBinding = fn
 
-  def selectDynamic(fieldName: String) = {
+  def selectDynamic(fieldName: String): PyBinding = {
     dynamicDecorator {
       pyCallMethod(fieldName)(Nil -> "")
     }
   }
-  def applyDynamic(methodName: String)(args: Any*) = {
+  def applyDynamic(methodName: String)(args: Any*): PyBinding = {
     dynamicDecorator {
       pyCallMethod(methodName)(converter.args2Ref(args))
     }
   }
-  def applyDynamicNamed(methodName: String)(kwargs: (String, Any)*) = {
+  def applyDynamicNamed(methodName: String)(kwargs: (String, Any)*): PyBinding = {
     dynamicDecorator {
       pyCallMethod(methodName)(converter.kwargs2Code(kwargs))
     }

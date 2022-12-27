@@ -5,16 +5,16 @@ package com.tribbloids.spookystuff.testutils
   */
 trait RemoteDocsFixture {
 
-  def HTML_URL = "http://tribbloid.github.io/spookystuff/test/Wikipedia.html"
-  def JSON_URL = "http://tribbloid.github.io/spookystuff/test/tribbloid.json"
+  def HTML_URL: String = "http://tribbloid.github.io/spookystuff/test/Wikipedia.html"
+  def JSON_URL: String = "http://tribbloid.github.io/spookystuff/test/tribbloid.json"
   // TODO: add this after fetch can semi-auto-detect content-type
   //  def jsonUrlIncorrectContentType = "https://raw.githubusercontent.com/tribbloid/spookystuff/master/core/src/test/resources/site/tribbloid.json"
-  def PNG_URL = "http://tribbloid.github.io/spookystuff/test/logo11w.png"
-  def PDF_URL = "http://tribbloid.github.io/spookystuff/test/Test.pdf"
-  def XML_URL = "http://tribbloid.github.io/spookystuff/test/example.xml"
-  def CSV_URL = "http://tribbloid.github.io/spookystuff/test/table.csv"
+  def PNG_URL: String = "http://tribbloid.github.io/spookystuff/test/logo11w.png"
+  def PDF_URL: String = "http://tribbloid.github.io/spookystuff/test/Test.pdf"
+  def XML_URL: String = "http://tribbloid.github.io/spookystuff/test/example.xml"
+  def CSV_URL: String = "http://tribbloid.github.io/spookystuff/test/table.csv"
 
-  def HTTP_IP_URL = "http://api.ipify.org/"
-  def HTTPS_IP_URL = "https://api.ipify.org/"
+  def HTTP_IP_URL: String = "http://api.ipify.org/"
+  def HTTPS_IP_URL: String = "https://api.ipify.org/"
 //  def USERAGENT_URL = "https://www.whatismybrowser.com/detect/what-is-my-user-agent/"
 }

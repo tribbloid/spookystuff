@@ -8,7 +8,7 @@ case class BroadcastLocalityImpl[K: ClassTag, V: ClassTag](
     override val rdd1: RDD[(K, V)]
 ) extends Locality_OrdinalityImpl[K, V] {
 
-  override def cogroupBase[V2: ClassTag](rdd2: RDD[(K, V2)]) = {
+  override def cogroupBase[V2: ClassTag](rdd2: RDD[(K, V2)]): RDD[(K, (V, Iterable[V2]))] = {
 
     //      val grouped: RDD[(K, Iterable[V])] = self.groupByKey()
     //      val a = grouped.map(_._2.toList).collect()

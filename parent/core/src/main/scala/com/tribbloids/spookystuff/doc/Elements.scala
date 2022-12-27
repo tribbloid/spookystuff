@@ -52,14 +52,16 @@ case class Elements[+T <: Unstructured](override val delegate: List[T]) extends 
 
   override def formattedCode: Option[String] = formattedCodes.headOption
 
-  override def findAll(selector: String) = new Elements(delegate.flatMap(_.findAll(selector)))
+  override def findAll(selector: String): Elements[Unstructured] = new Elements(delegate.flatMap(_.findAll(selector)))
 
-  override def findAllWithSiblings(selector: String, range: Range) =
+  override def findAllWithSiblings(selector: String, range: Range): Elements[Siblings[Unstructured]] =
     new Elements(delegate.flatMap(_.findAllWithSiblings(selector, range)))
 
-  override def children(selector: CSSQuery) = new Elements(delegate.flatMap(_.children(selector)))
+  override def children(selector: CSSQuery): Elements[Unstructured] = new Elements(
+    delegate.flatMap(_.children(selector))
+  )
 
-  override def childrenWithSiblings(selector: CSSQuery, range: Range) =
+  override def childrenWithSiblings(selector: CSSQuery, range: Range): Elements[Siblings[Unstructured]] =
     new Elements(delegate.flatMap(_.childrenWithSiblings(selector, range)))
 
   override def ownText: Option[String] = ownTexts.headOption

@@ -56,7 +56,7 @@ object Interpolation {
   def `$`: Interpolation = "$"
   def `'`: Interpolation = "'"
 
-  val specialChars = "(?=[]\\[+$&|!(){}^\"~*?:\\\\-])"
+  val specialChars: String = "(?=[]\\[+$&|!(){}^\"~*?:\\\\-])"
 
   def replaceAllNonRecursively(regex: Regex, target: CharSequence)(replacer: Match => String): String = {
 

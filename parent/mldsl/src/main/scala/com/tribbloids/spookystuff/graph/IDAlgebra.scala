@@ -9,7 +9,7 @@ trait IDAlgebra[ID, -NodeData, -EdgeData] {
 
   def DANGLING: ID
 
-  lazy val reserved = Set(DANGLING) // will be excluded from rotation
+  lazy val reserved: Set[ID] = Set(DANGLING) // will be excluded from rotation
 
   final def retryUntilNotReserved(fn: => ID): ID = {
 
@@ -72,7 +72,7 @@ object IDAlgebra {
 
     override def _random(): UUID = UUID.randomUUID()
 
-    override def rotatorFactory() = RotatorFactory()
+    override def rotatorFactory(): RotatorFactory = RotatorFactory()
 
     case class RotatorFactory() extends (() => RotatorImpl) {
 

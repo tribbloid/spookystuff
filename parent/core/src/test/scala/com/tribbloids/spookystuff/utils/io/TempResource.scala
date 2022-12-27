@@ -84,5 +84,5 @@ case class TempResource(
 
 object TempResource {
 
-  val defaultRandomFileSize = 16
+  val defaultRandomFileSize: Int = 16
 }

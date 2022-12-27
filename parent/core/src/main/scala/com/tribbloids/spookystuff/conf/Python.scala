@@ -8,7 +8,7 @@ import org.apache.spark.util.LongAccumulator
 
 object Python extends PluginSystem.WithDriver {
 
-  final val DEFAULT_PYTHONDRIVER_FACTORY = PythonDriverFactory._3.taskLocal
+  final val DEFAULT_PYTHONDRIVER_FACTORY: DriverFactory.TaskLocal[PythonDriver] = PythonDriverFactory._3.taskLocal
 
   case class Conf(
       pythonDriverFactory: DriverFactory[PythonDriver] = DEFAULT_PYTHONDRIVER_FACTORY

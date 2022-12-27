@@ -18,7 +18,7 @@ abstract class AbstractMetrics extends MetricLike {
 
   protected def _symbol2children: List[(String, Any)] = ReflectionUtils.getCaseAccessorMap(this)
 
-  @transient final lazy val symbol2children = _symbol2children
+  @transient final lazy val symbol2children: List[(String, Any)] = _symbol2children
 
   override def _equalBy: (String, List[(String, Any)]) = displayName -> symbol2children
 

@@ -127,7 +127,7 @@ class ScalaDynamicExtractorSuite extends SpookyEnvFixture with LocalPathDocsFixt
   //          )
   //    }
 
-  val src = List(
+  val src: List[(Option[Example], Option[Int], String)] = List(
     (Some(new Example()), Some(2), "abc"),
     (Some(new Example()), Some(1), "abc"),
     (Some(new Example()), None, "abd"),

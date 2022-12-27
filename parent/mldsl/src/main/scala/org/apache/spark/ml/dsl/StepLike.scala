@@ -12,6 +12,7 @@ import org.json4s.{JArray, JBool, JDecimal, JDouble, JInt, JNull, JString, JValu
 
 import scala.collection.mutable
 import scala.util.Try
+import scala.collection.immutable.ListMap
 
 /**
   * Created by peng on 24/04/16.
@@ -21,7 +22,7 @@ trait StepLike extends DFDComponent {
   def id: String
   def name: String
 
-  override def coll = StepMap(id -> this)
+  override def coll: ListMap[String, StepLike] = StepMap(id -> this)
 
   override def replicate(suffix: String = ""): StepLike
 
@@ -185,8 +186,8 @@ case class Step(
     result
   }
 
-  def id = stage.id
-  def name = stage.name
+  def id: String = stage.id
+  def name: String = stage.name
 
   def recursiveReplicas: Set[Step] = {
     val set = this.replicas.toSet
@@ -230,7 +231,7 @@ case class Source(
 
   override def replicate(suffix: String = ""): Source = this
 
-  def id = name
+  def id: String = name
 
   override def wth(inputIDs: Seq[String], outputIDs: Set[String]): Source = {
     this.copy(
@@ -238,7 +239,7 @@ case class Source(
     )
   }
 
-  override def toString = "'" + name
+  override def toString: String = "'" + name
 }
 
 case object PASSTHROUGH extends Connector {

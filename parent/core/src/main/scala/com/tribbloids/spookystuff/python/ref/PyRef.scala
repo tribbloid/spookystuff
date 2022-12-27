@@ -16,7 +16,7 @@ trait PyRef extends Cleanable {
   type Binding <: PyBinding
 
   // the following are only used by non-singleton subclasses
-  def className = this.getClass.getCanonicalName
+  def className: String = this.getClass.getCanonicalName
 
   /**
     * assumes that a Python class is always defined under pyspookystuff.
@@ -75,9 +75,9 @@ trait PyRef extends Cleanable {
   def converter: PyConverter = PyConverter.JSON
 
   def pyClassName: String = pyClassNameParts.mkString(".").stripSuffix("$")
-  def simpleClassName = pyClassNameParts.last
+  def simpleClassName: String = pyClassNameParts.last
   def varNamePrefix = DSLUtils.toCamelCase(simpleClassName)
-  def packageName = pyClassNameParts.slice(0, pyClassNameParts.length - 1).mkString(".")
+  def packageName: String = pyClassNameParts.slice(0, pyClassNameParts.length - 1).mkString(".")
 
 //  override def chainClean: Seq[Cleanable] = bindings
 

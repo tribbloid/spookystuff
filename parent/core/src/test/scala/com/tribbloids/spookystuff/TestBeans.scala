@@ -53,7 +53,7 @@ object TestBeans {
     }
   }
   object NOTSerializableID {
-    def apply(_id: Int) = new NOTSerializableID(_id)
+    def apply(_id: Int): NOTSerializableID = new NOTSerializableID(_id)
   }
 
 }

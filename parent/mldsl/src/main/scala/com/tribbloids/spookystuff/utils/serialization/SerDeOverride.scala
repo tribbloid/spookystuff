@@ -18,13 +18,13 @@ object SerDeOverride {
     @transient lazy val _conf: SparkConf = conf
       .registerKryoClasses(Array(classOf[TypeTag[_]]))
 
-    @transient lazy val javaSerializer = new JavaSerializer(_conf)
+    @transient lazy val javaSerializer: JavaSerializer = new JavaSerializer(_conf)
     @transient lazy val javaOverride: () => Some[SerializerInstance] = { // TODO: use singleton?
       () =>
         Some(javaSerializer.newInstance())
     }
 
-    @transient lazy val kryoSerializer = new KryoSerializer(_conf)
+    @transient lazy val kryoSerializer: KryoSerializer = new KryoSerializer(_conf)
     @transient lazy val kryoOverride: () => Some[SerializerInstance] = { // TODO: use singleton?
       () =>
         Some(kryoSerializer.newInstance())

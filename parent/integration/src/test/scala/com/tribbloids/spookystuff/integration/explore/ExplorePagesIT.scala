@@ -51,8 +51,8 @@ class ExplorePagesIT extends IntegrationFixture {
     )
   }
 
-  override def numPages = 5
-  override val remoteFetchSuboptimality = 0 to 3
+  override def numPages: Long = 5
+  override val remoteFetchSuboptimality: Range.Inclusive = 0 to 3
 
-  override def pageFetchedCap = 14 // TODO: this should be smaller, at least 13
+  override def pageFetchedCap: Long = 14 // TODO: this should be smaller, at least 13
 }

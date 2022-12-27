@@ -74,7 +74,7 @@ class ExploreClickNextPageIT extends IntegrationFixture {
     )
   }
 
-  override def numSessions = 6
+  override def numSessions: Long = 6
 
-  override def numPages = 12
+  override def numPages: Long = 12
 }

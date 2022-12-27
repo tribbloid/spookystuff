@@ -84,8 +84,8 @@ object NarrowDispersedRDD {
 
       val pSizes: Seq[Long] = mapping.to.map(pSizeGen)
 
-      val counter = new AtomicInteger(0)
-      val state_narrowIndex = new AtomicInteger(0)
+      val counter: AtomicInteger = new AtomicInteger(0)
+      val state_narrowIndex: AtomicInteger = new AtomicInteger(0)
 
       override def nextNarrowIndex(datum: Any): Int = {
         val state_size = pSizes(state_narrowIndex.get())

@@ -13,7 +13,7 @@ object TraceAPI {
 trait TraceAPI extends TraceSetAPI {
 
   def asTrace: Trace
-  @transient final lazy val traceView = TraceView(asTrace)
+  @transient final lazy val traceView: TraceView = TraceView(asTrace)
 
   @transient final lazy val asTraceSet: Set[Trace] = Set(asTrace)
 

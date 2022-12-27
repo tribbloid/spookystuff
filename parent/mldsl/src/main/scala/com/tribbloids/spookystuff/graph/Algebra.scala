@@ -18,7 +18,7 @@ trait Algebra[T <: Domain] extends Algebra.TypeAliases[T] {
 
     assert(isDangling)
 
-    override def toString = s"$idStr"
+    override def toString: String = s"$idStr"
   }
 
   def createNode(

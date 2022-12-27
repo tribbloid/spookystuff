@@ -15,7 +15,7 @@ case class RDDPlan(
       schema.ec
     ) {
 
-  override lazy val beaconRDDOpt = beaconRDD
+  override lazy val beaconRDDOpt: Option[BeaconRDD[TraceView]] = beaconRDD
 
   override def doExecute(): SquashedFetchedRDD = sourceRDD
 }

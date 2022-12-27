@@ -5,6 +5,7 @@ import com.tribbloids.spookystuff.graph.IDAlgebra.Rotator
 import com.tribbloids.spookystuff.utils.{CommonTypes, MultiMapView}
 
 import scala.collection.mutable
+import scala.reflect.ClassTag
 
 //optimised for speed rather than memory usage
 //NOT thread safe!
@@ -89,7 +90,7 @@ object LocalGraph {
   ) extends StaticGraph.Builder[D] {
 
     type GG = LocalGraph[D]
-    override def ctg = getCtg
+    override def ctg: ClassTag[GG] = getCtg
 
     override def fromSeq(
         nodes: Seq[_NodeLike],

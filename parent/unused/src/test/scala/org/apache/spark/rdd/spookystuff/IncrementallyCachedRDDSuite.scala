@@ -186,8 +186,8 @@ object IncrementallyCachedRDDSuite {
   //  val datasetSize = 1000
   //  val stride = 100
 
-  val datasetSize = 10000
-  val stride = 1000
+  val datasetSize: Int = 10000
+  val stride: Int = 1000
 
   val overlap: Int = stride * 2
 
@@ -221,7 +221,7 @@ object IncrementallyCachedRDDSuite {
     }
   }
 
-  val localCounters = mutable.Map.empty[Long, AtomicLong]
+  val localCounters: mutable.Map[Long, AtomicLong] = mutable.Map.empty[Long, AtomicLong]
 
   case class TestSubject[T](
       source: RDD[T],
@@ -235,7 +235,7 @@ object IncrementallyCachedRDDSuite {
     val id: Long = Random.nextLong()
 
     val localCounter: AtomicLong = localCounters.getOrElseUpdate(id, new AtomicLong())
-    val globalCounter = new LongAccumulator()
+    val globalCounter: LongAccumulator = new LongAccumulator()
     TestSC.register(globalCounter, "count")
 
     def count: Long = {
@@ -248,7 +248,7 @@ object IncrementallyCachedRDDSuite {
       Math.max(local, global)
     }
 
-    val ffInvoked = new LongAccumulator()
+    val ffInvoked: LongAccumulator = new LongAccumulator()
     TestSC.register(ffInvoked, "Fast forward invoked")
 
     trait Facet {

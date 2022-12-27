@@ -19,7 +19,7 @@ object DocCacheLevel {
 
   object All extends InMemory with DFS
 
-  def getDefault(uriOpt: Option[URI]) = {
+  def getDefault(uriOpt: Option[URI]): InMemory = {
     val scheme = uriOpt.map(_.getScheme).getOrElse("")
     scheme match {
       case "http" | "https" =>

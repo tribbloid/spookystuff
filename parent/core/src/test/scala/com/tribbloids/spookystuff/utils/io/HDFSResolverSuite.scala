@@ -5,7 +5,7 @@ import org.apache.hadoop.security.UserGroupInformation
 
 object HDFSResolverSuite {
 
-  val conf = new Configuration()
+  val conf: Configuration = new Configuration()
 }
 
 /**
@@ -20,10 +20,10 @@ class HDFSResolverSuite extends AbstractURIResolverSuite {
     () => Some(UserGroupInformation.createUserForTesting("dummy", Array.empty))
   )
 
-  @transient override lazy val schemaPrefix = "file://"
+  @transient override lazy val schemaPrefix: String = "file://"
 
-  val nonExistingSchemePath = "file:/non-existing/not-a-file.txt"
-  val nonExistingScheme2Path = "file:///non-existing/not-a-file.txt"
+  val nonExistingSchemePath: String = "file:/non-existing/not-a-file.txt"
+  val nonExistingScheme2Path: String = "file:///non-existing/not-a-file.txt"
 
   it("can convert path with schema of non-existing file") {
     val abs = resolver.toAbsolute(nonExistingSchemePath)

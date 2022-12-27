@@ -27,5 +27,5 @@ trait SubSuite extends Suite {
 
 object SubSuite {
 
-  val incrementalSuffixes = new AtomicInteger(0)
+  val incrementalSuffixes: AtomicInteger = new AtomicInteger(0)
 }

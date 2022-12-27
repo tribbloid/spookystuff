@@ -99,8 +99,8 @@ trait Cleanable extends AutoCloseable {
     * problem
     */
   def _lifespan: Lifespan = Lifespan.JVM()
-  final val lifespan = _lifespan
-  final val trackingNumber = System.identityHashCode(this).toLong // can be int value
+  final val lifespan: Lifespan = _lifespan
+  final val trackingNumber: Long = System.identityHashCode(this).toLong // can be int value
 
   {
     logPrefixed("Created")

@@ -47,7 +47,7 @@ class JsonElement private (
   }
 
   // TODO: how to implement?
-  override def findAllWithSiblings(selector: CSSQuery, range: Range) = {
+  override def findAllWithSiblings(selector: CSSQuery, range: Range): Elements[Siblings[JsonElement]] = {
     val found = this.findAll(selector).delegate
     new Elements(found.map(unstructured => new Siblings(List(unstructured))))
   }

@@ -55,10 +55,10 @@ class FetchClickNextPageIT extends IntegrationFixture {
     assert(pageRows2(1).docs.map(_.name) === Seq("d"))
   }
 
-  override def numPages = spooky.spookyConf.defaultGenPartitioner match {
+  override def numPages: Long = spooky.spookyConf.defaultGenPartitioner match {
 //    case FetchOptimizers.WebCacheAware => 3
     case _ => 3
   }
 
-  override def numSessions = 1
+  override def numSessions: Long = 1
 }

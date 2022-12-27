@@ -39,7 +39,7 @@ case class Stopwatch() {
     result
   }
 
-  def apply[T](fn: => T) = new Run(fn)
+  def apply[T](fn: => T): Run[T] = new Run(fn)
 
   class Run[T](fn: => T) {
 

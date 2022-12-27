@@ -92,7 +92,7 @@ trait EAV extends HasEagerInnerObjects with EqualBy with RootTagged with Seriali
 
   def contains(k: String): Boolean = tryGet(k).isSuccess
 
-  def attr(v: String) = new Attr_(primaryNameOverride = v)
+  def attr(v: String): Attr[Bound] = new Attr_(primaryNameOverride = v)
 
   trait _AttrLike[T] extends AttrLike[T] with EagerInnerObject with ObjectSimpleNameMixin
 

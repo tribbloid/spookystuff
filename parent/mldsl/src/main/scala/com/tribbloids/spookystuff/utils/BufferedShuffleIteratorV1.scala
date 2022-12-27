@@ -19,7 +19,7 @@ case class BufferedShuffleIteratorV1[T](
     seed: Long = Random.nextLong()
 ) extends Iterator[T] {
 
-  @transient lazy val buffer = new ArrayBuffer[T](cap + 1)
+  @transient lazy val buffer: ArrayBuffer[T] = new ArrayBuffer[T](cap + 1)
 
   @transient lazy val random: Random = {
 

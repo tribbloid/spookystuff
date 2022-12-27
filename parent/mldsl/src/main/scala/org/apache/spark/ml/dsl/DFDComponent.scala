@@ -671,7 +671,7 @@ trait DFDComponent extends MayHaveHeads with MayHaveTails {
       .mkString("")
   }
 
-  final protected val mirrorImgs = List(
+  final protected val mirrorImgs: List[(Char, Char)] = List(
     'v' -> '^',
     '┌' -> '└',
     '┘' -> '┐',
@@ -686,7 +686,7 @@ trait DFDComponent extends MayHaveHeads with MayHaveTails {
     }
   }
 
-  final protected val layoutPrefs = LayoutPrefsImpl(unicode = true, explicitAsciiBends = false)
+  final protected val layoutPrefs: LayoutPrefsImpl = LayoutPrefsImpl(unicode = true, explicitAsciiBends = false)
 
   def showASCIIArt(
       showID: Boolean = true,

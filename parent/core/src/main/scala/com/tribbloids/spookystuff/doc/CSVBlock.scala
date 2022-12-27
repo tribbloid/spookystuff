@@ -1,6 +1,7 @@
 package com.tribbloids.spookystuff.doc
 
 import org.apache.commons.csv.{CSVFormat, CSVParser}
+import org.apache.commons.csv.CSVRecord
 
 /**
   * equivalent to the following xml: <splitter> <row> <header1>datum1</header1> <header2>datum2</header2> ... </row>
@@ -15,8 +16,8 @@ case class CSVBlock(
   import scala.collection.JavaConverters._
 
   val parsed: CSVParser = CSVParser.parse(_text, csvFormat)
-  val parsedList = parsed.asScala.toList
-  val headers = parsed.getHeaderMap.asScala.keys.toList
+  val parsedList: List[CSVRecord] = parsed.asScala.toList
+  val headers: List[String] = parsed.getHeaderMap.asScala.keys.toList
 
   override def text: Option[String] = Some(_text)
 

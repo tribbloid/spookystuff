@@ -8,7 +8,7 @@ case class CircularDeque[T](size: Int = 10) {
 
   import scala.collection.JavaConverters._
 
-  lazy val delegate = new LinkedBlockingDeque[T](size)
+  lazy val delegate: LinkedBlockingDeque[T] = new LinkedBlockingDeque[T](size)
 
   def forceAddFirst(v: T): Unit = delegate.synchronized {
 

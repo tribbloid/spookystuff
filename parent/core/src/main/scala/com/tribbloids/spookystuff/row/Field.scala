@@ -50,17 +50,17 @@ case class Field(
 ) extends EqualBy
     with ProtoAPI {
 
-  lazy val _equalBy = (name, isWeak, isInvisible, isReserved)
+  lazy val _equalBy: (String, Boolean, Boolean, Boolean) = (name, isWeak, isInvisible, isReserved)
 
   def ! = this.copy(conflictResolving = Field.Overwrite)
   def !! = this.copy(conflictResolving = Field.Replace)
   def * = this.copy(isWeak = true)
   def `#` = this.copy(isOrdinal = true)
 
-  def isDepth = depthRangeOpt.nonEmpty
+  def isDepth: Boolean = depthRangeOpt.nonEmpty
   def isSortIndex: Boolean = isOrdinal || isDepth
 
-  def isSelected = isSelectedOverride.getOrElse(!(isWeak || isInvisible))
+  def isSelected: Boolean = isSelectedOverride.getOrElse(!(isWeak || isInvisible))
 
   def effectiveConflictResolving(existing: Field): ConflictResolving = {
 

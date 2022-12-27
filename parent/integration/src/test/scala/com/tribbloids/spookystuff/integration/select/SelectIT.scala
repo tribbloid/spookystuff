@@ -90,5 +90,5 @@ class SelectIT extends IntegrationFixture {
     assert(titles === Seq("The Free Encyclopedia", "English"))
   }
 
-  override def numPages = 1
+  override def numPages: Long = 1
 }

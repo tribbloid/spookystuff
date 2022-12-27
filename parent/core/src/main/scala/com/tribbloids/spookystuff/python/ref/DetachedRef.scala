@@ -9,5 +9,5 @@ case class DetachedRef(
     override val converter: PyConverter
 ) extends PyRef {
 
-  override def lzy = false
+  override def lzy: Boolean = false
 }

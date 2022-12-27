@@ -2,10 +2,11 @@ package com.tribbloids.spookystuff.utils
 
 import com.tribbloids.spookystuff.utils.lifespan.Cleanable.Lifespan
 import com.tribbloids.spookystuff.utils.lifespan.LocalCleanable
+import com.tribbloids.spookystuff.utils.serialization.BeforeAndAfterShipping
 
 object WaitBeforeAppExit extends LocalCleanable {
 
-  override def _lifespan = Lifespan.ActiveSparkApp()
+  override def _lifespan: BeforeAndAfterShipping.Container[Lifespan.ActiveSparkApp.Internal] = Lifespan.ActiveSparkApp()
 
   @volatile var _waitBeforeExitDuration: Long = -1
 

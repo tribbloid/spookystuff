@@ -51,5 +51,5 @@ class ExploreNextPageIT extends IntegrationFixture {
     )
   }
 
-  override def numPages = 4
+  override def numPages: Long = 4
 }

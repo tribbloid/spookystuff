@@ -6,16 +6,16 @@ class CommonConst {
 
   val maxLoop: Int = Int.MaxValue
 
-  val defaultTextCharset = "ISO-8859-1"
-  val defaultApplicationCharset = "UTF-8"
+  val defaultTextCharset: String = "ISO-8859-1"
+  val defaultApplicationCharset: String = "UTF-8"
 
   val driverClosingTimeout: FiniteDuration = 5.seconds
   val driverClosingRetries: Int = 5
 
-  val localResourceLocalRetries = 3 // In-node/partition retries
-  val remoteResourceLocalRetries = 2 // In-node/partition retries
-  val DFSLocalRetries = 2
-  val clusterRetries = 3
+  val localResourceLocalRetries: Int = 3 // In-node/partition retries
+  val remoteResourceLocalRetries: Int = 2 // In-node/partition retries
+  val DFSLocalRetries: Int = 2
+  val clusterRetries: Int = 3
 
   object Interaction {
 
@@ -29,12 +29,12 @@ class CommonConst {
   val USER_HOME: String = System.getProperty("user.home")
   val USER_DIR: String = System.getProperty("user.dir")
 
-  val TEMP = "temp"
+  val TEMP: String = "temp"
 
   val USER_TEMP_DIR: String = CommonUtils.\\\(USER_DIR, TEMP)
   val ROOT_TEMP_DIR: String = System.getProperty("java.io.tmpdir")
 
-  val HADOOP_TEMP_DIR = "/tmp"
+  val HADOOP_TEMP_DIR: String = "/tmp"
 
   val UNPACK_RESOURCE_DIR: String = CommonUtils.\\\(ROOT_TEMP_DIR, "spookystuff", "resources")
 }

@@ -65,6 +65,6 @@ class ExploreIT extends IntegrationFixture {
     )
   }
 
-  override def numPages = 6
-  override def pageFetchedCap = 18 // way too large
+  override def numPages: Long = 6
+  override def pageFetchedCap: Long = 18 // way too large
 }

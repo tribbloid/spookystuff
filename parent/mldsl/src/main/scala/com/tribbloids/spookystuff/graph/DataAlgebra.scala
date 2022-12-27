@@ -8,7 +8,7 @@ trait DataAlgebra[T] {
 
   object ForSome extends DataAlgebra[Option[T]] {
 
-    override val eye = None
+    override val eye: None.type = None
 
     override def add(v1: Option[T], v2: Option[T]): Option[T] = {
       (v1, v2) match {
@@ -50,6 +50,6 @@ object DataAlgebra {
 
   object Mutator {
 
-    def identity[T <: Domain] = Mutator[T](Predef.identity, Predef.identity)
+    def identity[T <: Domain]: Mutator[T] = Mutator[T](Predef.identity, Predef.identity)
   }
 }

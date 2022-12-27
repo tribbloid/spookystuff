@@ -43,7 +43,7 @@ class FetchTryWgetIT extends UncacheableIntegrationFixture {
     }
   }
 
-  override def numPages = 0
+  override def numPages: Long = 0
 
-  override def numSessions = 1 // TODO: should be 6, why local retry and cluster-wise retry doesn't count?
+  override def numSessions: Long = 1 // TODO: should be 6, why local retry and cluster-wise retry doesn't count?
 }

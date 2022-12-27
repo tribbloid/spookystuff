@@ -7,7 +7,7 @@ trait PartialFunctionWrapper[-T, +R] extends PartialFunction[T, R] {
   def partialFunction: scala.PartialFunction[T, R]
 
   final override def isDefinedAt(x: T): Boolean = partialFunction.isDefinedAt(x)
-  override def apply(v1: T) = partialFunction.apply(v1)
+  override def apply(v1: T): R = partialFunction.apply(v1)
   final override def applyOrElse[A1 <: T, B1 >: R](x: A1, default: A1 => B1): B1 =
     partialFunction.applyOrElse(x, default)
 

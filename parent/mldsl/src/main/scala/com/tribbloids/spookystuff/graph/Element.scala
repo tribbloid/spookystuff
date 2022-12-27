@@ -38,7 +38,7 @@ object Element {
     def idStr: String = idAlgebra.ids2Str(from_to)
     def dataStr: String = "" + data
 
-    override lazy val toString = s"${idAlgebra.ids2Str(from_to)}: $data"
+    override lazy val toString: String = s"${idAlgebra.ids2Str(from_to)}: $data"
 
     override protected def _replicate(m: DataMutator)(
         implicit
@@ -55,9 +55,9 @@ object Element {
         )
     }
 
-    lazy val canBeHead = to == algebra.DANGLING._equalBy
-    lazy val canBeTail = from == algebra.DANGLING._equalBy
-    lazy val isDetached = canBeHead && canBeTail
+    lazy val canBeHead: Boolean = to == algebra.DANGLING._equalBy
+    lazy val canBeTail: Boolean = from == algebra.DANGLING._equalBy
+    lazy val isDetached: Boolean = canBeHead && canBeTail
 
     override def toHeads(info: EdgeData): Module.Heads[T] =
       if (canBeHead) Heads[T](Seq(this))
@@ -81,7 +81,7 @@ object Element {
     def idStr: String = idAlgebra.id2Str(_equalBy)
     def dataStr: String = "" + data
 
-    override def toString = s"$idStr: $data"
+    override def toString: String = s"$idStr: $data"
 
     def toLinked(graphOpt: Option[StaticGraph[T]]): _NodeTriplet = {
       this match {
@@ -97,7 +97,7 @@ object Element {
           }
       }
     }
-    lazy val asLinked = toLinked(None)
+    lazy val asLinked: _NodeTriplet = toLinked(None)
 
     def toHeads(info: EdgeData): Module.Heads[T] =
       Module.Heads(Seq(Edge[T](info, Nil, this._equalBy -> algebra.DANGLING._equalBy)))
@@ -118,7 +118,7 @@ object Element {
         implicit
         idRotator: Rotator[ID],
         node_+ : CommonTypes.Binary[NodeData]
-    ) = {
+    ): _Module = {
       val newID = idRotator(this._equalBy)
       if (newID == this._equalBy)
         this
@@ -156,11 +156,11 @@ object Element {
 
     override def _equalBy: ID = node._equalBy
 
-    def inboundIDPairs = inbound.toSeq.map { v =>
+    def inboundIDPairs: Seq[(ID, ID)] = inbound.toSeq.map { v =>
       v -> node._equalBy
     }
 
-    def outboundIDPairs = outbound.toSeq.map { v =>
+    def outboundIDPairs: Seq[(ID, ID)] = outbound.toSeq.map { v =>
       node._equalBy -> v
     }
   }

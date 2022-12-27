@@ -11,7 +11,7 @@ import scala.collection.immutable.ListMap
 @Ignore
 class Json4sSpike extends FunSpecx {
 
-  implicit val fm = DefaultFormats
+  implicit val fm: DefaultFormats.type = DefaultFormats
 
   describe("encode/decode") {
 

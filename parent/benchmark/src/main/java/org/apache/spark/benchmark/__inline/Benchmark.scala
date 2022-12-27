@@ -59,9 +59,9 @@ private[spark] class Benchmark(
     output: Option[OutputStream] = None
 ) {
   import Benchmark._
-  val benchmarks = mutable.ArrayBuffer.empty[Benchmark.Case]
+  val benchmarks: ArrayBuffer[Case] = mutable.ArrayBuffer.empty[Benchmark.Case]
 
-  val out = if (output.isDefined) {
+  val out: PrintStream = if (output.isDefined) {
     new PrintStream(new TeeOutputStream(System.out, output.get))
   } else {
     System.out

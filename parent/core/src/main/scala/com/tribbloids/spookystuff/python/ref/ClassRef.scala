@@ -6,7 +6,7 @@ import org.apache.spark.ml.dsl.utils.refl.ReflectionUtils
 
 trait ClassRef extends PyRef {
 
-  override def imports = super.imports ++ Seq(s"import $packageName")
+  override def imports: Seq[String] = super.imports ++ Seq(s"import $packageName")
 
   override lazy val referenceOpt = Some(varNamePrefix + SpookyUtils.randomSuffix)
 }
@@ -18,11 +18,11 @@ trait StaticRef extends ClassRef {
     s"$className is not an object, only object can implement PyStatic"
   )
 
-  override lazy val createOpt = None
+  override lazy val createOpt: None.type = None
 
-  override lazy val referenceOpt = Some(pyClassName)
+  override lazy val referenceOpt: Some[String] = Some(pyClassName)
 
-  override lazy val delOpt = None
+  override lazy val delOpt: None.type = None
 }
 
 /**
@@ -41,7 +41,7 @@ trait InstanceRef extends ClassRef {
 
   def pyConstructorArgs: String
 
-  override def createOpt = Some(
+  override def createOpt: Some[String] = Some(
     s"""
        |$pyClassName$pyConstructorArgs
       """.trim.stripMargin
@@ -65,13 +65,13 @@ trait JSONInstanceRef extends InstanceRef with MessageAPI {
 trait CaseInstanceRef extends InstanceRef with Product {
 
   def attrMap = ReflectionUtils.getCaseAccessorMap(this)
-  def kwargsTuple = this.converter.kwargs2Code(attrMap)
+  def kwargsTuple: (Seq[PyRef], String) = this.converter.kwargs2Code(attrMap)
 
-  override def dependencies = {
+  override def dependencies: Seq[PyRef] = {
     kwargsTuple._1
   }
 
-  override def pyConstructorArgs = {
+  override def pyConstructorArgs: String = {
     kwargsTuple._2
   }
 }

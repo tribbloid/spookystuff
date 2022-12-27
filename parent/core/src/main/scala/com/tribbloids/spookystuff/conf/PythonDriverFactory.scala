@@ -18,7 +18,7 @@ case class PythonDriverFactory(
 
 object PythonDriverFactory {
 
-  lazy val python3 = "python3"
+  lazy val python3: String = "python3"
 
   object _3 extends PythonDriverFactory((_: SpookyContext) => python3)
 }

@@ -121,7 +121,7 @@ abstract class Relay[Proto] {
         name: String,
         doc: String,
         isValid: Proto => Boolean
-    ) = new MessageMLParam[Proto](this, parent, name, doc, isValid)
+    ): MessageMLParam[Proto] = new MessageMLParam[Proto](this, parent, name, doc, isValid)
 
     def Param(parent: String, name: String, doc: String): MessageMLParam[Proto] =
       Param(parent, name, doc, (_: Proto) => true)

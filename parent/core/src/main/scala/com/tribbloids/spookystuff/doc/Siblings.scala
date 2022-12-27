@@ -34,23 +34,23 @@ class Siblings[+T <: Unstructured](
     val formattedDelimiter: String = "\n"
 ) extends Elements[T](delegate) {
 
-  override def text =
+  override def text: Option[String] =
     if (texts.isEmpty) None
     else Some(texts.filter(_.nonEmpty).mkString(delimiter))
 
-  override def code =
+  override def code: Option[String] =
     if (codes.isEmpty) None
     else Some(codes.filter(_.nonEmpty).mkString(delimiter))
 
-  override def formattedCode =
+  override def formattedCode: Option[String] =
     if (formattedCodes.isEmpty) None
     else Some(formattedCodes.filter(_.nonEmpty).mkString(formattedDelimiter))
 
-  override def ownText =
+  override def ownText: Option[String] =
     if (ownTexts.isEmpty) None
     else Some(ownTexts.filter(_.nonEmpty).mkString(delimiter))
 
-  override def boilerPipe =
+  override def boilerPipe: Option[String] =
     if (boilerPipes.isEmpty) None
     else Some(boilerPipes.filter(_.nonEmpty).mkString(delimiter))
 }

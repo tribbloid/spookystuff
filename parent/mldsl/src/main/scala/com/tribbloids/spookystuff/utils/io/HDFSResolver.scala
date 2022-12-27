@@ -28,7 +28,7 @@ case class HDFSResolver(
     hadoopConfFactory()
   }
 
-  override def toString = s"${this.getClass.getSimpleName}(${_hadoopConf})"
+  override def toString: String = s"${this.getClass.getSimpleName}(${_hadoopConf})"
 
   def ugiOpt: Option[UserGroupInformation] = ugiFactory()
 
@@ -57,7 +57,7 @@ case class HDFSResolver(
 
   case class _Execution(pathStr: String) extends Execution {
 
-    val path = new Path(pathStr)
+    val path: Path = new Path(pathStr)
 
     lazy val fc: FileContext = FileContext.getFileContext(path.toUri, _hadoopConf)
 

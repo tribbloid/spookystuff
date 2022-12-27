@@ -2,9 +2,9 @@ package com.tribbloids.spookystuff.utils.io
 
 object LocalResolverSuite {
 
-  val nonExisting = s"not-a-file.txt"
-  val nonExistingRelative = "non-existing/not-a-file.txt"
-  val nonExistingAbsolute = "/non-existing/not-a-file.txt"
+  val nonExisting: String = s"not-a-file.txt"
+  val nonExistingRelative: String = "non-existing/not-a-file.txt"
+  val nonExistingAbsolute: String = "/non-existing/not-a-file.txt"
 }
 
 /**
@@ -13,5 +13,5 @@ object LocalResolverSuite {
 class LocalResolverSuite extends AbstractURIResolverSuite {
 
   @transient lazy val resolver: URIResolver = LocalResolver
-  @transient lazy val schemaPrefix = ""
+  @transient lazy val schemaPrefix: String = ""
 }

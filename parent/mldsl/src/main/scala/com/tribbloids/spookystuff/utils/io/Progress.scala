@@ -32,7 +32,7 @@ case class Progress() {
   private object _ProgressHeartbeat extends Heartbeat {
 
     // not thread safe
-    var previous = 0L
+    var previous: Long = 0L
 
     override def tryEmit(i: Int, remainMil: Long, callerStr: String): Boolean = {
       val result =

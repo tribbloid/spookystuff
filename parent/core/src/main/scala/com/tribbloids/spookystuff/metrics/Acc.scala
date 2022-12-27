@@ -20,7 +20,7 @@ trait Acc[T <: AccumulatorV2[_, _]] extends MetricLike {
 
   def _self: T
 
-  final val self = {
+  final val self: T = {
 
     val result = _self
     sparkContext.register(result, displayName)

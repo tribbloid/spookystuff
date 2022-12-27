@@ -7,19 +7,19 @@ import org.apache.tika.detect.DefaultDetector
 
 object Const extends CommonConst {
 
-  val defaultInputKey = "_"
-  val keyDelimiter = "'"
-  val onlyPageExtractor = "S"
-  val allPagesExtractor = "S_*"
+  val defaultInputKey: String = "_"
+  val keyDelimiter: String = "'"
+  val onlyPageExtractor: String = "S"
+  val allPagesExtractor: String = "S_*"
 
-  val groupIndexExtractor = "G"
+  val groupIndexExtractor: String = "G"
 
-  val defaultJoinField = Field("A", isWeak = true)
+  val defaultJoinField: Field = Field("A", isWeak = true)
 
-  val mimeDetector = new DefaultDetector()
+  val mimeDetector: DefaultDetector = new DefaultDetector()
 
-  val defaultDocumentFilter = DocFilterImpl.MustHaveTitle
-  val defaultImageFilter = DocFilterImpl.AcceptStatusCode2XX
+  val defaultDocumentFilter: DocFilterImpl.MustHaveTitle.type = DocFilterImpl.MustHaveTitle
+  val defaultImageFilter: DocFilterImpl.AcceptStatusCode2XX.type = DocFilterImpl.AcceptStatusCode2XX
 
-  val exploreStageSize = 100
+  val exploreStageSize: Int = 100
 }

@@ -101,7 +101,7 @@ trait ElementView[D <: Domain] extends Algebra.Aliases[D] with EqualBy {
 
       override def viewWFormat: ElementView[D]#WFormat = WFormat.this
 
-      override def dirSymbol = "v "
+      override def dirSymbol: String = "v "
 
       override val _children: Seq[ElementView[D]] = ElementView.this.outbound
 
@@ -116,7 +116,7 @@ trait ElementView[D <: Domain] extends Algebra.Aliases[D] with EqualBy {
 
       override def viewWFormat: ElementView[D]#WFormat = WFormat.this
 
-      override def dirSymbol = "^ "
+      override def dirSymbol: String = "^ "
 
       override val _children: Seq[ElementView[D]] = ElementView.this.inbound
 

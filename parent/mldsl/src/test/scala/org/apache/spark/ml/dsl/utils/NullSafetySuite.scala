@@ -4,7 +4,7 @@ import com.tribbloids.spookystuff.testutils.FunSpecx
 
 class NullSafetySuite extends FunSpecx {
 
-  val v = "abc"
+  val v: String = "abc"
 
   def validate(nullSafe: => NullSafety.Magnet[String]): NullSafety.Magnet[String] = {
 

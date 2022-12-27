@@ -90,9 +90,9 @@ object ElementTreeNode {
 
   case class Cyclic[D <: Domain](delegate: ElementTreeNode[D]) extends ElementTreeNode[D] {
 
-    override def viewWFormat = delegate.viewWFormat
+    override def viewWFormat: ElementView[D]#WFormat = delegate.viewWFormat
 
-    override def visited = delegate.visited
+    override def visited: Set[_Element] = delegate.visited
     override lazy val prefix: String = delegate.prefix + "(cyclic)"
     override val _children: Seq[ElementView[D]] = Nil
 

@@ -148,7 +148,7 @@ case class Visualisation[D <: Domain](
 
 object Visualisation {
 
-  final val mirrorImgs = List(
+  final val mirrorImgs: List[(Char, Char)] = List(
     'v' -> '^',
     '┌' -> '└',
     '┘' -> '┐',
@@ -163,7 +163,7 @@ object Visualisation {
     }
   }
 
-  lazy val defaultASCIILayout = LayoutPrefsImpl(
+  lazy val defaultASCIILayout: LayoutPrefsImpl = LayoutPrefsImpl(
     explicitAsciiBends = true
   )
 

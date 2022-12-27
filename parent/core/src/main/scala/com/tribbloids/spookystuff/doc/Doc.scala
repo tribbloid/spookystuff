@@ -108,8 +108,8 @@ case class DocWithError(
 
 object Doc {
 
-  val CONTENT_TYPE = "contentType"
-  val CSV_FORMAT = "csvFormat"
+  val CONTENT_TYPE: String = "contentType"
+  val CSV_FORMAT: String = "csvFormat"
 
   val defaultCSVFormat: CSVFormat = CSVFormat.DEFAULT
 }

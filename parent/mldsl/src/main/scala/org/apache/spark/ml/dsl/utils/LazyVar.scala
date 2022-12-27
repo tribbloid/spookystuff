@@ -48,5 +48,5 @@ object LazyVar {
 
   implicit def unbox[T](v: LazyVar[T]): T = v.value
 
-  def apply[T](fn: => T) = new LazyVar[T](fn)
+  def apply[T](fn: => T): LazyVar[T] = new LazyVar[T](fn)
 }

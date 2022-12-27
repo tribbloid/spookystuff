@@ -23,7 +23,7 @@ class RelaySuite extends AbstractDFDSuite {
     assert(fn2(2) == 4)
   }
 
-  val date = new Date()
+  val date: Date = new Date()
 
   it("Paranamer constructor lookup") {
 

@@ -49,7 +49,7 @@ abstract class AbstractURIResolverSuite extends FunSpecx with LocalPathDocsFixtu
   @transient val resolver: URIResolver
   @transient val schemaPrefix: String
 
-  val numWrites = 1000
+  val numWrites: Int = 1000
 
   lazy val temp: TempResource = TempResource(
     resolver,

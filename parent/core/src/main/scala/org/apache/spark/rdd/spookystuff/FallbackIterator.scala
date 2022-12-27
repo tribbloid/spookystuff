@@ -31,7 +31,7 @@ trait FallbackIterator[T] extends FastForwardingIterator[T] with ConsumedIterato
     }
   }
 
-  @volatile var useBackup = false
+  @volatile var useBackup: Boolean = false
 
   @transient final protected lazy val _backup: Iterator[T] with ConsumedIterator = {
 

@@ -119,7 +119,7 @@ object Xml {
     }
   }
 
-  lazy val ROOT = "root"
+  lazy val ROOT: String = "root"
 
   /**
     * Convert given JSON to XML. <p> Following rules are used in conversion. <ul> <li>JSON primitives are converted to

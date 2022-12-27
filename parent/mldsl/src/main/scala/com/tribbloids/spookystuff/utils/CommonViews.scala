@@ -6,7 +6,7 @@ import scala.collection.{mutable, GenTraversableOnce}
 
 abstract class CommonViews {
 
-  @transient lazy val specialChars = "(?=[]\\[+$&|!(){}^\"~*?:\\\\-])"
+  @transient lazy val specialChars: String = "(?=[]\\[+$&|!(){}^\"~*?:\\\\-])"
 
   implicit class StringView(str: String) {
 

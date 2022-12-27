@@ -12,8 +12,8 @@ import com.tribbloids.spookystuff.utils.CommonConst
   */
 object SnapshotRunner extends SpookyEnvFixture.EnvBase {
 
-  val SPLITTER = "/http://webscraper.io(:80)?"
-  val SPLITTER_MIN = "/http://webscraper.io"
+  val SPLITTER: String = "/http://webscraper.io(:80)?"
+  val SPLITTER_MIN: String = "/http://webscraper.io"
 
   import scala.concurrent.duration._
   val coolDown: Some[FiniteDuration] = Some(5.seconds)

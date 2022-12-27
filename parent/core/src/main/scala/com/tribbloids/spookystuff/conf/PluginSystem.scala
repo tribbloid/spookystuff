@@ -91,7 +91,7 @@ trait PluginSystem extends Serializable {
 
 object PluginSystem {
 
-  lazy val emptySparkConf = new SparkConf(false)
+  lazy val emptySparkConf: SparkConf = new SparkConf(false)
 
   trait WithDriver extends PluginSystem {
 

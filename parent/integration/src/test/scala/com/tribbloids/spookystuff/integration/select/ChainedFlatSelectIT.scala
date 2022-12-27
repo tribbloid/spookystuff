@@ -66,5 +66,5 @@ class ChainedFlatSelectIT extends IntegrationFixture {
     )
   }
 
-  override def numPages = 1
+  override def numPages: Long = 1
 }

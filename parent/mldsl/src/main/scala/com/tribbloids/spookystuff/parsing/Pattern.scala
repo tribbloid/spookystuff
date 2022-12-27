@@ -8,7 +8,7 @@ case class Pattern(
     range: RangeArg = Pattern.RangeArgs.next
 ) {
 
-  override def toString = s"'$token' $range"
+  override def toString: String = s"'$token' $range"
 
   // ID is to make sure that rules created by P/P_* operator can be referenced in the resultSet
   trait Rule[+R] {

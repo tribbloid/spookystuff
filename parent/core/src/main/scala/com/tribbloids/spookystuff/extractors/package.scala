@@ -14,7 +14,7 @@ package object extractors {
   type Extractor[+R] = GenExtractor[FR, R]
 
   type Resolved[+R] = GenResolved[FR, R]
-  def Resolved = GenResolved
+  def Resolved: GenResolved.type = GenResolved
 
   // TODO: clean up, didn't fix the problem
 //  implicit def Closure1[T, R](self: T => R): Function1[T, R] = self match {

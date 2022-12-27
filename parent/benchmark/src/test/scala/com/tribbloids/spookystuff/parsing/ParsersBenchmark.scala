@@ -15,8 +15,8 @@ class ParsersBenchmark extends FunSpecx {
 
   import com.tribbloids.spookystuff.parsing.ParsersBenchmark._
 
-  def maxSectionLen = 100
-  def maxRepeat = 1000
+  def maxSectionLen: Int = 100
+  def maxRepeat: Int = 1000
 
   lazy val seed: Long = Random.nextLong()
 

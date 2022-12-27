@@ -16,7 +16,7 @@ class DFDReadWriteSuite extends AbstractDFDSuite {
 
   TestHelper.TestSC
 
-  val pipelinePath = "temp/pipeline/pipeline"
+  val pipelinePath: String = "temp/pipeline/pipeline"
 //  def sc: SparkContext = TestHelper.TestSpark
 
   it("Pipeline can be saved and loaded") {

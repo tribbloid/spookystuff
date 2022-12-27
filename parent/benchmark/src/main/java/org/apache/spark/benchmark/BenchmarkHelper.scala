@@ -15,5 +15,6 @@ case class BenchmarkHelper(
     output: Option[OutputStream] = None
 ) {
 
-  val self = new Benchmark(name, valuesPerIteration, minNumIters, warmupTime, minTime, outputPerIteration, output)
+  val self: Benchmark =
+    new Benchmark(name, valuesPerIteration, minNumIters, warmupTime, minTime, outputPerIteration, output)
 }

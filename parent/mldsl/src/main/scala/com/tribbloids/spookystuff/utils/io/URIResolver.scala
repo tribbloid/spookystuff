@@ -63,7 +63,7 @@ abstract class URIResolver extends Serializable {
 
     final def createNew(): Unit = create_simple()
 
-    def zeroByte = Array.empty[Byte]
+    def zeroByte: Array[Byte] = Array.empty[Byte]
 
     private def create_simple(): Unit = {
 

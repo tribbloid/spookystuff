@@ -84,7 +84,7 @@ object DriverFactory {
       driver.clean()
     }
 
-    final lazy val taskLocal = TaskLocal(this)
+    final lazy val taskLocal: TaskLocal[D] = TaskLocal(this)
   }
 
   /**

@@ -38,8 +38,8 @@ class BeforeAndAfterShippingSuite extends FunSpecx with BeforeAndAfterEach {
 
 object BeforeAndAfterShippingSuite {
 
-  val beforeCounter = new AtomicInteger(0)
-  val afterCounter = new AtomicInteger(0)
+  val beforeCounter: AtomicInteger = new AtomicInteger(0)
+  val afterCounter: AtomicInteger = new AtomicInteger(0)
 
   case class Dummy(
       i: Int = 1,
