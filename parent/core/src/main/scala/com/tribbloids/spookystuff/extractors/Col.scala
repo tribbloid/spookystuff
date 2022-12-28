@@ -2,7 +2,7 @@ package com.tribbloids.spookystuff.extractors
 
 import com.tribbloids.spookystuff.Const
 import com.tribbloids.spookystuff.extractors.impl.{Extractors, Lit}
-import org.apache.spark.ml.dsl.utils.messaging.{ProtoAPI, RootTagged, TreeIR}
+import com.tribbloids.spookystuff.relay.{ProtoAPI, RootTagged, TreeIR}
 import org.apache.spark.sql.catalyst.ScalaReflection.universe.TypeTag
 
 import scala.language.implicitConversions

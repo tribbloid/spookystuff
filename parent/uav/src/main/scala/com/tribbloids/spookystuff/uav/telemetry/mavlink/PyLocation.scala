@@ -1,7 +1,7 @@
 package com.tribbloids.spookystuff.uav.telemetry.mavlink
 
 import com.tribbloids.spookystuff.python.ref.CaseInstanceRef
-import org.apache.spark.ml.dsl.utils.messaging.MessageReader
+import com.tribbloids.spookystuff.relay.MessageReader
 
 import scala.language.implicitConversions
 

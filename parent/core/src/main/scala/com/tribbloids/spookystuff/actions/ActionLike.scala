@@ -7,7 +7,7 @@ import com.tribbloids.spookystuff.session.Session
 import com.tribbloids.spookystuff.tree.TreeView
 import com.tribbloids.spookystuff.utils.CommonUtils
 import com.tribbloids.spookystuff.{Const, QueryException, SpookyContext}
-import org.apache.spark.ml.dsl.utils.messaging.AutomaticRelay
+import com.tribbloids.spookystuff.relay.AutomaticRelay
 import org.apache.spark.ml.dsl.utils.{DurationJSONSerializer, Verbose}
 import org.json4s.Formats
 import org.slf4j.LoggerFactory

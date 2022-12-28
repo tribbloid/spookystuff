@@ -2,7 +2,7 @@ package com.tribbloids.spookystuff.uav.spatial.point
 
 import com.tribbloids.spookystuff.uav.spatial._
 import com.tribbloids.spookystuff.uav.spatial.util.{SearchAttempt, SearchHistory}
-import org.apache.spark.ml.dsl.utils.messaging.MessageAPI
+import com.tribbloids.spookystuff.relay.MessageAPI
 import org.apache.spark.ml.dsl.utils.refl.ScalaUDT
 import org.apache.spark.sql.catalyst.expressions.GenericRowWithSchema
 import org.apache.spark.sql.types.SQLUserDefinedType

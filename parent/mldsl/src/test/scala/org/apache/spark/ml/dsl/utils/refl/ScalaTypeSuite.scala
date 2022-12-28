@@ -6,7 +6,7 @@ import com.tribbloids.spookystuff.testutils.FunSpecx
 import com.tribbloids.spookystuff.utils.serialization.AssertSerializable
 import org.apache.spark.ml.dsl.utils.PairwiseConversionMixin
 import org.apache.spark.ml.dsl.utils.PairwiseConversionMixin.Repr
-import org.apache.spark.ml.dsl.utils.messaging.TestBeans._
+import com.tribbloids.spookystuff.relay.TestBeans._
 import org.apache.spark.ml.dsl.utils.refl.ScalaTypeSuite.TypeTagRepr
 import org.apache.spark.sql.catalyst.ScalaReflection
 import org.apache.spark.sql.catalyst.ScalaReflection.universe

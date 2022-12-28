@@ -1,7 +1,7 @@
 package com.tribbloids.spookystuff.python
 
 import com.tribbloids.spookystuff.python.ref.PyRef
-import org.apache.spark.ml.dsl.utils.messaging.RelayRegistry
+import com.tribbloids.spookystuff.relay.RelayRegistry
 
 /**
   * Created by peng on 01/11/16.

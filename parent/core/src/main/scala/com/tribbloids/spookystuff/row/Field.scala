@@ -3,7 +3,7 @@ package com.tribbloids.spookystuff.row
 import com.tribbloids.spookystuff.QueryException
 import com.tribbloids.spookystuff.row.Field.ConflictResolving
 import com.tribbloids.spookystuff.utils.EqualBy
-import org.apache.spark.ml.dsl.utils.messaging.{ProtoAPI, TreeIR}
+import com.tribbloids.spookystuff.relay.{ProtoAPI, TreeIR}
 import org.apache.spark.sql.types.{DataType, Metadata, StructField}
 
 import scala.language.implicitConversions

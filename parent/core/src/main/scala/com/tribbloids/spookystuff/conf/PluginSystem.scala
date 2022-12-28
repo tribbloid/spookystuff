@@ -6,7 +6,7 @@ import com.tribbloids.spookystuff.session.DriverLike
 import com.tribbloids.spookystuff.utils.BroadcastWrapper
 import com.tribbloids.spookystuff.utils.lifespan.Cleanable
 import org.apache.spark.SparkConf
-import org.apache.spark.ml.dsl.utils.messaging.MessageAPI
+import com.tribbloids.spookystuff.relay.MessageAPI
 
 trait PluginSystem extends Serializable {
 

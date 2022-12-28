@@ -1,7 +1,7 @@
 package org.apache.spark.ml.dsl
 
 import org.apache.spark.ml.PipelineStage
-import org.apache.spark.ml.dsl.utils.messaging.{MessageAPI, Relay, TreeIR}
+import com.tribbloids.spookystuff.relay.{MessageAPI, Relay, TreeIR}
 import org.apache.spark.sql.types.StructField
 
 import scala.collection.mutable
@@ -111,97 +111,6 @@ object DFD extends Relay.<<[DFD] {
   case class HeadIDs(
       headID: Seq[String]
   )
-  //  class FlowWriter(flow: Flow) extends MLWriter {
-  //
-  //    SharedReadWrite.validateStages(flow.stages)
-  //
-  //    def stageDeclarationJSON: JArray = {
-  //      val namedStages: Seq[NamedStage] = flow.coll.values.collect {
-  //        case st: Step => st.stage
-  //      }.toSeq
-  //
-  //      val stageJSONs: Seq[JObject] = namedStages.map {
-  //        ns =>
-  //          val obj: JObject = (
-  //            ("id" -> ns.id)
-  //              ~ ("uid" -> ns.stage.uid)
-  //              ~ ("name" -> ns.name)
-  //              ~ ("tags" -> ns.tags.map {
-  //              tag =>
-  //                "tag" -> tag
-  //            })
-  //              ~ ("outputColOverride" -> ns.outputColOverride)
-  //            )
-  //          obj
-  //      }
-  //
-  //      val result = stageJSONs.map {
-  //        v =>
-  //          v
-  //      }
-  //
-  //      result: JArray
-  //    }
-  //
-  //    def forwardTreeJSON: JValue = {
-  //
-  //      val tailWrappers = flow.tails.map(SimpleStepWrapper)
-  //      val forwardTrees = tailWrappers.map(flow.ForwardNode)
-  //
-  //      val forwardTreesJVs = forwardTrees.map(_.jsonValue)
-  //
-  //      val result = forwardTreesJVs.map {
-  //        v =>
-  //          "stage" -> v
-  //      }
-  //
-  //      result: JValue
-  //    }
-  //
-  //    val basicMetadata: JObject =
-  //      ("timestamp" -> System.currentTimeMillis()) ~
-  //        ("sparkVersion" -> sc.version) ~
-  //        ("uid" -> flow.uid) ~
-  //        ("org" -> "sc1")
-  //    //      ("paramMap" -> jsonParams)
-  //
-  //    val graphMetadata: JObject =
-  //      "headIDs" ->
-  //        ("headID" -> flow.headIDs)
-  //
-  //    def json: JValue = {
-  //      flow.propagateCols(Compactions.PruneDownPath)
-  //
-  //      "flow" -> (
-  //        basicMetadata
-  //          ~ ("declarations" ->
-  //          ("stage" -> stageDeclarationJSON)
-  //          )
-  //          ~ ("flowLines" ->
-  //          ("flowLine" -> forwardTreeJSON)
-  //          )
-  //          ~ graphMetadata
-  //        )
-  //    }
-  //
-  //    def compactJSON = compact(render(json))
-  //    def prettyJSON = pretty(render(json))
-  //
-  //    def xmlNode = Xml.toXml(json)
-  //    def compactXML = xmlNode.toString()
-  //    def prettyXML = Const.modelXmlPrinter.formatNodes(xmlNode)
-  //
-  //    override protected def saveImpl(path: String): Unit = {
-  //
-  //      val resolver = HDFSResolver(sc.hadoopConfiguration)
-  //
-  //      resolver.output(path, overwrite = true){
-  //        os =>
-  //          os.write(prettyJSON.getBytes("UTF-8"))
-  //      }
-  //    }
-  //  }
-
 }
 
 //TODO: should I be using decorator/mixin?

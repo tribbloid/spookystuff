@@ -1,8 +1,8 @@
 package org.apache.spark.ml.dsl.utils.data
 
 import org.apache.spark.ml.dsl.utils.DSLUtils
-import org.apache.spark.ml.dsl.utils.messaging.io.Encoder.HasEncoder
-import org.apache.spark.ml.dsl.utils.messaging.{Relay, TreeIR}
+import com.tribbloids.spookystuff.relay.io.Encoder.HasEncoder
+import com.tribbloids.spookystuff.relay.{Relay, TreeIR}
 
 import java.lang.reflect.{InvocationTargetException, Method}
 import scala.collection.immutable.ListMap

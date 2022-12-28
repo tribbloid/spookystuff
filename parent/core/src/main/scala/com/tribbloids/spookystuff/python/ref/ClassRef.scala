@@ -1,7 +1,7 @@
 package com.tribbloids.spookystuff.python.ref
 
 import com.tribbloids.spookystuff.utils.SpookyUtils
-import org.apache.spark.ml.dsl.utils.messaging.MessageAPI
+import com.tribbloids.spookystuff.relay.MessageAPI
 import org.apache.spark.ml.dsl.utils.refl.ReflectionUtils
 
 trait ClassRef extends PyRef {

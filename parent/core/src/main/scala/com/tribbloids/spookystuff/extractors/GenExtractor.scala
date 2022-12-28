@@ -4,7 +4,7 @@ import com.tribbloids.spookystuff.Const
 import com.tribbloids.spookystuff.row.Field
 import com.tribbloids.spookystuff.tree.TreeView
 import com.tribbloids.spookystuff.utils.SpookyUtils
-import org.apache.spark.ml.dsl.utils.messaging.AutomaticRelay
+import com.tribbloids.spookystuff.relay.AutomaticRelay
 import org.apache.spark.ml.dsl.utils.refl.{ReflectionLock, ScalaType, UnreifiedObjectType}
 import org.apache.spark.sql.catalyst.ScalaReflection.universe
 import org.apache.spark.sql.catalyst.ScalaReflection.universe.TypeTag

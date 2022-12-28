@@ -1,7 +1,7 @@
 package org.apache.spark.ml.dsl.utils.data
 
 import com.tribbloids.spookystuff.testutils.FunSpecx
-import org.apache.spark.ml.dsl.utils.messaging.Relay
+import com.tribbloids.spookystuff.relay.Relay
 
 class EAVSuite extends FunSpecx {
 

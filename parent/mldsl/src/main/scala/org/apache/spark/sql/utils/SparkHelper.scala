@@ -16,13 +16,6 @@ import scala.reflect.ClassTag
   */
 object SparkHelper {
 
-  //  def serviceUGI: UserGroupInformation = {
-  //
-  //    val user = UserGroupInformation.getCurrentUser
-  //    val service = Option(user.getRealUser).getOrElse(user)
-  //    service
-  //  }
-
   def internalCreateDF(
       sql: SQLContext,
       rdd: RDD[InternalRow],

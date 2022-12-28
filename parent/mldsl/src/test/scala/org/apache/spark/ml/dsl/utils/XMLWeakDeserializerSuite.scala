@@ -1,7 +1,7 @@
 package org.apache.spark.ml.dsl.utils
 
 import org.apache.spark.ml.dsl.AbstractDFDSuite
-import org.apache.spark.ml.dsl.utils.messaging.xml.XMLFormats
+import com.tribbloids.spookystuff.relay.xml.XMLFormats
 import org.json4s.{DefaultFormats, Formats, JObject}
 
 object XMLWeakDeserializerSuite {
