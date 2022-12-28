@@ -12,9 +12,9 @@ import org.apache.spark.sql.types._
   */
 abstract class ScalaUDT[T >: Null](
     implicit
-    val self: ScalaType[T]
+    val self: TypeMagnet[T]
 ) extends UserDefinedType[T]
-    with ScalaType.CatalystTypeMixin[T] {
+    with TypeMagnet.CatalystTypeMixin[T] {
 
   override val typeName: String =
     this.getClass.getSimpleName.stripSuffix("$") // .stripSuffix("Type").stripSuffix("UDT").toLowerCase

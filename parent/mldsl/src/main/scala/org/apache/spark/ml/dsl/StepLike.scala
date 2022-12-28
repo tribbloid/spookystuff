@@ -1,7 +1,7 @@
 package org.apache.spark.ml.dsl
 
 import org.apache.spark.ml.PipelineStage
-import org.apache.spark.ml.dsl.utils.messaging.{MessageAPI, Relay, TreeIR}
+import com.tribbloids.spookystuff.relay.{MessageAPI, Relay, TreeIR}
 import org.apache.spark.ml.param.{ParamPair, Params}
 import org.apache.spark.sql.ColumnName
 import org.apache.spark.sql.types.DataType

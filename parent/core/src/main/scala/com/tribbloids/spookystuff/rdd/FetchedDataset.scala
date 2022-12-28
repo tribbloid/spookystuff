@@ -3,15 +3,15 @@ package com.tribbloids.spookystuff.rdd
 import com.tribbloids.spookystuff.actions._
 import com.tribbloids.spookystuff.conf.SpookyConf
 import com.tribbloids.spookystuff.doc.{Doc, DocOption}
-import com.tribbloids.spookystuff.dsl.{ExploreAlgorithm, JoinType, _}
+import com.tribbloids.spookystuff.dsl._
 import com.tribbloids.spookystuff.execution.ExplorePlan.Params
 import com.tribbloids.spookystuff.execution._
 import com.tribbloids.spookystuff.extractors._
 import com.tribbloids.spookystuff.extractors.impl.Get
-import com.tribbloids.spookystuff.row.{Field, _}
+import com.tribbloids.spookystuff.row._
 import com.tribbloids.spookystuff.utils.SpookyViews
 import com.tribbloids.spookystuff.{Const, SpookyContext}
-import org.apache.spark.ml.dsl.utils.refl.ScalaType
+import org.apache.spark.ml.dsl.utils.refl.TypeMagnet
 import org.apache.spark.rdd.RDD
 import org.apache.spark.sql.DataFrame
 import org.apache.spark.sql.catalyst.expressions.GenericInternalRow
@@ -150,7 +150,7 @@ case class FetchedDataset(
       if (!sort) this.dataRDD
       else dataRDDSorted
 
-    import ScalaType._
+    import TypeMagnet._
 
     //    val field2Encoder: Map[Field, ExpressionEncoder[Any]] = spookySchema.fieldTypes.mapValues {
     //      tpe =>

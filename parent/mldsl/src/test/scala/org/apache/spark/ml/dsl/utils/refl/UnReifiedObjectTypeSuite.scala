@@ -7,7 +7,7 @@ class UnReifiedObjectTypeSuite extends FunSpecx {
 
   import ScalaReflection.universe._
 
-  it("UnreifiedScalaType.toString") {
+  it("toString") {
 
     val tt = UnreifiedObjectType.summon(typeTag[Int])
     tt.toString.shouldBe(

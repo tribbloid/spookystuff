@@ -1,7 +1,7 @@
 package com.tribbloids.spookystuff.metrics
 
 import com.tribbloids.spookystuff.utils.CommonUtils
-import org.apache.spark.ml.dsl.utils.messaging.TreeIR
+import com.tribbloids.spookystuff.relay.TreeIR
 import org.apache.spark.ml.dsl.utils.refl.ReflectionUtils
 import org.apache.spark.util.AccumulatorV2
 

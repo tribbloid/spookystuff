@@ -2,7 +2,7 @@ package com.tribbloids.spookystuff.web.actions
 
 import com.tribbloids.spookystuff.selenium.BySizzleSelector
 import com.tribbloids.spookystuff.utils.EqualBy
-import org.apache.spark.ml.dsl.utils.messaging.{IR, Relay, TreeIR}
+import com.tribbloids.spookystuff.relay.{IR, Relay, TreeIR}
 import org.apache.spark.ml.dsl.utils.refl.ScalaUDT
 import org.apache.spark.sql.types.SQLUserDefinedType
 import org.openqa.selenium.By

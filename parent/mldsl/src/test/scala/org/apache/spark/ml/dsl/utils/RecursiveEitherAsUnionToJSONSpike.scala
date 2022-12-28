@@ -2,8 +2,8 @@ package org.apache.spark.ml.dsl.utils
 
 import com.tribbloids.spookystuff.testutils.FunSpecx
 import org.apache.spark.ml.dsl.utils.RecursiveEitherAsUnionToJSONSpike._
-import org.apache.spark.ml.dsl.utils.messaging.Relay
-import org.apache.spark.ml.dsl.utils.messaging.io.Encoder
+import com.tribbloids.spookystuff.relay.Relay
+import com.tribbloids.spookystuff.relay.io.Encoder
 import org.scalatest.Ignore
 import org.slf4j.LoggerFactory
 

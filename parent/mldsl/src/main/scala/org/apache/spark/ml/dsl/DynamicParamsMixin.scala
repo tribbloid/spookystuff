@@ -1,8 +1,8 @@
 package org.apache.spark.ml.dsl
 
-import org.apache.spark.ml.dsl.utils.messaging.{MessageMLParam, Relay}
+import com.tribbloids.spookystuff.relay.{MessageMLParam, Relay}
 import org.apache.spark.ml.dsl.utils.DSLUtils
-import org.apache.spark.ml.dsl.utils.messaging.io.FallbackSerializer
+import com.tribbloids.spookystuff.relay.io.FallbackSerializer
 import org.apache.spark.ml.param.{Param, Params}
 import org.json4s.Formats
 

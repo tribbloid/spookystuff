@@ -2,7 +2,7 @@ package com.tribbloids.spookystuff.row
 
 import java.util.UUID
 import com.tribbloids.spookystuff.utils.{Interpolation, SpookyUtils, SpookyViews}
-import org.apache.spark.ml.dsl.utils.messaging.{ProtoAPI, TreeIR}
+import com.tribbloids.spookystuff.relay.{ProtoAPI, TreeIR}
 
 import scala.reflect.ClassTag
 

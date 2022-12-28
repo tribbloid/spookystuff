@@ -11,7 +11,7 @@ import org.apache.spark.sql.types.{IntegerType, StringType}
 
 class ScalaReflectionSpike extends FunSpecx {
 
-  import org.apache.spark.ml.dsl.utils.refl.ScalaType._
+  import org.apache.spark.ml.dsl.utils.refl.TypeMagnet._
 
   lazy val exLit: Lit[FetchedRow, _] = Lit(new Example())
   lazy val exType: DataType = UnreifiedObjectType.summon[Example]

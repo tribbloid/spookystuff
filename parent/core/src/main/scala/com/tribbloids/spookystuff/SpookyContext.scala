@@ -11,8 +11,8 @@ import com.tribbloids.spookystuff.utils.{ShippingMarks, TreeThrowable}
 import org.apache.hadoop.conf.Configuration
 import org.apache.spark._
 import org.apache.spark.broadcast.Broadcast
-import org.apache.spark.ml.dsl.utils.messaging.io.Encoder
-import org.apache.spark.ml.dsl.utils.refl.ScalaType
+import com.tribbloids.spookystuff.relay.io.Encoder
+import org.apache.spark.ml.dsl.utils.refl.TypeMagnet
 import org.apache.spark.rdd.RDD
 import org.apache.spark.sql.{DataFrame, SQLContext}
 
@@ -147,7 +147,7 @@ case class SpookyContext(
       seq: TraversableOnce[T]
   ): FetchedDataset = {
 
-    implicit val ctg: ClassTag[T] = ScalaType.FromTypeTag[T].asClassTag
+    implicit val ctg: ClassTag[T] = TypeMagnet.FromTypeTag[T].asClassTag
     this.dsl.rddToFetchedDS(this.sqlContext.sparkContext.parallelize(seq.toSeq))
   }
   def create[T: TypeTag](
@@ -155,7 +155,7 @@ case class SpookyContext(
       numSlices: Int
   ): FetchedDataset = {
 
-    implicit val ctg: ClassTag[T] = ScalaType.FromTypeTag[T].asClassTag
+    implicit val ctg: ClassTag[T] = TypeMagnet.FromTypeTag[T].asClassTag
     this.dsl.rddToFetchedDS(this.sqlContext.sparkContext.parallelize(seq.toSeq, numSlices))
   }
 
@@ -236,7 +236,7 @@ case class SpookyContext(
           }
           new FetchedDataset(
             self,
-            fieldMap = ListMap(Field("_") -> ScalaType.FromTypeTag(ttg).asCatalystType),
+            fieldMap = ListMap(Field("_") -> TypeMagnet.FromTypeTag(ttg).asCatalystType),
             spooky = forkForNewRDD
           )
       }

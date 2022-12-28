@@ -1,7 +1,7 @@
 package org.apache.spark.ml.dsl
 
 import com.tribbloids.spookystuff.tree.TreeView
-import org.apache.spark.ml.dsl.utils.messaging.{MessageAPI, Relay, TreeIR}
+import com.tribbloids.spookystuff.relay.{MessageAPI, Relay, TreeIR}
 import org.apache.spark.sql.utils.DataTypeRelay
 
 trait StepTreeNode[BaseType <: StepTreeNode[BaseType]] extends TreeView.Immutable[StepTreeNode[BaseType]] {

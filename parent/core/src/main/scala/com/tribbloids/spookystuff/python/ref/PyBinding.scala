@@ -4,8 +4,8 @@ import com.tribbloids.spookystuff.SpookyContext
 import com.tribbloids.spookystuff.session.PythonDriver
 import com.tribbloids.spookystuff.utils.SpookyUtils
 import com.tribbloids.spookystuff.utils.lifespan.LocalCleanable
-import org.apache.spark.ml.dsl.utils.messaging.TreeIR
-import org.apache.spark.ml.dsl.utils.messaging.io.Encoder
+import com.tribbloids.spookystuff.relay.TreeIR
+import com.tribbloids.spookystuff.relay.io.Encoder
 import org.json4s
 import org.json4s.jackson.JsonMethods.parse
 

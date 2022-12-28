@@ -10,9 +10,9 @@ import org.apache.spark.sql.types._
   */
 class UnreifiedObjectType[T]()(
     implicit
-    val self: ScalaType[T]
+    val self: TypeMagnet[T]
 ) extends ObjectType(self.asClass)
-    with ScalaType.CatalystTypeMixin[T] {
+    with TypeMagnet.CatalystTypeMixin[T] {
 
 //  override def simpleString: String = "(unreified) " + ev.asType
 
@@ -35,7 +35,7 @@ object UnreifiedObjectType {
 
   def forRuntimeInstance[T](obj: T): DataType = {
     val clazz: Class[_] = obj.getClass
-    summon(ScalaType.FromClass(clazz).asTypeTag)
+    summon(TypeMagnet.FromClass(clazz).asTypeTag)
   }
 
   def reify(tt: DataType): DataType = {

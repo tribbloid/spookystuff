@@ -1,8 +1,8 @@
 package org.apache.spark.ml.dsl.utils.data
 
+import com.tribbloids.spookystuff.relay.RootTagged
+import com.tribbloids.spookystuff.relay.xml.Xml
 import com.tribbloids.spookystuff.utils.{CommonUtils, EqualBy, TreeThrowable}
-import org.apache.spark.ml.dsl.utils.messaging.RootTagged
-import org.apache.spark.ml.dsl.utils.messaging.xml.Xml
 import org.apache.spark.ml.dsl.utils.{?, HasEagerInnerObjects, ObjectSimpleNameMixin}
 import org.apache.spark.sql.catalyst.util.CaseInsensitiveMap
 
