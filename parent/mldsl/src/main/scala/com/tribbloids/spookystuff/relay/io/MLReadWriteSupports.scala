@@ -38,7 +38,7 @@ object MLReadWriteSupports {
 
   implicit class MsgWritable[Obj: Relay](v: Obj) extends MLWritable {
 
-    override def write: MLWriter = {
+    override def write = {
 
       implicitly[Relay[Obj]].toMLWriter(v)
     }
