@@ -19,7 +19,7 @@ import org.scalatest.Ignore
 @Ignore // TODO: remove due to deprecation of ScalaDynamicMixin
 class ScalaDynamicExtractorSuite extends SpookyEnvFixture with LocalPathDocsFixture {
 
-  import org.apache.spark.ml.dsl.utils.refl.ScalaType._
+  import org.apache.spark.ml.dsl.utils.refl.TypeMagnet._
 
   val doc: DocOption = Wget(HTML_URL).fetch(spooky).head
 

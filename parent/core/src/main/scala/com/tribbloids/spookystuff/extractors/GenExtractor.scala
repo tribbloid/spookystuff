@@ -5,7 +5,7 @@ import com.tribbloids.spookystuff.row.Field
 import com.tribbloids.spookystuff.tree.TreeView
 import com.tribbloids.spookystuff.utils.SpookyUtils
 import com.tribbloids.spookystuff.relay.AutomaticRelay
-import org.apache.spark.ml.dsl.utils.refl.{ReflectionLock, ScalaType, UnreifiedObjectType}
+import org.apache.spark.ml.dsl.utils.refl.{ReflectionLock, TypeMagnet, UnreifiedObjectType}
 import org.apache.spark.sql.catalyst.ScalaReflection.universe
 import org.apache.spark.sql.catalyst.ScalaReflection.universe.TypeTag
 
@@ -99,8 +99,8 @@ object GenExtractor extends AutomaticRelay[GenExtractor[_, _]] with GenExtractor
 
       // TODO: need to figure out how to implement this kind of pattern matching with unapply API
       val ttg = (
-        ScalaType.FromCatalystType(t1).asTypeTag,
-        ScalaType.FromCatalystType(t2).asTypeTag
+        TypeMagnet.FromCatalystType(t1).asTypeTag,
+        TypeMagnet.FromCatalystType(t2).asTypeTag
       ) match {
         case (ttg1: TypeTag[a], ttg2: TypeTag[b]) =>
           implicit val t1: universe.TypeTag[a] = ttg1
@@ -226,7 +226,7 @@ trait GenExtractor[T, +R] extends Product with ReflectionLock with Serializable 
 
   // TODO: extract subroutine and use it to avoid obj creation overhead
   def typed[A: TypeTag]: GenExtractor[T, A] = {
-    implicit val ctg: ClassTag[A] = ScalaType.FromTypeTag[A].asClassTag
+    implicit val ctg: ClassTag[A] = TypeMagnet.FromTypeTag[A].asClassTag
 
     andOptionFn[A] {
       SpookyUtils.typedOrNone[A]

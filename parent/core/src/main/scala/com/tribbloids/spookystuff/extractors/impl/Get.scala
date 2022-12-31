@@ -2,8 +2,8 @@ package com.tribbloids.spookystuff.extractors.impl
 
 import com.tribbloids.spookystuff.extractors.GenExtractor.Leaf
 import com.tribbloids.spookystuff.extractors._
-import com.tribbloids.spookystuff.row.{SpookySchema, _}
-import org.apache.spark.ml.dsl.utils.refl.ScalaType._
+import com.tribbloids.spookystuff.row._
+import org.apache.spark.ml.dsl.utils.refl.TypeMagnet._
 import org.apache.spark.sql.types._
 
 import scala.collection.TraversableOnce

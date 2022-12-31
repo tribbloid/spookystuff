@@ -80,7 +80,7 @@ object MapPlan {
   )(val childSchema: SpookySchema)
       extends RowMapper {
 
-    import org.apache.spark.ml.dsl.utils.refl.ScalaType._
+    import org.apache.spark.ml.dsl.utils.refl.TypeMagnet._
 
     val resolver: childSchema.Resolver = childSchema.newResolver
 

@@ -9,7 +9,7 @@ import org.scalatest.Ignore
 import scala.reflect.ClassTag
 
 @Ignore
-class ScalaTypeSpike extends FunSpecx {
+class TypeMagnetSpike extends FunSpecx {
 
   import ScalaReflection.universe._
 

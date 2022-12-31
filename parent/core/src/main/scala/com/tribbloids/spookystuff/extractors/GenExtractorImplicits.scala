@@ -17,7 +17,7 @@ import scala.reflect.ClassTag
 trait GenExtractorImplicits {
 
   import com.tribbloids.spookystuff.dsl.DSL._
-  import org.apache.spark.ml.dsl.utils.refl.ScalaType._
+  import org.apache.spark.ml.dsl.utils.refl.TypeMagnet._
   import org.apache.spark.sql.catalyst.ScalaReflection.universe
   import universe.TypeTag
 

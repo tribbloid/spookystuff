@@ -4,7 +4,7 @@ import java.lang.reflect.Method
 
 import com.tribbloids.spookystuff.extractors.impl.Lit
 import org.apache.spark.ml.dsl.utils.DSLUtils
-import org.apache.spark.ml.dsl.utils.refl.{ReflectionLock, ScalaType, TypeUtils, UnreifiedObjectType}
+import org.apache.spark.ml.dsl.utils.refl.{ReflectionLock, TypeMagnet, TypeUtils, UnreifiedObjectType}
 import org.apache.spark.sql.catalyst.ScalaReflection.universe._
 
 import scala.language.dynamics
@@ -13,7 +13,7 @@ case class ScalaDynamic(
     methodName: String
 ) extends ReflectionLock {
 
-  import org.apache.spark.ml.dsl.utils.refl.ScalaType._
+  import org.apache.spark.ml.dsl.utils.refl.TypeMagnet._
 
   def getMethodsByCatalystType(dType: DataType): List[MethodSymbol] = locked {
     val tpe = dType.asTypeTag_casted.tpe
@@ -139,7 +139,7 @@ case class ScalaDynamicExtractor[T](
     argsOpt: Option[List[GenExtractor[T, _]]]
 ) extends GenExtractor[T, Any] {
 
-  import org.apache.spark.ml.dsl.utils.refl.ScalaType._
+  import org.apache.spark.ml.dsl.utils.refl.TypeMagnet._
 
   val dynamic: ScalaDynamic = ScalaDynamic(methodName)
 
@@ -167,8 +167,8 @@ case class ScalaDynamicExtractor[T](
 
     val (paramTypes, resultType) = TypeUtils.getParameter_ReturnTypes(scalaMethod, baseTTg.tpe)
 
-    val resultScalaType = ScalaType.fromType[Any](resultType, baseTTg.mirror)
-    resultScalaType.asTypeTag
+    val resultMagnet = TypeMagnet.fromType[Any](resultType, baseTTg.mirror)
+    resultMagnet.asTypeTag
   }
 
   override def resolve(tt: DataType): PartialFunction[T, Any] = locked {

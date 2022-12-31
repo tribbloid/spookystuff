@@ -1,13 +1,11 @@
 package org.apache.spark.ml.dsl.utils.refl
 
-import java.sql.{Date, Timestamp}
-
-import com.tribbloids.spookystuff.utils.CachingUtils.ConcurrentCache
 import com.tribbloids.spookystuff.utils.serialization.SerDeOverride
 import org.apache.spark.sql.catalyst.ScalaReflection
 import org.apache.spark.sql.catalyst.ScalaReflection.universe._
 import org.apache.spark.sql.types._
 
+import java.sql.{Date, Timestamp}
 import scala.collection.Map
 import scala.language.{existentials, implicitConversions}
 import scala.reflect.ClassTag
@@ -19,9 +17,9 @@ import scala.reflect.ClassTag
   * introduces UserDefinedType V2.
   */
 //TODO: change to ThreadLocal to be faster?
-//TODO: should be named "TypeMagnet"
-//TODO: this should be a codec
-trait ScalaType[T] extends ReflectionLock with Serializable {
+//TODO: should be "WeakTypeMagnet", erasure may happen
+//TODO: should have a codec
+trait TypeMagnet[T] extends ReflectionLock with Serializable {
 
   override def toString: String = asType.toString
 
@@ -63,7 +61,7 @@ trait ScalaType[T] extends ReflectionLock with Serializable {
   final override def equals(v: Any): Boolean = {
     if (v == null) return false
     v match {
-      case vv: ScalaType[_] =>
+      case vv: TypeMagnet[_] =>
         (this.asClass == vv.asClass) && (this.asType =:= vv.asType)
       case _ =>
         false
@@ -73,14 +71,14 @@ trait ScalaType[T] extends ReflectionLock with Serializable {
   object utils {
 
     lazy val companionObject: Any = {
-      val mirror = ScalaType.this.mirror
+      val mirror = TypeMagnet.this.mirror
       val companionMirror = mirror.reflectModule(asType.typeSymbol.companion.asModule)
       companionMirror.instance
     }
 
     lazy val baseCompanionObjects: Seq[Any] = {
 
-      val mirror = ScalaType.this.mirror
+      val mirror = TypeMagnet.this.mirror
       val supers = asType.typeSymbol.asClass.baseClasses
 
       supers.flatMap { ss =>
@@ -93,104 +91,9 @@ trait ScalaType[T] extends ReflectionLock with Serializable {
   }
 }
 
-sealed abstract class ScalaType_Level1 {
+object TypeMagnet extends TypeMagnet_Imp2 {
 
-  trait _Ctg[T] extends ScalaType[T] {
-
-    protected def _classTag: ClassTag[T]
-    @transient final override lazy val asClassTag: ClassTag[T] = _classTag
-
-    override lazy val asClass: Class[T] = {
-      asClassTag.runtimeClass.asInstanceOf[Class[T]]
-    }
-
-    def classLoader: ClassLoader = asClass.getClassLoader
-
-    @transient override lazy val mirror: Mirror = {
-      val loader = classLoader
-      runtimeMirror(loader)
-    }
-    //    def mirror = ReflectionUtils.mirrorFactory.get()
-
-    @transient override lazy val asType: Type = locked {
-      //      val name = _class.getCanonicalName
-
-      val classSymbol = getClassSymbol(asClass)
-      val tpe = classSymbol.selfType
-      tpe
-    }
-
-    def getClassSymbol(_class: Class[_]): ClassSymbol = {
-
-      try {
-        mirror.classSymbol(_class)
-      } catch {
-        case _: AssertionError =>
-          val superclass = Seq(_class.getSuperclass).filter { v =>
-            v != classOf[AnyRef]
-          }
-          val interfaces = _class.getInterfaces
-
-          mirror.classSymbol((superclass ++ interfaces).head)
-      }
-    }
-
-    override def _typeTag: TypeTag[T] = {
-      TypeUtils.createTypeTag_fast(asType, mirror)
-    }
-  }
-
-  protected class FromClassTag[T](val _classTag: ClassTag[T]) extends _Ctg[T]
-
-  trait CachedBuilder[I[_]] extends Serializable {
-
-    def createNew[T](v: I[T]): ScalaType[T]
-
-    protected lazy val cache: ConcurrentCache[I[_], ScalaType[_]] = ConcurrentCache[I[_], ScalaType[_]]()
-
-    final def apply[T](
-        implicit
-        v: I[T]
-    ): ScalaType[T] = {
-      cache
-        .getOrElseUpdate(
-          v,
-          createNew[T](v)
-        )
-        .asInstanceOf[ScalaType[T]]
-    }
-  }
-
-  object FromClass extends CachedBuilder[Class] {
-
-    override def createNew[T](v: Class[T]): ScalaType[T] = new FromClassTag(ClassTag(v))
-  }
-
-  // TODO: how to get rid of these boilerplates?
-  implicit def _fromClass[T](v: Class[T]): ScalaType[T] = FromClass(v)
-  implicit def __fromClass[T](
-      implicit
-      v: Class[T]
-  ): ScalaType[T] = FromClass(v)
-}
-
-sealed abstract class ScalaType_Level2 extends ScalaType_Level1 {
-
-  object FromClassTag extends CachedBuilder[ClassTag] {
-
-    override def createNew[T](v: ClassTag[T]): ScalaType[T] = new FromClassTag(v)
-  }
-
-  implicit def _fromClassTag[T](v: ClassTag[T]): ScalaType[T] = FromClassTag(v)
-  implicit def __fromClassTag[T](
-      implicit
-      v: ClassTag[T]
-  ): ScalaType[T] = FromClassTag(v)
-}
-
-object ScalaType extends ScalaType_Level2 {
-
-  trait _Ttg[T] extends ScalaType[T] {}
+  trait _Ttg[T] extends TypeMagnet[T] {}
 
   protected class FromTypeTag[T](@transient protected val __typeTag: TypeTag[T]) extends _Ttg[T] {
 
@@ -208,14 +111,14 @@ object ScalaType extends ScalaType_Level2 {
 
   object FromTypeTag extends CachedBuilder[TypeTag] {
 
-    override def createNew[T](v: TypeTag[T]): ScalaType[T] = new FromTypeTag[T](v)
+    override def createNew[T](v: TypeTag[T]): TypeMagnet[T] = new FromTypeTag[T](v)
   }
 
-  implicit def _fromTypeTag[T](v: TypeTag[T]): ScalaType[T] = FromTypeTag.apply(v)
+  implicit def _fromTypeTag[T](v: TypeTag[T]): TypeMagnet[T] = FromTypeTag.apply(v)
   implicit def __fromTypeTag[T](
       implicit
       v: TypeTag[T]
-  ): ScalaType[T] = FromTypeTag.apply(v)
+  ): TypeMagnet[T] = FromTypeTag.apply(v)
 
   def fromType[T](tpe: Type, mirror: Mirror): FromTypeTag[T] = {
 
@@ -226,10 +129,10 @@ object ScalaType extends ScalaType_Level2 {
 
   def summon[T](
       implicit
-      ev: ScalaType[T]
-  ): ScalaType[T] = ev
+      ev: TypeMagnet[T]
+  ): TypeMagnet[T] = ev
 
-  def getRuntimeType(v: Any): ScalaType[_] = {
+  def getRuntimeType(v: Any): TypeMagnet[_] = {
     v match {
       case v: RuntimeTypeTagged => v.runtimeType
       case _                    => v.getClass
@@ -261,7 +164,7 @@ object ScalaType extends ScalaType_Level2 {
     }
 
     lazy val atomicTypePairs: Seq[(DataType, TypeTag[_])] = atomicExamples.map { v =>
-      ScalaType.FromTypeTag(v._2).tryReify.get -> v._2
+      TypeMagnet.FromTypeTag(v._2).tryReify.get -> v._2
     }
 
     lazy val atomicTypeMap: Map[DataType, TypeTag[_]] = {
@@ -282,7 +185,7 @@ object ScalaType extends ScalaType_Level2 {
       dataType match {
         case NullType =>
           Some(TypeTag.Null)
-        case st: ScalaType.CatalystTypeMixin[_] =>
+        case st: TypeMagnet.CatalystTypeMixin[_] =>
           Some(st.self.asTypeTag)
         case t if FromCatalystType.atomicTypeMap.contains(t) =>
           FromCatalystType.atomicTypeMap.get(t)
@@ -422,6 +325,6 @@ object ScalaType extends ScalaType_Level2 {
 
   trait CatalystTypeMixin[T] extends DataType {
 
-    def self: ScalaType[T]
+    def self: TypeMagnet[T]
   }
 }

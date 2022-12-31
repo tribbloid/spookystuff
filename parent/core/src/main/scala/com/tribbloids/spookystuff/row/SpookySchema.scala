@@ -16,7 +16,7 @@ case class SpookySchema(
     fieldTypes: ListMap[Field, DataType] = ListMap.empty
 ) extends ScalaUDT[DataRow] {
 
-  import org.apache.spark.ml.dsl.utils.refl.ScalaType._
+  import org.apache.spark.ml.dsl.utils.refl.TypeMagnet._
 
   def spooky: SpookyContext = ec.spooky
 

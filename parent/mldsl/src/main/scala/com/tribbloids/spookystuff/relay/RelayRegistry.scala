@@ -1,6 +1,6 @@
 package com.tribbloids.spookystuff.relay
 
-import org.apache.spark.ml.dsl.utils.refl.ScalaType
+import org.apache.spark.ml.dsl.utils.refl.TypeMagnet
 
 import scala.collection.mutable
 import scala.util.{Failure, Success, Try}
@@ -11,7 +11,7 @@ import scala.util.{Failure, Success, Try}
 trait RelayRegistry {
 
   // failed lookup won't be reattempted as it is still too slow.
-  val registry: mutable.Map[ScalaType[_], Try[Relay[_]]] = mutable.Map.empty
+  val registry: mutable.Map[TypeMagnet[_], Try[Relay[_]]] = mutable.Map.empty
 
   /**
     * this is a bunch of makeshift rules that allow type class pattern to be used in runtime
@@ -34,11 +34,11 @@ trait RelayRegistry {
         Success(v.outer)
       case _ =>
         val clazz = v.getClass
-        val scalaType: ScalaType[_] = clazz
+        val tt: TypeMagnet[_] = clazz
 
         registry.getOrElseUpdate(
-          scalaType, {
-            val companions = scalaType.utils.baseCompanionObjects
+          tt, {
+            val companions = tt.utils.baseCompanionObjects
             val rrOpt = companions.find(_.isInstanceOf[Relay[_]])
             rrOpt match {
               case Some(rr: Relay[_]) =>

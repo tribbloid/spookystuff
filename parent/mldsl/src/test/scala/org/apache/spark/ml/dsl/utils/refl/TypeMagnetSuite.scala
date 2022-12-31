@@ -7,7 +7,7 @@ import com.tribbloids.spookystuff.utils.serialization.AssertSerializable
 import org.apache.spark.ml.dsl.utils.PairwiseConversionMixin
 import org.apache.spark.ml.dsl.utils.PairwiseConversionMixin.Repr
 import com.tribbloids.spookystuff.relay.TestBeans._
-import org.apache.spark.ml.dsl.utils.refl.ScalaTypeSuite.TypeTagRepr
+import org.apache.spark.ml.dsl.utils.refl.TypeMagnetSuite.TypeTagRepr
 import org.apache.spark.sql.catalyst.ScalaReflection
 import org.apache.spark.sql.catalyst.ScalaReflection.universe
 import org.apache.spark.sql.types._
@@ -18,7 +18,7 @@ import scala.reflect.ClassTag
 /**
   * Created by peng on 08/06/16.
   */
-object ScalaTypeSuite {
+object TypeMagnetSuite {
 
   import ScalaReflection.universe._
 
@@ -48,7 +48,7 @@ object ScalaTypeSuite {
   }
 }
 
-class ScalaTypeSuite extends FunSpecx with PairwiseConversionMixin {
+class TypeMagnetSuite extends FunSpecx with PairwiseConversionMixin {
 
   import ScalaReflection.universe._
 
@@ -63,7 +63,7 @@ class ScalaTypeSuite extends FunSpecx with PairwiseConversionMixin {
     describe(s"From ${_typeTag}") {
 
       _typeTag.map { ttg =>
-        def vType = ScalaType.FromTypeTag(ttg)
+        def vType = TypeMagnet.FromTypeTag(ttg)
 
         it("has a mirror") {
           vType.mirror
@@ -78,7 +78,7 @@ class ScalaTypeSuite extends FunSpecx with PairwiseConversionMixin {
 
           val tt = ttg.tpe
 
-          val vType2 = ScalaType.fromType(tt, ttg.mirror)
+          val vType2 = TypeMagnet.fromType(tt, ttg.mirror)
 
           AssertSerializable(vType2)
         }
@@ -88,7 +88,7 @@ class ScalaTypeSuite extends FunSpecx with PairwiseConversionMixin {
     describe(s"From ${_classTag}") {
 
       _classTag.map { v =>
-        def vType = ScalaType.FromClassTag(v)
+        def vType = TypeMagnet.FromClassTag(v)
 
         it("has a mirror") {
           vType.mirror
@@ -111,30 +111,30 @@ class ScalaTypeSuite extends FunSpecx with PairwiseConversionMixin {
         _typeTag,
         _class,
         { r: TypeTag[_] =>
-          ScalaType.FromTypeTag(r).asClass
+          TypeMagnet.FromTypeTag(r).asClass
         },
         { r: Class[_] =>
-          ScalaType.FromClass(r).asTypeTag
+          TypeMagnet.FromClass(r).asTypeTag
         }
       ),
       PairwiseCase(
         _typeTag,
         _class.map[ClassTag[_]](v => ClassTag(v)),
         { r: TypeTag[_] =>
-          ScalaType.FromTypeTag(r).asClassTag
+          TypeMagnet.FromTypeTag(r).asClassTag
         },
         { r: ClassTag[_] =>
-          ScalaType.FromClassTag(r).asTypeTag
+          TypeMagnet.FromClassTag(r).asTypeTag
         }
       ),
       PairwiseCase(
         _typeTag,
         _catalystType,
         { r: TypeTag[_] =>
-          ScalaType.FromTypeTag(r).asCatalystType
+          TypeMagnet.FromTypeTag(r).asCatalystType
         },
         { r: DataType =>
-          ScalaType.FromCatalystType(r).asTypeTag_casted
+          TypeMagnet.FromCatalystType(r).asTypeTag_casted
         }
       )
     ).flatMap(_.bidirCases)

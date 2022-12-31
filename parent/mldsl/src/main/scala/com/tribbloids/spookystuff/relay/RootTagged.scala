@@ -1,6 +1,6 @@
 package com.tribbloids.spookystuff.relay
 
-import org.apache.spark.ml.dsl.utils.refl.ScalaType
+import org.apache.spark.ml.dsl.utils.refl.TypeMagnet
 
 trait RootTagged {
 
@@ -33,7 +33,7 @@ object RootTagged {
     lazy val fallback: String = first match {
 
       case _ =>
-        ScalaType.getRuntimeType(first).asClass.getSimpleName.stripSuffix("$")
+        TypeMagnet.getRuntimeType(first).asClass.getSimpleName.stripSuffix("$")
     }
 
     lazy val default: String = {
