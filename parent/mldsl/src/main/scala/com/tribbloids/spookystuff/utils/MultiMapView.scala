@@ -3,7 +3,7 @@ package com.tribbloids.spookystuff.utils
 import com.tribbloids.spookystuff.utils.MultiMapView.Self
 
 import scala.collection.mutable
-import scala.language.{higherKinds, implicitConversions}
+import scala.language.implicitConversions
 
 trait MultiMapView[K, +V] {
 

@@ -5,7 +5,7 @@ import com.tribbloids.spookystuff.graph.Layout.Facet
 import com.tribbloids.spookystuff.graph.Module.{Heads, Tails}
 import com.tribbloids.spookystuff.utils.CachingUtils.ConcurrentMap
 
-import scala.language.{higherKinds, implicitConversions}
+import scala.language.implicitConversions
 
 trait Layout[D <: Domain] extends Algebra.Aliases[D] {
 
