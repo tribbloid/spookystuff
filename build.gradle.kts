@@ -24,7 +24,7 @@ plugins {
     `maven-publish`
     id("io.github.gradle-nexus.publish-plugin") version "1.1.0"
 
-    id("com.github.ben-manes.versions") version "0.44.0"
+    id("com.github.ben-manes.versions") version "0.45.0"
     id("project-report")
 
     id("com.github.johnrengelman.shadow") version "7.1.2"

@@ -12,7 +12,7 @@ dependencies {
 
 //    testapi( "com.tribbloids.spookystuff:spookystuff-mldsl:${project.version}"
     api("oauth.signpost:signpost-core:2.1.1")
-    api("org.apache.commons:commons-csv:1.9.0")
+    api("org.apache.commons:commons-csv:1.10.0")
     // https://mvnrepository.com/artifact/org.typelevel/cats-effect
     implementation("org.typelevel:cats-effect_${vs.scalaBinaryV}:3.4.2")
 

@@ -193,7 +193,7 @@ allprojects {
 
         testFixturesApi("org.scalatest:scalatest_${vs.scalaBinaryV}:${vs.scalaTestV}")
 //        testFixturesApi(project(":repack:scalatest-repack", configuration = "shadow"))
-        testFixturesApi("org.junit.jupiter:junit-jupiter:5.9.1")
+        testFixturesApi("org.junit.jupiter:junit-jupiter:5.9.2")
 
         // TODO: alpha project, switch to mature solution once https://github.com/scalatest/scalatest/issues/1454 is solved
         testRuntimeOnly("co.helmethair:scalatest-junit-runner:0.2.0")
