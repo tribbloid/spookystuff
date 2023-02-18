@@ -8,9 +8,8 @@ import scala.reflect.ClassTag
 
 abstract class TypeMagnet_Imp1 {
 
-  trait _Ctg[T] extends TypeMagnet[T] {
+  protected class FromClassTag[T](val _classTag: ClassTag[T]) extends TypeMagnet[T] {
 
-    protected def _classTag: ClassTag[T]
     @transient final override lazy val asClassTag: ClassTag[T] = _classTag
 
     override lazy val asClass: Class[T] = {
@@ -52,8 +51,6 @@ abstract class TypeMagnet_Imp1 {
       TypeUtils.createTypeTag_fast(asType, mirror)
     }
   }
-
-  protected class FromClassTag[T](val _classTag: ClassTag[T]) extends _Ctg[T]
 
   trait CachedBuilder[I[_]] extends Serializable {
 

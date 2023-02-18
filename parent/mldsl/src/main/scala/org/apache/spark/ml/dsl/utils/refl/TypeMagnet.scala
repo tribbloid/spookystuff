@@ -93,9 +93,7 @@ trait TypeMagnet[T] extends ReflectionLock with Serializable {
 
 object TypeMagnet extends TypeMagnet_Imp2 {
 
-  trait _Ttg[T] extends TypeMagnet[T] {}
-
-  protected class FromTypeTag[T](@transient protected val __typeTag: TypeTag[T]) extends _Ttg[T] {
+  protected class FromTypeTag[T](@transient protected val __typeTag: TypeTag[T]) extends TypeMagnet[T] {
 
     {
       typeTag_ser
