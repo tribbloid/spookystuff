@@ -19,6 +19,6 @@ dependencies {
     api("org.apache.tika:tika-core:${vs.tikaV}")
     testImplementation( "org.apache.tika:tika-parsers-standard-package:${vs.tikaV}")
     api("com.googlecode.juniversalchardet:juniversalchardet:1.0.3")
-    api("org.jsoup:jsoup:1.15.3")
+    api("org.jsoup:jsoup:1.15.4")
     api("com.syncthemall:boilerpipe:1.2.2")
 }
