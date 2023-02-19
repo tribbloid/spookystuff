@@ -124,9 +124,9 @@ object TypeMagnet extends FromClassTagMixin {
   ): TypeMagnet[T] = ev
 
   def getRuntimeType(v: Any): TypeMagnet[_] = {
-    v match {
-      case v: RuntimeTypeTagged => v.runtimeType
-      case _                    => v.getClass
-    }
+    Unerase
+      .get(v)
+      .map(v => FromTypeTag(v))
+      .getOrElse(FromClass(v.getClass))
   }
 }
