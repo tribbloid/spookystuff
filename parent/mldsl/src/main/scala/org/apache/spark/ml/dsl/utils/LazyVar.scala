@@ -7,6 +7,7 @@ import scala.language.implicitConversions
 //TODO: merge into NullSafe
 //TODO: use AnyVal to minimise overhead
 //TODO: need thread safety test
+//TODO: merge into Cats Ref
 /**
   * similar to lazy val, but cached value can be peeked & overwritten from outside thread safe and value only
   * initialized once

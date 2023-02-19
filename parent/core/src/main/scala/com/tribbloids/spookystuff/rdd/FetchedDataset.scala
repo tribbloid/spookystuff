@@ -11,7 +11,7 @@ import com.tribbloids.spookystuff.extractors.impl.Get
 import com.tribbloids.spookystuff.row._
 import com.tribbloids.spookystuff.utils.SpookyViews
 import com.tribbloids.spookystuff.{Const, SpookyContext}
-import org.apache.spark.ml.dsl.utils.refl.TypeMagnet
+import org.apache.spark.ml.dsl.utils.refl.CatalystTypeOps
 import org.apache.spark.rdd.RDD
 import org.apache.spark.sql.DataFrame
 import org.apache.spark.sql.catalyst.expressions.GenericInternalRow
@@ -40,7 +40,8 @@ object FetchedDataset {
   */
 case class FetchedDataset(
     plan: ExecutionPlan
-) extends FetchedRDDAPI {
+) extends FetchedRDDAPI
+    with CatalystTypeOps.ImplicitMixin {
 
   import SpookyViews._
 
@@ -149,8 +150,6 @@ case class FetchedDataset(
     val dataRDD =
       if (!sort) this.dataRDD
       else dataRDDSorted
-
-    import TypeMagnet._
 
     //    val field2Encoder: Map[Field, ExpressionEncoder[Any]] = spookySchema.fieldTypes.mapValues {
     //      tpe =>

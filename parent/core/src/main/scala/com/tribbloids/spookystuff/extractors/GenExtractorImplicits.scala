@@ -6,7 +6,7 @@ import com.tribbloids.spookystuff.extractors.impl.Extractors._
 import com.tribbloids.spookystuff.extractors.impl.{Append, Zipped}
 import com.tribbloids.spookystuff.row.Field
 import com.tribbloids.spookystuff.utils.Default
-import org.apache.spark.ml.dsl.utils.refl.UnreifiedObjectType
+import org.apache.spark.ml.dsl.utils.refl.{CatalystTypeOps, UnreifiedObjectType}
 import org.apache.spark.sql.types.MapType
 
 import java.sql.Timestamp
@@ -14,10 +14,9 @@ import scala.collection.GenTraversableOnce
 import scala.language.implicitConversions
 import scala.reflect.ClassTag
 
-trait GenExtractorImplicits {
+trait GenExtractorImplicits extends CatalystTypeOps.ImplicitMixin {
 
   import com.tribbloids.spookystuff.dsl.DSL._
-  import org.apache.spark.ml.dsl.utils.refl.TypeMagnet._
   import org.apache.spark.sql.catalyst.ScalaReflection.universe
   import universe.TypeTag
 

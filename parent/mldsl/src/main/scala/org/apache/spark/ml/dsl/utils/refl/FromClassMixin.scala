@@ -1,12 +1,14 @@
 package org.apache.spark.ml.dsl.utils.refl
 
 import com.tribbloids.spookystuff.utils.CachingUtils.ConcurrentCache
-import org.apache.spark.sql.catalyst.ScalaReflection.universe._
 
 import scala.language.{existentials, implicitConversions}
 import scala.reflect.ClassTag
 
-abstract class TypeMagnet_Imp1 {
+abstract class FromClassMixin {
+
+  val universe: scala.reflect.runtime.universe.type = scala.reflect.runtime.universe
+  import universe._
 
   protected class FromClassTag[T](val _classTag: ClassTag[T]) extends TypeMagnet[T] {
 
@@ -22,11 +24,8 @@ abstract class TypeMagnet_Imp1 {
       val loader = classLoader
       runtimeMirror(loader)
     }
-    //    def mirror = ReflectionUtils.mirrorFactory.get()
 
     @transient override lazy val asType: Type = locked {
-      //      val name = _class.getCanonicalName
-
       val classSymbol = getClassSymbol(asClass)
       val tpe = classSymbol.selfType
       tpe
@@ -52,9 +51,14 @@ abstract class TypeMagnet_Imp1 {
     }
   }
 
+  object FromClassTag extends CachedBuilder[ClassTag] {
+
+    override def createNew[T](v: ClassTag[T]): TypeMagnet[T] = new FromClassTag(v)
+  }
+
   trait CachedBuilder[I[_]] extends Serializable {
 
-    def createNew[T](v: I[T]): TypeMagnet[T]
+    protected def createNew[T](v: I[T]): TypeMagnet[T]
 
     protected lazy val cache: ConcurrentCache[I[_], TypeMagnet[_]] = ConcurrentCache[I[_], TypeMagnet[_]]()
 

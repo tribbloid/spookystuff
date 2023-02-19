@@ -3,7 +3,6 @@ package com.tribbloids.spookystuff.extractors.impl
 import com.tribbloids.spookystuff.extractors._
 import com.tribbloids.spookystuff.row._
 import com.tribbloids.spookystuff.utils.SpookyUtils
-import org.apache.spark.ml.dsl.utils.refl.TypeMagnet._
 
 import scala.reflect.ClassTag
 

@@ -14,7 +14,7 @@ abstract class ScalaUDT[T >: Null](
     implicit
     val self: TypeMagnet[T]
 ) extends UserDefinedType[T]
-    with TypeMagnet.CatalystTypeMixin[T] {
+    with CatalystTypeMixin[T] {
 
   override val typeName: String =
     this.getClass.getSimpleName.stripSuffix("$") // .stripSuffix("Type").stripSuffix("UDT").toLowerCase

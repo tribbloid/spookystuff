@@ -3,10 +3,8 @@ package com.tribbloids.spookystuff.extractors.impl
 import com.tribbloids.spookystuff.extractors.GenExtractor.Leaf
 import com.tribbloids.spookystuff.extractors._
 import com.tribbloids.spookystuff.row._
-import org.apache.spark.ml.dsl.utils.refl.TypeMagnet._
+import org.apache.spark.ml.dsl.utils.refl.CatalystTypeOps
 import org.apache.spark.sql.types._
-
-import scala.collection.TraversableOnce
 
 /**
   * Created by peng on 7/3/17.
@@ -30,19 +28,19 @@ case class Get(field: Field) extends Leaf[FR, Any] {
 
   def GetSeq: GenExtractor[FR, Seq[Any]] = this.andOptionTyped[Any, Seq[Any]](
     {
-      case v: TraversableOnce[Any] => Some(v.toSeq)
-      case v: Array[Any]           => Some(v.toSeq)
-      case _                       => None
+      case v: IterableOnce[Any] => Some(v.toSeq)
+      case v: Array[Any]        => Some(v.toSeq)
+      case _                    => None
     },
-    _.ensureArray
+    v => CatalystTypeOps(v).ensureArray
   )
 
   def AsSeq: GenExtractor[FR, Seq[Any]] = this.andOptionTyped[Any, Seq[Any]](
     {
-      case v: TraversableOnce[Any] => Some(v.toSeq)
-      case v: Array[Any]           => Some(v.toSeq)
-      case v @ _                   => Some(Seq(v))
+      case v: IterableOnce[Any] => Some(v.toSeq)
+      case v: Array[Any]        => Some(v.toSeq)
+      case v @ _                => Some(Seq(v))
     },
-    _.asArray
+    v => CatalystTypeOps(v).asArray
   )
 }

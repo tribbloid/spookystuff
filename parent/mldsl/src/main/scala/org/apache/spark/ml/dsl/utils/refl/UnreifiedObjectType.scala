@@ -12,7 +12,7 @@ class UnreifiedObjectType[T]()(
     implicit
     val self: TypeMagnet[T]
 ) extends ObjectType(self.asClass)
-    with TypeMagnet.CatalystTypeMixin[T] {
+    with CatalystTypeMixin[T] {
 
 //  override def simpleString: String = "(unreified) " + ev.asType
 
@@ -41,7 +41,7 @@ object UnreifiedObjectType {
   def reify(tt: DataType): DataType = {
     tt match {
       case udt: UnreifiedObjectType[_] =>
-        udt.self.reify
+        ToCatalyst(udt.self).reify
       case ArrayType(v, n) =>
         ArrayType(reify(v), n)
       case StructType(fields) =>
