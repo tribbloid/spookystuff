@@ -37,12 +37,12 @@ object TypeMagnetSuite {
     }
   }
 
-  trait TypeTagRper_Level1 {
+  trait TypeTagRepr_Level1 {
 
     implicit def fromDelegate_level1(v: Repr[TypeTag[_]]): TypeTagRepr = new TypeTagRepr(v)
   }
 
-  object TypeTagRepr extends TypeTagRper_Level1 {
+  object TypeTagRepr extends TypeTagRepr_Level1 {
 
     implicit def fromDelegate[T](v: Repr[TypeTag[T]]): TypeTagRepr = new TypeTagRepr(v.copy())
   }
@@ -131,10 +131,10 @@ class TypeMagnetSuite extends FunSpecx with PairwiseConversionMixin {
         _typeTag,
         _catalystType,
         { r: TypeTag[_] =>
-          TypeMagnet.FromTypeTag(r).asCatalystType
+          ToCatalyst(TypeMagnet.FromTypeTag(r)).asCatalystType
         },
         { r: DataType =>
-          TypeMagnet.FromCatalystType(r).asTypeTag_casted
+          CatalystTypeOps(r).magnet[Any].asTypeTag
         }
       )
     ).flatMap(_.bidirCases)

@@ -4,14 +4,10 @@ import com.tribbloids.spookystuff.extractors.impl.Lit
 import com.tribbloids.spookystuff.row.FetchedRow
 import com.tribbloids.spookystuff.TestBeans.{Example, GenericExample}
 import com.tribbloids.spookystuff.testutils.FunSpecx
-import org.apache.spark.ml.dsl.utils.refl.{TypeUtils, UnreifiedObjectType}
+import org.apache.spark.ml.dsl.utils.refl.{CatalystTypeOps, TypeUtils, UnreifiedObjectType}
 import org.apache.spark.sql.types.{IntegerType, StringType}
 
-//object ScalaReflectionSuite {
-
-class ScalaReflectionSpike extends FunSpecx {
-
-  import org.apache.spark.ml.dsl.utils.refl.TypeMagnet._
+class ScalaReflectionSpike extends FunSpecx with CatalystTypeOps.ImplicitMixin {
 
   lazy val exLit: Lit[FetchedRow, _] = Lit(new Example())
   lazy val exType: DataType = UnreifiedObjectType.summon[Example]
@@ -34,7 +30,7 @@ class ScalaReflectionSpike extends FunSpecx {
       )
 
     val returnTypes = dynamic.getMethodsByCatalystType(exType).map {
-      TypeUtils.getParameter_ReturnTypes(_, exType.asTypeTag.tpe)
+      TypeUtils.getParameter_ReturnTypes(_, exType.typeTag_wild.tpe)
     }
     returnTypes
       .mkString("\n")
@@ -61,7 +57,7 @@ class ScalaReflectionSpike extends FunSpecx {
       )
 
     val returnTypes = dynamic.getMethodsByCatalystType(exType).map {
-      TypeUtils.getParameter_ReturnTypes(_, exType.asTypeTag.tpe)
+      TypeUtils.getParameter_ReturnTypes(_, exType.typeTag_wild.tpe)
     }
     returnTypes
       .mkString("\n")
@@ -87,7 +83,7 @@ class ScalaReflectionSpike extends FunSpecx {
       )
 
     val returnTypes = dynamic.getMethodsByCatalystType(exType).map {
-      TypeUtils.getParameter_ReturnTypes(_, exType.asTypeTag.tpe)
+      TypeUtils.getParameter_ReturnTypes(_, exType.typeTag_wild.tpe)
     }
     returnTypes
       .mkString("\n")
@@ -113,7 +109,7 @@ class ScalaReflectionSpike extends FunSpecx {
       )
 
     val returnTypes = dynamic.getMethodsByCatalystType(exType).map {
-      TypeUtils.getParameter_ReturnTypes(_, exType.asTypeTag.tpe)
+      TypeUtils.getParameter_ReturnTypes(_, exType.typeTag_wild.tpe)
     }
     returnTypes
       .mkString("\n")
@@ -139,7 +135,7 @@ class ScalaReflectionSpike extends FunSpecx {
       )
 
     val returnTypes = dynamic.getMethodsByCatalystType(exType).map {
-      TypeUtils.getParameter_ReturnTypes(_, exType.asTypeTag.tpe)
+      TypeUtils.getParameter_ReturnTypes(_, exType.typeTag_wild.tpe)
     }
     returnTypes
       .mkString("\n")
@@ -259,7 +255,7 @@ class ScalaReflectionSpike extends FunSpecx {
       "List(List(value k))"
     )
 
-    val returnType = TypeUtils.getParameter_ReturnTypes(method, exType.asTypeTag.tpe)
+    val returnType = TypeUtils.getParameter_ReturnTypes(method, exType.typeTag_wild.tpe)
     returnType.toString.shouldBe(
       """
         |(List(List(Int)),String)

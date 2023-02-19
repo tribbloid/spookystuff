@@ -6,8 +6,6 @@ import org.apache.spark.ml.param.{ParamMap, Params}
 import org.apache.spark.ml.util._
 import org.json4s.JObject
 
-import scala.language.existentials
-
 /**
   * Created by peng on 05/10/16.
   */
@@ -69,15 +67,6 @@ object MLReadWriteSupports {
   }
 
   case class Writer[T <: IR](message: Encoder[T]) extends MLWriter with Serializable {
-
-    //    def saveJSON(path: String): Unit = {
-    //      val resolver = HDFSResolver(sc.hadoopConfiguration)
-    //
-    //      resolver.output(path, overwrite = true){
-    //        os =>
-    //          os.write(StructRepr.this.prettyJSON.getBytes("UTF-8"))
-    //      }
-    //    }
 
     override protected def saveImpl(path: String): Unit = {
 

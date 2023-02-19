@@ -1,22 +1,20 @@
 package com.tribbloids.spookystuff.extractors
 
-import java.lang.reflect.Method
-
 import com.tribbloids.spookystuff.extractors.impl.Lit
 import org.apache.spark.ml.dsl.utils.DSLUtils
-import org.apache.spark.ml.dsl.utils.refl.{ReflectionLock, TypeMagnet, TypeUtils, UnreifiedObjectType}
+import org.apache.spark.ml.dsl.utils.refl._
 import org.apache.spark.sql.catalyst.ScalaReflection.universe._
 
+import java.lang.reflect.Method
 import scala.language.dynamics
 
 case class ScalaDynamic(
     methodName: String
-) extends ReflectionLock {
-
-  import org.apache.spark.ml.dsl.utils.refl.TypeMagnet._
+) extends ReflectionLock
+    with CatalystTypeOps.ImplicitMixin {
 
   def getMethodsByCatalystType(dType: DataType): List[MethodSymbol] = locked {
-    val tpe = dType.asTypeTag_casted.tpe
+    val tpe = dType.typeTag_wild.tpe
 
     // Java reflection preferred as more battle tested?
     val allMembers = tpe.members.toList
@@ -34,7 +32,7 @@ case class ScalaDynamic(
     val expectedTypeList: Seq[Option[List[Type]]] = argDTypesOpt match {
       case Some(dTypes) =>
         val tpess = dTypes.map { v =>
-          List(v.asTypeTag_casted.tpe)
+          List(v.typeTag_wild.tpe)
         }
         val cartesian = DSLUtils.cartesianProductList(tpess)
         cartesian.map(v => Some(v))
@@ -54,7 +52,7 @@ case class ScalaDynamic(
 
     val valid = methods.flatMap { method =>
       val paramTypess_returnType: (List[List[Type]], Type) = {
-        TypeUtils.getParameter_ReturnTypes(method, baseDType.asTypeTag_casted.tpe)
+        TypeUtils.getParameter_ReturnTypes(method, baseDType.typeTag_wild.tpe)
       }
       val actualTypess: List[List[Type]] = paramTypess_returnType._1
       val firstTypeOpt = actualTypess.headOption
@@ -76,7 +74,7 @@ case class ScalaDynamic(
             "(" + t.mkString(", ") + ")"
           }
           .getOrElse("")
-        s"method ${baseDType.asTypeTag_casted.tpe}.$methodName$argsStr does not exist"
+        s"method ${baseDType.typeTag_wild.tpe}.$methodName$argsStr does not exist"
       }
       throw new UnsupportedOperationException(
         errorStrs.mkString("\n")
@@ -90,12 +88,12 @@ case class ScalaDynamic(
     */
   def getMethodByJava(baseDType: DataType, argDTypesOpt: Option[List[DataType]]): Method = {
 
-    val baseClz = baseDType.asClass
+    val baseClz = baseDType.magnet.asClass
 
     val expectedClasssList: Seq[Option[List[Class[_]]]] = argDTypesOpt match {
       case Some(argDTypes) =>
         val classess: List[List[Class[_]]] = argDTypes.map { v =>
-          List(v.asClass) :+ classOf[Object]
+          List(v.magnet.asClass) :+ classOf[Object]
         }
         val cartesian = DSLUtils.cartesianProductList(classess)
         cartesian.map(v => Some(v))
@@ -139,8 +137,6 @@ case class ScalaDynamicExtractor[T](
     argsOpt: Option[List[GenExtractor[T, _]]]
 ) extends GenExtractor[T, Any] {
 
-  import org.apache.spark.ml.dsl.utils.refl.TypeMagnet._
-
   val dynamic: ScalaDynamic = ScalaDynamic(methodName)
 
   // only used to show TreeNode
@@ -163,7 +159,7 @@ case class ScalaDynamicExtractor[T](
     }
     val scalaMethod: MethodSymbol = dynamic.getMethodByScala(baseDType, argDTypes)
 
-    val baseTTg = baseDType.asTypeTag_casted
+    val baseTTg = baseDType.typeTag_wild
 
     val (paramTypes, resultType) = TypeUtils.getParameter_ReturnTypes(scalaMethod, baseTTg.tpe)
 

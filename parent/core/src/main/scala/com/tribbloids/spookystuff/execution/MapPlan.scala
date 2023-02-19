@@ -2,9 +2,10 @@ package com.tribbloids.spookystuff.execution
 
 import com.tribbloids.spookystuff.doc.Doc
 import com.tribbloids.spookystuff.execution.MapPlan.RowMapperFactory
-import com.tribbloids.spookystuff.extractors.{Extractor, Resolved}
 import com.tribbloids.spookystuff.extractors.impl.Get
+import com.tribbloids.spookystuff.extractors.{Extractor, Resolved}
 import com.tribbloids.spookystuff.row._
+import org.apache.spark.ml.dsl.utils.refl.CatalystTypeOps
 import org.apache.spark.sql.types.{ArrayType, IntegerType}
 
 case class MapPlan(
@@ -28,7 +29,7 @@ case class MapPlan(
 
 }
 
-object MapPlan {
+object MapPlan extends CatalystTypeOps.ImplicitMixin {
 
   type RowMapperBase = SquashedFetchedRow => SquashedFetchedRow
 
@@ -79,8 +80,6 @@ object MapPlan {
       isLeft: Boolean
   )(val childSchema: SpookySchema)
       extends RowMapper {
-
-    import org.apache.spark.ml.dsl.utils.refl.TypeMagnet._
 
     val resolver: childSchema.Resolver = childSchema.newResolver
 

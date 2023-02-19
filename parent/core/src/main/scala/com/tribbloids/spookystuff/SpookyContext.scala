@@ -12,7 +12,7 @@ import org.apache.hadoop.conf.Configuration
 import org.apache.spark._
 import org.apache.spark.broadcast.Broadcast
 import com.tribbloids.spookystuff.relay.io.Encoder
-import org.apache.spark.ml.dsl.utils.refl.TypeMagnet
+import org.apache.spark.ml.dsl.utils.refl.{ToCatalyst, TypeMagnet}
 import org.apache.spark.rdd.RDD
 import org.apache.spark.sql.{DataFrame, SQLContext}
 
@@ -236,7 +236,7 @@ case class SpookyContext(
           }
           new FetchedDataset(
             self,
-            fieldMap = ListMap(Field("_") -> TypeMagnet.FromTypeTag(ttg).asCatalystType),
+            fieldMap = ListMap(Field("_") -> ToCatalyst(TypeMagnet.FromTypeTag(ttg)).asCatalystType),
             spooky = forkForNewRDD
           )
       }
