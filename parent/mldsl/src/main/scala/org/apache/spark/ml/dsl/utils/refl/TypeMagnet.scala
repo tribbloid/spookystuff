@@ -14,7 +14,7 @@ import scala.reflect.ClassTag
 //TODO: change to ThreadLocal to be faster?
 //TODO: should be "WeakTypeMagnet", erasure may happen
 //TODO: should have a codec
-trait TypeMagnet[T] extends ReflectionLock with Serializable {
+trait TypeMagnet[T] extends Serializable {
 
   import TypeMagnet.universe._
 
@@ -22,20 +22,20 @@ trait TypeMagnet[T] extends ReflectionLock with Serializable {
 
   @transient lazy val mirror: Mirror = asTypeTag.mirror
 
-  @transient final lazy val asTypeTag: TypeTag[T] = locked {
+  @transient final lazy val asTypeTag: TypeTag[T] = {
     _typeTag
   }
 
   def _typeTag: TypeTag[T]
 
-  @transient lazy val asType: Type = locked {
+  @transient lazy val asType: Type = {
     TypeMagnet.localTypeOf(asTypeTag)
   }
-  @transient lazy val asClass: Class[T] = locked {
+  @transient lazy val asClass: Class[T] = {
     val result = mirror.runtimeClass(asType).asInstanceOf[Class[T]]
     result
   }
-  @transient lazy val asClassTag: ClassTag[T] = locked {
+  @transient lazy val asClassTag: ClassTag[T] = {
     ClassTag(asClass)
   }
 

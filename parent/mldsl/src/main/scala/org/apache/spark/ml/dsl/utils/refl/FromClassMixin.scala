@@ -25,7 +25,7 @@ abstract class FromClassMixin {
       runtimeMirror(loader)
     }
 
-    @transient override lazy val asType: Type = locked {
+    @transient override lazy val asType: Type = {
       val classSymbol = getClassSymbol(asClass)
       val tpe = classSymbol.selfType
       tpe

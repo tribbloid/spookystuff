@@ -6,7 +6,7 @@ import java.sql.{Date, Timestamp}
 import scala.collection.Map
 import scala.language.{existentials, implicitConversions}
 
-case class CatalystTypeOps(dataType: DataType) extends ReflectionLock {
+case class CatalystTypeOps(dataType: DataType) {
 
   import TypeMagnet.universe._
 
@@ -16,7 +16,7 @@ case class CatalystTypeOps(dataType: DataType) extends ReflectionLock {
   // 2. use the obtained TypeTag to get the specific function implementation and applies to the canonic Scala Type data.
   // 3. get the output TypeTag of the function, use it to generate the output DataType of the new Extraction.
   // TODO: should rely on spark impls including Literal, ScalaReflection & CatalystTypeConverters
-  def getTypeTagOpt: Option[TypeTag[_]] = locked {
+  def getTypeTagOpt: Option[TypeTag[_]] = {
 
     dataType match {
       case NullType =>
@@ -71,7 +71,7 @@ case class CatalystTypeOps(dataType: DataType) extends ReflectionLock {
     }
   }
 
-  @transient lazy val reified: DataType = locked {
+  @transient lazy val reified: DataType = {
     val result = UnreifiedObjectType.reify(dataType)
     result
   }
@@ -96,7 +96,7 @@ case class CatalystTypeOps(dataType: DataType) extends ReflectionLock {
 
 //  def asClass: Class[_] = asClassTag.runtimeClass
 
-  def unboxArrayOrMap: DataType = locked {
+  def unboxArrayOrMap: DataType = {
     _unboxArrayOrMapOpt
       .orElse(
         CatalystTypeOps(reified)._unboxArrayOrMapOpt
@@ -106,7 +106,7 @@ case class CatalystTypeOps(dataType: DataType) extends ReflectionLock {
       )
   }
 
-  private[utils] def _unboxArrayOrMapOpt: Option[DataType] = locked {
+  private[utils] def _unboxArrayOrMapOpt: Option[DataType] = {
     dataType match {
       case ArrayType(boxed, _) =>
         Some(boxed)
@@ -124,20 +124,20 @@ case class CatalystTypeOps(dataType: DataType) extends ReflectionLock {
     }
   }
 
-  def filterArray: Option[DataType] = locked {
+  def filterArray: Option[DataType] = {
     if (reified.isInstanceOf[ArrayType])
       Some(dataType)
     else
       None
   }
 
-  def asArray: DataType = locked {
+  def asArray: DataType = {
     filterArray.getOrElse {
       ArrayType(dataType)
     }
   }
 
-  def ensureArray: DataType = locked {
+  def ensureArray: DataType = {
     filterArray.getOrElse {
       throw new UnsupportedOperationException(s"Type $dataType is not an Array")
     }
