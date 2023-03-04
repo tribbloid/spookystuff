@@ -11,6 +11,6 @@ source "${CRDIR}/.shared.sh"
 
 ${FWDIR}/gradlew clean
 
-${FWDIR}/gradlew -q dependencyTree "${@}" > ${FWDIR}/logs/dependencyTree/"$DATE".log
+source ${CRDIR}/tree.sh "${@}"
 
 ${FWDIR}/gradlew testClasses shadow "${@}"
