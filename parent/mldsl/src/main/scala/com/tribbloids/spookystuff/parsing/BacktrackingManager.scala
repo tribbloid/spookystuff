@@ -99,7 +99,7 @@ case class BacktrackingManager(
       while (subRuleCacheII < subRuleCache.length) {
 
         val hit = subRuleCache(subRuleCacheII)
-        if (hit._1.delegate.containsLong(length)) return hit._2
+        if (hit._1.containsLong(length)) return hit._2
         subRuleCacheII += 1
       }
 

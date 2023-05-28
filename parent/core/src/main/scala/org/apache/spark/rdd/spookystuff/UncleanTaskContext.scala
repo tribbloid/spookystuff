@@ -83,4 +83,6 @@ case class UncleanTaskContext(
       }
     }
   }
+
+  override def numPartitions(): Int = ???
 }

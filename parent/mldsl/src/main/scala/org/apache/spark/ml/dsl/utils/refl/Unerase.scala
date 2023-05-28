@@ -20,7 +20,7 @@ case class Unerase[T](self: T)(
 
 object Unerase {
 
-  lazy val cache = TrieMap.empty[Int, universe.TypeTag[_]]
+  lazy val cache: TrieMap[Int, universe.TypeTag[_]] = TrieMap.empty[Int, universe.TypeTag[_]]
 
   def get[T](v: T): Option[universe.TypeTag[T]] = {
     val inMemoryId = System.identityHashCode(v)

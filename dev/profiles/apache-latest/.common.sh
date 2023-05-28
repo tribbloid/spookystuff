@@ -1,6 +1,6 @@
 #!/usr/bin/env bash
 
-SPARK_NAME="${SPARK:-spark-3.3.2}"
+SPARK_NAME="${SPARK:-spark-3.4.0}"
 SPARK_DIR_ROOT="$HOME/.ci/spark-dist"
 
 SPARK_DIR_NAME="$SPARK_NAME"-bin-hadoop3-scala2.13
@@ -13,4 +13,4 @@ tar -xzf "$SPARK_DIR_ROOT/$SPARK_DIR_NAME".tgz -C "$SPARK_DIR_ROOT"
 
 export SPARK_HOME="$SPARK_DIR_ROOT/$SPARK_DIR_NAME"
 
-export BUILD_PROFILES=("-PsparkVersion=3.3.0" "-PscalaVersion=2.13.10")
+export BUILD_PROFILES=("-PsparkVersion=3.4.0" "-PscalaVersion=2.13.10")

@@ -111,18 +111,18 @@ object TypeUtils extends ReflectionLock {
 
   // TODO: this needs improvement due to:
   // https://stackoverflow.com/questions/59473734/in-scala-2-12-why-none-of-the-typetag-created-in-runtime-is-serializable
-  def createTypeTag_slowButSerializable[T](
-      tpe: Type,
-      mirror: Mirror
-  ): TypeTag[T] = locked {
-
-    val toolbox = scala.tools.reflect.ToolBox(mirror).mkToolBox()
-
-    val tree = toolbox.parse(s"scala.reflect.runtime.universe.typeTag[$tpe]")
-    val result = toolbox.eval(tree).asInstanceOf[TypeTag[T]]
-
-    result
-  }
+//  def createTypeTag_slowButSerializable[T](
+//      tpe: Type,
+//      mirror: Mirror
+//  ): TypeTag[T] = locked {
+//
+//    val toolbox = scala.tools.reflect.ToolBox(mirror).mkToolBox()
+//
+//    val tree = toolbox.parse(s"scala.reflect.runtime.universe.typeTag[$tpe]")
+//    val result = toolbox.eval(tree).asInstanceOf[TypeTag[T]]
+//
+//    result
+//  }
 
   case class NaiveTypeCreator(tpe: Type) extends reflect.api.TypeCreator {
 

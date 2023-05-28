@@ -22,13 +22,13 @@ plugins {
 
     signing
     `maven-publish`
-    id("io.github.gradle-nexus.publish-plugin") version "1.1.0"
+    id("io.github.gradle-nexus.publish-plugin") version "1.3.0"
 
     // TODO: DO NOT upgrade until it is solved: https://github.com/ben-manes/gradle-versions-plugin/issues/727
     id("com.github.ben-manes.versions") version "0.44.0"
     id("project-report")
 
-    id("com.github.johnrengelman.shadow") version "7.1.2"
+    id("com.github.johnrengelman.shadow") version "8.1.1"
 }
 
 val sonatypeApiUser = providers.gradleProperty("sonatypeApiUser")

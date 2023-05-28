@@ -9,8 +9,6 @@ import scala.reflect.ClassTag
 
 abstract class SpookyViews_Imp0 extends CommonViews {
 
-  import cats.syntax.all._
-
   implicit class TraverseOps[F[t] <: Iterable[t], A](self: F[A]) {
 
     def filterByType[B <: A: ClassTag](

@@ -16,6 +16,8 @@ dependencies {
 tasks {
 
     shadowJar {
+        setProperty("zip64", true)
+
         exclude("META-INF/*.SF")
         exclude("META-INF/*.DSA")
         exclude("META-INF/*.RSA")

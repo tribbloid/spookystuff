@@ -67,7 +67,7 @@ object Pattern {
 
   object RangeArgs {
 
-    val next: RangeArg = 0L to 0L
-    val maxLength: RangeArg = 0L to Long.MaxValue
+    val next: RangeArg = RangeArg(0L, 0L)
+    val maxLength: RangeArg = RangeArg(0L, Long.MaxValue)
   }
 }

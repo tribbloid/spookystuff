@@ -113,7 +113,7 @@ object TypeMagnet extends FromClassTagMixin {
 
   def fromType[T](tpe: Type, mirror: Mirror): FromTypeTag[T] = {
 
-    val ttg = TypeUtils.createTypeTag_slowButSerializable[T](tpe, mirror)
+    val ttg = TypeUtils.createTypeTag_fast[T](tpe, mirror)
 
     new FromTypeTag(ttg)
   }

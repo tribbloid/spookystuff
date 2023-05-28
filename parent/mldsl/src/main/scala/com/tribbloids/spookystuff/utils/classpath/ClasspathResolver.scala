@@ -11,21 +11,19 @@ import com.tribbloids.spookystuff.utils.io.{
 }
 import com.tribbloids.spookystuff.utils.lifespan.Cleanable
 import io.github.classgraph.{ClassGraph, Resource, ResourceList, ScanResult}
-import org.apache.commons.lang.StringUtils
 import org.apache.spark.ml.dsl.utils.LazyVar
 
-import java.io.{IOException, InputStream, OutputStream}
+import java.io.{File, IOException, InputStream, OutputStream}
 import java.nio.file.{Files, NoSuchFileException}
 import java.util.regex.Pattern
 import scala.language.implicitConversions
-import scala.tools.nsc.io.File
 
 case class ClasspathResolver(
     elementsOverride: Option[Seq[String]] = None,
     classLoaderOverride: Option[ClassLoader] = None
 ) extends URIResolver {
 
-  import scala.collection.JavaConverters._
+  import scala.jdk.CollectionConverters._
 
   @transient lazy val metadataParser: ResourceMetadata.ReflectionParser[Resource] =
     ResourceMetadata.ReflectionParser[Resource]()
@@ -337,8 +335,7 @@ object ClasspathResolver {
 
   def getName(v: String): String = {
 
-    StringUtils
-      .split(v, File.separator)
+    v.split(File.separator)
       .lastOption
       .getOrElse(s"file path $v is empty")
   }

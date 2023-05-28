@@ -173,21 +173,21 @@ allprojects {
         }
 
         // see https://github.com/gradle/gradle/issues/13067
-        fun bothProvided(constraintNotation: Any) {
-            compileOnlyApi(constraintNotation)
-            testFixturesApi(constraintNotation)
+        fun both(notation: Any) {
+            implementation(notation)
+            testFixturesApi(notation)
         }
 
 //        api("org.json4s:json4s-jackson_${vs.scalaBinaryV}:3.5.5")
 
-        bothProvided("${vs.scalaGroup}:scala-compiler:${vs.scalaV}")
-        bothProvided("${vs.scalaGroup}:scala-library:${vs.scalaV}")
-        bothProvided("${vs.scalaGroup}:scala-reflect:${vs.scalaV}")
+//        both("${vs.scalaGroup}:scala-compiler:${vs.scalaV}")
+        both("${vs.scalaGroup}:scala-library:${vs.scalaV}")
+        both("${vs.scalaGroup}:scala-reflect:${vs.scalaV}")
 
-        bothProvided("org.scala-lang.modules:scala-collection-compat_${vs.scalaBinaryV}:2.9.0")
+        both("org.scala-lang.modules:scala-collection-compat_${vs.scalaBinaryV}:2.10.0")
 
-        bothProvided("org.apache.spark:spark-sql_${vs.scalaBinaryV}:${vs.sparkV}")
-        bothProvided("org.apache.spark:spark-mllib_${vs.scalaBinaryV}:${vs.sparkV}")
+        both("org.apache.spark:spark-sql_${vs.scalaBinaryV}:${vs.sparkV}")
+        both("org.apache.spark:spark-mllib_${vs.scalaBinaryV}:${vs.sparkV}")
 
         testRuntimeOnly("org.apache.spark:spark-yarn_${vs.scalaBinaryV}:${vs.sparkV}")
 
@@ -204,6 +204,6 @@ allprojects {
 
         testImplementation("com.lihaoyi:fastparse_${vs.scalaBinaryV}:2.3.3")
 
-        testImplementation("com.vladsch.flexmark:flexmark:0.62.2")
+        testImplementation("com.vladsch.flexmark:flexmark:0.64.8")
     }
 }

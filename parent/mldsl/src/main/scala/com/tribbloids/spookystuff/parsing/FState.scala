@@ -18,7 +18,7 @@ object FState {
 
   def isEnclosing(supr: RangeArg, sub: RangeArg): Boolean = {
     supr.start <= sub.start &&
-    supr.end >= sub.end
+    supr.last >= sub.last
   }
 
 }
@@ -43,7 +43,7 @@ case class FState(
     var proto = transitions.flatMap {
       case (rule, _) =>
         val window = rule.range
-        val end = window.end + 1
+        val end = window.last + 1
         Seq(window.start, end)
     }
     proto = proto :+ 0L
@@ -52,11 +52,13 @@ case class FState(
   }
 
   lazy val subRuleCache: Seq[(RangeArg, Transitions)] = {
+
     for (i <- 1 until markers.size) yield {
       val range: RangeArg = markers(i - 1) to (markers(i) - 1)
 
       val inRange = transitions.filter(v => FState.isEnclosing(v._1.range, range))
       range -> Transitions(inRange)
     }
+
   }
 }

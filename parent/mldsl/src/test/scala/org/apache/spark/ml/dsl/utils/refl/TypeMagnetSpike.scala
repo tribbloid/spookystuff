@@ -67,7 +67,7 @@ class TypeMagnetSpike extends FunSpecx {
     val ttg = implicitly[TypeTag[String]]
     val tpe = ttg.tpe
 
-    val ttgSlow = TypeUtils.createTypeTag_slowButSerializable(tpe, ttg.mirror)
+    val ttgSlow = TypeUtils.createTypeTag_fast(tpe, ttg.mirror)
     TypeUtils.createTypeTag_fast(tpe, ttg.mirror)
 
     AssertSerializable(ttgSlow)
