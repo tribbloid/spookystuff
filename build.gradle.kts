@@ -162,7 +162,7 @@ subprojects {
     }
 
     publishing {
-        val suffix = "_" + vs.scalaBinaryV
+        val suffix = "_" + vs.scala.binaryV
 
         val rootID = vs.projectRootID
 
@@ -228,7 +228,9 @@ idea {
             ".gradle",
 
             // apache spark
-            "warehouse"
+            "warehouse",
+
+            "parent/prover-commons",
         )
     }
 }

@@ -15,12 +15,21 @@ fun isEnabled(profile: String?): Boolean {
 include(
     // should be skipped on CI, contains local experiments only
     ":repack",
-    ":repack:selenium-repack",
-//    ":repack:json4s-repack",
-//    ":repack:scalatest-repack",
+    ":repack:selenium-repack"
+)
+
+include(":parent")
+
+//include(":parent:prover-commons")
+//project(":parent:prover-commons").projectDir = file("parent/prover-commons/module")
+//include(
+//    ":parent:prover-commons:core",
+//    ":parent:prover-commons:meta2"
+//)
+
+include(
 
     // uses unstable & experimental scala features, should be modified very slowly & carefully
-    ":parent",
     ":parent:mldsl",
     ":parent:core",
     ":parent:web",

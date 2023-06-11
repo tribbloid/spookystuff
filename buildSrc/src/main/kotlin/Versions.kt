@@ -1,6 +1,6 @@
 import org.gradle.api.Project
 
-class Versions(self: Project) {
+class Versions(private val self: Project) {
 
     // TODO : how to group them?
     val projectGroup = "com.tribbloids.spookstuff"
@@ -10,18 +10,24 @@ class Versions(self: Project) {
     val projectVMajor = projectV.removeSuffix("-SNAPSHOT")
 //    val projectVComposition = projectV.split('-')
 
-    val scalaGroup: String = self.properties.get("scalaGroup").toString()
+    inner class Scala {
+        val group: String = self.properties["scalaGroup"].toString()
 
-    val scalaV: String = self.properties.get("scalaVersion").toString()
+        val v: String = self.properties["scalaVersion"].toString()
+        protected val vParts: List<String> = v.split('.')
 
-    protected val scalaVParts = scalaV.split('.')
+        val binaryV: String = vParts.subList(0, 2).joinToString(".")
+        val minorV: String = vParts[2]
+    }
+    val scala = Scala()
 
-    val scalaBinaryV: String = scalaVParts.subList(0, 2).joinToString(".")
-    val scalaMinorV: String = scalaVParts[2]
+    val shapelessV: String = "2.3.7"
+
+    val scalaTestV: String = "3.2.12"
+
+    val splainV: String = self.properties.get("splainVersion")?.toString() ?: ""
 
     val sparkV: String = self.properties.get("sparkVersion").toString()
-
-    val scalaTestV: String = "3.2.10"
 
     val tikaV: String = "2.4.1"
 
