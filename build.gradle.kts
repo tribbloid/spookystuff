@@ -128,6 +128,19 @@ subprojects {
         dependsOn("dependencies", "htmlDependencyReport")
     }
 
+    dependencies {
+
+        // see https://github.com/gradle/gradle/issues/13067
+        fun both(notation: Any) {
+            implementation(notation)
+            testFixturesImplementation(notation)
+        }
+
+//        both("${vs.scala.group}:scala-compiler:${vs.scala.v}")
+        both("${vs.scala.group}:scala-library:${vs.scala.v}")
+        both("${vs.scala.group}:scala-reflect:${vs.scala.v}")
+    }
+
     tasks {
 
         htmlDependencyReport {
@@ -162,7 +175,7 @@ subprojects {
     }
 
     publishing {
-        val suffix = "_" + vs.scalaBinaryV
+        val suffix = "_" + vs.scala.binaryV
 
         val rootID = vs.projectRootID
 
@@ -228,7 +241,9 @@ idea {
             ".gradle",
 
             // apache spark
-            "warehouse"
+            "warehouse",
+
+            "parent/prover-commons",
         )
     }
 }

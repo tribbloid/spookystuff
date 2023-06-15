@@ -2,16 +2,16 @@
 
 # TODO: replaced with compile + test_only?
 
-CRDIR="$(cd "`dirname "$0"`"; pwd)"
+FWDIR="$(cd "`dirname "$0"`"/..; pwd)"
 
 echo "[COMPILING]" && \
-"${CRDIR}"/make-all.sh "${@}" && \
+"${FWDIR}"/make-all.sh "${@}" && \
 echo "[RUNNING TESTS]" && \
-"${CRDIR}"/test.sh "${@}"
+"${FWDIR}"/test.sh "${@}"
 
 # Save exit status of command1 immediately after it executes
 exit_status=$?
 
-"${CRDIR}"/test-report.sh
+"${FWDIR}"/test-report.sh
 
 exit ${exit_status}

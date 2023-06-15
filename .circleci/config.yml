@@ -1,22 +1,35 @@
 version: 2.1
 
-#executors:
-#  openjdk11:
-#    docker:
-#      - image: cimg/openjdk:11.0
-
-jobs:
-  build:
+executors:
+  openjdk11:
     docker:
       - image: cimg/openjdk:11.0
     resource_class: large
+
+jobs:
+  build:
+    executor: openjdk11
     steps:
       - checkout
+      - run:
+          name: Sanity
+          command: |
+            echo "Starting ..."
+      - restore_cache:
+          keys:
+            - profile-{{ checksum "./dev/profiles/apache-stable/.common.sh" }}
+      - run:
+          name: Prepare
+          command: |
+            ./dev/CI-apache-stable.sh prepare
+      - save_cache:
+          key: profile-{{ checksum "./dev/profiles/apache-stable/.common.sh" }}
+          paths:
+            - node_modules
       - run:
           name: Run
           command: |
             ./dev/CI-apache-stable.sh
-
 
 workflows:
   main-stable: # This is the name of the workflow, feel free to change it to better match your workflow.

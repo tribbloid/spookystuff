@@ -13,4 +13,4 @@ ${FWDIR}/gradlew clean
 
 source ${CRDIR}/tree.sh "${@}"
 
-${FWDIR}/gradlew testClasses shadow "${@}"
+${FWDIR}/gradlew classes testClasses shadow "${@}"

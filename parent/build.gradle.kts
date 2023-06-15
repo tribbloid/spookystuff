@@ -7,7 +7,7 @@ plugins {
     id("io.github.cosmicsilence.scalafix") version "0.1.14"
 }
 
-allprojects {
+subprojects {
 
     apply(plugin = "scala")
     apply(plugin = "io.github.cosmicsilence.scalafix")
@@ -19,9 +19,9 @@ allprojects {
 
         resolutionStrategy {
 
-//            force("org.scala-lang.modules:scala-xml_${vs.scalaBinaryV}:1.0.6")
+//            force("org.scala-lang.modules:scala-xml_${vs.scala.binaryV}:1.0.6")
 //            force("commons-codec:commons-codec:1.9")
-//            force("org.json4s:json4s-jackson_${vs.scalaBinaryV}:3.5.5")
+//            force("org.json4s:json4s-jackson_${vs.scala.binaryV}:3.5.5")
         }
     }
 
@@ -138,7 +138,7 @@ allprojects {
                     events("passed", "skipped", "failed")
                 }
 
-                val p = this@allprojects
+                val p = this@subprojects
 
                 if (p.hasProperty("notLocal") ) {
                     excludeTags("com.tribbloids.spookystuff.testutils.LocalOnly")
@@ -159,7 +159,7 @@ allprojects {
             api("org.apache.commons:commons-compress:1.19")
             api("com.google.protobuf:protobuf-java:2.5.0")
 
-//            api("org.scala-lang.modules:scala-xml_${vs.scalaBinaryV}") {
+//            api("org.scala-lang.modules:scala-xml_${vs.scala.binaryV}") {
 //                version {
 //                    strictly ("1.3.0")
 //                }
@@ -169,29 +169,23 @@ allprojects {
             api("com.fasterxml.jackson.core:jackson-core:${vs.jacksonV}")
             api("com.fasterxml.jackson.core:jackson-databind:${vs.jacksonV}")
             api("com.fasterxml.jackson.core:jackson-annotations:${vs.jacksonV}")
-            api("com.fasterxml.jackson.module:jackson-module-scala_${vs.scalaBinaryV}:${vs.jacksonV}")
+            api("com.fasterxml.jackson.module:jackson-module-scala_${vs.scala.binaryV}:${vs.jacksonV}")
         }
 
         // see https://github.com/gradle/gradle/issues/13067
         fun both(notation: Any) {
             implementation(notation)
-            testFixturesApi(notation)
+            testFixturesImplementation(notation)
         }
 
-//        api("org.json4s:json4s-jackson_${vs.scalaBinaryV}:3.5.5")
+        both("org.apache.spark:spark-sql_${vs.scala.binaryV}:${vs.sparkV}")
+        both("org.apache.spark:spark-mllib_${vs.scala.binaryV}:${vs.sparkV}")
 
-//        both("${vs.scalaGroup}:scala-compiler:${vs.scalaV}")
-        both("${vs.scalaGroup}:scala-library:${vs.scalaV}")
-        both("${vs.scalaGroup}:scala-reflect:${vs.scalaV}")
+        api("org.scala-lang.modules:scala-collection-compat_${vs.scala.binaryV}:2.10.0")
 
-        both("org.scala-lang.modules:scala-collection-compat_${vs.scalaBinaryV}:2.10.0")
+        testRuntimeOnly("org.apache.spark:spark-yarn_${vs.scala.binaryV}:${vs.sparkV}")
 
-        both("org.apache.spark:spark-sql_${vs.scalaBinaryV}:${vs.sparkV}")
-        both("org.apache.spark:spark-mllib_${vs.scalaBinaryV}:${vs.sparkV}")
-
-        testRuntimeOnly("org.apache.spark:spark-yarn_${vs.scalaBinaryV}:${vs.sparkV}")
-
-        testFixturesApi("org.scalatest:scalatest_${vs.scalaBinaryV}:${vs.scalaTestV}")
+        testFixturesApi("org.scalatest:scalatest_${vs.scala.binaryV}:${vs.scalaTestV}")
 //        testFixturesApi(project(":repack:scalatest-repack", configuration = "shadow"))
         testFixturesApi("org.junit.jupiter:junit-jupiter:5.9.2")
 
@@ -200,9 +194,9 @@ allprojects {
 //        testRuntimeOnly("org.junit.platform:junit-platform-launcher:1.10.0-SNAPSHOT")
 //        testRuntimeOnly("org.junit.platform:junit-platform-engine:1.10.0-SNAPSHOT")
 
-//        testImplementation("org.scalacheck:scalacheck_${vs.scalaBinaryV}:1.17.0")
+//        testImplementation("org.scalacheck:scalacheck_${vs.scala.binaryV}:1.17.0")
 
-        testImplementation("com.lihaoyi:fastparse_${vs.scalaBinaryV}:2.3.3")
+        testImplementation("com.lihaoyi:fastparse_${vs.scala.binaryV}:2.3.3")
 
         testImplementation("com.vladsch.flexmark:flexmark:0.64.8")
     }
