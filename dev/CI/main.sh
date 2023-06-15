@@ -5,4 +5,9 @@ FWDIR="$(cd "`dirname "$0"`"/..; pwd)"
 # shellcheck source=profiles/apache-stable/.common.sh
 source "${FWDIR}/profiles/${1}/.common.sh"
 
-"$FWDIR"/CI-pipeline.sh --console=plain "-PnotLocal" "${BUILD_PROFILES[@]}"
+if [ "${2}" = "prepare" ]; then
+  exit 0
+fi
+
+"$FWDIR"/CI/update-submodules.sh && \
+  "$FWDIR"/CI/pipeline.sh "-PnotLocal" "${BUILD_PROFILES[@]}"
