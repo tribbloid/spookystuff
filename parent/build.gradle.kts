@@ -7,7 +7,7 @@ plugins {
     id("io.github.cosmicsilence.scalafix") version "0.1.14"
 }
 
-allprojects {
+subprojects {
 
     apply(plugin = "scala")
     apply(plugin = "io.github.cosmicsilence.scalafix")
@@ -138,7 +138,7 @@ allprojects {
                     events("passed", "skipped", "failed")
                 }
 
-                val p = this@allprojects
+                val p = this@subprojects
 
                 if (p.hasProperty("notLocal") ) {
                     excludeTags("com.tribbloids.spookystuff.testutils.LocalOnly")
@@ -178,16 +178,10 @@ allprojects {
             testFixturesImplementation(notation)
         }
 
-//        api("org.json4s:json4s-jackson_${vs.scala.binaryV}:3.5.5")
-
-//        both("${vs.scala.group}:scala-compiler:${vs.scala.v}")
-        both("${vs.scala.group}:scala-library:${vs.scala.v}")
-        both("${vs.scala.group}:scala-reflect:${vs.scala.v}")
-
-        both("org.scala-lang.modules:scala-collection-compat_${vs.scala.binaryV}:2.10.0")
-
         both("org.apache.spark:spark-sql_${vs.scala.binaryV}:${vs.sparkV}")
         both("org.apache.spark:spark-mllib_${vs.scala.binaryV}:${vs.sparkV}")
+
+        api("org.scala-lang.modules:scala-collection-compat_${vs.scala.binaryV}:2.10.0")
 
         testRuntimeOnly("org.apache.spark:spark-yarn_${vs.scala.binaryV}:${vs.sparkV}")
 
