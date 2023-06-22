@@ -25,7 +25,7 @@ jobs:
       - save_cache:
           key: profile-{{ checksum "./dev/profiles/apache-stable/.common.sh" }}
           paths:
-            - node_modules
+            - ~/.ci
       - run:
           name: Run
           command: |
