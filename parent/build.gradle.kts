@@ -181,7 +181,7 @@ subprojects {
         both("org.apache.spark:spark-sql_${vs.scala.binaryV}:${vs.sparkV}")
         both("org.apache.spark:spark-mllib_${vs.scala.binaryV}:${vs.sparkV}")
 
-        api("org.scala-lang.modules:scala-collection-compat_${vs.scala.binaryV}:2.10.0")
+        api("org.scala-lang.modules:scala-collection-compat_${vs.scala.binaryV}:2.11.0")
 
         testRuntimeOnly("org.apache.spark:spark-yarn_${vs.scala.binaryV}:${vs.sparkV}")
 
