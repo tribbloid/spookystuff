@@ -130,7 +130,7 @@ case class Doc(
 ) extends DocOption
     with EqualBy {
 
-  import scala.collection.JavaConverters._
+  import scala.jdk.CollectionConverters._
 
   lazy val _equalBy: Any = (uid, uri, declaredContentType, timeMillis, httpStatus.toString)
 

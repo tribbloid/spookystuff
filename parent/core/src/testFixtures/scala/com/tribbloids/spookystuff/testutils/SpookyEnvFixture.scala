@@ -21,15 +21,7 @@ import scala.util.Try
 
 object SpookyEnvFixture {
 
-  import scala.collection.JavaConverters._
-
-  //  def cleanDriverInstances(): Unit = {
-  //    CleanMixin.unclean.foreach {
-  //      tuple =>
-  //        tuple._2.foreach (_.finalize())
-  //        Predef.assert(tuple._2.isEmpty)
-  //    }
-  //  }
+  import scala.jdk.CollectionConverters._
 
   @volatile var firstRun: Boolean = true
 

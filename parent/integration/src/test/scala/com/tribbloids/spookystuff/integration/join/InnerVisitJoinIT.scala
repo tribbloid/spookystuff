@@ -21,6 +21,7 @@ class InnerVisitJoinIT extends IntegrationFixture {
       .fetch(
         getPage("http://localhost:10092/test-sites/e-commerce/allinone")
       )
+      .savePages_!("~/temp/abc")
 
     val joined = base
       .join(S"div.sidebar-nav a", Inner, ordinalField = 'i1)(

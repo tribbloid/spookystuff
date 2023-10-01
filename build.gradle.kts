@@ -70,8 +70,6 @@ allprojects {
         mavenCentral()
         mavenLocal()
 //        jcenter()
-//        maven("https://dl.bintray.com/kotlin/kotlin-dev")
-//        maven("https://scala-ci.typesafe.com/artifactory/scala-integration/") // scala SNAPSHOT
     }
 
     idea {
@@ -110,18 +108,6 @@ subprojects {
     apply(plugin = "project-report")
 
 //    apply(plugin = "ru.tinkoff.gradle.jarjar")
-
-    // resolving version conflicts
-    // TODO: remove, already defined in `constraints` as below
-//    configurations.all {
-//        resolutionStrategy.dependencySubstitution {
-//            substitute(
-//                module("com.chuusai:shapeless_${vs.scalaBinaryV}")
-//            ).apply {
-//                using(module("com.chuusai:shapeless_${vs.scalaBinaryV}:${vs.shapelessV}"))
-//            }
-//        }
-//    }
 
 //    https://stackoverflow.com/questions/23261075/compiling-scala-before-alongside-java-with-gradle
 

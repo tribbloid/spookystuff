@@ -29,7 +29,7 @@ case class URLConnectionResolver(
     override val retry: Retry = Retry.ExponentialBackoff(8, 16000)
 ) extends URIResolver {
 
-  import scala.collection.JavaConverters._
+  import scala.jdk.CollectionConverters._
 
   case class _Execution(pathStr: String) extends Execution {
 

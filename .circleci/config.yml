@@ -1,14 +1,14 @@
 version: 2.1
 
 executors:
-  openjdk11:
+  main:
     docker:
       - image: cimg/openjdk:11.0
     resource_class: large
 
 jobs:
   build:
-    executor: openjdk11
+    executor: main
     steps:
       - checkout
       - run:

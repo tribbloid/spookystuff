@@ -306,4 +306,27 @@ class FetchedDatasetSuite extends SpookyEnvFixture with LocalPathDocsFixture {
 
     assert(ds.spooky.spookyMetrics.pagesFetched.value == 1)
   }
+
+  describe("savePage") {
+
+    it("lazily") {
+
+      spooky
+        .fetch(
+          Wget(HTML_URL)
+        )
+        .savePages("file://${CommonConst.USER_DIR}/temp/yyy", overwrite = true)
+        .collect()
+    }
+
+    it("eagerly") {
+
+      spooky
+        .fetch(
+          Wget(HTML_URL)
+        )
+        .savePages_!("file://${CommonConst.USER_DIR}/temp/yyy", overwrite = true)
+
+    }
+  }
 }

@@ -9,5 +9,5 @@ if [ "${2}" = "prepare" ]; then
   exit 0
 fi
 
-"$FWDIR"/CI/update-submodules.sh && \
+"$FWDIR"/update-submodules.sh && \
   "$FWDIR"/CI/pipeline.sh "-PnotLocal" "${BUILD_PROFILES[@]}"

@@ -35,7 +35,8 @@ include(
     ":parent:web",
     ":parent:integration",
     ":spookystuff-showcase",
-    ":spookystuff-showcase:showcase"
+    ":spookystuff-showcase:showcase",
+//    ":spookystuff-showcase:notebook", TODO: enable later
 )
 
 if (!isEnabled(noAssembly)) {
