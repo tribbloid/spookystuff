@@ -181,13 +181,13 @@ subprojects {
         both("org.apache.spark:spark-sql_${vs.scala.binaryV}:${vs.sparkV}")
         both("org.apache.spark:spark-mllib_${vs.scala.binaryV}:${vs.sparkV}")
 
-        api("org.scala-lang.modules:scala-collection-compat_${vs.scala.binaryV}:2.10.0")
+        api("org.scala-lang.modules:scala-collection-compat_${vs.scala.binaryV}:2.11.0")
 
         testRuntimeOnly("org.apache.spark:spark-yarn_${vs.scala.binaryV}:${vs.sparkV}")
 
         testFixturesApi("org.scalatest:scalatest_${vs.scala.binaryV}:${vs.scalaTestV}")
 //        testFixturesApi(project(":repack:scalatest-repack", configuration = "shadow"))
-        testFixturesApi("org.junit.jupiter:junit-jupiter:5.9.2")
+        testFixturesApi("org.junit.jupiter:junit-jupiter:5.10.0")
 
         // TODO: alpha project, switch to mature solution once https://github.com/scalatest/scalatest/issues/1454 is solved
         testRuntimeOnly("co.helmethair:scalatest-junit-runner:0.2.0")
@@ -196,7 +196,7 @@ subprojects {
 
 //        testImplementation("org.scalacheck:scalacheck_${vs.scala.binaryV}:1.17.0")
 
-        testImplementation("com.lihaoyi:fastparse_${vs.scala.binaryV}:2.3.3")
+        testImplementation("com.lihaoyi:fastparse_${vs.scala.binaryV}:3.0.2")
 
         testImplementation("com.vladsch.flexmark:flexmark:0.64.8")
     }

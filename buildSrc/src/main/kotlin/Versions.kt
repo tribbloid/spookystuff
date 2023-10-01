@@ -29,7 +29,7 @@ class Versions(private val self: Project) {
 
     val sparkV: String = self.properties.get("sparkVersion").toString()
 
-    val tikaV: String = "2.4.1"
+    val tikaV: String = "2.9.0"
 
     val jacksonV: String = "2.12.3"
 }
