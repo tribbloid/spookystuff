@@ -6,7 +6,7 @@ import com.tribbloids.spookystuff.extractors.impl.{Get, Lit}
 import com.tribbloids.spookystuff.TestBeans.Example
 import com.tribbloids.spookystuff.rdd.FetchedDataset
 import com.tribbloids.spookystuff.row.SpookySchema
-import com.tribbloids.spookystuff.testutils.{LocalPathDocsFixture, SpookyEnvFixture}
+import com.tribbloids.spookystuff.testutils.{LocalPathDocsFixture, SpookyBaseSpec}
 import com.tribbloids.spookystuff.utils.CommonUtils
 import org.apache.spark.ml.dsl.utils.refl.CatalystTypeOps
 import org.apache.spark.rdd.RDD
@@ -18,7 +18,7 @@ import org.scalatest.Ignore
   * Created by peng on 09/07/16.
   */
 @Ignore // TODO: remove due to deprecation of ScalaDynamicMixin
-class ScalaDynamicExtractorSuite extends SpookyEnvFixture with LocalPathDocsFixture with CatalystTypeOps.ImplicitMixin {
+class ScalaDynamicExtractorSuite extends SpookyBaseSpec with LocalPathDocsFixture with CatalystTypeOps.ImplicitMixin {
 
   val doc: DocOption = Wget(HTML_URL).fetch(spooky).head
 

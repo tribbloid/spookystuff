@@ -1,13 +1,13 @@
 package com.tribbloids.spookystuff.row
 
 import com.tribbloids.spookystuff.actions.Wget
-import com.tribbloids.spookystuff.testutils.{LocalPathDocsFixture, SpookyEnvFixture}
+import com.tribbloids.spookystuff.testutils.{LocalPathDocsFixture, SpookyBaseSpec}
 import com.tribbloids.spookystuff.dsl
 
 /**
   * Created by peng on 12/3/14.
   */
-class FetchedRowViewSuite extends SpookyEnvFixture with LocalPathDocsFixture {
+class FetchedRowViewSuite extends SpookyBaseSpec with LocalPathDocsFixture {
 
   import dsl._
 

@@ -120,7 +120,7 @@ case class FetchedDataset(
     val sorted = dataRDD.sortBy(_.sortIndex(sortIndices))
     sorted.setName("sort")
 
-    sorted.foreachPartition { _ => } // force execution
+    sorted.foreachPartition { _ => } // force execution TODO: remove, won't force
     plan.scratchRDDs.unpersist(dataRDD)
 
     sorted
@@ -265,7 +265,7 @@ case class FetchedDataset(
       overwrite: Boolean = false
   ): this.type = {
     val saved = savePages(path, extension, page, overwrite)
-    saved.foreach { _ => }
+    saved.rdd.forceExecute()
     this
   }
 
@@ -291,7 +291,10 @@ case class FetchedDataset(
       .map(_.ex.typed[String])
       .getOrElse(_pageEx.defaultFileExtension)
 
-    MapPlan.optimised(plan, MapPlan.SavePages(path.ex.typed[String], _extensionEx, _pageEx, overwrite))
+    MapPlan.optimised(
+      plan,
+      MapPlan.SavePages(path.ex.typed[String], _extensionEx, _pageEx, overwrite)
+    )
   }
 
   def flatten(

@@ -1,11 +1,11 @@
 package com.tribbloids.spookystuff.doc
 
 import com.tribbloids.spookystuff.actions.Wget
-import com.tribbloids.spookystuff.testutils.SpookyEnvFixture
+import com.tribbloids.spookystuff.testutils.SpookyBaseSpec
 import com.tribbloids.spookystuff.utils.CommonUtils
 import org.apache.commons.csv.CSVFormat
 
-class TestPageFromHttp extends SpookyEnvFixture {
+class TestPageFromHttp extends SpookyBaseSpec {
 
   it("wget html, save and load") {
 

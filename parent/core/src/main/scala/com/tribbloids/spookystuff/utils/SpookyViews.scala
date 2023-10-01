@@ -1,6 +1,7 @@
 package com.tribbloids.spookystuff.utils
 
 import com.tribbloids.spookystuff.execution.ScratchRDDs
+import com.tribbloids.spookystuff.utils.SpookyViews.doNothingFn
 import com.tribbloids.spookystuff.utils.locality.PartitionIdPassthrough
 import org.apache.spark.rdd.RDD
 import org.apache.spark.rdd.spookystuff.NarrowDispersedRDD
@@ -33,7 +34,7 @@ abstract class SpookyViews extends SpookyViews_Imp0 {
 
     def multiPassMap[U: ClassTag](f: T => Option[U]): RDD[U] = {
 
-      multiPassFlatMap(f.andThen(v => v.map(Traversable(_))))
+      multiPassFlatMap(f.andThen(v => v.map(Iterable(_))))
     }
 
     // if the function returns None for it will be retried as many times as it takes to get rid of them.
@@ -145,6 +146,12 @@ abstract class SpookyViews extends SpookyViews_Imp0 {
       shuffled.values
     }
 
+    def forceExecute(): self.type = {
+
+      self.foreach(doNothingFn)
+      self
+    }
+
     /**
       * @param f
       *   function applied on each element
@@ -180,19 +187,19 @@ abstract class SpookyViews extends SpookyViews_Imp0 {
 
       self.mapPartitions { itr =>
         val stageID = TaskContext.get.stageId()
-        val alreadyRun = perWorkerMark.synchronized {
+        perWorkerMark.synchronized {
           val alreadyRun = perWorkerMark.getOrElseUpdate(stageID, false)
-          if (!alreadyRun) {
+
+          val result = if (!alreadyRun) {
+            val result = f(itr.next())
+            //            Thread.sleep(1000)
             perWorkerMark.put(stageID, true)
+            Iterator(result)
+          } else {
+            Iterator.empty
           }
-          alreadyRun
-        }
-        if (!alreadyRun) {
-          val result = f(itr.next())
-          //            Thread.sleep(1000)
-          Iterator(result)
-        } else {
-          Iterator.empty
+
+          result
         }
       }
     }
@@ -381,4 +388,9 @@ abstract class SpookyViews extends SpookyViews_Imp0 {
   //  }
 }
 
-object SpookyViews extends SpookyViews {}
+object SpookyViews extends SpookyViews {
+
+  lazy val doNothingFn: Any => Unit = { _: Any =>
+    {}
+  }
+}

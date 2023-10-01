@@ -14,12 +14,10 @@ import scala.reflect.ClassTag
 
 object GenExtractor extends AutomaticRelay[GenExtractor[_, _]] with GenExtractorImplicits {
 
-//  import org.apache.spark.ml.dsl.utils.refl.ScalaType._
-
-  final val functionVID = -592849327L
+//  final val functionVID = -592849327L
 
   def fromFn[T, R](self: T => R, dataType: DataType): GenExtractor[T, R] = {
-    Elem(_ => Partial(self), _ => dataType)
+    Elem(_ => self, _ => dataType)
   }
 
   def fromOptionFn[T, R](self: T => Option[R], dataType: DataType): GenExtractor[T, R] = {
@@ -43,10 +41,17 @@ object GenExtractor extends AutomaticRelay[GenExtractor[_, _]] with GenExtractor
     val dataType: DataType
     final def resolveType(tt: DataType): DataType = dataType
   }
-  trait StaticPartialFunction[T, +R] extends GenExtractor[T, R] with PartialFunctionWrapper[T, R] {
-    final def resolve(tt: DataType): PartialFunction[T, R] = partialFunction
+  trait Static[T, +R] extends StaticType[T, R] with GenExtractor[T, R] with Leaf[T, R] {
+
+    def resolved: PartialFunction[T, R]
+
+    final def resolve(tt: DataType): PartialFunction[T, R] = resolved
   }
-  trait Static[T, +R] extends StaticType[T, R] with StaticPartialFunction[T, R] with Leaf[T, R]
+
+  object Static {
+
+    implicit def unbox[T, R](v: Static[T, R]): PartialFunction[T, R] = v.resolved
+  }
 
   trait Wrapper[T, +R] extends Unary[T, R] {
 
@@ -57,14 +62,22 @@ object GenExtractor extends AutomaticRelay[GenExtractor[_, _]] with GenExtractor
   }
 
   case class Elem[T, +R](
-      _resolve: DataType => PartialFunction[T, R],
+      _resolve: DataType => (T => R),
       _resolveType: DataType => DataType,
       name: Option[String] = None
   ) extends Leaf[T, R] {
     // resolve to a Spark SQL DataType according to an exeuction plan
     override def resolveType(tt: DataType): DataType = _resolveType(tt)
 
-    override def resolve(tt: DataType): PartialFunction[T, R] = _resolve(tt)
+    override def resolve(tt: DataType): PartialFunction[T, R] = {
+
+      val result = _resolve(tt)
+      result match {
+        case v: PartialFunction[_, _] => v
+        case _ =>
+          PartialFunction.fromFunction(result)
+      }
+    }
 
     //    override def toString = meta.getOrElse("Elem").toString
   }
@@ -179,13 +192,6 @@ trait GenExtractor[T, +R] extends ReflectionLock with CatalystTypeOps.ImplicitMi
 
   final def as(field: Field): GenExtractor[T, R] = _as(Option(field))
   final def ~(field: Field): GenExtractor[T, R] = as(field)
-  //  final def as_!(field: Field) = _as(Option(field).map(_.!))
-  //  final def ~!(field: Field) = as_!(field)
-  //  final def as_*(field: Field) = _as(Option(field).map(_.*))
-  //  final def ~*(field: Field) = as_*(field)
-
-  //  final def named_!(field: Field) = _named(field.!)
-  //  final def named_*(field: Field) = _named(field.*)
 
   // will not rename an already-named Alias.
   def withAliasIfMissing(field: Field): Alias[T, R] = {
@@ -213,7 +219,7 @@ trait GenExtractor[T, +R] extends ReflectionLock with CatalystTypeOps.ImplicitMi
       resolveType: DataType => DataType,
       meta: Option[Any] = None
   ): GenExtractor[T, A] = andEx(
-    Elem[R2, A](_ => Partial(g), resolveType),
+    Elem[R2, A](_ => g, resolveType),
     meta
   )
 

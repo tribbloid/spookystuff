@@ -1,13 +1,13 @@
 package com.tribbloids.spookystuff.integration.fetch
 
 import com.tribbloids.spookystuff.actions._
-import com.tribbloids.spookystuff.integration.IntegrationFixture
+import com.tribbloids.spookystuff.integration.ITBaseSpec
 import com.tribbloids.spookystuff.web.actions.{Click, Snapshot, Visit}
 
 /**
   * Created by peng on 11/26/14.
   */
-class FetchClickNextPageIT extends IntegrationFixture {
+class FetchClickNextPageIT extends ITBaseSpec {
 
 //  override lazy val driverFactories = Seq(
 //    phantomJS //TODO: HtmlUnit does not support Backbone.js

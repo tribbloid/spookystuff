@@ -16,7 +16,7 @@ object Const extends CommonConst {
 
   val defaultJoinField: Field = Field("A", isWeak = true)
 
-  val mimeDetector: DefaultDetector = new DefaultDetector()
+  val tikaDetector: DefaultDetector = new DefaultDetector()
 
   val defaultDocumentFilter: DocFilterImpl.MustHaveTitle.type = DocFilterImpl.MustHaveTitle
   val defaultImageFilter: DocFilterImpl.AcceptStatusCode2XX.type = DocFilterImpl.AcceptStatusCode2XX

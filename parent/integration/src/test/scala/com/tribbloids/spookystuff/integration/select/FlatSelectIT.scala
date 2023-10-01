@@ -2,12 +2,12 @@ package com.tribbloids.spookystuff.integration.select
 
 import com.tribbloids.spookystuff.actions._
 import com.tribbloids.spookystuff.dsl._
-import com.tribbloids.spookystuff.integration.IntegrationFixture
+import com.tribbloids.spookystuff.integration.ITBaseSpec
 
 /**
   * Created by peng on 11/26/14.
   */
-class FlatSelectIT extends IntegrationFixture {
+class FlatSelectIT extends ITBaseSpec {
 
   override lazy val driverFactories = Seq(
     null

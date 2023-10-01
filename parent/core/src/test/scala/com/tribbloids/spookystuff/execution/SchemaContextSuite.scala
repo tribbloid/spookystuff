@@ -2,12 +2,12 @@ package com.tribbloids.spookystuff.execution
 
 import com.tribbloids.spookystuff.extractors.impl.Lit
 import com.tribbloids.spookystuff.row.SpookySchema
-import com.tribbloids.spookystuff.testutils.SpookyEnvFixture
+import com.tribbloids.spookystuff.testutils.SpookyBaseSpec
 
 /**
   * Created by peng on 14/06/16.
   */
-class SchemaContextSuite extends SpookyEnvFixture {
+class SchemaContextSuite extends SpookyBaseSpec {
 
   import com.tribbloids.spookystuff.dsl._
 

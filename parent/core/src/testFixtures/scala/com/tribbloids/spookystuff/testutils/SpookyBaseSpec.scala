@@ -19,17 +19,9 @@ import org.scalatest.{BeforeAndAfterAll, BeforeAndAfterEach, Outcome, Retries}
 import scala.language.implicitConversions
 import scala.util.Try
 
-object SpookyEnvFixture {
+object SpookyBaseSpec {
 
   import scala.jdk.CollectionConverters._
-
-  //  def cleanDriverInstances(): Unit = {
-  //    CleanMixin.unclean.foreach {
-  //      tuple =>
-  //        tuple._2.foreach (_.finalize())
-  //        Predef.assert(tuple._2.isEmpty)
-  //    }
-  //  }
 
   @volatile var firstRun: Boolean = true
 
@@ -120,16 +112,16 @@ object SpookyEnvFixture {
 
 }
 
-abstract class SpookyEnvFixture
+abstract class SpookyBaseSpec
     extends FunSpecx
-    with SpookyEnvFixture.EnvBase
+    with SpookyBaseSpec.EnvBase
     with RemoteDocsFixture
     with BeforeAndAfterEach
     with BeforeAndAfterAll
     with Retries
     with SparkUISupport {
 
-  val exitingPIDs: Set[String] = SpookyEnvFixture.getProcesses.map(_.getPid).toSet
+  val exitingPIDs: Set[String] = SpookyBaseSpec.getProcesses.map(_.getPid).toSet
 
   def parallelism: Int = sc.defaultParallelism
 
@@ -182,20 +174,20 @@ abstract class SpookyEnvFixture
     val result = sc.runEverywhere() { _ =>
       Try {
         CommonUtils.retry(3, 1000, silent = true) {
-          SpookyEnvFixture.shouldBeClean(spooky, conditions)
+          SpookyBaseSpec.shouldBeClean(spooky, conditions)
         }
       }
     }
     TreeThrowable.&&&(result)
 
-    SpookyEnvFixture.firstRun = false
+    SpookyBaseSpec.firstRun = false
   }
 
   override def beforeAll(): Unit = {
 
     super.beforeAll()
 
-    if (SpookyEnvFixture.firstRun)
+    if (SpookyBaseSpec.firstRun)
       validateBeforeAndAfterAll()
   }
 
@@ -228,7 +220,7 @@ abstract class SpookyEnvFixture
       Try {
 
         CommonUtils.retry(3, 1000, silent = true) {
-          SpookyEnvFixture.instancesShouldBeClean(spooky)
+          SpookyBaseSpec.instancesShouldBeClean(spooky)
         }
       }
     }

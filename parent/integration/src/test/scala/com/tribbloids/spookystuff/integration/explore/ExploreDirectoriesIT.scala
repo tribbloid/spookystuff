@@ -1,13 +1,13 @@
 package com.tribbloids.spookystuff.integration.explore
 
 import com.tribbloids.spookystuff.actions.Wget
-import com.tribbloids.spookystuff.integration.IntegrationFixture
+import com.tribbloids.spookystuff.integration.ITBaseSpec
 import com.tribbloids.spookystuff.testutils.TestDocsResolver
 
 /**
   * Created by peng on 29/01/17.
   */
-class ExploreDirectoriesIT extends IntegrationFixture {
+class ExploreDirectoriesIT extends ITBaseSpec {
 
   import com.tribbloids.spookystuff.dsl._
 

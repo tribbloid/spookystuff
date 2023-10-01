@@ -1,7 +1,7 @@
 package com.tribbloids.spookystuff.utils.locality
 
 import com.tribbloids.spookystuff.TestBeans._
-import com.tribbloids.spookystuff.testutils.SpookyEnvFixture
+import com.tribbloids.spookystuff.testutils.SpookyBaseSpec
 import org.apache.spark
 import org.apache.spark.rdd.RDD
 import org.apache.spark.{HashPartitioner, RangePartitioner, SparkException}
@@ -10,7 +10,7 @@ import org.scalatest.Assertions
 import scala.reflect.ClassTag
 import scala.util.Random
 
-class LocalityImplSuite extends SpookyEnvFixture {
+class LocalityImplSuite extends SpookyBaseSpec {
 
   import LocalityImplSuite._
 

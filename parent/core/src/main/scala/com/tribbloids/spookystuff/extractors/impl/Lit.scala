@@ -17,13 +17,13 @@ case class Lit[T, +R](value: R, dataType: DataType) extends Static[T, R] with Eq
 
   def _equalBy: R = value
 
-  def valueOpt: Option[R] = Option(value)
+  @transient private lazy val valueOpt: Option[R] = Option(value)
 
-  override lazy val toString: String = valueOpt
+  @transient override lazy val toString: String = valueOpt
     .map(_.toString)
     .getOrElse("NULL")
 
-  override val partialFunction: PartialFunction[T, R] = Unlift { _: T =>
+  @transient override lazy val resolved: PartialFunction[T, R] = Unlift { _ =>
     valueOpt
   }
 }

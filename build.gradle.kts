@@ -1,3 +1,7 @@
+
+import com.github.benmanes.gradle.versions.updates.DependencyUpdatesTask
+import org.gradle.api.specs.Spec
+
 val vs = versions()
 
 buildscript {
@@ -9,6 +13,12 @@ buildscript {
 //    dependencies {
 //        classpath("ch.epfl.scala:gradle-bloop_2.12:1.5.3") // suffix is always 2.12, weird
 //    }
+}
+
+tasks.named<DependencyUpdatesTask>("dependencyUpdates").configure {
+    filterConfigurations = Spec<Configuration> {
+        !it.name.startsWith("incrementalScalaAnalysis")
+    }
 }
 
 plugins {
@@ -26,7 +36,7 @@ plugins {
     id("io.github.gradle-nexus.publish-plugin") version "1.3.0"
 
     // TODO: DO NOT upgrade until it is solved: https://github.com/ben-manes/gradle-versions-plugin/issues/727
-    id("com.github.ben-manes.versions") version "0.44.0"
+    id("com.github.ben-manes.versions") version "0.49.0"
     id("project-report")
 
     id("com.github.johnrengelman.shadow") version "8.1.1"
@@ -70,8 +80,6 @@ allprojects {
         mavenCentral()
         mavenLocal()
 //        jcenter()
-//        maven("https://dl.bintray.com/kotlin/kotlin-dev")
-//        maven("https://scala-ci.typesafe.com/artifactory/scala-integration/") // scala SNAPSHOT
     }
 
     idea {
@@ -111,18 +119,6 @@ subprojects {
 
 //    apply(plugin = "ru.tinkoff.gradle.jarjar")
 
-    // resolving version conflicts
-    // TODO: remove, already defined in `constraints` as below
-//    configurations.all {
-//        resolutionStrategy.dependencySubstitution {
-//            substitute(
-//                module("com.chuusai:shapeless_${vs.scalaBinaryV}")
-//            ).apply {
-//                using(module("com.chuusai:shapeless_${vs.scalaBinaryV}:${vs.shapelessV}"))
-//            }
-//        }
-//    }
-
 //    https://stackoverflow.com/questions/23261075/compiling-scala-before-alongside-java-with-gradle
 
     task("dependencyTree") {
@@ -132,15 +128,6 @@ subprojects {
 
     dependencies {
 
-        // see https://github.com/gradle/gradle/issues/13067
-        fun both(notation: Any) {
-            implementation(notation)
-            testFixturesImplementation(notation)
-        }
-
-//        both("${vs.scala.group}:scala-compiler:${vs.scala.v}")
-        both("${vs.scala.group}:scala-library:${vs.scala.v}")
-        both("${vs.scala.group}:scala-reflect:${vs.scala.v}")
     }
 
     tasks {

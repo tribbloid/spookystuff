@@ -1,11 +1,11 @@
 package com.tribbloids.spookystuff.row
 
-import com.tribbloids.spookystuff.testutils.SpookyEnvFixture
+import com.tribbloids.spookystuff.testutils.SpookyBaseSpec
 
 /**
   * Created by peng on 30/03/16.
   */
-class DataRowSuite extends SpookyEnvFixture {
+class DataRowSuite extends SpookyBaseSpec {
 
   import com.tribbloids.spookystuff.dsl._
 

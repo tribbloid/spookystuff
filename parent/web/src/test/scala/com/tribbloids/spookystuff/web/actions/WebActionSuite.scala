@@ -5,12 +5,12 @@ import com.tribbloids.spookystuff.doc.DocOption
 import com.tribbloids.spookystuff.session.Session
 import com.tribbloids.spookystuff.web.conf.Web
 import com.tribbloids.spookystuff.ActionException
-import com.tribbloids.spookystuff.testutils.SpookyEnvFixture
+import com.tribbloids.spookystuff.testutils.SpookyBaseSpec
 import org.apache.spark.rdd.RDD
 
 import scala.concurrent.duration
 
-class WebActionSuite extends SpookyEnvFixture {
+class WebActionSuite extends SpookyBaseSpec {
 
   import WebActionSuite._
 

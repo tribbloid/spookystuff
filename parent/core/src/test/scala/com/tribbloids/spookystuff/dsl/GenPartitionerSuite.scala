@@ -1,6 +1,6 @@
 package com.tribbloids.spookystuff.dsl
 
-import com.tribbloids.spookystuff.testutils.SpookyEnvFixture
+import com.tribbloids.spookystuff.testutils.SpookyBaseSpec
 import org.apache.spark.HashPartitioner
 import org.apache.spark.rdd.RDD
 
@@ -9,7 +9,7 @@ import scala.util.Random
 /**
   * Created by peng on 20/12/16.
   */
-class GenPartitionerSuite extends SpookyEnvFixture {
+class GenPartitionerSuite extends SpookyBaseSpec {
 
   import com.tribbloids.spookystuff.utils.SpookyViews._
 

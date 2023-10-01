@@ -4,14 +4,13 @@ import com.tribbloids.spookystuff.SpookyContext
 import com.tribbloids.spookystuff.actions.{Trace, TraceView}
 import com.tribbloids.spookystuff.doc.DocOption
 import com.tribbloids.spookystuff.utils.Caching
-import com.tribbloids.spookystuff.utils.Caching.ConcurrentCache
 
 /**
   * Backed by a WeakHashMap, the web cache temporarily store all trace -> Array[Page] until next GC. Always enabled
   */
 object InMemoryDocCache extends AbstractDocCache {
 
-  val internal: ConcurrentCache[Trace, Seq[DocOption]] = Caching.ConcurrentCache()
+  val internal: Caching.ConcurrentCache[Trace, Seq[DocOption]] = Caching.ConcurrentCache()
 
   def cacheable(v: Seq[DocOption]): Boolean = {
     v.exists(v => v.cacheLevel.isInstanceOf[DocCacheLevel.InMemory])

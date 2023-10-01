@@ -1,16 +1,15 @@
 package com.tribbloids.spookystuff.relay.io
 
-import org.apache.spark.ml.dsl.utils.DSLUtils
+import com.tribbloids.spookystuff.utils.serialization.SerDeOverride
 import org.apache.spark.ml.dsl.utils.EncodedBinaryMagnet.Base64
 import org.json4s._
 import org.slf4j.LoggerFactory
 
 import java.nio.ByteBuffer
-import scala.reflect.ClassTag
 
 // fallback mechanism that works for any java object
 abstract class FallbackSerializer(
-    sparkSerializer: org.apache.spark.serializer.Serializer = DSLUtils.defaultJavaSerializer
+    sparkSerializer: org.apache.spark.serializer.Serializer
 ) extends Serializer[Any] {
 
   val VID: Long = -47597349821L
@@ -20,7 +19,7 @@ abstract class FallbackSerializer(
       format: Formats
   ): PartialFunction[(TypeInfo, JValue), Any] = {
     Function.unlift {
-      case (ti, JString(str)) =>
+      case (_, JString(str)) =>
         LoggerFactory
           .getLogger(this.getClass)
           .debug(
@@ -31,7 +30,7 @@ abstract class FallbackSerializer(
 
           val ser = sparkSerializer.newInstance()
 
-          implicit val ctg = ClassTag(ti.clazz)
+//          implicit val ctg = ClassTag(ti.clazz)
           val de = ser.deserialize[Any](
             ByteBuffer.wrap(bytes)
           )
@@ -81,4 +80,4 @@ abstract class FallbackSerializer(
   }
 }
 
-object FallbackSerializer extends FallbackSerializer(DSLUtils.defaultJavaSerializer)
+object FallbackSerializer extends FallbackSerializer(SerDeOverride.Default.javaSerializer)

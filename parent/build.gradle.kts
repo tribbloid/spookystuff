@@ -10,7 +10,6 @@ plugins {
 subprojects {
 
     apply(plugin = "scala")
-    apply(plugin = "io.github.cosmicsilence.scalafix")
 
     configurations.all {
 
@@ -148,6 +147,17 @@ subprojects {
         }
     }
 
+    apply(plugin = "io.github.cosmicsilence.scalafix")
+    scalafix {
+//        configFile = file("config/myscalafix.conf")
+//        includes = ["/com/**/*.scala"]
+//        excludes = ["**/generated/**"]
+//        ignoreSourceSets = ["scoverage"]
+
+        semanticdb.autoConfigure.set(true)
+        semanticdb.version.set("4.8.11")
+    }
+
     dependencies {
 
         constraints {
@@ -177,6 +187,10 @@ subprojects {
             implementation(notation)
             testFixturesImplementation(notation)
         }
+
+//        both("${vs.scala.group}:scala-compiler:${vs.scala.v}")
+        both("${vs.scala.group}:scala-library:${vs.scala.v}")
+        both("${vs.scala.group}:scala-reflect:${vs.scala.v}")
 
         both("org.apache.spark:spark-sql_${vs.scala.binaryV}:${vs.sparkV}")
         both("org.apache.spark:spark-mllib_${vs.scala.binaryV}:${vs.sparkV}")

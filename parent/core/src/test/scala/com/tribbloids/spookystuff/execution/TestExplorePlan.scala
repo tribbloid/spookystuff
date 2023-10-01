@@ -2,14 +2,14 @@ package com.tribbloids.spookystuff.execution
 
 import com.tribbloids.spookystuff.actions.{Trace, Wget}
 import com.tribbloids.spookystuff.extractors.impl.Lit
-import com.tribbloids.spookystuff.testutils.{LocalPathDocsFixture, SpookyEnvFixture}
+import com.tribbloids.spookystuff.testutils.{LocalPathDocsFixture, SpookyBaseSpec}
 import com.tribbloids.spookystuff.{dsl, QueryException}
 import org.apache.spark.HashPartitioner
 
 /**
   * Created by peng on 05/04/16.
   */
-class TestExplorePlan extends SpookyEnvFixture with LocalPathDocsFixture {
+class TestExplorePlan extends SpookyBaseSpec with LocalPathDocsFixture {
 
   import dsl._
 

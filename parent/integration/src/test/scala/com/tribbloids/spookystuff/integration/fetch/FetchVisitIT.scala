@@ -1,10 +1,10 @@
 package com.tribbloids.spookystuff.integration.fetch
 
 import com.tribbloids.spookystuff.dsl._
-import com.tribbloids.spookystuff.integration.IntegrationFixture
+import com.tribbloids.spookystuff.integration.ITBaseSpec
 import com.tribbloids.spookystuff.web.actions.{Snapshot, Visit}
 
-class FetchVisitIT extends IntegrationFixture {
+class FetchVisitIT extends ITBaseSpec {
 
   override def doMain(): Unit = {
 

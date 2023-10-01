@@ -4,7 +4,7 @@ import com.tribbloids.spookystuff.execution.ExplorePlan.ExeID
 import com.tribbloids.spookystuff.execution.{ExploreRunner, NodeKey}
 import com.tribbloids.spookystuff.row.{DataRow, RowReducer}
 import com.tribbloids.spookystuff.utils.Caching
-import com.tribbloids.spookystuff.utils.Caching.{ConcurrentCache, ConcurrentMap, ConcurrentSet}
+import com.tribbloids.spookystuff.utils.Caching.{ConcurrentMap, ConcurrentSet}
 
 /**
   * Singleton, always in the JVM and shared by all executors on the same machine This is a makeshift implementation,
@@ -14,7 +14,8 @@ object ExploreRunnerCache {
 
   // (NodeKey, ExecutionID) -> Squashed Rows
   // exeID is used to segment Squashed Rows from different jobs
-  val committedVisited: ConcurrentCache[(NodeKey, ExeID), Iterable[DataRow]] = Caching.ConcurrentCache()
+  val committedVisited: Caching.ConcurrentCache[(NodeKey, ExeID), Iterable[DataRow]] =
+    Caching.ConcurrentCache()
 
   val onGoings: ConcurrentMap[ExeID, ConcurrentSet[ExploreRunner]] =
     Caching.ConcurrentMap() // executionID -> running ExploreStateView

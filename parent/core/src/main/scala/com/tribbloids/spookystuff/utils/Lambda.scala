@@ -6,6 +6,7 @@ import scala.runtime.ScalaRunTime
 /**
   * Create to override the lame scala <functionN> toString format
   */
+// TODO: should be a view instead of a subclass
 trait Lambda[-T, +R] extends Function1[T, R] with Product with Serializable {
   override def toString: String = ScalaRunTime._toString(this)
 }
