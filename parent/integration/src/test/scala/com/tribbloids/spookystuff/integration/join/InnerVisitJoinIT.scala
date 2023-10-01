@@ -4,10 +4,10 @@ import com.tribbloids.spookystuff.actions.Action
 import com.tribbloids.spookystuff.dsl.JoinType.Inner
 import com.tribbloids.spookystuff.dsl._
 import com.tribbloids.spookystuff.extractors.Col
-import com.tribbloids.spookystuff.integration.IntegrationFixture
+import com.tribbloids.spookystuff.integration.ITBaseSpec
 import com.tribbloids.spookystuff.web.actions.Visit
 
-class InnerVisitJoinIT extends IntegrationFixture {
+class InnerVisitJoinIT extends ITBaseSpec {
 
 //  override lazy val driverFactories = Seq(
 //    phantomJS //TODO: HtmlUnit does not support Backbone.js
@@ -21,6 +21,7 @@ class InnerVisitJoinIT extends IntegrationFixture {
       .fetch(
         getPage("http://localhost:10092/test-sites/e-commerce/allinone")
       )
+      .savePages_!("~/temp/abc")
 
     val joined = base
       .join(S"div.sidebar-nav a", Inner, ordinalField = 'i1)(

@@ -1,6 +1,6 @@
 package com.tribbloids.spookystuff.conf
 
-import com.tribbloids.spookystuff.testutils.SpookyEnvFixture
+import com.tribbloids.spookystuff.testutils.SpookyBaseSpec
 import com.tribbloids.spookystuff.utils.ConfUtils
 import com.tribbloids.spookystuff.utils.serialization.AssertSerializable
 import org.apache.spark.SparkConf
@@ -10,7 +10,7 @@ import scala.util.Random
 /**
   * Created by peng on 30/09/16.
   */
-class SpookyConfSuite extends SpookyEnvFixture {
+class SpookyConfSuite extends SpookyBaseSpec {
 
   def conf = new SpookyConf()
   def dirConf: Dir.Conf = Dir.Conf()

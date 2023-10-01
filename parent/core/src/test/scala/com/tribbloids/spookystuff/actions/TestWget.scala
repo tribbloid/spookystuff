@@ -4,7 +4,7 @@ import java.sql.Timestamp
 import com.tribbloids.spookystuff.actions.Delay.RandomDelay
 import com.tribbloids.spookystuff.doc.Doc
 import com.tribbloids.spookystuff.rdd.FetchedDataset
-import com.tribbloids.spookystuff.testutils.{LocalOnly, SpookyEnvFixture}
+import com.tribbloids.spookystuff.testutils.{LocalOnly, SpookyBaseSpec}
 import org.scalatest.Tag
 import org.scalatest.tags.Retryable
 
@@ -16,7 +16,7 @@ object TestWget {
 }
 
 @Retryable
-class TestWget extends SpookyEnvFixture {
+class TestWget extends SpookyBaseSpec {
 
   import com.tribbloids.spookystuff.dsl._
 

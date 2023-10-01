@@ -1,7 +1,6 @@
 package org.apache.spark.ml.dsl.utils.refl
 
 import com.tribbloids.spookystuff.utils.Caching
-import com.tribbloids.spookystuff.utils.Caching.ConcurrentCache
 
 import scala.language.{existentials, implicitConversions}
 import scala.reflect.ClassTag
@@ -61,7 +60,7 @@ abstract class FromClassMixin {
 
     protected def createNew[T](v: I[T]): TypeMagnet[T]
 
-    protected lazy val cache: ConcurrentCache[I[_], TypeMagnet[_]] = Caching.ConcurrentCache[I[_], TypeMagnet[_]]()
+    private lazy val cache = Caching.ConcurrentCache[I[_], TypeMagnet[_]]()
 
     final def apply[T](
         implicit

@@ -1,19 +1,21 @@
 package com.tribbloids.spookystuff.lifespan
 
-import com.tribbloids.spookystuff.testutils.SpookyEnvFixture
+import com.tribbloids.spookystuff.testutils.SparkEnvSpec
 import com.tribbloids.spookystuff.utils.CommonUtils
 import com.tribbloids.spookystuff.utils.lifespan.Cleanable.Lifespan
 import com.tribbloids.spookystuff.utils.lifespan.{Cleanable, LeafType, LocalCleanable}
 import com.tribbloids.spookystuff.utils.serialization.AssertSerializable
 import org.apache.spark.{HashPartitioner, SparkException, TaskContext}
+import org.scalatest.BeforeAndAfterEach
 
+import java.util.concurrent.atomic.AtomicInteger
 import scala.util.Random
 
 // TODO: move to previous module
 /**
   * Created by peng on 16/11/16.
   */
-class CleanableSuite extends SpookyEnvFixture {
+class CleanableSuite extends SparkEnvSpec with BeforeAndAfterEach {
 
   import com.tribbloids.spookystuff.lifespan.CleanableSuite._
   import com.tribbloids.spookystuff.utils.SpookyViews._
@@ -21,10 +23,12 @@ class CleanableSuite extends SpookyEnvFixture {
   override def beforeEach(): Unit = {
     super.beforeEach()
     sc.runEverywhere(alsoOnDriver = false) { _ =>
-      Cleanable.All.cleanSweep {
-        case _: DummyCleanable => true
-        case _                 => false
-      }
+      Cleanable.All
+        .filter {
+          case _: DummyCleanable => true
+          case _                 => false
+        }
+        .cleanSweep()
     }
   }
 
@@ -141,39 +145,93 @@ class CleanableSuite extends SpookyEnvFixture {
 
   private def verify(getDummy: Int => Unit) = {
     val ss = 1 to 10
-    for (_ <- 1 to 10) {
-      sc.parallelize(ss).foreach {
-        getDummy
+
+    val inc1 = sc
+      .uuidSeed()
+      .mapOncePerWorker { _ =>
+        counter.get()
+      }
+      .reduce(_ + _)
+
+    for (j <- 1 to 10) {
+      sc.parallelize(ss).foreach { i =>
+        getDummy(i)
       }
     }
 
-    val i2 = sc
+    val inc2 = sc
       .uuidSeed()
       .mapOncePerWorker { _ =>
-        Cleanable.All.typed[DummyCleanable].map(_.index)
+        Cleanable.All.typed[DummyCleanable].cleanSweep()
+        counter.get()
       }
-      .flatMap(identity)
-      .collect()
-      .toSeq
+      .reduce(_ + _)
 
-    assert(i2.size == ss.size * 10)
-    assert(i2.distinct.sorted == ss)
+    sc
+      .uuidSeed()
+      .mapOncePerWorker { _ =>
+        Cleanable.All.typed[DummyCleanable].cleanSweep()
+        counter.get()
+      }
+      .reduce(_ + _)
+
+    assert(inc2 - inc1 == ss.size * 10)
+//    assert(i2.distinct.sorted == ss)
   }
 
   it("can get all created Cleanables even their hashcodes may overlap") {
 
     verify(i => DummyCleanable(i, None))
   }
+
+  describe("System.gc() can trigger Cleanable that is") {
+
+    it("unreachable") {
+      @volatile var v = DummyCleanable(1, None)
+
+      assertInc {
+        v = null
+
+        System.gc()
+      }
+    }
+  }
+
 }
 
 object CleanableSuite {
+
+  val counter: AtomicInteger = new AtomicInteger(0)
+
+  val doInc: () => Unit = () => counter.incrementAndGet()
+
+  def incOf(fn: => Unit): Int = {
+    val c1 = counter.get()
+
+    fn
+
+    System.gc()
+
+    Thread.sleep(1000)
+    val c2 = counter.get()
+
+    c2 - c1
+  }
+
+  def assertInc(fn: => Unit, expected: Int = 1): Unit = {
+    val inc = incOf(fn)
+
+    assert(inc == expected)
+  }
 
   case class DummyCleanable(
       index: Int,
       id: Option[Long] = Some(Random.nextLong())
   ) extends LocalCleanable {
 
-    override protected def cleanImpl(): Unit = {}
+    override protected def cleanImpl(): Unit = {
+      counter.incrementAndGet()
+    }
   }
 
   def lifespanIsSerializable(v: Lifespan): Unit = {

@@ -1,14 +1,14 @@
 package com.tribbloids.spookystuff.execution
 
 import com.tribbloids.spookystuff.extractors.impl.Lit
-import com.tribbloids.spookystuff.testutils.SpookyEnvFixture
+import com.tribbloids.spookystuff.testutils.SpookyBaseSpec
 import org.apache.spark.ml.dsl.utils.refl.UnreifiedObjectType
 import org.apache.spark.sql.types.{IntegerType, StringType, StructField, StructType}
 
 /**
   * Created by peng on 17/05/16.
   */
-class TestFlattenPlan extends SpookyEnvFixture {
+class TestFlattenPlan extends SpookyBaseSpec {
 
   import com.tribbloids.spookystuff.dsl._
 

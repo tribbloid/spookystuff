@@ -3,7 +3,7 @@ package com.tribbloids.spookystuff
 import com.tribbloids.spookystuff.python.PyConverter
 import Python3DriverSuite.Runner
 import com.tribbloids.spookystuff.session.PythonDriver
-import com.tribbloids.spookystuff.testutils.SpookyEnvFixture
+import com.tribbloids.spookystuff.testutils.SpookyBaseSpec
 import com.tribbloids.spookystuff.utils.lifespan.Cleanable.Lifespan
 import com.tribbloids.spookystuff.utils.{CommonConst, CommonUtils}
 import org.slf4j.LoggerFactory
@@ -48,7 +48,7 @@ object Python3DriverSuite {
 /**
   * Created by peng on 01/08/16.
   */
-class Python3DriverSuite extends SpookyEnvFixture {
+class Python3DriverSuite extends SpookyBaseSpec {
 
   import scala.concurrent.ExecutionContext.Implicits.global
   import scala.concurrent.duration._

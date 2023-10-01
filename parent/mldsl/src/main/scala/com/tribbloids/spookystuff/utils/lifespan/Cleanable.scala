@@ -3,6 +3,8 @@ package com.tribbloids.spookystuff.utils.lifespan
 import com.tribbloids.spookystuff.utils.Caching._
 import org.slf4j.{Logger, LoggerFactory}
 
+import scala.language.implicitConversions
+import scala.ref.WeakReference
 import scala.reflect.ClassTag
 
 object Cleanable {
@@ -16,51 +18,57 @@ object Cleanable {
   object Lifespan extends BasicTypes with HadoopTypes with SparkTypes
 
   type BatchID = LeafType#ID
-  type Batch = ConcurrentMap[Long, Cleanable] // trackingNumber -> instance
+  type Batch = ConcurrentMap[Long, WeakReference[Cleanable]] // trackingNumber -> instance
   lazy val uncleaned: ConcurrentMap[BatchID, Batch] = ConcurrentMap()
 
-  trait Selection {
-
-    def ids: Seq[BatchID]
+  case class Select[T <: Cleanable: ClassTag](
+      ids: Seq[BatchID],
+      condition: T => Boolean = (_: T) => true
+  ) {
 
     final def batches: Seq[Batch] = ids.flatMap { id =>
-      Select(id).get
+      Select1Batch(id).get
     }
 
-    def filter(condition: Cleanable => Boolean = _ => true): Seq[Cleanable] = {
-
-      batches.flatMap(batch => batch.values).filter(condition)
-    }
-
-    def typed[T <: Cleanable: ClassTag]: Seq[T] = {
-      val result = filter {
-        case _: T => true
-        case _    => false
-      }.map { v =>
-        v.asInstanceOf[T]
+    final def cleanables: Seq[T] = batches
+      .flatMap(_.values)
+      .flatMap(_.get)
+      .collect {
+        case v: T => v
       }
+      .filter(condition)
 
-      result
+    def filter(condition: Cleanable => Boolean = _ => true): Select[T] = {
+
+      this.copy(condition = condition)
     }
 
-    def cleanSweep(condition: Cleanable => Boolean = _ => true): Unit = {
+    def typed[R <: T: ClassTag]: Select[R] = {
+      this.copy[R]()
+    }
+
+    def cleanSweep(): Unit = {
+
+      val filtered = cleanables
+
+      filtered
+        .foreach { instance =>
+          instance.tryClean()
+        }
 
       ids.foreach { id =>
-        Select(id).get.foreach { batch =>
-          val filtered = batch.values.filter(condition)
-
-          filtered
-            .foreach { instance =>
-              instance.tryClean()
-            }
+        batches.foreach { batch =>
           if (batch.isEmpty) uncleaned.remove(id)
         }
       }
     }
   }
 
-  case class Select(id: BatchID) extends Selection {
-    override def ids: Seq[BatchID] = Seq(id)
+//  def batchOf(id: BatchID): Selection[Cleanable] = Selection(Seq(id))
+
+  def All: Select[Cleanable] = Select[Cleanable](uncleaned.keys.toSeq)
+
+  case class Select1Batch(id: BatchID) {
 
     def getOrExecute(exe: () => Batch): Batch = uncleaned.getOrElseUpdateSynchronously(id) {
 
@@ -75,9 +83,7 @@ object Cleanable {
     }
   }
 
-  case object All extends Selection {
-    override def ids: Seq[BatchID] = uncleaned.keys.toSeq
-  }
+  implicit def selectBatchAsSelect(v: Select1Batch): Select[Cleanable] = Select(Seq(v.id))
 }
 
 /**
@@ -98,11 +104,22 @@ trait Cleanable extends AutoCloseable {
   final val lifespan: Lifespan = _lifespan
   final val trackingNumber: Long = System.identityHashCode(this).toLong // can be int value
 
+  override def finalize(): Unit = {
+    tryClean()
+  }
+
+  // TODO: useless, blocked by https://stackoverflow.com/questions/77290708/in-java-9-with-scala-how-to-make-a-cleanable-that-can-be-triggered-by-system
+//  @transient final private lazy val cleanable: Cleaner.Cleanable = jvmCleaner.register(
+//    this,
+//    () => tryClean()
+//  )
+
   {
     logPrefixed("Created")
     batches.foreach { inBatch =>
-      inBatch += this.trackingNumber -> this
+      inBatch += this.trackingNumber -> WeakReference(this)
     }
+//    cleanable // actually eager execution on creation
   }
 
   // each can only be cleaned once
@@ -187,12 +204,10 @@ trait Cleanable extends AutoCloseable {
               s"$logPrefix !!! FAILED TO CLEAN UP !!!\n",
               ee
             )
-    } finally {
-      super.finalize()
     }
   }
 
-  override protected def finalize(): Unit = tryClean()
-
-  final override def close(): Unit = clean()
+  final override def close(): Unit = {
+    clean(true)
+  }
 }

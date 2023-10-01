@@ -10,26 +10,16 @@ import com.tribbloids.spookystuff.session.DriverLike
 import com.tribbloids.spookystuff.utils.lifespan.Cleanable
 import com.tribbloids.spookystuff.utils.lifespan.Cleanable.Lifespan
 import com.tribbloids.spookystuff.utils.{CommonConst, CommonUtils, Retry, TreeThrowable}
-import org.apache.spark.SparkContext
-import org.apache.spark.sql.SQLContext
 import org.jutils.jprocesses.JProcesses
 import org.jutils.jprocesses.model.ProcessInfo
-import org.scalatest.{BeforeAndAfterAll, BeforeAndAfterEach, Outcome, Retries}
+import org.scalatest.{BeforeAndAfterEach, Outcome, Retries}
 
 import scala.language.implicitConversions
 import scala.util.Try
 
-object SpookyEnvFixture {
+object SpookyBaseSpec {
 
   import scala.jdk.CollectionConverters._
-
-  //  def cleanDriverInstances(): Unit = {
-  //    CleanMixin.unclean.foreach {
-  //      tuple =>
-  //        tuple._2.foreach (_.finalize())
-  //        Predef.assert(tuple._2.isEmpty)
-  //    }
-  //  }
 
   @volatile var firstRun: Boolean = true
 
@@ -47,6 +37,7 @@ object SpookyEnvFixture {
     Cleanable.uncleaned
       .foreach { tuple =>
         val taskCleanable = tuple._2.values
+          .flatMap(_.get)
           .filter { v =>
             val isOfTask = v.lifespan.leaves.exists { ll =>
               ll._type == Lifespan.Task
@@ -75,12 +66,13 @@ object SpookyEnvFixture {
 
     if (cleanSweepDrivers) {
       // this is necessary as each suite won't automatically cleanup drivers NOT in task when finished
-      Cleanable.All.cleanSweep(
-        condition = {
+      Cleanable.All
+        .filter {
+
           case _: DriverLike => true
           case _             => false
         }
-      )
+        .cleanSweep()
     }
 
     conditions.foreach { condition =>
@@ -94,44 +86,11 @@ object SpookyEnvFixture {
     }
   }
 
-  trait EnvBase {
-
-    def sc: SparkContext = TestHelper.TestSC
-    def sql: SQLContext = TestHelper.TestSQL
-
-    var _spooky: SpookyContext = _
-    def spooky: SpookyContext = {
-      Option(_spooky)
-        .getOrElse {
-          val result: SpookyContext = reloadSpooky
-          result
-        }
-    }
-
-    def reloadSpooky: SpookyContext = {
-      val sql = this.sql
-      val result = SpookyContext(sql, SpookyConf.default)
-      _spooky = result
-      result
-    }
-
-    def spookyConf: SpookyConf = spooky.getConf(Core)
-  }
-
 }
 
-abstract class SpookyEnvFixture
-    extends FunSpecx
-    with SpookyEnvFixture.EnvBase
-    with RemoteDocsFixture
-    with BeforeAndAfterEach
-    with BeforeAndAfterAll
-    with Retries
-    with SparkUISupport {
+abstract class SpookyBaseSpec extends SpookyEnvSpec with RemoteDocsFixture with BeforeAndAfterEach with Retries {
 
-  val exitingPIDs: Set[String] = SpookyEnvFixture.getProcesses.map(_.getPid).toSet
-
-  def parallelism: Int = sc.defaultParallelism
+  val exitingPIDs: Set[String] = SpookyBaseSpec.getProcesses.map(_.getPid).toSet
 
   lazy val defaultEC: SpookyExecutionContext = SpookyExecutionContext(spooky)
   lazy val defaultSchema: SpookySchema = SpookySchema(defaultEC)
@@ -159,9 +118,9 @@ abstract class SpookyEnvFixture
 
   import com.tribbloids.spookystuff.utils.SpookyViews._
 
-  def _processNames: Seq[String] = Seq("phantomjs", s"${PythonDriverFactory.python3} -iu")
+  def _externalProcessNames: Seq[String] = Seq("phantomjs", s"${PythonDriverFactory.python3} -iu")
   final lazy val conditions: Seq[ProcessInfo => Boolean] = {
-    val _processNames = this._processNames
+    val _processNames = this._externalProcessNames
     val exitingPIDs = this.exitingPIDs
     _processNames.map {
       name =>
@@ -182,20 +141,20 @@ abstract class SpookyEnvFixture
     val result = sc.runEverywhere() { _ =>
       Try {
         CommonUtils.retry(3, 1000, silent = true) {
-          SpookyEnvFixture.shouldBeClean(spooky, conditions)
+          SpookyBaseSpec.shouldBeClean(spooky, conditions)
         }
       }
     }
     TreeThrowable.&&&(result)
 
-    SpookyEnvFixture.firstRun = false
+    SpookyBaseSpec.firstRun = false
   }
 
   override def beforeAll(): Unit = {
 
     super.beforeAll()
 
-    if (SpookyEnvFixture.firstRun)
+    if (SpookyBaseSpec.firstRun)
       validateBeforeAndAfterAll()
   }
 
@@ -228,7 +187,7 @@ abstract class SpookyEnvFixture
       Try {
 
         CommonUtils.retry(3, 1000, silent = true) {
-          SpookyEnvFixture.instancesShouldBeClean(spooky)
+          SpookyBaseSpec.instancesShouldBeClean(spooky)
         }
       }
     }

@@ -4,9 +4,9 @@ import com.tribbloids.spookystuff.doc.{Doc, DocUtils}
 import com.tribbloids.spookystuff.session.Session
 import com.tribbloids.spookystuff.web.conf.Web
 import com.tribbloids.spookystuff.dsl
-import com.tribbloids.spookystuff.testutils.SpookyEnvFixture
+import com.tribbloids.spookystuff.testutils.SpookyBaseSpec
 
-class TestPageFromBrowser extends SpookyEnvFixture {
+class TestPageFromBrowser extends SpookyBaseSpec {
 
   import dsl._
 

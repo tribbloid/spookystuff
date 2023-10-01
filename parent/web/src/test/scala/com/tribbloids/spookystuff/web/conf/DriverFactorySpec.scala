@@ -3,11 +3,11 @@ package com.tribbloids.spookystuff.web.conf
 import com.tribbloids.spookystuff.conf.DriverFactory.Transient
 import com.tribbloids.spookystuff.conf.{DriverFactory, PluginSystem, Python, PythonDriverFactory}
 import com.tribbloids.spookystuff.session.Session
-import com.tribbloids.spookystuff.testutils.{LocalPathDocsFixture, SpookyEnvFixture}
+import com.tribbloids.spookystuff.testutils.{LocalPathDocsFixture, SpookyBaseSpec}
 import com.tribbloids.spookystuff.web.actions.Visit
 import com.tribbloids.spookystuff.SpookyContext
 
-class DriverFactorySpec extends SpookyEnvFixture with LocalPathDocsFixture {
+class DriverFactorySpec extends SpookyBaseSpec with LocalPathDocsFixture {
 
   trait BaseCase {
 

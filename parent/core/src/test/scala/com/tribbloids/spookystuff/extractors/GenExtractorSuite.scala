@@ -1,6 +1,6 @@
 package com.tribbloids.spookystuff.extractors
 
-import com.tribbloids.spookystuff.testutils.SpookyEnvFixture
+import com.tribbloids.spookystuff.testutils.SpookyBaseSpec
 import com.tribbloids.spookystuff.utils.serialization.AssertSerializable
 
 import scala.runtime.AbstractPartialFunction
@@ -40,7 +40,7 @@ object GenExtractorSuite {
   }
 }
 
-class GenExtractorSuite extends SpookyEnvFixture {
+class GenExtractorSuite extends SpookyBaseSpec {
 
   import GenExtractorSuite._
   import com.tribbloids.spookystuff.dsl._

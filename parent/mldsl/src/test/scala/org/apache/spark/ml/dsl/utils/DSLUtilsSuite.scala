@@ -7,25 +7,25 @@ import com.tribbloids.spookystuff.testutils.FunSpecx
   */
 class DSLUtilsSuite extends FunSpecx {
 
-  def caller(): Array[StackTraceElement] = {
+  def get1(): Array[StackTraceElement] = {
     DSLUtils.getBreakpointInfo()
   }
 
-  lazy val caller2: Array[StackTraceElement] = caller()
+  lazy val get2: Array[StackTraceElement] = get1()
 
-  val caller3: Array[StackTraceElement] = caller2
+  val get3: Array[StackTraceElement] = get2
 
   def defaultParamCaller(
-      c: Array[StackTraceElement] = caller2
+      c: Array[StackTraceElement] = get2
   ): Array[StackTraceElement] = c
 
   it("methodName should return caller's name") {
-    assert(caller3.head.getMethodName == "caller")
-    assert(caller3(1).getMethodName == "caller2")
-    assert(caller3(2).isNativeMethod)
+    assert(get3.head.getMethodName == "get1")
+    assert(get3(1).getMethodName == "get2")
+    assert(get3(2).isNativeMethod)
 
     val dpc = defaultParamCaller()
-    assert(dpc.head.getMethodName == "caller")
-    assert(dpc.apply(1).getMethodName == "caller2")
+    assert(dpc.head.getMethodName == "get1")
+    assert(dpc.apply(1).getMethodName == "get2")
   }
 }

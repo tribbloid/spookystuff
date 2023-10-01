@@ -4,11 +4,11 @@ import com.tribbloids.spookystuff.actions.{Delay, Loop, OAuthV2, TraceView, Wget
 import com.tribbloids.spookystuff.conf.DriverFactory
 import com.tribbloids.spookystuff.doc.Doc
 import com.tribbloids.spookystuff.session.Session
-import com.tribbloids.spookystuff.testutils.{FunSpecx, SpookyEnvFixture}
+import com.tribbloids.spookystuff.testutils.{FunSpecx, SpookyBaseSpec}
 import com.tribbloids.spookystuff.web.session.CleanWebDriver
 
 // TODO: part of this test suite should be move to core
-abstract class AbstractTestTrace extends SpookyEnvFixture with FunSpecx {
+abstract class AbstractTestTrace extends SpookyBaseSpec with FunSpecx {
 
   import scala.concurrent.duration._
 

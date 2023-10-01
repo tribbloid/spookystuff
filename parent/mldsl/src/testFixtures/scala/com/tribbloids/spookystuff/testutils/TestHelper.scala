@@ -84,7 +84,7 @@ abstract class TestHelper extends LocalCleanable {
       }
     }
 
-    cleanBeforeAndAfter()
+    cleanBeforeAndAfterJVM()
   }
 
   override def _lifespan: Lifespan = Lifespan.HadoopShutdown.BeforeSpark()
@@ -102,10 +102,10 @@ abstract class TestHelper extends LocalCleanable {
     TestSC.stop()
 
     //      println("=============== Test Spark Context has stopped ==============")
-    cleanBeforeAndAfter()
+    cleanBeforeAndAfterJVM()
   }
 
-  def cleanBeforeAndAfter(): Unit = {
+  def cleanBeforeAndAfterJVM(): Unit = {
     cleanTempDirs(
       Seq(
         WAREHOUSE_PATH,

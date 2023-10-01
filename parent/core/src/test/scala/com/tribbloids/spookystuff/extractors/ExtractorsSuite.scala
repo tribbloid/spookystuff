@@ -1,12 +1,12 @@
 package com.tribbloids.spookystuff.extractors
 
 import com.tribbloids.spookystuff.extractors.impl.Lit
-import com.tribbloids.spookystuff.testutils.SpookyEnvFixture
+import com.tribbloids.spookystuff.testutils.SpookyBaseSpec
 
 /**
   * Created by peng on 15/06/16.
   */
-class ExtractorsSuite extends SpookyEnvFixture {
+class ExtractorsSuite extends SpookyBaseSpec {
 
   it("Literal -> JSON") {
     val lit: Lit[FR, Int] = Lit(1)

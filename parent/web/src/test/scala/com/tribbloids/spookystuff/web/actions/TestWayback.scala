@@ -4,13 +4,13 @@ import com.tribbloids.spookystuff.actions.{Delay, Wget}
 
 import java.util.Date
 import com.tribbloids.spookystuff.QueryException
-import com.tribbloids.spookystuff.testutils.SpookyEnvFixture
+import com.tribbloids.spookystuff.testutils.SpookyBaseSpec
 
 /**
   * Created by peng on 08/09/15.
   */
 //TODO: test independently for each cache type (after switch for different cache is implemented)
-class TestWayback extends SpookyEnvFixture {
+class TestWayback extends SpookyBaseSpec {
 
   import scala.concurrent.duration._
 

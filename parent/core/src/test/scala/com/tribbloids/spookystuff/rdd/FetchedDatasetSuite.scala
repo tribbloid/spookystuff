@@ -3,14 +3,17 @@ package com.tribbloids.spookystuff.rdd
 import com.tribbloids.spookystuff.actions._
 import com.tribbloids.spookystuff.extractors.impl.Lit
 import com.tribbloids.spookystuff.metrics.Acc
-import com.tribbloids.spookystuff.testutils.{LocalPathDocsFixture, SpookyEnvFixture}
+import com.tribbloids.spookystuff.testutils.{LocalPathDocsFixture, SpookyBaseSpec}
 import com.tribbloids.spookystuff.testutils.beans.Composite
 import com.tribbloids.spookystuff.dsl
+import com.tribbloids.spookystuff.utils.CommonConst
+
+import java.io.File
 
 /**
   * Created by peng on 5/10/15.
   */
-class FetchedDatasetSuite extends SpookyEnvFixture with LocalPathDocsFixture {
+class FetchedDatasetSuite extends SpookyBaseSpec with LocalPathDocsFixture {
 
   import dsl._
 
@@ -305,5 +308,54 @@ class FetchedDatasetSuite extends SpookyEnvFixture with LocalPathDocsFixture {
     ).count()
 
     assert(ds.spooky.spookyMetrics.pagesFetched.value == 1)
+  }
+
+  describe("savePage") {
+
+    def dummyFileExists() = {
+      val file = new File(s"${CommonConst.USER_DIR}/temp/dummy.html")
+      val exists_deleted = file.exists() -> file.delete()
+      exists_deleted._1 && exists_deleted._2
+    }
+
+    it("lazily") {
+
+      spooky
+        .fetch(
+          Wget(HTML_URL)
+        )
+        .savePages(s"file://${CommonConst.USER_DIR}/temp/dummy", overwrite = true)
+        .collect()
+
+      assert(dummyFileExists())
+    }
+
+    it("... on persisted RDD") {
+
+      val vv = spooky
+        .fetch(
+          Wget(HTML_URL)
+        )
+        .persist()
+
+      vv.collect()
+
+      vv.savePages(s"file://${CommonConst.USER_DIR}/temp/dummy", overwrite = true)
+        .collect()
+
+      assert(dummyFileExists())
+
+    }
+
+    it("eagerly") {
+
+      spooky
+        .fetch(
+          Wget(HTML_URL)
+        )
+        .savePages_!(s"file://${CommonConst.USER_DIR}/temp/dummy", overwrite = true)
+
+      assert(dummyFileExists())
+    }
   }
 }

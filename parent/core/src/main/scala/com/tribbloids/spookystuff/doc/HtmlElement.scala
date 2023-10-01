@@ -8,21 +8,19 @@ import org.apache.tika.sax.ToXMLContentHandler
 import org.jsoup.Jsoup
 import org.jsoup.nodes.Element
 
-import scala.collection.JavaConverters
-
 /**
   * Created by peng on 11/30/14.
   */
 object HtmlElement {
 
-  def apply(html: String, uri: String): HtmlElement = new HtmlElement(null, html, None, uri)
-
   def breadcrumb(e: Element): Seq[String] = {
 
-    import JavaConverters._
+    import scala.jdk.CollectionConverters._
 
     e.parents().asScala.toSeq.map(_.tagName()).reverse :+ e.tagName()
   }
+
+  def apply(html: String, uri: String): HtmlElement = new HtmlElement(null, html, None, uri)
 
   def fromBytes(content: Array[Byte], charSet: String, mimeType: String, uri: String): HtmlElement = {
 
@@ -30,7 +28,7 @@ object HtmlElement {
 
     val metadata = new Metadata()
     val stream = TikaInputStream.get(content, metadata)
-    val html =
+    val html: CSSQuery =
       try {
         metadata.set(HttpHeaders.CONTENT_ENCODING, charSet)
         metadata.set(HttpHeaders.CONTENT_TYPE, mimeType)
@@ -52,7 +50,7 @@ class HtmlElement private (
     override val uri: String
 ) extends Unstructured {
 
-  import JavaConverters._
+  import scala.jdk.CollectionConverters._
 
   // constructor for HtmlElement returned by .children()
   private def this(_parsed: Element) = this(

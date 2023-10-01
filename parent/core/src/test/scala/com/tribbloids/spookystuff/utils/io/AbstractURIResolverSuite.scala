@@ -1,6 +1,6 @@
 package com.tribbloids.spookystuff.utils.io
 
-import com.tribbloids.spookystuff.testutils.{FunSpecx, LocalPathDocsFixture, SparkUISupport, TestHelper}
+import com.tribbloids.spookystuff.testutils.{LocalPathDocsFixture, SparkEnvSpec}
 import com.tribbloids.spookystuff.utils.io.AbstractURIResolverSuite.SequentialCheck
 import com.tribbloids.spookystuff.utils.serialization.AssertSerializable
 import com.tribbloids.spookystuff.utils.CommonConst
@@ -44,7 +44,7 @@ object AbstractURIResolverSuite {
 /**
   * Created by peng on 07/10/15.
   */
-abstract class AbstractURIResolverSuite extends FunSpecx with LocalPathDocsFixture with SparkUISupport {
+abstract class AbstractURIResolverSuite extends SparkEnvSpec with LocalPathDocsFixture {
 
   @transient val resolver: URIResolver
   @transient val schemaPrefix: String
@@ -71,7 +71,6 @@ abstract class AbstractURIResolverSuite extends FunSpecx with LocalPathDocsFixtu
     lazy val nonExistingSubFile: TempResource = nonExistingDir \ "not-a-file.txt"
 
   }
-  val sc: SparkContext = TestHelper.TestSC
 
   it("can convert relative path of non-existing file") {
     {

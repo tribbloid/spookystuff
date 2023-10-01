@@ -1,10 +1,10 @@
 package com.tribbloids.spookystuff.dsl
 
-import com.tribbloids.spookystuff.testutils.SpookyEnvFixture
+import com.tribbloids.spookystuff.testutils.SpookyBaseSpec
 import java.io.File
 import com.tribbloids.spookystuff.web.actions.{Snapshot, Visit, WaitFor}
 
-class FilePathsSuite extends SpookyEnvFixture {
+class FilePathsSuite extends SpookyBaseSpec {
 
   import scala.concurrent.duration._
 

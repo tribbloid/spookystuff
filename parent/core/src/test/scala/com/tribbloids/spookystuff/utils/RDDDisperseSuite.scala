@@ -1,6 +1,6 @@
 package com.tribbloids.spookystuff.utils
 
-import com.tribbloids.spookystuff.testutils.{SpookyEnvFixture, TestHelper}
+import com.tribbloids.spookystuff.testutils.{SpookyBaseSpec, TestHelper}
 import org.apache.spark.ml.dsl.utils.ObjectSimpleNameMixin
 import org.apache.spark.rdd.RDD
 import org.apache.spark.storage.StorageLevel
@@ -10,7 +10,7 @@ import org.slf4j.LoggerFactory
 import scala.concurrent.{ExecutionContext, ExecutionContextExecutor}
 import scala.util.Random
 
-class RDDDisperseSuite extends SpookyEnvFixture {
+class RDDDisperseSuite extends SpookyBaseSpec {
 
   implicit val concurrentCtx: ExecutionContextExecutor = ExecutionContext.global
 

@@ -13,7 +13,7 @@ import scala.reflect.ClassTag
 
 object SerDeOverride {
 
-  case class WithConf(conf: SparkConf = new SparkConf()) {
+  case class WithConf(conf: SparkConf) {
 
     @transient lazy val _conf: SparkConf = conf
       .registerKryoClasses(Array(classOf[TypeTag[_]]))
@@ -33,7 +33,7 @@ object SerDeOverride {
     @transient lazy val allSerializers: List[Serializer] = List(javaSerializer, kryoSerializer)
   }
 
-  object Default extends WithConf
+  object Default extends WithConf(new SparkConf())
 
   implicit def box[T: ClassTag](v: T): SerDeOverride[T] = SerDeOverride(v)
 
