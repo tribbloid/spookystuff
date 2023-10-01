@@ -27,7 +27,7 @@ object ConflictDetection {
 
   def conflicts: Seq[Try[Unit]] = {
 
-    val allObj = Cleanable.All.typed[ConflictDetection]
+    val allObj = Cleanable.All.typed[ConflictDetection].selected
 
     val allResourceIDs: Map[String, Seq[Any]] = allObj
       .map {

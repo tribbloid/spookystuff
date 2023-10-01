@@ -1,6 +1,5 @@
 package com.tribbloids.spookystuff.utils.lifespan
 
-import com.tribbloids.spookystuff.utils.Caching.ConcurrentMap
 import com.tribbloids.spookystuff.utils.lifespan.Cleanable.Batch
 
 abstract class LeafType extends LifespanType {
@@ -25,14 +24,14 @@ abstract class LeafType extends LifespanType {
 
       val batchID = this.batchID
 
-      def select = Cleanable.Select(batchID)
+      def select = Cleanable.Select1Batch(batchID)
 
       // if the batch for this batchID already existed, it means the cleanSweep hook is already registered
       val batch = select.getOrExecute { () =>
         registerHook { () =>
           select.cleanSweep()
         }
-        ConcurrentMap()
+        Batch()
       }
 
       Seq(batchID -> batch)
