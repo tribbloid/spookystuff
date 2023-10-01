@@ -3,6 +3,6 @@
 CRDIR="$(cd "`dirname "$0"`"; pwd)"
 FWDIR="$(cd "`dirname "$0"`"/..; pwd)"
 
-${FWDIR}/gradlew wrapper --gradle-version=8.1.1
+${FWDIR}/gradlew wrapper --gradle-version=8.3
 
 ${FWDIR}/gradlew dependencyUpdates "$@"
