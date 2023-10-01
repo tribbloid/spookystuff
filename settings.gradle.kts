@@ -9,8 +9,11 @@ fun isEnabled(profile: String?): Boolean {
     return result
 }
 
-//include("graph-commons")
-//project(":graph-commons").projectDir = file("graph-commons/core") TODO: enable later
+
+include(":prover-commons")
+project(":prover-commons").projectDir = file("prover-commons/module")
+include(":prover-commons:core")
+include(":prover-commons:meta2")
 
 include(
     // should be skipped on CI, contains local experiments only

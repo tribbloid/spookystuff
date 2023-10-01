@@ -1,3 +1,6 @@
 [submodule "spookystuff-showcase"]
 	path = spookystuff-showcase
 	url = https://github.com/tribbloid/spookystuff-showcase
+[submodule "prover-commons"]
+	path = prover-commons
+	url = https://github.com/tribbloid/prover-commons
