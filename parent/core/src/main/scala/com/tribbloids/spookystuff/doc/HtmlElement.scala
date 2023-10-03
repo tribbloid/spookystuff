@@ -8,7 +8,7 @@ import org.apache.tika.sax.ToXMLContentHandler
 import org.jsoup.Jsoup
 import org.jsoup.nodes.Element
 
-import scala.collection.JavaConverters
+import scala.jdk.CollectionConverters
 
 /**
   * Created by peng on 11/30/14.

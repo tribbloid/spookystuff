@@ -6,7 +6,7 @@ import scala.collection.mutable
 
 object CachingUtils {
 
-  import scala.collection.JavaConverters._
+  import scala.jdk.CollectionConverters._
 
   /**
     * A cache designed for multithreaded usage in cases where values (not keys) contained in this map will not

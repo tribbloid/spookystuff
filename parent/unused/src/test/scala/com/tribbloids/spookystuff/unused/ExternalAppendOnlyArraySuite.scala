@@ -19,7 +19,7 @@ abstract class ExternalAppendOnlyArraySuite(
 
   import com.tribbloids.spookystuff.testutils.TestHelper._
 
-  import scala.collection.JavaConverters._
+  import scala.jdk.CollectionConverters._
 
   val e_resultSize: Int = parallelism * numTestRuns * taskSize
   val e_computeTimes: Int = parallelism * taskSize // * TestHelper.numWorkers

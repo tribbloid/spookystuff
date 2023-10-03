@@ -71,7 +71,7 @@ case class Visualisation[D <: Domain](
     def compileASCII(
         endWith: Seq[Element[D]]
     ): Graph[ElementView[D]#WFormat] = {
-      import scala.collection.JavaConverters._
+      import scala.jdk.CollectionConverters._
 
       //      val buffer = mutable.LinkedHashSet.empty[ElementView[D]#WFormat]
       val buffer = {

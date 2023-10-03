@@ -112,7 +112,7 @@ object WebDriverFactory {
           asSeleniumProxy(v)
         }
 
-        import scala.collection.JavaConverters._
+        import scala.jdk.CollectionConverters._
 
         var builder = PhantomJS.defaultBuilder
           .usingAnyFreePort()

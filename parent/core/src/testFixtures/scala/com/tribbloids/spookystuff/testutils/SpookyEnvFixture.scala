@@ -21,7 +21,7 @@ import scala.util.Try
 
 object SpookyEnvFixture {
 
-  import scala.collection.JavaConverters._
+  import scala.jdk.CollectionConverters._
 
   //  def cleanDriverInstances(): Unit = {
   //    CleanMixin.unclean.foreach {

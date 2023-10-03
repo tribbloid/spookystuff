@@ -6,7 +6,7 @@ import scala.language.implicitConversions
 
 case class CircularDeque[T](size: Int = 10) {
 
-  import scala.collection.JavaConverters._
+  import scala.jdk.CollectionConverters._
 
   lazy val delegate: LinkedBlockingDeque[T] = new LinkedBlockingDeque[T](size)
 

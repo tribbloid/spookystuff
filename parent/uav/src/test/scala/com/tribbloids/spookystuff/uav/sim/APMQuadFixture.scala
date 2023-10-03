@@ -30,7 +30,7 @@ class TestAPMQuad extends APMQuadFixture {
     assert(fleet.size == fleet.distinct.size)
     assert(fleet.size == iNums.size)
 
-    import scala.collection.JavaConverters._
+    import scala.jdk.CollectionConverters._
 
     val processes = JProcesses.getProcessList().asScala
 

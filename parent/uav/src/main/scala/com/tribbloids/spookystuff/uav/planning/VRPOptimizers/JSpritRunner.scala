@@ -300,7 +300,7 @@ case class JSpritRunner(
 
   lazy val getUAV2TraceMap: Map[LinkStatus, Seq[TraceView]] = {
 
-    import scala.collection.JavaConverters._
+    import scala.jdk.CollectionConverters._
 
     val routes = solve.getRoutes.asScala.toList
     val status_KVs: Seq[(LinkStatus, List[TraceView])] = routes.map { route =>

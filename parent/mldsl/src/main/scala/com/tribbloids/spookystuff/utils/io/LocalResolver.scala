@@ -21,7 +21,7 @@ case class LocalResolver(
 
     val path: Path = Paths.get(pathStr)
 
-    import scala.collection.JavaConverters._
+    import scala.jdk.CollectionConverters._
 
     // CAUTION: resolving is different on each driver or executors
     val absolutePath: Path = path.toAbsolutePath
