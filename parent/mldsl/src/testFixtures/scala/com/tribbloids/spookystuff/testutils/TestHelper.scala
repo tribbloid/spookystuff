@@ -176,11 +176,6 @@ abstract class TestHelper extends LocalCleanable {
     Math.min(n * MEMORY_PER_CORE, cap)
   }
 
-  @transient lazy val envOverrides: Map[String, String] = Map(
-    "SPARK_SCALA_VERSION" -> CommonUtils.scalaBinaryVersion
-    //    "SPARK_LOCAL_HOSTNAME" -> "localhost"
-  )
-
   case object CoreSettings {
 
     lazy val masterEnv: String = System.getenv("SPARK_MASTER")
@@ -194,19 +189,6 @@ abstract class TestHelper extends LocalCleanable {
       println("initializing SparkContext in local mode:" + masterStr)
       masterStr
     } else {
-
-      if (envOverrides.nonEmpty) {
-        LoggerFactory
-          .getLogger(this.getClass)
-          .warn(
-            "overriding system variables ... this may be unstable for some JVM"
-          )
-
-        envOverrides.foreach {
-          case (k, v) =>
-            ConfUtils.overrideEnv(k, v)
-        }
-      }
 
       val masterStr =
         s"local-cluster[${clusterSizeOpt.get},${numCoresPerWorkerOpt.get},${executorMemoryOpt.get}]"
