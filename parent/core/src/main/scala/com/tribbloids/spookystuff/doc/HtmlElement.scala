@@ -8,8 +8,6 @@ import org.apache.tika.sax.ToXMLContentHandler
 import org.jsoup.Jsoup
 import org.jsoup.nodes.Element
 
-import scala.jdk.CollectionConverters
-
 /**
   * Created by peng on 11/30/14.
   */
@@ -19,7 +17,7 @@ object HtmlElement {
 
   def breadcrumb(e: Element): Seq[String] = {
 
-    import JavaConverters._
+    import scala.jdk.CollectionConverters._
 
     e.parents().asScala.toSeq.map(_.tagName()).reverse :+ e.tagName()
   }
@@ -52,7 +50,7 @@ class HtmlElement private (
     override val uri: String
 ) extends Unstructured {
 
-  import JavaConverters._
+  import scala.jdk.CollectionConverters._
 
   // constructor for HtmlElement returned by .children()
   private def this(_parsed: Element) = this(

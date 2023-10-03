@@ -23,14 +23,6 @@ object SpookyEnvFixture {
 
   import scala.jdk.CollectionConverters._
 
-  //  def cleanDriverInstances(): Unit = {
-  //    CleanMixin.unclean.foreach {
-  //      tuple =>
-  //        tuple._2.foreach (_.finalize())
-  //        Predef.assert(tuple._2.isEmpty)
-  //    }
-  //  }
-
   @volatile var firstRun: Boolean = true
 
   def shouldBeClean(

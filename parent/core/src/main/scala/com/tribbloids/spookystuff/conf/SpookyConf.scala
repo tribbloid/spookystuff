@@ -80,4 +80,14 @@ case class SpookyConf(
         earliestTimeFromDuration
     }
   }
+
+  def previewMode: this.type = {
+
+    val sampler: Samplers.FirstN = Samplers.FirstN(1)
+    this.defaultJoinSampler = sampler
+    this.defaultJoinSampler = sampler
+    this.defaultExploreRange = 0 to 2
+
+    this
+  }
 }

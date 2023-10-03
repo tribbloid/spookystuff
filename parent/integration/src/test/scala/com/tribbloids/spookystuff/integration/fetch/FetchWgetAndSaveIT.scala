@@ -27,11 +27,11 @@ class FetchWgetAndSaveIT extends IntegrationFixture {
       .persist()
     //    fetched.count()
 
-    val RDD = fetched
+    val rdd = fetched
       .savePages_!(x"file://${CommonConst.USER_DIR}/temp/spooky-integration/save/${'name}", overwrite = true)
       .select(S.saved ~ 'saved_path)
 
-    val savedPageRows = RDD.unsquashedRDD.collect()
+    val savedPageRows = rdd.unsquashedRDD.collect()
 
     val finishTime = System.currentTimeMillis()
     assert(savedPageRows.length === 1)
@@ -54,12 +54,12 @@ class FetchWgetAndSaveIT extends IntegrationFixture {
 
     Thread.sleep(10000) // this delay is necessary to circumvent eventual consistency of HDFS-based cache
 
-    val RDD2 = RDD
+    val RDD2 = rdd
       .fetch(
         Wget(imageURL).as('b)
       )
 
-    val unionRDD = RDD.union(RDD2)
+    val unionRDD = rdd.union(RDD2)
     val unionRows = unionRDD.unsquashedRDD.collect()
 
     assert(unionRows.length === 2)
