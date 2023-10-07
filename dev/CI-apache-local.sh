@@ -4,4 +4,4 @@
 
 CRDIR="$(cd "`dirname "$0"`"; pwd)"
 
-"$CRDIR"/CI/main.sh apache-latest "${@}"
+"$CRDIR"/CI/main.sh apache-local "${@}"

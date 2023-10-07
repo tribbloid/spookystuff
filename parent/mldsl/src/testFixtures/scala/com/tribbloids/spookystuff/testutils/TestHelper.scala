@@ -5,6 +5,7 @@ import com.tribbloids.spookystuff.utils.lifespan.Cleanable.Lifespan
 import com.tribbloids.spookystuff.utils.lifespan.LocalCleanable
 import com.tribbloids.spookystuff.utils.{CommonConst, CommonUtils, ConfUtils}
 import org.apache.hadoop.fs.FileUtil
+import org.apache.spark.launcher.InProcessLauncher
 import org.apache.spark.serializer.KryoSerializer
 import org.apache.spark.sql.{SQLContext, SparkSession}
 import org.apache.spark.{SparkConf, SparkContext, SparkEnv, SparkException}
@@ -212,10 +213,10 @@ abstract class TestHelper extends LocalCleanable {
         base1
       } else {
         base1 ++ Map(
-          "spark.home" -> SPARK_HOME,
+          "spark.home" -> SPARK_HOME
           //        "spark.executor.memory" -> (executorMemoryOpt.get + "m"),
-          "spark.driver.extraClassPath" -> sys.props("java.class.path"),
-          "spark.executor.extraClassPath" -> sys.props("java.class.path")
+//          "spark.driver.extraClassPath" -> sys.props("java.class.path"),
+//          "spark.executor.extraClassPath" -> sys.props("java.class.path")
         )
       }
 

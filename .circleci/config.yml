@@ -17,22 +17,22 @@ jobs:
             echo "Starting ..."
       - restore_cache:
           keys:
-            - profile-{{ checksum "./dev/profiles/apache-stable/.common.sh" }}
+            - profile-{{ checksum "./dev/profiles/apache-local/.common.sh" }}
       - run:
           name: Prepare
           command: |
-            ./dev/CI-apache-stable.sh prepare
+            ./dev/CI-apache-local.sh prepare
       - save_cache:
-          key: profile-{{ checksum "./dev/profiles/apache-stable/.common.sh" }}
+          key: profile-{{ checksum "./dev/profiles/apache-local/.common.sh" }}
           paths:
             - ~/.ci
       - run:
           name: Run
           command: |
-            ./dev/CI-apache-stable.sh
+            ./dev/CI-apache-local.sh
 
 workflows:
-  main-stable: # This is the name of the workflow, feel free to change it to better match your workflow.
+  main-local: # This is the name of the workflow, feel free to change it to better match your workflow.
     # Inside the workflow, you define the jobs you want to run.
     # For more details on extending your workflow, see the configuration docs: https://circleci.com/docs/2.0/configuration-reference/#workflows
     jobs:
