@@ -291,7 +291,10 @@ case class FetchedDataset(
       .map(_.ex.typed[String])
       .getOrElse(_pageEx.defaultFileExtension)
 
-    MapPlan.optimised(plan, MapPlan.SavePages(path.ex.typed[String], _extensionEx, _pageEx, overwrite))
+    MapPlan.optimised(
+      plan,
+      MapPlan.SavePages(path.ex.typed[String], _extensionEx, _pageEx, overwrite)
+    )
   }
 
   def flatten(

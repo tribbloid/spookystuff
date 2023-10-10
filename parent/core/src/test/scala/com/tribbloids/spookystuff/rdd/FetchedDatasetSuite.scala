@@ -319,6 +319,21 @@ class FetchedDatasetSuite extends SpookyEnvFixture with LocalPathDocsFixture {
         .collect()
     }
 
+    it("prior") {
+
+      val vv = spooky
+        .fetch(
+          Wget(HTML_URL)
+        )
+        .persist()
+
+      vv.collect()
+
+      vv.savePages("file://${CommonConst.USER_DIR}/temp/yyy", overwrite = true)
+        .collect()
+
+    }
+
     it("eagerly") {
 
       spooky
