@@ -178,6 +178,10 @@ subprojects {
             testFixturesImplementation(notation)
         }
 
+//        both("${vs.scala.group}:scala-compiler:${vs.scala.v}")
+        both("${vs.scala.group}:scala-library:${vs.scala.v}")
+        both("${vs.scala.group}:scala-reflect:${vs.scala.v}")
+
         both("org.apache.spark:spark-sql_${vs.scala.binaryV}:${vs.sparkV}")
         both("org.apache.spark:spark-mllib_${vs.scala.binaryV}:${vs.sparkV}")
 
