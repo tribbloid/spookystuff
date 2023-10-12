@@ -2,11 +2,11 @@ package com.tribbloids.spookystuff.actions
 
 import com.tribbloids.spookystuff.extractors.impl.Lit
 import com.tribbloids.spookystuff.session.Session
-import com.tribbloids.spookystuff.testutils.SpookyEnvFixture
+import com.tribbloids.spookystuff.testutils.SpookyBaseSpec
 
 import java.util.Date
 
-class TestBlock extends SpookyEnvFixture {
+class TestBlock extends SpookyBaseSpec {
 
   import scala.concurrent.duration._
 

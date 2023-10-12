@@ -1,12 +1,12 @@
 package com.tribbloids.spookystuff.row
 
 import com.tribbloids.spookystuff.actions.Wget
-import com.tribbloids.spookystuff.testutils.SpookyEnvFixture
+import com.tribbloids.spookystuff.testutils.SpookyBaseSpec
 
 /**
   * Created by peng on 05/04/16.
   */
-class SquashedFetchedRowSuite extends SpookyEnvFixture {
+class SquashedFetchedRowSuite extends SpookyBaseSpec {
 
   it("Array[Page]().grouping yields at least 1 group") {
     val row = SquashedFetchedRow()

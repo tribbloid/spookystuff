@@ -1,7 +1,7 @@
 package org.apache.spark.rdd.spookystuff
 
 import com.tribbloids.spookystuff.testutils.TestHelper.TestSC
-import com.tribbloids.spookystuff.testutils.{FunSpecx, SparkUISupport, SubSuite, TestHelper}
+import com.tribbloids.spookystuff.testutils.{SparkEnvSpec, SubSuite, TestHelper}
 import com.tribbloids.spookystuff.utils.Stopwatch
 import org.apache.spark.rdd.RDD
 import org.apache.spark.sql.execution.UnsafeRowSerializer
@@ -14,8 +14,7 @@ import scala.util.Random
 
 abstract class IncrementallyCachedRDDSuite[T](
     numPartitions: Int
-) extends FunSpecx
-    with SparkUISupport
+) extends SparkEnvSpec
     with SubSuite {
 
   TestHelper.enableCheckpoint

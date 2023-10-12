@@ -3,14 +3,14 @@ package com.tribbloids.spookystuff.integration
 import com.tribbloids.spookystuff.actions.{Trace, Wget}
 import com.tribbloids.spookystuff.extractors.{FR, GenExtractor}
 import com.tribbloids.spookystuff.rdd.FetchedDataset
-import com.tribbloids.spookystuff.testutils.SpookyEnvFixture
+import com.tribbloids.spookystuff.testutils.SpookyEnvSpec
 import com.tribbloids.spookystuff.utils.CommonConst
 
 /**
   * move the entire webscraper.io/test-sites/ into a local dir for integration tests may use wayback machine:
   * https://web.archive.org/web/20170707111752/http://webscraper.io:80/test-sites
   */
-object SnapshotRunner extends SpookyEnvFixture.EnvBase {
+object SnapshotRunner extends SpookyEnvSpec {
 
   val SPLITTER: String = "/http://webscraper.io(:80)?"
   val SPLITTER_MIN: String = "/http://webscraper.io"

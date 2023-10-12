@@ -10,7 +10,6 @@ plugins {
 subprojects {
 
     apply(plugin = "scala")
-    apply(plugin = "io.github.cosmicsilence.scalafix")
 
     configurations.all {
 
@@ -146,6 +145,17 @@ subprojects {
             }
 
         }
+    }
+
+    apply(plugin = "io.github.cosmicsilence.scalafix")
+    scalafix {
+//        configFile = file("config/myscalafix.conf")
+//        includes = ["/com/**/*.scala"]
+//        excludes = ["**/generated/**"]
+//        ignoreSourceSets = ["scoverage"]
+
+        semanticdb.autoConfigure.set(true)
+        semanticdb.version.set("4.8.11")
     }
 
     dependencies {

@@ -1,8 +1,5 @@
 package org.apache.spark.ml.dsl.utils
 
-import org.apache.spark.SparkConf
-import org.apache.spark.serializer.{JavaSerializer, KryoSerializer}
-
 object DSLUtils {
 
   def cartesianProductSet[T](xss: Seq[Set[T]]): Set[List[T]] = xss match {
@@ -77,6 +74,7 @@ object DSLUtils {
     effectiveElements
   }
 
+  // TODO: move to its own class
   case class Caller(
       depth: Int = 0,
       exclude: Seq[Class[_]] = Nil
@@ -113,15 +111,15 @@ object DSLUtils {
     text.split('\n').filter(_.nonEmpty).map(str + _).mkString("\n")
   }
 
-  lazy val defaultJavaSerializer: JavaSerializer = {
-    val conf = new SparkConf()
-    new JavaSerializer(conf)
-  }
-
-  lazy val defaultKryoSerializer: KryoSerializer = {
-    val conf = new SparkConf()
-    new KryoSerializer(conf)
-  }
+//  lazy val defaultJavaSerializer: JavaSerializer = {
+//    val conf = new SparkConf()
+//    new JavaSerializer(conf)
+//  }
+//
+//  lazy val defaultKryoSerializer: KryoSerializer = {
+//    val conf = new SparkConf()
+//    new KryoSerializer(conf)
+//  }
 
   def isSerializable(v: Class[_]): Boolean = {
 

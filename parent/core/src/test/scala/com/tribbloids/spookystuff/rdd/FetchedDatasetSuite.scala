@@ -3,14 +3,18 @@ package com.tribbloids.spookystuff.rdd
 import com.tribbloids.spookystuff.actions._
 import com.tribbloids.spookystuff.extractors.impl.Lit
 import com.tribbloids.spookystuff.metrics.Acc
-import com.tribbloids.spookystuff.testutils.{LocalPathDocsFixture, SpookyEnvFixture}
+import com.tribbloids.spookystuff.testutils.{LocalPathDocsFixture, SpookyBaseSpec}
 import com.tribbloids.spookystuff.testutils.beans.Composite
 import com.tribbloids.spookystuff.dsl
+import com.tribbloids.spookystuff.utils.CommonConst
+import com.tribbloids.spookystuff.utils.io.HDFSResolver
+
+import java.io.File
 
 /**
   * Created by peng on 5/10/15.
   */
-class FetchedDatasetSuite extends SpookyEnvFixture with LocalPathDocsFixture {
+class FetchedDatasetSuite extends SpookyBaseSpec with LocalPathDocsFixture {
 
   import dsl._
 
@@ -309,17 +313,25 @@ class FetchedDatasetSuite extends SpookyEnvFixture with LocalPathDocsFixture {
 
   describe("savePage") {
 
+    def dummyFileExists() = {
+      val file = new File(s"${CommonConst.USER_DIR}/temp/dummy.html")
+      val exists_deleted = file.exists() -> file.delete()
+      exists_deleted._1 && exists_deleted._2
+    }
+
     it("lazily") {
 
       spooky
         .fetch(
           Wget(HTML_URL)
         )
-        .savePages("file://${CommonConst.USER_DIR}/temp/yyy", overwrite = true)
+        .savePages(s"file://${CommonConst.USER_DIR}/temp/dummy", overwrite = true)
         .collect()
+
+      assert(dummyFileExists())
     }
 
-    it("prior") {
+    it("... on persisted RDD") {
 
       val vv = spooky
         .fetch(
@@ -329,8 +341,10 @@ class FetchedDatasetSuite extends SpookyEnvFixture with LocalPathDocsFixture {
 
       vv.collect()
 
-      vv.savePages("file://${CommonConst.USER_DIR}/temp/yyy", overwrite = true)
+      vv.savePages(s"file://${CommonConst.USER_DIR}/temp/dummy", overwrite = true)
         .collect()
+
+      assert(dummyFileExists())
 
     }
 
@@ -340,8 +354,9 @@ class FetchedDatasetSuite extends SpookyEnvFixture with LocalPathDocsFixture {
         .fetch(
           Wget(HTML_URL)
         )
-        .savePages_!("file://${CommonConst.USER_DIR}/temp/yyy", overwrite = true)
+        .savePages_!(s"file://${CommonConst.USER_DIR}/temp/dummy", overwrite = true)
 
+      assert(dummyFileExists())
     }
   }
 }

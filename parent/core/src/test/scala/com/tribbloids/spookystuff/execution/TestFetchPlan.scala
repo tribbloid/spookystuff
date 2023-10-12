@@ -2,7 +2,7 @@ package com.tribbloids.spookystuff.execution
 
 import com.tribbloids.spookystuff.actions.Wget
 import com.tribbloids.spookystuff.extractors.impl.Lit
-import com.tribbloids.spookystuff.testutils.{LocalPathDocsFixture, SpookyEnvFixture}
+import com.tribbloids.spookystuff.testutils.{LocalPathDocsFixture, SpookyBaseSpec}
 import com.tribbloids.spookystuff.utils.serialization.AssertWeaklySerializable
 import com.tribbloids.spookystuff.dsl
 import org.apache.spark.HashPartitioner
@@ -10,7 +10,7 @@ import org.apache.spark.HashPartitioner
 /**
   * Created by peng on 02/04/16.
   */
-class TestFetchPlan extends SpookyEnvFixture with LocalPathDocsFixture {
+class TestFetchPlan extends SpookyBaseSpec with LocalPathDocsFixture {
 
   import dsl._
 

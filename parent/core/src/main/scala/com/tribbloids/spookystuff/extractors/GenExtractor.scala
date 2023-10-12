@@ -43,7 +43,7 @@ object GenExtractor extends AutomaticRelay[GenExtractor[_, _]] with GenExtractor
   }
   trait Static[T, +R] extends StaticType[T, R] with GenExtractor[T, R] with Leaf[T, R] {
 
-    val resolved: PartialFunction[T, R]
+    def resolved: PartialFunction[T, R]
 
     final def resolve(tt: DataType): PartialFunction[T, R] = resolved
   }

@@ -1,12 +1,12 @@
 package com.tribbloids.spookystuff.execution
 
 import com.tribbloids.spookystuff.dsl
-import com.tribbloids.spookystuff.testutils.SpookyEnvFixture
+import com.tribbloids.spookystuff.testutils.SpookyBaseSpec
 
 /**
   * Created by peng on 02/04/16.
   */
-class TestExtractPlan extends SpookyEnvFixture {
+class TestExtractPlan extends SpookyBaseSpec {
 
   import dsl._
 

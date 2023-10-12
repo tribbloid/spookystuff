@@ -1,14 +1,14 @@
 package com.tribbloids.spookystuff.doc
 
 import com.tribbloids.spookystuff.actions._
-import com.tribbloids.spookystuff.testutils.{LocalPathDocsFixture, SpookyEnvFixture}
+import com.tribbloids.spookystuff.testutils.{LocalPathDocsFixture, SpookyBaseSpec}
 import com.tribbloids.spookystuff.utils.serialization.AssertSerializable
 import org.apache.spark.SparkEnv
 
 /**
   * Created by peng on 11/30/14.
   */
-class TestUnstructured extends SpookyEnvFixture with LocalPathDocsFixture {
+class TestUnstructured extends SpookyBaseSpec with LocalPathDocsFixture {
 
   lazy val page: Doc = Wget(HTML_URL).as('old).fetch(spooky).head.asInstanceOf[Doc]
 

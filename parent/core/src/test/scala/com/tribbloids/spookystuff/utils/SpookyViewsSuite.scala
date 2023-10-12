@@ -2,7 +2,7 @@ package com.tribbloids.spookystuff.utils
 
 import com.tribbloids.spookystuff.TestBeans._
 import com.tribbloids.spookystuff.metrics.Acc
-import com.tribbloids.spookystuff.testutils.{SpookyEnvFixture, TestHelper}
+import com.tribbloids.spookystuff.testutils.{SpookyBaseSpec, TestHelper}
 import com.tribbloids.spookystuff.utils.lifespan.LifespanContext
 import com.tribbloids.spookystuff.utils.locality.PartitionIdPassthrough
 import org.apache.spark.rdd.RDD
@@ -31,7 +31,7 @@ import scala.util.Random
 /**
   * Created by peng on 16/11/15.
   */
-class SpookyViewsSuite extends SpookyEnvFixture {
+class SpookyViewsSuite extends SpookyBaseSpec {
 
   import SpookyViews._
 
