@@ -7,7 +7,6 @@ import com.tribbloids.spookystuff.testutils.{LocalPathDocsFixture, SpookyBaseSpe
 import com.tribbloids.spookystuff.testutils.beans.Composite
 import com.tribbloids.spookystuff.dsl
 import com.tribbloids.spookystuff.utils.CommonConst
-import com.tribbloids.spookystuff.utils.io.HDFSResolver
 
 import java.io.File
 

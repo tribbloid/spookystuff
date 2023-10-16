@@ -1,5 +1,6 @@
 package com.tribbloids.spookystuff.utils.lifespan
 
+import com.tribbloids.spookystuff.utils.CachingUtils
 import com.tribbloids.spookystuff.utils.CachingUtils._
 import org.slf4j.{Logger, LoggerFactory}
 
@@ -18,7 +19,7 @@ object Cleanable {
   object Lifespan extends BasicTypes with HadoopTypes with SparkTypes
 
   type BatchID = LeafType#ID
-  type Batch = ConcurrentMap[Long, Cleanable] // trackingNumber -> instance
+  type Batch = CachingUtils.ConcurrentCache[Long, Cleanable] // trackingNumber -> instance
   lazy val uncleaned: ConcurrentMap[BatchID, Batch] = ConcurrentMap()
 
   trait Selection {
@@ -73,13 +74,15 @@ object Cleanable {
 
     @deprecated // creating a batch without registering clean sweep hook is illegal
     def getOrCreate: Batch = getOrExecute { () =>
-      ConcurrentMap()
+      CachingUtils.ConcurrentCache()
     }
   }
 
   case object All extends Selection {
     override def ids: Seq[BatchID] = uncleaned.keys.toSeq
   }
+
+//  lazy val jvmCleaner: Cleaner = Cleaner.create()
 }
 
 /**
@@ -102,11 +105,22 @@ trait Cleanable extends AutoCloseable {
   final val lifespan: Lifespan = _lifespan
   final val trackingNumber: Long = System.identityHashCode(this).toLong // can be int value
 
+  override def finalize(): Unit = {
+    tryClean()
+  }
+
+  // TODO: useless, blocked by https://stackoverflow.com/questions/77290708/in-java-9-with-scala-how-to-make-a-cleanable-that-can-be-triggered-by-system
+//  @transient final private lazy val cleanable: Cleaner.Cleanable = jvmCleaner.register(
+//    this,
+//    () => tryClean()
+//  )
+
   {
     logPrefixed("Created")
     batches.foreach { inBatch =>
       inBatch += this.trackingNumber -> this
     }
+//    cleanable // actually eager execution on creation
   }
 
   // each can only be cleaned once
@@ -191,12 +205,10 @@ trait Cleanable extends AutoCloseable {
               s"$logPrefix !!! FAILED TO CLEAN UP !!!\n",
               ee
             )
-    } finally {
-      super.finalize()
     }
   }
 
-  override protected def finalize(): Unit = tryClean()
-
-  final override def close(): Unit = clean()
+  final override def close(): Unit = {
+    clean(true)
+  }
 }

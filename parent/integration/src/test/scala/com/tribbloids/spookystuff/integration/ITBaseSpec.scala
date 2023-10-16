@@ -15,7 +15,7 @@ import java.util.Date
 import scala.concurrent.duration
 import scala.util.Random
 
-abstract class IntegrationFixture extends SpookyBaseSpec with LocalURIDocsFixture {
+abstract class ITBaseSpec extends SpookyBaseSpec with LocalURIDocsFixture {
 
   val phantomJS: WebDriverFactory.PhantomJS = WebDriverFactory.PhantomJS()
   val htmlUnit: WebDriverFactory.HtmlUnit = WebDriverFactory.HtmlUnit()

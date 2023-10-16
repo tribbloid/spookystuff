@@ -3,12 +3,12 @@ package com.tribbloids.spookystuff.integration.explore
 import com.tribbloids.spookystuff.actions._
 import com.tribbloids.spookystuff.dsl.JoinType.LeftOuter
 import com.tribbloids.spookystuff.dsl._
-import com.tribbloids.spookystuff.integration.IntegrationFixture
+import com.tribbloids.spookystuff.integration.ITBaseSpec
 
 /**
   * Created by peng on 12/10/14.
   */
-class JoinAndExplorePagesIT extends IntegrationFixture {
+class JoinAndExplorePagesIT extends ITBaseSpec {
 
   override lazy val driverFactories: Seq[Null] = Seq(
     null

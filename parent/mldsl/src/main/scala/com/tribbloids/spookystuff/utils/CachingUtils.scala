@@ -2,11 +2,11 @@ package com.tribbloids.spookystuff.utils
 
 import org.sparkproject.guava.cache.CacheBuilder
 
-import scala.collection.mutable
-
-object CachingUtils {
+trait CachingUtils {
 
   import scala.jdk.CollectionConverters._
+
+  def guavaBuilder: CacheBuilder[AnyRef, AnyRef]
 
   /**
     * A cache designed for multithreaded usage in cases where values (not keys) contained in this map will not
@@ -24,34 +24,30 @@ object CachingUtils {
     *   WeakReference
     */
   type ConcurrentCache[K, V] = scala.collection.concurrent.Map[K, V]
+
   def ConcurrentCache[K, V](): ConcurrentCache[K, V] = {
 
     // TODO: switching to https://github.com/blemale/scaffeine if faster?
-    val base = CacheBuilder
+    val base = guavaBuilder
+      .asInstanceOf[CacheBuilder[K, V]]
+      .build[K, V]()
+      .asMap()
+
+    val asScala = base.asScala
+
+    asScala
+  }
+}
+
+object CachingUtils extends CachingUtils {
+
+  import scala.jdk.CollectionConverters._
+
+  override lazy val guavaBuilder: CacheBuilder[AnyRef, AnyRef] = {
+    CacheBuilder
       .newBuilder()
       .concurrencyLevel(CommonUtils.numLocalCores)
       .weakValues() // This ensures that being present in this map will not prevent garbage collection/finalization
-      .build[Object, Object]()
-      .asMap()
-
-    val asScala = base.asScala
-
-    asScala.asInstanceOf[ConcurrentCache[K, V]]
-  }
-
-  type ConcurrentSoftCache[K, V] = scala.collection.concurrent.Map[K, V]
-  def ConcurrentSoftCache[K, V](): ConcurrentCache[K, V] = {
-
-    val base = CacheBuilder
-      .newBuilder()
-      .concurrencyLevel(CommonUtils.numLocalCores)
-      .softValues()
-      .build[Object, Object]()
-      .asMap()
-
-    val asScala = base.asScala
-
-    asScala.asInstanceOf[ConcurrentCache[K, V]]
   }
 
   type ConcurrentMap[K, V] = scala.collection.concurrent.Map[K, V]
@@ -64,20 +60,13 @@ object CachingUtils {
     ConcurrentMap[V, Unit]()
   }
 
-  implicit class MapView[K, V](self: mutable.Map[K, V]) {
+  object Soft extends CachingUtils {
 
-    def getOrUpdateSync(key: K)(value: => V): V = {
-
-      self.getOrElse(
-        key, {
-          self.synchronized {
-            self.getOrElseUpdate(
-              key,
-              value
-            )
-          }
-        }
-      )
+    override lazy val guavaBuilder: CacheBuilder[AnyRef, AnyRef] = {
+      CacheBuilder
+        .newBuilder()
+        .concurrencyLevel(CommonUtils.numLocalCores)
+        .softValues() // This ensures that being present in this map will not prevent garbage collection/finalization
     }
   }
 }

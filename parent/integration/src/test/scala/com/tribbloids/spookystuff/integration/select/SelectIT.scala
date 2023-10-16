@@ -2,10 +2,10 @@ package com.tribbloids.spookystuff.integration.select
 
 import com.tribbloids.spookystuff.QueryException
 import com.tribbloids.spookystuff.dsl._
-import com.tribbloids.spookystuff.integration.IntegrationFixture
+import com.tribbloids.spookystuff.integration.ITBaseSpec
 import com.tribbloids.spookystuff.web.actions.Visit
 
-class SelectIT extends IntegrationFixture {
+class SelectIT extends ITBaseSpec {
 
   override def doMain(): Unit = {
 

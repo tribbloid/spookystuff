@@ -2,6 +2,7 @@ package com.tribbloids.spookystuff.utils
 
 import com.tribbloids.spookystuff.testutils.FunSpecx
 import com.tribbloids.spookystuff.utils.CachingUtils.ConcurrentCache
+import com.tribbloids.spookystuff.utils.lifespan.LocalCleanable
 import org.scalatest.BeforeAndAfterEach
 
 import scala.concurrent.duration.Duration
@@ -95,10 +96,10 @@ object CachingUtilsSuite {
 
   @volatile var count: Int = 0
 
-  case class CacheTestData(s: String = "") {
-    // called when object is garbage collected, which allows verification of gc behaviour
-    override def finalize(): Unit = {
-      super.finalize()
+  case class CacheTestData(s: String = "") extends LocalCleanable {
+
+    override protected def cleanImpl(): Unit = {
+
       count += 1
     }
   }

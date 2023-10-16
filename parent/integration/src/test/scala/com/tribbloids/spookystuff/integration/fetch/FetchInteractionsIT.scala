@@ -1,7 +1,7 @@
 package com.tribbloids.spookystuff.integration.fetch
 
 import com.tribbloids.spookystuff.dsl._
-import com.tribbloids.spookystuff.integration.IntegrationFixture
+import com.tribbloids.spookystuff.integration.ITBaseSpec
 import com.tribbloids.spookystuff.web.actions.{DropDownSelect, Snapshot, Submit, TextInput, Visit}
 import org.scalatest.Ignore
 
@@ -11,7 +11,7 @@ import java.net.URLEncoder
   * Created by peng on 12/14/14.
   */
 @Ignore // waiting for scalaJS rewrite
-class FetchInteractionsIT extends IntegrationFixture {
+class FetchInteractionsIT extends ITBaseSpec {
 
   override def doMain(): Unit = {
 

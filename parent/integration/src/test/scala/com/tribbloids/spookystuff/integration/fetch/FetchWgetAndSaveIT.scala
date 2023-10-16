@@ -4,10 +4,10 @@ import com.tribbloids.spookystuff.actions._
 import com.tribbloids.spookystuff.doc.DocUtils
 import com.tribbloids.spookystuff.dsl._
 import com.tribbloids.spookystuff.extractors.impl.Lit
-import com.tribbloids.spookystuff.integration.IntegrationFixture
+import com.tribbloids.spookystuff.integration.ITBaseSpec
 import com.tribbloids.spookystuff.utils.CommonConst
 
-class FetchWgetAndSaveIT extends IntegrationFixture {
+class FetchWgetAndSaveIT extends ITBaseSpec {
 
   private val imageURL = {
     "http://upload.wikimedia.org/wikipedia/en/thumb/8/80/Wikipedia-logo-v2.svg/220px-Wikipedia-logo-v2.svg.png"
