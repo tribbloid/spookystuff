@@ -4,6 +4,7 @@ import com.tribbloids.spookystuff.utils.CachingUtils
 import com.tribbloids.spookystuff.utils.CachingUtils._
 import org.slf4j.{Logger, LoggerFactory}
 
+import scala.ref.WeakReference
 import scala.reflect.ClassTag
 
 object Cleanable {
@@ -19,7 +20,7 @@ object Cleanable {
   object Lifespan extends BasicTypes with HadoopTypes with SparkTypes
 
   type BatchID = LeafType#ID
-  type Batch = CachingUtils.ConcurrentCache[Long, Cleanable] // trackingNumber -> instance
+  type Batch = ConcurrentMap[Long, WeakReference[Cleanable]] // trackingNumber -> instance
   lazy val uncleaned: ConcurrentMap[BatchID, Batch] = ConcurrentMap()
 
   trait Selection {
@@ -30,9 +31,9 @@ object Cleanable {
       Select(id).get
     }
 
-    def filter(condition: Cleanable => Boolean = _ => true): Seq[Cleanable] = {
+    private def filter(condition: Cleanable => Boolean = _ => true) = {
 
-      batches.flatMap(batch => batch.values).filter(condition)
+      batches.flatMap(batch => batch.values).flatMap(_.get).filter(condition)
     }
 
     def typed[T <: Cleanable: ClassTag]: Seq[T] = {
@@ -40,8 +41,8 @@ object Cleanable {
         case _: T => true
         case _    => false
       }.map { v =>
-        v.asInstanceOf[T]
-      }
+        v
+      }.map(_.asInstanceOf[T])
 
       result
     }
@@ -50,7 +51,7 @@ object Cleanable {
 
       ids.foreach { id =>
         Select(id).get.foreach { batch =>
-          val filtered = batch.values.filter(condition)
+          val filtered = batch.values.flatMap(_.get).filter(condition)
 
           filtered
             .foreach { instance =>
@@ -74,7 +75,7 @@ object Cleanable {
 
     @deprecated // creating a batch without registering clean sweep hook is illegal
     def getOrCreate: Batch = getOrExecute { () =>
-      CachingUtils.ConcurrentCache()
+      ConcurrentMap()
     }
   }
 
@@ -118,7 +119,7 @@ trait Cleanable extends AutoCloseable {
   {
     logPrefixed("Created")
     batches.foreach { inBatch =>
-      inBatch += this.trackingNumber -> this
+      inBatch += this.trackingNumber -> WeakReference(this)
     }
 //    cleanable // actually eager execution on creation
   }

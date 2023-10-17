@@ -1,6 +1,7 @@
 package com.tribbloids.spookystuff.utils.lifespan
 
 import com.tribbloids.spookystuff.utils.CachingUtils
+import com.tribbloids.spookystuff.utils.CachingUtils.ConcurrentMap
 import com.tribbloids.spookystuff.utils.lifespan.Cleanable.Batch
 
 abstract class LeafType extends LifespanType {
@@ -32,7 +33,7 @@ abstract class LeafType extends LifespanType {
         registerHook { () =>
           select.cleanSweep()
         }
-        CachingUtils.ConcurrentCache()
+        ConcurrentMap()
       }
 
       Seq(batchID -> batch)

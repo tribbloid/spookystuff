@@ -37,6 +37,7 @@ object SpookyBaseSpec {
     Cleanable.uncleaned
       .foreach { tuple =>
         val taskCleanable = tuple._2.values
+          .flatMap(_.get)
           .filter { v =>
             val isOfTask = v.lifespan.leaves.exists { ll =>
               ll._type == Lifespan.Task
