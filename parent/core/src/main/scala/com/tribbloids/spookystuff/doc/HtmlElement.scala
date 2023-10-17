@@ -13,8 +13,6 @@ import org.jsoup.nodes.Element
   */
 object HtmlElement {
 
-  def apply(html: String, uri: String): HtmlElement = new HtmlElement(null, html, None, uri)
-
   def breadcrumb(e: Element): Seq[String] = {
 
     import scala.jdk.CollectionConverters._
@@ -22,13 +20,15 @@ object HtmlElement {
     e.parents().asScala.toSeq.map(_.tagName()).reverse :+ e.tagName()
   }
 
+  def apply(html: String, uri: String): HtmlElement = new HtmlElement(null, html, None, uri)
+
   def fromBytes(content: Array[Byte], charSet: String, mimeType: String, uri: String): HtmlElement = {
 
     val handler = new ToXMLContentHandler()
 
     val metadata = new Metadata()
     val stream = TikaInputStream.get(content, metadata)
-    val html =
+    val html: CSSQuery =
       try {
         metadata.set(HttpHeaders.CONTENT_ENCODING, charSet)
         metadata.set(HttpHeaders.CONTENT_TYPE, mimeType)
