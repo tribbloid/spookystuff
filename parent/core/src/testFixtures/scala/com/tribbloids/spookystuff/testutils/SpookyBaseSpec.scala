@@ -66,12 +66,13 @@ object SpookyBaseSpec {
 
     if (cleanSweepDrivers) {
       // this is necessary as each suite won't automatically cleanup drivers NOT in task when finished
-      Cleanable.All.cleanSweep(
-        condition = {
+      Cleanable.All
+        .filter {
+
           case _: DriverLike => true
           case _             => false
         }
-      )
+        .cleanSweep()
     }
 
     conditions.foreach { condition =>

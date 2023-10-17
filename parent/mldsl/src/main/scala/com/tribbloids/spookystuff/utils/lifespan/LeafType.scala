@@ -1,8 +1,7 @@
 package com.tribbloids.spookystuff.utils.lifespan
 
-import com.tribbloids.spookystuff.utils.CachingUtils
 import com.tribbloids.spookystuff.utils.CachingUtils.ConcurrentMap
-import com.tribbloids.spookystuff.utils.lifespan.Cleanable.Batch
+import com.tribbloids.spookystuff.utils.lifespan.Cleanable.BatchInstances
 
 abstract class LeafType extends LifespanType {
 
@@ -22,11 +21,11 @@ abstract class LeafType extends LifespanType {
       _type._registerHook(ctx, fn)
     }
 
-    final override protected def _registerBatches_CleanSweepHooks: Seq[(ID, Batch)] = {
+    final override protected def _registerBatches_CleanSweepHooks: Seq[(ID, BatchInstances)] = {
 
       val batchID = this.batchID
 
-      def select = Cleanable.Select(batchID)
+      def select = Cleanable.Batch(batchID)
 
       // if the batch for this batchID already existed, it means the cleanSweep hook is already registered
       val batch = select.getOrExecute { () =>

@@ -1,6 +1,5 @@
 package com.tribbloids.spookystuff.utils.lifespan
 
-import com.tribbloids.spookystuff.utils.CachingUtils
 import com.tribbloids.spookystuff.utils.CachingUtils._
 import org.slf4j.{Logger, LoggerFactory}
 
@@ -20,68 +19,72 @@ object Cleanable {
   object Lifespan extends BasicTypes with HadoopTypes with SparkTypes
 
   type BatchID = LeafType#ID
-  type Batch = ConcurrentMap[Long, WeakReference[Cleanable]] // trackingNumber -> instance
-  lazy val uncleaned: ConcurrentMap[BatchID, Batch] = ConcurrentMap()
+  type BatchInstances = ConcurrentMap[Long, WeakReference[Cleanable]] // trackingNumber -> instance
+  lazy val uncleaned: ConcurrentMap[BatchID, BatchInstances] = ConcurrentMap()
 
-  trait Selection {
+  case class Selection[T <: Cleanable: ClassTag](
+      ids: Seq[BatchID],
+      condition: T => Boolean = (_: T) => true
+  ) {
 
-    def ids: Seq[BatchID]
-
-    final def batches: Seq[Batch] = ids.flatMap { id =>
-      Select(id).get
+    final def batches: Seq[BatchInstances] = ids.flatMap { id =>
+      Batch(id).get
     }
 
-    private def filter(condition: Cleanable => Boolean = _ => true) = {
+    final def cleanables: Seq[T] = batches
+      .flatMap(_.values)
+      .flatMap(_.get)
+      .collect {
+        case v: T => v
+      }
+      .filter(condition)
 
-      batches.flatMap(batch => batch.values).flatMap(_.get).filter(condition)
+    def filter(condition: Cleanable => Boolean = _ => true): Selection[T] = {
+
+      this.copy(condition = condition)
     }
 
-    def typed[T <: Cleanable: ClassTag]: Seq[T] = {
-      val result = filter {
-        case _: T => true
-        case _    => false
-      }.map { v =>
-        v
-      }.map(_.asInstanceOf[T])
-
-      result
+    def typed[R <: T: ClassTag]: Selection[R] = {
+      this.copy[R]()
     }
 
-    def cleanSweep(condition: Cleanable => Boolean = _ => true): Unit = {
+    def cleanSweep(): Unit = {
+
+      val filtered = cleanables
+
+      filtered
+        .foreach { instance =>
+          instance.tryClean()
+        }
 
       ids.foreach { id =>
-        Select(id).get.foreach { batch =>
-          val filtered = batch.values.flatMap(_.get).filter(condition)
-
-          filtered
-            .foreach { instance =>
-              instance.tryClean()
-            }
+        batches.foreach { batch =>
           if (batch.isEmpty) uncleaned.remove(id)
         }
       }
     }
   }
 
-  case class Select(id: BatchID) extends Selection {
-    override def ids: Seq[BatchID] = Seq(id)
+//  def batchOf(id: BatchID): Selection[Cleanable] = Selection(Seq(id))
 
-    def getOrExecute(exe: () => Batch): Batch = uncleaned.getOrElseUpdateSynchronously(id) {
+  def All: Selection[Cleanable] = Selection[Cleanable](uncleaned.keys.toSeq)
+
+  case class Batch(id: BatchID) {
+
+    def getOrExecute(exe: () => BatchInstances): BatchInstances = uncleaned.getOrElseUpdateSynchronously(id) {
 
       exe()
     }
 
-    def get: Option[Batch] = uncleaned.get(id)
+    def get: Option[BatchInstances] = uncleaned.get(id)
 
     @deprecated // creating a batch without registering clean sweep hook is illegal
-    def getOrCreate: Batch = getOrExecute { () =>
+    def getOrCreate: BatchInstances = getOrExecute { () =>
       ConcurrentMap()
     }
   }
 
-  case object All extends Selection {
-    override def ids: Seq[BatchID] = uncleaned.keys.toSeq
-  }
+  implicit def batchAsSelection(v: Batch) = Selection(Seq(v.id))
 
 //  lazy val jvmCleaner: Cleaner = Cleaner.create()
 }
@@ -132,7 +135,7 @@ trait Cleanable extends AutoCloseable {
 
   @volatile var stacktraceAtCleaning: Option[Array[StackTraceElement]] = None
 
-  @transient lazy val batches: Seq[Batch] = {
+  @transient lazy val batches: Seq[BatchInstances] = {
     // This weird implementation is to mitigate thread-unsafe competition:
     // 2 empty collections being inserted simultaneously
     lifespan.registeredBatches.map { v =>
