@@ -28,7 +28,7 @@ class FetchWgetAndSaveIT extends ITBaseSpec {
     //    fetched.count()
 
     val rdd = fetched
-      .savePages_!(x"file://${CommonConst.USER_DIR}/temp/spooky-integration/save/${'name}", overwrite = true)
+      .savePages(x"file://${CommonConst.USER_DIR}/temp/spooky-integration/save/${'name}", overwrite = true)
       .select(S.saved ~ 'saved_path)
 
     val savedPageRows = rdd.unsquashedRDD.collect()

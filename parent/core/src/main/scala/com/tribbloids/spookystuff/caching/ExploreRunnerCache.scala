@@ -3,7 +3,8 @@ package com.tribbloids.spookystuff.caching
 import com.tribbloids.spookystuff.execution.ExplorePlan.ExeID
 import com.tribbloids.spookystuff.execution.{ExploreRunner, NodeKey}
 import com.tribbloids.spookystuff.row.{DataRow, RowReducer}
-import com.tribbloids.spookystuff.utils.CachingUtils.{ConcurrentCache, ConcurrentMap, ConcurrentSet}
+import com.tribbloids.spookystuff.utils.CachingUtils
+import com.tribbloids.spookystuff.utils.CachingUtils.{ConcurrentMap, ConcurrentSet}
 
 /**
   * Singleton, always in the JVM and shared by all executors on the same machine This is a makeshift implementation,
@@ -13,7 +14,8 @@ object ExploreRunnerCache {
 
   // (NodeKey, ExecutionID) -> Squashed Rows
   // exeID is used to segment Squashed Rows from different jobs
-  val committedVisited: ConcurrentCache[(NodeKey, ExeID), Iterable[DataRow]] = ConcurrentCache()
+  val committedVisited: CachingUtils.ConcurrentCache[(NodeKey, ExeID), Iterable[DataRow]] =
+    CachingUtils.ConcurrentCache()
 
   val onGoings: ConcurrentMap[ExeID, ConcurrentSet[ExploreRunner]] =
     ConcurrentMap() // executionID -> running ExploreStateView
@@ -58,7 +60,7 @@ object ExploreRunnerCache {
   }
 
   def register(v: ExploreRunner, exeID: ExeID): Unit = {
-    getOnGoingRunners(exeID) += v -> {}
+    getOnGoingRunners(exeID) += v
   }
 
   def deregister(v: ExploreRunner, exeID: ExeID): Unit = {
@@ -68,7 +70,6 @@ object ExploreRunnerCache {
   def get(key: (NodeKey, ExeID)): Set[Iterable[DataRow]] = {
     val onGoing = this
       .getOnGoingRunners(key._2)
-      .keySet
 
     val onGoingVisitedSet = onGoing
       .flatMap { v =>
@@ -81,7 +82,7 @@ object ExploreRunnerCache {
   def getAll(exeID: ExeID): Map[NodeKey, Iterable[DataRow]] = {
     val onGoing: Map[NodeKey, Iterable[DataRow]] = this
       .getOnGoingRunners(exeID)
-      .map(_._1.visited.toMap)
+      .map(_.visited.toMap)
       .reduceOption { (v1, v2) =>
         v1 ++ v2
       }

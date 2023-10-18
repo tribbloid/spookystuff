@@ -2,9 +2,14 @@ package com.tribbloids.spookystuff.utils
 
 import org.sparkproject.guava.cache.CacheBuilder
 
+import scala.collection.mutable
+import scala.language.implicitConversions
+
 trait CachingUtils {
 
   import scala.jdk.CollectionConverters._
+
+  trait CacheTag
 
   def guavaBuilder: CacheBuilder[AnyRef, AnyRef]
 
@@ -23,7 +28,7 @@ trait CachingUtils {
     * @see
     *   WeakReference
     */
-  type ConcurrentCache[K, V] = scala.collection.concurrent.Map[K, V]
+  type ConcurrentCache[K, V] = scala.collection.concurrent.Map[K, V] with CacheTag
 
   def ConcurrentCache[K, V](): ConcurrentCache[K, V] = {
 
@@ -35,29 +40,50 @@ trait CachingUtils {
 
     val asScala = base.asScala
 
-    asScala
+    asScala.asInstanceOf[ConcurrentCache[K, V]]
   }
 }
 
-object CachingUtils extends CachingUtils {
+object CachingUtils {
 
   import scala.jdk.CollectionConverters._
 
-  override lazy val guavaBuilder: CacheBuilder[AnyRef, AnyRef] = {
-    CacheBuilder
-      .newBuilder()
-      .concurrencyLevel(CommonUtils.numLocalCores)
-      .weakValues() // This ensures that being present in this map will not prevent garbage collection/finalization
-  }
+  trait ConcurrentTag
 
-  type ConcurrentMap[K, V] = scala.collection.concurrent.Map[K, V]
+  def javaConcurrentMap[K, V]() = new java.util.concurrent.ConcurrentHashMap[K, V]()
+
+  type ConcurrentMap[K, V] = scala.collection.concurrent.Map[K, V] with ConcurrentTag
   def ConcurrentMap[K, V](): ConcurrentMap[K, V] = {
-    new java.util.concurrent.ConcurrentHashMap[K, V]().asScala
+    javaConcurrentMap[K, V]().asScala.asInstanceOf[ConcurrentMap[K, V]]
   }
 
-  type ConcurrentSet[V] = ConcurrentMap[V, Unit]
+  type ConcurrentSet[V] = mutable.Set[V] with ConcurrentTag
   def ConcurrentSet[V](): ConcurrentSet[V] = {
-    ConcurrentMap[V, Unit]()
+
+    val proto: mutable.Set[V] = javaConcurrentMap[V, Unit]().keySet(()).asScala
+
+    //    val proto: mutable.Set[V] = javaConcurrentMap[V, Unit]().keySet().asScala// don't use, Java doesn't have a default value for Unit
+
+    proto.asInstanceOf[ConcurrentSet[V]]
+  }
+
+  object Strong extends CachingUtils {
+
+    override lazy val guavaBuilder: CacheBuilder[AnyRef, AnyRef] = {
+      CacheBuilder
+        .newBuilder()
+        .concurrencyLevel(CommonUtils.numLocalCores)
+    }
+  }
+
+  object Weak extends CachingUtils {
+
+    override lazy val guavaBuilder: CacheBuilder[AnyRef, AnyRef] = {
+      CacheBuilder
+        .newBuilder()
+        .concurrencyLevel(CommonUtils.numLocalCores)
+        .weakValues() // This ensures that being present in this map will not prevent garbage collection/finalization
+    }
   }
 
   object Soft extends CachingUtils {
@@ -66,7 +92,11 @@ object CachingUtils extends CachingUtils {
       CacheBuilder
         .newBuilder()
         .concurrencyLevel(CommonUtils.numLocalCores)
-        .softValues() // This ensures that being present in this map will not prevent garbage collection/finalization
+        .softValues() // values are only GC'd when closing to max heap
     }
   }
+
+  type ConcurrentCache[K, V] = Soft.ConcurrentCache[K, V]
+  implicit def defaultImpl(v: this.type): Soft.type = Soft
+
 }

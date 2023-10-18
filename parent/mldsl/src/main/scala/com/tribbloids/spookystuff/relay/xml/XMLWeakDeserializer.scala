@@ -1,9 +1,8 @@
 package com.tribbloids.spookystuff.relay.xml
 
-import com.tribbloids.spookystuff.utils.CachingUtils
-import com.tribbloids.spookystuff.utils.CachingUtils.ConcurrentCache
-import org.apache.spark.ml.dsl.utils.Verbose
 import com.tribbloids.spookystuff.relay.MessageAPI
+import com.tribbloids.spookystuff.utils.CachingUtils
+import org.apache.spark.ml.dsl.utils.Verbose
 import org.json4s._
 import org.json4s.reflect.TypeInfo
 
@@ -21,7 +20,7 @@ object XMLWeakDeserializer {
       custom: Seq[String] = Nil
   )
 
-  val cached: ConcurrentCache[Long, ParsingException] = CachingUtils.ConcurrentCache[Long, ParsingException]()
+  private val cached = CachingUtils.ConcurrentCache[Long, ParsingException]()
 
   trait ExceptionLike extends Throwable with Verbose {
 

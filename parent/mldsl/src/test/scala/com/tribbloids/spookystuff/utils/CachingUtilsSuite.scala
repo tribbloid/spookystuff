@@ -1,7 +1,6 @@
 package com.tribbloids.spookystuff.utils
 
 import com.tribbloids.spookystuff.testutils.FunSpecx
-import com.tribbloids.spookystuff.utils.CachingUtils.ConcurrentCache
 import com.tribbloids.spookystuff.utils.lifespan.LocalCleanable
 import org.scalatest.BeforeAndAfterEach
 
@@ -53,12 +52,12 @@ class CachingUtilsSuite extends FunSpecx with BeforeAndAfterEach {
     }
   }
 
-  describe("ConcurrentCache") {
+  describe("Weak ConcurrentCache") {
 
     describe("should remove value on garbage collection") {
 
       it("if the value is de-referenced") {
-        val cache = ConcurrentCache[String, CacheTestData]()
+        val cache = CachingUtils.Weak.ConcurrentCache[String, CacheTestData]()
 
         var myVal = CacheTestData("myString")
 
@@ -66,14 +65,14 @@ class CachingUtilsSuite extends FunSpecx with BeforeAndAfterEach {
         myVal = null
 
         System.gc()
-        Thread.sleep(10) // delay to allow gc
+        Thread.sleep(1) // delay to allow gc
 
         assert(count == 1)
       }
 
       it("if the value is not in scope") {
 
-        val cache = CachingUtils.ConcurrentCache[String, CacheTestData]()
+        val cache = CachingUtils.Weak.ConcurrentCache[String, CacheTestData]()
 
         val f: Future[Unit] = Future {
 
