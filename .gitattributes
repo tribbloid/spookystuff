@@ -7,3 +7,4 @@
 *.R text eol=lf
 
 # from apache spark
+*.sh text eol=lf
