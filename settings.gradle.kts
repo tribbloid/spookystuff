@@ -34,7 +34,8 @@ include(
     ":parent:core",
     ":parent:web",
     ":parent:integration",
-    ":spookystuff-showcase"
+    ":spookystuff-showcase",
+    ":spookystuff-showcase:showcase"
 )
 
 if (!isEnabled(noAssembly)) {

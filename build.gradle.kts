@@ -15,6 +15,7 @@ plugins {
 //    base
     `java-library`
     `java-test-fixtures`
+    `jvm-ecosystem`
 
 //    kotlin("jvm") version "1.6.10" // TODO: remove?
 
@@ -54,6 +55,7 @@ if (sonatypeApiUser.isPresent && sonatypeApiKey.isPresent) {
 allprojects {
 
     apply(plugin = "java-library")
+    apply(plugin = "jvm-ecosystem")
 
     // apply(plugin = "bloop")
     // DO NOT enable! In VSCode it will cause the conflict:

@@ -1,9 +1,10 @@
 package com.tribbloids.spookystuff.metrics
 
-import com.tribbloids.spookystuff.testutils.FunSpecx
+import com.tribbloids.spookystuff.testutils.{FunSpecx, TestHelper}
 import org.apache.spark.util.LongAccumulator
+import org.scalatest.BeforeAndAfterEach
 
-class AccSuite extends FunSpecx {
+class AccSuite extends FunSpecx with BeforeAndAfterEach {
 
   // TODO: it is not working
 //  it("FromType") {
@@ -12,6 +13,10 @@ class AccSuite extends FunSpecx {
 //
 //    assert(acc.value == EventTimeStats.zero)
 //  }
+
+  override protected def beforeEach(): Unit = {
+    TestHelper.TestSparkSession
+  }
 
   it("Simple") {
     Acc.Simple(new LongAccumulator)
