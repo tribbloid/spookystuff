@@ -1,6 +1,6 @@
 package com.tribbloids.spookystuff.conf
 
-import com.tribbloids.spookystuff.utils.CachingUtils
+import com.tribbloids.spookystuff.utils.Caching
 
 trait ParametricPoly1 extends GenParametricPoly1 {
 
@@ -11,7 +11,7 @@ object ParametricPoly1 {
 
   trait Cached extends ParametricPoly1 {
 
-    lazy val cache: CachingUtils.ConcurrentMap[UB, Out[_ <: UB]] = CachingUtils.ConcurrentMap()
+    lazy val cache: Caching.ConcurrentMap[UB, Out[_ <: UB]] = Caching.ConcurrentMap()
 
     def get[T <: UB](k: T): Option[Out[T]] = {
       cache

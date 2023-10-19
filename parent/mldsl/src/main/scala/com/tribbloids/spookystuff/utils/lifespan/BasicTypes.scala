@@ -1,6 +1,6 @@
 package com.tribbloids.spookystuff.utils.lifespan
 
-import com.tribbloids.spookystuff.utils.lifespan.Cleanable.{BatchID, BatchInstances}
+import com.tribbloids.spookystuff.utils.lifespan.Cleanable.{BatchID, Batch}
 import com.tribbloids.spookystuff.utils.{CommonUtils, EqualBy}
 
 import scala.util.Try
@@ -64,7 +64,7 @@ trait BasicTypes {
 
     override def children: List[LeafType#Internal] = delegateInstances.map(v => v.value)
 
-    override def _registerBatches_CleanSweepHooks: Seq[(BatchID, BatchInstances)] = {
+    override def _registerBatches_CleanSweepHooks: Seq[(BatchID, Batch)] = {
 
       delegateInstances.flatMap(_.registeredBatches)
     }

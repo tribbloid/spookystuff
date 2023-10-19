@@ -1,7 +1,7 @@
 package com.tribbloids.spookystuff.utils.lifespan
 
 import com.tribbloids.spookystuff.utils.EqualBy
-import com.tribbloids.spookystuff.utils.lifespan.Cleanable.{BatchID, BatchInstances}
+import com.tribbloids.spookystuff.utils.lifespan.Cleanable.{BatchID, Batch}
 import com.tribbloids.spookystuff.utils.serialization.BeforeAndAfterShipping
 
 import scala.util.Try
@@ -45,8 +45,8 @@ abstract class LifespanInternal extends BeforeAndAfterShipping with EqualBy {
       children
   }
 
-  protected def _registerBatches_CleanSweepHooks: Seq[(BatchID, BatchInstances)]
-  @transient final lazy val registeredBatches: Seq[(BatchID, BatchInstances)] = _registerBatches_CleanSweepHooks
+  protected def _registerBatches_CleanSweepHooks: Seq[(BatchID, Batch)]
+  @transient final lazy val registeredBatches: Seq[(BatchID, Batch)] = _registerBatches_CleanSweepHooks
   @transient final lazy val registeredIDs: Seq[BatchID] = registeredBatches.map(v => v._1)
   final protected def _equalBy: Seq[BatchID] = registeredIDs
 

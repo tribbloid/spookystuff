@@ -1,11 +1,11 @@
 package org.apache.spark.rdd.spookystuff
 
 import com.tribbloids.spookystuff.unused.ExternalAppendOnlyArray
-import com.tribbloids.spookystuff.utils.CachingUtils.ConcurrentMap
+import com.tribbloids.spookystuff.utils.Caching.ConcurrentMap
 import com.tribbloids.spookystuff.utils.accumulator.MapAccumulator
 import com.tribbloids.spookystuff.utils.lifespan.Cleanable.Lifespan
 import com.tribbloids.spookystuff.utils.lifespan.{Cleanable, LocalCleanable}
-import com.tribbloids.spookystuff.utils.{CachingUtils, EqualBy, Retry, SCFunctions}
+import com.tribbloids.spookystuff.utils.{Caching, EqualBy, Retry, SCFunctions}
 import org.apache.spark
 import org.apache.spark.broadcast.Broadcast
 import org.apache.spark.internal.Logging
@@ -394,8 +394,8 @@ object IncrementallyCachedRDD {
       rddID: Int
   ) {
 
-    @transient lazy val existing: CachingUtils.ConcurrentMap[Int, T] =
-      CachingUtils.ConcurrentMap()
+    @transient lazy val existing: Caching.ConcurrentMap[Int, T] =
+      Caching.ConcurrentMap()
 
     def getOrCreate(id: Int)(create: => T): T = {
 

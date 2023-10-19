@@ -1,6 +1,6 @@
 package com.tribbloids.spookystuff.utils.io.lock
 
-import com.tribbloids.spookystuff.utils.CachingUtils
+import com.tribbloids.spookystuff.utils.Caching
 import com.tribbloids.spookystuff.utils.io.{URIExecution, URIResolver}
 import com.tribbloids.spookystuff.utils.lifespan.Cleanable.Lifespan
 import com.tribbloids.spookystuff.utils.lifespan.LocalCleanable
@@ -90,6 +90,6 @@ object Lock {
 
   case class InMemoryLock() {}
 
-  lazy val inMemoryLocks: CachingUtils.ConcurrentCache[(Class[_], String), InMemoryLock] =
-    CachingUtils.ConcurrentCache[(Class[_], String), InMemoryLock]()
+  lazy val inMemoryLocks: Caching.ConcurrentCache[(Class[_], String), InMemoryLock] =
+    Caching.ConcurrentCache[(Class[_], String), InMemoryLock]()
 }

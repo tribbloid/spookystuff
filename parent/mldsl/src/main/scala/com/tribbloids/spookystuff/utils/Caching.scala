@@ -5,7 +5,7 @@ import org.sparkproject.guava.cache.CacheBuilder
 import scala.collection.mutable
 import scala.language.implicitConversions
 
-trait CachingUtils {
+trait Caching {
 
   import scala.jdk.CollectionConverters._
 
@@ -44,7 +44,7 @@ trait CachingUtils {
   }
 }
 
-object CachingUtils {
+object Caching {
 
   import scala.jdk.CollectionConverters._
 
@@ -67,7 +67,7 @@ object CachingUtils {
     proto.asInstanceOf[ConcurrentSet[V]]
   }
 
-  object Strong extends CachingUtils {
+  object Strong extends Caching {
 
     override lazy val guavaBuilder: CacheBuilder[AnyRef, AnyRef] = {
       CacheBuilder
@@ -76,7 +76,7 @@ object CachingUtils {
     }
   }
 
-  object Weak extends CachingUtils {
+  object Weak extends Caching {
 
     override lazy val guavaBuilder: CacheBuilder[AnyRef, AnyRef] = {
       CacheBuilder
@@ -86,7 +86,7 @@ object CachingUtils {
     }
   }
 
-  object Soft extends CachingUtils {
+  object Soft extends Caching {
 
     override lazy val guavaBuilder: CacheBuilder[AnyRef, AnyRef] = {
       CacheBuilder

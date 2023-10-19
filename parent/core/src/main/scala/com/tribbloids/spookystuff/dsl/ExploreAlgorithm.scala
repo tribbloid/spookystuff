@@ -4,7 +4,7 @@ import com.tribbloids.spookystuff.caching.ExploreRunnerCache
 import com.tribbloids.spookystuff.execution.ExplorePlan.Params
 import com.tribbloids.spookystuff.execution.NodeKey
 import com.tribbloids.spookystuff.row._
-import com.tribbloids.spookystuff.utils.CachingUtils.ConcurrentMap
+import com.tribbloids.spookystuff.utils.Caching.ConcurrentMap
 
 trait ExploreAlgorithm {
 

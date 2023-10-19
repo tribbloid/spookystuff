@@ -3,7 +3,7 @@ package com.tribbloids.spookystuff.unused
 import com.tribbloids.spookystuff.utils.lifespan.Cleanable.Lifespan
 import com.tribbloids.spookystuff.utils.lifespan.LocalCleanable
 import com.tribbloids.spookystuff.utils.serialization.NOTSerializable
-import com.tribbloids.spookystuff.utils.{CachingUtils, CommonConst, CommonUtils, ThreadLocal}
+import com.tribbloids.spookystuff.utils.{Caching, CommonConst, CommonUtils, ThreadLocal}
 import org.apache.spark.rdd.spookystuff.{ConsumedIterator, FallbackIterator, FastForwardingIterator}
 import org.apache.spark.serializer
 import org.apache.spark.serializer.SerializerInstance
@@ -340,7 +340,7 @@ object ExternalAppendOnlyArray {
 
   val processID: String = UUID.randomUUID().toString
 
-  val existing: CachingUtils.ConcurrentCache[String, ExternalAppendOnlyArray[_]] = CachingUtils.ConcurrentCache()
+  val existing: Caching.ConcurrentCache[String, ExternalAppendOnlyArray[_]] = Caching.ConcurrentCache()
 
   def apply[T: ClassTag](
       id: String,
