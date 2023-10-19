@@ -4,7 +4,7 @@ val vs = versions()
 plugins {
 
     scala
-    id("io.github.cosmicsilence.scalafix") version "0.1.14"
+    id("io.github.cosmicsilence.scalafix") version "0.1.15"
 }
 
 subprojects {
