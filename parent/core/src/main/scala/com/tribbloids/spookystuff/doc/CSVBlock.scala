@@ -13,7 +13,7 @@ case class CSVBlock(
     csvFormat: CSVFormat
 ) extends Unstructured {
 
-  import scala.collection.JavaConverters._
+  import scala.jdk.CollectionConverters._
 
   val parsed: CSVParser = CSVParser.parse(_text, csvFormat)
   val parsedList: List[CSVRecord] = parsed.asScala.toList

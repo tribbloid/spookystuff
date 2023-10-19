@@ -1,6 +1,6 @@
 package com.tribbloids.spookystuff
 
-import com.tribbloids.spookystuff.utils.CachingUtils.ConcurrentMap
+import com.tribbloids.spookystuff.utils.Caching.ConcurrentMap
 
 object SpookyViewsConst {
 

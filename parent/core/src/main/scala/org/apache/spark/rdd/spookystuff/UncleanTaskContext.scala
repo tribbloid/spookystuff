@@ -1,7 +1,7 @@
 package org.apache.spark.rdd.spookystuff
 
 import java.util.EventListener
-import com.tribbloids.spookystuff.utils.CachingUtils
+import com.tribbloids.spookystuff.utils.Caching
 import org.apache.spark.TaskContext
 import org.apache.spark.executor.TaskMetrics
 import org.apache.spark.metrics.source.Source
@@ -26,8 +26,8 @@ case class UncleanTaskContext(
 
   override def resourcesJMap(): util.Map[String, ResourceInformation] = self.resourcesJMap()
 
-  lazy val listeners: CachingUtils.ConcurrentMap[Long, EventListener] =
-    CachingUtils.ConcurrentMap[Long, EventListener]()
+  lazy val listeners: Caching.ConcurrentMap[Long, EventListener] =
+    Caching.ConcurrentMap[Long, EventListener]()
 
   override def addTaskCompletionListener(listener: TaskCompletionListener): TaskContext = {
     listeners += (System.currentTimeMillis() -> listener)

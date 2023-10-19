@@ -1,6 +1,6 @@
 package com.tribbloids.spookystuff.utils.lifespan
 
-import com.tribbloids.spookystuff.utils.CachingUtils.ConcurrentMap
+import com.tribbloids.spookystuff.utils.Caching.ConcurrentMap
 import com.tribbloids.spookystuff.utils.lifespan.Cleanable.Batch
 
 abstract class LeafType extends LifespanType {

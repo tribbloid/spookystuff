@@ -18,6 +18,7 @@ import org.mozilla.universalchardet.UniversalDetector
 
 import java.sql.{Date, Time, Timestamp}
 import java.util.UUID
+import scala.collection.mutable
 
 class DocOptionUDT extends ScalaUDT[DocOption]
 
@@ -122,15 +123,15 @@ case class Doc(
     declaredContentType: Option[String] = None,
     //                 cookie: Seq[SerializableCookie] = Nil,
     override val timeMillis: Long = System.currentTimeMillis(),
-    saved: scala.collection.mutable.Set[String] = scala.collection.mutable.Set(), // TODO: move out of constructor
     override val cacheLevel: DocCacheLevel.Value = DocCacheLevel.All,
     httpStatus: Option[StatusLine] = None,
     override val metadata: ResourceMetadata =
-      ResourceMetadata.empty // for customizing parsing TODO: remove, delegate to CSVElement.
+      ResourceMetadata.empty, // for customizing parsing TODO: remove, delegate to CSVElement.
+    saved: mutable.Set[String] = mutable.Set() // TODO: move out of constructor
 ) extends DocOption
     with EqualBy {
 
-  import scala.collection.JavaConverters._
+  import scala.jdk.CollectionConverters._
 
   lazy val _equalBy: Any = (uid, uri, declaredContentType, timeMillis, httpStatus.toString)
 

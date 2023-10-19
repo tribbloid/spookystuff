@@ -27,7 +27,7 @@ object ElementToArrayDeserializer extends XMLWeakDeserializer[Any] {
       extractInner(ti, jv, format).toSet
 
     case (ti @ TypeInfo(this.arrayListClass, _), jv) if !jv.isInstanceOf[JArray] =>
-      import scala.collection.JavaConverters._
+      import scala.jdk.CollectionConverters._
 
       new java.util.ArrayList[Any](extractInner(ti, jv, format).toList.asJava)
 

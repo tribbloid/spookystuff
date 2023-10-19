@@ -23,7 +23,7 @@ object SnapshotRunner extends SpookyEnvFixture.EnvBase {
     import com.tribbloids.spookystuff.dsl.DSL._
     import com.tribbloids.spookystuff.utils.CommonViews.StringView
 
-    val pathEncoding: GenExtractor[FR, String] = S.uri
+    val pathTemplate: GenExtractor[FR, String] = S.uri
       .andFn { uri =>
         val base = uri.split(SPLITTER).last
         CommonConst.USER_TEMP_DIR \\ "test-sites" \\ base
@@ -45,7 +45,7 @@ object SnapshotRunner extends SpookyEnvFixture.EnvBase {
         cooldown = coolDown
       )
       originalVersion
-        .savePages_!(pathEncoding, overwrite = true)
+        .savePages_!(pathTemplate, overwrite = true)
 
       fd
     }

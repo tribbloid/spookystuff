@@ -3,7 +3,8 @@ package com.tribbloids.spookystuff.caching
 import com.tribbloids.spookystuff.execution.ExplorePlan.ExeID
 import com.tribbloids.spookystuff.execution.{ExploreRunner, NodeKey}
 import com.tribbloids.spookystuff.row.{DataRow, RowReducer}
-import com.tribbloids.spookystuff.utils.CachingUtils.{ConcurrentCache, ConcurrentMap, ConcurrentSet}
+import com.tribbloids.spookystuff.utils.Caching
+import com.tribbloids.spookystuff.utils.Caching.{ConcurrentCache, ConcurrentMap, ConcurrentSet}
 
 /**
   * Singleton, always in the JVM and shared by all executors on the same machine This is a makeshift implementation,
@@ -13,10 +14,10 @@ object ExploreRunnerCache {
 
   // (NodeKey, ExecutionID) -> Squashed Rows
   // exeID is used to segment Squashed Rows from different jobs
-  val committedVisited: ConcurrentCache[(NodeKey, ExeID), Iterable[DataRow]] = ConcurrentCache()
+  val committedVisited: ConcurrentCache[(NodeKey, ExeID), Iterable[DataRow]] = Caching.ConcurrentCache()
 
   val onGoings: ConcurrentMap[ExeID, ConcurrentSet[ExploreRunner]] =
-    ConcurrentMap() // executionID -> running ExploreStateView
+    Caching.ConcurrentMap() // executionID -> running ExploreStateView
 
   def getOnGoingRunners(exeID: ExeID): ConcurrentSet[ExploreRunner] = {
     //    onGoings.synchronized{
@@ -58,7 +59,7 @@ object ExploreRunnerCache {
   }
 
   def register(v: ExploreRunner, exeID: ExeID): Unit = {
-    getOnGoingRunners(exeID) += v -> {}
+    getOnGoingRunners(exeID) += v
   }
 
   def deregister(v: ExploreRunner, exeID: ExeID): Unit = {
@@ -68,7 +69,6 @@ object ExploreRunnerCache {
   def get(key: (NodeKey, ExeID)): Set[Iterable[DataRow]] = {
     val onGoing = this
       .getOnGoingRunners(key._2)
-      .keySet
 
     val onGoingVisitedSet = onGoing
       .flatMap { v =>
@@ -81,7 +81,7 @@ object ExploreRunnerCache {
   def getAll(exeID: ExeID): Map[NodeKey, Iterable[DataRow]] = {
     val onGoing: Map[NodeKey, Iterable[DataRow]] = this
       .getOnGoingRunners(exeID)
-      .map(_._1.visited.toMap)
+      .map(_.visited.toMap)
       .reduceOption { (v1, v2) =>
         v1 ++ v2
       }

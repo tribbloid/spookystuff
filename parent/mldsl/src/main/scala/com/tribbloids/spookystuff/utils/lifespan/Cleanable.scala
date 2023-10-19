@@ -1,13 +1,11 @@
 package com.tribbloids.spookystuff.utils.lifespan
 
-import com.tribbloids.spookystuff.utils.CachingUtils._
+import com.tribbloids.spookystuff.utils.Caching._
 import org.slf4j.{Logger, LoggerFactory}
 
 import scala.reflect.ClassTag
 
 object Cleanable {
-
-  case class StateLock()
 
   import com.tribbloids.spookystuff.utils.CommonViews._
 
@@ -92,8 +90,6 @@ trait Cleanable extends AutoCloseable {
 
   import Cleanable._
 
-  @transient lazy val stateLock: StateLock = StateLock()
-
   /**
     * taskOrThreadOnCreation is incorrect in withDeadline or threads not created by Spark Override this to correct such
     * problem
@@ -111,7 +107,7 @@ trait Cleanable extends AutoCloseable {
 
   // each can only be cleaned once
   @volatile protected var _isCleaned: Boolean = false
-  def isCleaned: Boolean = stateLock.synchronized {
+  def isCleaned: Boolean = this.synchronized {
     _isCleaned
   }
 
@@ -151,7 +147,7 @@ trait Cleanable extends AutoCloseable {
     )
   }
 
-  lazy val doCleanOnce: Unit = stateLock.synchronized {
+  lazy val doCleanOnce: Unit = this.synchronized {
 
     stacktraceAtCleaning = Some(Thread.currentThread().getStackTrace)
     try {

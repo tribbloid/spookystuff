@@ -1,15 +1,14 @@
 package com.tribbloids.spookystuff.utils
 
 import com.tribbloids.spookystuff.testutils.FunSpecx
-import com.tribbloids.spookystuff.utils.CachingUtils.ConcurrentCache
 import org.scalatest.BeforeAndAfterEach
 
 import scala.concurrent.duration.Duration
 import scala.concurrent.{Await, ExecutionContextExecutor, Future}
 
-class CachingUtilsSuite extends FunSpecx with BeforeAndAfterEach {
+class CachingSuite extends FunSpecx with BeforeAndAfterEach {
 
-  import CachingUtilsSuite._
+  import CachingSuite._
   implicit def global: ExecutionContextExecutor = scala.concurrent.ExecutionContext.global
 
   override def beforeEach(): Unit = {
@@ -52,12 +51,12 @@ class CachingUtilsSuite extends FunSpecx with BeforeAndAfterEach {
     }
   }
 
-  describe("ConcurrentCache") {
+  describe("Weak ConcurrentCache") {
 
     describe("should remove value on garbage collection") {
 
       it("if the value is de-referenced") {
-        val cache = ConcurrentCache[String, CacheTestData]()
+        val cache = Caching.Weak.ConcurrentCache[String, CacheTestData]()
 
         var myVal = CacheTestData("myString")
 
@@ -72,7 +71,7 @@ class CachingUtilsSuite extends FunSpecx with BeforeAndAfterEach {
 
       it("if the value is not in scope") {
 
-        val cache = CachingUtils.ConcurrentCache[String, CacheTestData]()
+        val cache = Caching.Weak.ConcurrentCache[String, CacheTestData]()
 
         val f: Future[Unit] = Future {
 
@@ -91,7 +90,7 @@ class CachingUtilsSuite extends FunSpecx with BeforeAndAfterEach {
   }
 }
 
-object CachingUtilsSuite {
+object CachingSuite {
 
   @volatile var count: Int = 0
 

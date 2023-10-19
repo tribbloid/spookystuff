@@ -3,9 +3,8 @@ package com.tribbloids.spookystuff.testutils
 import com.tribbloids.spookystuff.utils.classpath.ClasspathResolver
 import com.tribbloids.spookystuff.utils.lifespan.Cleanable.Lifespan
 import com.tribbloids.spookystuff.utils.lifespan.LocalCleanable
-import com.tribbloids.spookystuff.utils.{CommonConst, CommonUtils, ConfUtils}
+import com.tribbloids.spookystuff.utils.{CommonConst, CommonUtils}
 import org.apache.hadoop.fs.FileUtil
-import org.apache.spark.launcher.InProcessLauncher
 import org.apache.spark.serializer.KryoSerializer
 import org.apache.spark.sql.{SQLContext, SparkSession}
 import org.apache.spark.{SparkConf, SparkContext, SparkEnv, SparkException}

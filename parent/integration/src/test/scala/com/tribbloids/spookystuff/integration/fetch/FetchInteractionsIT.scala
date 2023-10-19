@@ -56,8 +56,8 @@ class FetchInteractionsIT extends IntegrationFixture {
 
     assert(unionRows.length === 2)
     assert(
-      unionRows(0).docs.head.copy(timeMillis = 0, raw = null, saved = null)
-        === unionRows(1).docs.head.copy(timeMillis = 0, raw = null, saved = null)
+      unionRows(0).docs.head.copy(timeMillis = 0, raw = null)
+        === unionRows(1).docs.head.copy(timeMillis = 0, raw = null)
     )
 
     assert(unionRows(0).docs.head.timeMillis === unionRows(1).docs.head.timeMillis)
