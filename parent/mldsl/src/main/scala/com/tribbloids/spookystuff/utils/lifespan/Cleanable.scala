@@ -4,7 +4,7 @@ import com.tribbloids.spookystuff.utils.Caching._
 import org.slf4j.{Logger, LoggerFactory}
 
 import scala.language.implicitConversions
-import scala.ref.WeakReference
+import scala.ref.{ReferenceQueue, WeakReference}
 import scala.reflect.ClassTag
 
 object Cleanable {
@@ -18,8 +18,15 @@ object Cleanable {
   object Lifespan extends BasicTypes with HadoopTypes with SparkTypes
 
   type BatchID = LeafType#ID
-  type Batch = ConcurrentMap[Long, WeakReference[Cleanable]] // trackingNumber -> instance
   lazy val uncleaned: ConcurrentMap[BatchID, Batch] = ConcurrentMap()
+
+  case class Batch() {
+
+    type MapOfActive = ConcurrentMap[Long, WeakReference[Cleanable]] // trackingNumber -> instance
+    lazy val active: MapOfActive = ConcurrentMap()
+
+    lazy val refQueue = new ReferenceQueue[Cleanable]()
+  }
 
   case class Select[T <: Cleanable: ClassTag](
       ids: Seq[BatchID],
@@ -31,7 +38,7 @@ object Cleanable {
     }
 
     final def cleanables: Seq[T] = batches
-      .flatMap(_.values)
+      .flatMap(_.active.values)
       .flatMap(_.get)
       .collect {
         case v: T => v
@@ -58,7 +65,7 @@ object Cleanable {
 
       ids.foreach { id =>
         batches.foreach { batch =>
-          if (batch.isEmpty) uncleaned.remove(id)
+          if (batch.active.isEmpty) uncleaned.remove(id)
         }
       }
     }
@@ -79,7 +86,7 @@ object Cleanable {
 
     @deprecated // creating a batch without registering clean sweep hook is illegal
     def getOrCreate: Batch = getOrExecute { () =>
-      ConcurrentMap()
+      Batch()
     }
   }
 
@@ -116,8 +123,8 @@ trait Cleanable extends AutoCloseable {
 
   {
     logPrefixed("Created")
-    batches.foreach { inBatch =>
-      inBatch += this.trackingNumber -> WeakReference(this)
+    batches.foreach { batch =>
+      batch.active += this.trackingNumber -> new WeakReference(this, batch.refQueue)
     }
 //    cleanable // actually eager execution on creation
   }
@@ -164,15 +171,19 @@ trait Cleanable extends AutoCloseable {
     )
   }
 
+  @volatile private var silent: Boolean = false
   lazy val doCleanOnce: Unit = this.synchronized {
 
+    val silent = this.silent
     stacktraceAtCleaning = Some(Thread.currentThread().getStackTrace)
     try {
       cleanImpl()
       _isCleaned = true
 
+      if (silent) logPrefixed("Cleaned")
+
       batches.foreach { inBatch =>
-        inBatch -= this.trackingNumber
+        inBatch.active -= this.trackingNumber
       }
     } catch {
       case e: Throwable =>
@@ -183,10 +194,8 @@ trait Cleanable extends AutoCloseable {
 
   final def clean(silent: Boolean = false): Unit = {
 
-    val isCleaned = this.isCleaned
+    this.silent = silent
     doCleanOnce
-
-    if (!silent && !isCleaned) logPrefixed("Cleaned")
   }
 
   def silentOnError(ee: Throwable): Boolean = false

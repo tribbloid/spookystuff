@@ -4,6 +4,10 @@
 
 FWDIR="$(cd "`dirname "$0"`"/..; pwd)"
 
+echo "[ENV]"
+echo "SPARK_HOME=${SPARK_HOME}"
+echo "SPARK_SCALA_VERSION=${SPARK_SCALA_VERSION}"
+
 echo "[COMPILING]" && \
 "${FWDIR}"/make-all.sh "${@}" && \
 echo "[RUNNING TESTS]" && \

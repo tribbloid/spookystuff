@@ -70,13 +70,16 @@ object GCCleaningSpike {
       override def finalize(): Unit = fn()
     }
 
-    trait _2Base {
-      override def finalize(): Unit = fn()
-    }
-    case class _2() extends _2Base
+    case class _2() extends _2.Base
+    object _2 {
 
-    final val _cleaner = Cleaner.create()
+      trait Base {
+        override def finalize(): Unit = fn()
+      }
+    }
+
     case class _3() extends AutoCloseable {
+      import _3._
 
       final private val cleanable = _cleaner.register(
         this,
@@ -88,30 +91,54 @@ object GCCleaningSpike {
 
       override def close(): Unit = cleanable.clean()
     }
+    object _3 {
 
-    lazy val phantomQueue = new ReferenceQueue[_2Base]()
+      final val _cleaner: Cleaner = Cleaner.create()
+    }
+
     case class _4() {
-      val ref = new PhantomReference(this, phantomQueue)
-    }
+      import _4._
 
-    val cleaningPhantom: Future[Unit] = Future {
-      while (true) {
-        phantomQueue.remove
-        fn()
+      val ref = new PhantomReference(this, queue)
+
+      def fn(): Unit = fn()
+    }
+    object _4 {
+      lazy val queue = new ReferenceQueue[_4]()
+
+      queue.poll
+
+      val cleaning: Future[Unit] = Future {
+        while (true) {
+          val k = queue.remove
+          k.foreach { ref =>
+            ref().fn()
+          }
+        }
       }
     }
 
-    lazy val weakQueue = new ReferenceQueue[_2Base]()
     case class _5() {
-      val ref = new WeakReference(this, weakQueue)
-    }
+      import _5._
 
-    val cleaningWeak: Future[Unit] = Future {
-      while (true) {
-        weakQueue.remove
-        fn()
+      val ref = new WeakReference(this, queue)
+
+      def fn(): Unit = fn()
+    }
+    object _5 {
+
+      lazy val queue = new ReferenceQueue[_5]()
+
+      val cleaning: Future[Unit] = Future {
+        while (true) {
+          val k = queue.remove
+          k.foreach { ref =>
+            ref().fn()
+          }
+        }
       }
     }
+
   }
 
   @transient var count = 0

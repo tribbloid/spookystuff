@@ -32,7 +32,7 @@ abstract class LeafType extends LifespanType {
         registerHook { () =>
           select.cleanSweep()
         }
-        ConcurrentMap()
+        Batch()
       }
 
       Seq(batchID -> batch)

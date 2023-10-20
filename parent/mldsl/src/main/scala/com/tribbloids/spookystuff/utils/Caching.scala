@@ -61,9 +61,6 @@ object Caching {
   def ConcurrentSet[V](): ConcurrentSet[V] = {
 
     val proto: mutable.Set[V] = javaConcurrentMap[V, Unit]().keySet(()).asScala
-
-    //    val proto: mutable.Set[V] = javaConcurrentMap[V, Unit]().keySet().asScala// don't use, Java doesn't have a default value for Unit
-
     proto.asInstanceOf[ConcurrentSet[V]]
   }
 

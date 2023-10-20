@@ -184,7 +184,7 @@ class CleanableSuite extends SparkEnvSpec with BeforeAndAfterEach {
     verify(i => DummyCleanable(i, None))
   }
 
-  describe("System.gc() can trigger Cleanable that is") {
+  describe("System.gc() can trigger cleaning of Cleanable(s) that are") {
 
     it("unreachable") {
       @volatile var v = DummyCleanable(1, None)
