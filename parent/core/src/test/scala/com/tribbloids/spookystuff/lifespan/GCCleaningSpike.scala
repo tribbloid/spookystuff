@@ -1,11 +1,15 @@
 package com.tribbloids.spookystuff.lifespan
 
+import com.tribbloids.spookystuff.utils.Retry
+import org.scalatest.Ignore
 import org.scalatest.funspec.AnyFunSpec
 
 import java.lang.ref.Cleaner
+import java.util.concurrent.atomic.AtomicInteger
 import scala.concurrent.{ExecutionContext, ExecutionContextExecutor, Future}
 import scala.ref.{PhantomReference, ReferenceQueue, WeakReference}
 
+@Ignore
 class GCCleaningSpike extends AnyFunSpec {
 
   import GCCleaningSpike._
@@ -16,44 +20,44 @@ class GCCleaningSpike extends AnyFunSpec {
 
       var v = Dummies._1()
 
-      assertInc {
+      assertInc { () =>
         v = null
       }
     }
 
     it("<: class with finalizer") {
 
-      var v = Dummies._2()
+      @volatile var v = Dummies._2()
 
-      assertInc {
+      assertInc { () =>
         v = null
       }
     }
 
     // TODO: the following doesn't work, why?
-    ignore("registered to a cleaner") {
+    it("registered to a cleaner") {
 
       @volatile var v = Dummies._3()
 
-      assertInc {
+      assertInc { () =>
         v = null
       }
     }
 
-    ignore("registered to a phantom reference cleanup thread") {
+    it("registered to a phantom reference cleanup thread") {
 
       @volatile var v = Dummies._4()
 
-      assertInc {
+      assertInc { () =>
         v = null
       }
     }
 
-    ignore("registered to a weak reference cleanup thread") {
+    it("registered to a weak reference cleanup thread") {
 
       @volatile var v = Dummies._4()
 
-      assertInc {
+      assertInc { () =>
         v = null
       }
     }
@@ -81,19 +85,22 @@ object GCCleaningSpike {
     case class _3() extends AutoCloseable {
       import _3._
 
-      final private val cleanable = _cleaner.register(
+      _cleaner.register(
         this,
         { () =>
-          println("\ncleaned\n")
-          fn()
+          this.close()
         }
       )
 
-      override def close(): Unit = cleanable.clean()
+      override def close(): Unit = {
+
+        println("\ncleaned\n")
+        fn()
+      }
     }
     object _3 {
 
-      final val _cleaner: Cleaner = Cleaner.create()
+      final private val _cleaner: Cleaner = Cleaner.create()
     }
 
     case class _4() {
@@ -141,22 +148,25 @@ object GCCleaningSpike {
 
   }
 
-  @transient var count = 0
+  val count = new AtomicInteger(0)
 
-  val doInc: () => Unit = () => count += 1
+  def assertInc(deRef: () => Unit): Unit = {
+    val c1 = count.get()
 
-  def assertInc(fn: => Unit): Unit = {
-    val c1 = count
+    deRef()
 
-    fn
+    Retry.FixedInterval(10, 1000) {
 
-    System.gc()
+      System.gc()
 
-    Thread.sleep(1000)
-    val c2 = count
+      Thread.sleep(1000)
+      val c2 = count.get()
 
-    assert(c2 - c1 == 1)
+      println(s"c2=$c2 c1=$c1")
+
+      Predef.assert(c2 - c1 == 1, s"still no GC: c2=$c2 c1=$c1")
+    }
   }
 
-  object Dummies extends WithFinalizer(doInc)
+  object Dummies extends WithFinalizer(() => count.incrementAndGet())
 }

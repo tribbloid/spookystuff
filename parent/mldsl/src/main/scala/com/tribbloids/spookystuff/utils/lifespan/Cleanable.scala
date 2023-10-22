@@ -6,6 +6,7 @@ import org.slf4j.{Logger, LoggerFactory}
 import scala.language.implicitConversions
 import scala.ref.{ReferenceQueue, WeakReference}
 import scala.reflect.ClassTag
+import scala.util.Try
 
 object Cleanable {
 
@@ -25,7 +26,22 @@ object Cleanable {
     type MapOfActive = ConcurrentMap[Long, WeakReference[Cleanable]] // trackingNumber -> instance
     lazy val active: MapOfActive = ConcurrentMap()
 
-    lazy val refQueue = new ReferenceQueue[Cleanable]()
+    // objects that are marked for GC but before actual finalisation
+    // there is always a minor delay to maximise GC efficiency
+    lazy val tombstoneQueue = new ReferenceQueue[Cleanable]()
+
+    def cleanSweepTombstones(): Unit = {
+      // all tombstones are useless and should be cleaned if encountered
+
+      var nonEmpty = true
+      while (nonEmpty) {
+        tombstoneQueue.poll match {
+          case None => nonEmpty = false
+          case Some(v) =>
+            Try(v.apply().tryClean())
+        }
+      }
+    }
   }
 
   case class Select[T <: Cleanable: ClassTag](
@@ -59,12 +75,14 @@ object Cleanable {
       val filtered = cleanables
 
       filtered
-        .foreach { instance =>
-          instance.tryClean()
+        .foreach { v =>
+          v.tryClean()
         }
 
       ids.foreach { id =>
         batches.foreach { batch =>
+          batch.cleanSweepTombstones()
+
           if (batch.active.isEmpty) uncleaned.remove(id)
         }
       }
@@ -124,7 +142,7 @@ trait Cleanable extends AutoCloseable {
   {
     logPrefixed("Created")
     batches.foreach { batch =>
-      batch.active += this.trackingNumber -> new WeakReference(this, batch.refQueue)
+      batch.active += this.trackingNumber -> new WeakReference(this, batch.tombstoneQueue)
     }
 //    cleanable // actually eager execution on creation
   }
@@ -182,8 +200,8 @@ trait Cleanable extends AutoCloseable {
 
       if (silent) logPrefixed("Cleaned")
 
-      batches.foreach { inBatch =>
-        inBatch.active -= this.trackingNumber
+      batches.foreach { batch =>
+        batch.active -= this.trackingNumber
       }
     } catch {
       case e: Throwable =>
