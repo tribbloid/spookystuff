@@ -187,19 +187,19 @@ abstract class SpookyViews extends SpookyViews_Imp0 {
 
       self.mapPartitions { itr =>
         val stageID = TaskContext.get.stageId()
-        val alreadyRun = perWorkerMark.synchronized {
+        perWorkerMark.synchronized {
           val alreadyRun = perWorkerMark.getOrElseUpdate(stageID, false)
-          if (!alreadyRun) {
+
+          val result = if (!alreadyRun) {
+            val result = f(itr.next())
+            //            Thread.sleep(1000)
             perWorkerMark.put(stageID, true)
+            Iterator(result)
+          } else {
+            Iterator.empty
           }
-          alreadyRun
-        }
-        if (!alreadyRun) {
-          val result = f(itr.next())
-          //            Thread.sleep(1000)
-          Iterator(result)
-        } else {
-          Iterator.empty
+
+          result
         }
       }
     }

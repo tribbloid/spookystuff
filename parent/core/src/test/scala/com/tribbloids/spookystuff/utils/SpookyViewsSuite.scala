@@ -5,6 +5,7 @@ import com.tribbloids.spookystuff.metrics.Acc
 import com.tribbloids.spookystuff.testutils.{SpookyBaseSpec, TestHelper}
 import com.tribbloids.spookystuff.utils.lifespan.LifespanContext
 import com.tribbloids.spookystuff.utils.locality.PartitionIdPassthrough
+import org.apache.spark.SparkException
 import org.apache.spark.rdd.RDD
 import org.apache.spark.sql.utils.SparkHelper
 
@@ -160,6 +161,23 @@ class SpookyViewsSuite extends SpookyBaseSpec {
     assert(result.length === TestHelper.numWorkers, result.mkString("\n"))
     assert(result.map(_.blockManagerID).distinct.length === TestHelper.numWorkers, result.mkString("\n"))
     assert(result.map(_.taskAttemptID).distinct.length === TestHelper.numWorkers, result.mkString("\n"))
+  }
+
+  it("... where execution should fail") {
+
+    lazy val shouldFail = sc
+      .uuidSeed()
+      .mapOncePerWorker { _ =>
+        sys.error("???")
+      }
+
+    intercept[SparkException] {
+      shouldFail.count()
+    }
+
+    intercept[SparkException] {
+      shouldFail.collect()
+    }
   }
 
   it("runEverywhere") {
