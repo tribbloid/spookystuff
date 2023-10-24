@@ -183,6 +183,19 @@ class CleanableSuite extends SpookyBaseSpec {
     verify(i => DummyCleanable(i, None))
   }
 
+  describe("System.gc() can trigger cleaning of Cleanable(s) that are") {
+
+    it("unreachable") {
+      @volatile var v = DummyCleanable(1, None)
+
+      assertInc {
+        v = null
+
+        System.gc()
+      }
+    }
+  }
+
 }
 
 object CleanableSuite {
