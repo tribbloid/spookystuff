@@ -1,6 +1,6 @@
 #!/usr/bin/env bash
 
-SPARK_NAME="${SPARK:-spark-3.5.0}"
+SPARK_NAME="${SPARK:-spark-3.4.0}"
 SPARK_DIR_ROOT="$HOME/.ci/spark-dist"
 
 export SPARK_SCALA_VERSION="2.13"

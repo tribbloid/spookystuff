@@ -26,9 +26,9 @@ jobs:
       with:
         java-version: 11
 
-    - name: Run CI-apache-latest
+    - name: Run CI-apache-stable
       run: |
-        ./dev/CI-apache-latest.sh
+        ./dev/CI-apache-stable.sh
 
     - name: Publish Unit Test Results
       uses: EnricoMi/publish-unit-test-result-action@v1
