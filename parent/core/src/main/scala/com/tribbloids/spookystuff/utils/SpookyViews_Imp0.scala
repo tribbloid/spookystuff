@@ -48,7 +48,7 @@ abstract class SpookyViews_Imp0 extends CommonViews {
 
       val valueOption: Option[V] = self.get(key)
 
-      val values: Iterable[(Any, Int)] = valueOption.toIterable.flatMap(SpookyUtils.asIterable[Any]).zipWithIndex
+      val values: Iterable[(Any, Int)] = valueOption.iterator.to(Iterable).flatMap(SpookyUtils.asIterable[Any]).zipWithIndex
       val sampled = sampler(values)
 
       val cleaned = self - key

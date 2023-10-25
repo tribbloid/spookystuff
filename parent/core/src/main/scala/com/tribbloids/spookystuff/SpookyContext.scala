@@ -144,14 +144,14 @@ case class SpookyContext(
 
   // TODO: merge after 2.0.x
   def create[T: TypeTag](
-      seq: TraversableOnce[T]
+      seq: IterableOnce[T]
   ): FetchedDataset = {
 
     implicit val ctg: ClassTag[T] = TypeMagnet.FromTypeTag[T].asClassTag
     this.dsl.rddToFetchedDS(this.sqlContext.sparkContext.parallelize(seq.toSeq))
   }
   def create[T: TypeTag](
-      seq: TraversableOnce[T],
+      seq: IterableOnce[T],
       numSlices: Int
   ): FetchedDataset = {
 

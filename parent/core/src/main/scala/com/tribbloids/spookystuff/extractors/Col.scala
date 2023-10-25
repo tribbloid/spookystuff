@@ -45,6 +45,8 @@ object Col {
   implicit def fromSymbol[T](v: Symbol): Col[T] = {
     Col[T](v)
   }
+
+  implicit def unbox[T](v: Col[T]): Extractor[_ >: T] = v.ex
 }
 
 case class Col[T](
@@ -52,12 +54,7 @@ case class Col[T](
 ) extends ProtoAPI
     with RootTagged {
 
-  override def toString: String = this.treeText
-
-  def resolveType(tt: DataType): DataType = ex.resolveType(tt)
-  def resolve(tt: DataType): PartialFunction[FR, _ >: T] = ex.resolve(tt)
-
-  def value: T = {
+  lazy val value: T = {
     ex match {
       case v: Lit[_, T] => v.value
       case _            => throw new UnsupportedOperationException("Not a literal")
@@ -66,12 +63,7 @@ case class Col[T](
 
   override lazy val rootTag: String = ex.productPrefix
 
-  override def toMessage_>> = {
-    val result = ex match {
-      case v: Lit[_, T] =>
-        TreeIR.Builder(Some(rootTag)).leaf(v.value)
-      case _ => GenExtractor.toMessage_>>(ex)
-    }
-    result
+  override lazy val toMessage_>> : TreeIR.Leaf[T] = {
+    TreeIR.Builder(Some(rootTag)).leaf(value)
   }
 }

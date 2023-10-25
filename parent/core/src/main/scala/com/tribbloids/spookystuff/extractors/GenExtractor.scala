@@ -4,15 +4,14 @@ import com.tribbloids.spookystuff.Const
 import com.tribbloids.spookystuff.row.Field
 import com.tribbloids.spookystuff.tree.TreeView
 import com.tribbloids.spookystuff.utils.SpookyUtils
-import com.tribbloids.spookystuff.relay.AutomaticRelay
-import org.apache.spark.ml.dsl.utils.refl.{CatalystTypeOps, ReflectionLock, TypeMagnet, UnreifiedObjectType}
+import org.apache.spark.ml.dsl.utils.refl.{CatalystTypeOps, TypeMagnet, UnreifiedObjectType}
 import org.apache.spark.sql.catalyst.ScalaReflection.universe
 import org.apache.spark.sql.catalyst.ScalaReflection.universe.TypeTag
 
 import scala.language.{existentials, implicitConversions}
 import scala.reflect.ClassTag
 
-object GenExtractor extends AutomaticRelay[GenExtractor[_, _]] with GenExtractorImplicits {
+object GenExtractor extends GenExtractorImplicits {
 
 //  final val functionVID = -592849327L
 
@@ -106,7 +105,7 @@ object GenExtractor extends AutomaticRelay[GenExtractor[_, _]] with GenExtractor
       arg2: GenExtractor[T, R2]
   ) extends GenExtractor[T, (R1, R2)] {
     // resolve to a Spark SQL DataType according to an execution plan
-    override def resolveType(tt: DataType): DataType = locked {
+    override def resolveType(tt: DataType): DataType = {
       val t1 = arg1.resolveType(tt)
       val t2 = arg2.resolveType(tt)
 
@@ -157,7 +156,7 @@ object GenExtractor extends AutomaticRelay[GenExtractor[_, _]] with GenExtractor
 
 // a subclass wraps an expression and convert it into extractor, which converts all attribute reference children into data reference children and
 // (To be implemented) can be converted to an expression to be wrapped by other expressions
-trait GenExtractor[T, +R] extends ReflectionLock with CatalystTypeOps.ImplicitMixin with Product with Serializable {
+trait GenExtractor[T, +R] extends CatalystTypeOps.ImplicitMixin with Product with Serializable {
 
   import com.tribbloids.spookystuff.extractors.GenExtractor._
 
@@ -165,7 +164,11 @@ trait GenExtractor[T, +R] extends ReflectionLock with CatalystTypeOps.ImplicitMi
 
   protected def _args: Seq[GenExtractor[_, _]]
 
-  // resolve to a Spark SQL DataType according to an exeuction plan
+  // TODO: this is mapped from a Scala/shapeless polymorphic function, which is too complex and
+  //   totally unnecessary if compile-time type inference (e.g. frameless) is used ahead-of-time
+  // TODO: can use TypeMagnet to reduce boilerplate
+  // resolve to a Spark SQL DataType according to an execution plan
+  // TODO: the following 2 can be merged into a single method, returning a lazy tuple
   def resolveType(tt: DataType): DataType
   def resolve(tt: DataType): PartialFunction[T, R]
 
@@ -182,16 +185,13 @@ trait GenExtractor[T, +R] extends ReflectionLock with CatalystTypeOps.ImplicitMi
     }
   }
 
-  private def _as(fieldOpt: Option[Field]): GenExtractor[T, R] = {
+  private[extractors] def _as(fieldOpt: Option[Field]): GenExtractor[T, R] = {
 
     fieldOpt match {
       case Some(field) => withAlias(field)
       case None        => withoutAlias
     }
   }
-
-  final def as(field: Field): GenExtractor[T, R] = _as(Option(field))
-  final def ~(field: Field): GenExtractor[T, R] = as(field)
 
   // will not rename an already-named Alias.
   def withAliasIfMissing(field: Field): Alias[T, R] = {
@@ -203,14 +203,15 @@ trait GenExtractor[T, +R] extends ReflectionLock with CatalystTypeOps.ImplicitMi
 
   def withJoinFieldIfMissing: Alias[T, R] = withAliasIfMissing(Const.defaultJoinField)
 
+  // TODO: should merge into andMap
   def andEx[R2 >: R, A](g: GenExtractor[R2, A], meta: Option[Any] = None): GenExtractor[T, A] =
     AndThen[T, R2, A](this, g, meta)
 
-  def andFn[A: TypeTag](g: R => A, meta: Option[Any] = None): GenExtractor[T, A] = {
+  def andMap[A: TypeTag](g: R => A, meta: Option[Any] = None): GenExtractor[T, A] = {
     andEx(g, meta)
   }
 
-  def andOptionFn[A: TypeTag](g: R => Option[A], meta: Option[Any] = None): GenExtractor[T, A] = {
+  def andFlatMap[A: TypeTag](g: R => Option[A], meta: Option[Any] = None): GenExtractor[T, A] = {
     andEx(GenExtractor.fromOptionFn(g), meta)
   }
 
@@ -233,10 +234,10 @@ trait GenExtractor[T, +R] extends ReflectionLock with CatalystTypeOps.ImplicitMi
   def typed[A: TypeTag]: GenExtractor[T, A] = {
     implicit val ctg: ClassTag[A] = TypeMagnet.FromTypeTag[A].asClassTag
 
-    andOptionFn[A] {
+    andFlatMap[A] {
       SpookyUtils.typedOrNone[A]
     }
   }
 
-  def toStr: GenExtractor[T, String] = andFn(_.toString)
+  def toStr: GenExtractor[T, String] = andMap(_.toString)
 }

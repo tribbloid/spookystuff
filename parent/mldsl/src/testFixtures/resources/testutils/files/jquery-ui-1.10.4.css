@@ -1040,8 +1040,8 @@ body .ui-tooltip {
 .ui-icon-person { background-position: -144px -96px; }
 .ui-icon-print { background-position: -160px -96px; }
 .ui-icon-trash { background-position: -176px -96px; }
-.ui-icon-locked { background-position: -192px -96px; }
-.ui-icon-unlocked { background-position: -208px -96px; }
+.ui-icon-{ background-position: -192px -96px; }
+.ui-icon-un{ background-position: -208px -96px; }
 .ui-icon-bookmark { background-position: -224px -96px; }
 .ui-icon-tag { background-position: -240px -96px; }
 .ui-icon-home { background-position: 0 -112px; }

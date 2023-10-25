@@ -1,19 +1,16 @@
 package com.tribbloids.spookystuff.extractors
 
-import com.tribbloids.spookystuff.extractors.impl.Lit
 import org.apache.spark.ml.dsl.utils.DSLUtils
 import org.apache.spark.ml.dsl.utils.refl._
 import org.apache.spark.sql.catalyst.ScalaReflection.universe._
 
 import java.lang.reflect.Method
-import scala.language.dynamics
 
 case class ScalaDynamic(
     methodName: String
-) extends ReflectionLock
-    with CatalystTypeOps.ImplicitMixin {
+) extends CatalystTypeOps.ImplicitMixin {
 
-  def getMethodsByCatalystType(dType: DataType): List[MethodSymbol] = locked {
+  def getMethodsByCatalystType(dType: DataType): List[MethodSymbol] = {
     val tpe = dType.typeTag_wild.tpe
 
     // Java reflection preferred as more battle tested?
@@ -28,7 +25,7 @@ case class ScalaDynamic(
     members
   }
 
-  def getExpectedTypeCombinations(argDTypesOpt: Option[List[DataType]]): Seq[Option[List[Type]]] = locked {
+  def getExpectedTypeCombinations(argDTypesOpt: Option[List[DataType]]): Seq[Option[List[Type]]] = {
     val expectedTypeList: Seq[Option[List[Type]]] = argDTypesOpt match {
       case Some(dTypes) =>
         val tpess = dTypes.map { v =>
@@ -44,7 +41,7 @@ case class ScalaDynamic(
 
   // 2 cases: argDTypesOpt = None: call by .name
   // argDTypesOpt = Some(List()) call by .name()
-  def getMethodByScala(baseDType: DataType, argDTypesOpt: Option[List[DataType]]): MethodSymbol = locked {
+  def getMethodByScala(baseDType: DataType, argDTypesOpt: Option[List[DataType]]): MethodSymbol = {
     val methods = getMethodsByCatalystType(baseDType)
 
     val expectedTypeCombinations: Seq[Option[List[Type]]] =
@@ -143,13 +140,13 @@ case class ScalaDynamicExtractor[T](
   override protected def _args: Seq[GenExtractor[_, _]] = Seq(base) ++ argsOpt.toList.flatten
 
   // resolve to a Spark SQL DataType according to an exeuction plan
-  override def resolveType(tt: DataType): DataType = locked {
+  override def resolveType(tt: DataType): DataType = {
     val tag: TypeTag[Any] = _resolveTypeTag(tt)
 
     UnreifiedObjectType.summon(tag)
   }
 
-  private def _resolveTypeTag(tt: DataType): TypeTag[Any] = locked {
+  private def _resolveTypeTag(tt: DataType): TypeTag[Any] = {
     // TODO: merge
     val baseDType: DataType = base.resolveType(tt)
     val argDTypes = argsOpt.map {
@@ -167,7 +164,7 @@ case class ScalaDynamicExtractor[T](
     resultMagnet.asTypeTag
   }
 
-  override def resolve(tt: DataType): PartialFunction[T, Any] = locked {
+  override def resolve(tt: DataType): PartialFunction[T, Any] = {
     val resolvedFn = resolveUsingScala(tt)
 
     val lifted = if (_resolveTypeTag(tt).tpe <:< typeOf[Option[Any]]) {
@@ -177,7 +174,7 @@ case class ScalaDynamicExtractor[T](
     Unlift(lifted)
   }
 
-  def resolveUsingScala(tt: DataType): T => Option[Any] = locked {
+  def resolveUsingScala(tt: DataType): T => Option[Any] = {
 
     val baseLift: (T) => Option[Any] = base.resolve(tt).lift
     val argLifts: Option[List[(T) => Option[Any]]] = argsOpt.map(
@@ -285,32 +282,5 @@ case class ScalaResolvedFunction[T](
         methodMirror.apply(argOpts.map(_.get): _*)
       }
     }
-  }
-}
-
-/**
-  * this complex mixin enables many scala functions of Docs & Unstructured to be directly called on Extraction
-  * shortcuts. supersedes many implementations
-  */
-@Deprecated // no type safety
-trait ScalaDynamicMixin[T, +R] extends Dynamic with ReflectionLock {
-  selfType: GenExtractor[T, R] =>
-
-  def selectDynamic(methodName: String): GenExtractor[T, Any] = {
-
-    ScalaDynamicExtractor(this, methodName, None)
-  }
-
-  def applyDynamic(methodName: String)(args: Any*): GenExtractor[T, Any] = {
-
-    val argExs: Seq[GenExtractor[T, Any]] = args.toSeq.map {
-      case ex: GenExtractor[_, _] =>
-        ex.asInstanceOf[GenExtractor[T, Any]]
-      case v @ _ =>
-        val tt = UnreifiedObjectType.forRuntimeInstance(v)
-        new Lit[T, Any](Option(v), tt)
-    }
-
-    ScalaDynamicExtractor(this, methodName, Some(argExs.toList))
   }
 }

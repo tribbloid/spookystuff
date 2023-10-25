@@ -17,11 +17,11 @@ class TestExtractPlan extends SpookyBaseSpec {
 
     val extracted = src
       .extract(
-        '_1.typed[Int].andOptionFn { v =>
+        '_1.typed[Int].andFlatMap { v =>
           if (v > 1) Some("" + v)
           else None
         },
-        '_2.typed[String].andOptionFn { v =>
+        '_2.typed[String].andFlatMap { v =>
           if (v.length < 5) Some(v.charAt(0).toInt)
           else None
         }
@@ -50,7 +50,7 @@ class TestExtractPlan extends SpookyBaseSpec {
 
     val extracted = src
       .extract {
-        '_1.typed[Int].andOptionFn { v =>
+        '_1.typed[Int].andFlatMap { v =>
           if (v > 1) Some("" + v)
           else None
         } ~ '_2.!
@@ -77,7 +77,7 @@ class TestExtractPlan extends SpookyBaseSpec {
     intercept[IllegalArgumentException] {
       src
         .extract {
-          '_1.typed[Int].andOptionFn { v =>
+          '_1.typed[Int].andFlatMap { v =>
             if (v > 1) Some(v)
             else None
           } ~ '_2.!
@@ -88,7 +88,7 @@ class TestExtractPlan extends SpookyBaseSpec {
   it("ExtractPlan can append to old values using ~+ operator") {
     val extracted = src
       .extract {
-        '_1.typed[Int].andOptionFn { v =>
+        '_1.typed[Int].andFlatMap { v =>
           if (v > 1) Some("" + v)
           else None
         } ~+ '_2
@@ -116,7 +116,7 @@ class TestExtractPlan extends SpookyBaseSpec {
   it("ExtractPlan can erase old values that has a different DataType using ~+ operator") {
     val extracted = src
       .extract {
-        '_1.typed[Int].andOptionFn { v =>
+        '_1.typed[Int].andFlatMap { v =>
           if (v > 1) Some(v)
           else None
         } ~+ '_2
@@ -142,7 +142,7 @@ class TestExtractPlan extends SpookyBaseSpec {
         '_2 ~ '_3.*
       }
       .extract {
-        '_1.typed[Int].andOptionFn { v =>
+        '_1.typed[Int].andFlatMap { v =>
           if (v > 1) Some("" + v)
           else None
         } ~ '_3.*
@@ -174,7 +174,7 @@ class TestExtractPlan extends SpookyBaseSpec {
         '_2 ~ '_3.*
       }
       .extract {
-        '_1.typed[Int].andOptionFn { v =>
+        '_1.typed[Int].andFlatMap { v =>
           if (v > 1) Some("" + v)
           else None
         } ~ '_3.*.!

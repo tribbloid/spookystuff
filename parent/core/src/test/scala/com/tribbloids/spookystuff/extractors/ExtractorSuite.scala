@@ -6,7 +6,7 @@ import com.tribbloids.spookystuff.testutils.SpookyBaseSpec
 /**
   * Created by peng on 15/06/16.
   */
-class ExtractorsSuite extends SpookyBaseSpec {
+class ExtractorSuite extends SpookyBaseSpec {
 
   it("Literal -> JSON") {
     val lit: Lit[FR, Int] = Lit(1)

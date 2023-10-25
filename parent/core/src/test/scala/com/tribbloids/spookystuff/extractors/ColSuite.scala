@@ -14,18 +14,19 @@ class ColSuite extends FunSpecx {
 
   it("Col(Lit).toString") {
 
-    c1.toString.shouldBe(
+    c1.treeText.shouldBe(
       "\"abc\""
+    )
+
+    c1.toString.shouldBe(
+      "Col(abc)"
     )
   }
 
   it("Col(Symbol).toString") {
 
     cNonLit.toString.shouldBe(
-      """
-        |Get
-        |  "'A"
-        |""".stripMargin.trim
+      "Col(Get('A))"
     )
   }
 

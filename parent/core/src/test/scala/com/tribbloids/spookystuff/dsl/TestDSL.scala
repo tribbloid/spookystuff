@@ -39,13 +39,13 @@ class TestDSL extends SpookyBaseSpec with LocalPathDocsFixture {
   }
 
   it("andFn") {
-    val fun = 'abc.andFn(_.toString).resolve(emptySchema)
+    val fun = 'abc.andMap(_.toString).resolve(emptySchema)
 //    assert(fun.toString === "<function1>")
     assert(fun(row) === "Wikipedia")
   }
 
   it("andUnlift") {
-    val fun = 'abc.andOptionFn(_.toString.headOption).resolve(emptySchema)
+    val fun = 'abc.andFlatMap(_.toString.headOption).resolve(emptySchema)
 //    assert(fun.toString === "<function1>")
     assert(fun(row) === 'W')
   }

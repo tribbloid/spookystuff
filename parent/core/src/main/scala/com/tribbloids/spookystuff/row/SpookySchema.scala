@@ -128,7 +128,7 @@ case class SpookySchema(
     val existingTypeOpt = SpookySchema.this.fieldTypes.get(resolvedField)
 
     (existingTypeOpt, resolvedField.conflictResolving) match {
-      case (Some(existingType), Field.Overwrite) =>
+      case (Some(existingType), Field.ReplaceIfNotNull) =>
         if (dataType == existingType) dataType
         else if (dataType.reified == existingType.reified) dataType.reified
         else

@@ -40,15 +40,15 @@ abstract class SpookyViews extends SpookyViews_Imp0 {
     // if the function returns None for it will be retried as many times as it takes to get rid of them.
     // core problem is optimization: how to SPILL properly and efficiently?
     // TODO: this is the first implementation, simple but may not the most efficient
-    def multiPassFlatMap[U: ClassTag](f: T => Option[TraversableOnce[U]]): RDD[U] = {
+    def multiPassFlatMap[U: ClassTag](f: T => Option[IterableOnce[U]]): RDD[U] = {
 
       val counter = sc.longAccumulator
-      var halfDone: RDD[Either[T, TraversableOnce[U]]] = self.map(v => Left(v))
+      var halfDone: RDD[Either[T, IterableOnce[U]]] = self.map(v => Left(v))
 
       while (true) {
         counter.reset()
 
-        val updated: RDD[Either[T, TraversableOnce[U]]] = halfDone.map {
+        val updated: RDD[Either[T, IterableOnce[U]]] = halfDone.map {
           case Left(src) =>
             f(src) match {
               case Some(res) => Right(res)
@@ -71,13 +71,13 @@ abstract class SpookyViews extends SpookyViews_Imp0 {
 
       //      self.mapPartitions{
       //        itr =>
-      //          var intermediateResult: Iterator[Either[T, TraversableOnce[U]]] = itr.map(v => Left(v))
+      //          var intermediateResult: Iterator[Either[T, IterableOnce[U]]] = itr.map(v => Left(v))
       //
       //          var unfinished = true
       //          while (unfinished) {
       //
       //            var counter = 0
-      //            val updated: Iterator[Either[T, TraversableOnce[U]]] = intermediateResult.map {
+      //            val updated: Iterator[Either[T, IterableOnce[U]]] = intermediateResult.map {
       //              case Left(src) =>
       //                f(src) match {
       //                  case Some(res) => Right(res)
@@ -353,7 +353,7 @@ abstract class SpookyViews extends SpookyViews_Imp0 {
     }
   }
 
-  //  implicit class TraversableOnceView[A, Coll[A] <: TraversableOnce[A], Raw](self: Raw)(implicit cast: Raw => Coll[A]) {
+  //  implicit class IterableOnceView[A, Coll[A] <: IterableOnce[A], Raw](self: Raw)(implicit cast: Raw => Coll[A]) {
   //
   //    def filterByType[B: ClassTag]: Coll[B] = {
   //      val result = cast(self).flatMap{
