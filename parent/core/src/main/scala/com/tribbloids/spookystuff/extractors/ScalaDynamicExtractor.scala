@@ -1,6 +1,5 @@
 package com.tribbloids.spookystuff.extractors
 
-import com.tribbloids.spookystuff.extractors.impl.Lit
 import org.apache.spark.ml.dsl.utils.DSLUtils
 import org.apache.spark.ml.dsl.utils.refl._
 import org.apache.spark.sql.catalyst.ScalaReflection.universe._
@@ -285,32 +284,5 @@ case class ScalaResolvedFunction[T](
         methodMirror.apply(argOpts.map(_.get): _*)
       }
     }
-  }
-}
-
-/**
-  * this complex mixin enables many scala functions of Docs & Unstructured to be directly called on Extraction
-  * shortcuts. supersedes many implementations
-  */
-@Deprecated // no type safety
-trait ScalaDynamicMixin[T, +R] extends Dynamic with ReflectionLock {
-  selfType: GenExtractor[T, R] =>
-
-  def selectDynamic(methodName: String): GenExtractor[T, Any] = {
-
-    ScalaDynamicExtractor(this, methodName, None)
-  }
-
-  def applyDynamic(methodName: String)(args: Any*): GenExtractor[T, Any] = {
-
-    val argExs: Seq[GenExtractor[T, Any]] = args.toSeq.map {
-      case ex: GenExtractor[_, _] =>
-        ex.asInstanceOf[GenExtractor[T, Any]]
-      case v @ _ =>
-        val tt = UnreifiedObjectType.forRuntimeInstance(v)
-        new Lit[T, Any](Option(v), tt)
-    }
-
-    ScalaDynamicExtractor(this, methodName, Some(argExs.toList))
   }
 }

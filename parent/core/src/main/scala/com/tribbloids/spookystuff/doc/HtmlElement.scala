@@ -4,7 +4,7 @@ import de.l3s.boilerpipe.extractors.ArticleExtractor
 import org.apache.tika.io.TikaInputStream
 import org.apache.tika.metadata.{HttpHeaders, Metadata}
 import org.apache.tika.parser.{AutoDetectParser, ParseContext}
-import org.apache.tika.sax.ToXMLContentHandler
+import org.apache.tika.sax.ToHTMLContentHandler
 import org.jsoup.Jsoup
 import org.jsoup.nodes.Element
 
@@ -24,7 +24,7 @@ object HtmlElement {
 
   def fromBytes(content: Array[Byte], charSet: String, mimeType: String, uri: String): HtmlElement = {
 
-    val handler = new ToXMLContentHandler()
+    val handler = new ToHTMLContentHandler()
 
     val metadata = new Metadata()
     val stream = TikaInputStream.get(content, metadata)
