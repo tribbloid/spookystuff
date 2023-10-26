@@ -5,7 +5,6 @@ import org.apache.spark.ml.dsl.utils.refl._
 import org.apache.spark.sql.catalyst.ScalaReflection.universe._
 
 import java.lang.reflect.Method
-import scala.language.dynamics
 
 case class ScalaDynamic(
     methodName: String
