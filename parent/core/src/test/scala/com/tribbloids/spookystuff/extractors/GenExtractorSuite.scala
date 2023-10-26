@@ -9,7 +9,7 @@ object GenExtractorSuite {
 
   var counter: Int = 0
 
-  val partialFn: scala.PartialFunction[String, Int] =
+  val str2Int: scala.PartialFunction[String, Int] =
     new AbstractPartialFunction[String, Int] with Serializable {
 
       override def isDefinedAt(v: String): Boolean = {
@@ -28,7 +28,7 @@ object GenExtractorSuite {
       }
     }
 
-  val optionFn: String => Option[Int] = { v: String =>
+  val str2IntLifted: String => Option[Int] = { v: String =>
     {
       counter += 1
       if (v == "abc") {
@@ -43,72 +43,83 @@ object GenExtractorSuite {
 class GenExtractorSuite extends SpookyBaseSpec {
 
   import GenExtractorSuite._
-  import com.tribbloids.spookystuff.dsl._
 
-  it("Some(partialFn) is serializable") {
-    AssertSerializable[Option[String => Int]](Some(partialFn), condition = (_, _) => {})
-  }
+  describe("spike: is serializable") {
 
-  it("Some(optionFn) is serializable") {
-    AssertSerializable[Option[String => Option[Int]]](Some(optionFn), condition = (_, _) => {})
+    it("Some(str2Int)") {
+      AssertSerializable[Option[String => Int]](Some(str2Int), condition = (_, _) => {})
+    }
+
+    it("Some(str2IntLifted)") {
+      AssertSerializable[Option[String => Option[Int]]](Some(str2IntLifted), condition = (_, _) => {})
+    }
   }
 
   val tuples: Seq[(GenExtractor[String, Int], String)] = Seq(
-    GenExtractor.fromFn(partialFn) -> "fromFn",
-    GenExtractor.fromOptionFn(optionFn) -> "fromOptionFn",
-    GenExtractor.fromFn(partialFn) ~ 'A -> "Alias(fromFn)",
-    GenExtractor.fromOptionFn(optionFn) ~ 'B -> "Alias(fromOptionFn)"
+    GenExtractor.fromFn(str2Int) -> "fromFn",
+    GenExtractor.fromOptionFn(str2IntLifted) -> "fromOptionFn"
   )
 
   tuples.foreach { tuple =>
     val extractor = tuple._1
     val str = tuple._2
-    it(s"$str and all its resolved functions are serializable") {
-      AssertSerializable[GenExtractor[String, Int]](extractor, condition = (_, _) => {})
-      AssertSerializable[PartialFunction[String, Int]](extractor.resolve(emptySchema), condition = (_, _) => {})
-      AssertSerializable[Function1[String, Option[Int]]](extractor.resolve(emptySchema).lift, condition = (_, _) => {})
-    }
 
-    it(s"$str.apply won't execute twice") {
-      counter = 0
+    describe(str) {
+      // TODO: merge tests from ExtractorSuite
+      //   namely, toString & toJson assertions
 
-      println(extractor.apply("abc"))
-      assert(counter == 1)
-
-      intercept[MatchError] {
-        extractor.apply("d")
+      it(s"all its resolved functions are serializable") {
+        AssertSerializable[GenExtractor[String, Int]](extractor, condition = (_, _) => {})
+        AssertSerializable[PartialFunction[String, Int]](extractor.resolve(emptySchema), condition = (_, _) => {})
+        AssertSerializable[Function1[String, Option[Int]]](
+          extractor.resolve(emptySchema).lift,
+          condition = (_, _) => {}
+        )
       }
-      assert(counter == 2)
+
+      it(s"apply won't execute twice") {
+        counter = 0
+
+        println(extractor.apply("abc"))
+        assert(counter == 1)
+
+        intercept[MatchError] {
+          extractor.apply("d")
+        }
+        assert(counter == 2)
+      }
+
+      it(s"lift.apply won't execute twice") {
+        counter = 0
+
+        println(extractor.lift.apply("abc"))
+        assert(counter == 1)
+
+        println(extractor.lift.apply("d"))
+        assert(counter == 2)
+      }
+
+      it(s"applyOrElse won't execute twice") {
+        counter = 0
+
+        println(extractor.applyOrElse("abc", (_: String) => 0))
+        assert(counter == 1)
+
+        println(extractor.applyOrElse("d", (_: String) => 0))
+        assert(counter == 2)
+      }
+
+      it(s"isDefined won't execute twice") {
+        counter = 0
+
+        println(extractor.isDefinedAt("abc"))
+        assert(counter == 1)
+
+        println(extractor.isDefinedAt("d"))
+        assert(counter == 2)
+      }
     }
 
-    it(s"$str.lift.apply won't execute twice") {
-      counter = 0
-
-      println(extractor.lift.apply("abc"))
-      assert(counter == 1)
-
-      println(extractor.lift.apply("d"))
-      assert(counter == 2)
-    }
-
-    it(s"$str.applyOrElse won't execute twice") {
-      counter = 0
-
-      println(extractor.applyOrElse("abc", (_: String) => 0))
-      assert(counter == 1)
-
-      println(extractor.applyOrElse("d", (_: String) => 0))
-      assert(counter == 2)
-    }
-
-    it(s"$str.isDefined won't execute twice") {
-      counter = 0
-
-      println(extractor.isDefinedAt("abc"))
-      assert(counter == 1)
-
-      println(extractor.isDefinedAt("d"))
-      assert(counter == 2)
-    }
   }
+
 }

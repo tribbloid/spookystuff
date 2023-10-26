@@ -5,7 +5,6 @@ import com.tribbloids.spookystuff.extractors.GenExtractor.AndThen
 import com.tribbloids.spookystuff.extractors.impl.Extractors._
 import com.tribbloids.spookystuff.extractors.impl.{Append, Zipped}
 import com.tribbloids.spookystuff.row.Field
-import com.tribbloids.spookystuff.utils.Default
 import org.apache.spark.ml.dsl.utils.refl.{CatalystTypeOps, UnreifiedObjectType}
 import org.apache.spark.sql.types.MapType
 
@@ -20,13 +19,18 @@ trait GenExtractorImplicits extends CatalystTypeOps.ImplicitMixin {
   import org.apache.spark.sql.catalyst.ScalaReflection.universe
   import universe.TypeTag
 
-  implicit class ExView[R: ClassTag](self: Extractor[R])(
-      implicit
-      val defaultV: Default[R]
-  ) extends Serializable {
+  implicit class ExtractorView[R: ClassTag](val self: Extractor[R]) extends Serializable {
+
+    final def as(field: Field): GenExtractor[FR, R] = self._as(Option(field))
+    final def ~(field: Field): GenExtractor[FR, R] = as(field)
 
     def into(field: Field): Alias[FR, Seq[R]] = Append.create[R](field, self)
-    def ~+(field: Field) = into(field)
+    def ~+(field: Field): Alias[FR, Seq[R]] = into(field)
+  }
+
+  object ExtractorView {
+
+    implicit def unbox[R](v: ExtractorView[R]): Extractor[R] = v.self
   }
 
   implicit class StringExView(self: Extractor[String]) extends Serializable {
@@ -44,11 +48,11 @@ trait GenExtractorImplicits extends CatalystTypeOps.ImplicitMixin {
     def uri: Extractor[String] = self.andFn(_.uri)
 
     def findAll(selector: String): GenExtractor[FR, Elements[Unstructured]] = FindAllExpr(self, selector)
-    def \\(selector: String) = findAll(selector)
+    def \\(selector: String): GenExtractor[FR, Elements[Unstructured]] = findAll(selector)
     def findFirst(selector: String): Extractor[Unstructured] = findAll(selector).head
 
     def children(selector: String): GenExtractor[FR, Elements[Unstructured]] = ChildrenExpr(self, selector)
-    def \(selector: String) = children(selector)
+    def \(selector: String): GenExtractor[FR, Elements[Unstructured]] = children(selector)
     def child(selector: String): Extractor[Unstructured] = children(selector).head
 
     def text: Extractor[String] = self.andOptionFn { v =>

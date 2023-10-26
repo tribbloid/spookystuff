@@ -182,16 +182,13 @@ trait GenExtractor[T, +R] extends ReflectionLock with CatalystTypeOps.ImplicitMi
     }
   }
 
-  private def _as(fieldOpt: Option[Field]): GenExtractor[T, R] = {
+  private[extractors] def _as(fieldOpt: Option[Field]): GenExtractor[T, R] = {
 
     fieldOpt match {
       case Some(field) => withAlias(field)
       case None        => withoutAlias
     }
   }
-
-  final def as(field: Field): GenExtractor[T, R] = _as(Option(field))
-  final def ~(field: Field): GenExtractor[T, R] = as(field)
 
   // will not rename an already-named Alias.
   def withAliasIfMissing(field: Field): Alias[T, R] = {

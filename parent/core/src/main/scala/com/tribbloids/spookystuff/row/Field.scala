@@ -35,14 +35,14 @@ object Field {
   */
 case class Field(
     name: String,
-    isWeak: Boolean = false, // TODO: merge into conflictResolving
-    // weak field can be referred by common extractions, but has lower priority
+    isWeak: Boolean = false,
+    // weak field can be referred by extractions, but has lower priority
     // weak field is removed when conflict resolving with an identical field
-    isInvisible: Boolean = false,
-    // invisible field cannot be referred by common extractions
-    // declare it to ensure that its value won't interfere with downstream execution.
+//    isTemporary: Boolean = false, // TODO: enable
+    // temporary fields should be evicted after every ExecutionPlan
     isReserved: Boolean = false,
     conflictResolving: Field.ConflictResolving = Field.Error,
+    // TODO, this entire conflict resolving mechanism should be moved to typed Extractor, along with isWeak
     isOrdinal: Boolean = false, // represents ordinal index in flatten/explore
     depthRangeOpt: Option[Range] = None, // represents depth in explore
 
@@ -50,7 +50,12 @@ case class Field(
 ) extends EqualBy
     with ProtoAPI {
 
-  lazy val _equalBy: (String, Boolean, Boolean, Boolean) = (name, isWeak, isInvisible, isReserved)
+  lazy val _equalBy: List[Any] = List(
+    name,
+    isWeak,
+//    isTemporary,
+    isReserved
+  )
 
   def ! = this.copy(conflictResolving = Field.ReplaceIfNotNull)
   def !! = this.copy(conflictResolving = Field.Replace)
@@ -60,7 +65,7 @@ case class Field(
   def isDepth: Boolean = depthRangeOpt.nonEmpty
   def isSortIndex: Boolean = isOrdinal || isDepth
 
-  def isSelected: Boolean = isSelectedOverride.getOrElse(!(isWeak || isInvisible))
+  def isSelected: Boolean = isSelectedOverride.getOrElse(!isWeak)
 
   def effectiveConflictResolving(existing: Field): ConflictResolving = {
 

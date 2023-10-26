@@ -9,10 +9,10 @@ import scala.runtime.AbstractPartialFunction
 // Result of PartialFunctions.unlift in scala 2.11 is NOT serializable, but this problem is long gone
 // only kept here to memorize construction stacktrace
 case class Unlift[-T, +R](
-    liftFn: T => Option[R],
-    id: String = UUID.randomUUID().toString
+    liftFn: T => Option[R]
 ) extends AbstractPartialFunction[T, R] {
 
+  val id: String = UUID.randomUUID().toString
   Unlift.id2ConstructionStack += id -> DSLUtils.getBreakpointInfo().toList
 
   final override def isDefinedAt(x: T): Boolean = liftFn(x).isDefined

@@ -14,8 +14,7 @@ import java.util.concurrent.TimeUnit
 import scala.collection.immutable.ListMap
 import scala.concurrent.duration.FiniteDuration
 
-//TODO: not all classes are registered which renders this class useless
-// should be part of the Plugin API
+//TODO: not all classes are registered, will need benchmark to evaluate gains in Kryo Ser/De
 class SpookyKryoRegistrator extends KryoRegistrator {
 
   override def registerClasses(kryo: Kryo): Unit = {
