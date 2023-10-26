@@ -499,7 +499,7 @@ case class FetchedDataset(
       checkpointInterval: Int = spooky.spookyConf.checkpointInterval, // set to Int.MaxValue to disable checkpointing,
 
       select: Extractor[Any] = null,
-      selects: Traversable[Extractor[Any]] = Seq()
+      selects: Iterable[Extractor[Any]] = Seq()
   ): FetchedDataset = {
 
     var trace = _defaultWget(cooldown, filter)

@@ -130,9 +130,9 @@ These special characters are often called "metacharacters".
   def asArray[T <: Any: ClassTag](obj: Any): Array[T] = {
 
     val canon: Array[_] = obj match {
-      case v: TraversableOnce[Any] => v.toArray
-      case v: Array[_]             => v
-      case _                       => Array[Any](obj)
+      case v: IterableOnce[Any] => v.toArray
+      case v: Array[_]          => v
+      case _                    => Array[Any](obj)
     }
 
     canon.collect {
@@ -145,8 +145,8 @@ These special characters are often called "metacharacters".
   def asIterable[T <: Any: ClassTag](obj: Any): Iterable[T] = {
 
     val canon: Iterable[Any] = obj match {
-      case v: TraversableOnce[Any] => v.toIterable
-      case v: Array[_]             => v.toIterable
+      case v: IterableOnce[Any] => v.to(Iterable)
+      case v: Array[_]          => v.to(Iterable)
       case _ =>
         Iterable[Any](obj)
     }

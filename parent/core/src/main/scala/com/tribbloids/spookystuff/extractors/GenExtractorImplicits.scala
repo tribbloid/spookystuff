@@ -3,13 +3,12 @@ package com.tribbloids.spookystuff.extractors
 import com.tribbloids.spookystuff.doc._
 import com.tribbloids.spookystuff.extractors.GenExtractor.AndThen
 import com.tribbloids.spookystuff.extractors.impl.Extractors._
-import com.tribbloids.spookystuff.extractors.impl.{Append, Zipped}
+import com.tribbloids.spookystuff.extractors.impl.{Append, Get, Zipped}
 import com.tribbloids.spookystuff.row.Field
 import org.apache.spark.ml.dsl.utils.refl.{CatalystTypeOps, UnreifiedObjectType}
 import org.apache.spark.sql.types.MapType
 
 import java.sql.Timestamp
-import scala.collection.GenTraversableOnce
 import scala.language.implicitConversions
 import scala.reflect.ClassTag
 
@@ -24,8 +23,9 @@ trait GenExtractorImplicits extends CatalystTypeOps.ImplicitMixin {
     final def as(field: Field): GenExtractor[FR, R] = self._as(Option(field))
     final def ~(field: Field): GenExtractor[FR, R] = as(field)
 
-    def into(field: Field): Alias[FR, Seq[R]] = Append.create[R](field, self)
+    def into(field: Field): Alias[FR, Seq[R]] = Append[R](Get(field), self).withAlias(field.!!)
     def ~+(field: Field): Alias[FR, Seq[R]] = into(field)
+
   }
 
   object ExtractorView {
@@ -203,8 +203,8 @@ trait GenExtractorImplicits extends CatalystTypeOps.ImplicitMixin {
         groupByImpl(f)
           .andThen(v =>
             v.values.flatMap {
-              case repr: Traversable[T] => repr.headOption
-              case _                    => None // TODO: what's the point of this? removed
+              case repr: Iterable[T] => repr.headOption
+              case _                 => None // TODO: what's the point of this? removed
             }
           ),
         identity
@@ -213,7 +213,7 @@ trait GenExtractorImplicits extends CatalystTypeOps.ImplicitMixin {
 
     def map[B: TypeTag](f: T => B): Extractor[Seq[B]] = self.andFn(v => v.toSeq.map(f))
 
-    def flatMap[B: TypeTag](f: T => GenTraversableOnce[B]): Extractor[Seq[B]] = self.andFn(v => v.toSeq.flatMap(f))
+    def flatMap[B: TypeTag](f: T => IterableOnce[B]): Extractor[Seq[B]] = self.andFn(v => v.toSeq.flatMap(f))
   }
 }
 

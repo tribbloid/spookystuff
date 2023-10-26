@@ -27,5 +27,5 @@ object JoinType {
   // case object First extends MergeStrategy((a,b) => a) //keep the original pages if action chain is empty
   // case object Last extends MergeStrategy((a,b) => b) //always keep the original pages
   // case object Error extends MergeStrategy(throw new UnsupportedOperationException("merge conflict"))
-  // case object Concat extends MergeStrategy((a,b) => a.asInstanceOf[Traversable[_]] ++ b.asInstanceOf[TraversableOnce[_]])
+  // case object Concat extends MergeStrategy((a,b) => a.asInstanceOf[Iterable[_]] ++ b.asInstanceOf[IterableOnce[_]])
 }

@@ -2,7 +2,7 @@ package com.tribbloids.spookystuff.utils
 
 import java.security.PrivilegedAction
 
-import scala.collection.{mutable, GenTraversableOnce}
+import scala.collection.mutable
 
 abstract class CommonViews {
 
@@ -21,7 +21,7 @@ abstract class CommonViews {
     }
   }
 
-//  implicit class GenTraversableOnceView[A](self: GenTraversableOnce[A])(
+//  implicit class GenIterableOnceView[A](self: GenIterableOnce[A])(
 //      implicit
 //      ctg: ClassTag[A]
 //  ) {
