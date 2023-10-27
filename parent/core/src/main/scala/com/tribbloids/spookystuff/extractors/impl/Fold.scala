@@ -1,17 +1,19 @@
 package com.tribbloids.spookystuff.extractors.impl
 
 import com.tribbloids.spookystuff.extractors._
-import com.tribbloids.spookystuff.utils.SpookyUtils
 
-import scala.reflect.ClassTag
-
-abstract class Fold[T1, T2, R: ClassTag] extends Extractor[R] {
+abstract class Fold[T1, T2, R]() extends Extractor[R] {
 
   val getOld: Extractor[T1]
 
   val getNew: Extractor[T2]
 
-  def foldFn(
+  def foldType(
+      oldT: => DataType,
+      newT: => DataType
+  ): DataType
+
+  def fold(
       oldV: => Option[T1],
       newV: => Option[T2]
   ): Option[R]
@@ -19,9 +21,10 @@ abstract class Fold[T1, T2, R: ClassTag] extends Extractor[R] {
   override def _args: Seq[GenExtractor[_, _]] = Seq(getOld, getNew)
 
   override def resolveType(tt: DataType): DataType = {
-    val existingType = getNew.resolveType(tt)
+    def oldT = getOld.resolveType(tt)
+    def newT = getNew.resolveType(tt)
 
-    existingType
+    foldType(oldT, newT)
   }
 
   override def resolve(tt: DataType): PartialFunction[FR, R] = {
@@ -32,8 +35,7 @@ abstract class Fold[T1, T2, R: ClassTag] extends Extractor[R] {
       lazy val oldOpt = oldResolved.apply(v1)
       lazy val newOpt = newResolved.apply(v1)
 
-      foldFn(oldOpt, newOpt)
+      fold(oldOpt, newOpt)
     }
   }
-
 }

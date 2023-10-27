@@ -45,6 +45,8 @@ object Col {
   implicit def fromSymbol[T](v: Symbol): Col[T] = {
     Col[T](v)
   }
+
+  implicit def unbox[T](v: Col[T]): Extractor[_ >: T] = v.ex
 }
 
 case class Col[T](
@@ -53,9 +55,6 @@ case class Col[T](
     with RootTagged {
 
   override def toString: String = this.treeText
-
-  def resolveType(tt: DataType): DataType = ex.resolveType(tt)
-  def resolve(tt: DataType): PartialFunction[FR, _ >: T] = ex.resolve(tt)
 
   def value: T = {
     ex match {

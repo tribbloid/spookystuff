@@ -85,7 +85,7 @@ case class ExplorePlan(
   val depth_0: Resolved[Int] = resolver.include(Lit(0) withAlias _effectiveParams.depthField).head
   val depth_++ : Resolved[Int] = resolver
     .include(
-      Get(_effectiveParams.depthField).typed[Int].andFn(_ + 1) withAlias _effectiveParams.depthField.!!
+      Get(_effectiveParams.depthField).typed[Int].andMap(_ + 1) withAlias _effectiveParams.depthField.!!
     )
     .head
   val _ordinal: TypedField =
@@ -171,9 +171,9 @@ case class ExplorePlan(
 
     val combinedReducer: (Open_Visited, Open_Visited) => Open_Visited = { (v1, v2) =>
       Open_Visited(
-        open = (v1.open ++ v2.open).map(_.to(Iterable)).reduceOption(impl.openReducerBetweenEpochs).map(_.toArray),
+        open = (v1.open ++ v2.open).map(_.iterator.to(Iterable)).reduceOption(impl.openReducerBetweenEpochs).map(_.toArray),
         visited =
-          (v1.visited ++ v2.visited).map(_.to(Iterable)).reduceOption(impl.visitedReducerBetweenEpochs).map(_.toArray)
+          (v1.visited ++ v2.visited).map(_.iterator.to(Iterable)).reduceOption(impl.visitedReducerBetweenEpochs).map(_.toArray)
       )
     }
 

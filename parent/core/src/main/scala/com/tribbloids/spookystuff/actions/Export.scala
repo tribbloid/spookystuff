@@ -53,7 +53,7 @@ trait Wayback extends WaybackLike {
   var wayback: Extractor[Long] = _
 
   def waybackTo(date: Extractor[Date]): this.type = {
-    this.wayback = date.andFn(_.getTime)
+    this.wayback = date.andMap(_.getTime)
     this
   }
 

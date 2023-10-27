@@ -66,7 +66,7 @@ class FetchedDatasetSuite extends SpookyBaseSpec with LocalPathDocsFixture {
         Wget(HTML_URL)
       )
       .extract(
-        S.andOptionFn { page =>
+        S.andFlatMap { page =>
           acc += 1
           page.saved.headOption
         } ~ 'path
@@ -92,7 +92,7 @@ class FetchedDatasetSuite extends SpookyBaseSpec with LocalPathDocsFixture {
           Wget(HTML_URL)
         )
         .extract(
-          S.andOptionFn { page =>
+          S.andFlatMap { page =>
             acc += 1
             page.saved.headOption
           } ~ 'path
@@ -114,7 +114,7 @@ class FetchedDatasetSuite extends SpookyBaseSpec with LocalPathDocsFixture {
           Wget(HTML_URL)
         )
         .extract(
-          S.andOptionFn { page =>
+          S.andFlatMap { page =>
             acc += 1
             page.saved.headOption
           } ~ 'path
@@ -136,7 +136,7 @@ class FetchedDatasetSuite extends SpookyBaseSpec with LocalPathDocsFixture {
           Wget(HTML_URL)
         )
         .select(
-          S.andOptionFn { page =>
+          S.andFlatMap { page =>
             acc += 1
             page.saved.headOption
           } ~ 'path
@@ -161,7 +161,7 @@ class FetchedDatasetSuite extends SpookyBaseSpec with LocalPathDocsFixture {
         S.uri ~ 'uri,
         S.children("h1").size ~ 'size,
         S.timestamp ~ 'timestamp,
-        S.andOptionFn { page =>
+        S.andFlatMap { page =>
           page.saved.headOption
         } ~ 'saved
       )
@@ -214,7 +214,7 @@ class FetchedDatasetSuite extends SpookyBaseSpec with LocalPathDocsFixture {
         S.uri ~ 'uri.*,
         S.children("h1").size ~ 'size.*,
         S.timestamp ~ 'timestamp,
-        S.andOptionFn { page =>
+        S.andFlatMap { page =>
           page.saved.headOption
         } ~ 'saved
       )

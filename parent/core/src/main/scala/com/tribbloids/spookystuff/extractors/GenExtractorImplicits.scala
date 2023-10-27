@@ -3,7 +3,7 @@ package com.tribbloids.spookystuff.extractors
 import com.tribbloids.spookystuff.doc._
 import com.tribbloids.spookystuff.extractors.GenExtractor.AndThen
 import com.tribbloids.spookystuff.extractors.impl.Extractors._
-import com.tribbloids.spookystuff.extractors.impl.{Append, Get, Zipped}
+import com.tribbloids.spookystuff.extractors.impl.{AppendSeq, Get, Zipped}
 import com.tribbloids.spookystuff.row.Field
 import org.apache.spark.ml.dsl.utils.refl.{CatalystTypeOps, UnreifiedObjectType}
 import org.apache.spark.sql.types.MapType
@@ -23,7 +23,7 @@ trait GenExtractorImplicits extends CatalystTypeOps.ImplicitMixin {
     final def as(field: Field): GenExtractor[FR, R] = self._as(Option(field))
     final def ~(field: Field): GenExtractor[FR, R] = as(field)
 
-    def into(field: Field): Alias[FR, Seq[R]] = Append[R](Get(field), self).withAlias(field.!!)
+    def into(field: Field): Alias[FR, Seq[R]] = AppendSeq[R](Get(field), self).withAlias(field.!!)
     def ~+(field: Field): Alias[FR, Seq[R]] = into(field)
 
   }
@@ -36,16 +36,16 @@ trait GenExtractorImplicits extends CatalystTypeOps.ImplicitMixin {
   implicit class StringExView(self: Extractor[String]) extends Serializable {
 
     def replaceAll(regex: String, replacement: String): Extractor[String] =
-      self.andFn(_.replaceAll(regex, replacement))
+      self.andMap(_.replaceAll(regex, replacement))
 
-    def trim: Extractor[String] = self.andFn(_.trim)
+    def trim: Extractor[String] = self.andMap(_.trim)
 
     def +(another: Extractor[Any]): Extractor[String] = x"$self$another"
   }
 
   implicit class UnstructuredExView(self: Extractor[Unstructured]) extends Serializable {
 
-    def uri: Extractor[String] = self.andFn(_.uri)
+    def uri: Extractor[String] = self.andMap(_.uri)
 
     def findAll(selector: String): GenExtractor[FR, Elements[Unstructured]] = FindAllExpr(self, selector)
     def \\(selector: String): GenExtractor[FR, Elements[Unstructured]] = findAll(selector)
@@ -55,34 +55,34 @@ trait GenExtractorImplicits extends CatalystTypeOps.ImplicitMixin {
     def \(selector: String): GenExtractor[FR, Elements[Unstructured]] = children(selector)
     def child(selector: String): Extractor[Unstructured] = children(selector).head
 
-    def text: Extractor[String] = self.andOptionFn { v =>
+    def text: Extractor[String] = self.andFlatMap { v =>
       v.text
     }
 
-    def code: GenExtractor[FR, String] = self.andOptionFn(_.code)
+    def code: GenExtractor[FR, String] = self.andFlatMap(_.code)
 
-    def formattedCode: GenExtractor[FR, String] = self.andOptionFn(_.formattedCode)
+    def formattedCode: GenExtractor[FR, String] = self.andFlatMap(_.formattedCode)
 
-    def ownText: Extractor[String] = self.andOptionFn(_.ownText)
+    def ownText: Extractor[String] = self.andFlatMap(_.ownText)
 
     def allAttr: Extractor[Map[String, String]] =
-      self.andOptionFn(_.allAttr)
+      self.andFlatMap(_.allAttr)
 
     def attr(attrKey: String, noEmpty: Boolean = true): Extractor[String] =
-      self.andOptionFn(_.attr(attrKey, noEmpty))
+      self.andFlatMap(_.attr(attrKey, noEmpty))
 
-    def href: GenExtractor[FR, String] = self.andOptionFn(_.href)
+    def href: GenExtractor[FR, String] = self.andFlatMap(_.href)
 
-    def src: GenExtractor[FR, String] = self.andOptionFn(_.src)
+    def src: GenExtractor[FR, String] = self.andFlatMap(_.src)
 
-    def boilerPipe: GenExtractor[FR, String] = self.andOptionFn(_.boilerPipe)
+    def boilerPipe: GenExtractor[FR, String] = self.andFlatMap(_.boilerPipe)
 
     def expand(range: Range): GenExtractor[FR, Elements[Siblings[Unstructured]]] = {
       self match {
         case AndThen(_, _, Some(FindAllMeta(argg, selector))) =>
-          argg.andFn(_.findAllWithSiblings(selector, range))
+          argg.andMap(_.findAllWithSiblings(selector, range))
         case AndThen(_, _, Some(ChildrenMeta(argg, selector))) =>
-          argg.andFn(_.childrenWithSiblings(selector, range))
+          argg.andMap(_.childrenWithSiblings(selector, range))
         case _ =>
           throw new UnsupportedOperationException("expression does not support expand")
       }
@@ -91,50 +91,50 @@ trait GenExtractorImplicits extends CatalystTypeOps.ImplicitMixin {
 
   implicit class ElementsExView(self: Extractor[Elements[_]]) extends Serializable {
 
-    def uris: Extractor[Seq[String]] = self.andFn(_.uris)
+    def uris: Extractor[Seq[String]] = self.andMap(_.uris)
 
-    def texts: Extractor[Seq[String]] = self.andFn(_.texts)
+    def texts: Extractor[Seq[String]] = self.andMap(_.texts)
 
-    def codes: Extractor[Seq[String]] = self.andFn(_.codes)
+    def codes: Extractor[Seq[String]] = self.andMap(_.codes)
 
-    def ownTexts: Extractor[Seq[String]] = self.andFn(_.ownTexts)
+    def ownTexts: Extractor[Seq[String]] = self.andMap(_.ownTexts)
 
     def allAttrs: Extractor[Seq[Map[String, String]]] =
-      self.andFn(_.allAttrs)
+      self.andMap(_.allAttrs)
 
     def attrs(attrKey: String, noEmpty: Boolean = true): Extractor[Seq[String]] =
-      self.andFn(_.attrs(attrKey, noEmpty))
+      self.andMap(_.attrs(attrKey, noEmpty))
 
-    def hrefs: GenExtractor[FR, List[String]] = self.andFn(_.hrefs)
+    def hrefs: GenExtractor[FR, List[String]] = self.andMap(_.hrefs)
 
-    def srcs: GenExtractor[FR, List[String]] = self.andFn(_.srcs)
+    def srcs: GenExtractor[FR, List[String]] = self.andMap(_.srcs)
 
-    def boilerPipes: GenExtractor[FR, Seq[String]] = self.andFn(_.boilerPipes)
+    def boilerPipes: GenExtractor[FR, Seq[String]] = self.andMap(_.boilerPipes)
   }
 
-  implicit class DocExView(self: Extractor[Doc]) extends UnstructuredExView(self.andFn(_.root)) {
+  implicit class DocExView(self: Extractor[Doc]) extends UnstructuredExView(self.andMap(_.root)) {
 
-    def uid: Extractor[DocUID] = self.andFn(_.uid)
+    def uid: Extractor[DocUID] = self.andMap(_.uid)
 
-    def contentType: Extractor[String] = self.andFn(_.contentType)
+    def contentType: Extractor[String] = self.andMap(_.contentType)
 
-    def content: Extractor[Seq[Byte]] = self.andFn(_.raw.toSeq)
+    def content: Extractor[Seq[Byte]] = self.andMap(_.raw.toSeq)
 
-    def timestamp: Extractor[Timestamp] = self.andFn(_.timestamp)
+    def timestamp: Extractor[Timestamp] = self.andMap(_.timestamp)
 
-    def saved: Extractor[Set[String]] = self.andFn(_.saved.toSet)
+    def saved: Extractor[Set[String]] = self.andMap(_.saved.toSet)
 
-    def mimeType: Extractor[String] = self.andFn(_.mimeType)
+    def mimeType: Extractor[String] = self.andMap(_.mimeType)
 
-    def charSet: Extractor[String] = self.andOptionFn(_.charset)
+    def charSet: Extractor[String] = self.andFlatMap(_.charset)
 
-    def fileExtensions: Extractor[Seq[String]] = self.andFn(_.fileExtensions.toSeq)
+    def fileExtensions: Extractor[Seq[String]] = self.andMap(_.fileExtensions.toSeq)
 
-    def defaultFileExtension: Extractor[String] = self.andOptionFn(_.defaultFileExtension)
+    def defaultFileExtension: Extractor[String] = self.andFlatMap(_.defaultFileExtension)
   }
 
   implicit def SeqMagnetExView[T: TypeTag](self: Extractor[DelegateSeq[T]]): IterableExView[T] = {
-    new IterableExView[T](self.andFn(v => v.seq))
+    new IterableExView[T](self.andMap(v => v.seq))
   }
 
   implicit class IterableExView[T: TypeTag](self: Extractor[Iterable[T]]) extends Serializable {
@@ -156,15 +156,15 @@ trait GenExtractorImplicits extends CatalystTypeOps.ImplicitMixin {
         _.unboxArrayOrMap
       )
 
-    def size: Extractor[Int] = self.andFn(_.size)
+    def size: Extractor[Int] = self.andMap(_.size)
 
-    def isEmpty: Extractor[Boolean] = self.andFn(_.isEmpty)
+    def isEmpty: Extractor[Boolean] = self.andMap(_.isEmpty)
 
-    def nonEmpty: Extractor[Boolean] = self.andFn(_.nonEmpty)
+    def nonEmpty: Extractor[Boolean] = self.andMap(_.nonEmpty)
 
-    def mkString(sep: String = ""): Extractor[String] = self.andFn(_.mkString(sep))
+    def mkString(sep: String = ""): Extractor[String] = self.andMap(_.mkString(sep))
 
-    def mkString(start: String, sep: String, end: String): Extractor[String] = self.andFn(_.mkString(start, sep, end))
+    def mkString(start: String, sep: String, end: String): Extractor[String] = self.andMap(_.mkString(start, sep, end))
 
     // TODO: Why IterableExView.filter cannot be applied on ZippedExpr? is the scala compiler malfunctioning?
     def zipWithKeys(keys: Extractor[Any]): Zipped[Any, T] =
@@ -211,9 +211,9 @@ trait GenExtractorImplicits extends CatalystTypeOps.ImplicitMixin {
       )
     }
 
-    def map[B: TypeTag](f: T => B): Extractor[Seq[B]] = self.andFn(v => v.toSeq.map(f))
+    def map[B: TypeTag](f: T => B): Extractor[Seq[B]] = self.andMap(v => v.toSeq.map(f))
 
-    def flatMap[B: TypeTag](f: T => IterableOnce[B]): Extractor[Seq[B]] = self.andFn(v => v.toSeq.flatMap(f))
+//    def flatMap[B: TypeTag](f: T => IterableOnce[B]): Extractor[Seq[B]] = self.andMap(v => v.toSeq.flatMap(f))
   }
 }
 

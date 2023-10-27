@@ -52,7 +52,7 @@ sealed trait Level1 extends Level2 {
     def x(parts: Col[String]*): Interpolate = Interpolate(strC.parts, parts.map(_.ex))
 
     def CSS(parts: Col[String]*): GenExtractor[FR, Elements[Unstructured]] =
-      GetOnlyDocExpr.andFn(_.root).findAll(strC.s(parts: _*))
+      GetOnlyDocExpr.andMap(_.root).findAll(strC.s(parts: _*))
     def S(parts: Col[String]*): GenExtractor[FR, Elements[Unstructured]] = CSS(parts: _*)
 
     def CSS_*(parts: Col[String]*) = GetAllDocsExpr.findAll(strC.s(parts: _*))
@@ -67,7 +67,7 @@ class DSL extends Level1 {
   import com.tribbloids.spookystuff.extractors.impl.Extractors._
 
   def S: GenExtractor[FR, Doc] = GetOnlyDocExpr
-  def S(selector: String): GenExtractor[FR, Elements[Unstructured]] = S.andFn(_.root).findAll(selector)
+  def S(selector: String): GenExtractor[FR, Elements[Unstructured]] = S.andMap(_.root).findAll(selector)
   //  def S(selector: String, i: Int): Extractor[Unstructured] = {
   //    val expr = this.S(selector)
   //    new IterableExView(expr).get(i)

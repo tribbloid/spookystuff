@@ -32,7 +32,7 @@ object Extractors {
   }
 
   case class FindAllMeta(arg: Extractor[Unstructured], selector: String)
-  def FindAllExpr(arg: Extractor[Unstructured], selector: String): GenExtractor[FR, Elements[Unstructured]] = arg.andFn(
+  def FindAllExpr(arg: Extractor[Unstructured], selector: String): GenExtractor[FR, Elements[Unstructured]] = arg.andMap(
     { v1: Unstructured =>
       v1.findAll(selector)
     },
@@ -41,7 +41,7 @@ object Extractors {
 
   case class ChildrenMeta(arg: Extractor[Unstructured], selector: String)
   def ChildrenExpr(arg: Extractor[Unstructured], selector: String): GenExtractor[FR, Elements[Unstructured]] =
-    arg.andFn(
+    arg.andMap(
       { v1 =>
         v1.children(selector)
       },

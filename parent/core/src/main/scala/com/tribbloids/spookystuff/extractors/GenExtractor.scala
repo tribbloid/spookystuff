@@ -165,7 +165,11 @@ trait GenExtractor[T, +R] extends ReflectionLock with CatalystTypeOps.ImplicitMi
 
   protected def _args: Seq[GenExtractor[_, _]]
 
-  // resolve to a Spark SQL DataType according to an exeuction plan
+  // TODO: this is mapped from a Scala/shapeless polymorphic function, which is too complex and
+  //   totally unnecessary if compile-time type inference (e.g. frameless) is used ahead-of-time
+  // TODO: can use TypeMagnet to reduce boilerplate
+  // resolve to a Spark SQL DataType according to an execution plan
+  // TODO: the following 2 can be merged into a single method, returning a lazy tuple
   def resolveType(tt: DataType): DataType
   def resolve(tt: DataType): PartialFunction[T, R]
 
@@ -200,14 +204,15 @@ trait GenExtractor[T, +R] extends ReflectionLock with CatalystTypeOps.ImplicitMi
 
   def withJoinFieldIfMissing: Alias[T, R] = withAliasIfMissing(Const.defaultJoinField)
 
+  // TODO: should merge into andMap
   def andEx[R2 >: R, A](g: GenExtractor[R2, A], meta: Option[Any] = None): GenExtractor[T, A] =
     AndThen[T, R2, A](this, g, meta)
 
-  def andFn[A: TypeTag](g: R => A, meta: Option[Any] = None): GenExtractor[T, A] = {
+  def andMap[A: TypeTag](g: R => A, meta: Option[Any] = None): GenExtractor[T, A] = {
     andEx(g, meta)
   }
 
-  def andOptionFn[A: TypeTag](g: R => Option[A], meta: Option[Any] = None): GenExtractor[T, A] = {
+  def andFlatMap[A: TypeTag](g: R => Option[A], meta: Option[Any] = None): GenExtractor[T, A] = {
     andEx(GenExtractor.fromOptionFn(g), meta)
   }
 
@@ -230,10 +235,10 @@ trait GenExtractor[T, +R] extends ReflectionLock with CatalystTypeOps.ImplicitMi
   def typed[A: TypeTag]: GenExtractor[T, A] = {
     implicit val ctg: ClassTag[A] = TypeMagnet.FromTypeTag[A].asClassTag
 
-    andOptionFn[A] {
+    andFlatMap[A] {
       SpookyUtils.typedOrNone[A]
     }
   }
 
-  def toStr: GenExtractor[T, String] = andFn(_.toString)
+  def toStr: GenExtractor[T, String] = andMap(_.toString)
 }

@@ -145,8 +145,8 @@ These special characters are often called "metacharacters".
   def asIterable[T <: Any: ClassTag](obj: Any): Iterable[T] = {
 
     val canon: Iterable[Any] = obj match {
-      case v: IterableOnce[Any] => v.to(Iterable)
-      case v: Array[_]          => v.to(Iterable)
+      case v: IterableOnce[Any] => v.iterator.to(Iterable)
+      case v: Array[_]          => v.iterator.to(Iterable)
       case _ =>
         Iterable[Any](obj)
     }
