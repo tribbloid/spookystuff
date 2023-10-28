@@ -3,6 +3,7 @@ package com.tribbloids.spookystuff
 import com.tribbloids.spookystuff.conf._
 import com.tribbloids.spookystuff.metrics.SpookyMetrics
 import com.tribbloids.spookystuff.rdd.FetchedDataset
+import com.tribbloids.spookystuff.relay.io.Encoder
 import com.tribbloids.spookystuff.row._
 import com.tribbloids.spookystuff.session.Session
 import com.tribbloids.spookystuff.utils.io.HDFSResolver
@@ -11,12 +12,10 @@ import com.tribbloids.spookystuff.utils.{ShippingMarks, TreeThrowable}
 import org.apache.hadoop.conf.Configuration
 import org.apache.spark._
 import org.apache.spark.broadcast.Broadcast
-import com.tribbloids.spookystuff.relay.io.Encoder
-import org.apache.spark.ml.dsl.utils.refl.{ToCatalyst, TypeMagnet}
+import org.apache.spark.ml.dsl.utils.refl.TypeMagnet
 import org.apache.spark.rdd.RDD
 import org.apache.spark.sql.{DataFrame, SQLContext}
 
-import scala.collection.immutable.ListMap
 import scala.language.implicitConversions
 import scala.reflect.ClassTag
 import scala.util.Try
@@ -170,7 +169,7 @@ case class SpookyContext(
     }
   }
 
-  lazy val _blankRowRDD: RDD[SquashedFetchedRow] = sparkContext.parallelize(Seq(SquashedFetchedRow.blank))
+  lazy val _blankRowRDD: RDD[SquashedRow] = sparkContext.parallelize(Seq(SquashedRow.blank))
 
   def createBlank: FetchedDataset = this.create(_blankRowRDD)
 
@@ -179,23 +178,16 @@ case class SpookyContext(
     import com.tribbloids.spookystuff.utils.SpookyViews._
 
     implicit def dfToFetchedDS(df: DataFrame): FetchedDataset = {
-      val mapRDD = new DataFrameView(df)
-        .toMapRDD()
+      val rowRDD = df.rdd
 
-      val self: SquashedFetchedRDD = mapRDD
-        .map { map =>
-          SquashedFetchedRow(
-            Option(ListMap(map.toSeq: _*))
-              .getOrElse(ListMap())
-              .map(tuple => (Field(tuple._1), tuple._2))
-          )
-        }
+      val self = rowRDD
+        .map(row => DataRow(row.toSeq).asSquashedRow)
       val fields = df.schema.fields.map { sf =>
-        Field(sf.name) -> sf.dataType
-      }
+        Field(Alias(sf.name), sf.dataType)
+      }.toList
       new FetchedDataset(
         self,
-        fieldMap = ListMap(fields: _*),
+        fields,
         spooky = forkForNewRDD
       )
     }
@@ -217,26 +209,23 @@ case class SpookyContext(
 
         // RDD[SquashedFetchedRow] => ..
         // discard schema
-        case _ if ttg.tpe <:< typeOf[SquashedFetchedRow] =>
+        case _ if ttg.tpe <:< typeOf[SquashedRow] =>
           //        case _ if classOf[SquashedFetchedRow] == classTag[T].runtimeClass =>
           val self = rdd.asInstanceOf[SquashedFetchedRDD]
           new FetchedDataset(
             self,
-            fieldMap = ListMap(),
+            fields = List.empty,
             spooky = forkForNewRDD
           )
 
         // RDD[T] => RDD('_ -> T) => ...
         case _ =>
-          val self = rdd.map { str =>
-            var cells = ListMap[Field, Any]()
-            if (str != null) cells = cells + (Field("_") -> str)
-
-            SquashedFetchedRow(cells)
+          val self = rdd.map { v =>
+            DataRow(Seq(v)).asSquashedRow
           }
           new FetchedDataset(
             self,
-            fieldMap = ListMap(Field("_") -> ToCatalyst(TypeMagnet.FromTypeTag(ttg)).asCatalystType),
+            fields = List(Field(Alias("_"), TypeMagnet.FromTypeTag(ttg).asCatalystType)),
             spooky = forkForNewRDD
           )
       }

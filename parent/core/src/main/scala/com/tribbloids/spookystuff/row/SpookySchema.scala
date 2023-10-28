@@ -3,151 +3,121 @@ package com.tribbloids.spookystuff.row
 import com.tribbloids.spookystuff.SpookyContext
 import com.tribbloids.spookystuff.execution._
 import com.tribbloids.spookystuff.extractors._
-import org.apache.spark.ml.dsl.utils.refl.ScalaUDT
-import org.apache.spark.sql.types.{DataType, StructField, StructType}
+import org.apache.spark.ml.dsl.utils.refl.SerializingUDT
+import org.apache.spark.sql.types.{StructField, StructType}
 
-import scala.collection.immutable.ListMap
 import scala.language.implicitConversions
+
+object SpookySchema {}
 
 //this is a special StructType that carries more metadata
 //TODO: override sqlType, serialize & deserialize to compress into InternalRow
 case class SpookySchema(
-    ec: SpookyExecutionContext,
-    fieldTypes: ListMap[Field, DataType] = ListMap.empty
-) extends ScalaUDT[DataRow] {
+    @transient ec: SpookyExecutionContext = null,
+    fields: List[Field] = List.empty
+) extends SerializingUDT[DataRow] {
+
+  import Field._
 
   def spooky: SpookyContext = ec.spooky
 
-  final def fields: List[Field] = fieldTypes.keys.toList
-  final def typedFields: List[TypedField] = fieldTypes.iterator.toList.map(tuple => TypedField(tuple._1, tuple._2))
-  final def indexedFields: List[IndexedField] = typedFields.zipWithIndex
+  @transient final lazy val fieldLookup: Map[Symbol, Field] = {
 
-  final def typedFor(field: Field): Option[TypedField] = {
-    fieldTypes.get(field).map {
-      TypedField(field, _)
+    val withIndices = fields.flatMap(ff => ff.allIndices.map(ii => ii -> ff))
+
+    val grouped = withIndices.groupBy(_._1).view.mapValues(_.head._2).toMap
+    grouped
+  }
+
+  def getReference(by: Symbol): Option[Ref] = {
+    val fieldOpt = fieldLookup.get(by)
+    fieldOpt.map { ff =>
+      Ref(this, ff)
     }
   }
-  final def indexedFor(field: Field): Option[IndexedField] = {
-    indexedFields.find(_._1.self == field)
+  def apply(by: Symbol): Ref = {
+    getReference(by).getOrElse {
+      throw new UnsupportedOperationException(s"field $by does not exist")
+    }
   }
 
-  def filterFields(filter: Field => Boolean = _.isSelected): SpookySchema = {
+  @transient final lazy val indices = fields.flatMap(getReference)
+
+  def filterBy(fn: Ref => Boolean = _.alias.isSelected): SpookySchema = {
     this.copy(
-      fieldTypes = ListMap(fieldTypes.filterKeys(filter).toSeq: _*)
+      fields = indices.filter(fn).map(_.field)
     )
   }
 
-  lazy val structFields: Seq[StructField] = fieldTypes.toSeq
-    .map { tuple =>
-      StructField(
-        tuple._1.name,
-        tuple._2.reified
-      )
+  object inSpark {
+
+    lazy val structFields: Seq[StructField] = fields.map(_.toStructField)
+
+    lazy val structType: StructType = {
+
+      StructType(structFields)
     }
-
-  lazy val structType: StructType = {
-
-    StructType(structFields)
   }
 
-  def --(field: Iterable[Field]): SpookySchema = this.copy(
-    fieldTypes = fieldTypes -- field
-  )
+  def --(by: Symbol*): SpookySchema = {
 
-  def newResolver: Resolver = new Resolver()
+    val _fields = by.flatMap(getReference).map(_.field).toSet
 
-  class Resolver extends Serializable {
+    this.copy(
+      fields = fields.filter(f => !_fields.contains(f))
+    )
+  }
 
-    val buffer: LinkedMap[Field, DataType] = LinkedMap()
-    buffer ++= SpookySchema.this.fieldTypes.toSeq
-    //    val lookup: mutable.HashMap[Extractor[_], Resolved[_]] = mutable.HashMap()
+  lazy val allRefs: List[Ref] = fields.flatMap(getReference)
 
-    def build: SpookySchema = SpookySchema.this.copy(fieldTypes = ListMap(buffer.toSeq: _*))
+  case class ResolveDelta() extends Serializable {
+    // TODO: should be "Delta"
+    // every new field being resolved should return a new FieldReference
+    // not thread safe
 
-    private def resolveField(field: Field): Field = {
+    var schema: SpookySchema = SpookySchema.this
 
-      val existingOpt = buffer.keys.find(_ == field)
-      val crOpt = existingOpt.map { existing =>
-        field.effectiveConflictResolving(existing)
-      }
+    def build: SpookySchema = schema
 
-      val revised = crOpt
-        .map(cr => field.copy(conflictResolving = cr))
-        .getOrElse(field)
-
-      revised
+    def includeField(field: Field*): Seq[Field] = {
+      schema = schema.copy(
+        fields = schema.fields ++ field
+      )
+      field
     }
 
-    def includeTyped(typed: TypedField*): Seq[TypedField] = {
-      typed.map { t =>
-        val resolvedField = resolveField(t.self)
-        mergeType(resolvedField, t.dataType)
-        val result = TypedField(resolvedField, t.dataType)
-        buffer += result.self -> result.dataType
-        result
-      }
-    }
-
-    private def _include[R](
+    private def includeOne[R](
         ex: Extractor[R]
-    ): Resolved[R] = {
+    ): Expr[R] = {
 
-      val alias = ex match {
-        case a: Alias[_, _] =>
-          val resolvedField = resolveField(a.field)
-          ex withAlias resolvedField
+      val aliasedEx = ex match {
+        case a: HasAlias[_, _] =>
+          val alias = a.alias
+          ex withAlias alias
         case _ =>
-          val names = buffer.keys.toSeq.map(_.name)
+          val names = schema.indices.map(_.alias.name)
           val i = (1 to Int.MaxValue)
             .find(i => !names.contains("_c" + i))
             .get
-          ex withAlias Field("_c" + i)
+          ex withAlias Alias("_c" + i)
       }
-      val resolved = alias.resolve(SpookySchema.this)
-      val dataType = alias.resolveType(SpookySchema.this)
+      val resolved = aliasedEx.resolve(schema)
+      val dataType = aliasedEx.resolveType(schema)
 
-      val mergedType = mergeType(alias.field, dataType)
+      val field = Field(aliasedEx.alias, dataType)
+      includeField(field)
 
-      buffer += alias.field -> mergedType
-      Resolved(
+      Expr(
         resolved,
-        TypedField(alias.field, mergedType)
+        field
       )
     }
 
-    def include[R](exs: Extractor[R]*): Seq[Resolved[R]] = {
+    def include[R](exs: Extractor[R]*): Seq[Expr[R]] = {
 
       exs.map { ex =>
-        this._include(ex)
+        this.includeOne(ex)
       }
     }
-  }
-
-  def mergeType(resolvedField: Field, dataType: DataType): DataType = {
-
-    val existingTypeOpt = SpookySchema.this.fieldTypes.get(resolvedField)
-
-    (existingTypeOpt, resolvedField.conflictResolving) match {
-      case (Some(existingType), Field.ReplaceIfNotNull) =>
-        if (dataType == existingType) dataType
-        else if (dataType.reified == existingType.reified) dataType.reified
-        else
-          throw new IllegalArgumentException(
-            s"""
-             |Overwriting field ${resolvedField.name} with inconsistent type:
-             |old: $existingType
-             |new: $dataType
-             |set conflictResolving=Replace to fix it
-             """.stripMargin
-          )
-      case _ =>
-        dataType
-    }
-  }
-
-  // use it after Row-based data representation
-  object ImplicitLookup {
-    implicit def fieldToTyped(field: Field): TypedField = SpookySchema.this.typedFor(field).get
-    implicit def fieldToIndexed(field: Field): IndexedField = SpookySchema.this.indexedFor(field).get
   }
 }

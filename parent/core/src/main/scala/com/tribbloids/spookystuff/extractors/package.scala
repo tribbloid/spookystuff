@@ -13,7 +13,7 @@ package object extractors {
 
   type Extractor[+R] = GenExtractor[FR, R]
 
-  type Resolved[+R] = GenResolved[FR, R]
-  def Resolved: GenResolved.type = GenResolved
+  type Expr[+R] = GenExpr[FR, R]
+  def Expr: GenExpr.type = GenExpr
 
 }

@@ -5,11 +5,10 @@ import com.tribbloids.spookystuff.actions.TraceView
 import com.tribbloids.spookystuff.row._
 import com.tribbloids.spookystuff.tree.TreeView
 import org.apache.spark.rdd.RDD
-import org.apache.spark.sql.types.DataType
 import org.apache.spark.storage.StorageLevel
 import org.slf4j.LoggerFactory
 
-import scala.collection.immutable.ListMap
+import scala.collection.immutable
 import scala.language.implicitConversions
 
 //right now it vaguely resembles SparkPlan in catalyst
@@ -33,17 +32,15 @@ abstract class ExecutionPlan(
   // Cannot be lazy, always defined on construction
   val schema: SpookySchema = SpookySchema(
     ec,
-    fieldTypes = children
-      .map(_.schema.fieldTypes)
+    fields = children
+      .map(_.schema.fields)
       .reduceOption(_ ++ _)
-      .getOrElse(ListMap[Field, DataType]())
+      .getOrElse(immutable.List.empty)
   )
 
-  implicit def withSchema(row: SquashedFetchedRow): SquashedFetchedRow#WSchema = row.WSchema(schema)
+  implicit def withSchema(row: SquashedRow): SquashedRow#WSchema = row.WSchema(schema)
 
-  def fieldMap: ListMap[Field, DataType] = schema.fieldTypes
-
-  def allSortIndices: List[IndexedField] = schema.indexedFields.filter(_._1.self.isSortIndex)
+  def allSortIndices: List[Field] = schema.fields.filter(_.alias.isSortIndex) // TODO: move to Schema
 
   def firstChildOpt: Option[ExecutionPlan] = children.headOption
 

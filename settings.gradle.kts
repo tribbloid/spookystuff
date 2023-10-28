@@ -21,7 +21,7 @@ include(
 include(":parent")
 
 //include(":parent:prover-commons")
-//project(":parent:prover-commons").projectDir = file("parent/prover-commons/module")
+//project(":parent:prover-commons").projectDir = file("parent/prover-commons/module") // TODO: enable later
 //include(
 //    ":parent:prover-commons:core",
 //    ":parent:prover-commons:meta2"

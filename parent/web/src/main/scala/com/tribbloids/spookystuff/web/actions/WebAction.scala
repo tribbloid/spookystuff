@@ -30,12 +30,12 @@ trait WebAction extends Action {
         if (d.Drivers.get(Web).nonEmpty) {
           if (errorDump) {
             val rawPage = Snapshot.ErrorDump.exe(session).head.asInstanceOf[Doc]
-            message += "\nSnapshot: " + this.errorDump(message, rawPage, session.spooky)
+            message += "\nSnapshot: " + this.errorDump(rawPage, session.spooky)
           }
           if (errorDumpScreenshot) {
             try {
               val rawPage = Screenshot.ErrorScreenshot.exe(session).head.asInstanceOf[Doc]
-              message += "\nScreenshot: " + this.errorDump(message, rawPage, session.spooky)
+              message += "\nScreenshot: " + this.errorDump(rawPage, session.spooky)
             } catch {
               case e: Exception =>
                 LoggerFactory.getLogger(this.getClass).error("Cannot take screenshot on ActionError:", e)
@@ -44,7 +44,7 @@ trait WebAction extends Action {
         } else {
           docOpt.foreach { doc =>
             if (errorDump) {
-              message += "\nSnapshot: " + this.errorDump(message, doc, session.spooky)
+              message += "\nSnapshot: " + this.errorDump(doc, session.spooky)
             }
           }
         }

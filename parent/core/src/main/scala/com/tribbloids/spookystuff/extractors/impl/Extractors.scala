@@ -11,18 +11,18 @@ object Extractors {
   }
 
   //
-  def GetUnstructuredExpr(field: Field): GenExtractor[FR, Unstructured] = GenExtractor.fromOptionFn { v1: FR =>
-    v1.getUnstructured(field)
+  def GetUnstructuredExpr(alias: Alias): GenExtractor[FR, Unstructured] = GenExtractor.fromOptionFn { v1: FR =>
+    v1.getUnstructured(alias)
       .orElse {
-        v1.getUnstructured(field.copy(isWeak = true))
+        v1.getUnstructured(alias.copy(isWeak = true))
       }
       .orElse {
-        v1.getDoc(field.name).map(_.root)
+        v1.getDoc(alias.name).map(_.root)
       }
   }
 
-  def GetDocExpr(field: Field): GenExtractor[FR, Doc] = GenExtractor.fromOptionFn { v1: FR =>
-    v1.getDoc(field.name)
+  def GetDocExpr(alias: Alias): GenExtractor[FR, Doc] = GenExtractor.fromOptionFn { v1: FR =>
+    v1.getDoc(alias.name)
   }
   val GetOnlyDocExpr: GenExtractor[FR, Doc] = GenExtractor.fromOptionFn { v1: FR =>
     v1.getOnlyDoc
@@ -32,12 +32,13 @@ object Extractors {
   }
 
   case class FindAllMeta(arg: Extractor[Unstructured], selector: String)
-  def FindAllExpr(arg: Extractor[Unstructured], selector: String): GenExtractor[FR, Elements[Unstructured]] = arg.andMap(
-    { v1: Unstructured =>
-      v1.findAll(selector)
-    },
-    Some(FindAllMeta(arg, selector))
-  )
+  def FindAllExpr(arg: Extractor[Unstructured], selector: String): GenExtractor[FR, Elements[Unstructured]] =
+    arg.andMap(
+      { v1: Unstructured =>
+        v1.findAll(selector)
+      },
+      Some(FindAllMeta(arg, selector))
+    )
 
   case class ChildrenMeta(arg: Extractor[Unstructured], selector: String)
   def ChildrenExpr(arg: Extractor[Unstructured], selector: String): GenExtractor[FR, Elements[Unstructured]] =
@@ -47,8 +48,4 @@ object Extractors {
       },
       Some(ChildrenMeta(arg, selector))
     )
-
-  def ReplaceKeyExpr(str: String): GenExtractor[FR, String] = GenExtractor.fromOptionFn { v1: FR =>
-    v1.dataRow.replaceInto(str)
-  }
 }

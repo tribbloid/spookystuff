@@ -1,11 +1,11 @@
 package com.tribbloids.spookystuff.extractors
 
 import com.tribbloids.spookystuff.Const
-import com.tribbloids.spookystuff.row.Field
+import com.tribbloids.spookystuff.row.Alias
 import com.tribbloids.spookystuff.tree.TreeView
 import com.tribbloids.spookystuff.utils.SpookyUtils
 import com.tribbloids.spookystuff.relay.AutomaticRelay
-import org.apache.spark.ml.dsl.utils.refl.{CatalystTypeOps, ReflectionLock, TypeMagnet, UnreifiedObjectType}
+import org.apache.spark.ml.dsl.utils.refl.{CatalystTypeOps, ReflectionLock, TypeMagnet}
 import org.apache.spark.sql.catalyst.ScalaReflection.universe
 import org.apache.spark.sql.catalyst.ScalaReflection.universe.TypeTag
 
@@ -16,16 +16,35 @@ object GenExtractor extends AutomaticRelay[GenExtractor[_, _]] with GenExtractor
 
 //  final val functionVID = -592849327L
 
-  def fromFn[T, R](self: T => R, dataType: DataType): GenExtractor[T, R] = {
-    Elem(_ => self, _ => dataType)
+  abstract class Elem[T, +R](
+      _resolve: DataType => (T => R),
+      _resolveType: DataType => DataType
+  ) extends Leaf[T, R] {
+    // resolve to a Spark SQL DataType according to an exeuction plan
+    override def resolveType(tt: DataType): DataType = _resolveType(tt)
+
+    override def resolve(tt: DataType): PartialFunction[T, R] = {
+
+      val result = _resolve(tt)
+      result match {
+        case v: PartialFunction[_, _] => v
+        case _ =>
+          PartialFunction.fromFunction(result)
+      }
+    }
+
+    //    override def toString = meta.getOrElse("Elem").toString
   }
 
-  def fromOptionFn[T, R](self: T => Option[R], dataType: DataType): GenExtractor[T, R] = {
-    Elem(_ => Unlift(self), _ => dataType)
-  }
+  case class fromFn[T, R](dataType: DataType)(self: T => R) extends Elem(_ => self, _ => dataType)
+
+  case class fromPoly[T, R]()(poly: DataType => DataType, self: T => R) extends Elem(_ => self, poly)
+
+  case class fromOptionFn[T, R](dataType: DataType)(self: T => Option[R]) extends Elem(_ => Unlift(self), _ => dataType)
+
   def fromOptionFn[T, R: TypeTag](self: T => Option[R]): GenExtractor[T, R] = {
 
-    fromOptionFn(self, UnreifiedObjectType.summon[R])
+    fromOptionFn(TypeMagnet.summon[R].asCatalystTypeOrUnknown)(self)
   }
 
   trait Leaf[T, +R] extends GenExtractor[T, R] {
@@ -61,28 +80,7 @@ object GenExtractor extends AutomaticRelay[GenExtractor[_, _]] with GenExtractor
     def resolve(dataType: DataType): PartialFunction[T, R] = child.resolve(dataType)
   }
 
-  case class Elem[T, +R](
-      _resolve: DataType => (T => R),
-      _resolveType: DataType => DataType,
-      name: Option[String] = None
-  ) extends Leaf[T, R] {
-    // resolve to a Spark SQL DataType according to an exeuction plan
-    override def resolveType(tt: DataType): DataType = _resolveType(tt)
-
-    override def resolve(tt: DataType): PartialFunction[T, R] = {
-
-      val result = _resolve(tt)
-      result match {
-        case v: PartialFunction[_, _] => v
-        case _ =>
-          PartialFunction.fromFunction(result)
-      }
-    }
-
-    //    override def toString = meta.getOrElse("Elem").toString
-  }
-
-  case class AndThen[A, B, +C](
+  case class Chain[A, B, +C](
       a: GenExtractor[A, B],
       b: GenExtractor[B, C],
       meta: Option[Any] = None
@@ -110,17 +108,17 @@ object GenExtractor extends AutomaticRelay[GenExtractor[_, _]] with GenExtractor
       val t1 = arg1.resolveType(tt)
       val t2 = arg2.resolveType(tt)
 
-      val ttg = (
+      val typeMagnet = (
         t1.typeTag_wild,
         t2.typeTag_wild
       ) match {
         case (ttg1: TypeTag[a], ttg2: TypeTag[b]) =>
           implicit val t1: universe.TypeTag[a] = ttg1
           implicit val t2: universe.TypeTag[b] = ttg2
-          implicitly[TypeTag[(a, b)]]
+          implicitly[TypeMagnet[(a, b)]]
       }
 
-      UnreifiedObjectType.summon(ttg)
+      typeMagnet.asCatalystTypeOrUnknown
     }
 
     override def resolve(tt: DataType): PartialFunction[T, (R1, R2)] = {
@@ -147,8 +145,19 @@ object GenExtractor extends AutomaticRelay[GenExtractor[_, _]] with GenExtractor
 
   implicit def fromFn[T, R: TypeTag](self: T => R): GenExtractor[T, R] = {
 
-    fromFn(self, UnreifiedObjectType.summon[R])
+    fromFn(TypeMagnet.summon[R].asCatalystTypeOrUnknown)(self)
   }
+
+  trait HasAlias[T, +R] extends GenExtractor[T, R] {
+
+    def alias: Alias
+  }
+
+  case class Aliased[T, +R](
+      child: GenExtractor[T, R],
+      alias: Alias
+  ) extends HasAlias[T, R]
+      with GenExtractor.Wrapper[T, R] {}
 }
 
 // a special expression that can be applied on:
@@ -173,10 +182,10 @@ trait GenExtractor[T, +R] extends ReflectionLock with CatalystTypeOps.ImplicitMi
   def resolveType(tt: DataType): DataType
   def resolve(tt: DataType): PartialFunction[T, R]
 
-  def withAlias(field: Field): Alias.Impl[T, R] = {
+  def withAlias(alias: Alias): Aliased[T, R] = {
     this match {
-      case v: Wrapper[T, R] => new Alias.Impl[T, R](v.child, field)
-      case _                => new Alias.Impl[T, R](this, field)
+      case v: Wrapper[T, R] => new Aliased[T, R](v.child, alias)
+      case _                => new Aliased[T, R](this, alias)
     }
   }
   def withoutAlias: GenExtractor[T, R] = {
@@ -186,7 +195,7 @@ trait GenExtractor[T, +R] extends ReflectionLock with CatalystTypeOps.ImplicitMi
     }
   }
 
-  private[extractors] def _as(fieldOpt: Option[Field]): GenExtractor[T, R] = {
+  def withAliasOpt(fieldOpt: Option[Alias]): GenExtractor[T, R] = {
 
     fieldOpt match {
       case Some(field) => withAlias(field)
@@ -195,18 +204,18 @@ trait GenExtractor[T, +R] extends ReflectionLock with CatalystTypeOps.ImplicitMi
   }
 
   // will not rename an already-named Alias.
-  def withAliasIfMissing(field: Field): Alias[T, R] = {
+  def withAliasIfMissing(alias: Alias): HasAlias[T, R] = {
     this match {
-      case alias: Alias[T, R] => alias
-      case _                  => this.withAlias(field)
+      case alias: HasAlias[T, R] => alias
+      case _                     => this.withAlias(alias)
     }
   }
 
-  def withJoinFieldIfMissing: Alias[T, R] = withAliasIfMissing(Const.defaultJoinField)
+  def withJoinFieldIfMissing: HasAlias[T, R] = withAliasIfMissing(Const.defaultJoin)
 
   // TODO: should merge into andMap
   def andEx[R2 >: R, A](g: GenExtractor[R2, A], meta: Option[Any] = None): GenExtractor[T, A] =
-    AndThen[T, R2, A](this, g, meta)
+    Chain[T, R2, A](this, g, meta)
 
   def andMap[A: TypeTag](g: R => A, meta: Option[Any] = None): GenExtractor[T, A] = {
     andEx(g, meta)
@@ -218,21 +227,25 @@ trait GenExtractor[T, +R] extends ReflectionLock with CatalystTypeOps.ImplicitMi
 
   def andTyped[R2 >: R, A](
       g: R2 => A,
-      resolveType: DataType => DataType,
+      poly: DataType => DataType,
       meta: Option[Any] = None
   ): GenExtractor[T, A] = andEx(
-    Elem[R2, A](_ => g, resolveType),
+    fromPoly[R2, A]()(poly, g),
     meta
   )
 
   def andOptionTyped[R2 >: R, A](
       g: R2 => Option[A],
-      resolveType: DataType => DataType,
+      poly: DataType => DataType,
       meta: Option[Any] = None
-  ): GenExtractor[T, A] = andTyped(Unlift(g), resolveType, meta)
+  ): GenExtractor[T, A] = andTyped(Unlift(g), poly, meta)
 
-  // TODO: extract subroutine and use it to avoid obj creation overhead
-  def typed[A: TypeTag]: GenExtractor[T, A] = {
+  def cast[A]: GenExtractor[T, A] = {
+
+    this.asInstanceOf[GenExtractor[T, A]]
+  }
+
+  def filterByType[A: TypeTag]: GenExtractor[T, A] = {
     implicit val ctg: ClassTag[A] = TypeMagnet.FromTypeTag[A].asClassTag
 
     andFlatMap[A] {

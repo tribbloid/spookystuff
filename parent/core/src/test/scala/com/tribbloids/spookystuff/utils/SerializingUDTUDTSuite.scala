@@ -4,24 +4,21 @@ import com.tribbloids.spookystuff.actions.Action
 import com.tribbloids.spookystuff.doc.{Doc, DocOption, Unstructured}
 import com.tribbloids.spookystuff.testutils.{FunSpecx, SpookyBaseSpec}
 import com.tribbloids.spookystuff.utils.serialization.AssertSerializable
-import org.apache.spark.ml.dsl.utils.refl.{CatalystTypeOps, TypeUtils, UnreifiedObjectType}
+import org.apache.spark.ml.dsl.utils.refl.{CatalystTypeOps, TypeMagnet}
 import org.apache.spark.sql.types.DataType
 
 /**
   * Created by peng on 28/05/16.
   */
-class ScalaUDTSuite extends SpookyBaseSpec with FunSpecx with CatalystTypeOps.ImplicitMixin {
+class SerializingUDTUDTSuite extends SpookyBaseSpec with FunSpecx with CatalystTypeOps.ImplicitMixin {
 
   import org.apache.spark.sql.catalyst.ScalaReflection.universe._
 
   def getAndTestReifiedType[T: TypeTag]: DataType = {
-    val unreified = UnreifiedObjectType.summon[T]
-    AssertSerializable(unreified)
+    val dt = implicitly[TypeMagnet[T]].asCatalystType
 
-    val reified = TypeUtils.tryCatalystTypeFor[T].get
-    assert(reified == unreified.reified)
-    AssertSerializable(reified)
-    reified
+    AssertSerializable(dt)
+    dt
   }
 
   it("Int has a datatype") {

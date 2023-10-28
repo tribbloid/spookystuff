@@ -1,7 +1,7 @@
 package com.tribbloids.spookystuff.rdd
 
 import com.tribbloids.spookystuff.execution.{ExecutionPlan, UnaryPlan}
-import com.tribbloids.spookystuff.row.{SquashedFetchedRDD, SquashedFetchedRow}
+import com.tribbloids.spookystuff.row.{SquashedFetchedRDD, SquashedRow}
 import org.apache.spark.rdd.{RDD, UnionRDD}
 import org.apache.spark.storage.StorageLevel
 
@@ -9,7 +9,7 @@ case class CoalescePlan(
     override val child: ExecutionPlan,
     numPartitions: RDD[_] => Int,
     shuffle: Boolean = false,
-    ord: Ordering[SquashedFetchedRow] = null
+    ord: Ordering[SquashedRow] = null
 ) extends UnaryPlan(child) {
 
   def doExecute(): SquashedFetchedRDD = {
@@ -52,7 +52,7 @@ trait FetchedRDDAPI {
       shuffle: Boolean = false
   )(
       implicit
-      ord: Ordering[SquashedFetchedRow] = null
+      ord: Ordering[SquashedRow] = null
   ): FetchedDataset = this.copy(
     CoalescePlan(plan, numPartitions, shuffle, ord)
   )
@@ -62,7 +62,7 @@ trait FetchedRDDAPI {
       shuffle: Boolean = false
   )(
       implicit
-      ord: Ordering[SquashedFetchedRow] = null
+      ord: Ordering[SquashedRow] = null
   ): FetchedDataset = {
 
     _coalesce(
@@ -77,7 +77,7 @@ trait FetchedRDDAPI {
       numPartitions: Int
   )(
       implicit
-      ord: Ordering[SquashedFetchedRow] = null
+      ord: Ordering[SquashedRow] = null
   ): FetchedDataset = {
 
     coalesce(numPartitions, shuffle = true)(ord)

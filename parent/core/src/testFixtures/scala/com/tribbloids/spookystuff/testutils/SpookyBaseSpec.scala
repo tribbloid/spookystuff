@@ -4,8 +4,8 @@ import com.tribbloids.spookystuff.SpookyContext
 import com.tribbloids.spookystuff.conf._
 import com.tribbloids.spookystuff.doc.{Doc, Unstructured}
 import com.tribbloids.spookystuff.execution.SpookyExecutionContext
-import com.tribbloids.spookystuff.extractors.{Alias, GenExtractor, GenResolved}
-import com.tribbloids.spookystuff.row.{SpookySchema, SquashedFetchedRow, TypedField}
+import com.tribbloids.spookystuff.extractors.{GenExtractor, GenExpr, HasAlias}
+import com.tribbloids.spookystuff.row.{Field, SpookySchema, SquashedRow}
 import com.tribbloids.spookystuff.session.DriverLike
 import com.tribbloids.spookystuff.utils.lifespan.Cleanable
 import com.tribbloids.spookystuff.utils.lifespan.Cleanable.Lifespan
@@ -96,11 +96,11 @@ abstract class SpookyBaseSpec extends SpookyEnvSpec with RemoteDocsFixture with 
 
   def emptySchema: SpookySchema = SpookySchema(SpookyExecutionContext(spooky))
 
-  implicit def withSchema(row: SquashedFetchedRow): SquashedFetchedRow#WSchema = row.WSchema(emptySchema)
-  implicit def extractor2Resolved[T, R](extractor: Alias[T, R]): GenResolved[T, R] = GenResolved(
+  implicit def withSchema(row: SquashedRow): SquashedRow#WSchema = row.WSchema(emptySchema)
+  implicit def extractor2Resolved[T, R](extractor: HasAlias[T, R]): GenExpr[T, R] = GenExpr(
     extractor.resolve(emptySchema),
-    TypedField(
-      extractor.field,
+    Field(
+      extractor.alias,
       extractor.resolveType(emptySchema)
     )
   )

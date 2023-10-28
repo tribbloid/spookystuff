@@ -21,8 +21,8 @@ case class CatalystTypeOps(dataType: DataType) {
     dataType match {
       case NullType =>
         Some(TypeTag.Null)
-      case st: CatalystTypeMixin[_] =>
-        Some(st.self.asTypeTag)
+      case st: CustomDT[_] =>
+        Some(st.typeMagnet.asTypeTag)
       case t if CatalystTypeOps.atomicTypeMap.contains(t) =>
         CatalystTypeOps.atomicTypeMap.get(t)
       case ArrayType(inner, _) =>
@@ -72,7 +72,7 @@ case class CatalystTypeOps(dataType: DataType) {
   }
 
   @transient lazy val reified: DataType = {
-    val result = UnreifiedObjectType.reify(dataType)
+    val result = UnknownDT.reify(dataType)
     result
   }
 
@@ -82,19 +82,6 @@ case class CatalystTypeOps(dataType: DataType) {
   }
 
   def magnet[T]: AsTypeMagnet[T] = new AsTypeMagnet[T]
-
-//  @transient lazy val asClassTag: ClassTag[_] = {
-//
-//    dataType match {
-//      case v: CatalystTypeMixin[_] =>
-//        v.self.asClassTag
-//      case _ =>
-//        val clazz = org.apache.spark.sql.catalyst.expressions.Literal.default(dataType).eval().getClass
-//        ClassTag(clazz)
-//    }
-//  }
-
-//  def asClass: Class[_] = asClassTag.runtimeClass
 
   def unboxArrayOrMap: DataType = {
     _unboxArrayOrMapOpt
@@ -196,7 +183,7 @@ object CatalystTypeOps {
   }
 
   lazy val atomicTypePairs: Seq[(DataType, TypeTag[_])] = atomicExamples.map { v =>
-    ToCatalyst(TypeMagnet.FromTypeTag(v._2)).tryReify.get -> v._2
+    TypeMagnet.FromTypeTag(v._2).tryCatalystType.get -> v._2
   }
 
   lazy val atomicTypeMap: Map[DataType, TypeTag[_]] = {

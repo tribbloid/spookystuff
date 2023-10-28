@@ -14,7 +14,7 @@ class SchemaContextSuite extends SpookyBaseSpec {
   it("Resolver should not scramble sequence of fields") {
 
     val schema0 = SpookySchema(SpookyExecutionContext(spooky))
-    val resolver0 = schema0.newResolver
+    val resolver0 = schema0.ResolveDelta
     resolver0
       .include(
         Lit("literal1") ~ 'a,
@@ -22,7 +22,7 @@ class SchemaContextSuite extends SpookyBaseSpec {
       )
 
     val schema1 = resolver0.build
-    schema1.structType.treeString
+    schema1.inSpark.structType.treeString
       .shouldBe(
         """
           |root
@@ -30,7 +30,7 @@ class SchemaContextSuite extends SpookyBaseSpec {
           | |-- b: integer (nullable = true)
           |""".stripMargin
       )
-    val resolver1 = schema1.newResolver
+    val resolver1 = schema1.ResolveDelta
     resolver1
       .include(
         'a ~ 'c,
@@ -38,7 +38,7 @@ class SchemaContextSuite extends SpookyBaseSpec {
       )
 
     val schema2 = resolver1.build
-    schema2.structType.treeString
+    schema2.inSpark.structType.treeString
       .shouldBe(
         """
           |root

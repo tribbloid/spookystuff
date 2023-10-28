@@ -4,7 +4,7 @@ import com.tribbloids.spookystuff.doc._
 import com.tribbloids.spookystuff.extractors._
 import com.tribbloids.spookystuff.extractors.impl.Extractors._
 import com.tribbloids.spookystuff.extractors.impl.{Get, Interpolate}
-import com.tribbloids.spookystuff.row.Field
+import com.tribbloids.spookystuff.row.Alias
 
 import scala.language.implicitConversions
 
@@ -24,8 +24,8 @@ sealed trait Level2 {
 
   // --------------------------------------------------
 
-  implicit def symbol2Field(symbol: Symbol): Field =
-    Option(symbol).map(v => Field(v.name)).orNull
+  implicit def symbol2Field(symbol: Symbol): Alias =
+    Option(symbol).map(v => Alias(v.name)).orNull
 
   implicit def symbol2Get1(symbol: Symbol): Get =
     Get(symbol.name)

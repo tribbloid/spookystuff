@@ -3,7 +3,7 @@ package com.tribbloids.spookystuff.actions
 import com.tribbloids.spookystuff.doc.DocOption
 import com.tribbloids.spookystuff.dsl._
 import com.tribbloids.spookystuff.extractors.impl.Lit
-import com.tribbloids.spookystuff.row.{DataRow, FetchedRow, Field}
+import com.tribbloids.spookystuff.row.{Alias, DataRow, FetchedRow}
 import com.tribbloids.spookystuff.session.Session
 import com.tribbloids.spookystuff.testutils.SpookyBaseSpec
 import com.tribbloids.spookystuff.utils.{CommonUtils, Timeout}
@@ -25,7 +25,7 @@ class ActionSuite extends SpookyBaseSpec {
     val action = Wget(Const.keyDelimiter + "{~}").in(randomTimeout)
 
     val rewritten = action
-      .interpolate(FetchedRow(DataRow(data = ListMap(Field("~") -> "http://www.dummy.com")), Seq()), emptySchema)
+      .interpolate(FetchedRow(DataRow(data = ListMap(Alias("~") -> "http://www.dummy.com")), Seq()), emptySchema)
       .get
 
     //    val a = rewritten.uri.asInstanceOf[Literal[FR, String]].dataType.asInstanceOf[UnreifiedScalaType].ttg.tpe.normalize
@@ -42,7 +42,7 @@ class ActionSuite extends SpookyBaseSpec {
     val action = Wget("'{~}").as('dummy_name)
 
     val rewritten = action
-      .interpolate(FetchedRow(DataRow(data = ListMap(Field("~") -> "http://www.dummy.com")), Seq()), emptySchema)
+      .interpolate(FetchedRow(DataRow(data = ListMap(Alias("~") -> "http://www.dummy.com")), Seq()), emptySchema)
       .get
 
     assert(rewritten === Wget(Lit.erased("http://www.dummy.com")))

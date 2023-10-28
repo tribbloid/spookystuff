@@ -1,7 +1,7 @@
 package com.tribbloids.spookystuff
 
 import com.tribbloids.spookystuff.dsl.DocFilterImpl
-import com.tribbloids.spookystuff.row.Field
+import com.tribbloids.spookystuff.row.Alias
 import com.tribbloids.spookystuff.utils.CommonConst
 import org.apache.tika.detect.DefaultDetector
 
@@ -14,7 +14,7 @@ object Const extends CommonConst {
 
   val groupIndexExtractor: String = "G"
 
-  val defaultJoinField: Field = Field("A", isWeak = true)
+  val defaultJoin: Alias = Alias("A", isWeak = true)
 
   val tikaDetector: DefaultDetector = new DefaultDetector()
 

@@ -1,11 +1,12 @@
 package com.tribbloids.spookystuff.extractors
 
 import com.tribbloids.spookystuff.doc._
-import com.tribbloids.spookystuff.extractors.GenExtractor.AndThen
+import com.tribbloids.spookystuff.extractors.GenExtractor.Chain
 import com.tribbloids.spookystuff.extractors.impl.Extractors._
-import com.tribbloids.spookystuff.extractors.impl.{AppendSeq, Get, Zipped}
-import com.tribbloids.spookystuff.row.Field
-import org.apache.spark.ml.dsl.utils.refl.{CatalystTypeOps, UnreifiedObjectType}
+import com.tribbloids.spookystuff.extractors.impl.Fold.AppendSeq
+import com.tribbloids.spookystuff.extractors.impl.{Fold, Get, Zipped}
+import com.tribbloids.spookystuff.row.Alias
+import org.apache.spark.ml.dsl.utils.refl.{CatalystTypeOps, TypeMagnet}
 import org.apache.spark.sql.types.MapType
 
 import java.sql.Timestamp
@@ -20,12 +21,19 @@ trait GenExtractorImplicits extends CatalystTypeOps.ImplicitMixin {
 
   implicit class ExtractorView[R: ClassTag](val self: Extractor[R]) extends Serializable {
 
-    final def as(field: Field): GenExtractor[FR, R] = self._as(Option(field))
-    final def ~(field: Field): GenExtractor[FR, R] = as(field)
+    def as(alias: Alias): GenExtractor[FR, R] =
+      Fold.FailFast(Get(alias), self).withAliasOpt(Option(alias))
+    def ~(alias: Alias): GenExtractor[FR, R] = as(alias)
 
-    def into(field: Field): Alias[FR, Seq[R]] = AppendSeq[R](Get(field), self).withAlias(field.!!)
-    def ~+(field: Field): Alias[FR, Seq[R]] = into(field)
+    def replace(alias: Alias): GenExtractor[FR, R] =
+      Fold.PreferNew[R](Get(alias).cast[R], self).withAliasOpt(Option(alias))
+    def ~!(alias: Alias): GenExtractor[FR, R] = replace(alias)
 
+    def dropAndReplace(alias: Alias): GenExtractor[FR, R] = self.withAliasOpt(Option(alias))
+    def ~!!(alias: Alias): GenExtractor[FR, R] = dropAndReplace(alias)
+
+    def append(alias: Alias): HasAlias[FR, Seq[R]] = AppendSeq[R](Get(alias), self).withAlias(alias)
+    def ~+(alias: Alias): HasAlias[FR, Seq[R]] = append(alias)
   }
 
   object ExtractorView {
@@ -79,9 +87,9 @@ trait GenExtractorImplicits extends CatalystTypeOps.ImplicitMixin {
 
     def expand(range: Range): GenExtractor[FR, Elements[Siblings[Unstructured]]] = {
       self match {
-        case AndThen(_, _, Some(FindAllMeta(argg, selector))) =>
+        case Chain(_, _, Some(FindAllMeta(argg, selector))) =>
           argg.andMap(_.findAllWithSiblings(selector, range))
-        case AndThen(_, _, Some(ChildrenMeta(argg, selector))) =>
+        case Chain(_, _, Some(ChildrenMeta(argg, selector))) =>
           argg.andMap(_.childrenWithSiblings(selector, range))
         case _ =>
           throw new UnsupportedOperationException("expression does not support expand")
@@ -168,17 +176,17 @@ trait GenExtractorImplicits extends CatalystTypeOps.ImplicitMixin {
 
     // TODO: Why IterableExView.filter cannot be applied on ZippedExpr? is the scala compiler malfunctioning?
     def zipWithKeys(keys: Extractor[Any]): Zipped[Any, T] =
-      new Zipped[Any, T](keys.typed[Iterable[_]], self)
+      new Zipped[Any, T](keys.filterByType[Iterable[_]], self)
 
     def zipWithValues(values: Extractor[Any]): Zipped[T, Any] =
-      new Zipped[T, Any](self, values.typed[Iterable[_]])
+      new Zipped[T, Any](self, values.filterByType[Iterable[_]])
 
     protected def groupByImpl[K](f: T => K): Iterable[T] => Map[K, Seq[T]] =
       (v: Iterable[T]) => v.groupBy(f).view.mapValues(_.toSeq).toMap
 
     def groupBy[K: TypeTag](f: T => K): Extractor[Map[K, Seq[T]]] = {
 
-      val keyType = UnreifiedObjectType.summon[K]
+      val keyType = TypeMagnet.FromTypeTag[K].asCatalystTypeOrUnknown
 
       self.andTyped(
         groupByImpl(f),

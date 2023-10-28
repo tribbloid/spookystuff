@@ -6,10 +6,10 @@ import com.tribbloids.spookystuff.testutils.SpookyBaseSpec
 /**
   * Created by peng on 05/04/16.
   */
-class SquashedFetchedRowSuite extends SpookyBaseSpec {
+class SquashedRowSuite extends SpookyBaseSpec {
 
   it("Array[Page]().grouping yields at least 1 group") {
-    val row = SquashedFetchedRow()
+    val row = SquashedRow()
     val grouped = row.defaultGroupedFetched.toSeq
     assert(grouped == Seq(Seq()))
   }
@@ -21,7 +21,7 @@ class SquashedFetchedRowSuite extends SpookyBaseSpec {
       wget ~ 'b +>
       wget ~ 'a +>
       wget ~ 'b
-    val row = SquashedFetchedRow.withDocs(docs = trace.fetch(spooky))
+    val row = SquashedRow.withDocs(docs = trace.fetch(spooky))
     val grouped = row.defaultGroupedFetched.toSeq
     val groupedNames = grouped.map {
       _.map {

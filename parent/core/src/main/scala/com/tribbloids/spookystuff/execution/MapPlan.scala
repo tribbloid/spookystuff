@@ -3,10 +3,9 @@ package com.tribbloids.spookystuff.execution
 import com.tribbloids.spookystuff.doc.Doc
 import com.tribbloids.spookystuff.execution.MapPlan.RowMapperFactory
 import com.tribbloids.spookystuff.extractors.impl.Get
-import com.tribbloids.spookystuff.extractors.{Extractor, Resolved}
+import com.tribbloids.spookystuff.extractors.{Extractor, Expr}
 import com.tribbloids.spookystuff.row._
 import org.apache.spark.ml.dsl.utils.refl.CatalystTypeOps
-import org.apache.spark.sql.types.{ArrayType, IntegerType}
 
 case class MapPlan(
     override val child: ExecutionPlan,
@@ -31,7 +30,7 @@ case class MapPlan(
 
 object MapPlan extends CatalystTypeOps.ImplicitMixin {
 
-  type RowMapperBase = SquashedFetchedRow => SquashedFetchedRow
+  type RowMapperBase = SquashedRow => SquashedRow
 
   trait RowMapper extends RowMapperBase with Serializable {
     def schema: SpookySchema
@@ -61,58 +60,59 @@ object MapPlan extends CatalystTypeOps.ImplicitMixin {
     */
   case class Extract(exs: Seq[Extractor[_]])(val childSchema: SpookySchema) extends RowMapper {
 
-    val resolver: childSchema.Resolver = childSchema.newResolver
-    val _exs: Seq[Resolved[Any]] = resolver.include(exs: _*)
+    val resolver: childSchema.ResolveDelta = childSchema.ResolveDelta
+    val _exs: Seq[Expr[Any]] = resolver.include(exs: _*)
 
     override val schema: SpookySchema = {
       resolver.build
     }
 
-    override def apply(v: SquashedFetchedRow): SquashedFetchedRow = {
+    override def apply(v: SquashedRow): SquashedRow = {
       v.WSchema(schema).extract(_exs: _*)
     }
   }
 
   case class Flatten(
-      onField: Field,
-      ordinalField: Field,
+      on: Alias,
+      ordinal: Alias,
       sampler: Sampler[Any],
       isLeft: Boolean
   )(val childSchema: SpookySchema)
       extends RowMapper {
 
-    val resolver: childSchema.Resolver = childSchema.newResolver
+    val resolver: childSchema.ResolveDelta = childSchema.ResolveDelta
 
-    val _on: TypedField = {
-      val flattenType = Get(onField).resolveType(childSchema).unboxArrayOrMap
-      val tf = TypedField(onField.!!, flattenType)
+    val _on: Field = {
+      val flattenType = Get(on).resolveType(childSchema).unboxArrayOrMap
+      val tf = Field(on, flattenType)
 
-      resolver.includeTyped(tf).head
+      resolver.includeField(tf)
+      tf
     }
 
-    val effectiveOrdinalField: Field = Option(ordinalField) match {
+    val effectiveOrdinal: Alias = Option(ordinal) match {
       case Some(ff) =>
         ff.copy(isOrdinal = true)
       case None =>
-        Field(_on.self.name + "_ordinal", isWeak = true, isOrdinal = true)
+        Alias(_on.alias.name + "_ordinal", isWeak = true, isOrdinal = true)
     }
-
-    val _ordinal: TypedField = resolver.includeTyped(TypedField(effectiveOrdinalField, ArrayType(IntegerType))).head
 
     override val schema: SpookySchema = resolver.build
 
-    override def apply(v: SquashedFetchedRow): SquashedFetchedRow =
-      v.flattenData(onField, effectiveOrdinalField, isLeft, sampler)
+    override def apply(v: SquashedRow): SquashedRow =
+      v.explode(on, effectiveOrdinal, isLeft, sampler)
   }
 
+  object Flatten {}
+
   case class Remove(
-      toBeRemoved: Seq[Field]
+      toBeRemoved: Seq[Field.Symbol]
   )(val childSchema: SpookySchema)
       extends RowMapper {
 
     override val schema: SpookySchema = childSchema -- toBeRemoved
 
-    override def apply(v: SquashedFetchedRow): SquashedFetchedRow = v.remove(toBeRemoved: _*)
+    override def apply(v: SquashedRow): SquashedRow = v.remove(toBeRemoved: _*)
   }
 
   case class SavePages(
@@ -123,15 +123,15 @@ object MapPlan extends CatalystTypeOps.ImplicitMixin {
   )(val childSchema: SpookySchema)
       extends RowMapper {
 
-    val resolver: childSchema.Resolver = childSchema.newResolver
+    val resolver: childSchema.ResolveDelta = childSchema.ResolveDelta
 
-    val _ext: Resolved[String] = resolver.include(extension).head
-    val _path: Resolved[String] = resolver.include(path).head
-    val _pageExpr: Resolved[Doc] = resolver.include(page).head
+    val _ext: Expr[String] = resolver.include(extension).head
+    val _path: Expr[String] = resolver.include(path).head
+    val _pageExpr: Expr[Doc] = resolver.include(page).head
 
     override val schema: SpookySchema = childSchema
 
-    override def apply(v: SquashedFetchedRow): SquashedFetchedRow = {
+    override def apply(v: SquashedRow): SquashedRow = {
       val wSchema = v.WSchema(schema)
 
       wSchema.unsquash

@@ -19,9 +19,9 @@ class ExploreNextPageIT extends ITBaseSpec {
       .fetch(
         Wget("http://localhost:10092/test-sites/e-commerce/static/computers/tablets")
       )
-      .explore(S"ul.pagination a[rel=next]", ordinalField = 'index)(
+      .explore(S"ul.pagination a[rel=next]", ordinal = 'index)(
         Wget('A.href),
-        depthField = 'page
+        depth = 'page
       )(
         'A.text ~ 'button_text,
         S.uri ~ 'uri

@@ -40,8 +40,6 @@ object ExploreAlgorithm {
 
   trait EliminatingImpl extends Impl {
 
-    /**
-      */
     val ordering: RowOrdering
 
     /**

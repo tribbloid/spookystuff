@@ -22,13 +22,13 @@ class LeftVisitJoinIT extends ITBaseSpec {
       )
 
     val joined = base
-      .join(S"div.sidebar-nav a", LeftOuter, ordinalField = 'i1)(
+      .join(S"div.sidebar-nav a", LeftOuter, ordinal = 'i1)(
         getPage('A.href)
       )
       .extract(
         'A.text ~ 'category
       )
-      .join(S"a.subcategory-link", LeftOuter, ordinalField = 'i2)(
+      .join(S"a.subcategory-link", LeftOuter, ordinal = 'i2)(
         getPage('A.href)
       )
       .extract(
@@ -37,7 +37,7 @@ class LeftVisitJoinIT extends ITBaseSpec {
       .select(S"h1".text ~ 'header)
       .flatSelect(
         S"notexist",
-        ordinalField = 'notexist_key
+        ordinal = 'notexist_key
       )( // this is added to ensure that temporary joinKey in KV store won't be used.
         'A.attr("class") ~ 'notexist_class
       )

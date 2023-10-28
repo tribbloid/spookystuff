@@ -1,28 +1,39 @@
 package com.tribbloids.spookystuff.row
 
-import java.util.UUID
-
 import com.tribbloids.spookystuff.actions.{Actions, Trace, TraceView}
 import com.tribbloids.spookystuff.doc.DocOption
-import com.tribbloids.spookystuff.extractors.Resolved
+import com.tribbloids.spookystuff.extractors.Expr
 
+import java.util.UUID
 import scala.collection.mutable.ArrayBuffer
+import scala.language.implicitConversions
 
-object SquashedFetchedRow {
+object SquashedRow {
 
-  def apply(data: Map[Field, Any]): SquashedFetchedRow = SquashedFetchedRow(
-    dataRows = Array(DataRow(data))
-  )
+//  def apply(data: Map[Field.Symbol, Any]): SquashedRow = SquashedRow(
+//    dataRows = Array(DataRow(data))
+//  )
+
+//  def fromKV(
+//              kvs: Iterable[(Field, Any)]
+//            ): SquashedRow = {
+//
+//    val dataRow = DataRow.fromKV(kvs).outer
+//
+//    withDocs(
+//      dataRows = Array(dataRow)
+//    )
+//  }
 
   def withDocs(
       dataRows: Array[DataRow] = Array(DataRow()),
-      docs: Seq[DocOption] = null
-  ): SquashedFetchedRow = SquashedFetchedRow(
+      docs: Seq[DocOption] = Nil
+  ): SquashedRow = SquashedRow(
     dataRows = dataRows,
     traceView = TraceView.withDocs(docs = docs)
   )
 
-  lazy val blank: SquashedFetchedRow = SquashedFetchedRow(Array(DataRow()))
+  lazy val blank: SquashedRow = SquashedRow(Array(DataRow()))
 }
 
 /**
@@ -31,34 +42,18 @@ object SquashedFetchedRow {
   *      applying to cartesian products of the above two this is due to the fact that 90% of time is spent on fetching.
   *      < 5% on parsing & extraction.
   */
-case class SquashedFetchedRow(
+case class SquashedRow(
     dataRows: Array[DataRow] = Array(),
     traceView: TraceView = TraceView()
 ) {
 
-  def ++(another: SquashedFetchedRow): SquashedFetchedRow = {
-    this.copy(dataRows = this.dataRows ++ another.dataRows)
+  def mapPerDataRow(fn: DataRow => DataRow): SquashedRow = {
+    this.copy(dataRows = this.dataRows.map(fn))
   }
-
-  def flattenData(
-      field: Field,
-      ordinalKey: Field,
-      left: Boolean,
-      sampler: Sampler[Any]
-  ): SquashedFetchedRow = {
-
-    this.copy(
-      dataRows = this.dataRows.flatMap(_.flatten(field, ordinalKey, left, sampler))
-    )
-  }
-
-  def remove(fields: Field*): SquashedFetchedRow = this.copy(
-    dataRows = dataRows.map(_.--(fields))
-  )
 
   case class WSchema(schema: SpookySchema) extends Serializable {
 
-    val withSpooky: traceView.WithSpooky = new SquashedFetchedRow.this.traceView.WithSpooky(schema.spooky)
+    val withSpooky: traceView.WithSpooky = new SquashedRow.this.traceView.WithSpooky(schema.spooky)
 
     @volatile var groupedDocsOverride: Option[Array[Seq[DocOption]]] = None
 
@@ -105,23 +100,19 @@ case class SquashedFetchedRow(
       */
     // TODO: special optimization for Expression that only use pages
     private def _extract(
-        exs: Seq[Resolved[Any]],
+        exs: Seq[Expr[Any]],
         filterEmpty: Boolean = true,
         distinct: Boolean = true
-    ): SquashedFetchedRow = {
+    ): SquashedRow = {
 
       val allUpdatedDataRows: Array[DataRow] = semiUnsquash.flatMap {
         PageRows => // each element contains a different page group, CAUTION: not all of them are used: page group that yield no new datum will be removed, if all groups yield no new datum at least 1 row is preserved
           val dataRow_KVOpts = PageRows.map { pageRow =>
             val dataRow = pageRow.dataRow
-            val KVOpts: Seq[(Field, Option[Any])] = exs.flatMap { expr =>
-              val resolving = expr.field.conflictResolving
-              val k = expr.field
+            val KVOpts: Seq[(Alias, Option[Any])] = exs.flatMap { expr =>
+              val k = expr.alias
               val vOpt = expr.lift.apply(pageRow)
-              resolving match {
-                case Field.Replace => Some(k -> vOpt)
-                case _             => vOpt.map(v => k -> Some(v))
-              }
+              Some(k -> vOpt)
             }
             dataRow -> KVOpts
           }
@@ -155,10 +146,10 @@ case class SquashedFetchedRow(
 
           updatedDataRows
       }
-      SquashedFetchedRow.this.copy(dataRows = allUpdatedDataRows)
+      SquashedRow.this.copy(dataRows = allUpdatedDataRows)
     }
 
-    def extract(ex: Resolved[Any]*): SquashedFetchedRow = _extract(ex)
+    def extract(ex: Expr[Any]*): SquashedRow = _extract(ex)
 
     /*
      * same as extract + toTuple

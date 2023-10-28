@@ -41,21 +41,22 @@ abstract class SpookyViews_Imp0 extends CommonViews {
       case _ => None
     }
 
-    def flattenByKey(
-        key: K,
-        sampler: Sampler[Any]
-    ): Seq[(Map[K, Any], Int)] = {
-
-      val valueOption: Option[V] = self.get(key)
-
-      val values: Iterable[(Any, Int)] = valueOption.iterator.to(Iterable).flatMap(SpookyUtils.asIterable[Any]).zipWithIndex
-      val sampled = sampler(values)
-
-      val cleaned = self - key
-      val result = sampled.toSeq.map(tuple => (cleaned + (key -> tuple._1)) -> tuple._2)
-
-      result
-    }
+//    def flattenByKey(
+//        key: K,
+//        sampler: Sampler[Any]
+//    ): Seq[(Map[K, Any], Int)] = {
+//
+//      val valueOption: Option[V] = self.get(key)
+//
+//      val values: Iterable[(Any, Int)] =
+//        valueOption.iterator.to(Iterable).flatMap(SpookyUtils.asIterable[Any]).zipWithIndex
+//      val sampled = sampler(values)
+//
+//      val cleaned = self - key
+//      val result = sampled.toSeq.map(tuple => (cleaned + (key -> tuple._1)) -> tuple._2)
+//
+//      result
+//    }
 
     def canonizeKeysToColumnNames: scala.collection.Map[String, V] = self.map(tuple => {
       val keyName: String = tuple._1 match {

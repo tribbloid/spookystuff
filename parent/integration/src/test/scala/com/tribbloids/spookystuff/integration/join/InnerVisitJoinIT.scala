@@ -24,14 +24,14 @@ class InnerVisitJoinIT extends ITBaseSpec {
       .savePages_!("~/temp/abc")
 
     val joined = base
-      .join(S"div.sidebar-nav a", Inner, ordinalField = 'i1)(
+      .join(S"div.sidebar-nav a", Inner, ordinal = 'i1)(
         getPage('A.href)
       )
       .extract(
         G ~+ 'page,
         'A.text ~ 'category
       )
-      .join(S"a.subcategory-link", Inner, ordinalField = 'i2)(
+      .join(S"a.subcategory-link", Inner, ordinal = 'i2)(
         getPage('A.href)
       )
       .extract(
@@ -40,7 +40,7 @@ class InnerVisitJoinIT extends ITBaseSpec {
       .extract(S"h1".text ~ 'header)
       .flatSelect(
         S"notexist",
-        ordinalField = 'notexist_key
+        ordinal = 'notexist_key
       )( // this is added to ensure that temporary joinKey in KV store won't be used.
         'A.attr("class") ~ 'notexist_class
       )

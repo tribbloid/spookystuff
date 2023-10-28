@@ -9,11 +9,11 @@ import org.apache.spark.HashPartitioner
 /**
   * Created by peng on 05/04/16.
   */
-class TestExplorePlan extends SpookyBaseSpec with LocalPathDocsFixture {
+class ExplorePlanSpec extends SpookyBaseSpec with LocalPathDocsFixture {
 
   import dsl._
 
-  it("ExplorePlan.toString should work") {
+  it(".toString should work") {
 
     val base = spooky
       .fetch(
@@ -21,9 +21,9 @@ class TestExplorePlan extends SpookyBaseSpec with LocalPathDocsFixture {
       )
 
     val explored = base
-      .explore(S"div.sidebar-nav a", ordinalField = 'index)(
+      .explore(S"div.sidebar-nav a", ordinal = 'index)(
         Wget('A.href),
-        depthField = 'depth
+        depth = 'depth
       )(
         'A.text ~ 'category,
         S"h1".text ~ 'header
@@ -32,7 +32,7 @@ class TestExplorePlan extends SpookyBaseSpec with LocalPathDocsFixture {
     println(explored.plan.toString)
   }
 
-  it("ExplorePlan should create a new beaconRDD if its upstream doesn't have one") {
+  it("should create a new beaconRDD if its upstream doesn't have one") {
     val partitioner = new HashPartitioner(8)
 
     val src = spooky
@@ -49,7 +49,7 @@ class TestExplorePlan extends SpookyBaseSpec with LocalPathDocsFixture {
     assert(rdd1.plan.beaconRDDOpt.get.partitioner.get eq partitioner)
   }
 
-  it("ExplorePlan should inherit old beaconRDD from upstream if exists") {
+  it("should inherit old beaconRDD from upstream if exists") {
     val partitioner = new HashPartitioner(8)
     val partitioner2 = new HashPartitioner(16)
 
@@ -73,7 +73,7 @@ class TestExplorePlan extends SpookyBaseSpec with LocalPathDocsFixture {
     assert(rdd2.plan.beaconRDDOpt.get eq beaconRDD)
   }
 
-  it("ExplorePlan should work recursively on directory") {
+  it("should work recursively on directory") {
 
     val resourcePath = DEEP_DIR_URL
 
@@ -94,7 +94,7 @@ class TestExplorePlan extends SpookyBaseSpec with LocalPathDocsFixture {
     assert(df.collectAsList().size() == 6)
   }
 
-  it("ExplorePlan will throw an exception if OrdinalField == DepthField") {
+  it("will throw an exception if Ordinal alias == Depth alias") {
     val rdd1 = spooky
       .fetch {
         Wget(HTML_URL)
@@ -102,9 +102,9 @@ class TestExplorePlan extends SpookyBaseSpec with LocalPathDocsFixture {
 
     intercept[QueryException] {
       rdd1
-        .explore(S"root directory".attr("path"), ordinalField = 'dummy)(
+        .explore(S"root directory".attr("path"), ordinal = 'dummy)(
           Wget('A),
-          depthField = 'dummy
+          depth = 'dummy
         )()
     }
   }
@@ -137,7 +137,7 @@ class TestExplorePlan extends SpookyBaseSpec with LocalPathDocsFixture {
       val ds = first
         .explore(S"root directory URI".text)(
           Wget('A),
-          keyBy = TestExplorePlan.CustomKeyBy
+          keyBy = ExplorePlanSpec.CustomKeyBy
         )()
         .persist()
 
@@ -148,13 +148,13 @@ class TestExplorePlan extends SpookyBaseSpec with LocalPathDocsFixture {
       assert(ds.spooky.spookyMetrics.pagesFetched.value <= 3) // TODO: this can be reduced further
 
       ds.squashedRDD.foreach { squashedRow =>
-        Predef.assert(squashedRow.traceView.keyBy == TestExplorePlan.CustomKeyBy)
+        Predef.assert(squashedRow.traceView.keyBy == ExplorePlanSpec.CustomKeyBy)
       }
     }
   }
 }
 
-object TestExplorePlan {
+object ExplorePlanSpec {
 
   object CustomKeyBy extends (Trace => Any) with Serializable {
 

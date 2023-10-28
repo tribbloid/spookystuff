@@ -20,13 +20,13 @@ class JoinAndExplorePagesIT extends ITBaseSpec {
       .fetch(
         Wget("http://localhost:10092/test-sites/e-commerce/static")
       )
-      .join(S"div.sidebar-nav a", LeftOuter, ordinalField = 'i1)(
+      .join(S"div.sidebar-nav a", LeftOuter, ordinal = 'i1)(
         Wget('A.href)
       )
       .extract(
         'A.text ~ 'category
       )
-      .join(S"a.subcategory-link", LeftOuter, ordinalField = 'i2)(
+      .join(S"a.subcategory-link", LeftOuter, ordinal = 'i2)(
         Wget('A.href)
       )
       .extract(
@@ -35,12 +35,12 @@ class JoinAndExplorePagesIT extends ITBaseSpec {
       )
 
     val result = joined
-      .removeWeaks()
-      .explore(S"ul.pagination a", ordinalField = 'i3)(
+      .removeWeak()
+      .explore(S"ul.pagination a", ordinal = 'i3)(
         Wget('A.href),
-        depthField = 'depth
+        depth = 'depth
       )(
-        'A.text as 'page,
+        'A.text ~ 'page,
         S.uri ~ 'uri
       )
       .toDF(sort = true)

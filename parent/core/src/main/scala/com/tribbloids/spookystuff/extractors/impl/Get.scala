@@ -4,27 +4,31 @@ import com.tribbloids.spookystuff.extractors.GenExtractor.Leaf
 import com.tribbloids.spookystuff.extractors._
 import com.tribbloids.spookystuff.row._
 import org.apache.spark.ml.dsl.utils.refl.CatalystTypeOps
-import org.apache.spark.sql.types._
 
 /**
   * Created by peng on 7/3/17.
   */
-case class Get(field: Field) extends Leaf[FR, Any] {
+case class Get(
+    symbol: Field.Symbol
+) extends Leaf[FR, Any] {
+  // TODO: merge into Field.Symbol
 
   override def resolveType(tt: DataType): DataType = tt match {
     case schema: SpookySchema =>
       schema
-        .typedFor(field)
+        .getReference(symbol)
         .orElse {
-          schema.typedFor(field.*)
+          schema.getReference(symbol.*)
         }
         .map(_.dataType)
-        .getOrElse(NullType)
+        .getOrElse(
+          throw new UnsupportedOperationException(s"field $symbol does not exist")
+        )
     case _ =>
-      throw new UnsupportedOperationException("Can only resolve type against SchemaContext")
+      throw new UnsupportedOperationException("Can only resolve type against SpookySchema")
   }
 
-  override def resolve(tt: DataType): PartialFunction[FR, Any] = Unlift(v => v.dataRow.orWeak(field))
+  override def resolve(tt: DataType): PartialFunction[FR, Any] = Unlift(v => v.dataRow.orWeak(symbol))
 
   def GetSeq: GenExtractor[FR, Seq[Any]] = this.andOptionTyped[Any, Seq[Any]](
     {

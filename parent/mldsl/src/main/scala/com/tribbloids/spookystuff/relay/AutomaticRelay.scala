@@ -8,7 +8,7 @@ object AutomaticRelay {}
 abstract class AutomaticRelay[T <: Product: Manifest] extends Relay[T] {
   // TODO:
   //  slow in runtime, and unreliable
-  //  in the next version, should be rewritten using shapeless Generic and prover through implicits
+  //  frameless TypedEncoder does it much better in compile time, and can be leveraged for many conversions
 
   override type IR_>> = TreeIR.MapTree[String, Any]
 

@@ -27,10 +27,10 @@ class ExploreClickNextPageIT extends ITBaseSpec {
       )
 
     val result = base
-      .explore(S"div.sidebar-nav a", ordinalField = 'index)(
+      .explore(S"div.sidebar-nav a", ordinal = 'index)(
         Visit('A.href)
           +> snapshotAllPages,
-        depthField = 'depth
+        depth = 'depth
       )(
         G ~+ 'page_index.`#`,
         S"ul.pagination li.active span".text ~ 'page_number,

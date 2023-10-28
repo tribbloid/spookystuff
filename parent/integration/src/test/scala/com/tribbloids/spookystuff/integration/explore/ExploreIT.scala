@@ -21,9 +21,9 @@ class ExploreIT extends ITBaseSpec {
       )
 
     val explored = base
-      .explore(S"div.sidebar-nav a", ordinalField = 'index)(
+      .explore(S"div.sidebar-nav a", ordinal = 'index)(
         Wget('A.href),
-        depthField = 'depth
+        depth = 'depth
       )(
         'A.text ~ 'category,
         S"h1".text ~ 'header,
@@ -31,7 +31,7 @@ class ExploreIT extends ITBaseSpec {
       )
       .flatSelect(
         'A,
-        ordinalField = 'notexist_key
+        ordinal = 'notexist_key
       )( // this is added to ensure that temporary joinKey in KV store won't be used.
         'A.attr("class") ~ 'notexist_class
       )

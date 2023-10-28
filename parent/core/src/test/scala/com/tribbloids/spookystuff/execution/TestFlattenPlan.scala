@@ -2,8 +2,8 @@ package com.tribbloids.spookystuff.execution
 
 import com.tribbloids.spookystuff.extractors.impl.Lit
 import com.tribbloids.spookystuff.testutils.SpookyBaseSpec
-import org.apache.spark.ml.dsl.utils.refl.UnreifiedObjectType
-import org.apache.spark.sql.types.{IntegerType, StringType, StructField, StructType}
+import org.apache.spark.ml.dsl.utils.refl.UnknownDT
+import org.apache.spark.sql.types.{ArrayType, IntegerType, StringType, StructField, StructType}
 
 /**
   * Created by peng on 17/05/16.
@@ -97,9 +97,9 @@ class TestFlattenPlan extends SpookyBaseSpec {
       )
   }
 
-  def assertTypeEqual(t1: UnreifiedObjectType[_], t2: UnreifiedObjectType[_]) = {
-    assert(t1.self.asClass == t2.self.asClass)
-    assert(t1.self.asType =:= t2.self.asType)
+  def assertTypeEqual(t1: UnknownDT[_], t2: UnknownDT[_]) = {
+    assert(t1.typeMagnet.asClass == t2.typeMagnet.asClass)
+    assert(t1.typeMagnet.asType =:= t2.typeMagnet.asType)
     assert(t1 == t2)
   }
 
@@ -112,9 +112,20 @@ class TestFlattenPlan extends SpookyBaseSpec {
         Lit(Array("a" -> 1, "b" -> 2)) ~ 'Array
       )
 
-    val t1 = extracted.schema.typedFor('Array).get.dataType.asInstanceOf[UnreifiedObjectType[_]]
-    val t2 = UnreifiedObjectType.summon[Array[Tuple2[String, Int]]].asInstanceOf[UnreifiedObjectType[_]]
-    assertTypeEqual(t1, t2)
+    val t1 = extracted.schema.getReference('Array).get.dataType
+//    val t2 = UnknownDT.summon[Array[Tuple2[String, Int]]].asInstanceOf[UnknownDT[_]]
+
+    assert(
+      t1 == ArrayType(
+        StructType(
+          Array(
+            StructField("_1", StringType, nullable = true),
+            StructField("_2", IntegerType, nullable = false)
+          )
+        )
+      )
+    )
+//    assertTypeEqual(t1, t2)
 
     val flattened = extracted
       .flatten(
@@ -123,7 +134,7 @@ class TestFlattenPlan extends SpookyBaseSpec {
 
     //    assert(flattened.schema.typedFor('Array).get.dataType == UnreifiedScalaType.apply[Tuple2[String, Int]])
     assert(
-      flattened.schema.typedFor('Array).get.dataType == StructType(
+      flattened.schema.getReference('Array).get.dataType == StructType(
         Array(
           StructField("_1", StringType, nullable = true),
           StructField("_2", IntegerType, nullable = false)
@@ -141,9 +152,17 @@ class TestFlattenPlan extends SpookyBaseSpec {
         Lit(Seq("a" -> 1, "b" -> 2)) ~ 'Array
       )
 
-    val t1 = extracted.schema.typedFor('Array).get.dataType.asInstanceOf[UnreifiedObjectType[_]]
-    val t2 = UnreifiedObjectType.summon[Seq[Tuple2[String, Int]]].asInstanceOf[UnreifiedObjectType[_]]
-    assertTypeEqual(t1, t2)
+    val t1 = extracted.schema.getReference('Array).get.dataType
+    assert(
+      t1 == ArrayType(
+        StructType(
+          Array(
+            StructField("_1", StringType, nullable = true),
+            StructField("_2", IntegerType, nullable = false)
+          )
+        )
+      )
+    )
 
     val flattened = extracted
       .flatten(
@@ -152,7 +171,7 @@ class TestFlattenPlan extends SpookyBaseSpec {
 
     //    assert(flattened.schema.typedFor('Array).get.dataType == UnreifiedScalaType.apply[Tuple2[String, Int]])
     assert(
-      flattened.schema.typedFor('Array).get.dataType == StructType(
+      flattened.schema.getReference('Array).get.dataType == StructType(
         Array(
           StructField("_1", StringType, nullable = true),
           StructField("_2", IntegerType, nullable = false)
@@ -170,9 +189,17 @@ class TestFlattenPlan extends SpookyBaseSpec {
         Lit(List("a" -> 1, "b" -> 2)) ~ 'Array
       )
 
-    val t1 = extracted.schema.typedFor('Array).get.dataType.asInstanceOf[UnreifiedObjectType[_]]
-    val t2 = UnreifiedObjectType.summon[List[Tuple2[String, Int]]].asInstanceOf[UnreifiedObjectType[_]]
-    assertTypeEqual(t1, t2)
+    val t1 = extracted.schema.getReference('Array).get.dataType
+    assert(
+      t1 == ArrayType(
+        StructType(
+          Array(
+            StructField("_1", StringType, nullable = true),
+            StructField("_2", IntegerType, nullable = false)
+          )
+        )
+      )
+    )
 
     val flattened = extracted
       .flatten(
@@ -181,7 +208,7 @@ class TestFlattenPlan extends SpookyBaseSpec {
 
     //    assert(flattened.schema.typedFor('Array).get.dataType == UnreifiedScalaType.apply[Tuple2[String, Int]])
     assert(
-      flattened.schema.typedFor('Array).get.dataType == StructType(
+      flattened.schema.getReference('Array).get.dataType == StructType(
         Array(
           StructField("_1", StringType, nullable = true),
           StructField("_2", IntegerType, nullable = false)

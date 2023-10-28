@@ -20,6 +20,6 @@ case class AggPlan(
 
     keyedRDD
       .reduceByKey(reducer)
-      .map(v => SquashedFetchedRow(v._2.toArray))
+      .map(v => SquashedRow(v._2.toArray))
   }
 }

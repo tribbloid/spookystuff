@@ -2,9 +2,9 @@ package com.tribbloids.spookystuff.dsl
 
 import com.tribbloids.spookystuff.actions.Wget
 import com.tribbloids.spookystuff.doc.DocOption
-import com.tribbloids.spookystuff.extractors.Alias
+import com.tribbloids.spookystuff.extractors.HasAlias
 import com.tribbloids.spookystuff.rdd.FetchedDataset
-import com.tribbloids.spookystuff.row.{DataRow, FetchedRow, Field, SquashedFetchedRow}
+import com.tribbloids.spookystuff.row.{Alias, DataRow, FetchedRow, SquashedRow}
 import com.tribbloids.spookystuff.testutils.{LocalPathDocsFixture, SpookyBaseSpec}
 
 /**
@@ -16,7 +16,7 @@ class TestDSL extends SpookyBaseSpec with LocalPathDocsFixture {
     Wget(HTML_URL) ~ 'page
   ).fetch(spooky)
 
-  lazy val row: FetchedRow = SquashedFetchedRow
+  lazy val row: FetchedRow = SquashedRow
     .withDocs(dataRows = Array(DataRow()), docs = pages)
     .extract(
       S"title".head.text withAlias 'abc,
@@ -30,12 +30,12 @@ class TestDSL extends SpookyBaseSpec with LocalPathDocsFixture {
   }
 
   it("defaultAs should not rename an Alias") {
-    val renamed = 'abc as 'name1
-    assert(renamed.asInstanceOf[Alias[_, _]].field.name == "name1")
-    val renamed2 = renamed as 'name2
-    assert(renamed2.asInstanceOf[Alias[_, _]].field.name == "name2")
+    val renamed = 'abc ~ 'name1
+    assert(renamed.asInstanceOf[HasAlias[_, _]].alias.name == "name1")
+    val renamed2 = renamed ~ 'name2
+    assert(renamed2.asInstanceOf[HasAlias[_, _]].alias.name == "name2")
     val notRenamed = renamed withAliasIfMissing 'name2
-    assert(notRenamed.field.name == "name1")
+    assert(notRenamed.alias.name == "name1")
   }
 
   it("andFn") {
@@ -52,13 +52,13 @@ class TestDSL extends SpookyBaseSpec with LocalPathDocsFixture {
 
   it("double quotes in selector by attribute should work") {
     val pages = Wget(HTML_URL).fetch(spooky).toArray
-    val row = SquashedFetchedRow
+    val row = SquashedRow
       .withDocs(Array(DataRow()), docs = pages)
       .extract(S"""a[href*="wikipedia"]""".href withAlias 'uri)
       .unsquash
       .head
 
-    assert(row.dataRow.get(Field("uri")).nonEmpty)
+    assert(row.dataRow.get(Alias("uri")).nonEmpty)
   }
 
   it("uri") {
@@ -75,7 +75,7 @@ class TestDSL extends SpookyBaseSpec with LocalPathDocsFixture {
 
   it("SpookyContext can be cast to a blank PageRowRDD with empty schema") {
     val ds = spooky: FetchedDataset
-    assert(ds.fields.isEmpty)
+    assert(ds.schema.fields.isEmpty)
     assert(ds.count() == 1)
 
     val plan = ds.plan

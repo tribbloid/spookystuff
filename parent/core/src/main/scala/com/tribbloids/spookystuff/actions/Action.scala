@@ -4,11 +4,11 @@ import com.tribbloids.spookystuff.doc.{Doc, DocOption}
 import com.tribbloids.spookystuff.session.Session
 import com.tribbloids.spookystuff.utils.CommonUtils
 import com.tribbloids.spookystuff.{ActionException, SpookyContext}
-import org.apache.spark.ml.dsl.utils.refl.ScalaUDT
+import org.apache.spark.ml.dsl.utils.refl.SerializingUDT
 import org.apache.spark.sql.types.SQLUserDefinedType
 import org.slf4j.LoggerFactory
 
-class ActionUDT extends ScalaUDT[Action]
+class ActionUDT extends SerializingUDT[Action]
 
 /**
   * These are the same actions a human would do to get to the data page, their order of execution is identical to that
@@ -76,7 +76,7 @@ trait Action extends ActionLike with TraceAPI {
     results
   }
 
-  protected def errorDump(message: String, rawPage: Doc, spooky: SpookyContext): String = {
+  protected def errorDump(rawPage: Doc, spooky: SpookyContext): String = {
 
     val backtrace =
       if (rawPage.uid.backtrace.lastOption.exists(_ eq this)) rawPage.uid.backtrace
