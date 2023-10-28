@@ -18,9 +18,9 @@ class ExplorePagesIT extends ITBaseSpec {
       .fetch(
         Wget("http://localhost:10092/test-sites/e-commerce/static/computers/tablets")
       )
-      .explore(S"ul.pagination a", ordinalField = 'index)(
+      .explore(S"ul.pagination a", ordinal = 'index)(
         Wget('A.href),
-        depthField = 'depth
+        depth = 'depth
       )(
         'A.text ~ 'page,
         S.uri ~ 'uri

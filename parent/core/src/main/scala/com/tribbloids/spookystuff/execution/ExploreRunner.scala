@@ -4,7 +4,7 @@ import com.tribbloids.spookystuff.actions.{Trace, TraceView}
 import com.tribbloids.spookystuff.caching.ExploreRunnerCache
 import com.tribbloids.spookystuff.dsl.ExploreAlgorithm
 import com.tribbloids.spookystuff.execution.ExplorePlan.Open_Visited
-import com.tribbloids.spookystuff.extractors.Resolved
+import com.tribbloids.spookystuff.extractors.Expr
 import com.tribbloids.spookystuff.row._
 import com.tribbloids.spookystuff.utils.Caching.ConcurrentMap
 import com.tribbloids.spookystuff.utils.serialization.NOTSerializable
@@ -48,15 +48,15 @@ class ExploreRunner(
   }
 
   protected def executeOnce(
-      resolved: Resolved[Any],
+      resolved: Expr[Any],
       sampler: Sampler[Any],
       joinType: JoinType,
       trace: Set[Trace]
   )(
-      `depth_++`: Resolved[Int],
+      `depth_++`: Expr[Int],
       spooky: SpookyContext
   )(
-      rowFn: SquashedFetchedRow => SquashedFetchedRow
+      rowFn: SquashedRow => SquashedRow
       // apply immediately after depth selection, this include depth0
       // should include flatten & extract
   ): Unit = {
@@ -64,7 +64,7 @@ class ExploreRunner(
     import impl._
     import params._
 
-    implicit def withSchema(row: SquashedFetchedRow): SquashedFetchedRow#WSchema =
+    implicit def withSchema(row: SquashedRow): SquashedRow#WSchema =
       row.WSchema(schema)
 
     val bestOpen: (NodeKey, Iterable[DataRow]) = nextOpenSelector(open)
@@ -72,27 +72,27 @@ class ExploreRunner(
     if (bestOpen._2.nonEmpty) {
       this.fetchingInProgressOpt = Some(bestOpen._1)
 
-      val bestRow_- = SquashedFetchedRow(bestOpen._2.toArray, bestOpen._1)
+      val bestRow_- = SquashedRow(bestOpen._2.toArray, bestOpen._1)
 
       val bestRow = rowFn.apply(
         bestRow_-
           .extract(depth_++)
       )
       val bestDataRowsInRange = bestRow.dataRows.filter { dataRow =>
-        range.contains(dataRow.getInt(depth_++.field).get)
+        range.contains(dataRow.getInt(depth_++.alias).get)
       }
 
       this.commitIntoVisited(bestOpen._1, bestDataRowsInRange, visitedReducer)
 
       val bestNonFringeRow = bestRow.copy(
         dataRows = bestRow.dataRows.filter { dataRow =>
-          dataRow.getInt(depth_++.field).get < range.max
+          dataRow.getInt(depth_++.alias).get < range.max
         }
       )
 
       val newOpens: Array[(TraceView, DataRow)] = bestNonFringeRow
         .extract(resolved)
-        .flattenData(resolved.field, ordinalField, joinType.isLeft, sampler)
+        .explode(resolved.alias, ordinal, joinType.isLeft, sampler)
         .interpolateAndRewriteLocally(trace)
         .map { tuple =>
           tuple._1 -> tuple._2
@@ -110,16 +110,16 @@ class ExploreRunner(
 
   // TODO: need unit test if this preserve keyBy
   def run(
-      resolved: Resolved[Any],
+      resolved: Expr[Any],
       sampler: Sampler[Any],
       joinType: JoinType,
       traces: Set[Trace]
   )(
       maxItr: Int,
-      `depth_++`: Resolved[Int],
+      `depth_++`: Expr[Int],
       spooky: SpookyContext
   )(
-      rowMapper: SquashedFetchedRow => SquashedFetchedRow
+      rowMapper: SquashedRow => SquashedRow
       // apply immediately after depth selection, this include depth0
       // should include flatten & extract
   ): Iterator[(TraceView, Open_Visited)] =

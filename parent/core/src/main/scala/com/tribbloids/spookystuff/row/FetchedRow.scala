@@ -1,28 +1,16 @@
 package com.tribbloids.spookystuff.row
 
-import com.tribbloids.spookystuff.SpookyContext
 import com.tribbloids.spookystuff.actions._
 import com.tribbloids.spookystuff.doc._
 
-//TODO: extends Spark SQL Row
-trait AbstractSpookyRow extends Serializable {
-
-//  override def length: Int = this.productArity
-//
-//  override def get(i: Int): Any = this.productElement(i)
-//
-//  override def copy(): ProductRow = this //TODO: problems?
-}
-
 object FetchedRow {
 
-  object Empty extends FetchedRow()
-
-  //  def apply(
-  //             dataRow: DataRow = DataRow(),
-  //             pageLikes: Seq[Fetched] = Seq()
-  //           ): FetchedRow = dataRow -> pageLikes
-
+//  def noData(
+//      fetched: Seq[DocOption] = Seq()
+//  ): FetchedRow = {
+//    FetchedRow(DataRow(), fetched)
+//  }
+  // TODO: delete, should only initialize from SquashedRow
 }
 
 /**
@@ -32,10 +20,10 @@ object FetchedRow {
 case class FetchedRow(
     dataRow: DataRow = DataRow(),
     fetched: Seq[DocOption] = Seq()
-) extends AbstractSpookyRow {
+) extends Serializable {
 
   // TODO: trace implementation is not accurate: the last backtrace has all previous exports removed
-  def squash(spooky: SpookyContext): SquashedFetchedRow = SquashedFetchedRow(
+  def squash(): SquashedRow = SquashedRow(
     Array(dataRow),
     TraceView.withDocs(docs = fetched)
   )
@@ -45,10 +33,10 @@ case class FetchedRow(
     case _         => None
   }
 
-  def noDocs: Seq[NoDoc] = fetched.flatMap {
-    case noPage: NoDoc => Some(noPage)
-    case _             => None
-  }
+//  def noDocs: Seq[NoDoc] = fetched.flatMap {
+//    case noPage: NoDoc => Some(noPage)
+//    case _             => None
+//  }
 
   def getOnlyDoc: Option[Doc] = {
     val pages = this.docs
@@ -67,13 +55,14 @@ case class FetchedRow(
     else pages.headOption
   }
 
-  def getUnstructured(field: Field): Option[Unstructured] = {
-
-    val page = getDoc(field.name)
-    val value = dataRow.getTyped[Unstructured](field)
-
-    if (page.nonEmpty && value.nonEmpty)
-      throw new UnsupportedOperationException("Ambiguous key referring to both pages and data")
-    else page.map(_.root).orElse(value)
-  }
+  // TODO: remove, resolved at schema level
+//  def getUnstructured(alias: Alias): Option[Unstructured] = {
+//
+//    val page = getDoc(alias.name)
+//    val value = dataRow.getTyped[Unstructured](alias)
+//
+//    if (page.nonEmpty && value.nonEmpty)
+//      throw new UnsupportedOperationException("Ambiguous key referring to both pages and data")
+//    else page.map(_.root).orElse(value)
+//  }
 }

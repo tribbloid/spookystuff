@@ -23,7 +23,7 @@ object TestSiteServer {
       redirectURIOpt.foreach { v =>
         response.sendRedirect(v)
         baseRequest.setHandled(true)
-      // https://stackoverflow.com/questions/72410379/strange-jetty-warning-java-lang-illegalstateexception-committed-on-redirectin
+        // https://stackoverflow.com/questions/72410379/strange-jetty-warning-java-lang-illegalstateexception-committed-on-redirectin
       }
     }
 

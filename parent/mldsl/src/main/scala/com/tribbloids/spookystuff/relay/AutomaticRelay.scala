@@ -8,7 +8,7 @@ object AutomaticRelay {}
 abstract class AutomaticRelay[T <: Product: Manifest] extends Relay[T] {
   // TODO:
   //  slow in runtime, and unreliable
-  //  in the next version, should be rewritten using shapeless Generic and prover through implicits
+  //  frameless TypedEncoder does it much better in compile time, and can be leveraged for many conversions
 
   override type IR_>> = TreeIR.MapTree[String, Any]
 
@@ -27,7 +27,7 @@ abstract class AutomaticRelay[T <: Product: Manifest] extends Relay[T] {
                   .map { v: Any =>
                     val rr = RelayRegistry.Default.lookupOrDefault(v)
                     rr.toMessage_>>(v).asInstanceOf[TreeIR[Any]]
-                  // TODO: Cast may fail, IR should be an extendable interface
+                    // TODO: Cast may fail, IR should be an extendable interface
                   }
                 TreeIR.list(list: _*)
               case m: Map[_, _] =>

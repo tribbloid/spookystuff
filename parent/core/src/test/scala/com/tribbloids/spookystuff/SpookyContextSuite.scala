@@ -2,7 +2,7 @@ package com.tribbloids.spookystuff
 
 import com.tribbloids.spookystuff.actions._
 import com.tribbloids.spookystuff.conf.SpookyConf
-import com.tribbloids.spookystuff.row.Field
+import com.tribbloids.spookystuff.row.Alias
 import com.tribbloids.spookystuff.testutils.{LocalPathDocsFixture, SpookyBaseSpec}
 import com.tribbloids.spookystuff.utils.serialization.AssertWeaklySerializable
 
@@ -115,7 +115,7 @@ class SpookyContextSuite extends SpookyBaseSpec with LocalPathDocsFixture {
     val rows = spooky.create(Seq("a", "b"))
 
     val data = rows.squashedRDD.collect().flatMap(_.dataRows).map(_.data).toList
-    assert(data == List(Map(Field("_") -> "a"), Map(Field("_") -> "b")))
+    assert(data == List(Map(Alias("_") -> "a"), Map(Alias("_") -> "b")))
   }
 
   it("can create PageRow from map[String, String]") {
@@ -124,7 +124,7 @@ class SpookyContextSuite extends SpookyBaseSpec with LocalPathDocsFixture {
     val rows = spooky.create(Seq(Map("1" -> "a"), Map("2" -> "b")))
 
     val data = rows.squashedRDD.collect().flatMap(_.dataRows).map(_.data).toList
-    assert(data == List(Map(Field("1") -> "a"), Map(Field("2") -> "b")))
+    assert(data == List(Map(Alias("1") -> "a"), Map(Alias("2") -> "b")))
   }
 
   it("can create PageRow from map[Symbol, String]") {
@@ -133,7 +133,7 @@ class SpookyContextSuite extends SpookyBaseSpec with LocalPathDocsFixture {
     val rows = spooky.create(Seq(Map('a1 -> "a"), Map('a2 -> "b")))
 
     val data = rows.squashedRDD.collect().flatMap(_.dataRows).map(_.data).toList
-    assert(data == List(Map(Field("a1") -> "a"), Map(Field("a2") -> "b")))
+    assert(data == List(Map(Alias("a1") -> "a"), Map(Alias("a2") -> "b")))
   }
 
   it("can create PageRow from map[Int, String]") {
@@ -142,7 +142,7 @@ class SpookyContextSuite extends SpookyBaseSpec with LocalPathDocsFixture {
     val rows = spooky.create(Seq(Map(1 -> "a"), Map(2 -> "b")))
 
     val data = rows.squashedRDD.collect().flatMap(_.dataRows).map(_.data).toList
-    assert(data == List(Map(Field("1") -> "a"), Map(Field("2") -> "b")))
+    assert(data == List(Map(Alias("1") -> "a"), Map(Alias("2") -> "b")))
   }
 
   it("default SpookyContext should have default dir configs") {

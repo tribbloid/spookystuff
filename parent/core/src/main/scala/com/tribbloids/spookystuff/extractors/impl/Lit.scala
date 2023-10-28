@@ -5,7 +5,7 @@ import com.tribbloids.spookystuff.extractors._
 import com.tribbloids.spookystuff.utils.EqualBy
 import com.tribbloids.spookystuff.relay.IR.Aux
 import com.tribbloids.spookystuff.relay.{Relay, TreeIR}
-import org.apache.spark.ml.dsl.utils.refl.UnreifiedObjectType
+import org.apache.spark.ml.dsl.utils.refl.TypeMagnet
 import org.apache.spark.sql.catalyst.ScalaReflection.universe.TypeTag
 import org.apache.spark.sql.types._
 
@@ -31,10 +31,10 @@ case class Lit[T, +R](value: R, dataType: DataType) extends Static[T, R] with Eq
 object Lit extends Relay.ToMsg[Lit[_, _]] {
 
   def apply[T: TypeTag](v: T): Lit[FR, T] = {
-    apply[FR, T](v, UnreifiedObjectType.summon[T])
+    apply[FR, T](v, implicitly[TypeMagnet[T]].asCatalystTypeOrUnknown)
   }
 
-  def erased[T](v: T): Lit[FR, T] = {
+  def erased[T](v: T): Lit[FR, T] = { // TODO: remove, make no sense
     apply[FR, T](v, NullType)
   }
 

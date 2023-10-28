@@ -16,13 +16,12 @@ import org.apache.spark.rdd.RDD
 import org.apache.spark.sql.DataFrame
 import org.apache.spark.sql.catalyst.expressions.GenericInternalRow
 import org.apache.spark.sql.catalyst.{CatalystTypeConverters, InternalRow}
-import org.apache.spark.sql.types.{DataType, StructType}
+import org.apache.spark.sql.types.StructType
 import org.apache.spark.sql.utils.SparkHelper
 import org.apache.spark.storage.StorageLevel
 import org.apache.spark.{SparkContext, TaskContext}
 
 import scala.collection.Map
-import scala.collection.immutable.ListMap
 import scala.concurrent.duration.Duration
 import scala.language.implicitConversions
 import scala.reflect.ClassTag
@@ -49,14 +48,14 @@ case class FetchedDataset(
 
   def this(
       sourceRDD: SquashedFetchedRDD,
-      fieldMap: ListMap[Field, DataType],
+      fields: List[Field],
       spooky: SpookyContext,
       beaconRDDOpt: Option[BeaconRDD[TraceView]] = None
   ) = {
 
     this(
       RDDPlan(
-        SpookySchema(SpookyExecutionContext(spooky), fieldMap),
+        SpookySchema(SpookyExecutionContext(spooky), fields),
         sourceRDD,
         beaconRDDOpt
       )
@@ -106,18 +105,17 @@ case class FetchedDataset(
 
   def spooky: SpookyContext = plan.spooky
   def schema: SpookySchema = plan.schema
-  def fields: List[Field] = schema.fields
 
   def dataRDDSorted: RDD[DataRow] = {
 
     import scala.Ordering.Implicits._ // DO NOT DELETE!
 
-    val sortIndices: List[Field] = plan.allSortIndices.map(_._1.self)
+    val sortAliases: List[Alias] = plan.allSortIndices.map(_.alias)
 
     val dataRDD = this.dataRDD
     plan.persist(dataRDD)
 
-    val sorted = dataRDD.sortBy(_.sortIndex(sortIndices))
+    val sorted = dataRDD.sortBy(_.sortIndex(sortAliases))
     sorted.setName("sort")
 
     sorted.foreachPartition { _ => } // force execution TODO: remove, won't force
@@ -151,28 +149,20 @@ case class FetchedDataset(
       if (!sort) this.dataRDD
       else dataRDDSorted
 
-    //    val field2Encoder: Map[Field, ExpressionEncoder[Any]] = spookySchema.fieldTypes.mapValues {
-    //      tpe =>
-    //        val ttg = tpe.asTypeTagCasted[Any]
-    //        ExpressionEncoder.apply()(ttg)
-    //    }
-
-    // TOOD: how to make it serializable so it can be reused by different partitions?
-    @transient lazy val field2Converter: Map[Field, Any => Any] = spookySchema.fieldTypes.map {
+    // TODO: how to make it serializable so it can be reused by different partitions?
+    @transient lazy val index2Converter: Map[Field.Symbol, Any => Any] = spookySchema.fieldLookup.map {
       case (k, tpe) =>
-        val reified = tpe.reified
+        val reified = tpe.dataType.reified
         val converter = CatalystTypeConverters.createToCatalystConverter(reified)
         k -> converter
     }
 
-//    val rowEncoder = RowEncoder.apply(spookySchema.structType)
-
     dataRDD
       .map { v =>
-        val converted: Seq[Any] = spookySchema.fields.map { field =>
+        val converted: Seq[Any] = spookySchema.indices.map { field =>
           val raw: Any = v.data.get(field).orNull
           //              val encoder: ExpressionEncoder[Any] = field2Encoder(field)
-          val converter = field2Converter(field)
+          val converter = index2Converter(field)
           converter.apply(raw)
         }
         val internalRow = new GenericInternalRow(converted.toArray)
@@ -184,8 +174,8 @@ case class FetchedDataset(
   def toDF(sort: Boolean = false): DataFrame =
     sparkContext.withJob("toDF", s"toDF(sort=$sort)") {
 
-      val filteredSchema: SpookySchema = schema.filterFields()
-      val sqlSchema: StructType = filteredSchema.structType
+      val filteredSchema: SpookySchema = schema.filterBy()
+      val sqlSchema: StructType = filteredSchema.inSpark.structType
       val rowRDD = toInternalRowRDD(sort, filteredSchema)
 
       val result = SparkHelper.internalCreateDF(spooky.sqlContext, rowRDD, sqlSchema)
@@ -193,34 +183,7 @@ case class FetchedDataset(
       result
     }
 
-  // TODO: cleanup
-  //  @Deprecated
-  //  def toDFLegacy(sort: Boolean = false, tableName: String = null): DataFrame =
-  //    sparkContext.withJob(s"toDF(sort=$sort, name=$tableName)") {
-  //
-  //      val jsonRDD = this.toJSON(sort)
-  //      plan.persist(jsonRDD)
-  //
-  //      val schemaRDD = spooky.sqlContext.read.json(jsonRDD)
-  //
-  //      val columns: Seq[Column] = fields
-  //        .filter(key => !key.isWeak)
-  //        .map {
-  //          key =>
-  //            val name = SpookyUtils.canonizeColumnName(key.name)
-  //            if (schemaRDD.schema.fieldNames.contains(name)) new Column(UnresolvedAttribute(name))
-  //            else new Column(expressions.Alias(org.apache.spark.sql.catalyst.expressions.Literal(null), name)())
-  //        }
-  //
-  //      val result = schemaRDD.select(columns: _*)
-  //
-  //      if (tableName!=null) result.createOrReplaceTempView(tableName)
-  //      plan.scratchRDDs.clearAll()
-  //
-  //      result
-  //    }
-
-  def newResolver: SpookySchema#Resolver = schema.newResolver
+  def newResolver: SpookySchema#ResolveDelta = schema.ResolveDelta
 
   def toStringRDD(
       ex: Extractor[Any],
@@ -249,11 +212,11 @@ case class FetchedDataset(
 
   def select[T](exprs: Extractor[T]*): FetchedDataset = extract(exprs: _*)
 
-  def remove(fields: Field*): FetchedDataset = {
-    MapPlan.optimised(plan, MapPlan.Remove(fields))
+  def remove(indices: Field.Symbol*): FetchedDataset = {
+    MapPlan.optimised(plan, MapPlan.Remove(indices))
   }
 
-  def removeWeaks(): FetchedDataset = this.remove(fields.filter(_.isWeak): _*)
+  def removeWeak(): FetchedDataset = this.remove(schema.indices.filter(_.isWeak): _*)
 
   /**
     * this is an action that will be triggered immediately
@@ -285,22 +248,22 @@ case class FetchedDataset(
       overwrite: Boolean = false
   ): FetchedDataset = {
 
-    val _pageEx: Extractor[Doc] = page.ex.typed[Doc]
+    val _pageEx: Extractor[Doc] = page.ex.filterByType[Doc]
 
     val _extensionEx: Extractor[String] = Option(extension)
-      .map(_.ex.typed[String])
+      .map(_.ex.filterByType[String])
       .getOrElse(_pageEx.defaultFileExtension)
 
     MapPlan.optimised(
       plan,
-      MapPlan.SavePages(path.ex.typed[String], _extensionEx, _pageEx, overwrite)
+      MapPlan.SavePages(path.ex.filterByType[String], _extensionEx, _pageEx, overwrite)
     )
   }
 
   def flatten(
       ex: Extractor[Any],
       isLeft: Boolean = true,
-      ordinalField: Field = null,
+      ordinal: Alias = null,
       sampler: Sampler[Any] = spooky.spookyConf.defaultFlattenSampler
   ): FetchedDataset = {
 
@@ -309,11 +272,11 @@ case class FetchedDataset(
         ff -> this
       case _ =>
         val effectiveEx = ex.withJoinFieldIfMissing
-        val ff = effectiveEx.field
+        val ff = effectiveEx.alias
         ff -> this.extract(ex)
     }
 
-    MapPlan.optimised(extracted.plan, MapPlan.Flatten(on, ordinalField, sampler, isLeft))
+    MapPlan.optimised(extracted.plan, MapPlan.Flatten(on, ordinal, sampler, isLeft))
   }
 
   /**
@@ -324,20 +287,20 @@ case class FetchedDataset(
   def flatExtract(
       on: Extractor[Any], // TODO: used to be Iterable[Unstructured], any tradeoff?
       isLeft: Boolean = true,
-      ordinalField: Field = null,
+      ordinal: Alias = null,
       sampler: Sampler[Any] = spooky.spookyConf.defaultFlattenSampler
   )(exprs: Extractor[Any]*): FetchedDataset = {
     this
-      .flatten(on.withJoinFieldIfMissing, isLeft, ordinalField, sampler)
+      .flatten(on.withJoinFieldIfMissing, isLeft, ordinal, sampler)
       .extract(exprs: _*)
   }
 
   def flatSelect(
       on: Extractor[Any], // TODO: used to be Iterable[Unstructured], any tradeoff?
-      ordinalField: Field = null,
+      ordinal: Alias = null,
       sampler: Sampler[Any] = spooky.spookyConf.defaultFlattenSampler,
       isLeft: Boolean = true
-  )(exprs: Extractor[Any]*): FetchedDataset = flatExtract(on, isLeft, ordinalField, sampler)(exprs: _*)
+  )(exprs: Extractor[Any]*): FetchedDataset = flatExtract(on, isLeft, ordinal, sampler)(exprs: _*)
 
   // TODO: test
   def agg(exprs: Seq[FetchedRow => Any], reducer: RowReducer): FetchedDataset = AggPlan(plan, exprs, reducer)
@@ -353,7 +316,7 @@ case class FetchedDataset(
   protected def _defaultWget(
       cooldown: Option[Duration] = None,
       filter: DocFilter = Const.defaultDocumentFilter,
-      on: Col[String] = Get(Const.defaultJoinField)
+      on: Col[String] = Get(Const.defaultJoin)
   ): TraceView = {
 
     val _delay: Trace = _defaultCooldown(cooldown)
@@ -399,7 +362,7 @@ case class FetchedDataset(
   def join(
       on: Extractor[Any], // name is discarded
       joinType: JoinType = spooky.spookyConf.defaultJoinType,
-      ordinalField: Field = null, // left & idempotent parameters are missing as they are always set to true
+      ordinal: Alias = null, // left & idempotent parameters are missing as they are always set to true
       sampler: Sampler[Any] = spooky.spookyConf.defaultJoinSampler
   )(
       traces: Set[Trace],
@@ -408,7 +371,7 @@ case class FetchedDataset(
   ): FetchedDataset = {
 
     val flat = this
-      .flatten(on.withJoinFieldIfMissing, joinType.isLeft, ordinalField, sampler)
+      .flatten(on.withJoinFieldIfMissing, joinType.isLeft, ordinal, sampler)
 
     flat.fetch(traces, keyBy, genPartitioner)
   }
@@ -423,7 +386,7 @@ case class FetchedDataset(
   def wgetJoin(
       on: Extractor[Any],
       joinType: JoinType = spooky.spookyConf.defaultJoinType,
-      ordinalField: Field = null, // left & idempotent parameters are missing as they are always set to true
+      ordinal: Alias = null, // left & idempotent parameters are missing as they are always set to true
       sampler: Sampler[Any] = spooky.spookyConf.defaultJoinSampler,
       cooldown: Option[Duration] = None,
       keyBy: Trace => Any = identity,
@@ -437,7 +400,7 @@ case class FetchedDataset(
       trace = ClusterRetry(trace, failSafe).traceView
     }
 
-    this.join(on, joinType, ordinalField, sampler)(
+    this.join(on, joinType, ordinal, sampler)(
       trace,
       keyBy,
       genPartitioner = genPartitioner
@@ -448,13 +411,13 @@ case class FetchedDataset(
   def explore(
       on: Extractor[Any],
       joinType: JoinType = spooky.spookyConf.defaultJoinType,
-      ordinalField: Field = null,
+      ordinal: Alias = null,
       sampler: Sampler[Any] = spooky.spookyConf.defaultJoinSampler
   )(
       traces: Set[Trace],
       keyBy: Trace => Any = identity,
       genPartitioner: GenPartitioner = spooky.spookyConf.defaultGenPartitioner,
-      depthField: Field = null,
+      depth: Alias = null,
       range: Range = spooky.spookyConf.defaultExploreRange,
       exploreAlgorithm: ExploreAlgorithm = spooky.spookyConf.defaultExploreAlgorithm,
       epochSize: Int = spooky.spookyConf.epochSize,
@@ -464,7 +427,7 @@ case class FetchedDataset(
       // apply immediately after depth selection, this include depth0
   ): FetchedDataset = {
 
-    val params = Params(depthField, ordinalField, range)
+    val params = Params(depth, ordinal, range)
 
     ExplorePlan(
       plan,
@@ -485,14 +448,14 @@ case class FetchedDataset(
   def wgetExplore(
       on: Extractor[Any],
       joinType: JoinType = spooky.spookyConf.defaultJoinType,
-      ordinalField: Field = null,
+      ordinal: Alias = null,
       sampler: Sampler[Any] = spooky.spookyConf.defaultJoinSampler,
       filter: DocFilter = Const.defaultDocumentFilter,
       failSafe: Int = -1,
       cooldown: Option[Duration] = None,
       keyBy: Trace => Any = identity,
       genPartitioner: GenPartitioner = spooky.spookyConf.defaultGenPartitioner,
-      depthField: Field = null,
+      depth: Alias = null,
       range: Range = spooky.spookyConf.defaultExploreRange,
       exploreAlgorithm: ExploreAlgorithm = spooky.spookyConf.defaultExploreAlgorithm,
       miniBatch: Int = 500,
@@ -505,11 +468,11 @@ case class FetchedDataset(
     var trace = _defaultWget(cooldown, filter)
     if (failSafe > 0) trace = ClusterRetry(trace, failSafe)
 
-    explore(on, joinType, ordinalField, sampler)(
+    explore(on, joinType, ordinal, sampler)(
       trace,
       keyBy,
       genPartitioner,
-      depthField,
+      depth,
       range,
       exploreAlgorithm,
       miniBatch,

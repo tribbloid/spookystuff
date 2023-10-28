@@ -9,7 +9,7 @@ import org.apache.commons.csv.CSVFormat
 import org.apache.hadoop.fs.Path
 import org.apache.hadoop.shaded.org.apache.http.StatusLine
 import org.apache.hadoop.shaded.org.apache.http.entity.ContentType
-import org.apache.spark.ml.dsl.utils.refl.ScalaUDT
+import org.apache.spark.ml.dsl.utils.refl.SerializingUDT
 import org.apache.spark.sql.types.SQLUserDefinedType
 import org.apache.tika.io.TikaInputStream
 import org.apache.tika.metadata.{Metadata, TikaCoreProperties}
@@ -20,7 +20,7 @@ import java.sql.{Date, Time, Timestamp}
 import java.util.UUID
 import scala.collection.mutable
 
-class DocOptionUDT extends ScalaUDT[DocOption]
+class DocOptionUDT extends SerializingUDT[DocOption]
 
 //keep small, will be passed around by Spark
 //TODO: subclass Unstructured to save Message definition

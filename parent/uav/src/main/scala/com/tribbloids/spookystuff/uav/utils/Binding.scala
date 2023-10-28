@@ -62,9 +62,9 @@ case class Binding(
     * @param keyOpt
     *   access will be granted if the key contains identical UUID or threadID
     * @return
-    *   strength of the availability, >0 means available, higher number means more preferable:
-    * -1 access denied 0 binding has expired / open to all 1 on top of 1, key has identical threadID 2 key has identical
-    * taskID 3 key has identical ID (strongest)
+    *   strength of the availability, >0 means available, higher number means more preferable: -1 access denied 0
+    *   binding has expired / open to all 1 on top of 1, key has identical threadID 2 key has identical taskID 3 key has
+    *   identical ID (strongest)
     */
   def getAvailability(keyOpt: Option[Binding] = None): Int = {
 

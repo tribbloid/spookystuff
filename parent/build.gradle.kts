@@ -66,8 +66,8 @@ subprojects {
                     mutableListOf(
 
                         "-encoding", "UTF-8",
-                        "-unchecked", "-deprecation", "-feature",
-
+                        "-unchecked", "-feature",
+                        "-deprecation",
                         // CAUTION: DO NOT DOWNGRADE:
                         // json4s, jackson-scala & paranamer depends on it
                         "-g:vars",
@@ -76,6 +76,8 @@ subprojects {
 
                         "-Xlint",
                         "-Ywarn-unused",
+
+                        "-Wconf:cat=deprecation:ws" // TODO: enable after getting rid of all symbols
 
 //                        "-Wunused:imports",
 

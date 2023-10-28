@@ -25,11 +25,17 @@ object ExploreAlgorithms {
 
       import scala.Ordering.Implicits._
 
+      private val _depth = schema(depth)
+      private val _ordinal = schema(ordinal)
+
       override val openReducer: RowReducer = { (v1, v2) =>
         (v1 ++ v2)
           .groupBy(_.groupID)
           .values
-          .minBy(_.head.sortIndex(Seq(depthField, ordinalField)))
+          .minBy { v =>
+            val first = v.head
+            first.withFields(_depth, _ordinal).sortIndex
+          }
       }
 
       override val visitedReducer: RowReducer = openReducer
@@ -45,7 +51,8 @@ object ExploreAlgorithms {
           val v = tuple._2
           //          assert(v.size == 1)
           v.head
-            .getInt(depthField)
+            .on(_depth)
+            .int
             .getOrElse(Int.MaxValue)
         }
         result
@@ -55,72 +62,27 @@ object ExploreAlgorithms {
           open: Iterable[DataRow],
           visited: Iterable[DataRow]
       ): Iterable[DataRow] = {
-        val visitedDepth = visited.head.getInt(depthField)
+        val visitedDepth = visited.head.on(_depth).int
         open.filter { row =>
-          row.getInt(depthField) < visitedDepth
+          row.on(_depth).int < visitedDepth
         }
       }
     }
   }
 
-  // move reduce of openSet to elimination, should have identical result
-  // case class ShortestPathImpl2(
-  //                              depthField: IndexedField,
-  //                              ordinalField: IndexedField,
-  //                              extracts: Seq[Expression[Any]]
-  //                            ) extends ExploreAlgorithmImpl {
-  //
-  //  import scala.Ordering.Implicits._
-  //
-  //  override def openReducer: RowReducer = {
-  //    _ ++ _
-  //  }
-  //
-  //  override def visitedReducer: RowReducer = {
-  //    (v1, v2) =>
-  //      Array((v1 ++ v2).minBy(_.sortIndex(Seq(depthField, ordinalField))))
-  //  }
-  //
-  //  override def ordering: RowOrdering = Ordering.by{
-  //    v: Iterable[DataRow] =>
-  //      assert(v.size == 1)
-  //      v.head.getInt(depthField).get
-  //  }
-  //
-  //  override def eliminator: RowEliminator = {
-  //    (v1, v2) =>
-  //      assert(v2.size == 1)
-  //      val visitedDepth = v2.head.getInt(depthField).get
-  //      val filtered = v1.filter {
-  //        row =>
-  //          row.getInt(depthField).get < visitedDepth
-  //      }
-  //      if (filtered.isEmpty) filtered
-  //      else Some(filtered.minBy(_.sortIndex(Seq(depthField, ordinalField))))
-  //  }
-  // }
-
+  // TODO: not sure about implementation
   abstract class DepthFirst extends ExploreAlgorithm {
 
     override def getImpl(params: Params, schema: SpookySchema): Impl =
       Impl(params, schema)
 
     case class Impl(params: Params, schema: SpookySchema) extends EliminatingImpl {
-
-      /**
-        */
       override val ordering: RowOrdering = ???
 
-      /**
-        */
       override def eliminator(open: Iterable[DataRow], visited: Iterable[DataRow]): Iterable[DataRow] = ???
 
-      /**
-        */
       override val openReducer: RowReducer = ???
 
-      /**
-        */
       override val visitedReducer: RowReducer = ???
     }
   }

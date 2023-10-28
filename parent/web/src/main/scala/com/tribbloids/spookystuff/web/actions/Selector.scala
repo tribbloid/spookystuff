@@ -3,7 +3,7 @@ package com.tribbloids.spookystuff.web.actions
 import com.tribbloids.spookystuff.selenium.BySizzleSelector
 import com.tribbloids.spookystuff.utils.EqualBy
 import com.tribbloids.spookystuff.relay.{IR, Relay, TreeIR}
-import org.apache.spark.ml.dsl.utils.refl.ScalaUDT
+import org.apache.spark.ml.dsl.utils.refl.SerializingUDT
 import org.apache.spark.sql.types.SQLUserDefinedType
 import org.openqa.selenium.By
 
@@ -55,7 +55,7 @@ object Selector extends Relay.ToMsg[Selector] {
   override def toProto_<<(v: IR.Aux[String]): Selector = ???
 }
 
-class SelectorUDT extends ScalaUDT[Selector]
+class SelectorUDT extends SerializingUDT[Selector]
 
 @SQLUserDefinedType(udt = classOf[SelectorUDT])
 case class Selector(factory: String => By, pattern: String) extends EqualBy {

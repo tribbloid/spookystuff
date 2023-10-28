@@ -21,7 +21,7 @@ class PreemptiveLocalOpsSuite extends FunSpecx {
         v
       }
 
-      val (r0, t0) = CommonUtils.timed {
+      val (_, _) = CommonUtils.timed {
         sc.getLocalProperty("spark.jobGroup.id")
 
         slowRDD.collect().toList

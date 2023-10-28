@@ -1,7 +1,7 @@
 package com.tribbloids.spookystuff
 
 import com.tribbloids.spookystuff.utils.serialization.{AssertSerializable, NOTSerializable}
-import org.apache.spark.ml.dsl.utils.refl.ScalaUDT
+import org.apache.spark.ml.dsl.utils.refl.SerializingUDT
 import org.apache.spark.sql.types.SQLUserDefinedType
 import org.scalatest.Assertions
 
@@ -35,7 +35,7 @@ object TestBeans {
     def *=>(k: T): String = "" + k
   }
 
-  class ExampleUDT extends ScalaUDT[Example]
+  class ExampleUDT extends SerializingUDT[Example]
   @SQLUserDefinedType(udt = classOf[ExampleUDT])
   class Example(
       override val a: String = "dummy",

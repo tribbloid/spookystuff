@@ -118,11 +118,10 @@ trait EAV extends HasEagerInnerObjects with EqualBy with RootTagged with Seriali
     final def primaryName: String = primaryNameOverride.getOrElse(objectSimpleName)
 
     def explicitValue: T = {
-      val trials: Seq[() => T] = allNames.map {
-        name =>
-          { () =>
-            outer.apply(name, nullable).asInstanceOf[T]
-          }
+      val trials: Seq[() => T] = allNames.map { name =>
+        { () =>
+          outer.apply(name, nullable).asInstanceOf[T]
+        }
       }
 
       TreeThrowable

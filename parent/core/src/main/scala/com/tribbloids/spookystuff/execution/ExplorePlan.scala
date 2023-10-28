@@ -1,17 +1,16 @@
 package com.tribbloids.spookystuff.execution
 
 import java.util.UUID
-
 import com.tribbloids.spookystuff.actions.{Trace, TraceView}
 import com.tribbloids.spookystuff.caching.ExploreRunnerCache
 import com.tribbloids.spookystuff.dsl.{ExploreAlgorithm, GenPartitioner, JoinType}
 import com.tribbloids.spookystuff.execution.ExplorePlan.{Open_Visited, Params}
 import com.tribbloids.spookystuff.execution.MapPlan.RowMapperFactory
+import com.tribbloids.spookystuff.extractors.GenExtractor.HasAlias
 import com.tribbloids.spookystuff.extractors._
 import com.tribbloids.spookystuff.extractors.impl.{Get, Lit}
-import com.tribbloids.spookystuff.row.{SquashedFetchedRow, _}
+import com.tribbloids.spookystuff.row._
 import org.apache.spark.rdd.RDD
-import org.apache.spark.sql.types.{ArrayType, IntegerType}
 
 import scala.collection.mutable.ArrayBuffer
 
@@ -22,8 +21,8 @@ object ExplorePlan {
   def nextExeID(): ExeID = UUID.randomUUID()
 
   case class Params(
-      depthField: Field, // can be null
-      ordinalField: Field, // can be null
+      depth: Alias, // can be null
+      ordinal: Alias, // can be null
       range: Range,
       executionID: ExeID = nextExeID()
   ) {}
@@ -37,7 +36,7 @@ object ExplorePlan {
 
 case class ExplorePlan(
     override val child: ExecutionPlan,
-    on: Alias[FetchedRow, Any],
+    on: HasAlias[FetchedRow, Any],
     sampler: Sampler[Any],
     joinType: JoinType,
     traces: Set[Trace],
@@ -55,43 +54,42 @@ case class ExplorePlan(
 ) extends UnaryPlan(child)
     with InjectBeaconRDDPlan {
 
-  val resolver: child.schema.Resolver = child.schema.newResolver
+  val resolve: child.schema.ResolveDelta = child.schema.ResolveDelta()
 
-  val _on: Resolved[Any] = resolver.include(on).head
+  val _on: Expr[Any] = resolve.include(on).head
+
   val _effectiveParams: Params = {
 
     val effectiveDepthField = {
-      Option(params.depthField) match {
+      Option(params.depth) match {
         case Some(field) =>
           field
         case None =>
-          Field(_on.field.name + "_depth", isWeak = true)
+          Alias(_on.alias.name + "_depth", isWeak = true)
       }
     }.copy(depthRangeOpt = Some(params.range))
 
-    val effectiveOrdinalField = Option(params.ordinalField) match {
+    val effectiveOrdinal = Option(params.ordinal) match {
       case Some(ff) =>
         ff.copy(isOrdinal = true)
       case None =>
-        Field(_on.field.name + "_ordinal", isWeak = true, isOrdinal = true)
+        Alias(_on.alias.name + "_ordinal", isWeak = true, isOrdinal = true)
     }
 
     params.copy(
-      ordinalField = effectiveOrdinalField,
-      depthField = effectiveDepthField
+      ordinal = effectiveOrdinal,
+      depth = effectiveDepthField
     )
   }
 
-  val depth_0: Resolved[Int] = resolver.include(Lit(0) withAlias _effectiveParams.depthField).head
-  val depth_++ : Resolved[Int] = resolver
+  val depth_0: Expr[Int] = resolve.include(Lit(0) ~ _effectiveParams.depth).head
+  val depth_++ : Expr[Int] = resolve
     .include(
-      Get(_effectiveParams.depthField).typed[Int].andMap(_ + 1) withAlias _effectiveParams.depthField.!!
+      Get(_effectiveParams.depth).filterByType[Int].andMap(_ + 1) ~! _effectiveParams.depth
     )
     .head
-  val _ordinal: TypedField =
-    resolver.includeTyped(TypedField(_effectiveParams.ordinalField, ArrayType(IntegerType))).head
 
-  val _protoSchema: SpookySchema = resolver.build
+  val _protoSchema: SpookySchema = resolve.build
 
   val (_finalSchema, _rowMappers) = {
     var prevSchema = _protoSchema
@@ -116,28 +114,15 @@ case class ExplorePlan(
   }
   def allRowMappers: List[MapPlan.RowMapper] = _rowMappers ++ invariantRowMappers
 
-  //  {
-  //    val extractFields = _extracts.map(_.field)
-  //    val newFields = extractFields ++ Option(params.depthField) ++ Option(params.ordinalField)
-  //    newFields.groupBy(identity).foreach{
-  //      v =>
-  //        if (v._2.size > 1) throw new QueryException(s"Field ${v._1.name} already exist")
-  //    }
-  //    child.schema ++#
-  //      Option(params.depthField) ++#
-  //      Option(params.ordinalField) ++
-  //      _extracts.map(_.typedField)
-  //  }
-
   val impl: ExploreAlgorithm.Impl = exploreAlgorithm.getImpl(_effectiveParams, this.schema)
 
   override def doExecute(): SquashedFetchedRDD = {
-    assert(_effectiveParams.depthField != null)
+    assert(_effectiveParams.depth != null)
 
     if (spooky.sparkContext.getCheckpointDir.isEmpty && checkpointInterval > 0)
       spooky.sparkContext.setCheckpointDir(spooky.dirConf.checkpoint)
 
-    val rowMapper: SquashedFetchedRow => SquashedFetchedRow = { row =>
+    val rowMapper: SquashedRow => SquashedRow = { row =>
       allRowMappers.foldLeft(row) { (row, rowMapper) =>
         rowMapper(row)
       }
@@ -157,7 +142,10 @@ case class ExplorePlan(
 
         val open0 = depth0
           .extract(_on)
-          .flattenData(_on.field, _effectiveParams.ordinalField, joinType.isLeft, sampler)
+          .mapPerDataRow { r =>
+            r.on(_on.field)
+          }
+          .explode(_on.alias, _effectiveParams.ordinal, joinType.isLeft, sampler)
           .interpolateAndRewriteLocally(traces)
           .map { t =>
             t._1 -> Open_Visited(open = Some(Array(t._2)))
@@ -171,9 +159,12 @@ case class ExplorePlan(
 
     val combinedReducer: (Open_Visited, Open_Visited) => Open_Visited = { (v1, v2) =>
       Open_Visited(
-        open = (v1.open ++ v2.open).map(_.iterator.to(Iterable)).reduceOption(impl.openReducerBetweenEpochs).map(_.toArray),
-        visited =
-          (v1.visited ++ v2.visited).map(_.iterator.to(Iterable)).reduceOption(impl.visitedReducerBetweenEpochs).map(_.toArray)
+        open =
+          (v1.open ++ v2.open).map(_.iterator.to(Iterable)).reduceOption(impl.openReducerBetweenEpochs).map(_.toArray),
+        visited = (v1.visited ++ v2.visited)
+          .map(_.iterator.to(Iterable))
+          .reduceOption(impl.visitedReducerBetweenEpochs)
+          .map(_.toArray)
       )
     }
 
@@ -238,7 +229,7 @@ case class ExplorePlan(
         val visitedOpt = v._2.visited
 
         visitedOpt.map { visited =>
-          SquashedFetchedRow(visited, v._1)
+          SquashedRow(visited, v._1)
         }
       }
 

@@ -19,19 +19,19 @@ class ChainedFlatSelectIT extends ITBaseSpec {
       .fetch(
         Wget("http://localhost:10092/test-sites/e-commerce/allinone") // this site is unstable, need to revise
       )
-      .flatExtract(S"div.thumbnail", ordinalField = 'i1)(
+      .flatExtract(S"div.thumbnail", ordinal = 'i1)(
         A"p".attr("class") ~ 'p_class
       )
 
     val r2 = r1
-      .flatExtract(A"h4", ordinalField = 'i2)(
+      .flatExtract(A"h4", ordinal = 'i2)(
         'A.attr("class") ~ 'h4_class
       )
 
     val result = r2
       .flatExtract(
         S"notexist",
-        ordinalField = 'notexist_key
+        ordinal = 'notexist_key
       )( // this is added to ensure that temporary joinKey in KV store won't be used.
         'A.attr("class") ~ 'notexist_class
       )

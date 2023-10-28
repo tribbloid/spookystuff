@@ -1,6 +1,7 @@
 package org.apache.spark.ml.dsl.utils.refl
 
 import com.tribbloids.spookystuff.utils.serialization.SerDeOverride
+import org.apache.spark.sql.types.DataType
 
 import scala.language.implicitConversions
 import scala.reflect.ClassTag
@@ -39,7 +40,16 @@ trait TypeMagnet[T] extends Serializable {
     ClassTag(asClass)
   }
 
-  //  def reifyOrNullType = tryReify.getOrElse { NullType }
+  @transient lazy val tryCatalystType: scala.util.Try[DataType] = {
+    TypeUtils
+      .tryCatalystTypeFor(this.asTypeTag)
+  }
+
+  def asCatalystType: DataType = tryCatalystType.get
+
+  lazy val asCatalystTypeOrUnknown: DataType = tryCatalystType.getOrElse {
+    new UnknownDT[T]()(this)
+  }
 
   // see [SPARK-8647], this achieves the needed constant hash code without declaring singleton
   final override def hashCode: Int = asClass.hashCode()

@@ -147,7 +147,7 @@ class TestWget extends SpookyBaseSpec {
   it("wget.interpolate should not overwrite each other") {
     val wget = Wget(
       'A
-    ) waybackTo 'B.typed[Timestamp]
+    ) waybackTo 'B.filterByType[Timestamp]
 
     val rows = 1 to 5 map { i =>
       TestWget.Sample("http://dummy.com" + i, new Timestamp(i * 100000))

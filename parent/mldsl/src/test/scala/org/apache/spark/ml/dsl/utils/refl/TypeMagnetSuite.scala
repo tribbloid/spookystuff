@@ -131,7 +131,7 @@ class TypeMagnetSuite extends FunSpecx with PairwiseConversionMixin {
         _typeTag,
         _catalystType,
         { r: TypeTag[_] =>
-          ToCatalyst(TypeMagnet.FromTypeTag(r)).asCatalystType
+          TypeMagnet.FromTypeTag(r).asCatalystType
         },
         { r: DataType =>
           CatalystTypeOps(r).magnet[Any].asTypeTag
