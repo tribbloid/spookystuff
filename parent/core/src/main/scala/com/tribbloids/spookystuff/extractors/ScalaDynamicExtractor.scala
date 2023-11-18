@@ -8,10 +8,9 @@ import java.lang.reflect.Method
 
 case class ScalaDynamic(
     methodName: String
-) extends ReflectionLock
-    with CatalystTypeOps.ImplicitMixin {
+) extends CatalystTypeOps.ImplicitMixin {
 
-  def getMethodsByCatalystType(dType: DataType): List[MethodSymbol] = locked {
+  def getMethodsByCatalystType(dType: DataType): List[MethodSymbol] = {
     val tpe = dType.typeTag_wild.tpe
 
     // Java reflection preferred as more battle tested?
@@ -26,7 +25,7 @@ case class ScalaDynamic(
     members
   }
 
-  def getExpectedTypeCombinations(argDTypesOpt: Option[List[DataType]]): Seq[Option[List[Type]]] = locked {
+  def getExpectedTypeCombinations(argDTypesOpt: Option[List[DataType]]): Seq[Option[List[Type]]] = {
     val expectedTypeList: Seq[Option[List[Type]]] = argDTypesOpt match {
       case Some(dTypes) =>
         val tpess = dTypes.map { v =>
@@ -42,7 +41,7 @@ case class ScalaDynamic(
 
   // 2 cases: argDTypesOpt = None: call by .name
   // argDTypesOpt = Some(List()) call by .name()
-  def getMethodByScala(baseDType: DataType, argDTypesOpt: Option[List[DataType]]): MethodSymbol = locked {
+  def getMethodByScala(baseDType: DataType, argDTypesOpt: Option[List[DataType]]): MethodSymbol = {
     val methods = getMethodsByCatalystType(baseDType)
 
     val expectedTypeCombinations: Seq[Option[List[Type]]] =
@@ -141,13 +140,13 @@ case class ScalaDynamicExtractor[T](
   override protected def _args: Seq[GenExtractor[_, _]] = Seq(base) ++ argsOpt.toList.flatten
 
   // resolve to a Spark SQL DataType according to an exeuction plan
-  override def resolveType(tt: DataType): DataType = locked {
+  override def resolveType(tt: DataType): DataType = {
     val tag: TypeTag[Any] = _resolveTypeTag(tt)
 
     UnreifiedObjectType.summon(tag)
   }
 
-  private def _resolveTypeTag(tt: DataType): TypeTag[Any] = locked {
+  private def _resolveTypeTag(tt: DataType): TypeTag[Any] = {
     // TODO: merge
     val baseDType: DataType = base.resolveType(tt)
     val argDTypes = argsOpt.map {
@@ -165,7 +164,7 @@ case class ScalaDynamicExtractor[T](
     resultMagnet.asTypeTag
   }
 
-  override def resolve(tt: DataType): PartialFunction[T, Any] = locked {
+  override def resolve(tt: DataType): PartialFunction[T, Any] = {
     val resolvedFn = resolveUsingScala(tt)
 
     val lifted = if (_resolveTypeTag(tt).tpe <:< typeOf[Option[Any]]) {
@@ -175,7 +174,7 @@ case class ScalaDynamicExtractor[T](
     Unlift(lifted)
   }
 
-  def resolveUsingScala(tt: DataType): T => Option[Any] = locked {
+  def resolveUsingScala(tt: DataType): T => Option[Any] = {
 
     val baseLift: (T) => Option[Any] = base.resolve(tt).lift
     val argLifts: Option[List[(T) => Option[Any]]] = argsOpt.map(

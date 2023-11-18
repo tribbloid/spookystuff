@@ -4,12 +4,12 @@ package org.apache.spark.ml.dsl.utils.refl
 /**
   * all implementation has to be synchronized and preferrably not executed concurrently to preserve efficiency.
   */
-object ReflectionUtils extends ReflectionLock {
+object ReflectionUtils {
 
   import org.apache.spark.sql.catalyst.ScalaReflection.universe._
 
   // TODO: move most of them to ScalaType
-  def getCaseAccessorSymbols(tt: TypeMagnet[_]): List[MethodSymbol] = locked {
+  def getCaseAccessorSymbols(tt: TypeMagnet[_]): List[MethodSymbol] = {
     val accessors = tt.asType.members.toList.reverse
       .flatMap(filterCaseAccessors)
     accessors
@@ -32,7 +32,7 @@ object ReflectionUtils extends ReflectionLock {
     }
   }
 
-  def getConstructorParameters(tt: TypeMagnet[_]): Seq[(String, Type)] = locked {
+  def getConstructorParameters(tt: TypeMagnet[_]): Seq[(String, Type)] = {
     val formalTypeArgs = tt.asType.typeSymbol.asClass.typeParams
     val TypeRef(_, _, actualTypeArgs) = tt.asType
     val constructorSymbol = tt.asType.member(termNames.CONSTRUCTOR)

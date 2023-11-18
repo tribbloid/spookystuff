@@ -5,7 +5,7 @@ import com.tribbloids.spookystuff.row.Field
 import com.tribbloids.spookystuff.tree.TreeView
 import com.tribbloids.spookystuff.utils.SpookyUtils
 import com.tribbloids.spookystuff.relay.AutomaticRelay
-import org.apache.spark.ml.dsl.utils.refl.{CatalystTypeOps, ReflectionLock, TypeMagnet, UnreifiedObjectType}
+import org.apache.spark.ml.dsl.utils.refl.{CatalystTypeOps, TypeMagnet, UnreifiedObjectType}
 import org.apache.spark.sql.catalyst.ScalaReflection.universe
 import org.apache.spark.sql.catalyst.ScalaReflection.universe.TypeTag
 
@@ -106,7 +106,7 @@ object GenExtractor extends AutomaticRelay[GenExtractor[_, _]] with GenExtractor
       arg2: GenExtractor[T, R2]
   ) extends GenExtractor[T, (R1, R2)] {
     // resolve to a Spark SQL DataType according to an execution plan
-    override def resolveType(tt: DataType): DataType = locked {
+    override def resolveType(tt: DataType): DataType = {
       val t1 = arg1.resolveType(tt)
       val t2 = arg2.resolveType(tt)
 
@@ -157,7 +157,7 @@ object GenExtractor extends AutomaticRelay[GenExtractor[_, _]] with GenExtractor
 
 // a subclass wraps an expression and convert it into extractor, which converts all attribute reference children into data reference children and
 // (To be implemented) can be converted to an expression to be wrapped by other expressions
-trait GenExtractor[T, +R] extends ReflectionLock with CatalystTypeOps.ImplicitMixin with Product with Serializable {
+trait GenExtractor[T, +R] extends CatalystTypeOps.ImplicitMixin with Product with Serializable {
 
   import com.tribbloids.spookystuff.extractors.GenExtractor._
 

@@ -6,7 +6,7 @@ import org.apache.spark.sql.types._
 
 import scala.util.Failure
 
-object TypeUtils extends ReflectionLock {
+object TypeUtils {
 
   import ScalaReflection.universe._
 
@@ -24,7 +24,7 @@ object TypeUtils extends ReflectionLock {
   def tryCatalystTypeFor[T](
       implicit
       ttg: TypeTag[T]
-  ): scala.util.Try[DataType] = locked {
+  ): scala.util.Try[DataType] = {
     scala.util
       .Try {
         if (ttg == TypeTag.Null) NullType
@@ -48,7 +48,7 @@ object TypeUtils extends ReflectionLock {
     *   if t is already an option won't yeild Option[ Option[_] ] again
     * @return
     */
-//  private def selfAndOptionTypeIfNotAlready(t: TypeTag[_]): Seq[TypeTag[_]] = locked {
+//  private def selfAndOptionTypeIfNotAlready(t: TypeTag[_]): Seq[TypeTag[_]] = {
 //    t match {
 //      case at: TypeTag[a] =>
 //        if (at.tpe <:< typeOf[Option[_]]) Seq[TypeTag[_]](at)
@@ -62,14 +62,14 @@ object TypeUtils extends ReflectionLock {
   def getParameter_ReturnTypes(
       symbol: MethodSymbol,
       impl: Type
-  ): (List[List[Type]], Type) = locked {
+  ): (List[List[Type]], Type) = {
 
     val signature = symbol.typeSignatureIn(impl)
     val result = methodSignatureToParameter_ReturnTypes(signature)
     result
   }
 
-  private def methodSignatureToParameter_ReturnTypes(tpe: Type): (List[List[Type]], Type) = locked {
+  private def methodSignatureToParameter_ReturnTypes(tpe: Type): (List[List[Type]], Type) = {
     tpe match {
       case n: NullaryMethodType =>
         Nil -> n.resultType
@@ -82,7 +82,7 @@ object TypeUtils extends ReflectionLock {
     }
   }
 
-  def fitIntoArgs(t1: Option[Seq[Type]], t2: Option[Seq[Type]]): Boolean = locked {
+  def fitIntoArgs(t1: Option[Seq[Type]], t2: Option[Seq[Type]]): Boolean = {
     (t1, t2) match {
       case (Some(tt1), Some(tt2)) =>
         if (tt1.size != tt2.size) false
@@ -102,7 +102,7 @@ object TypeUtils extends ReflectionLock {
   def createTypeTag_fast[T](
       tpe: Type,
       mirror: Mirror
-  ): TypeTag[T] = locked {
+  ): TypeTag[T] = {
     TypeTag.apply(
       mirror,
       NaiveTypeCreator(tpe)
@@ -114,7 +114,7 @@ object TypeUtils extends ReflectionLock {
 //  def createTypeTag_slowButSerializable[T](
 //      tpe: Type,
 //      mirror: Mirror
-//  ): TypeTag[T] = locked {
+//  ): TypeTag[T] = {
 //
 //    val toolbox = scala.tools.reflect.ToolBox(mirror).mkToolBox()
 //
