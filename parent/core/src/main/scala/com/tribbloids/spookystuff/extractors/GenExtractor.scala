@@ -4,7 +4,6 @@ import com.tribbloids.spookystuff.Const
 import com.tribbloids.spookystuff.row.Field
 import com.tribbloids.spookystuff.tree.TreeView
 import com.tribbloids.spookystuff.utils.SpookyUtils
-import com.tribbloids.spookystuff.relay.AutomaticRelay
 import org.apache.spark.ml.dsl.utils.refl.{CatalystTypeOps, TypeMagnet, UnreifiedObjectType}
 import org.apache.spark.sql.catalyst.ScalaReflection.universe
 import org.apache.spark.sql.catalyst.ScalaReflection.universe.TypeTag
@@ -12,7 +11,7 @@ import org.apache.spark.sql.catalyst.ScalaReflection.universe.TypeTag
 import scala.language.{existentials, implicitConversions}
 import scala.reflect.ClassTag
 
-object GenExtractor extends AutomaticRelay[GenExtractor[_, _]] with GenExtractorImplicits {
+object GenExtractor extends GenExtractorImplicits {
 
 //  final val functionVID = -592849327L
 
