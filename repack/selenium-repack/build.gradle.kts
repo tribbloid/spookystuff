@@ -35,9 +35,13 @@ tasks {
     shadowJar {
         setProperty("zip64", true)
 
+//        this.archiveVersion = project.versions().rootV
+
         exclude("META-INF/*.SF")
         exclude("META-INF/*.DSA")
         exclude("META-INF/*.RSA")
+
+        exclude("scala/*")
 
         relocate("com.google.common", "repacked.spookystuff.com.google.common")
         relocate("io.netty", "repacked.spookystuff.io.netty")

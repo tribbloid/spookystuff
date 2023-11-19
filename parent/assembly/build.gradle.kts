@@ -18,9 +18,15 @@ tasks {
     shadowJar {
         setProperty("zip64", true)
 
-        exclude("META-INF/*.SF")
-        exclude("META-INF/*.DSA")
-        exclude("META-INF/*.RSA")
+        exclude(
+            listOf(
+                "META-INF/*.SF",
+                "META-INF/*.DSA",
+                "META-INF/*.RSA",
+
+                "scala/*"
+            )
+        )
 
         relocate("com.google.common", "repacked.spookystuff.com.google.common")
         relocate("io.netty", "repacked.spookystuff.io.netty")
