@@ -2,6 +2,7 @@
 val vs = versions()
 
 val sparkV = "3.5.0"
+val jacksonV = "2.12.3"
 
 plugins {
 //    id("ai.acyclic.scala2-conventions")
@@ -22,9 +23,6 @@ subprojects {
             )
         }
     }
-}
-
-subprojects {
 
     dependencies {
 
@@ -37,5 +35,44 @@ subprojects {
 
         testImplementation("com.vladsch.flexmark:flexmark:0.64.8")
 
+
+        constraints {
+
+            // TODO: some of the following may no longer be necessary
+            api("org.apache.httpcomponents:httpclient:4.5.2")
+
+//            api("com.google.guava:guava:16.0.1")
+            api("org.apache.commons:commons-compress:1.19")
+            api("com.google.protobuf:protobuf-java:2.5.0")
+
+//            api("org.scala-lang.modules:scala-xml_${vs.scala.binaryV}") {
+//                version {
+//                    strictly ("1.3.0")
+//                }
+////                because("used by json4s-jackson")
+//            }
+
+            api("com.fasterxml.jackson.core:jackson-core:${jacksonV}")
+            api("com.fasterxml.jackson.core:jackson-databind:${jacksonV}")
+            api("com.fasterxml.jackson.core:jackson-annotations:${jacksonV}")
+            api("com.fasterxml.jackson.module:jackson-module-scala_${vs.scala.binaryV}:${jacksonV}")
+        }
     }
+
+
+    tasks {
+
+        test {
+
+            useJUnitPlatform {
+
+                val p = this@subprojects
+
+                if (p.hasProperty("notLocal") ) {
+                    excludeTags("com.tribbloids.spookystuff.testutils.LocalOnly")
+                }
+            }
+        }
+    }
+
 }
