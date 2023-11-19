@@ -1,6 +1,6 @@
 
-val vs = versions()
 
+val tikaV = "2.9.0"
 //preBuild.dependsOn(":parent:mldsl")
 
 dependencies {
@@ -16,8 +16,8 @@ dependencies {
     // https://mvnrepository.com/artifact/org.typelevel/cats-effect
 //    implementation("org.typelevel:cats-effect_${vs.scalaBinaryV}:3.4.2")
 
-    api("org.apache.tika:tika-core:${vs.tikaV}")
-    testImplementation( "org.apache.tika:tika-parsers-standard-package:${vs.tikaV}")
+    api("org.apache.tika:tika-core:${tikaV}")
+    testImplementation( "org.apache.tika:tika-parsers-standard-package:${tikaV}")
     api("com.googlecode.juniversalchardet:juniversalchardet:1.0.3")
     api("org.jsoup:jsoup:1.16.1")
     api("com.syncthemall:boilerpipe:1.2.2")

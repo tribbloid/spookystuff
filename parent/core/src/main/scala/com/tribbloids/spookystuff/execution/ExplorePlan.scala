@@ -171,9 +171,12 @@ case class ExplorePlan(
 
     val combinedReducer: (Open_Visited, Open_Visited) => Open_Visited = { (v1, v2) =>
       Open_Visited(
-        open = (v1.open ++ v2.open).map(_.iterator.to(Iterable)).reduceOption(impl.openReducerBetweenEpochs).map(_.toArray),
-        visited =
-          (v1.visited ++ v2.visited).map(_.iterator.to(Iterable)).reduceOption(impl.visitedReducerBetweenEpochs).map(_.toArray)
+        open =
+          (v1.open ++ v2.open).map(_.iterator.to(Iterable)).reduceOption(impl.openReducerBetweenEpochs).map(_.toArray),
+        visited = (v1.visited ++ v2.visited)
+          .map(_.iterator.to(Iterable))
+          .reduceOption(impl.visitedReducerBetweenEpochs)
+          .map(_.toArray)
       )
     }
 

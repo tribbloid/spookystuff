@@ -2,7 +2,7 @@ package org.apache.spark.ml.dsl.utils.refl
 
 import com.tribbloids.spookystuff.utils.Caching
 
-import scala.language.{existentials, implicitConversions}
+import scala.language.implicitConversions
 import scala.reflect.ClassTag
 
 abstract class FromClassMixin {

@@ -4,7 +4,7 @@ import org.apache.spark.sql.types._
 
 import java.sql.{Date, Timestamp}
 import scala.collection.Map
-import scala.language.{existentials, implicitConversions}
+import scala.language.implicitConversions
 
 case class CatalystTypeOps(dataType: DataType) {
 

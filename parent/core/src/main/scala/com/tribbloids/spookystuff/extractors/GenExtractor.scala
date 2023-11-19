@@ -8,7 +8,7 @@ import org.apache.spark.ml.dsl.utils.refl.{CatalystTypeOps, TypeMagnet, Unreifie
 import org.apache.spark.sql.catalyst.ScalaReflection.universe
 import org.apache.spark.sql.catalyst.ScalaReflection.universe.TypeTag
 
-import scala.language.{existentials, implicitConversions}
+import scala.language.implicitConversions
 import scala.reflect.ClassTag
 
 object GenExtractor extends GenExtractorImplicits {

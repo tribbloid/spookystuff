@@ -1,3 +1,6 @@
 [submodule "parent/showcase"]
 	path = parent/showcase
 	url = https://github.com/tribbloid/spookystuff-showcase
+[submodule "buildSrc"]
+	path = buildSrc
+	url = https://github.com/tribbloid/buildSrc
