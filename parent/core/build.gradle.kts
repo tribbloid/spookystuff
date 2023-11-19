@@ -1,6 +1,7 @@
 
 val vs = versions()
 
+val tikaV =
 //preBuild.dependsOn(":parent:mldsl")
 
 dependencies {
