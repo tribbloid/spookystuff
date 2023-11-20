@@ -1,6 +1,6 @@
+val vs = versions()
 
-
-val tikaV = "2.9.0"
+val tikaV = "2.9.1"
 //preBuild.dependsOn(":parent:mldsl")
 
 dependencies {
@@ -9,6 +9,8 @@ dependencies {
     testFixturesApi(testFixtures(project(":parent:mldsl")))
 
     testFixturesApi("org.jprocesses:jProcesses:1.6.5")
+
+    api("com.chuusai:shapeless_${vs.Scala().binaryV}:2.3.10")
 
 //    testapi( "com.tribbloids.spookystuff:spookystuff-mldsl:${project.version}"
     api("oauth.signpost:signpost-core:2.1.1")
@@ -19,6 +21,6 @@ dependencies {
     api("org.apache.tika:tika-core:${tikaV}")
     testImplementation( "org.apache.tika:tika-parsers-standard-package:${tikaV}")
     api("com.googlecode.juniversalchardet:juniversalchardet:1.0.3")
-    api("org.jsoup:jsoup:1.16.1")
+    api("org.jsoup:jsoup:1.16.2")
     api("com.syncthemall:boilerpipe:1.2.2")
 }
