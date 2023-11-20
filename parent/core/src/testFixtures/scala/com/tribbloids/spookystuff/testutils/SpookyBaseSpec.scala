@@ -121,13 +121,12 @@ abstract class SpookyBaseSpec extends SpookyEnvSpec with RemoteDocsFixture with 
   final lazy val conditions: Seq[ProcessInfo => Boolean] = {
     val _processNames = this._externalProcessNames
     val exitingPIDs = this.exitingPIDs
-    _processNames.map {
-      name =>
-        { process: ProcessInfo =>
-          val c1 = process.getName == name
-          val c2 = !exitingPIDs.contains(process.getPid)
-          c1 && c2
-        }
+    _processNames.map { name =>
+      { process: ProcessInfo =>
+        val c1 = process.getName == name
+        val c2 = !exitingPIDs.contains(process.getPid)
+        c1 && c2
+      }
     }
   }
 

@@ -24,6 +24,14 @@ subprojects {
         }
     }
 
+    // these are either useless or should be merged into dependencies/constraints
+    configurations.all {
+//        exclude("net.jpountz.lz4","lz4")
+        resolutionStrategy {
+//            force("commons-codec:commons-codec:1.9")
+        }
+    }
+
     dependencies {
 
         bothImpl("org.apache.spark:spark-sql_${vs.scala.binaryV}:${sparkV}")

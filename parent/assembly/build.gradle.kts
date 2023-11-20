@@ -23,8 +23,6 @@ tasks {
                 "META-INF/*.SF",
                 "META-INF/*.DSA",
                 "META-INF/*.RSA",
-
-                "scala/*"
             )
         )
 

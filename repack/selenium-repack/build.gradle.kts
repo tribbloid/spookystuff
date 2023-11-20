@@ -1,3 +1,4 @@
+val vs = versions()
 
 //apply(plugin = "com.github.johnrengelman.shadow")
 plugins {
@@ -5,6 +6,12 @@ plugins {
 }
 
 dependencies {
+
+//    constraints { // TODO: doesn't work, overriding is broken
+//
+//        runtimeOnly("${vs.scala.group}:scala-library:${vs.scala.v}")
+//        runtimeOnly("${vs.scala.group}:scala-reflect:${vs.scala.v}")
+//    }
 
     val seleniumV = "4.1.4"
     val phantomJSV = "1.5.0"
@@ -33,15 +40,29 @@ dependencies {
 
 tasks {
     shadowJar {
-        setProperty("zip64", true)
 
-//        this.archiveVersion = project.versions().rootV
+        // https://github.com/johnrengelman/shadow/issues/505
+//        minimize {
+//        exclude(
+//            listOf(
+//                "META-INF/*.SF",
+//                "META-INF/*.DSA",
+//                "META-INF/*.RSA",
+//
+//                "scala/*"
+//            )
+//        )
+//        }
+        setExcludes(
 
-        exclude("META-INF/*.SF")
-        exclude("META-INF/*.DSA")
-        exclude("META-INF/*.RSA")
+            listOf(
+                "META-INF/*.SF",
+                "META-INF/*.DSA",
+                "META-INF/*.RSA",
 
-        exclude("scala/*")
+                "**/scala/**"
+            )
+        )
 
         relocate("com.google.common", "repacked.spookystuff.com.google.common")
         relocate("io.netty", "repacked.spookystuff.io.netty")
