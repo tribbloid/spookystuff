@@ -1,7 +1,8 @@
 package com.tribbloids.spookystuff.caching
 
-import com.tribbloids.spookystuff.actions.{TraceView, Wget}
-import com.tribbloids.spookystuff.doc.{Doc, DocUID}
+import com.tribbloids.spookystuff.actions.{Trace, Wget}
+import com.tribbloids.spookystuff.doc.Doc
+import com.tribbloids.spookystuff.doc.Observation.DocUID
 import com.tribbloids.spookystuff.testutils.{LocalPathDocsFixture, SpookyBaseSpec}
 import com.tribbloids.spookystuff.web.actions.{Snapshot, Visit}
 
@@ -14,7 +15,7 @@ class TestInMemoryDocCache extends SpookyBaseSpec with LocalPathDocsFixture {
 
   lazy val cache: AbstractDocCache = InMemoryDocCache
 
-  val visit: TraceView = Visit(HTML_URL) +> Snapshot().as('old)
+  val visit: Trace = Visit(HTML_URL) +> Snapshot().as('old)
   def visitPage: Seq[Doc] = visit.fetch(spooky).map(_.asInstanceOf[Doc])
 
   val wget: Wget = Wget(HTML_URL).as('oldWget)
@@ -38,7 +39,7 @@ class TestInMemoryDocCache extends SpookyBaseSpec with LocalPathDocsFixture {
     val page2 = cache.get(visitPage.head.uid.backtrace, spooky).get.map(_.asInstanceOf[Doc])
 
     assert(page2.length === 1)
-    assert(page2.head._equalBy === visitPage.head._equalBy)
+    assert(page2.head.samenessDelegatedTo === visitPage.head.samenessDelegatedTo)
     assert(visitPage.head.raw === page2.head.raw)
     assert(visitPage.head === page2.head)
   }
@@ -55,7 +56,7 @@ class TestInMemoryDocCache extends SpookyBaseSpec with LocalPathDocsFixture {
     val page2 = cache.get(newTrace, spooky).get.map(_.asInstanceOf[Doc])
 
     assert(page2.size === 1)
-    assert(page2.head._equalBy === visitPage.head._equalBy)
+    assert(page2.head.samenessDelegatedTo === visitPage.head.samenessDelegatedTo)
     assert(page2.head.code === page2.head.code)
     assert(page2.head.name === "new")
 
@@ -95,7 +96,7 @@ class TestInMemoryDocCache extends SpookyBaseSpec with LocalPathDocsFixture {
     spooky.spookyConf.cachedDocsLifeSpan = 30.days
 
     assert(page2.size === 1)
-    assert(page2.head._equalBy === wgetPage.head._equalBy)
+    assert(page2.head.samenessDelegatedTo === wgetPage.head.samenessDelegatedTo)
 //    assert(page2.head.code === page2.head.code)
   }
 

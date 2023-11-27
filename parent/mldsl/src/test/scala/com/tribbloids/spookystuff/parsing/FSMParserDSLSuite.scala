@@ -2,9 +2,9 @@ package com.tribbloids.spookystuff.parsing
 
 import com.tribbloids.spookystuff.parsing.FSMParserDSL._
 import com.tribbloids.spookystuff.parsing.exception.ParsingError
-import com.tribbloids.spookystuff.testutils.FunSpecx
+import com.tribbloids.spookystuff.testutils.BaseSpec
 
-class FSMParserDSLSuite extends FunSpecx {
+class FSMParserDSLSuite extends BaseSpec {
 
   it("can form linear graph") {
 

@@ -1,7 +1,7 @@
 package com.tribbloids.spookystuff.graph
 
+import ai.acyclic.prover.commons.EqualBy
 import com.tribbloids.spookystuff.graph.Layout.Facet
-import com.tribbloids.spookystuff.utils.EqualBy
 
 import scala.collection.mutable.ArrayBuffer
 import scala.language.implicitConversions
@@ -26,7 +26,7 @@ trait ElementView[D <: Domain] extends Algebra.Aliases[D] with EqualBy {
   def inbound: Seq[ElementView[D]]
   def outbound: Seq[ElementView[D]]
 
-  final override def _equalBy: _Element = element
+  final override def samenessDelegatedTo: _Element = element
 
   lazy val (prefixes, positioning): (Seq[String], Seq[Int]) = {
     element match {

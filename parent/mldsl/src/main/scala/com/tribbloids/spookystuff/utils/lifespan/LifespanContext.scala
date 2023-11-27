@@ -1,6 +1,6 @@
 package com.tribbloids.spookystuff.utils.lifespan
 
-import com.tribbloids.spookystuff.utils.EqualBy
+import ai.acyclic.prover.commons.EqualBy
 import org.apache.spark.sql.utils.SparkHelper
 import org.apache.spark.storage.BlockManagerId
 import org.apache.spark.{SparkEnv, TaskContext}
@@ -27,7 +27,7 @@ case class LifespanContext(
   val blockManagerID: Option[BlockManagerId] = _sparkEnvOpt.map(_.blockManager.blockManagerId)
   val executorID: Option[String] = _sparkEnvOpt.map(_.executorId)
 
-  override val _equalBy: (Option[Long], Long) = taskAttemptID -> threadID
+  override val samenessDelegatedTo: (Option[Long], Long) = taskAttemptID -> threadID
 
   val threadStr: String = {
     "Thread-" + thread.getId + s"[${thread.getName}]" + {

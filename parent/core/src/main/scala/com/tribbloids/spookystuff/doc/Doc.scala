@@ -1,111 +1,22 @@
 package com.tribbloids.spookystuff.doc
 
+import ai.acyclic.prover.commons.EqualBy
 import com.tribbloids.spookystuff._
-import com.tribbloids.spookystuff.actions._
 import com.tribbloids.spookystuff.caching.DocCacheLevel
+import com.tribbloids.spookystuff.doc.Observation.DocUID
 import com.tribbloids.spookystuff.utils.io.ResourceMetadata
-import com.tribbloids.spookystuff.utils.{CommonUtils, EqualBy}
+import com.tribbloids.spookystuff.utils.CommonUtils
 import org.apache.commons.csv.CSVFormat
 import org.apache.hadoop.fs.Path
 import org.apache.hadoop.shaded.org.apache.http.StatusLine
 import org.apache.hadoop.shaded.org.apache.http.entity.ContentType
-import org.apache.spark.ml.dsl.utils.refl.ScalaUDT
-import org.apache.spark.sql.types.SQLUserDefinedType
 import org.apache.tika.io.TikaInputStream
 import org.apache.tika.metadata.{Metadata, TikaCoreProperties}
 import org.apache.tika.mime.{MimeType, MimeTypes}
 import org.mozilla.universalchardet.UniversalDetector
 
-import java.sql.{Date, Time, Timestamp}
 import java.util.UUID
 import scala.collection.mutable
-
-class DocOptionUDT extends ScalaUDT[DocOption]
-
-//keep small, will be passed around by Spark
-//TODO: subclass Unstructured to save Message definition
-@SQLUserDefinedType(udt = classOf[DocOptionUDT])
-trait DocOption extends Serializable {
-
-  def uid: DocUID
-  def updated(
-      uid: DocUID = this.uid,
-      cacheLevel: DocCacheLevel.Value = this.cacheLevel
-  ): this.type
-
-  def cacheLevel: DocCacheLevel.Value
-
-  def name: String = this.uid.name
-
-  def timeMillis: Long
-
-  lazy val date: Date = new Date(timeMillis)
-  lazy val time: Time = new Time(timeMillis)
-  lazy val timestamp: Timestamp = new Timestamp(timeMillis)
-
-  def laterThan(v2: DocOption): Boolean = this.timeMillis > v2.timeMillis
-
-  def laterOf(v2: DocOption): DocOption =
-    if (laterThan(v2)) this
-    else v2
-
-  type RootType
-  def root: RootType
-  def metadata: ResourceMetadata
-}
-
-//Merely a placeholder if a conditional block is not applicable
-case class NoDoc(
-    backtrace: Trace,
-    override val timeMillis: Long = System.currentTimeMillis(),
-    override val cacheLevel: DocCacheLevel.Value = DocCacheLevel.All,
-    override val metadata: ResourceMetadata = ResourceMetadata.empty
-) extends Serializable
-    with DocOption {
-
-  @transient override lazy val uid: DocUID = DocUID(backtrace, null)()
-
-  override def updated(
-      uid: DocUID = this.uid,
-      cacheLevel: DocCacheLevel.Value = this.cacheLevel
-  ): NoDoc.this.type = this.copy(backtrace = uid.backtrace, cacheLevel = cacheLevel).asInstanceOf[this.type]
-
-  override type RootType = Unit
-  override def root: Unit = {}
-}
-
-case class DocWithError(
-    delegate: Doc,
-    header: String = "",
-    override val cause: Throwable = null
-) extends ActionException(
-      header + delegate.root.formattedCode
-        .map(
-          "\n" + _
-        )
-        .getOrElse(""),
-      cause
-    )
-    with DocOption {
-
-  override def timeMillis: Long = delegate.timeMillis
-
-  override def uid: DocUID = delegate.uid
-
-  override def updated(
-      uid: DocUID = this.uid,
-      cacheLevel: DocCacheLevel.Value = this.cacheLevel
-  ): DocWithError.this.type = {
-    this.copy(delegate = delegate.updated(uid, cacheLevel)).asInstanceOf[this.type]
-  }
-
-  override def cacheLevel: DocCacheLevel.Value = delegate.cacheLevel
-
-  override type RootType = delegate.RootType
-  override def root: Unstructured = delegate.root
-
-  override def metadata: ResourceMetadata = delegate.metadata
-}
 
 object Doc {
 
@@ -114,8 +25,8 @@ object Doc {
 
   val defaultCSVFormat: CSVFormat = CSVFormat.DEFAULT
 }
+
 @SerialVersionUID(94865098324L)
-@SQLUserDefinedType(udt = classOf[UnstructuredUDT])
 case class Doc(
     override val uid: DocUID,
     uri: String, // redirected
@@ -128,12 +39,12 @@ case class Doc(
     override val metadata: ResourceMetadata =
       ResourceMetadata.empty, // for customizing parsing TODO: remove, delegate to CSVElement.
     saved: mutable.Set[String] = mutable.Set() // TODO: move out of constructor
-) extends DocOption
+) extends Observation.Success
     with EqualBy {
 
   import scala.jdk.CollectionConverters._
 
-  lazy val _equalBy: Any = (uid, uri, declaredContentType, timeMillis, httpStatus.toString)
+  lazy val samenessDelegatedTo: Any = (uid, uri, declaredContentType, timeMillis, httpStatus.toString)
 
   override def updated(
       uid: DocUID = this.uid,
@@ -214,7 +125,7 @@ case class Doc(
         }
         .getOrElse(Doc.defaultCSVFormat)
 
-      CSVBlock.apply(contentStr, uri, csvFormat) // not serialize, parsing is faster
+      CSVElement.Block.apply(contentStr, uri, csvFormat) // not serialize, parsing is faster
     } else if (mimeType.contains("plain") || mimeType.contains("text")) {
       PlainElement(contentStr, uri) // not serialize, parsing is faster
     } else {
@@ -261,11 +172,15 @@ case class Doc(
 
       try {
         os.write(raw) //       remember that apache IOUtils is defective for DFS!
+
+        val metrics = spooky.spookyMetrics
+        metrics.saved += 1
+//        metrics.savedPath.add(path -> progress.indicator.longValue())
+
+        saved += fullPath.toString
       } finally {
         os.close()
       }
-
-      saved += fullPath.toString
     }
   }
 

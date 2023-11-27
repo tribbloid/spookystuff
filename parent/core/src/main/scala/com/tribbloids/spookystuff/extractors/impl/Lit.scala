@@ -1,8 +1,8 @@
 package com.tribbloids.spookystuff.extractors.impl
 
+import ai.acyclic.prover.commons.EqualBy
 import com.tribbloids.spookystuff.extractors.GenExtractor.Static
 import com.tribbloids.spookystuff.extractors._
-import com.tribbloids.spookystuff.utils.EqualBy
 import com.tribbloids.spookystuff.relay.IR.Aux
 import com.tribbloids.spookystuff.relay.{Relay, TreeIR}
 import org.apache.spark.ml.dsl.utils.refl.UnreifiedObjectType
@@ -15,7 +15,7 @@ import org.apache.spark.sql.types._
 //TODO: Message JSON conversion discard dataType info, is it wise?
 case class Lit[T, +R](value: R, dataType: DataType) extends Static[T, R] with EqualBy {
 
-  def _equalBy: R = value
+  def samenessDelegatedTo: R = value
 
   @transient private lazy val valueOpt: Option[R] = Option(value)
 

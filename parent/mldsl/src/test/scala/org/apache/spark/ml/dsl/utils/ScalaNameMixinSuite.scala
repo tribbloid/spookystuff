@@ -1,8 +1,8 @@
 package org.apache.spark.ml.dsl.utils
 
-import com.tribbloids.spookystuff.testutils.FunSpecx
+import com.tribbloids.spookystuff.testutils.BaseSpec
 
-class ScalaNameMixinSuite extends FunSpecx {
+class ScalaNameMixinSuite extends BaseSpec {
 
   it("can process anonymous function dependent object") {
 

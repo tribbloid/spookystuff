@@ -1,14 +1,12 @@
 package com.tribbloids.spookystuff.utils.lifespan
 
-import com.tribbloids.spookystuff.utils.Caching._
+import ai.acyclic.prover.commons.util.Caching.ConcurrentMap
 import org.slf4j.{Logger, LoggerFactory}
 
 import scala.language.implicitConversions
 import scala.reflect.ClassTag
 
 object Cleanable {
-
-  import com.tribbloids.spookystuff.utils.CommonViews._
 
   type Lifespan = LifespanInternal#ForShipping
   type Leaf = LeafType#Internal
@@ -63,11 +61,11 @@ object Cleanable {
         }
       }
 
-      LoggerFactory
-        .getLogger(this.getClass)
-        .info(
-          s"sweeped ID(s) ${batchIDs.mkString(", ")}"
-        )
+//      LoggerFactory
+//        .getLogger(this.getClass)
+//        .info(
+//          s"cleanSweep ID(s) ${batchIDs.mkString(", ")}"
+//        )
     }
   }
 

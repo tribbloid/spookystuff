@@ -33,7 +33,7 @@ class CleanableSuite extends SpookyBaseSpec {
 
   it("Lifespan.JVM.batchID is serializable") {
     val v1 = Lifespan.JVM().batchID
-    val v2 = v1.copy(v1.id)
+    val v2 = v1
     assert(v1 == v2)
 
     AssertSerializable(v1)
@@ -70,7 +70,7 @@ class CleanableSuite extends SpookyBaseSpec {
 
     val rdd = sc.uuidSeed().mapOncePerCore { _ =>
       val lifespan = Lifespan.Task()
-      val oldID = lifespan.registeredIDs.head.asInstanceOf[Lifespan.Task.ID].id
+      val oldID = lifespan.registeredIDs.head.asInstanceOf[Lifespan.Task.ID]
       lifespan -> oldID
     }
 
@@ -81,7 +81,7 @@ class CleanableSuite extends SpookyBaseSpec {
     val old_new = repartitioned.map { tuple =>
       val v = tuple._1
       val newID = TaskContext.get().taskAttemptId()
-      Predef.assert(v.registeredIDs.head.asInstanceOf[Lifespan.Task.ID].id == newID)
+      Predef.assert(v.registeredIDs.head.asInstanceOf[Lifespan.Task.ID] == newID)
       tuple._2 -> newID
     }.collectPerPartition
 
@@ -93,7 +93,7 @@ class CleanableSuite extends SpookyBaseSpec {
 
     val rdd = sc.uuidSeed().mapOncePerWorker { _ =>
       val lifespan = Lifespan.TaskOrJVM()
-      val oldID = lifespan.registeredIDs.head.asInstanceOf[Lifespan.Task.ID].id
+      val oldID = lifespan.registeredIDs.head.asInstanceOf[Lifespan.Task.ID]
       lifespan -> oldID
     }
 
@@ -111,7 +111,7 @@ class CleanableSuite extends SpookyBaseSpec {
 
     val rdd = sc.uuidSeed().mapOncePerCore { _ =>
       val lifespan = Lifespan.Task()
-      val oldID = lifespan.registeredIDs.head.asInstanceOf[Lifespan.Task.ID].id
+      val oldID = lifespan.registeredIDs.head.asInstanceOf[Lifespan.Task.ID]
       lifespan -> oldID
     }
 
@@ -128,7 +128,7 @@ class CleanableSuite extends SpookyBaseSpec {
         //            Predef.assert(v._id == newID2)
         result
       }
-      Predef.assert(newID3.asInstanceOf[Lifespan.Task.ID].id == newID)
+      Predef.assert(newID3.asInstanceOf[Lifespan.Task.ID] == newID)
       tuple._2 -> newID
     }.collectPerPartition
 

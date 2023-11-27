@@ -1,6 +1,6 @@
 package org.apache.spark.ml.dsl.utils.refl
 
-import com.tribbloids.spookystuff.testutils.FunSpecx
+import com.tribbloids.spookystuff.testutils.BaseSpec
 import com.tribbloids.spookystuff.utils.serialization.AssertSerializable
 import org.apache.spark.sql.catalyst.ScalaReflection
 import org.apache.spark.sql.catalyst.ScalaReflection.universe
@@ -9,7 +9,7 @@ import org.scalatest.Ignore
 import scala.reflect.ClassTag
 
 @Ignore
-class TypeMagnetSpike extends FunSpecx {
+class TypeMagnetSpike extends BaseSpec {
 
   import ScalaReflection.universe._
 

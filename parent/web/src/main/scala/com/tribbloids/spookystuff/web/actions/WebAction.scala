@@ -27,7 +27,7 @@ trait WebAction extends Action {
 
     session match {
       case d: Session =>
-        if (d.Drivers.get(Web).nonEmpty) {
+        if (d.Drivers.lookup.get(Web).nonEmpty) {
           if (errorDump) {
             val rawPage = Snapshot.ErrorDump.exe(session).head.asInstanceOf[Doc]
             message += "\nSnapshot: " + this.errorDump(message, rawPage, session.spooky)

@@ -1,6 +1,6 @@
 package org.apache.spark.ml.dsl.utils.refl
 
-import com.tribbloids.spookystuff.utils.Caching
+import ai.acyclic.prover.commons.util.Caching
 
 import scala.language.implicitConversions
 import scala.reflect.ClassTag

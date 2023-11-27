@@ -1,7 +1,8 @@
 package com.tribbloids.spookystuff.actions
 
+import com.tribbloids.spookystuff.actions.Trace.DryRun
 import com.tribbloids.spookystuff.caching.{DFSDocCache, InMemoryDocCache}
-import com.tribbloids.spookystuff.doc.{Doc, DocOption}
+import com.tribbloids.spookystuff.doc.{Doc, Observation}
 import com.tribbloids.spookystuff.row.{FetchedRow, SpookySchema}
 import com.tribbloids.spookystuff.session.Session
 import com.tribbloids.spookystuff.tree.TreeView
@@ -36,13 +37,13 @@ abstract class ActionLike extends Product with Serializable with Verbose {
 
   lazy val TreeNode: ActionLike.TreeNodeView = ActionLike.TreeNodeView(this)
 
-  def globalRewriteRules(schema: SpookySchema): Seq[RewriteRule[TraceView]] = Nil
+  def globalRewriteRules(schema: SpookySchema): Seq[RewriteRule[Trace]] = Nil
 
   /**
     * invoked on executors, immediately after interpolation *IMPORTANT!* may be called several times, before or after
     * GenPartitioner.
     */
-  def localRewriteRules(schema: SpookySchema): Seq[RewriteRule[TraceView]] = Nil
+  def localRewriteRules(schema: SpookySchema): Seq[RewriteRule[Trace]] = Nil
 
   final def interpolate(row: FetchedRow, schema: SpookySchema): Option[this.type] = {
     val result = this.doInterpolate(row, schema)
@@ -52,7 +53,8 @@ abstract class ActionLike extends Product with Serializable with Verbose {
     result
   }
 
-  // TODO: use reflection to simplify
+  // TODO: can be made automatic
+  // TODO: this.type cleanup
   /**
     * convert all extractor constructor parameters to Literals
     */
@@ -75,11 +77,12 @@ abstract class ActionLike extends Product with Serializable with Verbose {
   def dryRun: DryRun
 
   // the minimal equivalent action that can be put into backtrace
+  // TODO: this.type cleanup
   def skeleton: Option[this.type] = Some(this)
 
-  def apply(session: Session): Seq[DocOption]
+  def apply(session: Session): Seq[Observation]
 
-  def fetch(spooky: SpookyContext): Seq[DocOption] = {
+  def fetch(spooky: SpookyContext): Seq[Observation] = {
 
     val results = CommonUtils.retry(Const.remoteResourceLocalRetries) {
       fetchOnce(spooky)
@@ -90,15 +93,15 @@ abstract class ActionLike extends Product with Serializable with Verbose {
     results
   }
 
-  def fetchOnce(spooky: SpookyContext): Seq[DocOption] = {
+  def fetchOnce(spooky: SpookyContext): Seq[Observation] = {
 
     if (!this.hasOutput) return Nil
 
-    val pagesFromCache: Seq[Seq[DocOption]] =
+    val pagesFromCache: Seq[Seq[Observation]] =
       if (!spooky.spookyConf.cacheRead) Seq(null)
       else
         dryRun.map { dry =>
-          val view = TraceView(dry)
+          val view = Trace(dry)
           InMemoryDocCache
             .get(view, spooky)
             .orElse {

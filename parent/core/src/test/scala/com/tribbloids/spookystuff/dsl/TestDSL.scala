@@ -1,10 +1,10 @@
 package com.tribbloids.spookystuff.dsl
 
 import com.tribbloids.spookystuff.actions.Wget
-import com.tribbloids.spookystuff.doc.DocOption
+import com.tribbloids.spookystuff.doc.Observation
 import com.tribbloids.spookystuff.extractors.Alias
 import com.tribbloids.spookystuff.rdd.FetchedDataset
-import com.tribbloids.spookystuff.row.{DataRow, FetchedRow, Field, SquashedFetchedRow}
+import com.tribbloids.spookystuff.row.{DataRow, FetchedRow, Field, SquashedRow}
 import com.tribbloids.spookystuff.testutils.{LocalPathDocsFixture, SpookyBaseSpec}
 
 /**
@@ -12,17 +12,21 @@ import com.tribbloids.spookystuff.testutils.{LocalPathDocsFixture, SpookyBaseSpe
   */
 class TestDSL extends SpookyBaseSpec with LocalPathDocsFixture {
 
-  lazy val pages: Seq[DocOption] = (
+  lazy val pages: Seq[Observation] = (
     Wget(HTML_URL) ~ 'page
   ).fetch(spooky)
 
-  lazy val row: FetchedRow = SquashedFetchedRow
-    .withDocs(dataRows = Array(DataRow()), docs = pages)
+  lazy val row: FetchedRow = SquashedRow
+    .ofData(DataRow.blank)
+    .cache(pages)
+    .withCtx(spooky)
+    .resetScope
     .extract(
       S"title".head.text withAlias 'abc,
       S"title".head withAlias 'def
     )
-    .unsquash
+    .withCtx(spooky)
+    .unSquash
     .head
 
   it("symbol as Expr") {
@@ -52,10 +56,14 @@ class TestDSL extends SpookyBaseSpec with LocalPathDocsFixture {
 
   it("double quotes in selector by attribute should work") {
     val pages = Wget(HTML_URL).fetch(spooky).toArray
-    val row = SquashedFetchedRow
-      .withDocs(Array(DataRow()), docs = pages)
+    val row = SquashedRow
+      .ofData(DataRow.blank)
+      .cache(pages)
+      .withCtx(spooky)
+      .resetScope
       .extract(S"""a[href*="wikipedia"]""".href withAlias 'uri)
-      .unsquash
+      .withCtx(spooky)
+      .unSquash
       .head
 
     assert(row.dataRow.get(Field("uri")).nonEmpty)
@@ -73,13 +81,15 @@ class TestDSL extends SpookyBaseSpec with LocalPathDocsFixture {
     assert(expr.orElse[FetchedRow, String] { case _ => " " }.apply(row) == " ")
   }
 
-  it("SpookyContext can be cast to a blank PageRowRDD with empty schema") {
+  it("SpookyContext can be cast to a blank RDD with empty schema") {
     val ds = spooky: FetchedDataset
     assert(ds.fields.isEmpty)
     assert(ds.count() == 1)
 
     val plan = ds.plan
-    assert(plan.rdd() == spooky._blankRowRDD)
+    val rdd = plan.squashedRDD
+    assert(rdd.collect().toSeq == Seq(SquashedRow.ofData(DataRow.blank)))
+    assert(ds.schema.fields == Nil)
     assert(!(plan.spooky eq spooky)) // configs should be deep copied
   }
 }

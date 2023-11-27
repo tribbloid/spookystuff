@@ -8,6 +8,8 @@ import com.tribbloids.spookystuff.utils.lifespan.Cleanable
 import org.apache.spark.SparkConf
 import com.tribbloids.spookystuff.relay.MessageAPI
 
+import scala.util.Try
+
 trait PluginSystem extends Serializable {
 
   {
@@ -62,8 +64,8 @@ trait PluginSystem extends Serializable {
       this
     }
 
-    def deploy(): Unit = {
-      confBroadcastW.rebroadcast()
+    def tryDeploy(): Try[Unit] = {
+      Try(confBroadcastW.rebroadcast())
     }
 
     // end of definitions
@@ -93,7 +95,7 @@ object PluginSystem {
 
   lazy val emptySparkConf: SparkConf = new SparkConf(false)
 
-  trait WithDriver extends PluginSystem {
+  trait HasDriver extends PluginSystem {
 
     type Driver <: DriverLike
 
@@ -103,10 +105,12 @@ object PluginSystem {
 
       def driverFactoryOpt: Option[DriverFactory[Driver]] = Option(driverFactory)
 
-      override def deploy(): Unit = {
-        super.deploy()
-
-        driverFactoryOpt.foreach(_.deployGlobally(spooky))
+      override def tryDeploy(): Try[Unit] = {
+        super.tryDeploy().flatMap { _ =>
+          Try {
+            driverFactoryOpt.foreach(_.deployGlobally(spooky))
+          }
+        }
       }
     }
 

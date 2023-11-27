@@ -34,17 +34,6 @@ class TestFetchPlan extends SpookyBaseSpec with LocalPathDocsFixture {
     println(rdd1.plan.toString)
   }
 
-  it("FetchPlan is lazy and doesn't immediately do the fetch") {
-
-    val rdd1 = spooky
-      .fetch(
-        Wget(HTML_URL)
-      )
-    rdd1.dataRDD.count()
-
-    assert(rdd1.spooky.spookyMetrics.pagesFetched.value === 0)
-  }
-
   it("fetch() + count() will fetch once") {
 
     val rdd1 = spooky
@@ -63,11 +52,11 @@ class TestFetchPlan extends SpookyBaseSpec with LocalPathDocsFixture {
       .fetch(
         Wget(HTML_URL)
       )
-      .select(
+      .extract(
         Lit("Wikipedia") ~ 'name
       )
 
-    rdd1.unsquashedRDD.count()
+    rdd1.fetchedRDD.count()
 
     assert(rdd1.spooky.spookyMetrics.pagesFetched.value === 1)
   }

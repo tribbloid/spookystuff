@@ -48,12 +48,11 @@ case class SpookyConf(
     var remoteResourceTimeout: Timeout = Timeout(60.seconds),
     var DFSTimeout: Timeout = Timeout(40.seconds),
     var failOnDFSRead: Boolean = false,
-    var defaultJoinType: JoinType = JoinType.Inner,
     var defaultFlattenSampler: Sampler[Any] = identity,
-    var defaultJoinSampler: Sampler[Any] = identity, // join takes remote actions and cost much more than flatten.
+    var defaultForkSampler: Sampler[Any] = identity, // join takes remote actions and cost much more than flatten.
     var defaultExploreRange: Range = 0 until Int.MaxValue,
     var defaultGenPartitioner: GenPartitioner = GenPartitioners.Wide(),
-    var defaultExploreAlgorithm: ExploreAlgorithm = ExploreAlgorithms.BreadthFirst,
+    var defaultExploreAlgorithm: PathPlanning = PathPlanners_Simple.BreadthFirst,
     var epochSize: Int = 500,
     var checkpointInterval: Int = 50, // disabled if <=0
 
@@ -84,8 +83,8 @@ case class SpookyConf(
   def previewMode: this.type = {
 
     val sampler: Samplers.FirstN = Samplers.FirstN(1)
-    this.defaultJoinSampler = sampler
-    this.defaultJoinSampler = sampler
+    this.defaultForkSampler = sampler
+    this.defaultForkSampler = sampler
     this.defaultExploreRange = 0 to 2
 
     this

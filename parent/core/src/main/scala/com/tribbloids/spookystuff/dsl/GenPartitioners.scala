@@ -1,5 +1,6 @@
 package com.tribbloids.spookystuff.dsl
 
+import ai.acyclic.prover.commons.function.PreDef.:=>
 import com.tribbloids.spookystuff.dsl.GenPartitionerLike.Instance
 import com.tribbloids.spookystuff.execution.SpookyExecutionContext
 import com.tribbloids.spookystuff.row.{BeaconRDD, SpookySchema}
@@ -41,7 +42,7 @@ object GenPartitioners {
   }
 
   case class Wide(
-      partitionerFactory: RDD[_] => Partitioner = {
+      partitionerFactory: RDD[_] :=> Partitioner = {
         PartitionerFactories.SamePartitioner
       }
   ) extends AnyGenPartitioner {
@@ -70,7 +71,7 @@ object GenPartitioners {
   // group identical ActionPlans, execute in parallel, and duplicate result pages to match their original contexts
   // reduce workload by avoiding repeated access to the same url caused by duplicated context or diamond links (A->B,A->C,B->D,C->D)
   case class DocCacheAware(
-      partitionerFactory: RDD[_] => Partitioner = {
+      partitionerFactory: RDD[_] :=> Partitioner = {
         PartitionerFactories.SamePartitioner
       }
   ) extends AnyGenPartitioner {

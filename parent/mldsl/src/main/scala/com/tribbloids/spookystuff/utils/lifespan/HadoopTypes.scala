@@ -1,6 +1,5 @@
 package com.tribbloids.spookystuff.utils.lifespan
 
-import com.tribbloids.spookystuff.utils.EqualBy
 import com.tribbloids.spookystuff.utils.lifespan.Cleanable.Lifespan
 import org.apache.hadoop.fs.FileSystem
 import org.apache.hadoop.util.ShutdownHookManager
@@ -11,12 +10,10 @@ trait HadoopTypes {
 
   case class HadoopShutdown(priority: Int) extends HadoopType {
 
-    case class ID(id: Int) extends EqualBy.Fields {
-      override def toString: String = s"JVM-$id"
-    }
+    type ID = Int
 
     override protected def _batchID(ctx: LifespanContext): ID =
-      ID((ctx.thread.getId % Lifespan.JVM.MAX_NUMBER_OF_SHUTDOWN_HOOKS).toInt)
+      (ctx.thread.getId % Lifespan.JVM.MAX_NUMBER_OF_SHUTDOWN_HOOKS).toInt
 
     override protected def _registerHook(ctx: LifespanContext, fn: () => Unit): Unit = {
       val hookTask = new Runnable() {

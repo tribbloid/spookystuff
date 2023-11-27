@@ -1,9 +1,9 @@
 package org.apache.spark.ml.dsl.utils.data
 
-import com.tribbloids.spookystuff.testutils.FunSpecx
+import com.tribbloids.spookystuff.testutils.BaseSpec
 import com.tribbloids.spookystuff.relay.Relay
 
-class EAVSuite extends FunSpecx {
+class EAVSuite extends BaseSpec {
 
   import EAVSuite._
   import EAVSystem.NoAttr._

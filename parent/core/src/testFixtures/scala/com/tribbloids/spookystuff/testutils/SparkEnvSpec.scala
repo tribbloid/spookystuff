@@ -4,7 +4,7 @@ import org.apache.spark.SparkContext
 import org.apache.spark.sql.SQLContext
 import org.scalatest.BeforeAndAfterAll
 
-trait SparkEnvSpec extends FunSpecx with BeforeAndAfterAll with SparkUISupport {
+trait SparkEnvSpec extends BaseSpec with BeforeAndAfterAll with SparkUISupport {
 
   final def sc: SparkContext = TestHelper.TestSC
 

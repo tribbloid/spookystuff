@@ -1,10 +1,10 @@
 package com.tribbloids.spookystuff.python.ref
 
+import ai.acyclic.prover.commons.util.Caching.ConcurrentMap
 import com.tribbloids.spookystuff.SpookyContext
 import com.tribbloids.spookystuff.conf.Python
 import com.tribbloids.spookystuff.python.PyConverter
 import com.tribbloids.spookystuff.session.{PythonDriver, Session}
-import com.tribbloids.spookystuff.utils.Caching.ConcurrentMap
 import com.tribbloids.spookystuff.utils.TreeThrowable
 import com.tribbloids.spookystuff.utils.lifespan.Cleanable
 import org.apache.spark.ml.dsl.utils._

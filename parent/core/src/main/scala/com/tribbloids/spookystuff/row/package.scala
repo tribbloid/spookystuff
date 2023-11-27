@@ -1,24 +1,21 @@
 package com.tribbloids.spookystuff
 
-import com.tribbloids.spookystuff.execution.NodeKey
 import org.apache.spark.rdd.RDD
-import org.apache.spark.sql.catalyst.expressions.GenericRowWithSchema
 
 package object row {
 
   type Data = Map[Field, Any] // TODO: change to SQL Row
-
   implicit val Data: Map.type = Map
 
-  type SquashedFetchedRDD = RDD[SquashedFetchedRow]
+  type SquashedRDD = RDD[SquashedRow]
+
+  type SquashedRDDWithSchema = RDD[SquashedRow.WithSchema]
 
   type BeaconRDD[K] = RDD[(K, Unit)]
 
   type Sampler[T] = Iterable[(T, Int)] => Iterable[(T, Int)] // with index
 
-  type RowReducer = (Iterable[DataRow], Iterable[DataRow]) => Iterable[DataRow]
-
-  type RowOrdering = Ordering[(NodeKey, Iterable[DataRow])]
+  type RowOrdering = Ordering[(LocalityGroup, Vector[DataRow])]
 
   // f(open, visited) => open
 //  type RowEliminator = (Iterable[DataRow], Iterable[DataRow]) => Iterable[DataRow]
@@ -26,5 +23,5 @@ package object row {
   // In every execution plan, the schema: Map(Field -> DataType) has to be created on construction, which enables every Field to be cast into TypedField or IndexedField
   type IndexedField = (TypedField, Int)
 
-  type SchemaRow = GenericRowWithSchema
+//  type SchemaRow = GenericRowWithSchema
 }

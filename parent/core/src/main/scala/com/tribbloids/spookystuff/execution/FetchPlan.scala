@@ -2,7 +2,7 @@ package com.tribbloids.spookystuff.execution
 
 import com.tribbloids.spookystuff.actions._
 import com.tribbloids.spookystuff.dsl.GenPartitioner
-import com.tribbloids.spookystuff.row.{DataRow, SquashedFetchedRDD, SquashedFetchedRow}
+import com.tribbloids.spookystuff.row.{AgentState, DataRow, LocalityGroup, SquashedRDD, SquashedRow}
 import org.apache.spark.rdd.RDD
 
 /**
@@ -10,29 +10,35 @@ import org.apache.spark.rdd.RDD
   */
 case class FetchPlan(
     override val child: ExecutionPlan,
-    traces: Set[Trace],
-    keyBy: Trace => Any,
+    traces: TraceSet,
+    sameBy: Trace => Any,
     genPartitioner: GenPartitioner
-) extends UnaryPlan(child)
+) extends UnaryPlan.NoSchemaChange(child)
     with InjectBeaconRDDPlan {
 
-  override def doExecute(): SquashedFetchedRDD = {
+  override def execute: SquashedRDD = {
 
-    val trace_DataRowRDD: RDD[(TraceView, DataRow)] = child
-      .rdd()
-      .flatMap {
-        _.interpolateAndRewriteLocally(traces)
+    val trace_DataRowRDD: RDD[(LocalityGroup, DataRow)] = child.squashedRDD
+      .flatMap { v =>
+        v.withSchema(outputSchema).interpolateAndRewrite(traces)
       }
       .map {
         case (k, v) =>
-          k.keyBy(keyBy) -> v
+          LocalityGroup(k)().sameBy(sameBy) -> v
       }
 
     val grouped = gpImpl.groupByKey(trace_DataRowRDD, beaconRDDOpt)
 
     grouped
       .map { tuple =>
-        SquashedFetchedRow(tuple._2.toArray, tuple._1) // actual fetch can only be triggered by extract or savePages
+        SquashedRow(
+          AgentState(tuple._1),
+          tuple._2.map(_.withEmptyScope).toVector
+        )
+          .withCtx(spooky)
+          .resetScope
+
+        // actual fetch can only be triggered by extract or savePages
       }
   }
 }

@@ -1,6 +1,6 @@
 package org.apache.spark.ml.dsl
 
-import com.tribbloids.spookystuff.testutils.{FunSpecx, TestHelper}
+import com.tribbloids.spookystuff.testutils.{BaseSpec, TestHelper}
 import org.apache.spark.ml.PipelineStage
 import org.apache.spark.ml.param.shared.{HasInputCol, HasInputCols, HasOutputCol}
 import org.scalatest.BeforeAndAfterAll
@@ -10,31 +10,16 @@ import scala.util.matching.Regex
 /**
   * Created by peng on 18/04/16.
   */
-abstract class AbstractDFDSuite extends FunSpecx with BeforeAndAfterAll {
+abstract class AbstractDFDSuite extends BaseSpec with BeforeAndAfterAll {
 
-  implicit class StringView(str: String) extends super.TestStringView(str) {
+  implicit class StringView(str: String) extends super._StringView(str) {
 
     def treeNodeShouldBe(
         groundTruth: String = null,
         sort: Boolean = false
     ): Unit = {
       val compactedGT = Option(groundTruth).map(compactGroundTruth).orNull
-//      try {
       this.shouldBe(compactedGT, sort = sort)
-//      } catch {
-//        case e @ (_: TestFailedException | _: AssertionError) =>
-//          val correctedGT = compactedGT
-//            .replaceAllLiterally("+- ", " ")
-//            .replaceAllLiterally(":- ", " ")
-//            .replaceAllLiterally(":  ", " ")
-//          //this is for Spark 1.5
-//          try {
-//            this.shouldBe(correctedGT, sort = sort)
-//          } catch {
-//            case _: Throwable =>
-//              throw e
-//          }
-//      }
     }
   }
 

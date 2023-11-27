@@ -1,6 +1,6 @@
 package com.tribbloids.spookystuff.utils.serialization
 
-import com.tribbloids.spookystuff.utils.serialization.BeforeAndAfterShipping.Container
+import com.tribbloids.spookystuff.utils.serialization.BeforeAndAfterShipping.Trigger
 
 import java.io.NotSerializableException
 
@@ -15,7 +15,7 @@ trait NOTSerializable extends BeforeAndAfterShipping {
     trigger
   }
 
-  private lazy val trigger = Container(Internal())
+  private lazy val trigger = Trigger(Internal())
 }
 
 object NOTSerializable {

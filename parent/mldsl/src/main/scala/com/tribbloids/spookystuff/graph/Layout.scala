@@ -1,9 +1,9 @@
 package com.tribbloids.spookystuff.graph
 
+import ai.acyclic.prover.commons.util.Caching.ConcurrentMap
 import com.tribbloids.spookystuff.graph.IDAlgebra.Rotator
 import com.tribbloids.spookystuff.graph.Layout.Facet
 import com.tribbloids.spookystuff.graph.Module.{Heads, Tails}
-import com.tribbloids.spookystuff.utils.Caching.ConcurrentMap
 
 import scala.language.implicitConversions
 
@@ -95,7 +95,7 @@ trait Layout[D <: Domain] extends Algebra.Aliases[D] {
       val latentHeads = heads.seq
 
       val latentIDs = (latentTails.map(_.to) ++ latentHeads.map(_.from)).distinct
-        .filterNot(_ == algebra.DANGLING._equalBy)
+        .filterNot(_ == algebra.DANGLING.samenessDelegatedTo)
 
       val existingIDs = _graph.getLinkedNodes(latentIDs).keys.toList
 
@@ -279,7 +279,7 @@ trait Layout[D <: Domain] extends Algebra.Aliases[D] {
       }
 
       def fromNode(nn: _NodeLike): NodeView = {
-        val existingOpt = fromNodeID(nn._equalBy)
+        val existingOpt = fromNodeID(nn.samenessDelegatedTo)
         existingOpt match {
           case Some(existing) =>
             assert(

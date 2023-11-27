@@ -6,7 +6,7 @@ import com.tribbloids.spookystuff.session.PythonDriver
 import org.apache.spark.SparkConf
 import org.apache.spark.util.LongAccumulator
 
-object Python extends PluginSystem.WithDriver {
+object Python extends PluginSystem.HasDriver {
 
   final val DEFAULT_PYTHONDRIVER_FACTORY: DriverFactory.TaskLocal[PythonDriver] = PythonDriverFactory._3.taskLocal
 

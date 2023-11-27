@@ -1,11 +1,11 @@
 package com.tribbloids.spookystuff.unused
 
-import com.tribbloids.spookystuff.testutils.FunSpecx
+import com.tribbloids.spookystuff.testutils.BaseSpec
 import org.scalatest.Suite
 
 import scala.util.Random
 
-class ExternalAppendOnlyArrayMatrix extends FunSpecx {
+class ExternalAppendOnlyArrayMatrix extends BaseSpec {
 
   import com.tribbloids.spookystuff.testutils.TestHelper._
 

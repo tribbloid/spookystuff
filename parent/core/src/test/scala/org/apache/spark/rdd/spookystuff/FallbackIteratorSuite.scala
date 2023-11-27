@@ -1,8 +1,8 @@
 package org.apache.spark.rdd.spookystuff
 
-import com.tribbloids.spookystuff.testutils.FunSpecx
+import com.tribbloids.spookystuff.testutils.BaseSpec
 
-class FallbackIteratorSuite extends FunSpecx {
+class FallbackIteratorSuite extends BaseSpec {
 
   it("can consume from 1 iterator") {
 

@@ -1,7 +1,7 @@
 package com.tribbloids.spookystuff.parsing
 
-import com.tribbloids.spookystuff.testutils.FunSpecx
-import com.tribbloids.spookystuff.utils.{InterleavedIterator, Interpolation}
+import com.tribbloids.spookystuff.testutils.BaseSpec
+import com.tribbloids.spookystuff.utils.InterleavedIterator
 import fastparse.internal.Logger
 import org.apache.spark.benchmark.BenchmarkHelper
 import org.scalatest.Ignore
@@ -11,7 +11,7 @@ import scala.collection.mutable.ArrayBuffer
 import scala.util.Random
 
 @Ignore //TODO: enable!
-class ParsersBenchmark extends FunSpecx {
+class ParsersBenchmark extends BaseSpec {
 
   import com.tribbloids.spookystuff.parsing.ParsersBenchmark._
 
@@ -30,7 +30,6 @@ class ParsersBenchmark extends FunSpecx {
 
     val epochs: List[Epoch] = List(
       Epoch(getRandomStrs, "speed reference", skipResultCheck = true)(_.speedRef()),
-      Epoch(getRandomStrs, "regex")(_.useRegex()),
       Epoch(getRandomStrs, "fastParse")(_.useFastParse()),
       Epoch(getRandomStrs, "FSM")(_.useFSM())
 //      Epoch(stream, "do nothing", skipResultCheck = true)(_.doNothing())
@@ -177,8 +176,6 @@ object ParsersBenchmark {
     }
   }
 
-  val interpolation: Interpolation = Interpolation("$")
-
   case class RandomStrGen(
       seed: Long,
       override val size: Int = numVPerEpoch,
@@ -263,11 +260,6 @@ object ParsersBenchmark {
           sys.error(v.toString)
       }
       interpolated.mkString("")
-    }
-
-    def useRegex(): String = {
-
-      interpolation(str)(replace)
     }
 
     // measuring speed only, result is jibberish

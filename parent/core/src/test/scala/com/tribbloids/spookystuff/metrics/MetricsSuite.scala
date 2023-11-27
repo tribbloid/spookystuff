@@ -1,7 +1,7 @@
 package com.tribbloids.spookystuff.metrics
 
 import com.tribbloids.spookystuff.metrics.MetricsSuite.{DummyMetrics, DummyMetrics_HasMembers, DummyTreeMetrics}
-import com.tribbloids.spookystuff.testutils.{FunSpecx, TestHelper}
+import com.tribbloids.spookystuff.testutils.{BaseSpec, TestHelper}
 import com.tribbloids.spookystuff.relay.io.Encoder
 import org.apache.spark.sql.execution.streaming.EventTimeStatsAccum
 import org.apache.spark.util.{DoubleAccumulator, LongAccumulator}
@@ -26,7 +26,7 @@ object MetricsSuite {
   }
 }
 
-class MetricsSuite extends FunSpecx {
+class MetricsSuite extends BaseSpec {
 
   TestHelper.TestSC
 

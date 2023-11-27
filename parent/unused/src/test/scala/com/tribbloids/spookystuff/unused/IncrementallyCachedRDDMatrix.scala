@@ -1,7 +1,7 @@
 package com.tribbloids.spookystuff.unused
 
 import com.tribbloids.spookystuff.dsl.Samplers
-import com.tribbloids.spookystuff.testutils.FunSpecx
+import com.tribbloids.spookystuff.testutils.BaseSpec
 import com.tribbloids.spookystuff.testutils.TestHelper.TestSC
 import com.tribbloids.spookystuff.utils.PreemptiveLocalOps
 import org.apache.spark.rdd.RDD
@@ -98,7 +98,7 @@ object IncrementallyCachedRDDMatrix {
   object GMore extends Group(Samplers.withReplacement((TestSC.defaultParallelism + 1) to 64).get)
 }
 
-class IncrementallyCachedRDDMatrix extends FunSpecx with BeforeAndAfterAll {
+class IncrementallyCachedRDDMatrix extends BaseSpec with BeforeAndAfterAll {
 
   import IncrementallyCachedRDDMatrix._
 

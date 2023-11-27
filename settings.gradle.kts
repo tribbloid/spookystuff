@@ -4,13 +4,16 @@ val noBenchmark: String? by settings
 val noUnused: String? by settings
 val noUav: String? by settings
 
+pluginManagement.repositories {
+    gradlePluginPortal()
+    mavenCentral()
+    // maven("https://dl.bintray.com/kotlin/kotlin-dev")
+}
+
 fun isEnabled(profile: String?): Boolean {
     val result = profile.toBoolean() || profile == ""
     return result
 }
-
-//include("graph-commons")
-//project(":graph-commons").projectDir = file("graph-commons/core") TODO: enable later
 
 include(
     // should be skipped on CI, contains local experiments only
@@ -20,12 +23,12 @@ include(
 
 include(":parent")
 
-//include(":parent:prover-commons")
-//project(":parent:prover-commons").projectDir = file("parent/prover-commons/module") // TODO: enable later
-//include(
-//    ":parent:prover-commons:core",
-//    ":parent:prover-commons:meta2"
-//)
+include(":prover-commons")
+project(":prover-commons").projectDir = file("prover-commons/module")
+include(
+    ":prover-commons:core",
+    ":prover-commons:meta2"
+)
 
 include(
 
@@ -35,8 +38,6 @@ include(
     ":parent:web",
     ":parent:integration",
     ":parent:showcase",
-//    ":spookystuff-showcase:showcase",
-//    ":spookystuff-showcase:notebook", TODO: enable later
 )
 
 if (!isEnabled(noAssembly)) {
@@ -58,14 +59,9 @@ if (!isEnabled(noUnused)) {
     )
 }
 
-//if (!isEnabled(noUav)) {
-//    include(
-//        ":parent:uav"
-//    )
-//}
-
-pluginManagement.repositories {
-    gradlePluginPortal()
-    mavenCentral()
-    // maven("https://dl.bintray.com/kotlin/kotlin-dev")
+if (!isEnabled(noUav)) {
+    include(
+        ":parent:uav"
+    )
 }
+

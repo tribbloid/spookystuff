@@ -9,27 +9,6 @@ class DataRowSuite extends SpookyBaseSpec {
 
   import com.tribbloids.spookystuff.dsl._
 
-  it("interpolate") {
-    val map = Map(Field("abc") -> 1, Field("def") -> 2.2)
-    val result = DataRow(map).replaceInto("rpk'{abc}aek'{def}")
-    assert(result === Some("rpk1aek2.2"))
-  }
-
-  it("interpolate returns None when key not found") {
-
-    val map = Map(Field("abc") -> 1, Field("rpk") -> 2.2)
-    val result = DataRow(map).replaceInto("rpk'{abc}aek'{def}")
-    assert(result === None)
-  }
-
-  it("formatNullString") {
-    assert(DataRow(Map()).replaceInto(null).isEmpty)
-  }
-
-  it("formatEmptyString") {
-    assert(DataRow(Map()).replaceInto("").contains(""))
-  }
-
   it("getInt can extract scala Int type") {
     val map = Map(Field("abc") -> 1, Field("def") -> Array("d", "e", "f"))
     val result = DataRow(map).getInt('abc).get

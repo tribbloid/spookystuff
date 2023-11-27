@@ -11,6 +11,7 @@ import org.apache.spark.{HashPartitioner, SparkContext, TaskContext}
 
 import scala.collection.Map
 import scala.collection.immutable.ListMap
+import scala.language.implicitConversions
 import scala.reflect.ClassTag
 import scala.util.Random
 
@@ -21,7 +22,7 @@ abstract class SpookyViews extends SpookyViews_Imp0 {
 
   import com.tribbloids.spookystuff.SpookyViewsConst._
 
-  implicit class SparkContextView(self: SparkContext) extends SCFunctions(self)
+  implicit def sparkContextView(self: SparkContext): SparkContextView = SparkContextView(self)
 
   implicit class RDDView[T](val self: RDD[T]) extends RDDViewBase[T] {
 

@@ -41,7 +41,7 @@ abstract class SpookyViews_Imp0 extends CommonViews {
       case _ => None
     }
 
-    def flattenByKey(
+    def explode1Key(
         key: K,
         sampler: Sampler[Any]
     ): Seq[(Map[K, Any], Int)] = {

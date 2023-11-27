@@ -1,6 +1,6 @@
 package com.tribbloids.spookystuff.testutils
 
-import com.tribbloids.spookystuff.utils.SCFunctions
+import com.tribbloids.spookystuff.utils.SparkContextView
 import org.scalatest.{Status, Suite}
 
 import java.util.concurrent.atomic.AtomicInteger
@@ -11,7 +11,7 @@ trait SparkUISupport extends Suite {
 
     lazy val fullText = s"[${this.suiteName}] $testName"
 
-    SCFunctions(TestHelper.TestSC).withJob(fullText, SparkUISupport.serID.getAndIncrement().toString) {
+    SparkContextView(TestHelper.TestSC).withJob(fullText, SparkUISupport.serID.getAndIncrement().toString) {
 
       super.runTest(testName, args)
     }

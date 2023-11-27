@@ -1,10 +1,10 @@
 package com.tribbloids.spookystuff.utils
 
+import ai.acyclic.prover.commons.debug.Debug.CallStackRef
 import com.tribbloids.spookystuff.utils.AwaitWithHeartbeat.Heartbeat
 
 import java.io.{File, PrintWriter, StringWriter}
 import org.apache.spark.SparkEnv
-import org.apache.spark.ml.dsl.utils.DSLUtils
 import org.apache.spark.storage.BlockManagerId
 import org.slf4j.LoggerFactory
 
@@ -56,9 +56,9 @@ abstract class CommonUtils {
   def retry: Retry.FixedInterval.type = Retry.FixedInterval
 
   protected def _callerShowStr: String = {
-    val result = DSLUtils
-      .Caller(
-        exclude = Seq(classOf[CommonUtils])
+    val result = CallStackRef
+      .below(
+        condition = _.isUnderClasses(classOf[CommonUtils])
       )
       .showStr
     result

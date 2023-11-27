@@ -1,9 +1,9 @@
 package org.apache.spark.ml.dsl.utils.refl
 
-import com.tribbloids.spookystuff.testutils.FunSpecx
+import com.tribbloids.spookystuff.testutils.BaseSpec
 import org.apache.spark.sql.catalyst.ScalaReflection
 
-class UnReifiedObjectTypeSuite extends FunSpecx {
+class UnReifiedObjectTypeSuite extends BaseSpec {
 
   import ScalaReflection.universe._
 

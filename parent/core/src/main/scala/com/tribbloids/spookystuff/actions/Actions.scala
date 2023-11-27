@@ -11,8 +11,14 @@ trait Actions extends ActionLike {
 
   final protected def childrenSkeleton: Trace = children.flatMap(_.skeleton)
 
-  final protected def doInterpolateSeq(pr: FetchedRow, schema: SpookySchema): Trace =
-    Actions.doInterpolateSeq(children, pr, schema: SpookySchema)
+  final def doInterpolateSeq(pr: FetchedRow, schema: SpookySchema): Option[Trace] = {
+
+    val seq = children.map(_.doInterpolate(pr, schema))
+
+    if (seq.contains(None)) None
+    else Some(seq.flatten)
+
+  }
 
   // names are not encoded in PageUID and are injected after being read from cache
   override def injectFrom(same: ActionLike): Unit = {
@@ -26,13 +32,6 @@ trait Actions extends ActionLike {
 }
 
 object Actions {
-
-  def doInterpolateSeq(self: Trace, pr: FetchedRow, schema: SpookySchema): Trace = {
-    val seq = self.map(_.doInterpolate(pr, schema))
-
-    if (seq.contains(None)) Nil
-    else seq.flatten
-  }
 
   def empty: Nil.type = Nil
 }

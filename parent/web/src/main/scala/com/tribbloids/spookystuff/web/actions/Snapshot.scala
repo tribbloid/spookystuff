@@ -2,6 +2,7 @@ package com.tribbloids.spookystuff.web.actions
 
 import com.tribbloids.spookystuff.Const
 import com.tribbloids.spookystuff.actions.{Export, Wayback}
+import com.tribbloids.spookystuff.doc.Observation.DocUID
 import com.tribbloids.spookystuff.doc._
 import com.tribbloids.spookystuff.dsl.DocFilterImpl
 import com.tribbloids.spookystuff.row.{FetchedRow, SpookySchema}
@@ -20,8 +21,9 @@ case class Snapshot(
 
   // all other fields are empty
   override def doExeNoName(session: Session): Seq[Doc] = {
+    // no effect if WebDriver is missing
 
-    val pageOpt = session.Drivers.get(Web).map { webDriver =>
+    val pageOpt = session.Drivers.getExisting(Web).map { webDriver =>
       new Doc(
         DocUID((session.backtrace :+ this).toList, this)(),
         webDriver.getCurrentUrl,

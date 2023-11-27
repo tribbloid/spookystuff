@@ -7,41 +7,59 @@ import scala.collection.mutable
 // TODO: INCOMPLETE! this implementation always replace old KV instead of updating it.
 //  should add an extra layer of abstraction
 case class MapAccumulator[K, V](
-    override val value: mutable.LinkedHashMap[K, V] = mutable.LinkedHashMap.empty[K, V],
+    map: mutable.LinkedHashMap[K, V] = mutable.LinkedHashMap.empty[K, V],
     updater: (V, V) => V = MapAccumulator.Updater.Replace[V]()
-) extends AccumulatorV2[(K, V), mutable.LinkedHashMap[K, V]] {
+) extends AccumulatorV2[(K, V), MapAccumulator.MapView[K, V]] {
 
-  override def isZero: Boolean = value.isEmpty
+  import MapAccumulator._
 
-  override def copy(): AccumulatorV2[(K, V), mutable.LinkedHashMap[K, V]] = {
+  override def value: MapView[K, V] = MapView(map)
+
+  override def isZero: Boolean = map.isEmpty
+
+  override def copy(): MapAccumulator[K, V] = {
     val neo = MapAccumulator[K, V](updater = updater)
-    neo.value ++= this.value
+    neo.map ++= this.map
     neo
   }
 
   override def reset(): Unit = {
-    value.clear()
+    map.clear()
   }
 
   override def add(v: (K, V)): Unit = {
 
-    val oldVOpt = value.get(v._1)
+    val oldVOpt = map.get(v._1)
 
     val newV = oldVOpt match {
       case Some(oldV) => updater(oldV, v._2)
       case None       => v._2
     }
-    value.update(v._1, newV)
+    map.update(v._1, newV)
   }
 
-  override def merge(other: AccumulatorV2[(K, V), mutable.LinkedHashMap[K, V]]): Unit = {
-    for (v <- other.value) {
+  override def merge(other: AccumulatorV2[(K, V), MapView[K, V]]): Unit = {
+    for (v <- other.value.self) {
       add(v)
     }
   }
 }
 
 object MapAccumulator {
+
+  case class MapView[K, V](
+      self: collection.Map[K, V]
+  ) {
+
+    override lazy val toString: String = {
+
+      self
+        .map {
+          case (k, v) => s"$k -> $v"
+        }
+        .mkString(", ")
+    }
+  }
 
   type Updater[V] = (V, V) => V
 

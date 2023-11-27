@@ -9,13 +9,9 @@ import com.tribbloids.spookystuff.web.actions.{Click, Snapshot, Visit}
   */
 class FetchClickNextPageIT extends ITBaseSpec {
 
-//  override lazy val driverFactories = Seq(
-//    phantomJS //TODO: HtmlUnit does not support Backbone.js
-//  )
-
   override def doMain(): Unit = {
 
-    val RDD = spooky
+    val rdd = spooky
       .fetch(
         Visit("http://localhost:10092/test-sites/e-commerce/static/computers/laptops")
           +> Snapshot().as('a)
@@ -26,7 +22,8 @@ class FetchClickNextPageIT extends ITBaseSpec {
       )
       .persist()
 
-    val pageRows = RDD.unsquashedRDD.collect()
+    val pageRows = rdd.explodeObservations(v => v.splitByDistinctNames).fetchedRDD.collect()
+//    val pageRows = rdd.unsquashedRDD.collect()
 
     val finishTime = System.currentTimeMillis()
     assert(pageRows.length === 2) // TODO: adapt to new default grouping: ab b
@@ -38,7 +35,7 @@ class FetchClickNextPageIT extends ITBaseSpec {
 
     Thread.sleep(10000) // this delay is necessary to circumvent eventual consistency of DFS cache
 
-    val RDD2 = RDD
+    val rdd2 = rdd
       .fetch(
         Visit("http://localhost:10092/test-sites/e-commerce/static/computers/laptops")
           +> Snapshot().as('c)
@@ -48,7 +45,7 @@ class FetchClickNextPageIT extends ITBaseSpec {
           )
       )
 
-    val pageRows2 = RDD2.unsquashedRDD.collect()
+    val pageRows2 = rdd2.explodeObservations(v => v.splitByDistinctNames).fetchedRDD.collect()
 
     assert(pageRows2.length === 2)
     assert(pageRows2(0).docs.map(_.name) === Seq("c", "d"))

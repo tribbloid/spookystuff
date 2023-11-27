@@ -1,6 +1,7 @@
 package org.apache.spark.ml.dsl.utils.data
 
-import com.tribbloids.spookystuff.utils.{EqualBy, TreeThrowable}
+import ai.acyclic.prover.commons.EqualBy
+import com.tribbloids.spookystuff.utils.TreeThrowable
 import org.apache.spark.ml.dsl.utils.?
 
 import scala.util.Try
@@ -41,7 +42,7 @@ trait AttrLike[T] extends Serializable with EqualBy {
   final def get: Option[T] = tryGet.toOption
   final def value: T = tryGet.get
 
-  override def _equalBy: Any = this.allNames -> get
+  override def samenessDelegatedTo: Any = this.allNames -> get
 }
 
 object AttrLike {

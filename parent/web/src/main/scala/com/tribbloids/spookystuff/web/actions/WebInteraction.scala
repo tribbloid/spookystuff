@@ -1,6 +1,6 @@
 package com.tribbloids.spookystuff.web.actions
 
-import com.tribbloids.spookystuff.actions.{Interaction, RewriteRule, TraceView}
+import com.tribbloids.spookystuff.actions.{Interaction, RewriteRule, Trace}
 import com.tribbloids.spookystuff.doc.{Doc, Unstructured}
 import com.tribbloids.spookystuff.extractors.Col
 import com.tribbloids.spookystuff.extractors.impl.Lit
@@ -29,7 +29,7 @@ abstract class WebInteraction(
 
   import WebInteraction._
 
-  override def globalRewriteRules(schema: SpookySchema): Seq[RewriteRule[TraceView]] = Seq(AutoSnapshotRule)
+  override def globalRewriteRules(schema: SpookySchema): Seq[RewriteRule[Trace]] = Seq(AutoSnapshotRule)
 
   override def doExe(session: Session): Seq[Doc] = {
 

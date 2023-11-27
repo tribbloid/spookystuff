@@ -44,7 +44,7 @@ object PythonDriver {
 
     val exe = ClasspathResolver.execute(PythonDriver.PYTHON_RESOURCE)
 
-    exe.treeExtractTo(
+    exe.treeCopyTo(
       LocalResolver.execute(pythonPath),
       WriteMode.CreateOnly
     )

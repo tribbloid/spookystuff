@@ -46,9 +46,14 @@ trait LocalityImpl[K, V] extends Product with Serializable {
 
 }
 
-/**
-  * result of any function should preserve locality of partitions AND ordering of elements inside each partition of rdd1
-  * @tparam K
-  * @tparam V
-  */
-trait Locality_OrdinalityImpl[K, V] extends LocalityImpl[K, V]
+object LocalityImpl {
+
+  /**
+    * result of any function should preserve locality of partitions AND ordering of elements inside each partition of
+    * rdd1
+    * @tparam K
+    * @tparam V
+    */
+  trait Ordinality[K, V] extends LocalityImpl[K, V]
+
+}

@@ -5,6 +5,7 @@ import org.apache.spark.ml.dsl.utils.ObjectSimpleNameMixin
 import org.apache.spark.rdd.RDD
 import org.apache.spark.storage.StorageLevel
 import org.apache.spark.util.LongAccumulator
+import org.scalatest
 import org.slf4j.LoggerFactory
 
 import scala.concurrent.{ExecutionContext, ExecutionContextExecutor}
@@ -133,7 +134,7 @@ class RDDDisperseSuite extends SpookyBaseSpec {
 
     }
 
-    def doAssert(rdd: RDD[Int]): Unit
+    def doAssert(rdd: RDD[Int]): scalatest.Assertion
 
     def facetName: String = this.objectSimpleName
 
@@ -168,7 +169,7 @@ class RDDDisperseSuite extends SpookyBaseSpec {
 
   object PlainRDD extends Facet {
 
-    override def doAssert(rdd: RDD[Int]): Unit = {
+    override def doAssert(rdd: RDD[Int]): scalatest.Assertion = {
 
       assertCanBeBalanced_raw(rdd)
 
@@ -178,7 +179,7 @@ class RDDDisperseSuite extends SpookyBaseSpec {
 
   object PartitionReified extends Facet {
 
-    override def doAssert(rdd: RDD[Int]): Unit = {
+    override def doAssert(rdd: RDD[Int]): scalatest.Assertion = {
 
       val s = rdd.mapPartitions { itr =>
         val list = itr.toList
@@ -198,7 +199,7 @@ class RDDDisperseSuite extends SpookyBaseSpec {
 
   class Persisted(level: StorageLevel) extends Facet {
 
-    override def doAssert(rdd: RDD[Int]): Unit = {
+    override def doAssert(rdd: RDD[Int]): scalatest.Assertion = {
 
       rdd.persist(level)
       assertCanBeBalanced_raw(rdd)
@@ -211,7 +212,7 @@ class RDDDisperseSuite extends SpookyBaseSpec {
 
   class Persisted_RDDReified(level: StorageLevel) extends Persisted(level) {
 
-    override def doAssert(rdd: RDD[Int]): Unit = {
+    override def doAssert(rdd: RDD[Int]): scalatest.Assertion = {
 
       val p = rdd.persist(level)
       p.foreach(_ => {})
@@ -226,7 +227,7 @@ class RDDDisperseSuite extends SpookyBaseSpec {
 
     TestHelper.enableCheckpoint
 
-    override def doAssert(rdd: RDD[Int]): Unit = {
+    override def doAssert(rdd: RDD[Int]): scalatest.Assertion = {
 
       val p = rdd.persist(level)
       p.checkpoint()
@@ -241,7 +242,7 @@ class RDDDisperseSuite extends SpookyBaseSpec {
 
   object Persisted_PartitionReified extends Facet {
 
-    override def doAssert(rdd: RDD[Int]): Unit = {
+    override def doAssert(rdd: RDD[Int]): scalatest.Assertion = {
 
       val s = rdd
         .mapPartitions { itr =>
@@ -259,7 +260,7 @@ class RDDDisperseSuite extends SpookyBaseSpec {
 
   object Persisted_PartitionShuffled extends Facet {
 
-    override def doAssert(rdd: RDD[Int]): Unit = {
+    override def doAssert(rdd: RDD[Int]): scalatest.Assertion = {
 
       val shuffleSeed = Random.nextLong()
 

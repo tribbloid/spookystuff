@@ -1,6 +1,6 @@
 package org.apache.spark.ml.dsl.utils
 
-import com.tribbloids.spookystuff.testutils.FunSpecx
+import com.tribbloids.spookystuff.testutils.BaseSpec
 import org.apache.spark.ml.dsl.utils.RecursiveEitherAsUnionToJSONSpike._
 import com.tribbloids.spookystuff.relay.Relay
 import com.tribbloids.spookystuff.relay.io.Encoder
@@ -27,7 +27,7 @@ object RecursiveEitherAsUnionToJSONSpike {
 }
 
 @Ignore
-class RecursiveEitherAsUnionToJSONSpike extends FunSpecx {
+class RecursiveEitherAsUnionToJSONSpike extends BaseSpec {
 
   val u1: Union = Right(Test1("abc", 2))
   val u2: Union = Left(Right(Test2(3.2)))

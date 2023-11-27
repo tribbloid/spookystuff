@@ -1,7 +1,7 @@
 package com.tribbloids.spookystuff.extractors
 
 import com.tribbloids.spookystuff.actions.{Action, ActionUDT, Wget}
-import com.tribbloids.spookystuff.doc.{Doc, DocOption, Unstructured}
+import com.tribbloids.spookystuff.doc.{Doc, Observation, Unstructured}
 import com.tribbloids.spookystuff.extractors.impl.{Get, Lit}
 import com.tribbloids.spookystuff.TestBeans.Example
 import com.tribbloids.spookystuff.rdd.FetchedDataset
@@ -20,7 +20,7 @@ import org.scalatest.Ignore
 @Ignore // TODO: remove due to deprecation of ScalaDynamicMixin
 class ScalaDynamicExtractorSuite extends SpookyBaseSpec with LocalPathDocsFixture with CatalystTypeOps.ImplicitMixin {
 
-  val doc: DocOption = Wget(HTML_URL).fetch(spooky).head
+  val doc: Observation = Wget(HTML_URL).fetch(spooky).head
 
   it("can resolve Fetched.timestamp") {
 
@@ -139,7 +139,7 @@ class ScalaDynamicExtractorSuite extends SpookyBaseSpec with LocalPathDocsFixtur
       Wget(HTML_URL)
     )
 
-  val rdd: RDD[FR] = ds.unsquashedRDD.persist()
+  val rdd: RDD[FR] = ds.fetchedRDD.persist()
   val rows: Array[FR] = rdd.take(10)
   override lazy val emptySchema: SpookySchema = ds.schema
 

@@ -12,6 +12,21 @@ plugins {
     id("com.github.johnrengelman.shadow") version "8.1.1"
 }
 
+allprojects {
+    idea {
+
+        module {
+
+            excludeDirs = excludeDirs + files(
+                "temp",
+
+                // apache spark
+                "warehouse",
+            )
+        }
+    }
+}
+
 idea {
 
     module {
@@ -19,10 +34,7 @@ idea {
         excludeDirs = excludeDirs + files(
             ".gradle",
 
-            // apache spark
-            "warehouse",
-
-            "parent/prover-commons",
+            "prover-commons",
         )
     }
 }

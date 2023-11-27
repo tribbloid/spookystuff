@@ -1,28 +1,16 @@
 package com.tribbloids.spookystuff.row
 
-import com.tribbloids.spookystuff.SpookyContext
-import com.tribbloids.spookystuff.actions._
 import com.tribbloids.spookystuff.doc._
-
-//TODO: extends Spark SQL Row
-trait AbstractSpookyRow extends Serializable {
-
-//  override def length: Int = this.productArity
-//
-//  override def get(i: Int): Any = this.productElement(i)
-//
-//  override def copy(): ProductRow = this //TODO: problems?
-}
 
 object FetchedRow {
 
-  object Empty extends FetchedRow()
+  lazy val blank: FetchedRow = FetchedRow()
 
-  //  def apply(
-  //             dataRow: DataRow = DataRow(),
-  //             pageLikes: Seq[Fetched] = Seq()
-  //           ): FetchedRow = dataRow -> pageLikes
+  //  def ofDatum(dataRow: DataRow): SquashedRow = ofData(Seq(dataRow))
 
+  //  lazy val blank: SquashedRow = {
+  //    ofData(Seq(DataRow.blank))
+  //  }
 }
 
 /**
@@ -30,30 +18,34 @@ object FetchedRow {
   * SquashedPageRow is
   */
 case class FetchedRow(
-    dataRow: DataRow = DataRow(),
-    fetched: Seq[DocOption] = Seq()
-) extends AbstractSpookyRow {
+    dataRow: DataRow = DataRow.blank,
+    // TODO: scope here is only to simplify SquashedRow.extract, all references in it are already lost
+    observations: Seq[Observation] = Seq.empty,
+    ordinal: Int = 0
+) {
 
-  // TODO: trace implementation is not accurate: the last backtrace has all previous exports removed
-  def squash(spooky: SpookyContext): SquashedFetchedRow = SquashedFetchedRow(
-    Array(dataRow),
-    TraceView.withDocs(docs = fetched)
-  )
+  lazy val dataRowWithScope: DataRow.WithScope = DataRow.WithScope(dataRow, observations.map(_.uid))
 
-  def docs: Seq[Doc] = fetched.flatMap {
+  def squash: SquashedRow = {
+    SquashedRow
+      .ofData(
+        dataRowWithScope
+      )
+      .cache(observations)
+  }
+
+  lazy val docs: Seq[Doc] = observations.flatMap {
     case page: Doc => Some(page)
     case _         => None
   }
 
-  def noDocs: Seq[NoDoc] = fetched.flatMap {
-    case noPage: NoDoc => Some(noPage)
-    case _             => None
-  }
-
-  def getOnlyDoc: Option[Doc] = {
+  lazy val onlyDoc: Option[Doc] = {
     val pages = this.docs
 
-    if (pages.size > 1) throw new UnsupportedOperationException("Ambiguous key referring to multiple pages")
+    if (pages.size > 1)
+      throw new UnsupportedOperationException(
+        "Ambiguous key referring to multiple pages"
+      )
     else pages.headOption
   }
 

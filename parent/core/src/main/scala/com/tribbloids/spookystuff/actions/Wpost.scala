@@ -2,6 +2,7 @@ package com.tribbloids.spookystuff.actions
 
 import com.tribbloids.spookystuff.Const
 import com.tribbloids.spookystuff.caching.DocCacheLevel
+import com.tribbloids.spookystuff.doc.Observation.DocUID
 import com.tribbloids.spookystuff.doc._
 import com.tribbloids.spookystuff.extractors.impl.Lit
 import com.tribbloids.spookystuff.extractors.{Col, FR}
@@ -69,7 +70,7 @@ object Wpost {
       resolver
     }
 
-    override def doExeNoName(session: Session): Seq[DocOption] = {
+    override def doExeNoName(session: Session): Seq[Observation] = {
 
       val uri = this.uri.value
 

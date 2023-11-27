@@ -1,6 +1,6 @@
 package org.apache.spark.ml.dsl.utils.refl
 
-import com.tribbloids.spookystuff.utils.serialization.SerDeOverride
+import com.tribbloids.spookystuff.utils.serialization.SerializerOverride
 
 import scala.language.implicitConversions
 import scala.reflect.ClassTag
@@ -92,9 +92,9 @@ object TypeMagnet extends FromClassTagMixin {
       typeTag_ser
     }
 
-    lazy val typeTag_ser: SerDeOverride[TypeTag[T]] = {
+    lazy val typeTag_ser: SerializerOverride[TypeTag[T]] = {
 
-      SerDeOverride(__typeTag, SerDeOverride.Default.javaOverride)
+      SerializerOverride(__typeTag, SerializerOverride.Default.javaOverride)
     }
 
     def _typeTag: TypeTag[T] = typeTag_ser.value

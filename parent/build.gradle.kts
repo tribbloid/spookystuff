@@ -43,7 +43,6 @@ subprojects {
 
         testImplementation("com.vladsch.flexmark:flexmark:0.64.8")
 
-
         constraints {
 
             // TODO: some of the following may no longer be necessary

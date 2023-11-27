@@ -1,5 +1,6 @@
 package org.apache.spark.ml.dsl
 
+import ai.acyclic.prover.commons.debug.Debug.CallStackRef
 import com.tribbloids.spookystuff.relay.{MessageMLParam, Relay}
 import org.apache.spark.ml.dsl.utils.DSLUtils
 import com.tribbloids.spookystuff.relay.io.FallbackSerializer
@@ -39,7 +40,9 @@ trait DynamicParamsMixin extends Params with Dynamic {
   }
 
   protected def Param[T: ClassTag](
-      name: String = DSLUtils.Caller().fnName,
+      name: String = CallStackRef.here.pop { v =>
+        v.isArgDefault || v.isLazyCompute
+      }.fnName,
       doc: String = "Pending ...",
       default: T = null
   ): Param[T] = {
@@ -52,7 +55,9 @@ trait DynamicParamsMixin extends Params with Dynamic {
   }
 
   protected def GenericParam[T: Manifest](
-      name: String = DSLUtils.Caller().fnName,
+      name: String = CallStackRef.here.pop { v =>
+        v.isArgDefault || v.isLazyCompute
+      }.fnName,
       doc: String = "Pending ...",
       default: T = null
   ): Param[T] = {

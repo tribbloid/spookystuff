@@ -152,7 +152,7 @@ object GenExtractor extends GenExtractorImplicits {
 
 // a special expression that can be applied on:
 // 1. FetchedRow, yielding a datum with dataType to be used in .extract() and .explore()
-// 2. (To be implemented) Internal Row backing a SquashedFetchedRow, this makes extractor an expression itself and can be wrapped by COTS expressions.
+// 2. (To be implemented) Internal Row backing a SquashedRow, this makes extractor an expression itself and can be wrapped by COTS expressions.
 
 // a subclass wraps an expression and convert it into extractor, which converts all attribute reference children into data reference children and
 // (To be implemented) can be converted to an expression to be wrapped by other expressions
@@ -201,7 +201,7 @@ trait GenExtractor[T, +R] extends CatalystTypeOps.ImplicitMixin with Product wit
     }
   }
 
-  def withJoinFieldIfMissing: Alias[T, R] = withAliasIfMissing(Const.defaultJoinField)
+  def withForkFieldIfMissing: Alias[T, R] = withAliasIfMissing(Const.defaultForkField)
 
   // TODO: should merge into andMap
   def andEx[R2 >: R, A](g: GenExtractor[R2, A], meta: Option[Any] = None): GenExtractor[T, A] =

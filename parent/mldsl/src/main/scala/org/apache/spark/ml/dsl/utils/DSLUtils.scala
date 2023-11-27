@@ -74,36 +74,6 @@ object DSLUtils {
     effectiveElements
   }
 
-  // TODO: move to its own class
-  case class Caller(
-      depth: Int = 0,
-      exclude: Seq[Class[_]] = Nil
-  ) {
-
-    lazy val breakpointInfo: Array[StackTraceElement] = {
-      val bp = DSLUtils.getBreakpointInfo()
-      val filteredIndex = bp.toSeq.indexWhere(
-        { element =>
-          !exclude.exists { v =>
-            element.getClassName.startsWith(v.getCanonicalName)
-          }
-        },
-        depth
-      )
-      bp.slice(filteredIndex, Int.MaxValue)
-    }
-
-    def showStr: String = {
-      stackTracesShowStr(breakpointInfo)
-    }
-
-    def fnName: String = {
-      val bp = breakpointInfo.head
-      assert(!bp.isNativeMethod, "can only get fnName in def & lazy val blocks")
-      bp.getMethodName
-    }
-  }
-
   def liftCamelCase(str: String): String = str.head.toUpper.toString + str.substring(1)
   def toCamelCase(str: String): String = str.head.toLower.toString + str.substring(1)
 

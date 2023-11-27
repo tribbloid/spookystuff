@@ -1,5 +1,6 @@
 package com.tribbloids.spookystuff.extractors
 
+import com.tribbloids.spookystuff.doc.Observation.DocUID
 import com.tribbloids.spookystuff.doc._
 import com.tribbloids.spookystuff.extractors.GenExtractor.AndThen
 import com.tribbloids.spookystuff.extractors.impl.Extractors._

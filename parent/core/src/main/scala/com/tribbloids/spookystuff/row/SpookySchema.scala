@@ -31,11 +31,13 @@ case class SpookySchema(
     indexedFields.find(_._1.self == field)
   }
 
-  def filterFields(filter: Field => Boolean = _.isSelected): SpookySchema = {
+  def filterFields(filter: Field => Boolean): SpookySchema = {
     this.copy(
-      fieldTypes = ListMap(fieldTypes.filterKeys(filter).toSeq: _*)
+      fieldTypes = ListMap(fieldTypes.view.filterKeys(filter).toSeq: _*)
     )
   }
+
+//  lazy val evictTransientFields: SpookySchema = filterFields(_.isNonTransient)
 
   lazy val structFields: Seq[StructField] = fieldTypes.toSeq
     .map { tuple =>
@@ -64,7 +66,7 @@ case class SpookySchema(
 
     def build: SpookySchema = SpookySchema.this.copy(fieldTypes = ListMap(buffer.toSeq: _*))
 
-    private def resolveField(field: Field): Field = {
+    private def includeField(field: Field): Field = {
 
       val existingOpt = buffer.keys.find(_ == field)
       val crOpt = existingOpt.map { existing =>
@@ -80,7 +82,7 @@ case class SpookySchema(
 
     def includeTyped(typed: TypedField*): Seq[TypedField] = {
       typed.map { t =>
-        val resolvedField = resolveField(t.self)
+        val resolvedField = includeField(t.self)
         mergeType(resolvedField, t.dataType)
         val result = TypedField(resolvedField, t.dataType)
         buffer += result.self -> result.dataType
@@ -94,7 +96,7 @@ case class SpookySchema(
 
       val alias = ex match {
         case a: Alias[_, _] =>
-          val resolvedField = resolveField(a.field)
+          val resolvedField = includeField(a.field)
           ex withAlias resolvedField
         case _ =>
           val names = buffer.keys.toSeq.map(_.name)

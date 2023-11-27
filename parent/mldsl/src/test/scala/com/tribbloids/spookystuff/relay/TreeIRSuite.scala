@@ -1,8 +1,8 @@
 package com.tribbloids.spookystuff.relay
 
-import com.tribbloids.spookystuff.testutils.FunSpecx
+import com.tribbloids.spookystuff.testutils.BaseSpec
 
-class TreeIRSuite extends FunSpecx {
+class TreeIRSuite extends BaseSpec {
 
   import TreeIRSuite._
 

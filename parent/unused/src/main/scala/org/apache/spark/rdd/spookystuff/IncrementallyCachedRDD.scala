@@ -1,11 +1,13 @@
 package org.apache.spark.rdd.spookystuff
 
+import ai.acyclic.prover.commons.EqualBy
+import ai.acyclic.prover.commons.util.Caching
+import ai.acyclic.prover.commons.util.Caching.ConcurrentMap
 import com.tribbloids.spookystuff.unused.ExternalAppendOnlyArray
-import com.tribbloids.spookystuff.utils.Caching.ConcurrentMap
 import com.tribbloids.spookystuff.utils.accumulator.MapAccumulator
 import com.tribbloids.spookystuff.utils.lifespan.Cleanable.Lifespan
 import com.tribbloids.spookystuff.utils.lifespan.{Cleanable, LocalCleanable}
-import com.tribbloids.spookystuff.utils.{Caching, EqualBy, Retry, SCFunctions}
+import com.tribbloids.spookystuff.utils.{Retry, SparkContextView}
 import org.apache.spark
 import org.apache.spark.broadcast.Broadcast
 import org.apache.spark.internal.Logging
@@ -33,7 +35,6 @@ case class IncrementallyCachedRDD[T: ClassTag](
     with Logging {
 
   import IncrementallyCachedRDD._
-  import com.tribbloids.spookystuff.utils.SpookyViews._
 
   /**
     * mimicking DAGScheduler.cacheLocs, but using accumulator as I don't mess with BlockManager
@@ -77,7 +78,7 @@ case class IncrementallyCachedRDD[T: ClassTag](
 
       lazy val semaphore: Semaphore = new Semaphore(1) // cannot be shared by >1 threads
 
-      override protected lazy val _equalBy: Any = taskCtx.taskAttemptId()
+      override protected lazy val samenessDelegatedTo: Any = taskCtx.taskAttemptId()
 
       lazy val uncleanTask: UncleanTaskContext = UncleanTaskContext(taskCtx)
 
@@ -340,7 +341,7 @@ case class IncrementallyCachedRDD[T: ClassTag](
 //    val key = this.id -> split.index
 //    println(key.toString())
 
-    val cacheLocs = cacheLocAccum.value
+    val cacheLocs = cacheLocAccum.map
 
     val result = cacheLocs
       .getOrElse(
@@ -368,7 +369,7 @@ case class IncrementallyCachedRDD[T: ClassTag](
 
     logInfo(info)
 
-    val result = SCFunctions(sparkContext).withJob(info) {
+    val result = SparkContextView(sparkContext).withJob(info) {
 
       this
         .mapOncePerWorker { _ =>
@@ -387,8 +388,6 @@ case class IncrementallyCachedRDD[T: ClassTag](
 }
 
 object IncrementallyCachedRDD {
-
-  import com.tribbloids.spookystuff.utils.CommonViews._
 
   case class DepCache[T <: Cleanable](
       rddID: Int

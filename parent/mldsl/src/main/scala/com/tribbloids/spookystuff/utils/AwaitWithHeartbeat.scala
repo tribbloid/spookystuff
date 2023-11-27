@@ -1,7 +1,7 @@
 package com.tribbloids.spookystuff.utils
 
+import ai.acyclic.prover.commons.debug.Debug.CallStackRef
 import com.tribbloids.spookystuff.utils.AwaitWithHeartbeat.Heartbeat
-import org.apache.spark.ml.dsl.utils.DSLUtils
 import org.slf4j.LoggerFactory
 
 import java.util.concurrent.{ExecutorService, Executors}
@@ -63,9 +63,9 @@ case class AwaitWithHeartbeat(
 )(heartbeat: Heartbeat = Heartbeat.default) {
 
   protected lazy val _callerShowStr: String = {
-    val result = DSLUtils
-      .Caller(
-        exclude = Seq(classOf[CommonUtils], classOf[AwaitWithHeartbeat])
+    val result = CallStackRef
+      .below(
+        condition = _.isUnderClasses(classOf[CommonUtils], classOf[AwaitWithHeartbeat])
       )
       .showStr
     result

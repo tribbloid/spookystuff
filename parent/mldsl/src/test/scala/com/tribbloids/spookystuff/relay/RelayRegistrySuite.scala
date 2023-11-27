@@ -1,9 +1,9 @@
 package com.tribbloids.spookystuff.relay
 
-import com.tribbloids.spookystuff.testutils.FunSpecx
+import com.tribbloids.spookystuff.testutils.BaseSpec
 import com.tribbloids.spookystuff.relay.TestBeans._
 
-class RelayRegistrySuite extends FunSpecx {
+class RelayRegistrySuite extends BaseSpec {
 
   describe("lookup") {
 

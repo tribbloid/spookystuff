@@ -1,26 +1,118 @@
 package com.tribbloids.spookystuff.row
 
-import java.util.UUID
-import com.tribbloids.spookystuff.utils.{Interpolation, SpookyUtils, SpookyViews}
+import com.tribbloids.spookystuff.doc.Observation.DocUID
+import com.tribbloids.spookystuff.dsl.ForkType
 import com.tribbloids.spookystuff.relay.{ProtoAPI, TreeIR}
+import com.tribbloids.spookystuff.utils.{SpookyUtils, SpookyViews}
 
+import java.util.UUID
+import scala.collection.mutable
+import scala.collection.mutable.ArrayBuffer
+import scala.language.implicitConversions
 import scala.reflect.ClassTag
 
+object DataRow {
+
+  lazy val blank: DataRow.WithScope = DataRow().withEmptyScope
+
+  case class WithScope(
+      self: DataRow = blank,
+      scopeUIDs: Seq[DocUID] = Nil,
+      // a list of DocUIDs that can be found in associated Rollout, DocUID has very small serialized form
+      ordinal: Int = 0
+  ) {
+
+    // make sure no pages with identical name can appear in the same group.
+    lazy val splitByDistinctNames: Seq[WithScope] = {
+      val outerBuffer: ArrayBuffer[Seq[DocUID]] = ArrayBuffer()
+
+      object innerBuffer {
+        val refs: mutable.ArrayBuffer[DocUID] = ArrayBuffer()
+        val names: mutable.HashSet[String] = mutable.HashSet[String]()
+
+        def add(uid: DocUID): Unit = {
+          refs += uid
+          names += uid.name
+        }
+
+        def clear(): Unit = {
+          refs.clear()
+          names.clear()
+        }
+      }
+
+      scopeUIDs.foreach { uid =>
+        if (innerBuffer.names.contains(uid.name)) {
+          outerBuffer += innerBuffer.refs.toList
+          innerBuffer.clear()
+        }
+        innerBuffer.add(uid)
+      }
+      outerBuffer += innerBuffer.refs.toList // always left, have at least 1 member
+
+      outerBuffer.zipWithIndex.map {
+        case (v, i) =>
+          this.copy(scopeUIDs = v, ordinal = i)
+      }.toSeq
+    }
+  }
+  object WithScope {
+
+    implicit def unbox(v: WithScope): DataRow = v.self
+
+//    implicit def box(v: DataRow): WithScope = v.withEmptyScope
+  }
+
+//  case class WithLineageID( TODO: enable this as the only lineageID evidence for better type safety
+//      self: DataRow,
+//      lineageID: UUID
+//  )
+//  object WithLineageID {
+//    implicit def unbox(v: WithScope): DataRow = v.self
+//  }
+
+  trait Reducer extends Reducer.Fn with Serializable {
+
+    import Reducer._
+
+    def reduce(
+        v1: Rows,
+        v2: Rows
+    ): Rows
+
+    final override def apply(
+        old: Rows,
+        neo: Rows
+    ): Rows = reduce(old, neo)
+  }
+
+  object Reducer {
+
+    type Rows = Vector[DataRow]
+
+    type Fn = (Rows, Rows) => Rows
+  }
+}
+
 /**
-  * data container that is persisted through different stages of execution plan. has no schema information, user are
-  * required to refer to schema from driver and use the index number to access element. schema |x| field => index =>
-  * value
+  * contains all schematic data accumulated over graph traversal path, but contains no schema, ad-hoc local access
+  * requires combining with schema from Spark driver
+  *
+  * @param data
+  *   internal representation
+  *
+  * @param lineageID
+  *   only used in [[com.tribbloids.spookystuff.dsl.PathPlanning]], multiple [[DataRow]] with identical [[lineageID]]
+  *   are assumed to be scrapped from the same graph traversal path, and are preserved or removed in
+  *   [[com.tribbloids.spookystuff.dsl.PathPlanning]] as a unit
   */
-//TODO: change to wrap DataFrame Row/InternalRow?
-//TODO: also carry PageUID & property type (Vertex/Edge) for GraphX or GraphFrame
 @SerialVersionUID(6534469387269426194L)
 case class DataRow(
     data: Data = Data.empty,
-    groupID: Option[UUID] = None,
-    groupIndex: Int = 0, // set to 0...n for each page group after SquashedPageRow.semiUnsquash/unsquash
-    freeze: Boolean = false // if set to true PageRow.extract won't insert anything into it, used in merge/replace join
-) extends AbstractSpookyRow
-    with ProtoAPI {
+    lineageID: Option[UUID] = None
+) extends ProtoAPI {
+  // TODO: will become TypedRow that leverage extensible Record and frameless
+  // TODO: how to easily reconstruct vertices/edges for graphX/graphframe?
 
   {
     assert(data.isInstanceOf[Serializable]) // fail early
@@ -28,19 +120,12 @@ case class DataRow(
 
   import SpookyViews._
 
-  //  def copy(//TODO: remove, already in case class contract
-  //            data: Data = this.data,
-  //            groupID: Option[UUID] = this.groupID,
-  //            groupIndex: Int = this.groupIndex, //set to 0...n for each page group after SquashedPageRow.semiUnsquash/unsquash
-  //            freeze: Boolean = this.freeze //if set to true PageRow.extract won't insert anything into it, used in merge/replace join
-  //          ) = DataRow(data, groupID, groupIndex, freeze)
-
   def ++(m: Iterable[(Field, Any)]): DataRow = this.copy(data = data ++ m)
 
   def --(m: Iterable[Field]): DataRow = this.copy(data = data -- m)
 
   def nameToField(name: String): Option[Field] = {
-    Some(Field(name, isWeak = true))
+    Some(Field(name, isTransient = true))
       .filter(data.contains)
       .orElse {
         Some(Field(name)).filter(data.contains)
@@ -63,7 +148,7 @@ case class DataRow(
   def getInt(field: Field): Option[Int] = getTyped[Int](field)
 
   lazy val toMap: Map[String, Any] = data.view
-    .filterKeys(_.isSelected)
+    .filterKeys(_.isNonTransient)
     .map(identity)
     .map(tuple => tuple._1.name -> tuple._2)
     .toMap
@@ -73,24 +158,29 @@ case class DataRow(
     TreeIR.leaf(toMap)
   }
 
-  def sortIndex(fields: Seq[Field]): Seq[Option[Iterable[Int]]] = {
-    val result = fields.map(key => this.getIntIterable(key))
+  def sortIndex(fields: Field*): Seq[List[Int]] = {
+    val result = fields.map(key =>
+      this
+        .getIntArray(key)
+        .map(_.toList)
+        .getOrElse(List.empty)
+    )
     result
   }
 
   // retain old pageRow,
   // always left
   // TODO: add test to ensure that ordinalField is added BEFORE sampling
-  def flatten(
+  def explode(
       field: Field,
       ordinalField: Field,
-      left: Boolean,
+      forkType: ForkType,
       sampler: Sampler[Any]
   ): Seq[DataRow] = {
 
-    val newValues_Indices = data.flattenByKey(field, sampler)
+    val newValues_Indices = data.explode1Key(field, sampler)
 
-    if (left && newValues_Indices.isEmpty) {
+    if (forkType.isOuter && newValues_Indices.isEmpty) {
       Seq(this.copy(data = data - field)) // you don't lose the remainder of a row because an element is empty
     } else {
       val result: Seq[(DataRow, Int)] = newValues_Indices.map(tuple => this.copy(data = tuple._1.toMap) -> tuple._2)
@@ -115,11 +205,6 @@ case class DataRow(
     }
   }
 
-  //  def withoutWeak: DataRow = {
-  //    val tempFields = this.data.keys.filter(_.isWeak == true)
-  //    this -- tempFields
-  //  }
-
   // T cannot <: AnyVal otherwise will run into https://issues.scala-lang.org/browse/SI-6967
   // getIntIterable cannot use it for the same reason
   def getTypedArray[T <: Any: ClassTag](field: Field): Option[Array[T]] = {
@@ -142,25 +227,7 @@ case class DataRow(
   def getIterable(field: Field): Option[Iterable[Any]] = getTypedIterable[Any](field)
   def getIntIterable(field: Field): Option[Iterable[Int]] = getTypedIterable[Int](field)
 
-  // replace each '{key} in a string with their respective value in cells
-  def replaceInto(
-      str: String,
-      interpolation: Interpolation = Interpolation.`'`
-  ): Option[String] = {
+  def withEmptyScope: DataRow.WithScope = DataRow.WithScope(this)
 
-    try {
-      Option(
-        interpolation
-          .Compile(str) { key =>
-            val field = Field(key)
-            "" + this.get(field).get
-          }
-          .run()
-      )
-    } catch {
-      case _: NoSuchElementException => None
-    }
-  }
-
-  //  override def toString: String = data.toString()
+  def withLineageID: DataRow = this.copy(lineageID = Some(UUID.randomUUID()))
 }

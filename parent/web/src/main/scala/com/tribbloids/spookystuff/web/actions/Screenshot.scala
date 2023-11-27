@@ -2,6 +2,7 @@ package com.tribbloids.spookystuff.web.actions
 
 import com.tribbloids.spookystuff.Const
 import com.tribbloids.spookystuff.actions.{Export, Wayback}
+import com.tribbloids.spookystuff.doc.Observation.DocUID
 import com.tribbloids.spookystuff.doc._
 import com.tribbloids.spookystuff.dsl.DocFilterImpl
 import com.tribbloids.spookystuff.row.{FetchedRow, SpookySchema}
@@ -17,7 +18,7 @@ case class Screenshot(
 
   override def doExeNoName(session: Session): Seq[Doc] = {
 
-    val pageOpt = session.Drivers.get(Web).map { webDriver =>
+    val pageOpt = session.Drivers.getExisting(Web).map { webDriver =>
       val content = webDriver.self match {
         case ts: TakesScreenshot => ts.getScreenshotAs(OutputType.BYTES)
         case _                   => throw new UnsupportedOperationException("driver doesn't support screenshot")

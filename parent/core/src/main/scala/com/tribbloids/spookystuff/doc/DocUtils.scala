@@ -122,7 +122,7 @@ object DocUtils {
       dirPath: Path,
       earliestModificationTime: Long,
       latestModificationTime: Long
-  )(spooky: SpookyContext): Seq[DocOption] = {
+  )(spooky: SpookyContext): Seq[Observation] = {
 
     val latestStatus: Option[FileStatus] =
       dfsRead("get latest version", dirPath.toString, spooky) { _ =>
@@ -142,7 +142,7 @@ object DocUtils {
 
     latestStatus match {
       case Some(status) =>
-        val results = restore[DocOption](status.getPath.toString)(spooky)
+        val results = restore[Observation](status.getPath.toString)(spooky)
 
         if (results == null) {
           LoggerFactory.getLogger(this.getClass).warn("Cached content is corrputed:\n" + dirPath)

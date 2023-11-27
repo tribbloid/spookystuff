@@ -15,10 +15,10 @@ limitations under the License.
  */
 package com.tribbloids.spookystuff.conf
 
-import com.tribbloids.spookystuff.session.{DriverLike, DriverStatus, Session}
-import com.tribbloids.spookystuff.utils.Caching.ConcurrentMap
-import com.tribbloids.spookystuff.utils.lifespan.Cleanable.{BatchID, Lifespan}
+import ai.acyclic.prover.commons.util.Caching.ConcurrentMap
 import com.tribbloids.spookystuff.SpookyContext
+import com.tribbloids.spookystuff.session.{DriverLike, DriverStatus, Session}
+import com.tribbloids.spookystuff.utils.lifespan.Cleanable.{BatchID, Lifespan}
 import org.apache.spark.TaskContext
 
 //local to TaskID, if not exist, local to ThreadID

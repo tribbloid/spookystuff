@@ -10,22 +10,27 @@ import scala.collection.mutable.ArrayBuffer
 import scala.reflect.ClassTag
 import scala.util.Random
 
-case class MapPartitioner(
-    numPartitions: Int,
-    @transient key2PartitionID: Map[Any, Int]
-) extends Partitioner {
+object IndexingLocalityImpl {
 
-  val key2PartitionID_broadcast: BroadcastWrapper[Map[Any, Int]] = BroadcastWrapper(key2PartitionID)
+  case class MapPartitioner(
+      numPartitions: Int,
+      @transient key2PartitionID: Map[Any, Int]
+  ) extends Partitioner {
 
-  override def getPartition(key: Any): Int = {
-    key2PartitionID_broadcast.value.getOrElse(key, Random.nextInt(numPartitions))
+    val key2PartitionID_broadcast: BroadcastWrapper[Map[Any, Int]] = BroadcastWrapper(key2PartitionID)
+
+    override def getPartition(key: Any): Int = {
+      key2PartitionID_broadcast.value.getOrElse(key, Random.nextInt(numPartitions))
+    }
   }
 }
 
 case class IndexingLocalityImpl[K: ClassTag, V: ClassTag](
     override val rdd1: RDD[(K, V)],
     persistFn: RDD[_] => Unit = _.persist()
-) extends Locality_OrdinalityImpl[K, V] {
+) extends LocalityImpl.Ordinality[K, V] {
+
+  import IndexingLocalityImpl._
 
   val numPartitions1: Int = rdd1.partitions.length
 

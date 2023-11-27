@@ -151,8 +151,7 @@ case class ClasspathResolver(
 
     override def moveTo(target: String, force: Boolean): Unit = unsupported("write")
 
-    // TODO: generalise to all URIResolvers! Renamed to treeCopyTo
-    def treeExtractTo(targetRootExe: URIResolver#Execution, mode: WriteMode): Unit = io() { i =>
+    def treeCopyTo(targetRootExe: URIResolver#Execution, mode: WriteMode): Unit = io() { i =>
       val offspring = i.offspring
       offspring.foreach { v: ClasspathResolver#Execution =>
         val dst = CommonUtils.\\\(targetRootExe.absolutePathStr, v.absolutePathStr)
@@ -208,6 +207,7 @@ case class ClasspathResolver(
         def debugConfs(
             fileNames: Seq[String] = List(
               "log4j.properties",
+              "log4j2.properties",
               "rootkey.csv",
               ".rootkey.csv"
             )

@@ -11,7 +11,6 @@ import org.apache.spark.TaskContext
 
 import java.util.Date
 import scala.collection.mutable.ArrayBuffer
-import scala.reflect.ClassTag
 import scala.util.Try
 
 /**
@@ -39,30 +38,32 @@ class Session(
 
   lazy val progress: Progress = Progress()
 
-  object Drivers extends PluginRegistry.Factory {
+  type Sys = PluginSystem.HasDriver
 
-    type UB = PluginSystem.WithDriver
-    implicit override lazy val ubEv: ClassTag[UB] = ClassTag(classOf[UB])
+  object Drivers extends PluginRegistry.Factory[Sys] {
 
-    override type Out[V <: UB] = V#Driver
+    override type Out[V <: Sys] = V#Driver
 
-    override def compute[V <: UB](v: V): Out[V] = {
-      val plugin: V#Plugin = spooky.Plugins.apply(v)
+    override def init: Dependent = new Dependent {
 
-      progress.ping()
-      val result = plugin.driverFactory.dispatch(Session.this)
-      progress.ping()
+      override def apply[V <: Sys](v: V): Out[V] = {
+        val plugin: V#Plugin = spooky.Plugins.apply(v)
 
-      spooky.getMetric(Core).driverDispatched.add(plugin.driverFactory.toString -> 1L)
+        progress.ping()
+        val result = plugin.driverFactory.dispatch(Session.this)
+        progress.ping()
 
-      result
+        spooky.getMetric(Core).driverDispatched.add(plugin.driverFactory.toString -> 1L)
+
+        result
+      }
     }
 
     def releaseAll(): Unit = {
-      val plugins = spooky.Plugins.cache.values.toList
+      val plugins = spooky.Plugins.lookup.values.toList
 
       val wDrivers = plugins.collect {
-        case p: PluginSystem.WithDriver#Plugin =>
+        case p: PluginSystem.HasDriver#Plugin =>
           p
       }
 
@@ -70,14 +71,14 @@ class Session(
         Try {
           p.driverFactoryOpt.foreach { v =>
             v.release(Session.this)
-            cache -= p.pluginSystem
+            cached.lookup remove p.pluginSystem
 
             spooky.getMetric(Core).driverReleased.add(v.toString -> 1L)
           }
         }
       }
 
-      require(cache.isEmpty, "cache not empty")
+      require(cached.lookup.underlying.isEmpty, "cache not empty")
 
       TreeThrowable.&&&(trials)
     }
@@ -85,13 +86,13 @@ class Session(
     /**
       * all drivers will be terminated, not released (as in cleanImpl) currently useless
       */
-    def shutdownAll(): Unit = {
-
-      ???
-    }
+//    def shutdownAll(): Unit = {
+//
+//      ???
+//    }
   }
 
-  def driverOf[V <: Drivers.UB](v: V): V#Driver = Drivers.apply(v)
+  def driverOf[V <: Sys](v: V): V#Driver = Drivers.apply(v)
 
   override def cleanImpl(): Unit = {
     Drivers.releaseAll()

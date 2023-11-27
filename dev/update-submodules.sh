@@ -4,4 +4,4 @@
 git submodule sync && \
 git submodule foreach git fetch && \
 git submodule foreach git reset --hard && \
-git submodule update --init --recursive --force
+git submodule update --init --force

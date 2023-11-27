@@ -1,9 +1,9 @@
 package com.tribbloids.spookystuff.graph
 
 import com.tribbloids.spookystuff.graph.example.SimpleFlowGraph.DSL._
-import com.tribbloids.spookystuff.testutils.FunSpecx
+import com.tribbloids.spookystuff.testutils.BaseSpec
 
-class FlowLayoutSuite extends FunSpecx {
+class FlowLayoutSuite extends BaseSpec {
 
   import Implicits._
 

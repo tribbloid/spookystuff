@@ -10,7 +10,7 @@ import scala.language.implicitConversions
 trait BeforeAndAfterShipping extends Serializable {
 
   {
-    _container
+    _trigger
   }
 
   import BeforeAndAfterShipping._
@@ -19,10 +19,10 @@ trait BeforeAndAfterShipping extends Serializable {
 
   def afterArrival(): Unit = {}
 
-  @transient private lazy val _container: Container[this.type] = Container(this)
+  @transient private lazy val _trigger: Trigger[this.type] = Trigger(this)
 
-  type ForShipping = Container[this.type]
-  def forShipping: ForShipping = _container
+  type ForShipping = Trigger[this.type]
+  def forShipping: ForShipping = _trigger
 }
 
 object BeforeAndAfterShipping {
@@ -32,12 +32,13 @@ object BeforeAndAfterShipping {
 //    LoggerFactory.getLogger(this.getClass).debug(v: String)
   }
 
-  object Container {
+  object Trigger {
 
-    implicit def unbox[T <: BeforeAndAfterShipping](v: Container[T]): T = v.value
+    implicit def unbox[T <: BeforeAndAfterShipping](v: Trigger[T]): T = v.value
   }
 
-  case class Container[+T <: BeforeAndAfterShipping](
+  // TODO: merge into SerializerOverride as "Locker"
+  case class Trigger[+T <: BeforeAndAfterShipping](
       @transient private var _value: BeforeAndAfterShipping
   ) extends Serializable
       with KryoSerializable {

@@ -52,7 +52,7 @@ object TreeThrowable {
 
   def &&&[T](
       trials: Seq[Try[T]],
-      agg: Seq[Throwable] => Throwable = combine(_),
+      combine: Seq[Throwable] => Throwable = combine(_),
       extra: Seq[Throwable] = Nil
   ): Seq[T] = {
 
@@ -62,7 +62,7 @@ object TreeThrowable {
     if (es.isEmpty) {
       trials.map(_.get)
     } else {
-      val ee = agg(extra.flatMap(v => Option(v)) ++ es)
+      val ee = combine(extra.flatMap(v => Option(v)) ++ es)
       throw ee
     }
   }
