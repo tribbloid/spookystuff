@@ -3,6 +3,8 @@ val vs = versions()
 
 dependencies {
 
+    api(project(":prover-commons:core")) // TODO: incldue meta?
+
     api("org.scalameta:ascii-graphs_${vs.scala.binaryV}:0.1.2")
     api("io.github.classgraph:classgraph:4.8.165")
 

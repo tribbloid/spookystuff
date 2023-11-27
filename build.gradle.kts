@@ -22,7 +22,7 @@ idea {
             // apache spark
             "warehouse",
 
-            "parent/prover-commons",
+            "prover-commons",
         )
     }
 }

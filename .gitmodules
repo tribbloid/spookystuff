@@ -4,3 +4,6 @@
 [submodule "buildSrc"]
 	path = buildSrc
 	url = https://github.com/tribbloid/buildSrc
+[submodule "prover-commons"]
+	path = prover-commons
+	url = https://github.com/tribbloid/prover-commons
