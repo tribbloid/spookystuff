@@ -1,11 +1,10 @@
 package org.apache.spark.ml.dsl.utils
 
+import ai.acyclic.prover.commons.EqualBy
+
 import java.security.Key
-
-import javax.xml.bind.DatatypeConverter
-import com.tribbloids.spookystuff.utils.EqualBy
 import javax.crypto.spec.SecretKeySpec
-
+import javax.xml.bind.DatatypeConverter
 import scala.language.implicitConversions
 
 /**
@@ -17,7 +16,7 @@ abstract class EncodedBinaryMagnet[T <: EncodedBinaryMagnet[T]] extends Product 
 
   def asBytesOrEmpty: Array[Byte] = Option(asBytes).getOrElse(Array.empty)
 
-  @transient lazy val _equalBy: List[Byte] = asBytesOrEmpty.toList
+  @transient lazy val samenessDelegatedTo: List[Byte] = asBytesOrEmpty.toList
 
   def strEncoding: String
 

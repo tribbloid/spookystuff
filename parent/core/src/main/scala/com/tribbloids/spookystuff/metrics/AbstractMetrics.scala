@@ -20,7 +20,7 @@ abstract class AbstractMetrics extends MetricLike {
 
   @transient final lazy val symbol2children: List[(String, Any)] = _symbol2children
 
-  override def _equalBy: (String, List[(String, Any)]) = displayName -> symbol2children
+  override def samenessDelegatedTo: (String, List[(String, Any)]) = displayName -> symbol2children
 
   /**
     * slow, should not be used too often

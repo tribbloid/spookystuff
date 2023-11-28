@@ -8,7 +8,7 @@ import org.apache.spark.serializer.Serializer
 import scala.reflect.ClassTag
 import scala.util.Try
 
-case class AssertWeaklySerializable[T <: AnyRef: ClassTag](
+case class AssertWeaklySerializable[T <: Any: ClassTag](
     element: T,
     serializers: Seq[Serializer] = SerDeOverride.Default.allSerializers,
     condition: (T, T) => Any = { (_: T, _: T) =>

@@ -1,13 +1,13 @@
 package com.tribbloids.spookystuff.utils.serialization
 
-import java.io
-import java.nio.ByteBuffer
-import com.tribbloids.spookystuff.utils.EqualBy
+import ai.acyclic.prover.commons.EqualBy
 import org.apache.hadoop.io.Writable
 import org.apache.spark.serializer.{JavaSerializer, KryoSerializer, Serializer, SerializerInstance}
 import org.apache.spark.sql.catalyst.ScalaReflection.universe.TypeTag
 import org.apache.spark.{SerializableWritable, SparkConf}
 
+import java.io
+import java.nio.ByteBuffer
 import scala.language.implicitConversions
 import scala.reflect.ClassTag
 
@@ -90,5 +90,5 @@ case class SerDeOverride[T: ClassTag](
     }
   }
 
-  override def _equalBy: Any = value
+  override def samenessDelegatedTo: Any = value
 }

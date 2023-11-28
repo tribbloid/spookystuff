@@ -1,9 +1,9 @@
 package com.tribbloids.spookystuff.row
 
+import ai.acyclic.prover.commons.EqualBy
 import com.tribbloids.spookystuff.QueryException
-import com.tribbloids.spookystuff.row.Field.ConflictResolving
-import com.tribbloids.spookystuff.utils.EqualBy
 import com.tribbloids.spookystuff.relay.{ProtoAPI, TreeIR}
+import com.tribbloids.spookystuff.row.Field.ConflictResolving
 import org.apache.spark.sql.types.{DataType, Metadata, StructField}
 
 import scala.language.implicitConversions
@@ -50,7 +50,7 @@ case class Field(
 ) extends EqualBy
     with ProtoAPI {
 
-  lazy val _equalBy: List[Any] = List(
+  lazy val samenessDelegatedTo: List[Any] = List(
     name,
     isWeak,
 //    isTemporary,

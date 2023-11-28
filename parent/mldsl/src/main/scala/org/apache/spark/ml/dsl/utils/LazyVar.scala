@@ -1,6 +1,6 @@
 package org.apache.spark.ml.dsl.utils
 
-import com.tribbloids.spookystuff.utils.EqualBy
+import ai.acyclic.prover.commons.EqualBy
 
 import scala.language.implicitConversions
 
@@ -40,7 +40,7 @@ class LazyVar[T](
 
   def isCached: Boolean = cached.asOption.nonEmpty
 
-  override def _equalBy: Any = value
+  override def samenessDelegatedTo: Any = value
 
   override def toString: String = value.toString
 }

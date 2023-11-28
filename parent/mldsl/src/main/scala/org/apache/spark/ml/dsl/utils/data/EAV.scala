@@ -1,8 +1,9 @@
 package org.apache.spark.ml.dsl.utils.data
 
+import ai.acyclic.prover.commons.EqualBy
 import com.tribbloids.spookystuff.relay.RootTagged
 import com.tribbloids.spookystuff.relay.xml.Xml
-import com.tribbloids.spookystuff.utils.{CommonUtils, EqualBy, TreeThrowable}
+import com.tribbloids.spookystuff.utils.{CommonUtils, TreeThrowable}
 import org.apache.spark.ml.dsl.utils.{?, HasEagerInnerObjects, ObjectSimpleNameMixin}
 import org.apache.spark.sql.catalyst.util.CaseInsensitiveMap
 
@@ -39,7 +40,7 @@ trait EAV extends HasEagerInnerObjects with EqualBy with RootTagged with Seriali
   lazy val asMapOfString: MapView[String, String] = asMap.view.mapValues(v => "" + v)
 
   // TODO: change to declaredAttrs?
-  override def _equalBy: Any = asMap
+  override def samenessDelegatedTo: Any = asMap
 
   lazy val asProperties: Properties = {
     val properties = new Properties()

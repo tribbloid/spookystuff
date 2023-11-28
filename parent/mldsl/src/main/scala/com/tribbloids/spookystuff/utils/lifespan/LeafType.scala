@@ -7,6 +7,10 @@ abstract class LeafType extends LifespanType {
   protected def _batchID(ctx: LifespanContext): ID
   protected def _registerHook(ctx: LifespanContext, fn: () => Unit): Unit
 
+  trait IDMixin {
+    def outer = LeafType.this
+  }
+
   class Internal(
       val nameOpt: Option[String] = None,
       val ctxFactory: () => LifespanContext = () => LifespanContext()

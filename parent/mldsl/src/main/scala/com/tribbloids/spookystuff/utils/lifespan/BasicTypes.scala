@@ -1,7 +1,7 @@
 package com.tribbloids.spookystuff.utils.lifespan
 
+import com.tribbloids.spookystuff.utils.CommonUtils
 import com.tribbloids.spookystuff.utils.lifespan.Cleanable.{Batch, BatchID}
-import com.tribbloids.spookystuff.utils.{CommonUtils, EqualBy}
 
 import scala.util.Try
 
@@ -12,12 +12,10 @@ trait BasicTypes {
 
   case object Task extends LeafType {
 
-    case class ID(id: Long) extends EqualBy.Fields {
-      override def toString: String = s"Task-$id"
-    }
+    type ID = Long
 
     override protected def _batchID(ctx: LifespanContext): ID =
-      ID(ctx.task.taskAttemptId())
+      ctx.task.taskAttemptId()
 
     override protected def _registerHook(ctx: LifespanContext, fn: () => Unit): Unit = {
       ctx.task.addTaskCompletionListener[Unit] { _ =>
@@ -31,12 +29,10 @@ trait BasicTypes {
 
     val MAX_NUMBER_OF_SHUTDOWN_HOOKS: Int = CommonUtils.numLocalCores
 
-    case class ID(id: Int) extends EqualBy.Fields {
-      override def toString: String = s"JVM-$id"
-    }
+    type ID = Int
 
     override protected def _batchID(ctx: LifespanContext): ID =
-      ID((ctx.thread.getId % MAX_NUMBER_OF_SHUTDOWN_HOOKS).toInt)
+      (ctx.thread.getId % MAX_NUMBER_OF_SHUTDOWN_HOOKS).toInt
 
     override protected def _registerHook(ctx: LifespanContext, fn: () => Unit): Unit = {
       try {

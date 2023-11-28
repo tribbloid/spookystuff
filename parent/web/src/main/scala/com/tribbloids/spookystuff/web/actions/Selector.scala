@@ -1,7 +1,7 @@
 package com.tribbloids.spookystuff.web.actions
 
+import ai.acyclic.prover.commons.EqualBy
 import com.tribbloids.spookystuff.selenium.BySizzleSelector
-import com.tribbloids.spookystuff.utils.EqualBy
 import com.tribbloids.spookystuff.relay.{IR, Relay, TreeIR}
 import org.apache.spark.ml.dsl.utils.refl.ScalaUDT
 import org.apache.spark.sql.types.SQLUserDefinedType
@@ -64,5 +64,5 @@ case class Selector(factory: String => By, pattern: String) extends EqualBy {
 
   override def toString: String = by.toString
 
-  override lazy val _equalBy: By = by
+  override lazy val samenessDelegatedTo: By = by
 }

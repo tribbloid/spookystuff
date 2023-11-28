@@ -1,6 +1,5 @@
 package com.tribbloids.spookystuff.utils.lifespan
 
-import com.tribbloids.spookystuff.utils.EqualBy
 import com.tribbloids.spookystuff.utils.serialization.NOTSerializable
 import org.apache.spark.SparkContext
 import org.apache.spark.scheduler.{SparkListener, SparkListenerApplicationEnd}
@@ -16,9 +15,7 @@ trait SparkTypes {
       sparkContext
     }
 
-    case class ID(id: String) extends EqualBy.Fields {
-      override def toString: String = s"Spark.$productPrefix-$id"
-    }
+    type ID = String
   }
 
   case class SparkApp(
@@ -33,7 +30,7 @@ trait SparkTypes {
       }
     }
 
-    override protected def _batchID(ctx: LifespanContext): ID = ID(sparkContext.applicationId)
+    override protected def _batchID(ctx: LifespanContext): ID = sparkContext.applicationId
 
     override protected def _registerHook(ctx: LifespanContext, fn: () => Unit): Unit =
       sparkContext.addSparkListener(new Listener(fn))

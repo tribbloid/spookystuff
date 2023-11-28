@@ -1,11 +1,11 @@
 package com.tribbloids.spookystuff.actions
 
+import ai.acyclic.prover.commons.EqualBy
 import com.tribbloids.spookystuff.SpookyContext
 import com.tribbloids.spookystuff.caching.{DFSDocCache, InMemoryDocCache}
 import com.tribbloids.spookystuff.doc.{Doc, DocOption}
 import com.tribbloids.spookystuff.row.{FetchedRow, SpookySchema}
 import com.tribbloids.spookystuff.session.Session
-import com.tribbloids.spookystuff.utils.EqualBy
 
 import scala.collection.mutable.ArrayBuffer
 
@@ -31,7 +31,7 @@ case class TraceView(
 
   @transient override lazy val asTrace: Trace = children
 
-  val _equalBy: Any = keyBy(children)
+  val samenessDelegatedTo: Any = keyBy(children)
 
   override def toString: String = children.mkString("{ ", " -> ", " }")
 

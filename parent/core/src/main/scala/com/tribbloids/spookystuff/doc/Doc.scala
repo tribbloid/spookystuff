@@ -1,10 +1,11 @@
 package com.tribbloids.spookystuff.doc
 
+import ai.acyclic.prover.commons.EqualBy
 import com.tribbloids.spookystuff._
 import com.tribbloids.spookystuff.actions._
 import com.tribbloids.spookystuff.caching.DocCacheLevel
 import com.tribbloids.spookystuff.utils.io.ResourceMetadata
-import com.tribbloids.spookystuff.utils.{CommonUtils, EqualBy}
+import com.tribbloids.spookystuff.utils.CommonUtils
 import org.apache.commons.csv.CSVFormat
 import org.apache.hadoop.fs.Path
 import org.apache.hadoop.shaded.org.apache.http.StatusLine
@@ -133,7 +134,7 @@ case class Doc(
 
   import scala.jdk.CollectionConverters._
 
-  lazy val _equalBy: Any = (uid, uri, declaredContentType, timeMillis, httpStatus.toString)
+  lazy val samenessDelegatedTo: Any = (uid, uri, declaredContentType, timeMillis, httpStatus.toString)
 
   override def updated(
       uid: DocUID = this.uid,
