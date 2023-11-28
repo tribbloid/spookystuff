@@ -81,7 +81,7 @@ class ScalaUDTSuite extends SpookyBaseSpec with FunSpecx with CatalystTypeOps.Im
     val reified = getAndTestReifiedType[Fetched]
     reified.toString.shouldBe(
       """
-        |DocOptionUDT
+        |FetchedUDT
       """.stripMargin
     )
   }
