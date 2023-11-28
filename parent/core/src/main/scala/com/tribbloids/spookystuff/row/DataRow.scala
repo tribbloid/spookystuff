@@ -1,7 +1,7 @@
 package com.tribbloids.spookystuff.row
 
 import java.util.UUID
-import com.tribbloids.spookystuff.utils.{Interpolation, SpookyUtils, SpookyViews}
+import com.tribbloids.spookystuff.utils.{SpookyUtils, SpookyViews}
 import com.tribbloids.spookystuff.relay.{ProtoAPI, TreeIR}
 
 import scala.reflect.ClassTag
@@ -143,24 +143,24 @@ case class DataRow(
   def getIntIterable(field: Field): Option[Iterable[Int]] = getTypedIterable[Int](field)
 
   // replace each '{key} in a string with their respective value in cells
-  def replaceInto(
-      str: String,
-      interpolation: Interpolation = Interpolation.`'`
-  ): Option[String] = {
-
-    try {
-      Option(
-        interpolation
-          .Compile(str) { key =>
-            val field = Field(key)
-            "" + this.get(field).get
-          }
-          .run()
-      )
-    } catch {
-      case _: NoSuchElementException => None
-    }
-  }
+//  def replaceInto(
+//      str: String,
+//      interpolation: Interpolation = Interpolation.`'`
+//  ): Option[String] = {
+//
+//    try {
+//      Option(
+//        interpolation
+//          .Compile(str) { key =>
+//            val field = Field(key)
+//            "" + this.get(field).get
+//          }
+//          .run()
+//      )
+//    } catch {
+//      case _: NoSuchElementException => None
+//    }
+//  }
 
   //  override def toString: String = data.toString()
 }

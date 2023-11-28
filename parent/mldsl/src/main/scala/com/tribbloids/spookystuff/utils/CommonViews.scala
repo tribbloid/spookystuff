@@ -12,7 +12,6 @@ abstract class CommonViews {
 
     def :/(other: String): String = CommonUtils./:/(str, other)
     def \\(other: String): String = CommonUtils.\\\(str, other)
-
   }
 
   implicit class Function2PrivilegedAction[T](f: => T) extends PrivilegedAction[T] {
@@ -20,18 +19,6 @@ abstract class CommonViews {
       f
     }
   }
-
-//  implicit class GenIterableOnceView[A](self: GenIterableOnce[A])(
-//      implicit
-//      ctg: ClassTag[A]
-//  ) {
-//
-//    def longSize: Long = {
-//      var result = 0L
-//      for (x <- self) result += 1
-//      result
-//    }
-//  }
 
   implicit class MutableMapView[K, V](self: mutable.Map[K, V]) {
 

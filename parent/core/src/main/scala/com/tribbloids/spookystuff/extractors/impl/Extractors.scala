@@ -48,8 +48,4 @@ object Extractors {
       },
       Some(ChildrenMeta(arg, selector))
     )
-
-  def ReplaceKeyExpr(str: String): GenExtractor[FR, String] = GenExtractor.fromOptionFn { v1: FR =>
-    v1.dataRow.replaceInto(str)
-  }
 }

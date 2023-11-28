@@ -1,6 +1,4 @@
-package com.tribbloids.spookystuff.utils
-
-import com.tribbloids.spookystuff.utils.lifespan.LifespanContext
+package com.tribbloids.spookystuff.utils.lifespan
 
 case class ThreadLocal[A](init: LifespanContext => A) extends java.lang.ThreadLocal[A] {
 

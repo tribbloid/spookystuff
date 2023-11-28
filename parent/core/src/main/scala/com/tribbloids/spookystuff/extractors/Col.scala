@@ -1,7 +1,6 @@
 package com.tribbloids.spookystuff.extractors
 
-import com.tribbloids.spookystuff.Const
-import com.tribbloids.spookystuff.extractors.impl.{Extractors, Lit}
+import com.tribbloids.spookystuff.extractors.impl.Lit
 import com.tribbloids.spookystuff.relay.{ProtoAPI, RootTagged, TreeIR}
 import org.apache.spark.sql.catalyst.ScalaReflection.universe.TypeTag
 
@@ -21,14 +20,8 @@ object Col {
     val ex = v match {
       //      case str: String if ctg <:< ClassTag(classOf[String]) =>
       case str: String =>
-        val delimiter = Const.keyDelimiter
-        val regex = (delimiter + "\\{[^\\{\\}\r\n]*\\}").r
-
         val result =
-          if (regex.findFirstIn(str).isEmpty)
-            Lit[String](str)
-          else
-            Extractors.ReplaceKeyExpr(str)
+          Lit[String](str)
 
         result.asInstanceOf[Extractor[T]]
       case _ =>

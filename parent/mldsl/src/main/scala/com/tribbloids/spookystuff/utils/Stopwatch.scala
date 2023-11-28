@@ -1,5 +1,6 @@
 package com.tribbloids.spookystuff.utils
 
+import com.tribbloids.spookystuff.utils.lifespan.ThreadLocal
 import org.slf4j.LoggerFactory
 
 import scala.collection.mutable.ArrayBuffer

@@ -8,7 +8,7 @@ import org.scalatest.Ignore
   * Created by peng on 16/11/16.
   */
 @Ignore
-class CleanableSpike extends FunSpecx {
+class WaitBeforeAppExitSpike extends FunSpecx {
 
   it("wait for closing") {
     TestHelper.TestSC

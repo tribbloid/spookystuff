@@ -15,12 +15,10 @@ case class Interpolate(parts: Seq[String], _args: Seq[Extractor[Any]])
     val rs = _args.map(_.resolve(tt).lift)
 
     Unlift { row =>
-      val iParts = parts.map(row.dataRow.replaceInto(_))
-
       val vs = rs.map(_.apply(row))
       val result =
-        if (iParts.contains(None) || vs.contains(None)) None
-        else Some(iParts.zip(vs).map(tpl => tpl._1.get + tpl._2.get).mkString + iParts.last.get)
+        if (vs.contains(None)) None
+        else Some(parts.zip(vs).map(tpl => tpl._1 + tpl._2.get).mkString + parts.last)
 
       result
     }

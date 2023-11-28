@@ -22,15 +22,11 @@ class ActionSuite extends SpookyBaseSpec {
     import scala.concurrent.duration._
 
     val randomTimeout = Timeout(Random.nextInt().seconds)
-    val action = Wget(Const.keyDelimiter + "{~}").in(randomTimeout)
+    val action = Wget(x"${'A}").in(randomTimeout)
 
     val rewritten = action
-      .interpolate(FetchedRow(DataRow(data = ListMap(Field("~") -> "http://www.dummy.com")), Seq()), emptySchema)
+      .interpolate(FetchedRow(DataRow(data = ListMap(Field("A") -> "http://www.dummy.com")), Seq()), emptySchema)
       .get
-
-    //    val a = rewritten.uri.asInstanceOf[Literal[FR, String]].dataType.asInstanceOf[UnreifiedScalaType].ttg.tpe.normalize
-    //    val b = Literal("http://www.dummy.com").dataType.asInstanceOf[UnreifiedScalaType].ttg.tpe.normalize
-    //    val c = Literal(new Example()).dataType.asInstanceOf[UnreifiedScalaType].ttg.tpe.normalize
 
     assert(rewritten === Wget(Lit.erased("http://www.dummy.com")))
     assert(rewritten.timeout(null) === randomTimeout)
@@ -39,10 +35,10 @@ class ActionSuite extends SpookyBaseSpec {
 
   it("interpolate should not change name") {
 
-    val action = Wget("'{~}").as('dummy_name)
+    val action = Wget(x"${'A}").as('dummy_name)
 
     val rewritten = action
-      .interpolate(FetchedRow(DataRow(data = ListMap(Field("~") -> "http://www.dummy.com")), Seq()), emptySchema)
+      .interpolate(FetchedRow(DataRow(data = ListMap(Field("A") -> "http://www.dummy.com")), Seq()), emptySchema)
       .get
 
     assert(rewritten === Wget(Lit.erased("http://www.dummy.com")))

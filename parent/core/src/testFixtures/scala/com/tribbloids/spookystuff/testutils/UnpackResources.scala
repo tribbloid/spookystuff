@@ -25,7 +25,7 @@ case class UnpackResources(
   lazy val unpackOnce: Unit = {
     ClasspathResolver
       .execute(root)
-      .treeExtractTo(
+      .treeCopyTo(
         LocalResolver.execute(unpackedParent),
         WriteMode.Overwrite
       )
