@@ -1,7 +1,7 @@
 package com.tribbloids.spookystuff.utils
 
 import com.tribbloids.spookystuff.actions.Action
-import com.tribbloids.spookystuff.doc.{Doc, DocOption, Unstructured}
+import com.tribbloids.spookystuff.doc.{Doc, Fetched, Unstructured}
 import com.tribbloids.spookystuff.testutils.{FunSpecx, SpookyBaseSpec}
 import com.tribbloids.spookystuff.utils.serialization.AssertSerializable
 import org.apache.spark.ml.dsl.utils.refl.{CatalystTypeOps, TypeUtils, UnreifiedObjectType}
@@ -78,7 +78,7 @@ class ScalaUDTSuite extends SpookyBaseSpec with FunSpecx with CatalystTypeOps.Im
 
   it("DocOption has a datatype") {
 
-    val reified = getAndTestReifiedType[DocOption]
+    val reified = getAndTestReifiedType[Fetched]
     reified.toString.shouldBe(
       """
         |DocOptionUDT

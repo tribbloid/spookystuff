@@ -31,7 +31,7 @@ object FetchedRow {
   */
 case class FetchedRow(
     dataRow: DataRow = DataRow(),
-    fetched: Seq[DocOption] = Seq()
+    fetched: Seq[Fetched] = Seq()
 ) extends AbstractSpookyRow {
 
   // TODO: trace implementation is not accurate: the last backtrace has all previous exports removed

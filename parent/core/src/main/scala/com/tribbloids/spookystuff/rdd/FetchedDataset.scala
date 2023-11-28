@@ -2,7 +2,7 @@ package com.tribbloids.spookystuff.rdd
 
 import com.tribbloids.spookystuff.actions._
 import com.tribbloids.spookystuff.conf.SpookyConf
-import com.tribbloids.spookystuff.doc.{Doc, DocOption}
+import com.tribbloids.spookystuff.doc.{Doc, Fetched}
 import com.tribbloids.spookystuff.dsl._
 import com.tribbloids.spookystuff.execution.ExplorePlan.Params
 import com.tribbloids.spookystuff.execution._
@@ -83,7 +83,7 @@ case class FetchedDataset(
   def rdd: RDD[FR] = unsquashedRDD
   def unsquashedRDD: RDD[FetchedRow] = this.squashedRDD.flatMap(v => v.WSchema(schema).unsquash)
 
-  def docRDD: RDD[Seq[DocOption]] = {
+  def docRDD: RDD[Seq[Fetched]] = {
 
     squashedRDD.map { row =>
       row.WSchema(schema).withSpooky.getDoc

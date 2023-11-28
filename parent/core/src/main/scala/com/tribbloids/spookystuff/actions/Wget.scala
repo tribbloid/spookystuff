@@ -49,7 +49,7 @@ case class Wget(
     resolver
   }
 
-  override def doExeNoName(session: Session): Seq[DocOption] = {
+  override def doExeNoName(session: Session): Seq[Fetched] = {
 
     val resolver = getResolver(session)
     val _uri = uri.value

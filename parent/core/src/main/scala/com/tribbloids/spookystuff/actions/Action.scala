@@ -1,6 +1,6 @@
 package com.tribbloids.spookystuff.actions
 
-import com.tribbloids.spookystuff.doc.{Doc, DocOption}
+import com.tribbloids.spookystuff.doc.{Doc, Fetched}
 import com.tribbloids.spookystuff.session.Session
 import com.tribbloids.spookystuff.utils.CommonUtils
 import com.tribbloids.spookystuff.{ActionException, SpookyContext}
@@ -54,7 +54,7 @@ trait Action extends ActionLike with TraceAPI {
   }
 
   // this should handle autoSave, cache and errorDump
-  final override def apply(session: Session): Seq[DocOption] = {
+  final override def apply(session: Session): Seq[Fetched] = {
 
     val results =
       try {
@@ -120,15 +120,15 @@ trait Action extends ActionLike with TraceAPI {
     }
   }
 
-  final def exe(session: Session): Seq[DocOption] = {
+  final def exe(session: Session): Seq[Fetched] = {
     withTimeoutDuring(session) {
       doExe(session)
     }
   }
 
-  protected def doExe(session: Session): Seq[DocOption]
+  protected def doExe(session: Session): Seq[Fetched]
 
-  def andThen(f: Seq[DocOption] => Seq[DocOption]): Action = AndThen(this, f)
+  def andThen(f: Seq[Fetched] => Seq[Fetched]): Action = AndThen(this, f)
 
   override def injectFrom(same: ActionLike): Unit = {
     super.injectFrom(same)
@@ -160,7 +160,7 @@ trait Driverless extends Action {}
 
 trait ActionPlaceholder extends Action {
 
-  override protected def doExe(session: Session): Seq[DocOption] = {
+  override protected def doExe(session: Session): Seq[Fetched] = {
     throw new UnsupportedOperationException(s"${this.getClass.getSimpleName} is a placeholder")
   }
 }

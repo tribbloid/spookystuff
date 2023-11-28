@@ -2,7 +2,7 @@ package com.tribbloids.spookystuff.actions
 
 import com.tribbloids.spookystuff._
 import com.tribbloids.spookystuff.caching.DocCacheLevel
-import com.tribbloids.spookystuff.doc.{DocOption, NoDoc}
+import com.tribbloids.spookystuff.doc.{Fetched, NoDoc}
 import com.tribbloids.spookystuff.extractors.Extractor
 import com.tribbloids.spookystuff.extractors.impl.Lit
 import com.tribbloids.spookystuff.row.{FetchedRow, SpookySchema}
@@ -46,7 +46,7 @@ abstract class Block(override val children: Trace) extends Actions with Named wi
 
   def cacheEmptyOutput: DocCacheLevel.Value = DocCacheLevel.All
 
-  final override def doExe(session: Session): Seq[DocOption] = {
+  final override def doExe(session: Session): Seq[Fetched] = {
 
     val doc = this.doExeNoUID(session)
 
@@ -65,14 +65,14 @@ abstract class Block(override val children: Trace) extends Actions with Named wi
     }
     if (result.isEmpty && this.hasOutput) {
       Seq(NoDoc(backtrace, cacheLevel = this.cacheEmptyOutput))
-    } else if (result.count(_.isInstanceOf[DocOption]) == 0 && this.hasOutput) {
+    } else if (result.count(_.isInstanceOf[Fetched]) == 0 && this.hasOutput) {
       result.map(_.updated(cacheLevel = this.cacheEmptyOutput))
     } else {
       result
     }
   }
 
-  def doExeNoUID(session: Session): Seq[DocOption]
+  def doExeNoUID(session: Session): Seq[Fetched]
 }
 
 object ClusterRetry {
@@ -98,9 +98,9 @@ object ClusterRetry {
     override def skeleton: Option[ClusterRetryImpl.this.type] =
       Some(ClusterRetryImpl(this.childrenSkeleton)(retries, cacheEmptyOutput).asInstanceOf[this.type])
 
-    override def doExeNoUID(session: Session): Seq[DocOption] = {
+    override def doExeNoUID(session: Session): Seq[Fetched] = {
 
-      val pages = new ArrayBuffer[DocOption]()
+      val pages = new ArrayBuffer[Fetched]()
 
       try {
         for (action <- children) {
@@ -154,9 +154,9 @@ object LocalRetry {
     override def skeleton: Option[LocalRetryImpl.this.type] =
       Some(LocalRetryImpl(this.childrenSkeleton)(retries, cacheEmptyOutput).asInstanceOf[this.type])
 
-    override def doExeNoUID(session: Session): Seq[DocOption] = {
+    override def doExeNoUID(session: Session): Seq[Fetched] = {
 
-      val pages = new ArrayBuffer[DocOption]()
+      val pages = new ArrayBuffer[Fetched]()
 
       try {
         for (action <- children) {
@@ -165,7 +165,7 @@ object LocalRetry {
       } catch {
         case _: Exception =>
           CommonUtils.retry(retries) {
-            val retriedPages = new ArrayBuffer[DocOption]()
+            val retriedPages = new ArrayBuffer[Fetched]()
 
             for (action <- children) {
               retriedPages ++= action.exe(session)
@@ -206,9 +206,9 @@ final case class Loop(
   override def skeleton: Option[Loop.this.type] =
     Some(this.copy(children = this.childrenSkeleton).asInstanceOf[this.type])
 
-  override def doExeNoUID(session: Session): Seq[DocOption] = {
+  override def doExeNoUID(session: Session): Seq[Fetched] = {
 
-    val pages = new ArrayBuffer[DocOption]()
+    val pages = new ArrayBuffer[Fetched]()
 
     try {
       for (_ <- 0 until limit) {
@@ -267,7 +267,7 @@ case class OAuthV2(self: Wget) extends Block(List(self)) with Driverless {
       this.copy(self = v).asInstanceOf[this.type]
     }
 
-  override def doExeNoUID(session: Session): Seq[DocOption] = {
+  override def doExeNoUID(session: Session): Seq[Fetched] = {
     val effectiveWget = this.rewrite(session)
 
     effectiveWget
@@ -277,12 +277,12 @@ case class OAuthV2(self: Wget) extends Block(List(self)) with Driverless {
 
 final case class AndThen(
     self: Action,
-    f: Seq[DocOption] => Seq[DocOption]
+    f: Seq[Fetched] => Seq[Fetched]
 ) extends Block(List(self)) {
 
   override def skeleton: Option[AndThen.this.type] = Some(this)
 
-  override def doExeNoUID(session: Session): Seq[DocOption] = {
+  override def doExeNoUID(session: Session): Seq[Fetched] = {
     f(self.exe(session))
   }
 }

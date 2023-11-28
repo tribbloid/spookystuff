@@ -1,7 +1,7 @@
 package com.tribbloids.spookystuff.dsl
 
 import com.tribbloids.spookystuff.actions.Wget
-import com.tribbloids.spookystuff.doc.DocOption
+import com.tribbloids.spookystuff.doc.Fetched
 import com.tribbloids.spookystuff.extractors.Alias
 import com.tribbloids.spookystuff.rdd.FetchedDataset
 import com.tribbloids.spookystuff.row.{DataRow, FetchedRow, Field, SquashedFetchedRow}
@@ -12,7 +12,7 @@ import com.tribbloids.spookystuff.testutils.{LocalPathDocsFixture, SpookyBaseSpe
   */
 class TestDSL extends SpookyBaseSpec with LocalPathDocsFixture {
 
-  lazy val pages: Seq[DocOption] = (
+  lazy val pages: Seq[Fetched] = (
     Wget(HTML_URL) ~ 'page
   ).fetch(spooky)
 

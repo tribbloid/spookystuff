@@ -69,7 +69,7 @@ object Wpost {
       resolver
     }
 
-    override def doExeNoName(session: Session): Seq[DocOption] = {
+    override def doExeNoName(session: Session): Seq[Fetched] = {
 
       val uri = this.uri.value
 

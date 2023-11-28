@@ -3,7 +3,7 @@ package com.tribbloids.spookystuff.actions
 import ai.acyclic.prover.commons.EqualBy
 import com.tribbloids.spookystuff.SpookyContext
 import com.tribbloids.spookystuff.caching.{DFSDocCache, InMemoryDocCache}
-import com.tribbloids.spookystuff.doc.{Doc, DocOption}
+import com.tribbloids.spookystuff.doc.{Doc, Fetched}
 import com.tribbloids.spookystuff.row.{FetchedRow, SpookySchema}
 import com.tribbloids.spookystuff.session.Session
 
@@ -14,7 +14,7 @@ object TraceView {
   def withDocs(
       children: Trace = Nil,
       keyBy: Trace => Any = identity,
-      docs: Seq[DocOption] = Nil
+      docs: Seq[Fetched] = Nil
   ): TraceView = {
     val result = apply(children, keyBy)
     result.docs = docs
@@ -35,16 +35,16 @@ case class TraceView(
 
   override def toString: String = children.mkString("{ ", " -> ", " }")
 
-  @volatile @transient private var docs: Seq[DocOption] = _
+  @volatile @transient private var docs: Seq[Fetched] = _
   // override, cannot be shipped, lazy evaluated TODO: not volatile?
-  def docsOpt: Option[Seq[DocOption]] = Option(docs)
+  def docsOpt: Option[Seq[Fetched]] = Option(docs)
 
-  override def apply(session: Session): Seq[DocOption] = {
+  override def apply(session: Session): Seq[Fetched] = {
 
     _apply(session)
   }
 
-  protected[actions] def _apply(session: Session, lazyStream: Boolean = false): Seq[DocOption] = {
+  protected[actions] def _apply(session: Session, lazyStream: Boolean = false): Seq[Fetched] = {
 
     val _children: Seq[Action] =
       if (lazyStream) children.toStream
@@ -133,13 +133,13 @@ case class TraceView(
 
     // fetched may yield very large documents and should only be
     // loaded lazily and not shuffled or persisted (unless in-memory)
-    def getDoc: Seq[DocOption] = TraceView.this.synchronized {
+    def getDoc: Seq[Fetched] = TraceView.this.synchronized {
       docsOpt.getOrElse {
         fetch
       }
     }
 
-    def fetch: Seq[DocOption] = {
+    def fetch: Seq[Fetched] = {
       val docs = TraceView.this.fetch(spooky)
       docs
     }

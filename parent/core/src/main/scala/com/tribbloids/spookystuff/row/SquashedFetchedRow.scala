@@ -3,7 +3,7 @@ package com.tribbloids.spookystuff.row
 import java.util.UUID
 
 import com.tribbloids.spookystuff.actions.{Actions, Trace, TraceView}
-import com.tribbloids.spookystuff.doc.DocOption
+import com.tribbloids.spookystuff.doc.Fetched
 import com.tribbloids.spookystuff.extractors.Resolved
 
 import scala.collection.mutable.ArrayBuffer
@@ -16,7 +16,7 @@ object SquashedFetchedRow {
 
   def withDocs(
       dataRows: Array[DataRow] = Array(DataRow()),
-      docs: Seq[DocOption] = null
+      docs: Seq[Fetched] = null
   ): SquashedFetchedRow = SquashedFetchedRow(
     dataRows = dataRows,
     traceView = TraceView.withDocs(docs = docs)
@@ -60,15 +60,13 @@ case class SquashedFetchedRow(
 
     val withSpooky: traceView.WithSpooky = new SquashedFetchedRow.this.traceView.WithSpooky(schema.spooky)
 
-    @volatile var groupedDocsOverride: Option[Array[Seq[DocOption]]] = None
-
-    def groupedDocs: Array[Seq[DocOption]] = groupedDocsOverride.getOrElse(defaultGroupedFetched)
+    def groupedDocs: Array[Seq[Fetched]] = defaultGroupedFetched
 
     // by default, make sure no pages with identical name can appear in the same group.
     // TODO: need tests!
-    @transient lazy val defaultGroupedFetched: Array[Seq[DocOption]] = {
-      val grandBuffer: ArrayBuffer[Seq[DocOption]] = ArrayBuffer()
-      val buffer: ArrayBuffer[DocOption] = ArrayBuffer()
+    @transient lazy val defaultGroupedFetched: Array[Seq[Fetched]] = {
+      val grandBuffer: ArrayBuffer[Seq[Fetched]] = ArrayBuffer()
+      val buffer: ArrayBuffer[Fetched] = ArrayBuffer()
       withSpooky.getDoc.foreach { page =>
         if (buffer.exists(_.name == page.name)) {
           grandBuffer += buffer.toList
@@ -89,11 +87,11 @@ case class SquashedFetchedRow(
           groupID = Some(groupID),
           groupIndex = tuple._2
         )
-        FetchedRow(withGroupID, tuple._1: Seq[DocOption])
+        FetchedRow(withGroupID, tuple._1: Seq[Fetched])
       }
     }
 
-    // cartisian product
+    // Cartesian product
     def unsquash: Array[FetchedRow] = semiUnsquash.flatten
 
     /**

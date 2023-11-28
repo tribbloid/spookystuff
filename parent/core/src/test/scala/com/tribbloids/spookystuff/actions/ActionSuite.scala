@@ -1,6 +1,6 @@
 package com.tribbloids.spookystuff.actions
 
-import com.tribbloids.spookystuff.doc.DocOption
+import com.tribbloids.spookystuff.doc.Fetched
 import com.tribbloids.spookystuff.dsl._
 import com.tribbloids.spookystuff.extractors.impl.Lit
 import com.tribbloids.spookystuff.row.{DataRow, FetchedRow, Field}
@@ -103,7 +103,7 @@ object ActionSuite {
 
   case object OverdueExport extends Export with Timed.ThreadSafe {
 
-    override def doExeNoName(session: Session): Seq[DocOption] = {
+    override def doExeNoName(session: Session): Seq[Fetched] = {
       Thread.sleep(120 * 1000)
       Nil
     }
