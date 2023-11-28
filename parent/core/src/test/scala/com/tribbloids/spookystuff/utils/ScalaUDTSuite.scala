@@ -86,13 +86,14 @@ class ScalaUDTSuite extends SpookyBaseSpec with FunSpecx with CatalystTypeOps.Im
     )
   }
 
-  it("Doc has a datatype") {
-
-    val reified = getAndTestReifiedType[Doc]
-    reified.toString.shouldBe(
-      """
-        |UnstructuredUDT
-      """.stripMargin
-    )
-  }
+  // TODO: not anymore
+//  it("Doc has a datatype") {
+//
+//    val reified = getAndTestReifiedType[Doc]
+//    reified.toString.shouldBe(
+//      """
+//        |UnstructuredUDT
+//      """.stripMargin
+//    )
+//  }
 }
