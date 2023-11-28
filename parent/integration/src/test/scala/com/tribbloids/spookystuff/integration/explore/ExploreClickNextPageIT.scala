@@ -13,12 +13,11 @@ class ExploreClickNextPageIT extends ITBaseSpec {
 
   override def doMain(): Unit = {
 
-    val snapshotAllPages = (Snapshot()
-      +> Loop(
-        Click("ul.pagination a[rel=next]")
+    val snapshotAllPages = Snapshot() +> Loop(
+      Click("ul.pagination a[rel=next]")
 //          +> Delay(2.seconds)
-          +> Snapshot()
-      ))
+        +> Snapshot()
+    )
 
     val base = spooky
       .fetch(

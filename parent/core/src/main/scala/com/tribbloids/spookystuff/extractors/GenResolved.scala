@@ -1,7 +1,8 @@
 package com.tribbloids.spookystuff.extractors
 
 import com.tribbloids.spookystuff.extractors.GenExtractor.Static
-import com.tribbloids.spookystuff.row.{Field, TypedField};
+import com.tribbloids.spookystuff.row.Field.TypedField
+import com.tribbloids.spookystuff.row.Field
 
 case class GenResolved[T, +R](
     override val resolved: PartialFunction[T, R],

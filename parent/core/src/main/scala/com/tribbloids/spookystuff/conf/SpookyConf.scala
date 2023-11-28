@@ -48,7 +48,7 @@ case class SpookyConf(
     var remoteResourceTimeout: Timeout = Timeout(60.seconds),
     var DFSTimeout: Timeout = Timeout(40.seconds),
     var failOnDFSRead: Boolean = false,
-    var defaultFlattenSampler: Sampler[Any] = identity,
+    var defaultExplodeSampler: Sampler[Any] = identity,
     var defaultForkSampler: Sampler[Any] = identity, // join takes remote actions and cost much more than flatten.
     var defaultExploreRange: Range = 0 until Int.MaxValue,
     var defaultGenPartitioner: GenPartitioner = GenPartitioners.Wide(),

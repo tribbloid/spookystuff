@@ -1,7 +1,7 @@
 package com.tribbloids.spookystuff.extractors
 
-import com.tribbloids.spookystuff.Const
 import com.tribbloids.spookystuff.row.Field
+import com.tribbloids.spookystuff.row.Field.Temp
 import com.tribbloids.spookystuff.tree.TreeView
 import com.tribbloids.spookystuff.utils.SpookyUtils
 import org.apache.spark.ml.dsl.utils.refl.{CatalystTypeOps, TypeMagnet, UnreifiedObjectType}
@@ -201,7 +201,7 @@ trait GenExtractor[T, +R] extends CatalystTypeOps.ImplicitMixin with Product wit
     }
   }
 
-  def withJoinFieldIfMissing: Alias[T, R] = withAliasIfMissing(Const.defaultJoinField)
+  def withTempAliasIfMissing: Alias[T, R] = withAliasIfMissing(Temp)
 
   // TODO: should merge into andMap
   def andEx[R2 >: R, A](g: GenExtractor[R2, A], meta: Option[Any] = None): GenExtractor[T, A] =

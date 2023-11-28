@@ -18,15 +18,18 @@ import scala.reflect.ClassTag
 @SerialVersionUID(6534469387269426194L)
 case class DataRow(
     data: Data = Data.empty,
-    groupID: Option[UUID] = None
-) extends AbstractSpookyRow
-    with ProtoAPI {
+    fastID: Option[UUID] = None
+    // 1 row may be replicated in semiUnsquash and scattered, but if 2 rows has identical tempID they are clearly identical.
+    // this field is used to quickly identify identical rows
+) extends ProtoAPI {
 
   {
     assert(data.isInstanceOf[Serializable]) // fail early
   }
 
   import SpookyViews._
+
+//  def withFastID: DataRow = this.copy(fastID = Some(UUID.randomUUID()))
 
   def ++(m: Iterable[(Field, Any)]): DataRow = this.copy(data = data ++ m)
 
@@ -74,7 +77,7 @@ case class DataRow(
   // retain old pageRow,
   // always left
   // TODO: add test to ensure that ordinalField is added BEFORE sampling
-  def flatten(
+  def explode(
       field: Field,
       ordinalField: Field,
       forkType: ForkType,
@@ -83,7 +86,7 @@ case class DataRow(
 
     val newValues_Indices = data.flattenByKey(field, sampler)
 
-    if (forkType.isLeft && newValues_Indices.isEmpty) {
+    if (forkType.isOuter && newValues_Indices.isEmpty) {
       Seq(this.copy(data = data - field)) // you don't lose the remainder of a row because an element is empty
     } else {
       val result: Seq[(DataRow, Int)] = newValues_Indices.map(tuple => this.copy(data = tuple._1.toMap) -> tuple._2)

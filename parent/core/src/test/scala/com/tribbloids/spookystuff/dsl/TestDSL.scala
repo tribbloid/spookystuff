@@ -22,7 +22,7 @@ class TestDSL extends SpookyBaseSpec with LocalPathDocsFixture {
       S"title".head.text withAlias 'abc,
       S"title".head withAlias 'def
     )
-    .unsquash
+    .unSquash
     .head
 
   it("symbol as Expr") {
@@ -55,7 +55,7 @@ class TestDSL extends SpookyBaseSpec with LocalPathDocsFixture {
     val row = SquashedFetchedRow
       .withDocs(Array(DataRow()), docs = pages)
       .extract(S"""a[href*="wikipedia"]""".href withAlias 'uri)
-      .unsquash
+      .unSquash
       .head
 
     assert(row.dataRow.get(Field("uri")).nonEmpty)

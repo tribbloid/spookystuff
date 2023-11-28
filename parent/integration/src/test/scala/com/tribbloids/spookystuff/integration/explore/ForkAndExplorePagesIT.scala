@@ -8,7 +8,7 @@ import com.tribbloids.spookystuff.integration.ITBaseSpec
 /**
   * Created by peng on 12/10/14.
   */
-class JoinAndExplorePagesIT extends ITBaseSpec {
+class ForkAndExplorePagesIT extends ITBaseSpec {
 
   override lazy val driverFactories: Seq[Null] = Seq(
     null
@@ -20,13 +20,15 @@ class JoinAndExplorePagesIT extends ITBaseSpec {
       .fetch(
         Wget("http://localhost:10092/test-sites/e-commerce/static")
       )
-      .join(S"div.sidebar-nav a", Outer, ordinalField = 'i1)(
+      .fork(S"div.sidebar-nav a", Outer, ordinalField = 'i1)
+      .fetch(
         Wget('A.href)
       )
       .extract(
         'A.text ~ 'category
       )
-      .join(S"a.subcategory-link", Outer, ordinalField = 'i2)(
+      .fork(S"a.subcategory-link", Outer, ordinalField = 'i2)
+      .fetch(
         Wget('A.href)
       )
       .extract(

@@ -1,4 +1,4 @@
-package com.tribbloids.spookystuff.integration.select
+package com.tribbloids.spookystuff.integration.extract
 
 import com.tribbloids.spookystuff.actions._
 import com.tribbloids.spookystuff.dsl._
@@ -7,7 +7,7 @@ import com.tribbloids.spookystuff.integration.ITBaseSpec
 /**
   * Created by peng on 11/26/14.
   */
-class ChainedFlatSelectIT extends ITBaseSpec {
+class ChainedForkExtractIT extends ITBaseSpec {
 
   override lazy val driverFactories = Seq(
     null
@@ -19,20 +19,26 @@ class ChainedFlatSelectIT extends ITBaseSpec {
       .fetch(
         Wget("http://localhost:10092/test-sites/e-commerce/allinone") // this site is unstable, need to revise
       )
-      .flatExtract(S"div.thumbnail", ordinalField = 'i1)(
+      .fork(S"div.thumbnail", ordinalField = 'i1)
+      .extract(
         A"p".attr("class") ~ 'p_class
       )
+//    assert(r1.toDF().count() == 3)
 
     val r2 = r1
-      .flatExtract(A"h4", ordinalField = 'i2)(
+      .fork(A"h4", ordinalField = 'i2)
+      .extract(
         'A.attr("class") ~ 'h4_class
       )
+//    assert(r2.toDF().count() == 6)
 
     val result = r2
-      .flatExtract(
+      .fork(
         S"notexist",
+        forkType = ForkType.Outer,
         ordinalField = 'notexist_key
-      )( // this is added to ensure that temporary joinKey in KV store won't be used.
+      )
+      .extract( // this is added to ensure that temporary joinKey in KV store won't be used.
         'A.attr("class") ~ 'notexist_class
       )
       .toDF(sort = true)

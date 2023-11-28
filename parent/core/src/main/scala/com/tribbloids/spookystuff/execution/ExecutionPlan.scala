@@ -99,7 +99,7 @@ abstract class ExecutionPlan(
 
   def unsquashedRDD: RDD[FetchedRow] =
     rdd()
-      .flatMap(v => v.WSchema(schema).unsquash)
+      .flatMap(v => v.WSchema(schema).unSquash)
 
   def persist[T](
       rdd: RDD[T],

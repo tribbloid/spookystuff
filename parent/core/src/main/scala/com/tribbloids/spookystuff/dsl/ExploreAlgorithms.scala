@@ -5,6 +5,8 @@ import com.tribbloids.spookystuff.execution.ExplorePlan.Params
 import com.tribbloids.spookystuff.execution.NodeKey
 import com.tribbloids.spookystuff.row._
 
+import java.util.UUID
+
 object ExploreAlgorithms {
 
   import ExploreAlgorithm._
@@ -25,16 +27,25 @@ object ExploreAlgorithms {
 
       import scala.Ordering.Implicits._
 
-      override val openReducer: RowReducer = { (v1, v2) =>
-        (v1 ++ v2)
-          .groupBy(_.groupID)
-          .values
-          .minBy(_.head.sortIndex(Seq(depthField, ordinalField)))
+      override lazy val openReducer: RowReducer = { (v1, v2) =>
+        val grouped: Map[Option[UUID], Iterable[DataRow]] = (v1 ++ v2)
+          .groupBy(_.fastID)
+
+        val result = if (grouped.isEmpty) {
+          Nil
+        } else {
+
+          // rows that are discovered with deeper recursions are dropped
+          grouped.values
+            .minBy(v => v.head.sortIndex(Seq(depthField, ordinalField)))
+        }
+
+        result
       }
 
-      override val visitedReducer: RowReducer = openReducer
+      override lazy val visitedReducer: RowReducer = openReducer
 
-      override val ordering: RowOrdering = Ordering.by { tuple: (NodeKey, Iterable[DataRow]) =>
+      override lazy val ordering: RowOrdering = Ordering.by { tuple: (NodeKey, Iterable[DataRow]) =>
         val inProgress = ExploreRunnerCache
           .getOnGoingRunners(params.executionID)
           .flatMap(_.fetchingInProgressOpt)

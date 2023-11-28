@@ -10,7 +10,7 @@ import org.apache.spark.HashPartitioner
 /**
   * Created by peng on 02/04/16.
   */
-class TestFetchPlan extends SpookyBaseSpec with LocalPathDocsFixture {
+class FetchPlanSpec extends SpookyBaseSpec with LocalPathDocsFixture {
 
   import dsl._
 

@@ -32,7 +32,7 @@ class FetchedRowViewSuite extends SpookyBaseSpec with LocalPathDocsFixture {
         S("h1.central-textlogo img").head withAlias 'e1,
         'pp.findAll("label") withAlias 'lang
       )
-      .unsquash
+      .unSquash
       .head
 
     val page2 = row.getUnstructured('pp)

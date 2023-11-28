@@ -9,14 +9,14 @@ import org.apache.spark.sql.types._
 /**
   * Created by peng on 7/3/17.
   */
-case class Get(field: Field) extends Leaf[FR, Any] {
+case class Get(src: Field) extends Leaf[FR, Any] {
 
   override def resolveType(tt: DataType): DataType = tt match {
     case schema: SpookySchema =>
       schema
-        .typedFor(field)
+        .typedFor(src)
         .orElse {
-          schema.typedFor(field.*)
+          schema.typedFor(src.*)
         }
         .map(_.dataType)
         .getOrElse(NullType)
@@ -24,7 +24,7 @@ case class Get(field: Field) extends Leaf[FR, Any] {
       throw new UnsupportedOperationException("Can only resolve type against SchemaContext")
   }
 
-  override def resolve(tt: DataType): PartialFunction[FR, Any] = Unlift(v => v.dataRow.orWeak(field))
+  override def resolve(tt: DataType): PartialFunction[FR, Any] = Unlift(v => v.dataRow.orWeak(src))
 
   def GetSeq: GenExtractor[FR, Seq[Any]] = this.andOptionTyped[Any, Seq[Any]](
     {

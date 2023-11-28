@@ -17,7 +17,7 @@ object TraceView {
       docs: Seq[Fetched] = Nil
   ): TraceView = {
     val result = apply(children, keyBy)
-    result.docs = docs
+    result._existing = docs
     result
   }
 }
@@ -35,19 +35,19 @@ case class TraceView(
 
   override def toString: String = children.mkString("{ ", " -> ", " }")
 
-  @volatile @transient private var docs: Seq[Fetched] = _
+  @volatile @transient private var _existing: Seq[Fetched] = _
   // override, cannot be shipped, lazy evaluated TODO: not volatile?
-  def docsOpt: Option[Seq[Fetched]] = Option(docs)
+  def existing: Option[Seq[Fetched]] = Option(_existing)
 
   override def apply(session: Session): Seq[Fetched] = {
 
     _apply(session)
   }
 
-  protected[actions] def _apply(session: Session, lazyStream: Boolean = false): Seq[Fetched] = {
+  protected[actions] def _apply(session: Session, useLazy: Boolean = false): Seq[Fetched] = {
 
     val _children: Seq[Action] =
-      if (lazyStream) children.toStream
+      if (useLazy) children.to(LazyList)
       // this is a good pattern as long as anticipated result doesn't grow too long
       else children
 
@@ -75,7 +75,7 @@ case class TraceView(
       }
     }
 
-    this.docs = results
+    this._existing = results
 
     results
   }
@@ -134,8 +134,8 @@ case class TraceView(
 
     // fetched may yield very large documents and should only be
     // loaded lazily and not shuffled or persisted (unless in-memory)
-    def getDoc: Seq[Fetched] = TraceView.this.synchronized {
-      docsOpt.getOrElse {
+    def fetched: Seq[Fetched] = TraceView.this.synchronized {
+      existing.getOrElse {
         fetch
       }
     }

@@ -1,5 +1,7 @@
 package com.tribbloids.spookystuff.execution
 
+import java.util.UUID
+
 import com.tribbloids.spookystuff.actions.{Trace, TraceView}
 import com.tribbloids.spookystuff.caching.ExploreRunnerCache
 import com.tribbloids.spookystuff.dsl.{ExploreAlgorithm, ForkType, GenPartitioner}
@@ -7,6 +9,7 @@ import com.tribbloids.spookystuff.execution.ExplorePlan.{Open_Visited, Params}
 import com.tribbloids.spookystuff.execution.MapPlan.RowMapperFactory
 import com.tribbloids.spookystuff.extractors._
 import com.tribbloids.spookystuff.extractors.impl.{Get, Lit}
+import com.tribbloids.spookystuff.row.Field.TypedField
 import com.tribbloids.spookystuff.row._
 import org.apache.spark.rdd.RDD
 import org.apache.spark.sql.types.{ArrayType, IntegerType}
@@ -42,7 +45,7 @@ case class ExplorePlan(
     keyBy: Trace => Any,
     genPartitioner: GenPartitioner,
     params: Params,
-    exploreAlgorithm: ExploreAlgorithm,
+    algorithm: ExploreAlgorithm,
     epochSize: Int,
     // TODO: stopping condition can be more than this,
     // TODO: test if proceed to next epoch works
@@ -107,7 +110,7 @@ case class ExplorePlan(
 
   def allRowMappers: List[MapPlan.RowMapper] = _rowMappers
 
-  val impl: ExploreAlgorithm.Impl = exploreAlgorithm.getImpl(_effectiveParams, this.schema)
+  val impl: ExploreAlgorithm.Impl = algorithm.getImpl(_effectiveParams, this.schema)
 
   override def doExecute(): SquashedFetchedRDD = {
     assert(_effectiveParams.depthField != null)
@@ -135,7 +138,7 @@ case class ExplorePlan(
 
         val open0 = depth0
           .extract(_on)
-          .flattenData(_on.field, _effectiveParams.ordinalField, forkType, sampler)
+          .explodeData(_on.field, _effectiveParams.ordinalField, forkType, sampler)
           .interpolateAndRewriteLocally(traces)
           .map { t =>
             t._1 -> Open_Visited(open = Some(Array(t._2)))

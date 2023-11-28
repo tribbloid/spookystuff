@@ -5,6 +5,7 @@ import com.tribbloids.spookystuff.dsl.ForkType
 import com.tribbloids.spookystuff.execution.MapPlan.RowMapperFactory
 import com.tribbloids.spookystuff.extractors.impl.Get
 import com.tribbloids.spookystuff.extractors.{Extractor, Resolved}
+import com.tribbloids.spookystuff.row.Field.TypedField
 import com.tribbloids.spookystuff.row._
 import org.apache.spark.ml.dsl.utils.refl.CatalystTypeOps
 import org.apache.spark.sql.types.{ArrayType, IntegerType}
@@ -74,7 +75,7 @@ object MapPlan extends CatalystTypeOps.ImplicitMixin {
     }
   }
 
-  case class Flatten(
+  case class Explode(
       onField: Field,
       ordinalField: Field,
       sampler: Sampler[Any],
@@ -103,7 +104,7 @@ object MapPlan extends CatalystTypeOps.ImplicitMixin {
     override val schema: SpookySchema = resolver.build
 
     override def apply(v: SquashedFetchedRow): SquashedFetchedRow =
-      v.flattenData(onField, effectiveOrdinalField, forkType, sampler)
+      v.explodeData(onField, effectiveOrdinalField, forkType, sampler)
   }
 
   case class Remove(
@@ -135,7 +136,7 @@ object MapPlan extends CatalystTypeOps.ImplicitMixin {
     override def apply(v: SquashedFetchedRow): SquashedFetchedRow = {
       val wSchema = v.WSchema(schema)
 
-      wSchema.unsquash
+      wSchema.unSquash
         .foreach { pageRow =>
           var pathStr: Option[String] = _path.lift(pageRow).map(_.toString).map { str =>
             val splitted = str.split(":")

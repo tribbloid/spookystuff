@@ -27,7 +27,7 @@ object ExploreAlgorithm {
 
     def openReducerBetweenEpochs: RowReducer = openReducer
 
-    def nextOpenSelector(
+    def selectNext(
         open: ConcurrentMap[NodeKey, Iterable[DataRow]]
     ): (NodeKey, Iterable[DataRow])
 
@@ -51,7 +51,7 @@ object ExploreAlgorithm {
         visited: Iterable[DataRow]
     ): Iterable[DataRow]
 
-    final override def nextOpenSelector(
+    final override def selectNext(
         open: ConcurrentMap[NodeKey, Iterable[DataRow]]
     ): (NodeKey, Iterable[DataRow]) = {
 

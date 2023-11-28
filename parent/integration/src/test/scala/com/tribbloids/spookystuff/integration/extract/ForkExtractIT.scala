@@ -1,4 +1,4 @@
-package com.tribbloids.spookystuff.integration.select
+package com.tribbloids.spookystuff.integration.extract
 
 import com.tribbloids.spookystuff.actions._
 import com.tribbloids.spookystuff.dsl._
@@ -7,7 +7,7 @@ import com.tribbloids.spookystuff.integration.ITBaseSpec
 /**
   * Created by peng on 11/26/14.
   */
-class FlatSelectIT extends ITBaseSpec {
+class ForkExtractIT extends ITBaseSpec {
 
   override lazy val driverFactories = Seq(
     null
@@ -19,7 +19,8 @@ class FlatSelectIT extends ITBaseSpec {
       .fetch(
         Wget(HTML_URL)
       )
-      .flatExtract(S"div.central-featured-lang")(
+      .fork(S"div.central-featured-lang")
+      .extract(
         'A.attr("lang"),
         A"a".href,
         A"a em".text,

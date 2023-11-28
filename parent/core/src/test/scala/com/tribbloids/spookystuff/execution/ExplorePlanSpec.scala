@@ -9,7 +9,7 @@ import org.apache.spark.HashPartitioner
 /**
   * Created by peng on 05/04/16.
   */
-class TestExplorePlan extends SpookyBaseSpec with LocalPathDocsFixture {
+class ExplorePlanSpec extends SpookyBaseSpec with LocalPathDocsFixture {
 
   import dsl._
 
@@ -85,7 +85,8 @@ class TestExplorePlan extends SpookyBaseSpec with LocalPathDocsFixture {
       .explore(S"root directory URI".text)(
         Wget('A)
       )()
-      .flatExtract(S"root file")(
+      .fork(S"root file")
+      .extract(
         A"name".text ~ 'leaf,
         A"URI".text ~ 'fullPath
       )
@@ -137,7 +138,7 @@ class TestExplorePlan extends SpookyBaseSpec with LocalPathDocsFixture {
       val ds = first
         .explore(S"root directory URI".text)(
           Wget('A),
-          keyBy = TestExplorePlan.CustomKeyBy
+          keyBy = ExplorePlanSpec.CustomKeyBy
         )()
         .persist()
 
@@ -148,13 +149,13 @@ class TestExplorePlan extends SpookyBaseSpec with LocalPathDocsFixture {
       assert(ds.spooky.spookyMetrics.pagesFetched.value <= 3) // TODO: this can be reduced further
 
       ds.squashedRDD.foreach { squashedRow =>
-        Predef.assert(squashedRow.traceView.keyBy == TestExplorePlan.CustomKeyBy)
+        Predef.assert(squashedRow.traceView.keyBy == ExplorePlanSpec.CustomKeyBy)
       }
     }
   }
 }
 
-object TestExplorePlan {
+object ExplorePlanSpec {
 
   object CustomKeyBy extends (Trace => Any) with Serializable {
 

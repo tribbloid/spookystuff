@@ -8,6 +8,7 @@ import com.tribbloids.spookystuff.execution.ExplorePlan.Params
 import com.tribbloids.spookystuff.execution._
 import com.tribbloids.spookystuff.extractors._
 import com.tribbloids.spookystuff.extractors.impl.Get
+import com.tribbloids.spookystuff.row.Field.Temp
 import com.tribbloids.spookystuff.row._
 import com.tribbloids.spookystuff.utils.SpookyViews
 import com.tribbloids.spookystuff.{Const, SpookyContext}
@@ -81,12 +82,12 @@ case class FetchedDataset(
   }
 
   def rdd: RDD[FR] = unsquashedRDD
-  def unsquashedRDD: RDD[FetchedRow] = this.squashedRDD.flatMap(v => v.WSchema(schema).unsquash)
+  def unsquashedRDD: RDD[FetchedRow] = this.squashedRDD.flatMap(v => v.WSchema(schema).unSquash)
 
   def docRDD: RDD[Seq[Fetched]] = {
 
     squashedRDD.map { row =>
-      row.WSchema(schema).withSpooky.getDoc
+      row.WSchema(schema).withSpooky.fetched
     }
   }
 
@@ -193,33 +194,6 @@ case class FetchedDataset(
       result
     }
 
-  // TODO: cleanup
-  //  @Deprecated
-  //  def toDFLegacy(sort: Boolean = false, tableName: String = null): DataFrame =
-  //    sparkContext.withJob(s"toDF(sort=$sort, name=$tableName)") {
-  //
-  //      val jsonRDD = this.toJSON(sort)
-  //      plan.persist(jsonRDD)
-  //
-  //      val schemaRDD = spooky.sqlContext.read.json(jsonRDD)
-  //
-  //      val columns: Seq[Column] = fields
-  //        .filter(key => !key.isWeak)
-  //        .map {
-  //          key =>
-  //            val name = SpookyUtils.canonizeColumnName(key.name)
-  //            if (schemaRDD.schema.fieldNames.contains(name)) new Column(UnresolvedAttribute(name))
-  //            else new Column(expressions.Alias(org.apache.spark.sql.catalyst.expressions.Literal(null), name)())
-  //        }
-  //
-  //      val result = schemaRDD.select(columns: _*)
-  //
-  //      if (tableName!=null) result.createOrReplaceTempView(tableName)
-  //      plan.scratchRDDs.clearAll()
-  //
-  //      result
-  //    }
-
   def newResolver: SpookySchema#Resolver = schema.newResolver
 
   def toStringRDD(
@@ -297,47 +271,24 @@ case class FetchedDataset(
     )
   }
 
-  def flatten(
+  def explode(
       ex: Extractor[Any],
-      forkType: ForkType = ForkType.default,
+      forkType: ForkType = ForkType.defaultExplode,
       ordinalField: Field = null,
-      sampler: Sampler[Any] = spooky.spookyConf.defaultFlattenSampler
+      sampler: Sampler[Any] = spooky.spookyConf.defaultExplodeSampler
   ): FetchedDataset = {
 
     val (on, extracted) = ex match {
       case Get(ff) =>
         ff -> this
       case _ =>
-        val effectiveEx = ex.withJoinFieldIfMissing
+        val effectiveEx = ex.withTempAliasIfMissing
         val ff = effectiveEx.field
         ff -> this.extract(ex)
     }
 
-    MapPlan.optimised(extracted.plan, MapPlan.Flatten(on, ordinalField, sampler, forkType))
+    MapPlan.optimised(extracted.plan, MapPlan.Explode(on, ordinalField, sampler, forkType))
   }
-
-  /**
-    * break each page into 'shards', used to extract structured data from tables
-    * @param on
-    *   denotes enclosing elements of each shards
-    */
-  def flatExtract(
-      on: Extractor[Any], // TODO: used to be Iterable[Unstructured], any tradeoff?
-      forkType: ForkType = ForkType.default,
-      ordinalField: Field = null,
-      sampler: Sampler[Any] = spooky.spookyConf.defaultFlattenSampler
-  )(exprs: Extractor[Any]*): FetchedDataset = {
-    this
-      .flatten(on.withJoinFieldIfMissing, forkType, ordinalField, sampler)
-      .extract(exprs: _*)
-  }
-
-  def flatSelect(
-      on: Extractor[Any], // TODO: used to be Iterable[Unstructured], any tradeoff?
-      ordinalField: Field = null,
-      sampler: Sampler[Any] = spooky.spookyConf.defaultFlattenSampler,
-      forkType: ForkType = ForkType.default
-  )(exprs: Extractor[Any]*): FetchedDataset = flatExtract(on, forkType, ordinalField, sampler)(exprs: _*)
 
   // TODO: test
   def agg(exprs: Seq[FetchedRow => Any], reducer: RowReducer): FetchedDataset = AggPlan(plan, exprs, reducer)
@@ -353,7 +304,7 @@ case class FetchedDataset(
   protected def _defaultWget(
       cooldown: Option[Duration] = None,
       filter: DocFilter = Const.defaultDocumentFilter,
-      on: Col[String] = Get(Const.defaultJoinField)
+      on: Col[String] = Get(Temp)
   ): TraceView = {
 
     val _delay: Trace = _defaultCooldown(cooldown)
@@ -396,21 +347,16 @@ case class FetchedDataset(
     )
   }
 
-  def join(
+  def fork(
       on: Extractor[Any], // name is discarded
-      forkType: ForkType = ForkType.default,
+      forkType: ForkType = ForkType.defaultFork,
       ordinalField: Field = null, // left & idempotent parameters are missing as they are always set to true
       sampler: Sampler[Any] = spooky.spookyConf.defaultForkSampler
-  )(
-      traces: Set[Trace],
-      keyBy: Trace => Any = identity,
-      genPartitioner: GenPartitioner = spooky.spookyConf.defaultGenPartitioner
   ): FetchedDataset = {
 
-    val flat = this
-      .flatten(on.withJoinFieldIfMissing, forkType, ordinalField, sampler)
-
-    flat.fetch(traces, keyBy, genPartitioner)
+    val result = FetchedDataset.this
+      .explode(on.withTempAliasIfMissing, forkType, ordinalField, sampler)
+    result
   }
 
   /**
@@ -420,9 +366,9 @@ case class FetchedDataset(
     * @return
     *   RDD[Page]
     */
-  def wgetJoin(
+  def wgetFork(
       on: Extractor[Any],
-      forkType: ForkType = ForkType.default,
+      forkType: ForkType = ForkType.defaultFork,
       ordinalField: Field = null, // left & idempotent parameters are missing as they are always set to true
       sampler: Sampler[Any] = spooky.spookyConf.defaultForkSampler,
       cooldown: Option[Duration] = None,
@@ -437,17 +383,19 @@ case class FetchedDataset(
       trace = ClusterRetry(trace, failSafe).traceView
     }
 
-    this.join(on, forkType, ordinalField, sampler)(
-      trace,
-      keyBy,
-      genPartitioner = genPartitioner
-    )
+    this
+      .fork(on, forkType, ordinalField, sampler)
+      .fetch(
+        trace,
+        keyBy,
+        genPartitioner = genPartitioner
+      )
   }
 
   // TODO: how to unify this with join?
   def explore(
       on: Extractor[Any],
-      forkType: ForkType = ForkType.default,
+      forkType: ForkType = ForkType.defaultExplore,
       ordinalField: Field = null,
       sampler: Sampler[Any] = spooky.spookyConf.defaultForkSampler
   )(
@@ -468,7 +416,7 @@ case class FetchedDataset(
 
     ExplorePlan(
       plan,
-      on.withJoinFieldIfMissing,
+      on.withTempAliasIfMissing,
       sampler,
       forkType,
       TraceSetView(traces).rewriteGlobally(plan.schema),
@@ -484,7 +432,7 @@ case class FetchedDataset(
 
   def wgetExplore(
       on: Extractor[Any],
-      forkType: ForkType = ForkType.default,
+      forkType: ForkType = ForkType.defaultExplore,
       ordinalField: Field = null,
       sampler: Sampler[Any] = spooky.spookyConf.defaultForkSampler,
       filter: DocFilter = Const.defaultDocumentFilter,

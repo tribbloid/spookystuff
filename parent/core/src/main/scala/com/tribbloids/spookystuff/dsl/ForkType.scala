@@ -3,8 +3,7 @@ package com.tribbloids.spookystuff.dsl
 /**
   * Created by peng on 8/31/14.
   */
-//TODO: use Spark JoinType
-sealed abstract class ForkType(val isLeft: Boolean) extends Serializable with Product
+sealed abstract class ForkType(val isOuter: Boolean) extends Serializable with Product
 
 object ForkType {
 
@@ -28,6 +27,9 @@ object ForkType {
   // case object Last extends MergeStrategy((a,b) => b) //always keep the original pages
   // case object Error extends MergeStrategy(throw new UnsupportedOperationException("merge conflict"))
   // case object Concat extends MergeStrategy((a,b) => a.asInstanceOf[Iterable[_]] ++ b.asInstanceOf[IterableOnce[_]])
+  val defaultExplode: ForkType = ForkType.Outer
 
-  val default: ForkType = ForkType.Outer
+  val defaultFork: ForkType = ForkType.Outer
+
+  val defaultExplore: ForkType = ForkType.Outer
 }

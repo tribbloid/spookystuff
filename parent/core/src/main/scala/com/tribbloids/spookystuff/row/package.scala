@@ -1,6 +1,7 @@
 package com.tribbloids.spookystuff
 
 import com.tribbloids.spookystuff.execution.NodeKey
+import com.tribbloids.spookystuff.row.Field.TypedField
 import org.apache.spark.rdd.RDD
 import org.apache.spark.sql.catalyst.expressions.GenericRowWithSchema
 

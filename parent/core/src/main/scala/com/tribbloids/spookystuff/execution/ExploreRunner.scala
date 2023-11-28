@@ -67,7 +67,7 @@ class ExploreRunner(
     implicit def withSchema(row: SquashedFetchedRow): SquashedFetchedRow#WSchema =
       row.WSchema(schema)
 
-    val bestOpen: (NodeKey, Iterable[DataRow]) = nextOpenSelector(open)
+    val bestOpen: (NodeKey, Iterable[DataRow]) = selectNext(open)
 
     if (bestOpen._2.nonEmpty) {
       this.fetchingInProgressOpt = Some(bestOpen._1)
@@ -92,7 +92,7 @@ class ExploreRunner(
 
       val newOpens: Array[(TraceView, DataRow)] = bestRowInRange
         .extract(resolved)
-        .flattenData(resolved.field, ordinalField, forkType, sampler)
+        .explodeData(resolved.field, ordinalField, forkType, sampler)
         .interpolateAndRewriteLocally(trace)
         .map { tuple =>
           tuple._1 -> tuple._2

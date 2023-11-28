@@ -1,4 +1,4 @@
-package com.tribbloids.spookystuff.integration.select
+package com.tribbloids.spookystuff.integration.extract
 
 import com.tribbloids.spookystuff.QueryException
 import com.tribbloids.spookystuff.dsl._

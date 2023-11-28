@@ -1,11 +1,11 @@
 package com.tribbloids.spookystuff.row
 
-import java.util.UUID
 import com.tribbloids.spookystuff.actions.{Trace, TraceView}
 import com.tribbloids.spookystuff.doc.Fetched
 import com.tribbloids.spookystuff.dsl.ForkType
 import com.tribbloids.spookystuff.extractors.Resolved
 
+import java.util.UUID
 import scala.collection.mutable.ArrayBuffer
 
 object SquashedFetchedRow {
@@ -40,7 +40,7 @@ case class SquashedFetchedRow(
     this.copy(dataRows = this.dataRows ++ another.dataRows)
   }
 
-  def flattenData(
+  def explodeData(
       field: Field,
       ordinalKey: Field,
       forkType: ForkType,
@@ -48,7 +48,7 @@ case class SquashedFetchedRow(
   ): SquashedFetchedRow = {
 
     this.copy(
-      dataRows = this.dataRows.flatMap(_.flatten(field, ordinalKey, forkType, sampler))
+      dataRows = this.dataRows.flatMap(_.explode(field, ordinalKey, forkType, sampler))
     )
   }
 
@@ -58,21 +58,20 @@ case class SquashedFetchedRow(
 
   case class WSchema(schema: SpookySchema) extends Serializable {
 
-    val withSpooky: traceView.WithSpooky = new SquashedFetchedRow.this.traceView.WithSpooky(schema.spooky)
-
-    def groupedDocs: Array[Seq[Fetched]] = defaultGroupedFetched
+    @transient lazy val withSpooky: traceView.WithSpooky =
+      new SquashedFetchedRow.this.traceView.WithSpooky(schema.spooky)
 
     // by default, make sure no pages with identical name can appear in the same group.
-    // TODO: need tests!
-    @transient lazy val defaultGroupedFetched: Array[Seq[Fetched]] = {
+    // TODO: not well defined, switch to more manual option & re-slice with a function
+    @transient lazy val fetchedSlices: Array[Seq[Fetched]] = {
       val grandBuffer: ArrayBuffer[Seq[Fetched]] = ArrayBuffer()
       val buffer: ArrayBuffer[Fetched] = ArrayBuffer()
-      withSpooky.getDoc.foreach { page =>
-        if (buffer.exists(_.name == page.name)) {
+      withSpooky.fetched.foreach { fetched =>
+        if (buffer.exists(_.name == fetched.name)) {
           grandBuffer += buffer.toList
           buffer.clear()
         }
-        buffer += page
+        buffer += fetched
       }
       grandBuffer += buffer.toList // always left, have at least 1 member
       buffer.clear()
@@ -80,19 +79,19 @@ case class SquashedFetchedRow(
     }
 
     // outer: dataRows, inner: grouped pages
-    def semiUnsquash: Array[Array[FetchedRow]] = dataRows.map { dataRow =>
-      val groupID = UUID.randomUUID()
+    def semiUnSquash: Array[Array[FetchedRow]] = dataRows.map { dataRow =>
+      val _id = UUID.randomUUID()
       val withGroupID = dataRow.copy(
-        groupID = Some(groupID)
+        fastID = Some(_id)
       )
 
-      groupedDocs.zipWithIndex.map { tuple =>
+      fetchedSlices.zipWithIndex.map { tuple =>
         FetchedRow(withGroupID, tuple._1, tuple._2)
       }
     }
 
     // Cartesian product
-    def unsquash: Array[FetchedRow] = semiUnsquash.flatten
+    def unSquash: Array[FetchedRow] = semiUnSquash.flatten
 
     /**
       * yield 1 SquashedPageRow, but the size of dataRows may increase according to the following rules: each dataRow
@@ -103,14 +102,14 @@ case class SquashedFetchedRow(
         filterEmpty: Boolean = true
     ): SquashedFetchedRow = {
 
-      val allUpdatedDataRows: Array[DataRow] = semiUnsquash.flatMap {
-        PageRows => // each element contains a different page group, CAUTION: not all of them are used: page group that yield no new datum will be removed, if all groups yield no new datum at least 1 row is preserved
-          val dataRow_KVOpts = PageRows.map { pageRow =>
-            val dataRow = pageRow.dataRow
+      val allUpdatedDataRows: Array[DataRow] = semiUnSquash.flatMap {
+        rows => // each element contains a different page group, CAUTION: not all of them are used: page group that yield no new datum will be removed, if all groups yield no new datum at least 1 row is preserved
+          val dataRow_KVOpts = rows.map { row =>
+            val dataRow = row.dataRow
             val KVOpts: Seq[(Field, Option[Any])] = exs.flatMap { expr =>
               val resolving = expr.field.conflictResolving
               val k = expr.field
-              val vOpt = expr.lift.apply(pageRow)
+              val vOpt = expr.lift.apply(row)
               resolving match {
                 case Field.Replace => Some(k -> vOpt)
                 case _             => vOpt.map(v => k -> Some(v))
@@ -161,7 +160,7 @@ case class SquashedFetchedRow(
         distinct: Boolean = true
     ): Array[(TraceView, DataRow)] = {
 
-      val dataRows_traces = semiUnsquash.flatMap {
+      val dataRows_traces = semiUnSquash.flatMap {
         rows => // each element contains a different page group, CAUTION: not all of them are used: page group that yield no new datum will be removed, if all groups yield no new datum at least 1 row is preserved
           val pairs = rows.flatMap { row =>
             traces.map { trace =>

@@ -252,7 +252,7 @@ class FetchedDatasetSuite extends SpookyBaseSpec with LocalPathDocsFixture {
       .wget(
         HTML_URL
       )
-      .flatten(
+      .explode(
         Lit(Array("a" -> 1, "b" -> 2)) ~ 'Array
       )
       .persist()

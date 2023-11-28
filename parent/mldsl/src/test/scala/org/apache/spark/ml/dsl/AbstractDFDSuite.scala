@@ -12,29 +12,14 @@ import scala.util.matching.Regex
   */
 abstract class AbstractDFDSuite extends FunSpecx with BeforeAndAfterAll {
 
-  implicit class StringView(str: String) extends super.TestStringView(str) {
+  implicit class StringView(str: String) extends super._StringView(str) {
 
     def treeNodeShouldBe(
         groundTruth: String = null,
         sort: Boolean = false
     ): Unit = {
       val compactedGT = Option(groundTruth).map(compactGroundTruth).orNull
-//      try {
       this.shouldBe(compactedGT, sort = sort)
-//      } catch {
-//        case e @ (_: TestFailedException | _: AssertionError) =>
-//          val correctedGT = compactedGT
-//            .replaceAllLiterally("+- ", " ")
-//            .replaceAllLiterally(":- ", " ")
-//            .replaceAllLiterally(":  ", " ")
-//          //this is for Spark 1.5
-//          try {
-//            this.shouldBe(correctedGT, sort = sort)
-//          } catch {
-//            case _: Throwable =>
-//              throw e
-//          }
-//      }
     }
   }
 

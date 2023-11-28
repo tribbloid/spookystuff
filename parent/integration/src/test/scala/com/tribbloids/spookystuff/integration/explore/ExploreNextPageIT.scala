@@ -39,7 +39,7 @@ class ExploreNextPageIT extends ITBaseSpec {
       """.stripMargin
     )
 
-    val formatted = result.toJSON
+    result.toJSON
       .collect()
       .toSeq
       .mkString("\n")

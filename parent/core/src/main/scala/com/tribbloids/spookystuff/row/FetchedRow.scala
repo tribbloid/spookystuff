@@ -4,16 +4,6 @@ import com.tribbloids.spookystuff.SpookyContext
 import com.tribbloids.spookystuff.actions._
 import com.tribbloids.spookystuff.doc._
 
-//TODO: extends Spark SQL Row
-trait AbstractSpookyRow extends Serializable {
-
-//  override def length: Int = this.productArity
-//
-//  override def get(i: Int): Any = this.productElement(i)
-//
-//  override def copy(): ProductRow = this //TODO: problems?
-}
-
 object FetchedRow {
 
   object Empty extends FetchedRow()
@@ -32,8 +22,9 @@ object FetchedRow {
 case class FetchedRow(
     dataRow: DataRow = DataRow(),
     fetched: Seq[Fetched] = Seq(),
-    groupIndex: Int = 0 // set to 0...n for each page group after SquashedPageRow.semiUnsquash/unsquash
-) extends AbstractSpookyRow {
+    groupIndex: Int = 0
+    // set to 0...n for each page group after SquashedPageRow.semiUnsquash/unsquash
+) {
 
   // TODO: trace implementation is not accurate: the last backtrace has all previous exports removed
   def squash(spooky: SpookyContext): SquashedFetchedRow = SquashedFetchedRow(

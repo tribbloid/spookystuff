@@ -27,6 +27,21 @@ object Field {
   implicit def str2Field(str: String): Field = Field(str)
 
   implicit def symbol2Field(sym: Symbol): Field = Field(sym.name)
+
+  // used to convert SquashedFetchedRow to DF
+  case class TypedField(
+      self: Field,
+      dataType: DataType,
+      metaData: Metadata = Metadata.empty
+  ) {
+
+    def toStructField: StructField = StructField(
+      self.name,
+      dataType
+    )
+  }
+
+  object Temp extends Field("A", isWeak = true) // TODO: should have no name
 }
 
 /**
@@ -38,9 +53,7 @@ case class Field(
     isWeak: Boolean = false,
     // weak field can be referred by extractions, but has lower priority
     // weak field is removed when conflict resolving with an identical field
-//    isTemporary: Boolean = false, // TODO: enable
-    // temporary fields should be evicted after every ExecutionPlan
-    isReserved: Boolean = false,
+    //    isReserved: Boolean = false,
     conflictResolving: Field.ConflictResolving = Field.Error,
     // TODO, this entire conflict resolving mechanism should be moved to typed Extractor, along with isWeak
     isOrdinal: Boolean = false, // represents ordinal index in flatten/explore
@@ -52,9 +65,7 @@ case class Field(
 
   lazy val samenessDelegatedTo: List[Any] = List(
     name,
-    isWeak,
-//    isTemporary,
-    isReserved
+    isWeak
   )
 
   def ! = this.copy(conflictResolving = Field.ReplaceIfNotNull)
@@ -65,6 +76,8 @@ case class Field(
   def isDepth: Boolean = depthRangeOpt.nonEmpty
   def isSortIndex: Boolean = isOrdinal || isDepth
 
+  // a.k.a. non-temporary
+  // temporary fields should be evicted after every ExecutionPlan
   def isSelected: Boolean = isSelectedOverride.getOrElse(!isWeak)
 
   def effectiveConflictResolving(existing: Field): ConflictResolving = {
@@ -95,17 +108,4 @@ case class Field(
     depthRangeOpt.foreach(range => builder append s" [${range.head}...${range.last}]")
     TreeIR.Builder(Some(name)).leaf(builder.result())
   }
-}
-
-//used to convert SquashedFetchedRow to DF
-case class TypedField(
-    self: Field,
-    dataType: DataType,
-    metaData: Metadata = Metadata.empty
-) {
-
-  def toStructField: StructField = StructField(
-    self.name,
-    dataType
-  )
 }

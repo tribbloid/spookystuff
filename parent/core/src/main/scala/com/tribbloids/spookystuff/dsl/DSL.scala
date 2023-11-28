@@ -79,7 +79,8 @@ class DSL extends Level1 {
   //    new IterableExView(expr).get(i)
   //  }
 
-  def G: GenExtractor[FR, Int] = GroupIndexExpr
+  def G: GenExtractor[FR, Int] = groupIndexExpr
+  // TODO: A / forkField should be declared here
 
   def A(selector: String): GenExtractor[FR, Elements[Unstructured]] = 'A.findAll(selector)
   def A(selector: String, i: Int): Extractor[Unstructured] = {

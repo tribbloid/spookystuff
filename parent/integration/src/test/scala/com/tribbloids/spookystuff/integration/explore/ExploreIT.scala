@@ -1,6 +1,7 @@
 package com.tribbloids.spookystuff.integration.explore
 
 import com.tribbloids.spookystuff.actions.Wget
+import com.tribbloids.spookystuff.dsl.ForkType.Outer
 import com.tribbloids.spookystuff.dsl._
 import com.tribbloids.spookystuff.integration.ITBaseSpec
 
@@ -29,10 +30,12 @@ class ExploreIT extends ITBaseSpec {
         S"h1".text ~ 'header,
         S"notexist" ~ 'A.*
       )
-      .flatSelect(
+      .fork(
         'A,
+        Outer,
         ordinalField = 'notexist_key
-      )( // this is added to ensure that temporary joinKey in KV store won't be used.
+      )
+      .extract( // this is added to ensure that temporary joinKey in KV store won't be used.
         'A.attr("class") ~ 'notexist_class
       )
       .toDF(sort = true)

@@ -3,6 +3,7 @@ package com.tribbloids.spookystuff.row
 import com.tribbloids.spookystuff.SpookyContext
 import com.tribbloids.spookystuff.execution._
 import com.tribbloids.spookystuff.extractors._
+import com.tribbloids.spookystuff.row.Field.TypedField
 import org.apache.spark.ml.dsl.utils.refl.ScalaUDT
 import org.apache.spark.sql.types.{DataType, StructField, StructType}
 

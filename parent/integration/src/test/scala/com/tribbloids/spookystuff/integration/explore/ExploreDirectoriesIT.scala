@@ -1,6 +1,7 @@
 package com.tribbloids.spookystuff.integration.explore
 
 import com.tribbloids.spookystuff.actions.Wget
+import com.tribbloids.spookystuff.dsl.ForkType.Outer
 import com.tribbloids.spookystuff.integration.ITBaseSpec
 import com.tribbloids.spookystuff.testutils.TestDocsResolver
 
@@ -31,7 +32,8 @@ class ExploreDirectoriesIT extends ITBaseSpec {
       )()
       .extract(S.uri ~ 'uri)
     val result = nodes
-      .flatExtract(S"root file")(
+      .fork(S"root file", Outer)
+      .extract(
         A"Name".text ~ 'leaf,
         A"URI".text ~ 'fullPath
       )

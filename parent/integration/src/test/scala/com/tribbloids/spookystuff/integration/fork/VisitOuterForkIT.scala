@@ -1,4 +1,4 @@
-package com.tribbloids.spookystuff.integration.join
+package com.tribbloids.spookystuff.integration.fork
 
 import com.tribbloids.spookystuff.actions._
 import com.tribbloids.spookystuff.dsl.ForkType.Outer
@@ -10,7 +10,7 @@ import com.tribbloids.spookystuff.web.actions.Visit
 /**
   * Created by peng on 12/5/14.
   */
-class LeftVisitJoinIT extends ITBaseSpec {
+class VisitOuterForkIT extends ITBaseSpec {
 
   def getPage(uri: Col[String]): Action = Visit(uri)
 
@@ -22,23 +22,27 @@ class LeftVisitJoinIT extends ITBaseSpec {
       )
 
     val joined = base
-      .join(S"div.sidebar-nav a", Outer, ordinalField = 'i1)(
+      .fork(S"div.sidebar-nav a", Outer, ordinalField = 'i1)
+      .fetch(
         getPage('A.href)
       )
       .extract(
         'A.text ~ 'category
       )
-      .join(S"a.subcategory-link", Outer, ordinalField = 'i2)(
+      .fork(S"a.subcategory-link", Outer, ordinalField = 'i2)
+      .fetch(
         getPage('A.href)
       )
       .extract(
         'A.text ~ 'subcategory
       )
       .select(S"h1".text ~ 'header)
-      .flatSelect(
+      .fork(
         S"notexist",
+        Outer,
         ordinalField = 'notexist_key
-      )( // this is added to ensure that temporary joinKey in KV store won't be used.
+      )
+      .extract( // this is added to ensure that temporary joinKey in KV store won't be used.
         'A.attr("class") ~ 'notexist_class
       )
 
@@ -61,16 +65,18 @@ class LeftVisitJoinIT extends ITBaseSpec {
       """.stripMargin
     )
 
-    val formatted = df.toJSON.collect().toSeq
-    assert(
-      formatted ===
+    df.toJSON
+      .collect()
+      .toSeq
+      .mkString("\n")
+      .shouldBe(
         """
           |{"i1":[0],"category":"Home"}
           |{"i1":[1],"category":"Computers","i2":[0],"subcategory":"Laptops","header":"Computers / Laptops"}
           |{"i1":[1],"category":"Computers","i2":[1],"subcategory":"Tablets","header":"Computers / Tablets"}
           |{"i1":[2],"category":"Phones","i2":[0],"subcategory":"Touch","header":"Phones / Touch"}
-        """.stripMargin.trim.split('\n').toSeq
-    )
+        """.stripMargin.trim
+      )
   }
 
   override def numPages: Long = spooky.spookyConf.defaultGenPartitioner match {
