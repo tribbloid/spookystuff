@@ -12,13 +12,12 @@ import scala.reflect.ClassTag
   * value
   */
 //TODO: change to wrap DataFrame Row/InternalRow?
-//TODO: also carry PageUID & property type (Vertex/Edge) for GraphX or GraphFrame
+//TODO: also carry UID & property type (Vertex/Edge) for GraphX or GraphFrame
 @SerialVersionUID(6534469387269426194L)
 case class DataRow(
     data: Data = Data.empty,
     groupID: Option[UUID] = None,
-    groupIndex: Int = 0, // set to 0...n for each page group after SquashedPageRow.semiUnsquash/unsquash
-    freeze: Boolean = false // if set to true PageRow.extract won't insert anything into it, used in merge/replace join
+    groupIndex: Int = 0 // set to 0...n for each page group after SquashedPageRow.semiUnsquash/unsquash
 ) extends AbstractSpookyRow
     with ProtoAPI {
 
@@ -27,13 +26,6 @@ case class DataRow(
   }
 
   import SpookyViews._
-
-  //  def copy(//TODO: remove, already in case class contract
-  //            data: Data = this.data,
-  //            groupID: Option[UUID] = this.groupID,
-  //            groupIndex: Int = this.groupIndex, //set to 0...n for each page group after SquashedPageRow.semiUnsquash/unsquash
-  //            freeze: Boolean = this.freeze //if set to true PageRow.extract won't insert anything into it, used in merge/replace join
-  //          ) = DataRow(data, groupID, groupIndex, freeze)
 
   def ++(m: Iterable[(Field, Any)]): DataRow = this.copy(data = data ++ m)
 

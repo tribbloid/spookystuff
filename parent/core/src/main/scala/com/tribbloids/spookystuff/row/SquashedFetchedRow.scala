@@ -87,7 +87,7 @@ case class SquashedFetchedRow(
           groupID = Some(groupID),
           groupIndex = tuple._2
         )
-        FetchedRow(withGroupID, tuple._1: Seq[Fetched])
+        FetchedRow(withGroupID, tuple._1)
       }
     }
 
