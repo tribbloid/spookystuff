@@ -82,12 +82,12 @@ case class SquashedFetchedRow(
     // outer: dataRows, inner: grouped pages
     def semiUnsquash: Array[Array[FetchedRow]] = dataRows.map { dataRow =>
       val groupID = UUID.randomUUID()
+      val withGroupID = dataRow.copy(
+        groupID = Some(groupID)
+      )
+
       groupedDocs.zipWithIndex.map { tuple =>
-        val withGroupID = dataRow.copy(
-          groupID = Some(groupID),
-          groupIndex = tuple._2
-        )
-        FetchedRow(withGroupID, tuple._1)
+        FetchedRow(withGroupID, tuple._1, tuple._2)
       }
     }
 
@@ -96,16 +96,11 @@ case class SquashedFetchedRow(
 
     /**
       * yield 1 SquashedPageRow, but the size of dataRows may increase according to the following rules: each dataRow
-      * yield >= 1 dataRows. each dataRow yield <= {groupedFetched.size} dataRows. if a groupedFetched doesn't yield any
-      * new data it is omitted if 2 groupedFetched yield identical results only the first is preserved? TODO: need more
-      * test on this one handling of previous values with identical field id is determined by new
-      * Field.conflictResolving.
+      * yield >= 1 dataRows. each dataRow yield {groupedFetched.size} dataRows.
       */
-    // TODO: special optimization for Expression that only use pages
     private def _extract(
         exs: Seq[Resolved[Any]],
-        filterEmpty: Boolean = true,
-        distinct: Boolean = true
+        filterEmpty: Boolean = true
     ): SquashedFetchedRow = {
 
       val allUpdatedDataRows: Array[DataRow] = semiUnsquash.flatMap {
@@ -131,13 +126,8 @@ case class SquashedFetchedRow(
               if (filtered.isEmpty) dataRow_KVOpts.headOption.toArray
               else filtered
             }
-          val distinctDataRow_KVOpts =
-            if (!distinct) filteredDataRow_KVOpts
-            else {
-              filteredDataRow_KVOpts.groupBy(_._2).map(_._2.head).toArray
-            }
 
-          val updatedDataRows: Array[DataRow] = distinctDataRow_KVOpts.map { tuple =>
+          val updatedDataRows: Array[DataRow] = filteredDataRow_KVOpts.map { tuple =>
             val K_VOrRemoves = tuple._2
             val dataRow = tuple._1
             val newKVs = K_VOrRemoves.collect {

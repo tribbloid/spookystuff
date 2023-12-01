@@ -31,7 +31,8 @@ object FetchedRow {
   */
 case class FetchedRow(
     dataRow: DataRow = DataRow(),
-    fetched: Seq[Fetched] = Seq()
+    fetched: Seq[Fetched] = Seq(),
+    groupIndex: Int = 0 // set to 0...n for each page group after SquashedPageRow.semiUnsquash/unsquash
 ) extends AbstractSpookyRow {
 
   // TODO: trace implementation is not accurate: the last backtrace has all previous exports removed

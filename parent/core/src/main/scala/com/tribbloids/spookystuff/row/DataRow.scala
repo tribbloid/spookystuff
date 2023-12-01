@@ -16,8 +16,7 @@ import scala.reflect.ClassTag
 @SerialVersionUID(6534469387269426194L)
 case class DataRow(
     data: Data = Data.empty,
-    groupID: Option[UUID] = None,
-    groupIndex: Int = 0 // set to 0...n for each page group after SquashedPageRow.semiUnsquash/unsquash
+    groupID: Option[UUID] = None
 ) extends AbstractSpookyRow
     with ProtoAPI {
 
