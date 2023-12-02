@@ -1,7 +1,7 @@
 package com.tribbloids.spookystuff.caching
 
 import com.tribbloids.spookystuff.SpookyContext
-import com.tribbloids.spookystuff.actions.{Trace, TraceView}
+import com.tribbloids.spookystuff.actions.Trace
 import com.tribbloids.spookystuff.doc.{DocUtils, Fetched}
 import com.tribbloids.spookystuff.utils.CommonUtils
 import org.apache.hadoop.fs.Path
@@ -17,7 +17,7 @@ object DFSDocCache extends AbstractDocCache {
     v.exists(v => v.cacheLevel.isInstanceOf[DocCacheLevel.DFS])
   }
 
-  def getImpl(k: TraceView, spooky: SpookyContext): Option[Seq[Fetched]] = {
+  def getImpl(k: Trace, spooky: SpookyContext): Option[Seq[Fetched]] = {
 
     val pathStr = CommonUtils.\\\(
       spooky.dirConf.cache,

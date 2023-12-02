@@ -7,7 +7,7 @@ import com.tribbloids.spookystuff.row._
 object Extractors {
 
   val GroupIndexExpr: GenExtractor[FR, Int] = GenExtractor.fromFn { v1: FR =>
-    v1.groupIndex
+    v1.trajectory.ordinal
   }
 
   //

@@ -1,8 +1,8 @@
 package com.tribbloids.spookystuff.dsl
 
+import com.tribbloids.spookystuff.actions.Trace
 import com.tribbloids.spookystuff.caching.ExploreRunnerCache
 import com.tribbloids.spookystuff.execution.ExplorePlan.Params
-import com.tribbloids.spookystuff.execution.NodeKey
 import com.tribbloids.spookystuff.row._
 
 import java.util.UUID
@@ -28,18 +28,22 @@ object ExploreAlgorithms {
       import scala.Ordering.Implicits._
 
       override val openReducer: RowReducer = { (v1, v2) =>
-        val candidates: Map[Option[UUID], Iterable[DataRow]] = (v1 ++ v2)
-          .groupBy(_.groupID)
+        val candidates: Map[UUID, Vector[DataRow]] = (v1 ++ v2)
+          .groupBy(_.exploreLineageID.get)
 
-        val result = candidates.values
-          .minBy(_.head.sortIndex(Seq(depthField, ordinalField)))
+        if (candidates.isEmpty) Vector.empty
+        else {
 
-        result
+          val result = candidates.values
+            .minBy(_.head.sortIndex(Seq(depthField, ordinalField)))
+
+          result
+        }
       }
 
       override val visitedReducer: RowReducer = openReducer
 
-      override val ordering: RowOrdering = Ordering.by { tuple: (NodeKey, Iterable[DataRow]) =>
+      override val ordering: RowOrdering = Ordering.by { tuple: (Trace, Iterable[DataRow]) =>
         val inProgress = ExploreRunnerCache
           .getOnGoingRunners(params.executionID)
           .flatMap(_.fetchingInProgressOpt)
@@ -56,10 +60,11 @@ object ExploreAlgorithms {
         result
       }
 
-      override def eliminator(
-          open: Iterable[DataRow],
-          visited: Iterable[DataRow]
-      ): Iterable[DataRow] = {
+      override protected def pruneOpenNonEmpty(
+          open: Vector[DataRow],
+          visited: Vector[DataRow]
+      ): Vector[DataRow] = {
+
         val visitedDepth = visited.head.getInt(depthField)
         open.filter { row =>
           row.getInt(depthField) < visitedDepth
@@ -105,30 +110,9 @@ object ExploreAlgorithms {
   //  }
   // }
 
-  abstract class DepthFirst extends ExploreAlgorithm {
+  abstract class DepthFirst extends ExploreAlgorithm {}
 
-    override def getImpl(params: Params, schema: SpookySchema): Impl =
-      Impl(params, schema)
-
-    case class Impl(params: Params, schema: SpookySchema) extends EliminatingImpl {
-
-      /**
-        */
-      override val ordering: RowOrdering = ???
-
-      /**
-        */
-      override def eliminator(open: Iterable[DataRow], visited: Iterable[DataRow]): Iterable[DataRow] = ???
-
-      /**
-        */
-      override val openReducer: RowReducer = ???
-
-      /**
-        */
-      override val visitedReducer: RowReducer = ???
-    }
-  }
+  abstract class AStar extends ExploreAlgorithm {}
 }
 
 //TODO: finish these

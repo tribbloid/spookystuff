@@ -39,7 +39,7 @@ class FetchInteractionsIT extends ITBaseSpec {
         .encode("深度学习", "UTF-8"))
     )
     assert(pageRows(0).docs.head.name === Snapshot(DocFilterImpl.MustHaveTitle).toString)
-    val pageTime = pageRows(0).fetched.head.timeMillis
+    val pageTime = pageRows(0).trajectory.head.timeMillis
     assert(pageTime < finishTime)
     assert(pageTime > finishTime - 120000) // long enough even after the second time it is retrieved from s3 cache
 

@@ -1,5 +1,6 @@
 package com.tribbloids.spookystuff.actions
 
+import com.tribbloids.spookystuff.actions.Trace.DryRun
 import com.tribbloids.spookystuff.doc.{Doc, Fetched}
 import com.tribbloids.spookystuff.session.Session
 import com.tribbloids.spookystuff.utils.CommonUtils
@@ -19,14 +20,14 @@ class ActionUDT extends ScalaUDT[Action]
   */
 //TODO: merging with Extractor[Seq[Fetched]]?
 @SQLUserDefinedType(udt = classOf[ActionUDT])
-trait Action extends ActionLike with TraceAPI {
+trait Action extends ActionLike with HasTrace {
 
   override def children: Trace = Nil
   @transient override lazy val asTrace: Trace = List(this)
 
   var timeElapsed: Long = -1 // only set once
 
-  override def dryRun: List[List[Action]] = {
+  override def dryRun: DryRun = {
     if (hasOutput) {
       List(List(this))
     } else {
@@ -78,7 +79,7 @@ trait Action extends ActionLike with TraceAPI {
 
   protected def errorDump(message: String, rawPage: Doc, spooky: SpookyContext): String = {
 
-    val backtrace =
+    val backtrace: Trace =
       if (rawPage.uid.backtrace.lastOption.exists(_ eq this)) rawPage.uid.backtrace
       else rawPage.uid.backtrace :+ this
     val uid = rawPage.uid.copy(backtrace = backtrace)(name = null)

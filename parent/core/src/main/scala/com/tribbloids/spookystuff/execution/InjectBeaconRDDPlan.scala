@@ -8,14 +8,14 @@ trait InjectBeaconRDDPlan extends ExecutionPlan {
 
   def genPartitioner: GenPartitioner
 
-  lazy val gpImpl: GenPartitionerLike.Instance[TraceView] = {
-    genPartitioner.getInstance[TraceView](schema)
+  lazy val gpImpl: GenPartitionerLike.Instance[Trace] = {
+    genPartitioner.getInstance[Trace](schema)
   }
 
-  abstract override lazy val beaconRDDOpt: Option[BeaconRDD[TraceView]] = {
+  abstract override lazy val beaconRDDOpt: Option[BeaconRDD[Trace]] = {
     inheritedBeaconRDDOpt.orElse {
       this.firstChildOpt.flatMap { child =>
-        val beaconRDDOpt = gpImpl.createBeaconRDD(child.rdd())
+        val beaconRDDOpt = gpImpl.createBeaconRDD(child.bottleneckRDD)
         beaconRDDOpt
       }
     }

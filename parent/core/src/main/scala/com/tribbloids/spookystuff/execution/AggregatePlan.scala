@@ -11,15 +11,15 @@ case class AggregatePlan(
     reducer: RowReducer
 ) extends UnaryPlan(child) {
 
-  override def doExecute(): SquashedFetchedRDD = {
-    val keyedRDD = super.unsquashedRDD
+  override def doExecute(): BottleneckRDD = {
+    val grouped = super.unsquashedRDD
       .keyBy { row =>
         exprs.map(expr => expr.apply(row))
       }
-      .mapValues(v => Iterable(v.dataRow))
+      .mapValues(v => Vector(v.dataRow))
 
-    keyedRDD
+    grouped
       .reduceByKey(reducer)
-      .map(v => SquashedFetchedRow(v._2.toArray))
+      .map(v => BottleneckRow(v._2))
   }
 }

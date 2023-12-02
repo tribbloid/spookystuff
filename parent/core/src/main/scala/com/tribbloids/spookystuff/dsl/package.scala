@@ -12,6 +12,6 @@ package object dsl extends DSL {
   type ByTrace[+R] = Fn1[Trace, R]
   type WebProxyFactory = Fn1[Unit, WebProxySetting]
 
-  type GenPartitioner = GenPartitionerLike[TraceView, TraceView]
-  type AnyGenPartitioner = GenPartitionerLike[TraceView, Any]
+  type GenPartitioner = GenPartitionerLike[Trace, Trace]
+  type AnyGenPartitioner = GenPartitionerLike[Trace, Any]
 }

@@ -1,28 +1,11 @@
 package com.tribbloids.spookystuff.row
 
-import com.tribbloids.spookystuff.SpookyContext
 import com.tribbloids.spookystuff.actions._
 import com.tribbloids.spookystuff.doc._
 
-//TODO: extends Spark SQL Row
-trait AbstractSpookyRow extends Serializable {
-
-//  override def length: Int = this.productArity
-//
-//  override def get(i: Int): Any = this.productElement(i)
-//
-//  override def copy(): ProductRow = this //TODO: problems?
-}
-
 object FetchedRow {
 
-  object Empty extends FetchedRow()
-
-  //  def apply(
-  //             dataRow: DataRow = DataRow(),
-  //             pageLikes: Seq[Fetched] = Seq()
-  //           ): FetchedRow = dataRow -> pageLikes
-
+  lazy val empty: FetchedRow = FetchedRow()
 }
 
 /**
@@ -31,17 +14,15 @@ object FetchedRow {
   */
 case class FetchedRow(
     dataRow: DataRow = DataRow(),
-    fetched: Seq[Fetched] = Seq(),
-    groupIndex: Int = 0 // set to 0...n for each page group after SquashedPageRow.semiUnsquash/unsquash
-) extends AbstractSpookyRow {
+    trajectory: Trajectory = Trajectory.empty
+) {
 
-  // TODO: trace implementation is not accurate: the last backtrace has all previous exports removed
-  def squash(spooky: SpookyContext): SquashedFetchedRow = SquashedFetchedRow(
-    Array(dataRow),
-    TraceView().setCache(fetched)
+  def asBottleneckRow(): BottleneckRow = BottleneckRow(
+    Vector(dataRow),
+    Trace().setCache(trajectory)
   )
 
-  def docs: Seq[Doc] = fetched.flatMap {
+  def docs: Seq[Doc] = trajectory.flatMap {
     case page: Doc => Some(page)
     case _         => None
   }

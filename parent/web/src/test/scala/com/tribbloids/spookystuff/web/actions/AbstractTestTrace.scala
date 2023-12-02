@@ -1,6 +1,6 @@
 package com.tribbloids.spookystuff.web.actions
 
-import com.tribbloids.spookystuff.actions.{Delay, Loop, OAuthV2, TraceView, Wget}
+import com.tribbloids.spookystuff.actions.{Delay, Loop, OAuthV2, Trace, TraceSet, Wget}
 import com.tribbloids.spookystuff.conf.DriverFactory
 import com.tribbloids.spookystuff.doc.Doc
 import com.tribbloids.spookystuff.session.Session
@@ -55,14 +55,14 @@ abstract class AbstractTestTrace extends SpookyBaseSpec with BaseSpec {
   it("TraceView.autoSnapshot should not modify empty Trace") {
 
     assert(
-      TraceView().rewriteGlobally(defaultSchema) ==
-        List(TraceView())
+      Trace().rewriteGlobally(defaultSchema) ==
+        TraceSet.of(Trace())
     )
   }
 
   it("TraceView.autoSnapshot should append Snapshot to non-empty Trace that doesn't end with Export OR Block") {
 
-    val trace = TraceView(
+    val trace = Trace(
       List(
         Visit("dummy"),
         Snapshot() ~ 'A,
@@ -70,12 +70,12 @@ abstract class AbstractTestTrace extends SpookyBaseSpec with BaseSpec {
       )
     )
 
-    assert(trace.rewriteGlobally(defaultSchema) == List(trace +> Snapshot()))
+    assert(trace.rewriteGlobally(defaultSchema) == TraceSet.of(trace +> Snapshot()))
   }
 
   it("TraceView.autoSnapshot should append Snapshot to non-empty Trace that has no output") {
 
-    val trace = TraceView(
+    val trace = Trace(
       List(
         Visit("dummy"),
         Snapshot() ~ 'A,
@@ -86,12 +86,12 @@ abstract class AbstractTestTrace extends SpookyBaseSpec with BaseSpec {
       )
     )
 
-    assert(trace.rewriteGlobally(defaultSchema) == List(trace +> Snapshot()))
+    assert(trace.rewriteGlobally(defaultSchema) == TraceSet.of(trace +> Snapshot()))
   }
 
   it("TraceView.TreeNode.toString should have indentations of TreeNode") {
 
-    val traces: Set[Trace] = (
+    val traces = (
       Visit(HTML_URL)
         +> Click("dummy")
         +> Snapshot()
@@ -113,8 +113,8 @@ abstract class AbstractTestTrace extends SpookyBaseSpec with BaseSpec {
         )
     )
 
-    traces.foreach { trace =>
-      val str = TraceView(trace).TreeNode.toString
+    traces.asTraceSet.foreach { trace =>
+      val str = Trace(trace).TreeNode.toString
 //      println(str)
       assert(str contains "\n")
     }

@@ -1,5 +1,7 @@
 package com.tribbloids.spookystuff.row
 
+import com.tribbloids.spookystuff.dsl.ForkType
+
 import java.util.UUID
 import com.tribbloids.spookystuff.utils.{SpookyUtils, SpookyViews}
 import com.tribbloids.spookystuff.relay.{ProtoAPI, TreeIR}
@@ -7,18 +9,24 @@ import com.tribbloids.spookystuff.relay.{ProtoAPI, TreeIR}
 import scala.reflect.ClassTag
 
 /**
-  * data container that is persisted through different stages of execution plan. has no schema information, user are
-  * required to refer to schema from driver and use the index number to access element. schema |x| field => index =>
-  * value
+  * contains all schematic data accumulated over graph traversal path, but contains no schema, ad-hoc local access
+  * requires combining with schema from Spark driver
+  *
+  * @param data
+  *   internal representation
+  * @param exploreLineageID
+  *   only used in [[com.tribbloids.spookystuff.dsl.ExploreAlgorithm]], multiple [[DataRow]] with identical
+  *   [[exploreLineageID]] are assumed to be scrapped from the same graph traversal path, in most reduction algorithms
+  *   these rows are treated as an inseparable unit
   */
-//TODO: change to wrap DataFrame Row/InternalRow?
-//TODO: also carry UID & property type (Vertex/Edge) for GraphX or GraphFrame
 @SerialVersionUID(6534469387269426194L)
 case class DataRow(
     data: Data = Data.empty,
-    groupID: Option[UUID] = None
-) extends AbstractSpookyRow
-    with ProtoAPI {
+    exploreLineageID: Option[UUID] = None
+    // TODO: I don't like this explanation, give me something better
+) extends ProtoAPI {
+  // TODO: will become TypedRow that leverage extensible Record and frameless
+  // TODO: how to easily reconstruct vertices/edges for graphX/graphframe?
 
   {
     assert(data.isInstanceOf[Serializable]) // fail early
@@ -54,7 +62,7 @@ case class DataRow(
   def getInt(field: Field): Option[Int] = getTyped[Int](field)
 
   lazy val toMap: Map[String, Any] = data.view
-    .filterKeys(_.isSelected)
+    .filterKeys(_.isNonTransient)
     .map(identity)
     .map(tuple => tuple._1.name -> tuple._2)
     .toMap
@@ -72,16 +80,16 @@ case class DataRow(
   // retain old pageRow,
   // always left
   // TODO: add test to ensure that ordinalField is added BEFORE sampling
-  def flatten(
+  def explode(
       field: Field,
       ordinalField: Field,
-      left: Boolean,
+      forkType: ForkType,
       sampler: Sampler[Any]
   ): Seq[DataRow] = {
 
-    val newValues_Indices = data.flattenByKey(field, sampler)
+    val newValues_Indices = data.explode1Key(field, sampler)
 
-    if (left && newValues_Indices.isEmpty) {
+    if (forkType.isLeft && newValues_Indices.isEmpty) {
       Seq(this.copy(data = data - field)) // you don't lose the remainder of a row because an element is empty
     } else {
       val result: Seq[(DataRow, Int)] = newValues_Indices.map(tuple => this.copy(data = tuple._1.toMap) -> tuple._2)
@@ -132,26 +140,4 @@ case class DataRow(
   }
   def getIterable(field: Field): Option[Iterable[Any]] = getTypedIterable[Any](field)
   def getIntIterable(field: Field): Option[Iterable[Int]] = getTypedIterable[Int](field)
-
-  // replace each '{key} in a string with their respective value in cells
-//  def replaceInto(
-//      str: String,
-//      interpolation: Interpolation = Interpolation.`'`
-//  ): Option[String] = {
-//
-//    try {
-//      Option(
-//        interpolation
-//          .Compile(str) { key =>
-//            val field = Field(key)
-//            "" + this.get(field).get
-//          }
-//          .run()
-//      )
-//    } catch {
-//      case _: NoSuchElementException => None
-//    }
-//  }
-
-  //  override def toString: String = data.toString()
 }

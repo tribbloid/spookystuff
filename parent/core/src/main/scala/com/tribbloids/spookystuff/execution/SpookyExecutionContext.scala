@@ -3,6 +3,9 @@ package com.tribbloids.spookystuff.execution
 import com.tribbloids.spookystuff.SpookyContext
 import org.apache.spark.rdd.RDD
 import org.apache.spark.storage.StorageLevel
+import org.slf4j.LoggerFactory
+
+import scala.util.Try
 
 /**
   * Created by peng on 10/07/17.
@@ -13,7 +16,20 @@ case class SpookyExecutionContext(
     @transient scratchRDDs: ScratchRDDs = ScratchRDDs()
 ) {
 
-  @transient lazy val deployPluginsOnce: Unit = spooky.Plugins.deployAll()
+  @transient lazy val deployPluginsOnce: Unit = {
+    try {
+      spooky.Plugins.deployAll()
+    } catch {
+      case e: Throwable =>
+        LoggerFactory
+          .getLogger(this.getClass)
+          .error("Deployment of some plugin(s) has failed", e)
+    }
+  }
+
+  def tryDeployPlugin(): Try[Unit] = {
+    Try(deployPluginsOnce)
+  }
 
   def :++(b: SpookyExecutionContext): SpookyExecutionContext = {
     //    assert(this.spooky == b.spooky,

@@ -5,42 +5,12 @@ import com.tribbloids.spookystuff.utils.io.ResourceMetadata
 import org.apache.spark.sql.types.SQLUserDefinedType
 
 import java.sql.{Date, Time, Timestamp}
-import scala.collection.mutable.ArrayBuffer
-import scala.language.implicitConversions
 
 object Fetched {
 
   trait Success extends Fetched
 
   trait Failure extends Fetched
-
-  implicit class Observations(
-      val vs: Seq[Fetched]
-  ) {
-
-    // make sure no pages with identical name can appear in the same group.
-    lazy val splitByDistinctNames: Array[Seq[Fetched]] = {
-      val outerBuffer: ArrayBuffer[Seq[Fetched]] = ArrayBuffer()
-      val buffer: ArrayBuffer[Fetched] = ArrayBuffer()
-
-      vs.foreach { page =>
-        if (buffer.exists(_.name == page.name)) {
-          outerBuffer += buffer.toList
-          buffer.clear()
-        }
-        buffer += page
-      }
-      outerBuffer += buffer.toList // always left, have at least 1 member
-      buffer.clear()
-      outerBuffer.toArray
-    }
-  }
-
-  object Observations {
-
-    implicit def unbox(v: Observations): Seq[Fetched] = v.vs
-  }
-
 }
 
 //keep small, will be passed around by Spark

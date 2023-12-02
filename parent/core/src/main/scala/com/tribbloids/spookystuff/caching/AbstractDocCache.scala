@@ -11,7 +11,7 @@ import com.tribbloids.spookystuff.extractors.impl.Lit
   */
 trait AbstractDocCache {
 
-  def get(k: TraceView, spooky: SpookyContext): Option[Seq[Fetched]] = {
+  def get(k: Trace, spooky: SpookyContext): Option[Seq[Fetched]] = {
     val pagesOpt = getImpl(k, spooky)
 
     val dryRun = k.dryRun
@@ -21,9 +21,9 @@ trait AbstractDocCache {
         val pageBacktrace: Trace = page.uid.backtrace
         val similarTrace = dryRun.find(_ == pageBacktrace).get
 
-        TraceView(pageBacktrace)
+        Trace(pageBacktrace)
           .injectFrom(
-            TraceView(similarTrace)
+            Trace(similarTrace)
           ) // this is to allow actions in backtrace to have different name than those cached
         page.updated(
           uid = page.uid.copy()(name = Option(page.uid.output).map(_.name).orNull)
@@ -32,9 +32,9 @@ trait AbstractDocCache {
     }
     result
   }
-  def getImpl(k: TraceView, spooky: SpookyContext): Option[Seq[Fetched]]
+  def getImpl(k: Trace, spooky: SpookyContext): Option[Seq[Fetched]]
 
-  def getOrElsePut(k: TraceView, v: Seq[Fetched], spooky: SpookyContext): Seq[Fetched] = {
+  def getOrElsePut(k: Trace, v: Seq[Fetched], spooky: SpookyContext): Seq[Fetched] = {
 
     val gg = get(k, spooky)
     gg.getOrElse {
@@ -45,9 +45,9 @@ trait AbstractDocCache {
 
   def cacheable(v: Seq[Fetched]): Boolean
 
-  def put(k: Trace, v: Seq[Fetched], spooky: SpookyContext): this.type = {
+  def put(k: HasTrace, v: Seq[Fetched], spooky: SpookyContext): this.type = {
 
-    if (cacheable(v)) putImpl(k, v, spooky)
+    if (cacheable(v)) putImpl(k.asTrace, v, spooky)
     else this
   }
   def putImpl(k: Trace, v: Seq[Fetched], spooky: SpookyContext): this.type

@@ -2,7 +2,7 @@ package com.tribbloids.spookystuff.rdd
 
 import com.tribbloids.spookystuff.actions._
 import com.tribbloids.spookystuff.conf.SpookyConf
-import com.tribbloids.spookystuff.doc.{Doc, Fetched}
+import com.tribbloids.spookystuff.doc.{Doc, Trajectory}
 import com.tribbloids.spookystuff.dsl._
 import com.tribbloids.spookystuff.execution.ExplorePlan.Params
 import com.tribbloids.spookystuff.execution._
@@ -13,11 +13,11 @@ import com.tribbloids.spookystuff.utils.SpookyViews
 import com.tribbloids.spookystuff.{Const, SpookyContext}
 import org.apache.spark.ml.dsl.utils.refl.CatalystTypeOps
 import org.apache.spark.rdd.RDD
-import org.apache.spark.sql.DataFrame
 import org.apache.spark.sql.catalyst.expressions.GenericInternalRow
 import org.apache.spark.sql.catalyst.{CatalystTypeConverters, InternalRow}
 import org.apache.spark.sql.types.{DataType, StructType}
 import org.apache.spark.sql.utils.SparkHelper
+import org.apache.spark.sql.{DataFrame, Dataset}
 import org.apache.spark.storage.StorageLevel
 import org.apache.spark.{SparkContext, TaskContext}
 
@@ -27,9 +27,10 @@ import scala.concurrent.duration.Duration
 import scala.language.implicitConversions
 import scala.reflect.ClassTag
 
-object FetchedDataset {
 
-  implicit def FDToRDD(self: FetchedDataset): RDD[FetchedRow] = self.rdd
+object FetchedDataset extends FetchedDatasetImp0 {
+
+  implicit def asRDD(self: FetchedDataset): RDD[FetchedRow] = self.rdd
 }
 
 /**
@@ -40,7 +41,7 @@ object FetchedDataset {
   */
 case class FetchedDataset(
     plan: ExecutionPlan
-) extends FetchedRDDAPI
+) extends FetchedDatasetAPI
     with CatalystTypeOps.ImplicitMixin {
 
   import SpookyViews._
@@ -48,10 +49,10 @@ case class FetchedDataset(
   implicit def fromExecutionPlan(plan: ExecutionPlan): FetchedDataset = FetchedDataset(plan)
 
   def this(
-      sourceRDD: SquashedFetchedRDD,
+      sourceRDD: BottleneckRDD,
       fieldMap: ListMap[Field, DataType],
       spooky: SpookyContext,
-      beaconRDDOpt: Option[BeaconRDD[TraceView]] = None
+      beaconRDDOpt: Option[BeaconRDD[Trace]] = None
   ) = {
 
     this(
@@ -76,26 +77,7 @@ case class FetchedDataset(
   }
   def isCached: Boolean = plan.isCached
 
-  def squashedRDD: SquashedFetchedRDD = {
-    plan.tryDeployAndRDD()
-  }
-
-  def rdd: RDD[FR] = unsquashedRDD
-  def unsquashedRDD: RDD[FetchedRow] = this.squashedRDD.flatMap(v => v.WSchema(schema).unsquash)
-
-  def observedRDD: RDD[Seq[Fetched]] = {
-
-    squashedRDD.map { row =>
-      row.WSchema(schema).withSpooky.observations
-    }
-  }
-
-  def dataRDD: RDD[DataRow] = {
-
-    squashedRDD.flatMap {
-      _.dataRows
-    }
-  }
+  def rdd: RDD[FR] = this.unsquashedRDD
 
   def partitionRDD: RDD[(Int, Seq[FR])] = rdd.mapPartitions { ii =>
     Iterator(TaskContext.get().partitionId() -> ii.toSeq)
@@ -128,19 +110,14 @@ case class FetchedDataset(
   def toMapRDD(sort: Boolean = false): RDD[Map[String, Any]] =
     sparkContext.withJob("toMapRDD", s"toMapRDD(sort=$sort)") {
       {
-        if (!sort) dataRDD
+        if (!sort) this.dataRDD
         else dataRDDSorted
       }.map(_.toMap)
     }
 
-  def toJSON(sort: Boolean = false): RDD[String] =
-    sparkContext.withJob("toMapRDD", s"toJSON(sort=$sort)") {
-
-      {
-        if (!sort) dataRDD
-        else dataRDDSorted
-      }.map(_.compactJSON)
-    }
+  def toJSON(sort: Boolean = false): Dataset[String] = {
+    toDF(sort).toJSON
+  }
 
   protected def toInternalRowRDD(
       sort: Boolean = false,
@@ -151,12 +128,6 @@ case class FetchedDataset(
       if (!sort) this.dataRDD
       else dataRDDSorted
 
-    //    val field2Encoder: Map[Field, ExpressionEncoder[Any]] = spookySchema.fieldTypes.mapValues {
-    //      tpe =>
-    //        val ttg = tpe.asTypeTagCasted[Any]
-    //        ExpressionEncoder.apply()(ttg)
-    //    }
-
     // TOOD: how to make it serializable so it can be reused by different partitions?
     @transient lazy val field2Converter: Map[Field, Any => Any] = spookySchema.fieldTypes.map {
       case (k, tpe) =>
@@ -164,8 +135,6 @@ case class FetchedDataset(
         val converter = CatalystTypeConverters.createToCatalystConverter(reified)
         k -> converter
     }
-
-//    val rowEncoder = RowEncoder.apply(spookySchema.structType)
 
     dataRDD
       .map { v =>
@@ -175,16 +144,16 @@ case class FetchedDataset(
           val converter = field2Converter(field)
           converter.apply(raw)
         }
-        val internalRow = new GenericInternalRow(converted.toArray)
+        val InternalRow = new GenericInternalRow(converted.toArray)
 
-        internalRow
+        InternalRow
       }
   }
 
   def toDF(sort: Boolean = false): DataFrame =
     sparkContext.withJob("toDF", s"toDF(sort=$sort)") {
 
-      val filteredSchema: SpookySchema = schema.filterFields()
+      val filteredSchema: SpookySchema = schema.evictTransientFields
       val sqlSchema: StructType = filteredSchema.structType
       val rowRDD = toInternalRowRDD(sort, filteredSchema)
 
@@ -192,33 +161,6 @@ case class FetchedDataset(
 
       result
     }
-
-  // TODO: cleanup
-  //  @Deprecated
-  //  def toDFLegacy(sort: Boolean = false, tableName: String = null): DataFrame =
-  //    sparkContext.withJob(s"toDF(sort=$sort, name=$tableName)") {
-  //
-  //      val jsonRDD = this.toJSON(sort)
-  //      plan.persist(jsonRDD)
-  //
-  //      val schemaRDD = spooky.sqlContext.read.json(jsonRDD)
-  //
-  //      val columns: Seq[Column] = fields
-  //        .filter(key => !key.isWeak)
-  //        .map {
-  //          key =>
-  //            val name = SpookyUtils.canonizeColumnName(key.name)
-  //            if (schemaRDD.schema.fieldNames.contains(name)) new Column(UnresolvedAttribute(name))
-  //            else new Column(expressions.Alias(org.apache.spark.sql.catalyst.expressions.Literal(null), name)())
-  //        }
-  //
-  //      val result = schemaRDD.select(columns: _*)
-  //
-  //      if (tableName!=null) result.createOrReplaceTempView(tableName)
-  //      plan.scratchRDDs.clearAll()
-  //
-  //      result
-  //    }
 
   def newResolver: SpookySchema#Resolver = schema.newResolver
 
@@ -229,7 +171,7 @@ case class FetchedDataset(
 
     val _ex = newResolver.include(ex.toStr).head
 
-    unsquashedRDD.map(v => _ex.applyOrElse[FetchedRow, String](v, _ => default))
+    this.unsquashedRDD.map(v => _ex.applyOrElse[FetchedRow, String](v, _ => default))
   }
 
   def toObjectRDD[T: ClassTag](
@@ -239,11 +181,15 @@ case class FetchedDataset(
 
     val _ex = newResolver.include(ex).head
 
-    unsquashedRDD.map(v => _ex.applyOrElse[FetchedRow, T](v, _ => default))
+    this.unsquashedRDD.map(v => _ex.applyOrElse[FetchedRow, T](v, _ => default))
   }
 
   // IMPORTANT: DO NOT discard type parameter! otherwise arguments' type will be coerced into Any!
   def extract[T](exs: Extractor[T]*): FetchedDataset = {
+    MapPlan.optimised(plan, MapPlan.Extract(exs))
+  }
+
+  def apply[T](exs: Extractor[T]*): FetchedDataset = {
     MapPlan.optimised(plan, MapPlan.Extract(exs))
   }
 
@@ -252,7 +198,7 @@ case class FetchedDataset(
   }
 
   def explodeObservations(
-      fn: Seq[Fetched] => Seq[Seq[Fetched]]
+      fn: Trajectory => Seq[Trajectory]
   ): FetchedDataset = {
     MapPlan.optimised(plan, MapPlan.ExplodeObservations(fn))
   }
@@ -301,9 +247,9 @@ case class FetchedDataset(
     )
   }
 
-  def flatten(
+  def explode(
       ex: Extractor[Any],
-      isLeft: Boolean = true,
+      forkType: ForkType = ForkType.default,
       ordinalField: Field = null,
       sampler: Sampler[Any] = spooky.spookyConf.defaultFlattenSampler
   ): FetchedDataset = {
@@ -312,42 +258,34 @@ case class FetchedDataset(
       case Get(ff) =>
         ff -> this
       case _ =>
-        val effectiveEx = ex.withJoinFieldIfMissing
+        val effectiveEx = ex.withForkFieldIfMissing
         val ff = effectiveEx.field
         ff -> this.extract(ex)
     }
 
-    MapPlan.optimised(extracted.plan, MapPlan.Flatten(on, ordinalField, sampler, isLeft))
+    MapPlan.optimised(extracted.plan, MapPlan.ExplodeData(on, ordinalField, sampler, forkType))
   }
 
-  /**
-    * break each page into 'shards', used to extract structured data from tables
-    * @param on
-    *   denotes enclosing elements of each shards
-    */
-  def flatExtract(
-      on: Extractor[Any], // TODO: used to be Iterable[Unstructured], any tradeoff?
-      isLeft: Boolean = true,
-      ordinalField: Field = null,
-      sampler: Sampler[Any] = spooky.spookyConf.defaultFlattenSampler
-  )(exprs: Extractor[Any]*): FetchedDataset = {
-    this
-      .flatten(on.withJoinFieldIfMissing, isLeft, ordinalField, sampler)
-      .extract(exprs: _*)
-  }
+  def fork(
+      on: Extractor[Any], // name is discarded
+      forkType: ForkType = ForkType.default,
+      ordinalField: Field = null, // left & idempotent parameters are missing as they are always set to true
+      sampler: Sampler[Any] = spooky.spookyConf.defaultForkSampler
+  ): FetchedDataset = {
 
-  def flatSelect(
-      on: Extractor[Any], // TODO: used to be Iterable[Unstructured], any tradeoff?
-      ordinalField: Field = null,
-      sampler: Sampler[Any] = spooky.spookyConf.defaultFlattenSampler,
-      isLeft: Boolean = true
-  )(exprs: Extractor[Any]*): FetchedDataset = flatExtract(on, isLeft, ordinalField, sampler)(exprs: _*)
+    val result = this
+      .explode(on.withForkFieldIfMissing, forkType, ordinalField, sampler)
+
+    result
+  }
 
   // TODO: test
-  def agg(exprs: Seq[FetchedRow => Any], reducer: RowReducer): FetchedDataset = AggregatePlan(plan, exprs, reducer)
-  def distinctBy(exprs: FetchedRow => Any*): FetchedDataset = agg(exprs, (v1, _) => v1)
+  def aggregate(exprs: Seq[FetchedRow => Any], reducer: RowReducer): FetchedDataset =
+    AggregatePlan(plan, exprs, reducer)
+//  def distinctBy(exprs: FetchedRow => Any*): FetchedDataset =
+//    agg(exprs, ((v1: Vector[DataRow], _: Vector[DataRow]) => v1): RowReducer)
 
-  protected def _defaultCooldown(v: Option[Duration]): Trace = {
+  protected def getCooldown(v: Option[Duration]): Trace = {
     val _delay: Trace = v.map { dd =>
       Delay(dd)
     }.toList
@@ -357,30 +295,30 @@ case class FetchedDataset(
   protected def _defaultWget(
       cooldown: Option[Duration] = None,
       filter: DocFilter = Const.defaultDocumentFilter,
-      on: Col[String] = Get(Const.defaultJoinField)
-  ): TraceView = {
+      on: Col[String] = Get(Const.defaultForkField)
+  ): Trace = {
 
-    val _delay: Trace = _defaultCooldown(cooldown)
+    val _delay: Trace = getCooldown(cooldown)
 
     val result = Wget(on, filter) +> _delay
 
-    TraceView(result)
+    Trace(result)
   }
 
   // Always left
   def fetch(
-      traces: Set[Trace],
-      keyBy: Trace => Any = identity,
+      traces: HasTraceSet,
+      keyBy: List[Action] => Any = identity,
       genPartitioner: GenPartitioner = spooky.spookyConf.defaultGenPartitioner
   ): FetchedDataset = {
 
-    val _traces = TraceSetView(traces).rewriteGlobally(schema)
+    val _traces = traces.asTraceSet.rewriteGlobally(schema)
 
     FetchPlan(plan, _traces, keyBy, genPartitioner)
   }
 
 //  def sliceBy(
-//      slicer: SquashedFetchedRow.FetchedSlicer
+//      slicer: SquashedRow.FetchedSlicer
 //  ): FetchedDataset = {
 //
 //    MapPlan(
@@ -396,15 +334,15 @@ case class FetchedDataset(
   def wget(
       on: Col[String],
       cooldown: Option[Duration] = None,
-      keyBy: Trace => Any = identity,
+      keyBy: List[Action] => Any = identity,
       filter: DocFilter = Const.defaultDocumentFilter,
       failSafe: Int = -1,
       genPartitioner: GenPartitioner = spooky.spookyConf.defaultGenPartitioner
   ): FetchedDataset = {
 
-    var trace = _defaultWget(cooldown, filter, on)
+    var trace: Trace = _defaultWget(cooldown, filter, on)
 
-    if (failSafe > 0) trace = ClusterRetry(trace, failSafe)
+    if (failSafe > 0) trace = Trace.of(ClusterRetry(trace, failSafe))
 
     this.fetch(
       trace.asTraceSet,
@@ -413,63 +351,41 @@ case class FetchedDataset(
     )
   }
 
-  def join(
-      on: Extractor[Any], // name is discarded
-      joinType: JoinType = spooky.spookyConf.defaultJoinType,
-      ordinalField: Field = null, // left & idempotent parameters are missing as they are always set to true
-      sampler: Sampler[Any] = spooky.spookyConf.defaultJoinSampler
-  )(
-      traces: Set[Trace],
-      keyBy: Trace => Any = identity,
-      genPartitioner: GenPartitioner = spooky.spookyConf.defaultGenPartitioner
-  ): FetchedDataset = {
-
-    val flat = this
-      .flatten(on.withJoinFieldIfMissing, joinType.isLeft, ordinalField, sampler)
-
-    flat.fetch(traces, keyBy, genPartitioner)
-  }
-
-  /**
-    * same as join, but avoid launching a browser by using direct http GET (wget) to download new pages much faster and
-    * less stressful to both crawling and target server(s)
-    *
-    * @return
-    *   RDD[Page]
-    */
-  def wgetJoin(
+  def wgetFork(
       on: Extractor[Any],
-      joinType: JoinType = spooky.spookyConf.defaultJoinType,
+      forkType: ForkType = ForkType.default,
       ordinalField: Field = null, // left & idempotent parameters are missing as they are always set to true
-      sampler: Sampler[Any] = spooky.spookyConf.defaultJoinSampler,
+      sampler: Sampler[Any] = spooky.spookyConf.defaultForkSampler,
       cooldown: Option[Duration] = None,
-      keyBy: Trace => Any = identity,
+      keyBy: List[Action] => Any = identity,
       filter: DocFilter = Const.defaultDocumentFilter,
       failSafe: Int = -1,
       genPartitioner: GenPartitioner = spooky.spookyConf.defaultGenPartitioner
   ): FetchedDataset = {
 
-    var trace = _defaultWget(cooldown, filter)
+    var trace: Trace = _defaultWget(cooldown, filter)
     if (failSafe > 0) {
-      trace = ClusterRetry(trace, failSafe).traceView
+      trace = ClusterRetry(trace, failSafe).asTrace
     }
 
-    this.join(on, joinType, ordinalField, sampler)(
-      trace,
-      keyBy,
-      genPartitioner = genPartitioner
-    )
+    this
+      .fork(on, forkType, ordinalField, sampler)
+      .fetch(
+        trace.asTraceSet,
+        keyBy,
+        genPartitioner = genPartitioner
+      )
   }
 
   // TODO: how to unify this with join?
   def explore(
       on: Extractor[Any],
-      joinType: JoinType = spooky.spookyConf.defaultJoinType,
+      forkType: ForkType = ForkType.default,
       ordinalField: Field = null,
-      sampler: Sampler[Any] = spooky.spookyConf.defaultJoinSampler
+      sampler: Sampler[Any] = spooky.spookyConf.defaultForkSampler
   )(
-      traces: Set[Trace],
-      keyBy: Trace => Any = identity,
+      traces: HasTraceSet,
+      keyBy: List[Action] => Any = identity,
       genPartitioner: GenPartitioner = spooky.spookyConf.defaultGenPartitioner,
       depthField: Field = null,
       range: Range = spooky.spookyConf.defaultExploreRange,
@@ -482,10 +398,10 @@ case class FetchedDataset(
 
     ExplorePlan(
       plan,
-      on.withJoinFieldIfMissing,
+      on.withForkFieldIfMissing,
       sampler,
-      joinType,
-      TraceSetView(traces).rewriteGlobally(plan.schema),
+      forkType,
+      traces.asTraceSet.rewriteGlobally(plan.schema),
       keyBy,
       genPartitioner,
       params,
@@ -498,13 +414,13 @@ case class FetchedDataset(
 
   def wgetExplore(
       on: Extractor[Any],
-      joinType: JoinType = spooky.spookyConf.defaultJoinType,
+      forkType: ForkType = ForkType.default,
       ordinalField: Field = null,
-      sampler: Sampler[Any] = spooky.spookyConf.defaultJoinSampler,
+      sampler: Sampler[Any] = spooky.spookyConf.defaultForkSampler,
       filter: DocFilter = Const.defaultDocumentFilter,
       failSafe: Int = -1,
       cooldown: Option[Duration] = None,
-      keyBy: Trace => Any = identity,
+      keyBy: List[Action] => Any = identity,
       genPartitioner: GenPartitioner = spooky.spookyConf.defaultGenPartitioner,
       depthField: Field = null,
       range: Range = spooky.spookyConf.defaultExploreRange,
@@ -515,10 +431,10 @@ case class FetchedDataset(
   ): FetchedDataset = {
 
     var trace = _defaultWget(cooldown, filter)
-    if (failSafe > 0) trace = ClusterRetry(trace, failSafe)
+    if (failSafe > 0) trace = Trace.of(ClusterRetry(trace, failSafe))
 
-    explore(on, joinType, ordinalField, sampler)(
-      trace,
+    explore(on, forkType, ordinalField, sampler)(
+      trace.asTraceSet,
       keyBy,
       genPartitioner,
       depthField,

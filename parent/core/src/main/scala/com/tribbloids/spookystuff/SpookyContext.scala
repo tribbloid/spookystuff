@@ -170,7 +170,7 @@ case class SpookyContext(
     }
   }
 
-  lazy val _blankRowRDD: RDD[SquashedFetchedRow] = sparkContext.parallelize(Seq(SquashedFetchedRow.blank))
+  lazy val _blankRowRDD: RDD[BottleneckRow] = sparkContext.parallelize(Seq(BottleneckRow.empty))
 
   def createBlank: FetchedDataset = this.create(_blankRowRDD)
 
@@ -182,9 +182,9 @@ case class SpookyContext(
       val mapRDD = new DataFrameView(df)
         .toMapRDD()
 
-      val self: SquashedFetchedRDD = mapRDD
+      val self: BottleneckRDD = mapRDD
         .map { map =>
-          SquashedFetchedRow(
+          BottleneckRow(
             Option(ListMap(map.toSeq: _*))
               .getOrElse(ListMap())
               .map(tuple => (Field(tuple._1), tuple._2))
@@ -215,11 +215,11 @@ case class SpookyContext(
           val dataFrame = sqlContext.read.json(jsonDS)
           dfToFetchedDS(dataFrame)
 
-        // RDD[SquashedFetchedRow] => ..
+        // RDD[SquashedRow] => ..
         // discard schema
-        case _ if ttg.tpe <:< typeOf[SquashedFetchedRow] =>
-          //        case _ if classOf[SquashedFetchedRow] == classTag[T].runtimeClass =>
-          val self = rdd.asInstanceOf[SquashedFetchedRDD]
+        case _ if ttg.tpe <:< typeOf[BottleneckRow] =>
+          //        case _ if classOf[SquashedRow] == classTag[T].runtimeClass =>
+          val self = rdd.asInstanceOf[BottleneckRDD]
           new FetchedDataset(
             self,
             fieldMap = ListMap(),
@@ -232,7 +232,7 @@ case class SpookyContext(
             var cells = ListMap[Field, Any]()
             if (str != null) cells = cells + (Field("_") -> str)
 
-            SquashedFetchedRow(cells)
+            BottleneckRow(cells)
           }
           new FetchedDataset(
             self,

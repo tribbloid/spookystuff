@@ -1,7 +1,8 @@
 package com.tribbloids.spookystuff.caching
 
+import com.tribbloids.spookystuff.actions.Trace
 import com.tribbloids.spookystuff.execution.ExplorePlan.ExeID
-import com.tribbloids.spookystuff.execution.{ExploreRunner, NodeKey}
+import com.tribbloids.spookystuff.execution.ExploreAlgorithmRunner
 import com.tribbloids.spookystuff.row.{DataRow, RowReducer}
 import com.tribbloids.spookystuff.utils.Caching
 import com.tribbloids.spookystuff.utils.Caching.{ConcurrentMap, ConcurrentSet}
@@ -12,20 +13,20 @@ import com.tribbloids.spookystuff.utils.Caching.{ConcurrentMap, ConcurrentSet}
   */
 object ExploreRunnerCache {
 
-  // (NodeKey, ExecutionID) -> Squashed Rows
+  // (TraceView, ExecutionID) -> Squashed Rows
   // exeID is used to segment Squashed Rows from different jobs
-  val committedVisited: Caching.ConcurrentCache[(NodeKey, ExeID), Iterable[DataRow]] =
+  val committedVisited: Caching.ConcurrentCache[(Trace, ExeID), Vector[DataRow]] =
     Caching.ConcurrentCache()
 
-  val onGoings: ConcurrentMap[ExeID, ConcurrentSet[ExploreRunner]] =
+  val onGoings: ConcurrentMap[ExeID, ConcurrentSet[ExploreAlgorithmRunner]] =
     Caching.ConcurrentMap() // executionID -> running ExploreStateView
 
-  def getOnGoingRunners(exeID: ExeID): ConcurrentSet[ExploreRunner] = {
+  def getOnGoingRunners(exeID: ExeID): ConcurrentSet[ExploreAlgorithmRunner] = {
     //    onGoings.synchronized{
     onGoings
       .getOrElseUpdate(
         exeID, {
-          val v = ConcurrentSet[ExploreRunner]()
+          val v = ConcurrentSet[ExploreAlgorithmRunner]()
           v
         }
       )
@@ -37,8 +38,8 @@ object ExploreRunnerCache {
 
   // TODO relax synchronized check to accelerate?
   private def commit1(
-      key: (NodeKey, ExeID),
-      value: Iterable[DataRow],
+      key: (Trace, ExeID),
+      value: Vector[DataRow],
       reducer: RowReducer
   ): Unit = {
 
@@ -50,7 +51,7 @@ object ExploreRunnerCache {
   }
 
   def commit(
-      kvs: Iterable[((NodeKey, ExeID), Iterable[DataRow])],
+      kvs: Iterable[((Trace, ExeID), Vector[DataRow])],
       reducer: RowReducer
   ): Unit = {
 
@@ -59,15 +60,15 @@ object ExploreRunnerCache {
     }
   }
 
-  def register(v: ExploreRunner, exeID: ExeID): Unit = {
+  def register(v: ExploreAlgorithmRunner, exeID: ExeID): Unit = {
     getOnGoingRunners(exeID) += v
   }
 
-  def deregister(v: ExploreRunner, exeID: ExeID): Unit = {
+  def deregister(v: ExploreAlgorithmRunner, exeID: ExeID): Unit = {
     getOnGoingRunners(exeID) -= v
   }
 
-  def get(key: (NodeKey, ExeID)): Set[Iterable[DataRow]] = {
+  def get(key: (Trace, ExeID)): Set[Vector[DataRow]] = {
     val onGoing = this
       .getOnGoingRunners(key._2)
 
@@ -79,8 +80,8 @@ object ExploreRunnerCache {
     onGoingVisitedSet.toSet ++ committedVisited.get(key)
   }
 
-  def getAll(exeID: ExeID): Map[NodeKey, Iterable[DataRow]] = {
-    val onGoing: Map[NodeKey, Iterable[DataRow]] = this
+  def getAll(exeID: ExeID): Map[Trace, Vector[DataRow]] = {
+    val onGoing: Map[Trace, Vector[DataRow]] = this
       .getOnGoingRunners(exeID)
       .map(_.visited.toMap)
       .reduceOption { (v1, v2) =>

@@ -1,7 +1,8 @@
 package com.tribbloids.spookystuff.execution
 
 import com.tribbloids.spookystuff.SpookyContext
-import com.tribbloids.spookystuff.actions.TraceView
+import com.tribbloids.spookystuff.actions.Trace
+import com.tribbloids.spookystuff.doc.Fetched
 import com.tribbloids.spookystuff.row._
 import com.tribbloids.spookystuff.tree.TreeView
 import org.apache.spark.rdd.RDD
@@ -39,7 +40,7 @@ abstract class ExecutionPlan(
       .getOrElse(ListMap[Field, DataType]())
   )
 
-  implicit def withSchema(row: SquashedFetchedRow): SquashedFetchedRow#WSchema = row.WSchema(schema)
+  implicit def withSchema(row: BottleneckRow): BottleneckRow#WSchema = row.WSchema(schema)
 
   def fieldMap: ListMap[Field, DataType] = schema.fieldTypes
 
@@ -49,38 +50,29 @@ abstract class ExecutionPlan(
 
   // beconRDD is always empty, with fixed partitioning, cogroup with it to maximize Local Cache hitting chance
   // by default, inherit from the first child
-  final protected def inheritedBeaconRDDOpt: Option[BeaconRDD[NodeKey]] =
+  final protected def inheritedBeaconRDDOpt: Option[BeaconRDD[Trace]] =
     firstChildOpt.flatMap(_.beaconRDDOpt)
 
-  lazy val beaconRDDOpt: Option[BeaconRDD[TraceView]] = inheritedBeaconRDDOpt
+  lazy val beaconRDDOpt: Option[BeaconRDD[Trace]] = inheritedBeaconRDDOpt
 
-  def doExecute(): SquashedFetchedRDD
+  def doExecute(): BottleneckRDD
 
-  final def execute(): SquashedFetchedRDD = {
+  final def execute(): BottleneckRDD = {
 
     this.doExecute()
   }
 
   var storageLevel: StorageLevel = StorageLevel.NONE
-  var _cachedRDD: SquashedFetchedRDD = _
-  def cachedRDDOpt: Option[SquashedFetchedRDD] = Option(_cachedRDD)
+  var _cachedRDD: BottleneckRDD = _
+  def cachedRDDOpt: Option[BottleneckRDD] = Option(_cachedRDD)
 
   def isCached: Boolean = cachedRDDOpt.nonEmpty
 
-  final def tryDeployAndRDD(): SquashedFetchedRDD = {
-    try {
-      ec.deployPluginsOnce
-    } catch {
-      case e: Throwable =>
-        LoggerFactory
-          .getLogger(this.getClass)
-          .error("Deployment of some plugin(s) has failed", e)
-    }
-    rdd()
-  }
-
   // TODO: cachedRDD is redundant? just make it lazy val!
-  final def rdd(): SquashedFetchedRDD = {
+  final def bottleneckRDD: BottleneckRDD = {
+    ec.tryDeployPlugin()
+    // any RDD access will cause all plugins to be deployed
+
     cachedRDDOpt match {
       // if cached and loaded, use it
       case Some(cached) =>
@@ -97,9 +89,23 @@ abstract class ExecutionPlan(
     }
   }
 
+  def squashedRDD: RDD[SquashedRow] =
+    bottleneckRDD
+      .flatMap(v => v.WSchema(schema).deltaApplied)
+
   def unsquashedRDD: RDD[FetchedRow] =
-    rdd()
-      .flatMap(v => v.WSchema(schema).unsquash)
+    squashedRDD.flatMap(row => row.unSquashed)
+
+  def observationRDD: RDD[Seq[Fetched]] = {
+    squashedRDD.map(_.trajectory.inScope)
+  }
+
+  def dataRDD: RDD[DataRow] = {
+
+    unsquashedRDD.map(_.dataRow)
+  }
+
+  // -------------------------------------
 
   def persist[T](
       rdd: RDD[T],

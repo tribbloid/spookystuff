@@ -26,7 +26,7 @@ class ExploreClickNextPageIT extends ITBaseSpec {
       )
       .explodeObservations(v => v.splitByDistinctNames)
 
-    val result = base
+    val fetched = base
       .explore(S"div.sidebar-nav a", ordinalField = 'index)(
         Visit('A.href)
           +> snapshotAllPages,
@@ -40,6 +40,8 @@ class ExploreClickNextPageIT extends ITBaseSpec {
         S.findAll("h1").text ~ 'title,
         S"a.title".size ~ 'num_product
       )
+
+    val result = fetched
       .toDF(sort = true)
 
     result.schema.treeString.shouldBe(

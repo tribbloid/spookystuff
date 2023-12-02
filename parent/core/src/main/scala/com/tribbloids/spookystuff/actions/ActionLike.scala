@@ -1,5 +1,6 @@
 package com.tribbloids.spookystuff.actions
 
+import com.tribbloids.spookystuff.actions.Trace.DryRun
 import com.tribbloids.spookystuff.caching.{DFSDocCache, InMemoryDocCache}
 import com.tribbloids.spookystuff.doc.{Doc, Fetched}
 import com.tribbloids.spookystuff.row.{FetchedRow, SpookySchema}
@@ -36,13 +37,13 @@ abstract class ActionLike extends Product with Serializable with Verbose {
 
   lazy val TreeNode: ActionLike.TreeNodeView = ActionLike.TreeNodeView(this)
 
-  def globalRewriteRules(schema: SpookySchema): Seq[RewriteRule[TraceView]] = Nil
+  def globalRewriteRules(schema: SpookySchema): Seq[RewriteRule[Trace]] = Nil
 
   /**
     * invoked on executors, immediately after interpolation *IMPORTANT!* may be called several times, before or after
     * GenPartitioner.
     */
-  def localRewriteRules(schema: SpookySchema): Seq[RewriteRule[TraceView]] = Nil
+  def localRewriteRules(schema: SpookySchema): Seq[RewriteRule[Trace]] = Nil
 
   final def interpolate(row: FetchedRow, schema: SpookySchema): Option[this.type] = {
     val result = this.doInterpolate(row, schema)
@@ -98,7 +99,7 @@ abstract class ActionLike extends Product with Serializable with Verbose {
       if (!spooky.spookyConf.cacheRead) Seq(null)
       else
         dryRun.map { dry =>
-          val view = TraceView(dry)
+          val view = Trace(dry)
           InMemoryDocCache
             .get(view, spooky)
             .orElse {

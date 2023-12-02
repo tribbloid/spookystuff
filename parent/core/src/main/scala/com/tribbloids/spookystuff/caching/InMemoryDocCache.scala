@@ -1,7 +1,7 @@
 package com.tribbloids.spookystuff.caching
 
 import com.tribbloids.spookystuff.SpookyContext
-import com.tribbloids.spookystuff.actions.{Trace, TraceView}
+import com.tribbloids.spookystuff.actions.Trace
 import com.tribbloids.spookystuff.doc.Fetched
 import com.tribbloids.spookystuff.utils.Caching
 
@@ -16,7 +16,7 @@ object InMemoryDocCache extends AbstractDocCache {
     v.exists(v => v.cacheLevel.isInstanceOf[DocCacheLevel.InMemory])
   }
 
-  def getImpl(k: TraceView, spooky: SpookyContext): Option[Seq[Fetched]] = {
+  def getImpl(k: Trace, spooky: SpookyContext): Option[Seq[Fetched]] = {
     val candidate = internal.get(k)
     candidate.flatMap { v =>
       if (

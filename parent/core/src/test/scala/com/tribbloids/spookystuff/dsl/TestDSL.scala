@@ -4,7 +4,7 @@ import com.tribbloids.spookystuff.actions.Wget
 import com.tribbloids.spookystuff.doc.Fetched
 import com.tribbloids.spookystuff.extractors.Alias
 import com.tribbloids.spookystuff.rdd.FetchedDataset
-import com.tribbloids.spookystuff.row.{DataRow, FetchedRow, Field, SquashedFetchedRow}
+import com.tribbloids.spookystuff.row.{BottleneckRow, DataRow, FetchedRow, Field}
 import com.tribbloids.spookystuff.testutils.{LocalPathDocsFixture, SpookyBaseSpec}
 
 /**
@@ -16,13 +16,13 @@ class TestDSL extends SpookyBaseSpec with LocalPathDocsFixture {
     Wget(HTML_URL) ~ 'page
   ).fetch(spooky)
 
-  lazy val row: FetchedRow = SquashedFetchedRow(dataRows = Array(DataRow()))
+  lazy val row: FetchedRow = BottleneckRow(dataRows = Vector(DataRow()))
     .setCache(pages)
     .extract(
       S"title".head.text withAlias 'abc,
       S"title".head withAlias 'def
     )
-    .unsquash
+    .unsquashed
     .head
 
   it("symbol as Expr") {
@@ -52,10 +52,10 @@ class TestDSL extends SpookyBaseSpec with LocalPathDocsFixture {
 
   it("double quotes in selector by attribute should work") {
     val pages = Wget(HTML_URL).fetch(spooky).toArray
-    val row = SquashedFetchedRow(Array(DataRow()))
+    val row = BottleneckRow(Vector(DataRow()))
       .setCache(pages)
       .extract(S"""a[href*="wikipedia"]""".href withAlias 'uri)
-      .unsquash
+      .unsquashed
       .head
 
     assert(row.dataRow.get(Field("uri")).nonEmpty)
@@ -79,7 +79,7 @@ class TestDSL extends SpookyBaseSpec with LocalPathDocsFixture {
     assert(ds.count() == 1)
 
     val plan = ds.plan
-    assert(plan.rdd() == spooky._blankRowRDD)
+    assert(plan.bottleneckRDD == spooky._blankRowRDD)
     assert(!(plan.spooky eq spooky)) // configs should be deep copied
   }
 }

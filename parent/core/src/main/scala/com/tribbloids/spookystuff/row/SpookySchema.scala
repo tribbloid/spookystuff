@@ -31,11 +31,13 @@ case class SpookySchema(
     indexedFields.find(_._1.self == field)
   }
 
-  def filterFields(filter: Field => Boolean = _.isSelected): SpookySchema = {
+  def filterFields(filter: Field => Boolean): SpookySchema = {
     this.copy(
       fieldTypes = ListMap(fieldTypes.filterKeys(filter).toSeq: _*)
     )
   }
+
+  lazy val evictTransientFields: SpookySchema = filterFields(_.isNonTransient)
 
   lazy val structFields: Seq[StructField] = fieldTypes.toSeq
     .map { tuple =>

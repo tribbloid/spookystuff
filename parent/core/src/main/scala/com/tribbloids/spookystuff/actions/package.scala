@@ -9,10 +9,6 @@ import com.tribbloids.spookystuff.session.Session
   */
 package object actions {
 
-  type Trace = List[Action]
-
-  type DryRun = List[Trace]
-
   type DocFilter = Fn1[(Doc, Session), Doc] // TODO: merge with Selector[Doc]
 
   type DocCondition = Fn1[(Doc, Session), Boolean] // TODO: merge with Selector[Doc]

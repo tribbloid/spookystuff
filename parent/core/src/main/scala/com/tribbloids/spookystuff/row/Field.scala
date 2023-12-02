@@ -4,7 +4,6 @@ import ai.acyclic.prover.commons.EqualBy
 import com.tribbloids.spookystuff.QueryException
 import com.tribbloids.spookystuff.relay.{ProtoAPI, TreeIR}
 import com.tribbloids.spookystuff.row.Field.ConflictResolving
-import org.apache.spark.sql.types.{DataType, Metadata, StructField}
 
 import scala.language.implicitConversions
 
@@ -44,9 +43,8 @@ case class Field(
     conflictResolving: Field.ConflictResolving = Field.Error,
     // TODO, this entire conflict resolving mechanism should be moved to typed Extractor, along with isWeak
     isOrdinal: Boolean = false, // represents ordinal index in flatten/explore
-    depthRangeOpt: Option[Range] = None, // represents depth in explore
-
-    isSelectedOverride: Option[Boolean] = None
+    depthRangeOpt: Option[Range] = None
+    // represents depth in explore, at this moment, it doesn't affect engine execution
 ) extends EqualBy
     with ProtoAPI {
 
@@ -65,7 +63,7 @@ case class Field(
   def isDepth: Boolean = depthRangeOpt.nonEmpty
   def isSortIndex: Boolean = isOrdinal || isDepth
 
-  def isSelected: Boolean = isSelectedOverride.getOrElse(!isWeak)
+  def isNonTransient: Boolean = !isWeak
 
   def effectiveConflictResolving(existing: Field): ConflictResolving = {
 
@@ -95,17 +93,4 @@ case class Field(
     depthRangeOpt.foreach(range => builder append s" [${range.head}...${range.last}]")
     TreeIR.Builder(Some(name)).leaf(builder.result())
   }
-}
-
-//used to convert SquashedFetchedRow to DF
-case class TypedField(
-    self: Field,
-    dataType: DataType,
-    metaData: Metadata = Metadata.empty
-) {
-
-  def toStructField: StructField = StructField(
-    self.name,
-    dataType
-  )
 }

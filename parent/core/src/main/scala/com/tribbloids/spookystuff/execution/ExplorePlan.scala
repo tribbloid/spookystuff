@@ -1,10 +1,8 @@
 package com.tribbloids.spookystuff.execution
 
-import java.util.UUID
-
-import com.tribbloids.spookystuff.actions.{Trace, TraceView}
+import com.tribbloids.spookystuff.actions.{Action, Trace, TraceSet}
 import com.tribbloids.spookystuff.caching.ExploreRunnerCache
-import com.tribbloids.spookystuff.dsl.{ExploreAlgorithm, GenPartitioner, JoinType}
+import com.tribbloids.spookystuff.dsl.{ExploreAlgorithm, ForkType, GenPartitioner}
 import com.tribbloids.spookystuff.execution.ExplorePlan.{Open_Visited, Params}
 import com.tribbloids.spookystuff.execution.MapPlan.RowMapperFactory
 import com.tribbloids.spookystuff.extractors._
@@ -12,6 +10,8 @@ import com.tribbloids.spookystuff.extractors.impl.{Get, Lit}
 import com.tribbloids.spookystuff.row._
 import org.apache.spark.rdd.RDD
 import org.apache.spark.sql.types.{ArrayType, IntegerType}
+
+import java.util.UUID
 
 object ExplorePlan {
 
@@ -28,8 +28,8 @@ object ExplorePlan {
 
   // use Array to minimize serialization footage
   case class Open_Visited(
-      open: Option[Array[DataRow]] = None,
-      visited: Option[Array[DataRow]] = None
+      open: Option[Vector[DataRow]] = None,
+      visited: Option[Vector[DataRow]] = None
   )
 }
 
@@ -37,15 +37,15 @@ case class ExplorePlan(
     override val child: ExecutionPlan,
     on: Alias[FetchedRow, Any],
     sampler: Sampler[Any],
-    joinType: JoinType,
-    traces: Set[Trace],
-    keyBy: Trace => Any,
+    forkType: ForkType,
+    traces: TraceSet,
+    keyBy: List[Action] => Any,
     genPartitioner: GenPartitioner,
     params: Params,
     exploreAlgorithm: ExploreAlgorithm,
-    epochSize: Int,
-    // TODO: stopping condition can be more than this,
-    // TODO: test if proceed to next epoch works
+    miniBatchSize: Int,
+    // TODO: enable more flexible stopping condition
+    // TODO: test if proceeding to next miniBatch is necessary
     checkpointInterval: Int, // set to Int.MaxValue to disable checkpointing,
 
     //                          extracts: Seq[Extractor[Any]],
@@ -86,8 +86,8 @@ case class ExplorePlan(
       Get(_effectiveParams.depthField).typed[Int].andMap(_ + 1) withAlias _effectiveParams.depthField.!!
     )
     .head
-  val _ordinal: TypedField =
-    resolver.includeTyped(TypedField(_effectiveParams.ordinalField, ArrayType(IntegerType))).head
+
+  resolver.includeTyped(TypedField(_effectiveParams.ordinalField, ArrayType(IntegerType))).head
 
   val _protoSchema: SpookySchema = resolver.build
 
@@ -122,106 +122,99 @@ case class ExplorePlan(
 
   val impl: ExploreAlgorithm.Impl = exploreAlgorithm.getImpl(_effectiveParams, this.schema)
 
-  override def doExecute(): SquashedFetchedRDD = {
+  override def doExecute(): BottleneckRDD = {
     assert(_effectiveParams.depthField != null)
 
     if (spooky.sparkContext.getCheckpointDir.isEmpty && checkpointInterval > 0)
       spooky.sparkContext.setCheckpointDir(spooky.dirConf.checkpoint)
 
-    val rowMapper: SquashedFetchedRow => SquashedFetchedRow = { row =>
+    val rowMapper: BottleneckRow => BottleneckRow = { row =>
       allRowMappers.foldLeft(row) { (row, rowMapper) =>
-        rowMapper(row)
+        val rm: MapPlan.RowMapper = rowMapper
+
+        rm(row)
       }
     }
 
-    val state0RDD: RDD[(TraceView, Open_Visited)] = child
-      .rdd()
+    val state0RDD: RDD[(Trace, Open_Visited)] = child.bottleneckRDD
       .flatMap { row0 =>
         val row0WithDepth = row0.extract(depth_0)
-        val depth0 = rowMapper.apply(row0WithDepth)
-        val visited0 = if (_effectiveParams.range.contains(0)) {
-          // extract on selfRDD, add into visited set.
-          Some(depth0.traceView -> Open_Visited(visited = Some(depth0.dataRows)))
-        } else {
-          None
-        }
+        val row0Mapped = rowMapper.apply(row0WithDepth)
 
-        val open0 = depth0
+        val open0 = row0Mapped
           .extract(_on)
-          .flattenData(_on.field, _effectiveParams.ordinalField, joinType.isLeft, sampler)
-          .interpolateAndRewriteLocally(traces)
+          .explodeData(_on.field, _effectiveParams.ordinalField, forkType, sampler)
+          .interpolateAndRewrite(traces)
           .map { t =>
-            t._1 -> Open_Visited(open = Some(Array(t._2)))
+            t._1 -> Open_Visited(open = Some(Vector(t._2)))
           }
+
+        val visited0 = {
+          if (_effectiveParams.range.contains(-1)) {
+            Some(row0Mapped.traceView -> Open_Visited(visited = Some(row0Mapped.dataRows)))
+          } else {
+            None
+          }
+        }
 
         (open0 ++ visited0).map {
           case (k, v) =>
-            k.keyBy(keyBy) -> v
+            k.setSamenessFn(keyBy) -> v
         }
       }
-
-    val combinedReducer: (Open_Visited, Open_Visited) => Open_Visited = { (v1, v2) =>
-      Open_Visited(
-        open =
-          (v1.open ++ v2.open).map(_.iterator.to(Iterable)).reduceOption(impl.openReducerBetweenEpochs).map(_.toArray),
-        visited = (v1.visited ++ v2.visited)
-          .map(_.iterator.to(Iterable))
-          .reduceOption(impl.visitedReducerBetweenEpochs)
-          .map(_.toArray)
-      )
-    }
-
-    // this will use globalReducer, same thing will happen to later states, eliminator however will only be used inside ExploreStateView.execute()
-    //    val reducedState0RDD: RDD[(TraceView, Open_Visited)] = betweenEpochReduce(state0RDD, combinedReducer)
 
     val openSetSize = spooky.sparkContext.longAccumulator
     var i = 1
     var stop: Boolean = false
 
-    var stateRDD: RDD[(TraceView, Open_Visited)] = state0RDD
+    val finalStateRDD: RDD[(Trace, Open_Visited)] = {
 
-    while (!stop) {
+      var stateRDD: RDD[(Trace, Open_Visited)] = state0RDD
 
-      openSetSize.reset
+      while (!stop) {
 
-      val reduceStateRDD: RDD[(TraceView, Open_Visited)] = betweenEpochReduce(stateRDD, combinedReducer)
+        openSetSize.reset
 
-      val stateRDD_+ : RDD[(TraceView, Open_Visited)] = reduceStateRDD.mapPartitions { itr =>
-        val state = new ExploreRunner(itr, impl, keyBy)
-        val state_+ = state.run(
-          _on,
-          sampler,
-          joinType,
-          traces
-        )(
-          epochSize,
-          depth_++,
-          spooky
-        )(
-          rowMapper
-        )
-        openSetSize add state.open.size.toLong
-        state_+
+        val reduceStateRDD: RDD[(Trace, Open_Visited)] = reduceBetweenMiniBatch(stateRDD, impl.combineGlobally)
+
+        val stateRDD_+ : RDD[(Trace, Open_Visited)] = reduceStateRDD.mapPartitions { itr =>
+          val localRunner = new ExploreAlgorithmRunner(itr, impl, keyBy)
+          val state_+ = localRunner.run(
+            _on,
+            sampler,
+            forkType,
+            traces
+          )(
+            miniBatchSize,
+            depth_++
+          )(
+            rowMapper
+          )
+          openSetSize add localRunner.open.size.toLong
+          state_+
+        }
+
+        // this will use globalReducer, same thing will happen to later states, eliminator however will only be used inside ExploreStateView.execute()
+
+        //      val reducedStateRDD_+ : RDD[(TraceView, Open_Visited)] = betweenEpochReduce(stateRDD_+, combinedReducer)
+
+        persist(stateRDD_+, spooky.spookyConf.defaultStorageLevel)
+        if (checkpointInterval > 0 && i % checkpointInterval == 0) {
+          stateRDD_+.checkpoint()
+        }
+
+        stateRDD_+.count()
+        scratchRDDs.unpersist(stateRDD)
+        if (openSetSize.value == 0) stop = true
+
+        stateRDD = stateRDD_+
+        i += 1
       }
 
-      // this will use globalReducer, same thing will happen to later states, eliminator however will only be used inside ExploreStateView.execute()
-
-      //      val reducedStateRDD_+ : RDD[(TraceView, Open_Visited)] = betweenEpochReduce(stateRDD_+, combinedReducer)
-
-      persist(stateRDD_+, spooky.spookyConf.defaultStorageLevel)
-      if (checkpointInterval > 0 && i % checkpointInterval == 0) {
-        stateRDD_+.checkpoint()
-      }
-
-      stateRDD_+.count()
-      scratchRDDs.unpersist(stateRDD)
-      if (openSetSize.value == 0) stop = true
-
-      stateRDD = stateRDD_+
-      i += 1
+      stateRDD
     }
 
-    val result = stateRDD
+    val result: RDD[BottleneckRow] = finalStateRDD
       .mapPartitions { itr =>
         ExploreRunnerCache.finishExploreExecutions(
           params.executionID
@@ -232,17 +225,17 @@ case class ExplorePlan(
         val visitedOpt = v._2.visited
 
         visitedOpt.map { visited =>
-          SquashedFetchedRow(visited, v._1)
+          BottleneckRow(visited, v._1)
         }
       }
 
     result
   }
 
-  def betweenEpochReduce(
-      stateRDD: RDD[(TraceView, Open_Visited)],
+  def reduceBetweenMiniBatch(
+      stateRDD: RDD[(Trace, Open_Visited)],
       reducer: (Open_Visited, Open_Visited) => Open_Visited
-  ): RDD[(TraceView, Open_Visited)] = {
+  ): RDD[(Trace, Open_Visited)] = {
     gpImpl.reduceByKey[Open_Visited](stateRDD, reducer, beaconRDDOpt)
   }
 }

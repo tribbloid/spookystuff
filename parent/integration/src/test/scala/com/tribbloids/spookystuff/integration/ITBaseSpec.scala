@@ -1,7 +1,7 @@
 package com.tribbloids.spookystuff.integration
 
 import com.tribbloids.spookystuff._
-import com.tribbloids.spookystuff.actions.TraceView
+import com.tribbloids.spookystuff.actions.Trace
 import com.tribbloids.spookystuff.conf.{DriverFactory, SpookyConf}
 import com.tribbloids.spookystuff.dsl._
 import com.tribbloids.spookystuff.metrics.SpookyMetrics
@@ -33,7 +33,7 @@ abstract class ITBaseSpec extends SpookyBaseSpec with LocalURIDocsFixture {
     //    htmlUnit
   )
 
-  lazy val genPartitioners: Seq[GenPartitionerLike[TraceView, Any]] = Seq(
+  lazy val genPartitioners: Seq[GenPartitionerLike[Trace, Any]] = Seq(
     GenPartitioners.Narrow,
     GenPartitioners.Wide(),
     GenPartitioners.DocCacheAware()

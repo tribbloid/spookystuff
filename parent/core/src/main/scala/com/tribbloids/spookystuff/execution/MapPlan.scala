@@ -1,6 +1,7 @@
 package com.tribbloids.spookystuff.execution
 
-import com.tribbloids.spookystuff.doc.{Doc, Fetched}
+import com.tribbloids.spookystuff.doc.{Doc, Trajectory}
+import com.tribbloids.spookystuff.dsl.ForkType
 import com.tribbloids.spookystuff.execution.MapPlan.RowMapperFactory
 import com.tribbloids.spookystuff.extractors.impl.Get
 import com.tribbloids.spookystuff.extractors.{Extractor, Resolved}
@@ -19,9 +20,9 @@ case class MapPlan(
 
   override val schema: SpookySchema = mapFn.schema
 
-  final override def doExecute(): SquashedFetchedRDD = {
+  final override def doExecute(): BottleneckRDD = {
 
-    val rdd = child.rdd()
+    val rdd = child.bottleneckRDD
     rdd.map {
       mapFn
     }
@@ -31,7 +32,7 @@ case class MapPlan(
 
 object MapPlan extends CatalystTypeOps.ImplicitMixin {
 
-  trait RowMapper extends (SquashedFetchedRow => SquashedFetchedRow) with Serializable {
+  trait RowMapper extends (BottleneckRow => BottleneckRow) with Serializable {
     def schema: SpookySchema
   }
 
@@ -66,16 +67,16 @@ object MapPlan extends CatalystTypeOps.ImplicitMixin {
       resolver.build
     }
 
-    override def apply(v: SquashedFetchedRow): SquashedFetchedRow = {
-      v.WSchema(schema).extract(_exs: _*)
+    override def apply(v: BottleneckRow): BottleneckRow = {
+      v.extract(_exs: _*)
     }
   }
 
-  case class Flatten(
+  case class ExplodeData(
       onField: Field,
       ordinalField: Field,
       sampler: Sampler[Any],
-      isLeft: Boolean
+      forkType: ForkType
   )(val childSchema: SpookySchema)
       extends RowMapper {
 
@@ -95,12 +96,26 @@ object MapPlan extends CatalystTypeOps.ImplicitMixin {
         Field(_on.self.name + "_ordinal", isWeak = true, isOrdinal = true)
     }
 
-    val _ordinal: TypedField = resolver.includeTyped(TypedField(effectiveOrdinalField, ArrayType(IntegerType))).head
+    val _: TypedField = resolver.includeTyped(TypedField(effectiveOrdinalField, ArrayType(IntegerType))).head
 
     override val schema: SpookySchema = resolver.build
 
-    override def apply(v: SquashedFetchedRow): SquashedFetchedRow =
-      v.flattenData(onField, effectiveOrdinalField, isLeft, sampler)
+    override def apply(v: BottleneckRow): BottleneckRow = {
+      val result = v.explodeData(onField, effectiveOrdinalField, forkType, sampler)
+      result
+    }
+  }
+
+  case class ExplodeObservations(
+      fn: Trajectory => Seq[Trajectory]
+  )(val childSchema: SpookySchema)
+      extends RowMapper {
+
+    override def schema: SpookySchema = childSchema
+
+    override def apply(v: BottleneckRow): BottleneckRow = {
+      v.explodeTrajectory(fn)
+    }
   }
 
   case class Remove(
@@ -110,19 +125,7 @@ object MapPlan extends CatalystTypeOps.ImplicitMixin {
 
     override val schema: SpookySchema = childSchema -- toBeRemoved
 
-    override def apply(v: SquashedFetchedRow): SquashedFetchedRow = v.remove(toBeRemoved: _*)
-  }
-
-  case class ExplodeObservations(
-      fn: Seq[Fetched] => Seq[Seq[Fetched]]
-  )(val childSchema: SpookySchema)
-      extends RowMapper {
-
-    override def schema: SpookySchema = childSchema
-
-    override def apply(v: SquashedFetchedRow): SquashedFetchedRow = {
-      v.copy(explodeObservationsFn = fn)
-    }
+    override def apply(v: BottleneckRow): BottleneckRow = v.remove(toBeRemoved: _*)
   }
 
   case class SavePages(
@@ -141,10 +144,10 @@ object MapPlan extends CatalystTypeOps.ImplicitMixin {
 
     override val schema: SpookySchema = childSchema
 
-    override def apply(v: SquashedFetchedRow): SquashedFetchedRow = {
+    override def apply(v: BottleneckRow): BottleneckRow = {
       val wSchema = v.WSchema(schema)
 
-      wSchema.unsquash
+      wSchema.unsquashed
         .foreach { pageRow =>
           var pathStr: Option[String] = _path.lift(pageRow).map(_.toString).map { str =>
             val splitted = str.split(":")

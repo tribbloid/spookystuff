@@ -1,8 +1,8 @@
 package com.tribbloids.spookystuff.dsl
 
+import com.tribbloids.spookystuff.actions.Trace
 import com.tribbloids.spookystuff.caching.ExploreRunnerCache
-import com.tribbloids.spookystuff.execution.ExplorePlan.Params
-import com.tribbloids.spookystuff.execution.NodeKey
+import com.tribbloids.spookystuff.execution.ExplorePlan.{Open_Visited, Params}
 import com.tribbloids.spookystuff.row._
 import com.tribbloids.spookystuff.utils.Caching.ConcurrentMap
 
@@ -21,54 +21,70 @@ object ExploreAlgorithm {
     val params: Params
     val schema: SpookySchema
 
-    /**
-      */
     def openReducer: RowReducer
 
-    def openReducerBetweenEpochs: RowReducer = openReducer
+    def openReducer_global: RowReducer = openReducer
 
-    def nextOpenSelector(
-        open: ConcurrentMap[NodeKey, Iterable[DataRow]]
-    ): (NodeKey, Iterable[DataRow])
+    def selectNext(
+        open: ConcurrentMap[Trace, Vector[DataRow]]
+    ): (Trace, Vector[DataRow])
 
-    /**
-      */
     def visitedReducer: RowReducer // precede eliminator
 
-    def visitedReducerBetweenEpochs: RowReducer = visitedReducer
+    def visitedReducer_global: RowReducer = visitedReducer
+
+    def combine(open: RowReducer, visited: RowReducer): (Open_Visited, Open_Visited) => Open_Visited = { (v1, v2) =>
+      Open_Visited(
+        open = (v1.open ++ v2.open).reduceOption(open).map(_.toVector),
+        visited = (v1.visited ++ v2.visited)
+          .reduceOption(visited)
+          .map(_.toVector)
+      )
+    }
+
+    @transient lazy val combineLocally: (Open_Visited, Open_Visited) => Open_Visited =
+      combine(openReducer, visitedReducer)
+
+    @transient lazy val combineGlobally: (Open_Visited, Open_Visited) => Open_Visited =
+      combine(openReducer_global, visitedReducer_global)
+
   }
 
   trait EliminatingImpl extends Impl {
 
-    /**
-      */
     val ordering: RowOrdering
 
-    /**
-      */
-    def eliminator(
-        open: Iterable[DataRow],
-        visited: Iterable[DataRow]
-    ): Iterable[DataRow]
+    final def pruneOpen(
+        open: Vector[DataRow],
+        visited: Vector[DataRow]
+    ): Vector[DataRow] = {
+      if (open.isEmpty || visited.isEmpty) open
+      else pruneOpenNonEmpty(open, visited)
+    }
 
-    final override def nextOpenSelector(
-        open: ConcurrentMap[NodeKey, Iterable[DataRow]]
-    ): (NodeKey, Iterable[DataRow]) = {
+    protected def pruneOpenNonEmpty(
+        open: Vector[DataRow],
+        visited: Vector[DataRow]
+    ): Vector[DataRow]
 
-      // Should I use pre-sorted collection? Or is it overengineering?
-      val bestOpenBeforeElimination: (NodeKey, Iterable[DataRow]) = open.min(ordering)
+    final override def selectNext(
+        open: ConcurrentMap[Trace, Vector[DataRow]]
+    ): (Trace, Vector[DataRow]) = {
+
+      // TODO: Should I use pre-sorted collection? Or is it over-engineering?
+      val bestOpenBeforeElimination = open.min(ordering)
       val bestOpenNodeID = bestOpenBeforeElimination._1
 
       open -= bestOpenNodeID
 
-      val existingVisitedOption: Option[Iterable[DataRow]] =
+      val existingVisitedOption =
         ExploreRunnerCache
           .get(bestOpenNodeID -> params.executionID)
           .reduceOption(visitedReducer)
 
-      val bestOpen: (NodeKey, Iterable[DataRow]) = existingVisitedOption match {
+      val bestOpen = existingVisitedOption match {
         case Some(allVisited) =>
-          val dataRowsAfterElimination = eliminator(bestOpenBeforeElimination._2, allVisited)
+          val dataRowsAfterElimination = pruneOpen(bestOpenBeforeElimination._2, allVisited)
           bestOpenBeforeElimination.copy(_2 = dataRowsAfterElimination)
         case None =>
           bestOpenBeforeElimination

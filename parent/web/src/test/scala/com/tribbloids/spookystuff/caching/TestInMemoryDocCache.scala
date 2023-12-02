@@ -1,6 +1,6 @@
 package com.tribbloids.spookystuff.caching
 
-import com.tribbloids.spookystuff.actions.{TraceView, Wget}
+import com.tribbloids.spookystuff.actions.{Trace, Wget}
 import com.tribbloids.spookystuff.doc.{Doc, DocUID}
 import com.tribbloids.spookystuff.testutils.{LocalPathDocsFixture, SpookyBaseSpec}
 import com.tribbloids.spookystuff.web.actions.{Snapshot, Visit}
@@ -14,7 +14,7 @@ class TestInMemoryDocCache extends SpookyBaseSpec with LocalPathDocsFixture {
 
   lazy val cache: AbstractDocCache = InMemoryDocCache
 
-  val visit: TraceView = Visit(HTML_URL) +> Snapshot().as('old)
+  val visit: Trace = Visit(HTML_URL) +> Snapshot().as('old)
   def visitPage: Seq[Doc] = visit.fetch(spooky).map(_.asInstanceOf[Doc])
 
   val wget: Wget = Wget(HTML_URL).as('oldWget)
