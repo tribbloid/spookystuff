@@ -4,14 +4,14 @@ package com.tribbloids.spookystuff.dsl
   * Created by peng on 8/31/14.
   */
 //TODO: use Spark JoinType
-sealed abstract class JoinType(val isLeft: Boolean) extends Serializable with Product
+sealed abstract class ForkType(val isLeft: Boolean) extends Serializable with Product
 
-object JoinType {
+object ForkType {
 
   // trait LeftLink extends JoinType //Join yield at least 1 PageRow that may have empty action chain, now assuming always happen
-  case object Inner extends JoinType(false)
+  case object Inner extends ForkType(false)
 
-  case object LeftOuter extends JoinType(true) // Flatten yield at least 1 PageRow that may have no page
+  case object Outer extends ForkType(true) // Flatten yield at least 1 PageRow that may have no page
   // case object Overwrite extends JoinType //keep the original pages if new trace is empty
   // case object Append extends JoinType //always keep the original traces
 
@@ -28,4 +28,6 @@ object JoinType {
   // case object Last extends MergeStrategy((a,b) => b) //always keep the original pages
   // case object Error extends MergeStrategy(throw new UnsupportedOperationException("merge conflict"))
   // case object Concat extends MergeStrategy((a,b) => a.asInstanceOf[Iterable[_]] ++ b.asInstanceOf[IterableOnce[_]])
+
+  val default: ForkType = ForkType.Outer
 }

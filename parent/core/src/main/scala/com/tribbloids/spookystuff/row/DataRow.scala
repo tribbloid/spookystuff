@@ -1,5 +1,7 @@
 package com.tribbloids.spookystuff.row
 
+import com.tribbloids.spookystuff.dsl.ForkType
+
 import java.util.UUID
 import com.tribbloids.spookystuff.utils.{SpookyUtils, SpookyViews}
 import com.tribbloids.spookystuff.relay.{ProtoAPI, TreeIR}
@@ -75,13 +77,13 @@ case class DataRow(
   def flatten(
       field: Field,
       ordinalField: Field,
-      left: Boolean,
+      forkType: ForkType,
       sampler: Sampler[Any]
   ): Seq[DataRow] = {
 
     val newValues_Indices = data.flattenByKey(field, sampler)
 
-    if (left && newValues_Indices.isEmpty) {
+    if (forkType.isLeft && newValues_Indices.isEmpty) {
       Seq(this.copy(data = data - field)) // you don't lose the remainder of a row because an element is empty
     } else {
       val result: Seq[(DataRow, Int)] = newValues_Indices.map(tuple => this.copy(data = tuple._1.toMap) -> tuple._2)

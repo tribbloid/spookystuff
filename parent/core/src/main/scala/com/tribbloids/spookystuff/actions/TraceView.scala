@@ -112,12 +112,13 @@ case class TraceView(
   }
 
   def interpolateAndRewriteLocally(row: FetchedRow, schema: SpookySchema): Seq[TraceView] = {
-    // TODO: isolate interploation into an independent rewriter?
-    val interpolatedOpt: Option[Trace] = interpolate(row, schema)
-      .map(_.children)
-    interpolatedOpt.toSeq.flatMap { v =>
-      TraceView(v).rewriteLocally(schema)
+
+    val interpolatedOpt = interpolate(row, schema)
+    val result = interpolatedOpt.toSeq.flatMap { v =>
+      v.rewriteLocally(schema)
     }
+
+    result
   }
 
   def rewriteLocally(schema: SpookySchema): Seq[TraceView] = {

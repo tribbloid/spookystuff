@@ -17,27 +17,6 @@ class FetchedDatasetSuite extends SpookyBaseSpec with LocalPathDocsFixture {
 
   import dsl._
 
-  //    test("should support repartition") {
-  //      val spooky = this.spooky
-  //
-  //      sc.setCheckpointDir(s"file://${CommonConst.USER_DIR}/temp/spooky-unit/${this.getClass.getSimpleName}/")
-  //
-  //      val first = spooky
-  //        .fetch(Wget("http://en.wikipedia.org")).persist()
-  //      first.checkpoint()
-  //      first.count()
-  //
-  //      val second = first.wgetJoin(S"a".hrefs, joinType = LeftOuter)
-  //        .extract(S.uri ~ 'uri)
-  //        .repartition(14)
-  //
-  //      val result = second.collect()
-  //      result.foreach(println)
-  //
-  //      assert(result.length == 2)
-  //      assert(first.spooky.metrics.pagesFetched.value == 2)
-  //    }
-
   it(s".map should not run preceding transformation multiple times") {
     val acc = Acc.create(0)
 

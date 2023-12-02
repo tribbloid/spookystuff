@@ -1,7 +1,7 @@
 package com.tribbloids.spookystuff.integration.explore
 
 import com.tribbloids.spookystuff.actions._
-import com.tribbloids.spookystuff.dsl.JoinType.LeftOuter
+import com.tribbloids.spookystuff.dsl.ForkType.Outer
 import com.tribbloids.spookystuff.dsl._
 import com.tribbloids.spookystuff.integration.ITBaseSpec
 
@@ -20,13 +20,13 @@ class JoinAndExplorePagesIT extends ITBaseSpec {
       .fetch(
         Wget("http://localhost:10092/test-sites/e-commerce/static")
       )
-      .join(S"div.sidebar-nav a", LeftOuter, ordinalField = 'i1)(
+      .join(S"div.sidebar-nav a", Outer, ordinalField = 'i1)(
         Wget('A.href)
       )
       .extract(
         'A.text ~ 'category
       )
-      .join(S"a.subcategory-link", LeftOuter, ordinalField = 'i2)(
+      .join(S"a.subcategory-link", Outer, ordinalField = 'i2)(
         Wget('A.href)
       )
       .extract(

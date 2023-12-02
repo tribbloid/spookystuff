@@ -1,7 +1,7 @@
 package com.tribbloids.spookystuff.integration.join
 
 import com.tribbloids.spookystuff.actions.Action
-import com.tribbloids.spookystuff.dsl.JoinType.Inner
+import com.tribbloids.spookystuff.dsl.ForkType.Inner
 import com.tribbloids.spookystuff.dsl._
 import com.tribbloids.spookystuff.extractors.Col
 import com.tribbloids.spookystuff.integration.ITBaseSpec

@@ -299,7 +299,7 @@ case class FetchedDataset(
 
   def flatten(
       ex: Extractor[Any],
-      isLeft: Boolean = true,
+      forkType: ForkType = ForkType.default,
       ordinalField: Field = null,
       sampler: Sampler[Any] = spooky.spookyConf.defaultFlattenSampler
   ): FetchedDataset = {
@@ -313,7 +313,7 @@ case class FetchedDataset(
         ff -> this.extract(ex)
     }
 
-    MapPlan.optimised(extracted.plan, MapPlan.Flatten(on, ordinalField, sampler, isLeft))
+    MapPlan.optimised(extracted.plan, MapPlan.Flatten(on, ordinalField, sampler, forkType))
   }
 
   /**
@@ -323,12 +323,12 @@ case class FetchedDataset(
     */
   def flatExtract(
       on: Extractor[Any], // TODO: used to be Iterable[Unstructured], any tradeoff?
-      isLeft: Boolean = true,
+      forkType: ForkType = ForkType.default,
       ordinalField: Field = null,
       sampler: Sampler[Any] = spooky.spookyConf.defaultFlattenSampler
   )(exprs: Extractor[Any]*): FetchedDataset = {
     this
-      .flatten(on.withJoinFieldIfMissing, isLeft, ordinalField, sampler)
+      .flatten(on.withJoinFieldIfMissing, forkType, ordinalField, sampler)
       .extract(exprs: _*)
   }
 
@@ -336,8 +336,8 @@ case class FetchedDataset(
       on: Extractor[Any], // TODO: used to be Iterable[Unstructured], any tradeoff?
       ordinalField: Field = null,
       sampler: Sampler[Any] = spooky.spookyConf.defaultFlattenSampler,
-      isLeft: Boolean = true
-  )(exprs: Extractor[Any]*): FetchedDataset = flatExtract(on, isLeft, ordinalField, sampler)(exprs: _*)
+      forkType: ForkType = ForkType.default
+  )(exprs: Extractor[Any]*): FetchedDataset = flatExtract(on, forkType, ordinalField, sampler)(exprs: _*)
 
   // TODO: test
   def agg(exprs: Seq[FetchedRow => Any], reducer: RowReducer): FetchedDataset = AggPlan(plan, exprs, reducer)
@@ -398,9 +398,9 @@ case class FetchedDataset(
 
   def join(
       on: Extractor[Any], // name is discarded
-      joinType: JoinType = spooky.spookyConf.defaultJoinType,
+      forkType: ForkType = ForkType.default,
       ordinalField: Field = null, // left & idempotent parameters are missing as they are always set to true
-      sampler: Sampler[Any] = spooky.spookyConf.defaultJoinSampler
+      sampler: Sampler[Any] = spooky.spookyConf.defaultForkSampler
   )(
       traces: Set[Trace],
       keyBy: Trace => Any = identity,
@@ -408,7 +408,7 @@ case class FetchedDataset(
   ): FetchedDataset = {
 
     val flat = this
-      .flatten(on.withJoinFieldIfMissing, joinType.isLeft, ordinalField, sampler)
+      .flatten(on.withJoinFieldIfMissing, forkType, ordinalField, sampler)
 
     flat.fetch(traces, keyBy, genPartitioner)
   }
@@ -422,9 +422,9 @@ case class FetchedDataset(
     */
   def wgetJoin(
       on: Extractor[Any],
-      joinType: JoinType = spooky.spookyConf.defaultJoinType,
+      forkType: ForkType = ForkType.default,
       ordinalField: Field = null, // left & idempotent parameters are missing as they are always set to true
-      sampler: Sampler[Any] = spooky.spookyConf.defaultJoinSampler,
+      sampler: Sampler[Any] = spooky.spookyConf.defaultForkSampler,
       cooldown: Option[Duration] = None,
       keyBy: Trace => Any = identity,
       filter: DocFilter = Const.defaultDocumentFilter,
@@ -437,7 +437,7 @@ case class FetchedDataset(
       trace = ClusterRetry(trace, failSafe).traceView
     }
 
-    this.join(on, joinType, ordinalField, sampler)(
+    this.join(on, forkType, ordinalField, sampler)(
       trace,
       keyBy,
       genPartitioner = genPartitioner
@@ -447,9 +447,9 @@ case class FetchedDataset(
   // TODO: how to unify this with join?
   def explore(
       on: Extractor[Any],
-      joinType: JoinType = spooky.spookyConf.defaultJoinType,
+      forkType: ForkType = ForkType.default,
       ordinalField: Field = null,
-      sampler: Sampler[Any] = spooky.spookyConf.defaultJoinSampler
+      sampler: Sampler[Any] = spooky.spookyConf.defaultForkSampler
   )(
       traces: Set[Trace],
       keyBy: Trace => Any = identity,
@@ -470,7 +470,7 @@ case class FetchedDataset(
       plan,
       on.withJoinFieldIfMissing,
       sampler,
-      joinType,
+      forkType,
       TraceSetView(traces).rewriteGlobally(plan.schema),
       keyBy,
       genPartitioner,
@@ -484,9 +484,9 @@ case class FetchedDataset(
 
   def wgetExplore(
       on: Extractor[Any],
-      joinType: JoinType = spooky.spookyConf.defaultJoinType,
+      forkType: ForkType = ForkType.default,
       ordinalField: Field = null,
-      sampler: Sampler[Any] = spooky.spookyConf.defaultJoinSampler,
+      sampler: Sampler[Any] = spooky.spookyConf.defaultForkSampler,
       filter: DocFilter = Const.defaultDocumentFilter,
       failSafe: Int = -1,
       cooldown: Option[Duration] = None,
@@ -505,7 +505,7 @@ case class FetchedDataset(
     var trace = _defaultWget(cooldown, filter)
     if (failSafe > 0) trace = ClusterRetry(trace, failSafe)
 
-    explore(on, joinType, ordinalField, sampler)(
+    explore(on, forkType, ordinalField, sampler)(
       trace,
       keyBy,
       genPartitioner,

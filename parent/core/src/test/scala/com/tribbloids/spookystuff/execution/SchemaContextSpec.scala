@@ -7,7 +7,7 @@ import com.tribbloids.spookystuff.testutils.SpookyBaseSpec
 /**
   * Created by peng on 14/06/16.
   */
-class SchemaContextSuite extends SpookyBaseSpec {
+class SchemaContextSpec extends SpookyBaseSpec {
 
   import com.tribbloids.spookystuff.dsl._
 

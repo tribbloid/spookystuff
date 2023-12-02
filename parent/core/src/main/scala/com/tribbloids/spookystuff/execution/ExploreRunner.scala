@@ -50,7 +50,7 @@ class ExploreRunner(
   protected def executeOnce(
       resolved: Resolved[Any],
       sampler: Sampler[Any],
-      joinType: JoinType,
+      forkType: ForkType,
       trace: Set[Trace]
   )(
       `depth_++`: Resolved[Int],
@@ -84,15 +84,15 @@ class ExploreRunner(
 
       this.commitIntoVisited(bestOpen._1, bestDataRowsInRange, visitedReducer)
 
-      val bestNonFringeRow = bestRow.copy(
+      val bestRowInRange = bestRow.copy(
         dataRows = bestRow.dataRows.filter { dataRow =>
           dataRow.getInt(depth_++.field).get < range.max
         }
       )
 
-      val newOpens: Array[(TraceView, DataRow)] = bestNonFringeRow
+      val newOpens: Array[(TraceView, DataRow)] = bestRowInRange
         .extract(resolved)
-        .flattenData(resolved.field, ordinalField, joinType.isLeft, sampler)
+        .flattenData(resolved.field, ordinalField, forkType, sampler)
         .interpolateAndRewriteLocally(trace)
         .map { tuple =>
           tuple._1 -> tuple._2
@@ -112,7 +112,7 @@ class ExploreRunner(
   def run(
       resolved: Resolved[Any],
       sampler: Sampler[Any],
-      joinType: JoinType,
+      forkType: ForkType,
       traces: Set[Trace]
   )(
       maxItr: Int,
@@ -153,7 +153,7 @@ class ExploreRunner(
 
       for (_ <- 0 to maxItr) {
         if (open.isEmpty) return finish()
-        executeOnce(resolved, sampler, joinType, traces)(`depth_++`, spooky)(rowMapper)
+        executeOnce(resolved, sampler, forkType, traces)(`depth_++`, spooky)(rowMapper)
       }
 
       finish()

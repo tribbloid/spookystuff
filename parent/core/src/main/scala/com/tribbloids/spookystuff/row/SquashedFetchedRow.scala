@@ -1,9 +1,9 @@
 package com.tribbloids.spookystuff.row
 
 import java.util.UUID
-
-import com.tribbloids.spookystuff.actions.{Actions, Trace, TraceView}
+import com.tribbloids.spookystuff.actions.{Trace, TraceView}
 import com.tribbloids.spookystuff.doc.Fetched
+import com.tribbloids.spookystuff.dsl.ForkType
 import com.tribbloids.spookystuff.extractors.Resolved
 
 import scala.collection.mutable.ArrayBuffer
@@ -43,12 +43,12 @@ case class SquashedFetchedRow(
   def flattenData(
       field: Field,
       ordinalKey: Field,
-      left: Boolean,
+      forkType: ForkType,
       sampler: Sampler[Any]
   ): SquashedFetchedRow = {
 
     this.copy(
-      dataRows = this.dataRows.flatMap(_.flatten(field, ordinalKey, left, sampler))
+      dataRows = this.dataRows.flatMap(_.flatten(field, ordinalKey, forkType, sampler))
     )
   }
 
@@ -163,39 +163,40 @@ case class SquashedFetchedRow(
 
       val dataRows_traces = semiUnsquash.flatMap {
         rows => // each element contains a different page group, CAUTION: not all of them are used: page group that yield no new datum will be removed, if all groups yield no new datum at least 1 row is preserved
-          val dataRows_traces = rows.flatMap { row =>
+          val pairs = rows.flatMap { row =>
             traces.map { trace =>
-              val rewritten: Seq[TraceView] = TraceView(trace).interpolateAndRewriteLocally(row, schema)
+              val rewritten: Seq[TraceView] = TraceView(trace)
+                .interpolateAndRewriteLocally(row, schema)
+                .filter(_.nonEmpty)
               row.dataRow -> rewritten
               // always discard old pages & temporary data before repartition, unlike flatten
             }
           }
 
-          val filteredDataRows_traces =
-            if (!filterEmpty) dataRows_traces
+          val filteredPairs =
+            if (!filterEmpty) pairs
             else {
-              val result = dataRows_traces.filter(_._2.nonEmpty)
-              if (result.isEmpty) dataRows_traces.headOption.toArray
-              else result
+              val result = pairs.filter(_._2.nonEmpty)
+              result
             }
 
-          val mergedDataRows_traces =
-            if (!distinct) filteredDataRows_traces
-            else filteredDataRows_traces.groupBy(_._2).map(_._2.head).toArray
+          val distinctPairs =
+            if (!distinct) filteredPairs
+            else filteredPairs.groupBy(_._2).map(_._2.head).toArray
 
-          mergedDataRows_traces
+          distinctPairs
       }
 
-      dataRows_traces.flatMap { v =>
-        val traces = v._2
-        if (traces.isEmpty) {
-          Seq(TraceView(Actions.empty) -> v._1)
-        } else {
-          traces.map { trace =>
-            TraceView(trace) -> v._1
-          }
+      val result = dataRows_traces.flatMap { mergedDataRows_traces =>
+        val traces = mergedDataRows_traces._2
+
+        traces.map { trace =>
+          TraceView(trace) -> mergedDataRows_traces._1
         }
       }
+
+      result
     }
+
   }
 }

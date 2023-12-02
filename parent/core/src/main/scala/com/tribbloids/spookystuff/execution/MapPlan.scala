@@ -1,6 +1,7 @@
 package com.tribbloids.spookystuff.execution
 
 import com.tribbloids.spookystuff.doc.Doc
+import com.tribbloids.spookystuff.dsl.ForkType
 import com.tribbloids.spookystuff.execution.MapPlan.RowMapperFactory
 import com.tribbloids.spookystuff.extractors.impl.Get
 import com.tribbloids.spookystuff.extractors.{Extractor, Resolved}
@@ -77,7 +78,7 @@ object MapPlan extends CatalystTypeOps.ImplicitMixin {
       onField: Field,
       ordinalField: Field,
       sampler: Sampler[Any],
-      isLeft: Boolean
+      forkType: ForkType
   )(val childSchema: SpookySchema)
       extends RowMapper {
 
@@ -102,7 +103,7 @@ object MapPlan extends CatalystTypeOps.ImplicitMixin {
     override val schema: SpookySchema = resolver.build
 
     override def apply(v: SquashedFetchedRow): SquashedFetchedRow =
-      v.flattenData(onField, effectiveOrdinalField, isLeft, sampler)
+      v.flattenData(onField, effectiveOrdinalField, forkType, sampler)
   }
 
   case class Remove(

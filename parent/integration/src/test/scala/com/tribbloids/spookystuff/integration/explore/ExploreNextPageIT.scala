@@ -39,16 +39,18 @@ class ExploreNextPageIT extends ITBaseSpec {
       """.stripMargin
     )
 
-    val formatted = result.toJSON.collect().toSeq
-    assert(
-      formatted ===
+    val formatted = result.toJSON
+      .collect()
+      .toSeq
+      .mkString("\n")
+      .shouldBe(
         """
-          |{"page":0,"uri":"http://localhost:10092/test-sites/e-commerce/static/computers/tablets"}
-          |{"page":1,"index":[0],"button_text":"»","uri":"http://localhost:10092/test-sites/e-commerce/static/computers/tablets/2"}
-          |{"page":2,"index":[0,0],"button_text":"»","uri":"http://localhost:10092/test-sites/e-commerce/static/computers/tablets/3"}
-          |{"page":3,"index":[0,0,0],"button_text":"»","uri":"http://localhost:10092/test-sites/e-commerce/static/computers/tablets/4"}
-        """.stripMargin.trim.split('\n').toSeq
-    )
+        |{"page":0,"uri":"http://localhost:10092/test-sites/e-commerce/static/computers/tablets"}
+        |{"page":1,"index":[0],"button_text":"»","uri":"http://localhost:10092/test-sites/e-commerce/static/computers/tablets/2"}
+        |{"page":2,"index":[0,0],"button_text":"»","uri":"http://localhost:10092/test-sites/e-commerce/static/computers/tablets/3"}
+        |{"page":3,"index":[0,0,0],"button_text":"»","uri":"http://localhost:10092/test-sites/e-commerce/static/computers/tablets/4"}
+        """.stripMargin.trim
+      )
   }
 
   override def numPages: Long = 4

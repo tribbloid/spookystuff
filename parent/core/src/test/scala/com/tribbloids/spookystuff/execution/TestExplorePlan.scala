@@ -91,7 +91,7 @@ class TestExplorePlan extends SpookyBaseSpec with LocalPathDocsFixture {
       )
       .toDF(sort = true)
 
-    assert(df.collectAsList().size() == 6)
+    assert(df.collectAsList().size() == 5)
   }
 
   it("ExplorePlan will throw an exception if OrdinalField == DepthField") {
