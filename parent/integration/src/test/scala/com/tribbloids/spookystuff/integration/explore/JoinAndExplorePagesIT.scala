@@ -39,7 +39,8 @@ class JoinAndExplorePagesIT extends ITBaseSpec {
       .explore(S"ul.pagination a", ordinalField = 'i3)(
         Wget('A.href),
         depthField = 'depth
-      )(
+      )
+      .extract(
         'A.text as 'page,
         S.uri ~ 'uri
       )

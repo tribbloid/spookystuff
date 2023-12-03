@@ -28,7 +28,7 @@ class ExploreDirectoriesIT extends ITBaseSpec {
     val nodes = rootDoc
       .explore(S"root directory URI".texts)(
         Wget('A)
-      )()
+      )
       .extract(S.uri ~ 'uri)
     val result = nodes
       .flatExtract(S"root file")(

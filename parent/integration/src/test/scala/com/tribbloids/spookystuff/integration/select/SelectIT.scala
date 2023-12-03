@@ -13,7 +13,7 @@ class SelectIT extends ITBaseSpec {
       .fetch(
         Visit(HTML_URL)
       )
-      .select(
+      .extract(
         S.uri,
         S.timestamp,
         //        S"div.central-featured-lang".head ~ 'element,
@@ -58,13 +58,13 @@ class SelectIT extends ITBaseSpec {
     assert(expanded.head === "English The Free Encyclopedia")
 
     intercept[QueryException] {
-      set.select(
+      set.extract(
         S"div.central-featured-lang strong".text ~ 'title
       )
     }
 
     val rdd2 = set
-      .select(
+      .extract(
         S"div.central-featured-lang strong".text ~+ 'title
       )
 

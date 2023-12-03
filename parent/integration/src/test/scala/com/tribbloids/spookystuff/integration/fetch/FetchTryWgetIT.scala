@@ -24,7 +24,7 @@ class FetchTryWgetIT extends UncacheableIntegrationFixture {
       .fetch(
         ClusterRetry(Wget('_), 3)
       )
-      .select(S.code ~ 'page)
+      .extract(S.code ~ 'page)
       .persist()
     //
     assert(RDD.unsquashedRDD.first().getOnlyDoc.isEmpty)
@@ -38,7 +38,7 @@ class FetchTryWgetIT extends UncacheableIntegrationFixture {
         .fetch(
           ClusterRetry(Wget('_), 5)
         )
-        .select(S.code ~ 'page)
+        .extract(S.code ~ 'page)
         .collect()
     }
   }

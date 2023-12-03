@@ -23,13 +23,13 @@ class FetchWgetAndSaveIT extends ITBaseSpec {
       .fetch(
         Wget(imageURL)
       )
-      .select(Lit("Wikipedia") ~ 'name)
+      .extract(Lit("Wikipedia") ~ 'name)
       .persist()
     //    fetched.count()
 
     val rdd = fetched
       .savePages(x"file://${CommonConst.USER_DIR}/temp/spooky-integration/save/${'name}", overwrite = true)
-      .select(S.saved ~ 'saved_path)
+      .extract(S.saved ~ 'saved_path)
 
     val savedPageRows = rdd.unsquashedRDD.collect()
 

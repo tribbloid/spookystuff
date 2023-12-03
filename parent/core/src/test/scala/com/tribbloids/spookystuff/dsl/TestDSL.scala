@@ -16,8 +16,8 @@ class TestDSL extends SpookyBaseSpec with LocalPathDocsFixture {
     Wget(HTML_URL) ~ 'page
   ).fetch(spooky)
 
-  lazy val row: FetchedRow = SquashedFetchedRow
-    .withDocs(dataRows = Array(DataRow()), docs = pages)
+  lazy val row: FetchedRow = SquashedFetchedRow(dataRows = Array(DataRow()))
+    .setCache(pages)
     .extract(
       S"title".head.text withAlias 'abc,
       S"title".head withAlias 'def
@@ -52,8 +52,8 @@ class TestDSL extends SpookyBaseSpec with LocalPathDocsFixture {
 
   it("double quotes in selector by attribute should work") {
     val pages = Wget(HTML_URL).fetch(spooky).toArray
-    val row = SquashedFetchedRow
-      .withDocs(Array(DataRow()), docs = pages)
+    val row = SquashedFetchedRow(Array(DataRow()))
+      .setCache(pages)
       .extract(S"""a[href*="wikipedia"]""".href withAlias 'uri)
       .unsquash
       .head

@@ -16,7 +16,6 @@ class ExploreClickNextPageIT extends ITBaseSpec {
     val snapshotAllPages = (Snapshot()
       +> Loop(
         Click("ul.pagination a[rel=next]")
-//          +> Delay(2.seconds)
           +> Snapshot()
       ))
 
@@ -25,13 +24,16 @@ class ExploreClickNextPageIT extends ITBaseSpec {
         Visit("http://localhost:10092/test-sites/e-commerce/static")
           +> snapshotAllPages
       )
+      .explodeObservations(v => v.splitByDistinctNames)
 
     val result = base
       .explore(S"div.sidebar-nav a", ordinalField = 'index)(
         Visit('A.href)
           +> snapshotAllPages,
         depthField = 'depth
-      )(
+      )
+      .explodeObservations(v => v.splitByDistinctNames)
+      .extract(
         G ~+ 'page_index.`#`,
         S"ul.pagination li.active span".text ~ 'page_number,
         'A.text ~ 'category,

@@ -9,18 +9,7 @@ import com.tribbloids.spookystuff.session.Session
 
 import scala.collection.mutable.ArrayBuffer
 
-object TraceView {
-
-  def withDocs(
-      children: Trace = Nil,
-      keyBy: Trace => Any = identity,
-      docs: Seq[Fetched] = Nil
-  ): TraceView = {
-    val result = apply(children, keyBy)
-    result.docs = docs
-    result
-  }
-}
+object TraceView {}
 
 case class TraceView(
     override val children: Trace = Nil,
@@ -35,9 +24,14 @@ case class TraceView(
 
   override def toString: String = children.mkString("{ ", " -> ", " }")
 
-  @volatile @transient private var docs: Seq[Fetched] = _
+  @volatile @transient private var _cached: Seq[Fetched] = _
   // override, cannot be shipped, lazy evaluated TODO: not volatile?
-  def docsOpt: Option[Seq[Fetched]] = Option(docs)
+  def cachedOpt: Option[Seq[Fetched]] = Option(_cached)
+
+  def setCache(vs: Seq[Fetched]): this.type = {
+    this._cached = vs
+    this
+  }
 
   override def apply(session: Session): Seq[Fetched] = {
 
@@ -75,7 +69,7 @@ case class TraceView(
       }
     }
 
-    this.docs = results
+    setCache(results)
 
     results
   }
@@ -133,8 +127,8 @@ case class TraceView(
 
     // fetched may yield very large documents and should only be
     // loaded lazily and not shuffled or persisted (unless in-memory)
-    def getDoc: Seq[Fetched] = TraceView.this.synchronized {
-      docsOpt.getOrElse {
+    def observations: Seq[Fetched] = TraceView.this.synchronized {
+      cachedOpt.getOrElse {
         fetch
       }
     }

@@ -38,7 +38,7 @@ case class FetchedRow(
   // TODO: trace implementation is not accurate: the last backtrace has all previous exports removed
   def squash(spooky: SpookyContext): SquashedFetchedRow = SquashedFetchedRow(
     Array(dataRow),
-    TraceView.withDocs(docs = fetched)
+    TraceView().setCache(fetched)
   )
 
   def docs: Seq[Doc] = fetched.flatMap {
@@ -46,15 +46,13 @@ case class FetchedRow(
     case _         => None
   }
 
-  def noDocs: Seq[NoDoc] = fetched.flatMap {
-    case noPage: NoDoc => Some(noPage)
-    case _             => None
-  }
-
   def getOnlyDoc: Option[Doc] = {
     val pages = this.docs
 
-    if (pages.size > 1) throw new UnsupportedOperationException("Ambiguous key referring to multiple pages")
+    if (pages.size > 1)
+      throw new UnsupportedOperationException(
+        "Ambiguous key referring to multiple pages"
+      )
     else pages.headOption
   }
 

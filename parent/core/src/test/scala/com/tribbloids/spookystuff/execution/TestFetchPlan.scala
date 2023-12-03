@@ -63,7 +63,7 @@ class TestFetchPlan extends SpookyBaseSpec with LocalPathDocsFixture {
       .fetch(
         Wget(HTML_URL)
       )
-      .select(
+      .extract(
         Lit("Wikipedia") ~ 'name
       )
 

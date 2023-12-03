@@ -10,7 +10,7 @@ class SquashedFetchedRowSuite extends SpookyBaseSpec {
 
   it("Array[Page]().grouping yields at least 1 group") {
     val row = SquashedFetchedRow()
-    val grouped = row.defaultGroupedFetched.toSeq
+    val grouped = row.observations
     assert(grouped == Seq(Seq()))
   }
 
@@ -21,8 +21,9 @@ class SquashedFetchedRowSuite extends SpookyBaseSpec {
       wget ~ 'b +>
       wget ~ 'a +>
       wget ~ 'b
-    val row = SquashedFetchedRow.withDocs(docs = trace.fetch(spooky))
-    val grouped = row.defaultGroupedFetched.toSeq
+    val row =
+      SquashedFetchedRow().setCache(trace.fetch(spooky)).copy(explodeObservationsFn = v => v.splitByDistinctNames)
+    val grouped = row.observations
     val groupedNames = grouped.map {
       _.map {
         _.name

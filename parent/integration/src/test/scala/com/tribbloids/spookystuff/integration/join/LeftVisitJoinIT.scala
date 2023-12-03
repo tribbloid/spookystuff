@@ -34,7 +34,7 @@ class LeftVisitJoinIT extends ITBaseSpec {
       .extract(
         'A.text ~ 'subcategory
       )
-      .select(S"h1".text ~ 'header)
+      .extract(S"h1".text ~ 'header)
       .flatSelect(
         S"notexist",
         ordinalField = 'notexist_key

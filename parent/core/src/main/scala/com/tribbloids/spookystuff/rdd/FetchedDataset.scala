@@ -83,10 +83,10 @@ case class FetchedDataset(
   def rdd: RDD[FR] = unsquashedRDD
   def unsquashedRDD: RDD[FetchedRow] = this.squashedRDD.flatMap(v => v.WSchema(schema).unsquash)
 
-  def docRDD: RDD[Seq[Fetched]] = {
+  def observedRDD: RDD[Seq[Fetched]] = {
 
     squashedRDD.map { row =>
-      row.WSchema(schema).withSpooky.getDoc
+      row.WSchema(schema).withSpooky.observations
     }
   }
 
@@ -247,10 +247,14 @@ case class FetchedDataset(
     MapPlan.optimised(plan, MapPlan.Extract(exs))
   }
 
-  def select[T](exprs: Extractor[T]*): FetchedDataset = extract(exprs: _*)
-
   def remove(fields: Field*): FetchedDataset = {
     MapPlan.optimised(plan, MapPlan.Remove(fields))
+  }
+
+  def explodeObservations(
+      fn: Seq[Fetched] => Seq[Seq[Fetched]]
+  ): FetchedDataset = {
+    MapPlan.optimised(plan, MapPlan.ExplodeObservations(fn))
   }
 
   def removeWeaks(): FetchedDataset = this.remove(fields.filter(_.isWeak): _*)
@@ -340,7 +344,7 @@ case class FetchedDataset(
   )(exprs: Extractor[Any]*): FetchedDataset = flatExtract(on, isLeft, ordinalField, sampler)(exprs: _*)
 
   // TODO: test
-  def agg(exprs: Seq[FetchedRow => Any], reducer: RowReducer): FetchedDataset = AggPlan(plan, exprs, reducer)
+  def agg(exprs: Seq[FetchedRow => Any], reducer: RowReducer): FetchedDataset = AggregatePlan(plan, exprs, reducer)
   def distinctBy(exprs: FetchedRow => Any*): FetchedDataset = agg(exprs, (v1, _) => v1)
 
   protected def _defaultCooldown(v: Option[Duration]): Trace = {
@@ -374,6 +378,19 @@ case class FetchedDataset(
 
     FetchPlan(plan, _traces, keyBy, genPartitioner)
   }
+
+//  def sliceBy(
+//      slicer: SquashedFetchedRow.FetchedSlicer
+//  ): FetchedDataset = {
+//
+//    MapPlan(
+//      plan,
+//      { schema =>
+//        val rowMapper = MapPlan.SliceBy(slicer)(schema)
+//        rowMapper
+//      }
+//    )
+//  }
 
   // shorthand of fetch
   def wget(
@@ -459,9 +476,6 @@ case class FetchedDataset(
       exploreAlgorithm: ExploreAlgorithm = spooky.spookyConf.defaultExploreAlgorithm,
       epochSize: Int = spooky.spookyConf.epochSize,
       checkpointInterval: Int = spooky.spookyConf.checkpointInterval // set to Int.MaxValue to disable checkpointing,
-  )(
-      extracts: Extractor[_]*
-      // apply immediately after depth selection, this include depth0
   ): FetchedDataset = {
 
     val params = Params(depthField, ordinalField, range)
@@ -478,7 +492,7 @@ case class FetchedDataset(
       exploreAlgorithm,
       epochSize,
       checkpointInterval,
-      List(MapPlan.Extract(extracts))
+      Nil
     )
   }
 
@@ -496,10 +510,8 @@ case class FetchedDataset(
       range: Range = spooky.spookyConf.defaultExploreRange,
       exploreAlgorithm: ExploreAlgorithm = spooky.spookyConf.defaultExploreAlgorithm,
       miniBatch: Int = 500,
-      checkpointInterval: Int = spooky.spookyConf.checkpointInterval, // set to Int.MaxValue to disable checkpointing,
+      checkpointInterval: Int = spooky.spookyConf.checkpointInterval // set to Int.MaxValue to disable checkpointing,
 
-      select: Extractor[Any] = null,
-      selects: Iterable[Extractor[Any]] = Seq()
   ): FetchedDataset = {
 
     var trace = _defaultWget(cooldown, filter)
@@ -514,8 +526,6 @@ case class FetchedDataset(
       exploreAlgorithm,
       miniBatch,
       checkpointInterval
-    )(
-      Option(select).toSeq ++ selects: _*
     )
   }
 }

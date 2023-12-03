@@ -24,7 +24,8 @@ class ExploreIT extends ITBaseSpec {
       .explore(S"div.sidebar-nav a", ordinalField = 'index)(
         Wget('A.href),
         depthField = 'depth
-      )(
+      )
+      .extract(
         'A.text ~ 'category,
         S"h1".text ~ 'header,
         S"notexist" ~ 'A.*

@@ -13,8 +13,6 @@ import com.tribbloids.spookystuff.row.{SquashedFetchedRow, _}
 import org.apache.spark.rdd.RDD
 import org.apache.spark.sql.types.{ArrayType, IntegerType}
 
-import scala.collection.mutable.ArrayBuffer
-
 object ExplorePlan {
 
   type ExeID = UUID
@@ -107,14 +105,7 @@ case class ExplorePlan(
 
   override val schema: SpookySchema = _finalSchema
 
-  val invariantRowMapperFactories: ArrayBuffer[RowMapperFactory] = ArrayBuffer.empty[RowMapperFactory]
-  def invariantRowMappers: ArrayBuffer[MapPlan.RowMapper] = {
-    invariantRowMapperFactories.map { factory =>
-      val rowMapper = factory(_protoSchema)
-      rowMapper
-    }
-  }
-  def allRowMappers: List[MapPlan.RowMapper] = _rowMappers ++ invariantRowMappers
+  def allRowMappers: List[MapPlan.RowMapper] = _rowMappers
 
   //  {
   //    val extractFields = _extracts.map(_.field)

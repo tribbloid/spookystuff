@@ -24,7 +24,8 @@ class TestExplorePlan extends SpookyBaseSpec with LocalPathDocsFixture {
       .explore(S"div.sidebar-nav a", ordinalField = 'index)(
         Wget('A.href),
         depthField = 'depth
-      )(
+      )
+      .extract(
         'A.text ~ 'category,
         S"h1".text ~ 'header
       )
@@ -44,7 +45,7 @@ class TestExplorePlan extends SpookyBaseSpec with LocalPathDocsFixture {
       .explore('dummy)(
         Wget(HTML_URL),
         genPartitioner = GenPartitioners.DocCacheAware(_ => partitioner)
-      )()
+      )
 
     assert(rdd1.plan.beaconRDDOpt.get.partitioner.get eq partitioner)
   }
@@ -58,7 +59,7 @@ class TestExplorePlan extends SpookyBaseSpec with LocalPathDocsFixture {
       .explore('dummy)(
         Wget(HTML_URL),
         genPartitioner = GenPartitioners.DocCacheAware(_ => partitioner)
-      )()
+      )
 
     assert(rdd1.plan.beaconRDDOpt.get.partitioner.get eq partitioner)
     val beaconRDD = rdd1.plan.beaconRDDOpt.get
@@ -67,7 +68,7 @@ class TestExplorePlan extends SpookyBaseSpec with LocalPathDocsFixture {
       .explore('dummy)(
         Wget(HTML_URL),
         genPartitioner = GenPartitioners.DocCacheAware(_ => partitioner2)
-      )()
+      )
 
     assert(rdd2.plan.beaconRDDOpt.get.partitioner.get eq partitioner)
     assert(rdd2.plan.beaconRDDOpt.get eq beaconRDD)
@@ -84,7 +85,7 @@ class TestExplorePlan extends SpookyBaseSpec with LocalPathDocsFixture {
       }
       .explore(S"root directory URI".text)(
         Wget('A)
-      )()
+      )
       .flatExtract(S"root file")(
         A"name".text ~ 'leaf,
         A"URI".text ~ 'fullPath
@@ -105,7 +106,7 @@ class TestExplorePlan extends SpookyBaseSpec with LocalPathDocsFixture {
         .explore(S"root directory".attr("path"), ordinalField = 'dummy)(
           Wget('A),
           depthField = 'dummy
-        )()
+        )
     }
   }
 
@@ -117,7 +118,7 @@ class TestExplorePlan extends SpookyBaseSpec with LocalPathDocsFixture {
     val ds = first
       .explore(S"root directory URI".text)(
         Wget('A)
-      )()
+      )
       .persist()
 
     assert(ds.squashedRDD.count() == 4)
@@ -138,7 +139,7 @@ class TestExplorePlan extends SpookyBaseSpec with LocalPathDocsFixture {
         .explore(S"root directory URI".text)(
           Wget('A),
           keyBy = TestExplorePlan.CustomKeyBy
-        )()
+        )
         .persist()
 
       assert(ds.squashedRDD.count() == 2)

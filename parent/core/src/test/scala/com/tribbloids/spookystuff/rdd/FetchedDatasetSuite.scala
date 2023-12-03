@@ -135,7 +135,7 @@ class FetchedDatasetSuite extends SpookyBaseSpec with LocalPathDocsFixture {
         .fetch(
           Wget(HTML_URL)
         )
-        .select(
+        .extract(
           S.andFlatMap { page =>
             acc += 1
             page.saved.headOption
@@ -157,7 +157,7 @@ class FetchedDatasetSuite extends SpookyBaseSpec with LocalPathDocsFixture {
       .fetch(
         Wget(HTML_URL)
       )
-      .select(
+      .extract(
         S.uri ~ 'uri,
         S.children("h1").size ~ 'size,
         S.timestamp ~ 'timestamp,
@@ -182,7 +182,7 @@ class FetchedDatasetSuite extends SpookyBaseSpec with LocalPathDocsFixture {
 
   it("toDF can handle composite types") {
     val set = spooky
-      .select(
+      .extract(
         Lit(0 -> "str") ~ 'tuple,
         Lit(Composite()) ~ 'composite
       )
@@ -210,7 +210,7 @@ class FetchedDatasetSuite extends SpookyBaseSpec with LocalPathDocsFixture {
       .fetch(
         Wget(HTML_URL)
       )
-      .select(
+      .extract(
         S.uri ~ 'uri.*,
         S.children("h1").size ~ 'size.*,
         S.timestamp ~ 'timestamp,
@@ -254,7 +254,7 @@ class FetchedDatasetSuite extends SpookyBaseSpec with LocalPathDocsFixture {
       .wget(
         HTML_URL
       )
-      .select(Lit("Wikipedia") ~ 'name)
+      .extract(Lit("Wikipedia") ~ 'name)
       .persist()
     ds.count()
 
@@ -297,7 +297,7 @@ class FetchedDatasetSuite extends SpookyBaseSpec with LocalPathDocsFixture {
     val ds = first
       .explore(S"root directory".attr("path"))(
         Wget('A)
-      )()
+      )
       .persist()
     ds.count()
 

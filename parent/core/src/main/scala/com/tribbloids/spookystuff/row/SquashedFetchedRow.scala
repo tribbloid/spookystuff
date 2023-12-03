@@ -1,12 +1,10 @@
 package com.tribbloids.spookystuff.row
 
-import java.util.UUID
-
 import com.tribbloids.spookystuff.actions.{Actions, Trace, TraceView}
 import com.tribbloids.spookystuff.doc.Fetched
 import com.tribbloids.spookystuff.extractors.Resolved
 
-import scala.collection.mutable.ArrayBuffer
+import java.util.UUID
 
 object SquashedFetchedRow {
 
@@ -14,15 +12,10 @@ object SquashedFetchedRow {
     dataRows = Array(DataRow(data))
   )
 
-  def withDocs(
-      dataRows: Array[DataRow] = Array(DataRow()),
-      docs: Seq[Fetched] = null
-  ): SquashedFetchedRow = SquashedFetchedRow(
-    dataRows = dataRows,
-    traceView = TraceView.withDocs(docs = docs)
-  )
-
   lazy val blank: SquashedFetchedRow = SquashedFetchedRow(Array(DataRow()))
+
+  //  type FetchedSlicer = Lambda[Seq[Fetched], Array[Seq[Fetched]]]
+
 }
 
 /**
@@ -33,11 +26,15 @@ object SquashedFetchedRow {
   */
 case class SquashedFetchedRow(
     dataRows: Array[DataRow] = Array(),
-    traceView: TraceView = TraceView()
+    traceView: TraceView = TraceView(),
+    explodeObservationsFn: Seq[Fetched] => Seq[Seq[Fetched]] = v => Seq(v)
 ) {
 
-  def ++(another: SquashedFetchedRow): SquashedFetchedRow = {
-    this.copy(dataRows = this.dataRows ++ another.dataRows)
+  def setCache(
+      vs: Seq[Fetched] = null
+  ): this.type = {
+    this.traceView.setCache(vs)
+    this
   }
 
   def flattenData(
@@ -56,39 +53,29 @@ case class SquashedFetchedRow(
     dataRows = dataRows.map(_.--(fields))
   )
 
-  case class WSchema(schema: SpookySchema) extends Serializable {
+  case class WSchema(
+      schema: SpookySchema
+  ) extends Serializable {
 
-    val withSpooky: traceView.WithSpooky = new SquashedFetchedRow.this.traceView.WithSpooky(schema.spooky)
+    @transient lazy val withSpooky: traceView.WithSpooky =
+      new SquashedFetchedRow.this.traceView.WithSpooky(schema.spooky)
 
-    def groupedDocs: Array[Seq[Fetched]] = defaultGroupedFetched
+    @transient lazy val observations: Seq[Seq[Fetched]] = {
 
-    // by default, make sure no pages with identical name can appear in the same group.
-    // TODO: need tests!
-    @transient lazy val defaultGroupedFetched: Array[Seq[Fetched]] = {
-      val grandBuffer: ArrayBuffer[Seq[Fetched]] = ArrayBuffer()
-      val buffer: ArrayBuffer[Fetched] = ArrayBuffer()
-      withSpooky.getDoc.foreach { page =>
-        if (buffer.exists(_.name == page.name)) {
-          grandBuffer += buffer.toList
-          buffer.clear()
-        }
-        buffer += page
-      }
-      grandBuffer += buffer.toList // always left, have at least 1 member
-      buffer.clear()
-      grandBuffer.toArray
+      val raw: Seq[Fetched] = withSpooky.observations
+      explodeObservationsFn(raw)
     }
 
-    // outer: dataRows, inner: grouped pages
+    // outer: dataRows, inner: exploded observations
     def semiUnsquash: Array[Array[FetchedRow]] = dataRows.map { dataRow =>
       val groupID = UUID.randomUUID()
       val withGroupID = dataRow.copy(
         groupID = Some(groupID)
       )
 
-      groupedDocs.zipWithIndex.map { tuple =>
+      observations.zipWithIndex.map { tuple =>
         FetchedRow(withGroupID, tuple._1, tuple._2)
-      }
+      }.toArray
     }
 
     // Cartesian product
@@ -157,8 +144,7 @@ case class SquashedFetchedRow(
      */
     def interpolateAndRewriteLocally(
         traces: Set[Trace],
-        filterEmpty: Boolean = true,
-        distinct: Boolean = true
+        filterEmpty: Boolean = true
     ): Array[(TraceView, DataRow)] = {
 
       val dataRows_traces = semiUnsquash.flatMap {
@@ -179,11 +165,7 @@ case class SquashedFetchedRow(
               else result
             }
 
-          val mergedDataRows_traces =
-            if (!distinct) filteredDataRows_traces
-            else filteredDataRows_traces.groupBy(_._2).map(_._2.head).toArray
-
-          mergedDataRows_traces
+          filteredDataRows_traces
       }
 
       dataRows_traces.flatMap { v =>

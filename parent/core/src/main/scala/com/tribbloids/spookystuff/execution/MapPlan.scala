@@ -1,6 +1,6 @@
 package com.tribbloids.spookystuff.execution
 
-import com.tribbloids.spookystuff.doc.Doc
+import com.tribbloids.spookystuff.doc.{Doc, Fetched}
 import com.tribbloids.spookystuff.execution.MapPlan.RowMapperFactory
 import com.tribbloids.spookystuff.extractors.impl.Get
 import com.tribbloids.spookystuff.extractors.{Extractor, Resolved}
@@ -31,9 +31,7 @@ case class MapPlan(
 
 object MapPlan extends CatalystTypeOps.ImplicitMixin {
 
-  type RowMapperBase = SquashedFetchedRow => SquashedFetchedRow
-
-  trait RowMapper extends RowMapperBase with Serializable {
+  trait RowMapper extends (SquashedFetchedRow => SquashedFetchedRow) with Serializable {
     def schema: SpookySchema
   }
 
@@ -113,6 +111,18 @@ object MapPlan extends CatalystTypeOps.ImplicitMixin {
     override val schema: SpookySchema = childSchema -- toBeRemoved
 
     override def apply(v: SquashedFetchedRow): SquashedFetchedRow = v.remove(toBeRemoved: _*)
+  }
+
+  case class ExplodeObservations(
+      fn: Seq[Fetched] => Seq[Seq[Fetched]]
+  )(val childSchema: SpookySchema)
+      extends RowMapper {
+
+    override def schema: SpookySchema = childSchema
+
+    override def apply(v: SquashedFetchedRow): SquashedFetchedRow = {
+      v.copy(explodeObservationsFn = fn)
+    }
   }
 
   case class SavePages(

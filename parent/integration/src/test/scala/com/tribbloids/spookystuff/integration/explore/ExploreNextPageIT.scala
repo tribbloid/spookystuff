@@ -22,7 +22,8 @@ class ExploreNextPageIT extends ITBaseSpec {
       .explore(S"ul.pagination a[rel=next]", ordinalField = 'index)(
         Wget('A.href),
         depthField = 'page
-      )(
+      )
+      .extract(
         'A.text ~ 'button_text,
         S.uri ~ 'uri
       )

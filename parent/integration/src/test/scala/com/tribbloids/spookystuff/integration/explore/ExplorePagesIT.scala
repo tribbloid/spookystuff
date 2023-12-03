@@ -21,7 +21,8 @@ class ExplorePagesIT extends ITBaseSpec {
       .explore(S"ul.pagination a", ordinalField = 'index)(
         Wget('A.href),
         depthField = 'depth
-      )(
+      )
+      .extract(
         'A.text ~ 'page,
         S.uri ~ 'uri
       )

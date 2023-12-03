@@ -5,7 +5,7 @@ import com.tribbloids.spookystuff.row._
 /**
   * discard pages
   */
-case class AggPlan(
+case class AggregatePlan(
     override val child: ExecutionPlan,
     exprs: Seq[(FetchedRow => Any)],
     reducer: RowReducer
