@@ -1,10 +1,10 @@
 package com.tribbloids.spookystuff.utils
 
-import com.tribbloids.spookystuff.testutils.{FunSpecx, TestHelper}
+import com.tribbloids.spookystuff.testutils.{BaseSpec, TestHelper}
 import org.apache.hadoop.security.UserGroupInformation
 import org.scalatest.BeforeAndAfterAll
 
-class SCFunctionsSuite extends FunSpecx with BeforeAndAfterAll {
+class SCFunctionsSuite extends BaseSpec with BeforeAndAfterAll {
 
   override def beforeAll(): Unit = {}
 

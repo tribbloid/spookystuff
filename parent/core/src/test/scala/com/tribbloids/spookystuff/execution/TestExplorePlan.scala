@@ -84,15 +84,18 @@ class TestExplorePlan extends SpookyBaseSpec with LocalPathDocsFixture {
         Wget('_)
       }
       .explore(S"root directory URI".text)(
-        Wget('A)
+        Wget('A),
+        depthField = 'depth
       )
       .flatExtract(S"root file")(
-        A"name".text ~ 'leaf,
+        A"name".text into 'leaf,
         A"URI".text ~ 'fullPath
       )
       .toDF(sort = true)
 
-    assert(df.collectAsList().size() == 6)
+    val result = df.collect().toList
+
+    assert(result.size == 6)
   }
 
   it("ExplorePlan will throw an exception if OrdinalField == DepthField") {

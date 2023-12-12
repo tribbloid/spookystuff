@@ -2,7 +2,7 @@ package com.tribbloids.spookystuff.utils.serialization
 
 import java.io.NotSerializableException
 
-import com.tribbloids.spookystuff.testutils.{FunSpecx, TestHelper}
+import com.tribbloids.spookystuff.testutils.{BaseSpec, TestHelper}
 import org.apache.spark.SparkException
 
 object NOTSerializableSuite {
@@ -24,7 +24,7 @@ object NOTSerializableSuite {
   case class Thing4(str: String) extends Super2
 }
 
-class NOTSerializableSuite extends FunSpecx {
+class NOTSerializableSuite extends BaseSpec {
 
   import NOTSerializableSuite._
 

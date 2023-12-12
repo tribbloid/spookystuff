@@ -12,7 +12,7 @@ import scala.util.Random
 /**
   * Created by peng on 11/1/14.
   */
-class SpookyUtilsSuite extends FunSpecx {
+class SpookyUtilsSuite extends BaseSpec {
 
   import SpookyViews._
 

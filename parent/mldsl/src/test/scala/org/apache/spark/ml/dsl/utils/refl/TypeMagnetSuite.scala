@@ -2,7 +2,7 @@ package org.apache.spark.ml.dsl.utils.refl
 
 import java.sql.Timestamp
 
-import com.tribbloids.spookystuff.testutils.FunSpecx
+import com.tribbloids.spookystuff.testutils.BaseSpec
 import com.tribbloids.spookystuff.utils.serialization.AssertSerializable
 import org.apache.spark.ml.dsl.utils.PairwiseConversionMixin
 import org.apache.spark.ml.dsl.utils.PairwiseConversionMixin.Repr
@@ -48,7 +48,7 @@ object TypeMagnetSuite {
   }
 }
 
-class TypeMagnetSuite extends FunSpecx with PairwiseConversionMixin {
+class TypeMagnetSuite extends BaseSpec with PairwiseConversionMixin {
 
   import ScalaReflection.universe._
 

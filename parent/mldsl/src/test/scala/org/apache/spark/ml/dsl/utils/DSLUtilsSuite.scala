@@ -1,11 +1,11 @@
 package org.apache.spark.ml.dsl.utils
 
-import com.tribbloids.spookystuff.testutils.FunSpecx
+import com.tribbloids.spookystuff.testutils.BaseSpec
 
 /**
   * Created by peng on 10/04/16.
   */
-class DSLUtilsSuite extends FunSpecx {
+class DSLUtilsSuite extends BaseSpec {
 
   def get1(): Array[StackTraceElement] = {
     DSLUtils.getBreakpointInfo()

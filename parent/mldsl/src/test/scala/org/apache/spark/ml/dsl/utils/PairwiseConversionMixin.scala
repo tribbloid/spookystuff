@@ -1,12 +1,12 @@
 package org.apache.spark.ml.dsl.utils
 
-import com.tribbloids.spookystuff.testutils.FunSpecx
+import com.tribbloids.spookystuff.testutils.BaseSpec
 import com.tribbloids.spookystuff.utils.MultiMapView
 
 import scala.collection.mutable.ArrayBuffer
 import scala.reflect.ClassTag
 
-trait PairwiseConversionMixin extends FunSpecx {
+trait PairwiseConversionMixin extends BaseSpec {
 
   import PairwiseConversionMixin._
 

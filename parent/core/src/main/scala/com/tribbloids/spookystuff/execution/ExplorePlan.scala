@@ -9,7 +9,7 @@ import com.tribbloids.spookystuff.execution.ExplorePlan.{Open_Visited, Params}
 import com.tribbloids.spookystuff.execution.MapPlan.RowMapperFactory
 import com.tribbloids.spookystuff.extractors._
 import com.tribbloids.spookystuff.extractors.impl.{Get, Lit}
-import com.tribbloids.spookystuff.row.{SquashedFetchedRow, _}
+import com.tribbloids.spookystuff.row._
 import org.apache.spark.rdd.RDD
 import org.apache.spark.sql.types.{ArrayType, IntegerType}
 

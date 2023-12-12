@@ -1,11 +1,11 @@
 package com.tribbloids.spookystuff.extractors
 
-import com.tribbloids.spookystuff.testutils.FunSpecx
+import com.tribbloids.spookystuff.testutils.BaseSpec
 
 /**
   * Created by peng on 14/07/17.
   */
-class ColSuite extends FunSpecx {
+class ColSuite extends BaseSpec {
 
   val c1: Col[String] = "abc"
   val c2: Col[String] = "abc"

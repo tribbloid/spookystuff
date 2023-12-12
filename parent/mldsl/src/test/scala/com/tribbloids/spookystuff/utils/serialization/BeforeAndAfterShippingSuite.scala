@@ -1,11 +1,11 @@
 package com.tribbloids.spookystuff.utils.serialization
 
-import com.tribbloids.spookystuff.testutils.FunSpecx
+import com.tribbloids.spookystuff.testutils.BaseSpec
 import org.scalatest.BeforeAndAfterEach
 
 import java.util.concurrent.atomic.AtomicInteger
 
-class BeforeAndAfterShippingSuite extends FunSpecx with BeforeAndAfterEach {
+class BeforeAndAfterShippingSuite extends BaseSpec with BeforeAndAfterEach {
 
   import BeforeAndAfterShippingSuite._
 

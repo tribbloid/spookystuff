@@ -1,8 +1,8 @@
 package org.apache.spark.ml.dsl.utils
 
-import com.tribbloids.spookystuff.testutils.FunSpecx
+import com.tribbloids.spookystuff.testutils.BaseSpec
 
-class NullSafetySuite extends FunSpecx {
+class NullSafetySuite extends BaseSpec {
 
   val v: String = "abc"
 

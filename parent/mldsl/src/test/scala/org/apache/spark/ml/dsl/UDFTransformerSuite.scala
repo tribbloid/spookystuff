@@ -1,6 +1,6 @@
 package org.apache.spark.ml.dsl
 
-import com.tribbloids.spookystuff.testutils.{FunSpecx, TestHelper}
+import com.tribbloids.spookystuff.testutils.{BaseSpec, TestHelper}
 import org.apache.spark.ml.feature.Tokenizer
 import org.apache.spark.sql.functions._
 import org.apache.spark.sql.DataFrame
@@ -11,7 +11,7 @@ case class User(
     age: Int
 )
 
-class UDFTransformerSuite extends FunSpecx {
+class UDFTransformerSuite extends BaseSpec {
 
   val df1 = TestHelper.TestSQL.createDataFrame(
     Seq(

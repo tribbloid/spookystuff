@@ -79,7 +79,7 @@ class SpookyContextSuite extends SpookyBaseSpec with LocalPathDocsFixture {
     metrics
       .map(_.View.toMap)
       .reduce { (v1, v2) =>
-        v1 shouldBe v2
+        v1 mapShouldBe v2
         assert(!v1.eq(v2))
         v1
       }

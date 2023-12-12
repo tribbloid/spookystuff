@@ -1,10 +1,10 @@
 package com.tribbloids.spookystuff.utils.serialization
 
-import com.tribbloids.spookystuff.testutils.FunSpecx
+import com.tribbloids.spookystuff.testutils.BaseSpec
 
 import scala.util.Try
 
-class AssertSerializableSuite extends FunSpecx {
+class AssertSerializableSuite extends BaseSpec {
 
   it("IllegalArgumentException should be WeaklySerializable") {
 

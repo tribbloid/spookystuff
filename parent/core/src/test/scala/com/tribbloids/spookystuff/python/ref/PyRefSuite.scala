@@ -1,9 +1,9 @@
 package com.tribbloids.spookystuff.python.ref
 
 import com.tribbloids.spookystuff.python.{CaseExample, JSONExample, PyConverter}
-import com.tribbloids.spookystuff.testutils.FunSpecx
+import com.tribbloids.spookystuff.testutils.BaseSpec
 
-class PyRefSuite extends FunSpecx {
+class PyRefSuite extends BaseSpec {
 
   it("JSONInstanceRef can initialize Python instance with missing constructor parameter") {
     val example = JSONExample(1, None)

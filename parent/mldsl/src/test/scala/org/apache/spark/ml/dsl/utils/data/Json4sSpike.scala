@@ -1,6 +1,6 @@
 package org.apache.spark.ml.dsl.utils.data
 
-import com.tribbloids.spookystuff.testutils.FunSpecx
+import com.tribbloids.spookystuff.testutils.BaseSpec
 import org.apache.hadoop.fs.Path
 import org.json4s.{DefaultFormats, Extraction}
 import org.json4s.jackson.JsonMethods
@@ -9,7 +9,7 @@ import org.scalatest.Ignore
 import scala.collection.immutable.ListMap
 
 @Ignore
-class Json4sSpike extends FunSpecx {
+class Json4sSpike extends BaseSpec {
 
   implicit val fm: DefaultFormats.type = DefaultFormats
 

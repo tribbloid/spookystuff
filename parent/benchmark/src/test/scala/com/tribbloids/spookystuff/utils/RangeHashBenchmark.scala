@@ -1,8 +1,8 @@
 package com.tribbloids.spookystuff.utils
 
-import com.tribbloids.spookystuff.testutils.FunSpecx
+import com.tribbloids.spookystuff.testutils.BaseSpec
 
-class RangeHashBenchmark extends FunSpecx {
+class RangeHashBenchmark extends BaseSpec {
 
   it("RangeArg hash should be fast") { // TODO: move to unit test
 

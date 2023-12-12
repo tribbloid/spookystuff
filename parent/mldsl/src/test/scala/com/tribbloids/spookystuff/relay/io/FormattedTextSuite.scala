@@ -1,9 +1,9 @@
 package com.tribbloids.spookystuff.relay.io
 
-import com.tribbloids.spookystuff.testutils.FunSpecx
+import com.tribbloids.spookystuff.testutils.BaseSpec
 import com.tribbloids.spookystuff.relay.TestBeans._
 
-class FormattedTextSuite extends FunSpecx {
+class FormattedTextSuite extends BaseSpec {
 
   val user1: User = User("1")
   val user2: User = User("2", Some(Roles(Seq("r1", "r2"))))

@@ -1,11 +1,11 @@
 package org.apache.spark.rdd.spookystuff.benchmark
 
-import com.tribbloids.spookystuff.testutils.FunSpecx
+import com.tribbloids.spookystuff.testutils.BaseSpec
 import org.apache.spark.rdd.RDD
 import org.apache.spark.sql.execution.UnsafeRowSerializer
 import org.apache.spark.storage.StorageLevel
 
-class IncrementallyCachedRDDMatrix extends FunSpecx {
+class IncrementallyCachedRDDMatrix extends BaseSpec {
 
   object Memory extends IncrementallyCachedRDDBenchmark {
 

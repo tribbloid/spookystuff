@@ -1,6 +1,6 @@
 package com.tribbloids.spookystuff
 
-import com.tribbloids.spookystuff.testutils.{FunSpecx, TestHelper}
+import com.tribbloids.spookystuff.testutils.{BaseSpec, TestHelper}
 import com.tribbloids.spookystuff.utils.WaitBeforeAppExit
 import org.scalatest.Ignore
 
@@ -8,7 +8,7 @@ import org.scalatest.Ignore
   * Created by peng on 16/11/16.
   */
 @Ignore
-class WaitBeforeAppExitSpike extends FunSpecx {
+class WaitBeforeAppExitSpike extends BaseSpec {
 
   it("wait for closing") {
     TestHelper.TestSC

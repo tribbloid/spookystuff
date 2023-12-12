@@ -3,11 +3,11 @@ package com.tribbloids.spookystuff.extractors
 import com.tribbloids.spookystuff.extractors.impl.Lit
 import com.tribbloids.spookystuff.row.FetchedRow
 import com.tribbloids.spookystuff.TestBeans.{Example, GenericExample}
-import com.tribbloids.spookystuff.testutils.FunSpecx
+import com.tribbloids.spookystuff.testutils.BaseSpec
 import org.apache.spark.ml.dsl.utils.refl.{CatalystTypeOps, TypeUtils, UnreifiedObjectType}
 import org.apache.spark.sql.types.{IntegerType, StringType}
 
-class ScalaReflectionSpike extends FunSpecx with CatalystTypeOps.ImplicitMixin {
+class ScalaReflectionSpike extends BaseSpec with CatalystTypeOps.ImplicitMixin {
 
   lazy val exLit: Lit[FetchedRow, _] = Lit(new Example())
   lazy val exType: DataType = UnreifiedObjectType.summon[Example]

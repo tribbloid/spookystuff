@@ -5,6 +5,8 @@ import com.tribbloids.spookystuff.execution.ExplorePlan.Params
 import com.tribbloids.spookystuff.execution.NodeKey
 import com.tribbloids.spookystuff.row._
 
+import java.util.UUID
+
 object ExploreAlgorithms {
 
   import ExploreAlgorithm._
@@ -26,10 +28,13 @@ object ExploreAlgorithms {
       import scala.Ordering.Implicits._
 
       override val openReducer: RowReducer = { (v1, v2) =>
-        (v1 ++ v2)
+        val candidates: Map[Option[UUID], Iterable[DataRow]] = (v1 ++ v2)
           .groupBy(_.groupID)
-          .values
+
+        val result = candidates.values
           .minBy(_.head.sortIndex(Seq(depthField, ordinalField)))
+
+        result
       }
 
       override val visitedReducer: RowReducer = openReducer

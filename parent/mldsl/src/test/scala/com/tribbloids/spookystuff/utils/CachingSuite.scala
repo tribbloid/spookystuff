@@ -1,12 +1,12 @@
 package com.tribbloids.spookystuff.utils
 
-import com.tribbloids.spookystuff.testutils.FunSpecx
+import com.tribbloids.spookystuff.testutils.BaseSpec
 import org.scalatest.BeforeAndAfterEach
 
 import scala.concurrent.duration.Duration
 import scala.concurrent.{Await, ExecutionContextExecutor, Future}
 
-class CachingSuite extends FunSpecx with BeforeAndAfterEach {
+class CachingSuite extends BaseSpec with BeforeAndAfterEach {
 
   import CachingSuite._
   implicit def global: ExecutionContextExecutor = scala.concurrent.ExecutionContext.global

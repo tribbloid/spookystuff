@@ -1,6 +1,6 @@
 package com.tribbloids.spookystuff.parsing
 
-import com.tribbloids.spookystuff.testutils.FunSpecx
+import com.tribbloids.spookystuff.testutils.BaseSpec
 import com.tribbloids.spookystuff.utils.InterleavedIterator
 import fastparse.internal.Logger
 import org.apache.spark.benchmark.BenchmarkHelper
@@ -11,7 +11,7 @@ import scala.collection.mutable.ArrayBuffer
 import scala.util.Random
 
 @Ignore //TODO: enable!
-class ParsersBenchmark extends FunSpecx {
+class ParsersBenchmark extends BaseSpec {
 
   import com.tribbloids.spookystuff.parsing.ParsersBenchmark._
 
