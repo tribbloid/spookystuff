@@ -1,7 +1,6 @@
 package org.apache.spark.rdd.spookystuff
 
-import java.util.EventListener
-import com.tribbloids.spookystuff.utils.Caching
+import ai.acyclic.prover.commons.util.Caching
 import org.apache.spark.TaskContext
 import org.apache.spark.executor.TaskMetrics
 import org.apache.spark.metrics.source.Source
@@ -10,6 +9,7 @@ import org.apache.spark.shuffle.FetchFailedException
 import org.apache.spark.util.{AccumulatorV2, TaskCompletionListener, TaskFailureListener}
 
 import java.util
+import java.util.EventListener
 
 case class UncleanTaskContext(
     self: TaskContext
@@ -84,5 +84,5 @@ case class UncleanTaskContext(
     }
   }
 
-  override def numPartitions(): Int = ???
+  override def numPartitions(): Int = self.numPartitions()
 }

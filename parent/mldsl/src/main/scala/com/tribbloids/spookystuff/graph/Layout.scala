@@ -1,9 +1,9 @@
 package com.tribbloids.spookystuff.graph
 
+import ai.acyclic.prover.commons.util.Caching.ConcurrentMap
 import com.tribbloids.spookystuff.graph.IDAlgebra.Rotator
 import com.tribbloids.spookystuff.graph.Layout.Facet
 import com.tribbloids.spookystuff.graph.Module.{Heads, Tails}
-import com.tribbloids.spookystuff.utils.Caching.ConcurrentMap
 
 import scala.language.implicitConversions
 

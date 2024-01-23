@@ -1,9 +1,9 @@
 package com.tribbloids.spookystuff.caching
 
+import ai.acyclic.prover.commons.util.Caching
 import com.tribbloids.spookystuff.SpookyContext
 import com.tribbloids.spookystuff.actions.Trace
 import com.tribbloids.spookystuff.doc.Observation
-import com.tribbloids.spookystuff.utils.Caching
 
 /**
   * Backed by a WeakHashMap, the web cache temporarily store all trace -> Array[Page] until next GC. Always enabled

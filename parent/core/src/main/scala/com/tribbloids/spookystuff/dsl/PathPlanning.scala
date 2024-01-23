@@ -1,9 +1,9 @@
 package com.tribbloids.spookystuff.dsl
 
+import ai.acyclic.prover.commons.util.Caching.ConcurrentMap
 import com.tribbloids.spookystuff.caching.ExploreLocalCache
 import com.tribbloids.spookystuff.execution.ExplorePlan.Params
 import com.tribbloids.spookystuff.row._
-import com.tribbloids.spookystuff.utils.Caching.ConcurrentMap
 
 trait PathPlanning {
 

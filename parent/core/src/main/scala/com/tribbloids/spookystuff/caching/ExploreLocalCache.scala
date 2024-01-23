@@ -1,10 +1,10 @@
 package com.tribbloids.spookystuff.caching
 
+import ai.acyclic.prover.commons.util.Caching.Soft.ConcurrentCache
+import ai.acyclic.prover.commons.util.Caching.{ConcurrentMap, ConcurrentSet}
 import com.tribbloids.spookystuff.execution.ExplorePlan.ExeID
 import com.tribbloids.spookystuff.execution.ExploreRunner
 import com.tribbloids.spookystuff.row.{DataRow, LocalityGroup}
-import com.tribbloids.spookystuff.utils.Caching.Soft.ConcurrentCache
-import com.tribbloids.spookystuff.utils.Caching.{ConcurrentMap, ConcurrentSet}
 
 /**
   * Singleton, always in the JVM and shared by all executors on the same machine.

@@ -1,6 +1,6 @@
 package com.tribbloids.spookystuff.utils.io.lock
 
-import com.tribbloids.spookystuff.utils.Caching
+import ai.acyclic.prover.commons.util.Caching
 import com.tribbloids.spookystuff.utils.io.{URIExecution, URIResolver}
 import com.tribbloids.spookystuff.utils.lifespan.Cleanable.Lifespan
 import com.tribbloids.spookystuff.utils.lifespan.LocalCleanable

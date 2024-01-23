@@ -1,6 +1,6 @@
 package com.tribbloids.spookystuff.utils.lifespan
 
-import com.tribbloids.spookystuff.utils.Caching._
+import ai.acyclic.prover.commons.util.Caching.ConcurrentMap
 import org.slf4j.{Logger, LoggerFactory}
 
 import scala.language.implicitConversions

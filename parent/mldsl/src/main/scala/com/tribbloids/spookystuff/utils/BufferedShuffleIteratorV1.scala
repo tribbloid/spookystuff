@@ -1,6 +1,6 @@
 package com.tribbloids.spookystuff.utils
 
-import com.tribbloids.spookystuff.utils.Caching.ConcurrentMap
+import ai.acyclic.prover.commons.util.Caching
 
 import scala.collection.mutable.ArrayBuffer
 import scala.util.Random
@@ -10,7 +10,7 @@ object BufferedShuffleIteratorV1 {
   /**
     * (instanceID -> partitionID) -> iterator
     */
-  val seeds: ConcurrentMap[(String, Int), Long] = Caching.ConcurrentMap[(String, Int), Long]()
+  val seeds: Caching.ConcurrentMap[(String, Int), Long] = Caching.ConcurrentMap[(String, Int), Long]()
 }
 
 case class BufferedShuffleIteratorV1[T](
