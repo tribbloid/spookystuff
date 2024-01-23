@@ -1,6 +1,7 @@
 package com.tribbloids.spookystuff.caching
 
 import com.tribbloids.spookystuff.SpookyContext
+import com.tribbloids.spookystuff.actions.Wayback.WaybackLike
 import com.tribbloids.spookystuff.actions._
 import com.tribbloids.spookystuff.doc.Observation
 import com.tribbloids.spookystuff.extractors.FR

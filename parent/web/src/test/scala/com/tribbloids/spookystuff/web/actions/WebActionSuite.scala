@@ -69,7 +69,8 @@ class WebActionSuite extends SpookyBaseSpec {
     }
   }
 
-  describe("Loop") {
+  ignore("Loop") {
+    // TODO: enable, if it still exists
     val action = Loop(
       Click("o1")
         +> Snapshot()

@@ -45,11 +45,11 @@ abstract class AbstractTestTrace extends SpookyBaseSpec with BaseSpec {
 
     val dry = (Delay(10.seconds) +> Wget("http://dum.my")).dryRun
     assert(dry.size == 1)
-    assert(dry.head == Seq(Wget("http://dum.my")))
+    assert(dry.head == Trace.of(Wget("http://dum.my")))
 
     val dry2 = (Delay(10.seconds) +> OAuthV2(Wget("http://dum.my"))).dryRun
     assert(dry2.size == 1)
-    assert(dry2.head == Seq(OAuthV2(Wget("http://dum.my"))))
+    assert(dry2.head == Trace.of(OAuthV2(Wget("http://dum.my"))))
   }
 
   it("Trace.autoSnapshot should not modify empty Trace") {

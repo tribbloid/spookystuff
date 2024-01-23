@@ -1,6 +1,7 @@
 package com.tribbloids.spookystuff.actions
 
 import com.tribbloids.spookystuff._
+import com.tribbloids.spookystuff.actions.Wayback.WaybackLike
 import com.tribbloids.spookystuff.caching.DocCacheLevel
 import com.tribbloids.spookystuff.doc.{NoDoc, Observation}
 import com.tribbloids.spookystuff.extractors.Extractor
@@ -18,12 +19,10 @@ import scala.collection.mutable.ArrayBuffer
   * or multiple times depending on situations.
   */
 abstract class Block(
-    val arg: HasTrace
+    override val children: Trace
 ) extends Actions
     with Named
     with WaybackLike {
-
-  override val children: Trace = arg.trace
 
   override def wayback: Extractor[Long] =
     children
@@ -93,11 +92,11 @@ object ClusterRetry {
   // TODO: this retry mechanism use Spark scheduler to re-run the partition and is very inefficient
   //  Re-implement using multi-pass!
   final case class ClusterRetryImpl private (
-      override val arg: HasTrace
+      override val children: Trace
   )(
       retries: Int,
       override val cacheEmptyOutput: DocCacheLevel.Value
-  ) extends Block(arg) {
+  ) extends Block(children) {
 
     override def skeleton: Option[ClusterRetryImpl.this.type] =
       Some(ClusterRetryImpl(this.childrenSkeleton)(retries, cacheEmptyOutput).asInstanceOf[this.type])
@@ -132,7 +131,7 @@ object ClusterRetry {
     override def doInterpolate(row: FetchedRow, schema: SpookySchema): Option[this.type] = {
       val opt = this.doInterpolateSeq(row, schema)
       opt.map { seq =>
-        this.copy(arg = seq)(this.retries, this.cacheEmptyOutput).asInstanceOf[this.type]
+        this.copy(children = seq)(this.retries, this.cacheEmptyOutput).asInstanceOf[this.type]
       }
 
     }
@@ -151,11 +150,11 @@ object LocalRetry {
   }
 
   final case class LocalRetryImpl(
-      override val arg: Trace
+      override val children: Trace
   )(
       retries: Int,
       override val cacheEmptyOutput: DocCacheLevel.Value
-  ) extends Block(arg) {
+  ) extends Block(children) {
 
     override def skeleton: Option[LocalRetryImpl.this.type] =
       Some(LocalRetryImpl(this.childrenSkeleton)(retries, cacheEmptyOutput).asInstanceOf[this.type])
@@ -165,7 +164,7 @@ object LocalRetry {
       val pages = new ArrayBuffer[Observation]()
 
       try {
-        for (action <- arg) {
+        for (action <- children) {
           pages ++= action.exe(session)
         }
       } catch {
@@ -173,7 +172,7 @@ object LocalRetry {
           CommonUtils.retry(retries) {
             val retriedPages = new ArrayBuffer[Observation]()
 
-            for (action <- arg) {
+            for (action <- children) {
               retriedPages ++= action.exe(session)
             }
             retriedPages
@@ -186,7 +185,7 @@ object LocalRetry {
     override def doInterpolate(pageRow: FetchedRow, schema: SpookySchema): Option[this.type] = {
       val opt = this.doInterpolateSeq(pageRow, schema)
       opt.map { seq =>
-        this.copy(arg = seq)(this.retries, this.cacheEmptyOutput).asInstanceOf[this.type]
+        this.copy(children = seq)(this.retries, this.cacheEmptyOutput).asInstanceOf[this.type]
       }
     }
   }
@@ -204,14 +203,14 @@ object Loop {}
   *   a list of actions being iterated through
   */
 final case class Loop(
-    override val arg: HasTrace,
+    override val children: Trace,
     limit: Int = Const.maxLoop
-) extends Block(arg) {
+) extends Block(children) {
 
   assert(limit > 0)
 
   override def skeleton: Option[Loop.this.type] =
-    Some(this.copy(arg = this.childrenSkeleton).asInstanceOf[this.type])
+    Some(this.copy(children = this.childrenSkeleton).asInstanceOf[this.type])
 
   override def doExeNoUID(session: Session): Seq[Observation] = {
 
@@ -219,7 +218,7 @@ final case class Loop(
 
     try {
       for (_ <- 0 until limit) {
-        for (action <- arg.trace) {
+        for (action <- children.trace) {
           pages ++= action.exe(session)
         }
       }
@@ -234,7 +233,7 @@ final case class Loop(
   override def doInterpolate(pageRow: FetchedRow, schema: SpookySchema): Option[this.type] = {
     val opt = this.doInterpolateSeq(pageRow, schema)
     opt.map { seq =>
-      this.copy(arg = seq).asInstanceOf[this.type]
+      this.copy(children = seq).asInstanceOf[this.type]
     }
   }
 }
