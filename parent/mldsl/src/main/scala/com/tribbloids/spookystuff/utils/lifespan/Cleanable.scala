@@ -63,11 +63,11 @@ object Cleanable {
         }
       }
 
-      LoggerFactory
-        .getLogger(this.getClass)
-        .info(
-          s"sweeped ID(s) ${batchIDs.mkString(", ")}"
-        )
+//      LoggerFactory
+//        .getLogger(this.getClass)
+//        .info(
+//          s"cleanSweep ID(s) ${batchIDs.mkString(", ")}"
+//        )
     }
   }
 

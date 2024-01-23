@@ -2,7 +2,7 @@ package com.tribbloids.spookystuff.caching
 
 import com.tribbloids.spookystuff.SpookyContext
 import com.tribbloids.spookystuff.actions.Trace
-import com.tribbloids.spookystuff.doc.{DocUtils, Fetched}
+import com.tribbloids.spookystuff.doc.{DocUtils, Observation}
 import com.tribbloids.spookystuff.utils.CommonUtils
 import org.apache.hadoop.fs.Path
 
@@ -13,11 +13,11 @@ import java.util.UUID
   */
 object DFSDocCache extends AbstractDocCache {
 
-  def cacheable(v: Seq[Fetched]): Boolean = {
+  def cacheable(v: Seq[Observation]): Boolean = {
     v.exists(v => v.cacheLevel.isInstanceOf[DocCacheLevel.DFS])
   }
 
-  def getImpl(k: Trace, spooky: SpookyContext): Option[Seq[Fetched]] = {
+  def getImpl(k: Trace, spooky: SpookyContext): Option[Seq[Observation]] = {
 
     val pathStr = CommonUtils.\\\(
       spooky.dirConf.cache,
@@ -35,7 +35,7 @@ object DFSDocCache extends AbstractDocCache {
     Option(pages)
   }
 
-  def putImpl(k: Trace, v: Seq[Fetched], spooky: SpookyContext): this.type = {
+  def putImpl(k: Trace, v: Seq[Observation], spooky: SpookyContext): this.type = {
 
     val pathStr = CommonUtils.\\\(
       spooky.dirConf.cache,

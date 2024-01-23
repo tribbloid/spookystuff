@@ -1,10 +1,10 @@
 package com.tribbloids.spookystuff.integration
 
 import com.tribbloids.spookystuff._
-import com.tribbloids.spookystuff.actions.Trace
 import com.tribbloids.spookystuff.conf.{DriverFactory, SpookyConf}
 import com.tribbloids.spookystuff.dsl._
 import com.tribbloids.spookystuff.metrics.SpookyMetrics
+import com.tribbloids.spookystuff.row.LocalityGroup
 import com.tribbloids.spookystuff.testutils.{LocalURIDocsFixture, SpookyBaseSpec, TestHelper}
 import com.tribbloids.spookystuff.utils.{CommonConst, CommonUtils}
 import com.tribbloids.spookystuff.web.conf.{Web, WebDriverFactory}
@@ -27,13 +27,13 @@ abstract class ITBaseSpec extends SpookyBaseSpec with LocalURIDocsFixture {
     local ++ TestHelper.S3Path
   }
 
-  lazy val driverFactories: Seq[DriverFactory[CleanWebDriver]] = Seq(
+  lazy val webDriverFactories: Seq[DriverFactory[CleanWebDriver]] = Seq(
     phantomJS,
     phantomJS.taskLocal
     //    htmlUnit
   )
 
-  lazy val genPartitioners: Seq[GenPartitionerLike[Trace, Any]] = Seq(
+  lazy val genPartitioners: Seq[GenPartitionerLike[LocalityGroup, Any]] = Seq(
     GenPartitioners.Narrow,
     GenPartitioners.Wide(),
     GenPartitioners.DocCacheAware()
@@ -42,10 +42,10 @@ abstract class ITBaseSpec extends SpookyBaseSpec with LocalURIDocsFixture {
   import duration._
 
   // testing matrix
-  for (root <- roots) {
-    for (driver <- driverFactories) {
+  for (case (root, rootI) <- roots.zipWithIndex) {
+    for (driver <- webDriverFactories) {
       for (gp <- genPartitioners) {
-        it(s"$gp/$driver/$root") {
+        it(s"$gp - $driver - $rootI") {
 
           _spooky = SpookyContext(sql)
           _spooky.setConf(
@@ -75,7 +75,7 @@ abstract class ITBaseSpec extends SpookyBaseSpec with LocalURIDocsFixture {
     val pagesFetched = metrics.pagesFetched.value
     remotePagesFetched = metrics.pagesFetchedFromRemote.value
     assert(pagesFetched >= numPages)
-    assert(remoteFetchSuboptimality contains remotePagesFetched - numPages)
+    assert(maxRedundantFetch contains remotePagesFetched - numPages)
     assert(metrics.pagesFetchedFromCache.value === pagesFetched - remotePagesFetched)
     assert(metrics.sessionInitialized.value === numSessions)
     assert(metrics.sessionReclaimed.value >= metrics.sessionInitialized.value)
@@ -139,11 +139,11 @@ abstract class ITBaseSpec extends SpookyBaseSpec with LocalURIDocsFixture {
 
   def numSessions: Long = remotePagesFetched
   final def numWebDrivers: Long = {
-    if (driverFactories.flatMap(Option(_)).isEmpty) 0
+    if (webDriverFactories.flatMap(Option(_)).isEmpty) 0
     else numSessions
   }
 
   def pageFetchedCap: Long = numPages * 2
 
-  def remoteFetchSuboptimality: Range = 0 to 0
+  def maxRedundantFetch: Range = 0 to 0
 }

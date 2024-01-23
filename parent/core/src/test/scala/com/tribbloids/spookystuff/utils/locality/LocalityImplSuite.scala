@@ -189,7 +189,7 @@ class LocalityImplSuite extends SpookyBaseSpec {
 
   describe("cogroupBase() can preserve both locality and in-partition orders") {
 
-    val allImpls: Seq[Locality_OrdinalityImpl[Int, WithID]] = {
+    val allImpls: Seq[LocalityImpl.Ordinality[Int, WithID]] = {
       def partitioned =
         rdd1
           .partitionBy(new HashPartitioner(np))
@@ -204,7 +204,7 @@ class LocalityImplSuite extends SpookyBaseSpec {
   }
 
   private def testAllImpls(
-      allImpls: Seq[Locality_OrdinalityImpl[Int, WithID]],
+      allImpls: Seq[LocalityImpl.Ordinality[Int, WithID]],
       rdd2: RDD[(Int, WithID)] = this.rdd2
   ) = {
     allImpls.foreach { impl =>
@@ -223,7 +223,7 @@ class LocalityImplSuite extends SpookyBaseSpec {
 
   describe("... even if the first operand is not serializable") {
 
-    val allImpls: Seq[Locality_OrdinalityImpl[Int, WithID]] = {
+    val allImpls: Seq[LocalityImpl.Ordinality[Int, WithID]] = {
       val rdd = rdd1.mapValues { v =>
         NOTSerializableID(v._id): WithID
       }
@@ -255,7 +255,7 @@ class LocalityImplSuite extends SpookyBaseSpec {
         i -> WithID(i)
       }
     )
-    val allImpls: Seq[Locality_OrdinalityImpl[Int, WithID]] = {
+    val allImpls: Seq[LocalityImpl.Ordinality[Int, WithID]] = {
       def partitioned =
         rdd1_extra
           .partitionBy(new HashPartitioner(rdd1_extra.partitions.length))

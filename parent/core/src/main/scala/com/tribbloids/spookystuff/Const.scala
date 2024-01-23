@@ -14,7 +14,7 @@ object Const extends CommonConst {
 
   val groupIndexExtractor: String = "G"
 
-  val defaultForkField: Field = Field("A", isWeak = true)
+  val defaultForkField: Field = Field("A", isTransient = true)
 
   val tikaDetector: DefaultDetector = new DefaultDetector()
 

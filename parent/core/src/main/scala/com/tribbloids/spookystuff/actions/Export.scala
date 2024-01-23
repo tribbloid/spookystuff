@@ -22,7 +22,7 @@ abstract class Export extends Named {
 
   final override def skeleton: Option[Export.this.type] = None // have not impact to driver
 
-  final def doExe(session: Session): Seq[Fetched] = {
+  final def doExe(session: Session): Seq[Observation] = {
     val results = doExeNoName(session)
     results.map {
       case doc: Doc =>
@@ -35,12 +35,12 @@ abstract class Export extends Named {
 
             throw wrapped
         }
-      case other: Fetched =>
+      case other: Observation =>
         other
     }
   }
 
-  def doExeNoName(session: Session): Seq[Fetched]
+  def doExeNoName(session: Session): Seq[Observation]
 }
 
 trait WaybackLike {

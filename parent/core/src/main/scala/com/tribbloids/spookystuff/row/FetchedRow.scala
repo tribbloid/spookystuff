@@ -1,11 +1,16 @@
 package com.tribbloids.spookystuff.row
 
-import com.tribbloids.spookystuff.actions._
 import com.tribbloids.spookystuff.doc._
 
 object FetchedRow {
 
-  lazy val empty: FetchedRow = FetchedRow()
+  lazy val blank: FetchedRow = FetchedRow()
+
+  //  def ofDatum(dataRow: DataRow): SquashedRow = ofData(Seq(dataRow))
+
+  //  lazy val blank: SquashedRow = {
+  //    ofData(Seq(DataRow.blank))
+  //  }
 }
 
 /**
@@ -13,21 +18,28 @@ object FetchedRow {
   * SquashedPageRow is
   */
 case class FetchedRow(
-    dataRow: DataRow = DataRow(),
-    trajectory: Trajectory = Trajectory.empty
+    dataRow: DataRow = DataRow.blank,
+    // TODO: scope here is only to simplify SquashedRow.extract, all references in it are already lost
+    observations: Seq[Observation] = Seq.empty,
+    ordinal: Int = 0
 ) {
 
-  def asBottleneckRow(): BottleneckRow = BottleneckRow(
-    Vector(dataRow),
-    Trace().setCache(trajectory)
-  )
+  lazy val dataRowWithScope: DataRow.WithScope = DataRow.WithScope(dataRow, observations.map(_.uid))
 
-  def docs: Seq[Doc] = trajectory.flatMap {
+  def squash: SquashedRow = {
+    SquashedRow
+      .ofData(
+        dataRowWithScope
+      )
+      .cache(observations)
+  }
+
+  lazy val docs: Seq[Doc] = observations.flatMap {
     case page: Doc => Some(page)
     case _         => None
   }
 
-  def getOnlyDoc: Option[Doc] = {
+  lazy val onlyDoc: Option[Doc] = {
     val pages = this.docs
 
     if (pages.size > 1)

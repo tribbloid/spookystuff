@@ -52,7 +52,7 @@ case class SpookyConf(
     var defaultForkSampler: Sampler[Any] = identity, // join takes remote actions and cost much more than flatten.
     var defaultExploreRange: Range = 0 until Int.MaxValue,
     var defaultGenPartitioner: GenPartitioner = GenPartitioners.Wide(),
-    var defaultExploreAlgorithm: ExploreAlgorithm = ExploreAlgorithms.BreadthFirst,
+    var defaultExploreAlgorithm: PathPlanning = PathPlanners_Simple.BreadthFirst,
     var epochSize: Int = 500,
     var checkpointInterval: Int = 50, // disabled if <=0
 

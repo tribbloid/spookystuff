@@ -8,6 +8,7 @@ import com.tribbloids.spookystuff.doc.Doc
 import com.tribbloids.spookystuff.utils.{CommonUtils, SpookyUtils}
 
 object FilePaths {
+  // TODO: should be "TracePath"
 
   case object Flat extends ByTrace[String] {
 
@@ -50,12 +51,13 @@ object FilePaths {
   }
 
   // only from Page
-  case class UUIDName(encoder: ByTrace[Any]) extends ByDoc[String] {
+  case class UUIDName(encoder: ByTrace[_ <: Any]) extends ByDoc[String] {
+
     override def apply(page: Doc): String =
       CommonUtils.\\\(encoder(page.uid.backtrace).toString, UUID.randomUUID().toString)
   }
 
-  case class TimeStampName(encoder: ByTrace[Any]) extends ByDoc[String] {
+  case class TimeStampName(encoder: ByTrace[_ <: Any]) extends ByDoc[String] {
     override def apply(page: Doc): String =
       CommonUtils.\\\(encoder(page.uid.backtrace).toString, SpookyUtils.canonizeFileName(page.timeMillis.toString))
   }

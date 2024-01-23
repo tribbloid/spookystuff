@@ -9,7 +9,7 @@ import com.tribbloids.spookystuff.integration.ITBaseSpec
   */
 class ForkExtractIT extends ITBaseSpec {
 
-  override lazy val driverFactories = Seq(
+  override lazy val webDriverFactories = Seq(
     null
   )
 

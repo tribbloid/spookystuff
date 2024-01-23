@@ -207,6 +207,7 @@ case class ClasspathResolver(
         def debugConfs(
             fileNames: Seq[String] = List(
               "log4j.properties",
+              "log4j2.properties",
               "rootkey.csv",
               ".rootkey.csv"
             )

@@ -6,15 +6,15 @@ import com.tribbloids.spookystuff.row._
 
 object Extractors {
 
-  val GroupIndexExpr: GenExtractor[FR, Int] = GenExtractor.fromFn { v1: FR =>
-    v1.trajectory.ordinal
+  val GroupIndexExpr: GenExtractor[FR, Int] = GenExtractor.fromFn { v: FR =>
+    v.ordinal
   }
 
   //
   def GetUnstructuredExpr(field: Field): GenExtractor[FR, Unstructured] = GenExtractor.fromOptionFn { v1: FR =>
     v1.getUnstructured(field)
       .orElse {
-        v1.getUnstructured(field.copy(isWeak = true))
+        v1.getUnstructured(field.copy(isTransient = true))
       }
       .orElse {
         v1.getDoc(field.name).map(_.root)
@@ -25,7 +25,7 @@ object Extractors {
     v1.getDoc(field.name)
   }
   val GetOnlyDocExpr: GenExtractor[FR, Doc] = GenExtractor.fromOptionFn { v1: FR =>
-    v1.getOnlyDoc
+    v1.onlyDoc
   }
   val GetAllDocsExpr: GenExtractor[FR, Elements[Unstructured]] = GenExtractor.fromFn { v1: FR =>
     new Elements(v1.docs.map(_.root).toList)

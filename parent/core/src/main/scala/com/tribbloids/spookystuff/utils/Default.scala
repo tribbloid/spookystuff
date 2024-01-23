@@ -4,7 +4,6 @@ import scala.collection.immutable
 
 class Default[+A](val default: A)
 
-
 object Default extends Default_Imp0 {
   implicit object DefaultDouble extends Default[Double](0.0)
   implicit object DefaultFloat extends Default[Float](0.0f)

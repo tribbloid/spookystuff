@@ -54,94 +54,97 @@ class SpookyContextSuite extends SpookyBaseSpec with LocalPathDocsFixture {
     conf1 shouldBe conf2
   }
 
-  it("each noInput should have independent metrics if sharedMetrics=false") {
+  describe("each execution should have") {
 
-    val spooky = this.spooky
-    spooky.spookyConf.shareMetrics = false
+    it("independent metrics if sharedMetrics=false") {
 
-    val rdd1 = spooky
-      .fetch(
-        Wget(HTML_URL)
-      )
-    rdd1.unsquashedRDD.count()
+      val spooky = this.spooky
+      spooky.spookyConf.shareMetrics = false
 
-    val rdd2 = spooky
-      .fetch(
-        Wget(HTML_URL)
-      )
+      val d1 = spooky
+        .fetch(
+          Wget(HTML_URL)
+        )
+      d1.fetchedRDD.count()
 
-    rdd2.unsquashedRDD.count()
+      val d2 = spooky
+        .fetch(
+          Wget(HTML_URL)
+        )
+      d2.fetchedRDD.count()
 
-    val seq = Seq(rdd1, rdd2)
+      val seq = Seq(d1, d2)
 
-    val metrics = seq.map(_.spooky.spookyMetrics)
+      val metrics = seq.map(_.spooky.spookyMetrics)
 
-    metrics
-      .map(_.View.toMap)
-      .reduce { (v1, v2) =>
-        v1 mapShouldBe v2
-        assert(!v1.eq(v2))
-        v1
+      metrics
+        .map(_.View.toMap)
+        .reduce { (v1, v2) =>
+          v1 mapShouldBe v2
+          assert(!v1.eq(v2))
+          v1
+        }
+
+      seq.foreach { d =>
+        assert(d.spooky.spookyMetrics.pagesFetched.value === 1)
       }
+    }
 
-    assert(rdd1.spooky.spookyMetrics.pagesFetched.value === 1)
-    assert(rdd2.spooky.spookyMetrics.pagesFetched.value === 1)
-  }
+    it("shared metrics if sharedMetrics=true") {
 
-  it("each noInput should have shared metrics if sharedMetrics=true") {
+      val spooky = this.spooky
+      spooky.spookyConf.shareMetrics = true
 
-    val spooky = this.spooky
-    spooky.spookyConf.shareMetrics = true
+      val rdd1 = spooky
+        .fetch(
+          Wget(HTML_URL)
+        )
+      rdd1.count()
 
-    val rdd1 = spooky
-      .fetch(
-        Wget(HTML_URL)
-      )
-    rdd1.count()
+      val rdd2 = spooky
+        .fetch(
+          Wget(HTML_URL)
+        )
+      rdd2.count()
 
-    val rdd2 = spooky
-      .fetch(
-        Wget(HTML_URL)
-      )
-    rdd2.count()
-
-    rdd1.spooky.spookyMetrics.toTreeIR.treeView.treeString shouldBe
-      rdd2.spooky.spookyMetrics.toTreeIR.treeView.treeString
+      rdd1.spooky.spookyMetrics.toTreeIR.treeView.treeString shouldBe
+        rdd2.spooky.spookyMetrics.toTreeIR.treeView.treeString
+    }
   }
 
   it("can create PageRow from String") {
 
     val spooky = this.spooky
-    val rows = spooky.create(Seq("a", "b"))
+    val rdd = spooky.create(Seq("a", "b"))
 
-    val data = rows.bottleneckRDD.collect().flatMap(_.dataRows).map(_.data).toList
+    val data = rdd.squashedRDD.collect().flatMap(_.dataRows).map(_.data).toList
     assert(data == List(Map(Field("_") -> "a"), Map(Field("_") -> "b")))
   }
 
   it("can create PageRow from map[String, String]") {
 
     val spooky = this.spooky
-    val rows = spooky.create(Seq(Map("1" -> "a"), Map("2" -> "b")))
+    val rdd = spooky.create(Seq(Map("1" -> "a"), Map("2" -> "b")))
 
-    val data = rows.bottleneckRDD.collect().flatMap(_.dataRows).map(_.data).toList
+    val data = rdd.squashedRDD.collect().flatMap(_.dataRows).map(_.data).toList
     assert(data == List(Map(Field("1") -> "a"), Map(Field("2") -> "b")))
   }
 
   it("can create PageRow from map[Symbol, String]") {
 
     val spooky = this.spooky
-    val rows = spooky.create(Seq(Map('a1 -> "a"), Map('a2 -> "b")))
+    val rdd = spooky.create(Seq(Map('a1 -> "a"), Map('a2 -> "b")))
 
-    val data = rows.bottleneckRDD.collect().flatMap(_.dataRows).map(_.data).toList
+    val data = rdd.squashedRDD.collect().flatMap(_.dataRows).map(_.data).toList
     assert(data == List(Map(Field("a1") -> "a"), Map(Field("a2") -> "b")))
   }
 
   it("can create PageRow from map[Int, String]") {
 
     val spooky = this.spooky
-    val rows = spooky.create(Seq(Map(1 -> "a"), Map(2 -> "b")))
+    val rdd = spooky.create(Seq(Map(1 -> "a"), Map(2 -> "b")))
 
-    val data = rows.bottleneckRDD.collect().flatMap(_.dataRows).map(_.data).toList
+    val data = rdd.squashedRDD.collect().flatMap(_.dataRows).map(_.data).toList
     assert(data == List(Map(Field("1") -> "a"), Map(Field("2") -> "b")))
   }
 

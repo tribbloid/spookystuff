@@ -2,7 +2,7 @@ package com.tribbloids.spookystuff.actions
 
 import com.tribbloids.spookystuff._
 import com.tribbloids.spookystuff.caching.DocCacheLevel
-import com.tribbloids.spookystuff.doc.{Fetched, NoDoc}
+import com.tribbloids.spookystuff.doc.{NoDoc, Observation}
 import com.tribbloids.spookystuff.extractors.Extractor
 import com.tribbloids.spookystuff.extractors.impl.Lit
 import com.tribbloids.spookystuff.row.{FetchedRow, SpookySchema}
@@ -23,7 +23,7 @@ abstract class Block(
     with Named
     with WaybackLike {
 
-  override val children: Trace = arg.asTrace
+  override val children: Trace = arg.trace
 
   override def wayback: Extractor[Long] =
     children
@@ -50,7 +50,7 @@ abstract class Block(
 
   def cacheEmptyOutput: DocCacheLevel.Value = DocCacheLevel.All
 
-  final override def doExe(session: Session): Seq[Fetched] = {
+  final override def doExe(session: Session): Seq[Observation] = {
 
     val doc = this.doExeNoUID(session)
 
@@ -69,14 +69,14 @@ abstract class Block(
     }
     if (result.isEmpty && this.hasOutput) {
       Seq(NoDoc(backtrace, cacheLevel = this.cacheEmptyOutput))
-    } else if (result.count(_.isInstanceOf[Fetched]) == 0 && this.hasOutput) {
+    } else if (result.count(_.isInstanceOf[Observation]) == 0 && this.hasOutput) {
       result.map(_.updated(cacheLevel = this.cacheEmptyOutput))
     } else {
       result
     }
   }
 
-  def doExeNoUID(session: Session): Seq[Fetched]
+  def doExeNoUID(session: Session): Seq[Observation]
 }
 
 object ClusterRetry {
@@ -102,9 +102,9 @@ object ClusterRetry {
     override def skeleton: Option[ClusterRetryImpl.this.type] =
       Some(ClusterRetryImpl(this.childrenSkeleton)(retries, cacheEmptyOutput).asInstanceOf[this.type])
 
-    override def doExeNoUID(session: Session): Seq[Fetched] = {
+    override def doExeNoUID(session: Session): Seq[Observation] = {
 
-      val pages = new ArrayBuffer[Fetched]()
+      val pages = new ArrayBuffer[Observation]()
 
       try {
         for (action <- children) {
@@ -160,9 +160,9 @@ object LocalRetry {
     override def skeleton: Option[LocalRetryImpl.this.type] =
       Some(LocalRetryImpl(this.childrenSkeleton)(retries, cacheEmptyOutput).asInstanceOf[this.type])
 
-    override def doExeNoUID(session: Session): Seq[Fetched] = {
+    override def doExeNoUID(session: Session): Seq[Observation] = {
 
-      val pages = new ArrayBuffer[Fetched]()
+      val pages = new ArrayBuffer[Observation]()
 
       try {
         for (action <- arg) {
@@ -171,7 +171,7 @@ object LocalRetry {
       } catch {
         case _: Exception =>
           CommonUtils.retry(retries) {
-            val retriedPages = new ArrayBuffer[Fetched]()
+            val retriedPages = new ArrayBuffer[Observation]()
 
             for (action <- arg) {
               retriedPages ++= action.exe(session)
@@ -213,13 +213,13 @@ final case class Loop(
   override def skeleton: Option[Loop.this.type] =
     Some(this.copy(arg = this.childrenSkeleton).asInstanceOf[this.type])
 
-  override def doExeNoUID(session: Session): Seq[Fetched] = {
+  override def doExeNoUID(session: Session): Seq[Observation] = {
 
-    val pages = new ArrayBuffer[Fetched]()
+    val pages = new ArrayBuffer[Observation]()
 
     try {
       for (_ <- 0 until limit) {
-        for (action <- arg.asTrace) {
+        for (action <- arg.trace) {
           pages ++= action.exe(session)
         }
       }
@@ -275,7 +275,7 @@ case class OAuthV2(self: Wget) extends Block(self) with Driverless {
       this.copy(self = v).asInstanceOf[this.type]
     }
 
-  override def doExeNoUID(session: Session): Seq[Fetched] = {
+  override def doExeNoUID(session: Session): Seq[Observation] = {
     val effectiveWget = this.rewrite(session)
 
     effectiveWget
@@ -285,12 +285,12 @@ case class OAuthV2(self: Wget) extends Block(self) with Driverless {
 
 final case class AndThen(
     self: Action,
-    f: Seq[Fetched] => Seq[Fetched]
+    f: Seq[Observation] => Seq[Observation]
 ) extends Block(self) {
 
   override def skeleton: Option[AndThen.this.type] = Some(this)
 
-  override def doExeNoUID(session: Session): Seq[Fetched] = {
+  override def doExeNoUID(session: Session): Seq[Observation] = {
     f(self.exe(session))
   }
 }

@@ -11,6 +11,7 @@ import scala.runtime.AbstractPartialFunction
 case class Unlift[-T, +R](
     liftFn: T => Option[R]
 ) extends AbstractPartialFunction[T, R] {
+  // TODO: this should be moved into prover-commons function
 
   val id: String = UUID.randomUUID().toString
   Unlift.id2ConstructionStack += id -> DSLUtils.getBreakpointInfo().toList

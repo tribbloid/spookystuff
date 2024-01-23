@@ -4,6 +4,12 @@ val noBenchmark: String? by settings
 val noUnused: String? by settings
 val noUav: String? by settings
 
+pluginManagement.repositories {
+    gradlePluginPortal()
+    mavenCentral()
+    // maven("https://dl.bintray.com/kotlin/kotlin-dev")
+}
+
 fun isEnabled(profile: String?): Boolean {
     val result = profile.toBoolean() || profile == ""
     return result
@@ -53,14 +59,9 @@ if (!isEnabled(noUnused)) {
     )
 }
 
-//if (!isEnabled(noUav)) {
-//    include(
-//        ":parent:uav"
-//    )
-//}
-
-pluginManagement.repositories {
-    gradlePluginPortal()
-    mavenCentral()
-    // maven("https://dl.bintray.com/kotlin/kotlin-dev")
+if (!isEnabled(noUav)) {
+    include(
+        ":parent:uav"
+    )
 }
+

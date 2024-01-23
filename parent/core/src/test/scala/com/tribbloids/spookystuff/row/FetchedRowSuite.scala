@@ -13,9 +13,9 @@ class FetchedRowSuite extends SpookyBaseSpec with LocalPathDocsFixture {
 
   it("get page") {
     val pages = Wget(HTML_URL).fetch(spooky)
-    val row = FetchedRow(trajectory = pages)
+    val row = FetchedRow(observations = pages)
 
-    val page1 = row.getOnlyDoc
+    val page1 = row.onlyDoc
     assert(page1.get === pages.head)
 
     println(Wget(HTML_URL).toString)
@@ -26,13 +26,12 @@ class FetchedRowSuite extends SpookyBaseSpec with LocalPathDocsFixture {
 
   it("get unstructured") {
     val pages = (Wget(HTML_URL) as 'pp).fetch(spooky)
-    val row = FetchedRow(trajectory = pages)
-      .asBottleneckRow()
+    val row = FetchedRow(observations = pages).squash
       .extract(
         S("h1.central-textlogo img").head withAlias 'e1,
         'pp.findAll("label") withAlias 'lang
       )
-      .unsquashed
+      .unSquash
       .head
 
     val page2 = row.getUnstructured('pp)

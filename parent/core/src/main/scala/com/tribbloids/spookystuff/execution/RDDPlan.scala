@@ -1,21 +1,18 @@
 package com.tribbloids.spookystuff.execution
 
-import com.tribbloids.spookystuff.actions._
-import com.tribbloids.spookystuff.row.{BeaconRDD, BottleneckRDD, SpookySchema}
+import com.tribbloids.spookystuff.row.{BeaconRDD, LocalityGroup, SpookySchema, SquashedRDD}
 
 /**
   * Basic Plan with no children, isExecuted always= true
   */
 case class RDDPlan(
-    override val schema: SpookySchema,
-    @transient sourceRDD: BottleneckRDD,
-    @transient beaconRDD: Option[BeaconRDD[Trace]] = None
+    override val computeSchema: SpookySchema,
+    @transient execute: SquashedRDD,
+    @transient beaconRDD: Option[BeaconRDD[LocalityGroup]] = None
 ) extends ExecutionPlan(
       Seq(),
-      schema.ec
+      computeSchema.ec
     ) {
 
-  override lazy val beaconRDDOpt: Option[BeaconRDD[Trace]] = beaconRDD
-
-  override def doExecute(): BottleneckRDD = sourceRDD
+  override lazy val beaconRDDOpt: Option[BeaconRDD[LocalityGroup]] = beaconRDD
 }

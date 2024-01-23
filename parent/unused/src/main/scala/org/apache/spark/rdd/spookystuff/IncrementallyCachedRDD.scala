@@ -6,7 +6,7 @@ import com.tribbloids.spookystuff.utils.Caching.ConcurrentMap
 import com.tribbloids.spookystuff.utils.accumulator.MapAccumulator
 import com.tribbloids.spookystuff.utils.lifespan.Cleanable.Lifespan
 import com.tribbloids.spookystuff.utils.lifespan.{Cleanable, LocalCleanable}
-import com.tribbloids.spookystuff.utils.{Caching, Retry, SCFunctions}
+import com.tribbloids.spookystuff.utils.{Caching, Retry, SparkContextView}
 import org.apache.spark
 import org.apache.spark.broadcast.Broadcast
 import org.apache.spark.internal.Logging
@@ -341,7 +341,7 @@ case class IncrementallyCachedRDD[T: ClassTag](
 //    val key = this.id -> split.index
 //    println(key.toString())
 
-    val cacheLocs = cacheLocAccum.value
+    val cacheLocs = cacheLocAccum.map
 
     val result = cacheLocs
       .getOrElse(
@@ -369,7 +369,7 @@ case class IncrementallyCachedRDD[T: ClassTag](
 
     logInfo(info)
 
-    val result = SCFunctions(sparkContext).withJob(info) {
+    val result = SparkContextView(sparkContext).withJob(info) {
 
       this
         .mapOncePerWorker { _ =>

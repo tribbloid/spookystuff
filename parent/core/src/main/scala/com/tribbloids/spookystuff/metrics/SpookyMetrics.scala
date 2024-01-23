@@ -24,12 +24,13 @@ case class SpookyMetrics(
     fetchFromCacheFailure: Acc[LongAccumulator] = Acc.create(0L, "fetchFromCacheFailure"),
     fetchFromRemoteSuccess: Acc[LongAccumulator] = Acc.create(0L, "fetchFromRemoteSuccess"),
     fetchFromRemoteFailure: Acc[LongAccumulator] = Acc.create(0L, "fetchFromRemoteFailure"),
-    pagesSaved: Acc[LongAccumulator] = Acc.create(0L, "pagesSaved")
+    saved: Acc[LongAccumulator] = Acc.create(0L, "saved")
+//    savedPath: Acc[MapAccumulator[String, Long]] = "savedPath" -> MapAccumulator.kToLong[String]
 ) extends AbstractMetrics {
 
   object Drivers extends Serializable {
 
-    def dispatchedTotalCount: Long = driverDispatched.value.values.sum
-    def releasedTotalCount: Long = driverReleased.value.values.sum
+    def dispatchedTotalCount: Long = driverDispatched.map.values.sum
+    def releasedTotalCount: Long = driverReleased.map.values.sum
   }
 }

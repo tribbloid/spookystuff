@@ -14,7 +14,7 @@ class FetchVisitIT extends ITBaseSpec {
       )
       .persist()
 
-    val pageRows = RDD.unsquashedRDD.collect()
+    val pageRows = RDD.fetchedRDD.collect()
 
     val finishTime = System.currentTimeMillis()
     assert(pageRows.length === 1)
@@ -32,7 +32,7 @@ class FetchVisitIT extends ITBaseSpec {
       .persist()
 
     val unionRDD = RDD.union(RDD2)
-    val unionRows = unionRDD.unsquashedRDD.collect()
+    val unionRows = unionRDD.fetchedRDD.collect()
 
     assert(unionRows.length === 2)
     assert(
@@ -42,9 +42,9 @@ class FetchVisitIT extends ITBaseSpec {
 
     assert(unionRows(0).docs.head.timeMillis === unionRows(1).docs.head.timeMillis)
     assert(unionRows(0).docs.head.raw === unionRows(1).docs.head.raw)
-    assert(unionRows(0).getOnlyDoc.get.raw === unionRows(1).docs.head.raw)
-    assert(unionRows(0).getOnlyDoc.get.name === Snapshot(DocFilterImpl.MustHaveTitle).toString)
-    assert(unionRows(1).getOnlyDoc.get.name === "b")
+    assert(unionRows(0).onlyDoc.get.raw === unionRows(1).docs.head.raw)
+    assert(unionRows(0).onlyDoc.get.name === Snapshot(DocFilterImpl.MustHaveTitle).toString)
+    assert(unionRows(1).onlyDoc.get.name === "b")
 
     // this is to ensure that an invalid expression (with None interpolation result) won't cause loss of information
     val RDDfetchNone = unionRDD
@@ -52,7 +52,7 @@ class FetchVisitIT extends ITBaseSpec {
         Visit('noSuchField) +> Snapshot() ~ 'c
       )
 
-    val fetchNoneRows = RDDfetchNone.unsquashedRDD.collect()
+    val fetchNoneRows = RDDfetchNone.fetchedRDD.collect()
 
     assert(fetchNoneRows.length === 2)
     assert(fetchNoneRows(0).docs.length === 0)

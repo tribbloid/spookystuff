@@ -6,11 +6,11 @@ import com.tribbloids.spookystuff.testutils.SpookyBaseSpec
 /**
   * Created by peng on 05/04/16.
   */
-class BottleneckRowSuite extends SpookyBaseSpec {
+class SquashedRowSuite extends SpookyBaseSpec {
 
   it("execution yields at least 1 trajectory") {
-    val row = BottleneckRow()
-    val grouped = row.deltaApplied.map(_.trajectory.inScope)
+    val row = FetchedRow.blank.squash
+    val grouped = row.dataRows.map(_.scopeUIDs)
     assert(grouped == Seq(Seq()))
   }
 
@@ -21,11 +21,13 @@ class BottleneckRowSuite extends SpookyBaseSpec {
       wget ~ 'b +>
       wget ~ 'a +>
       wget ~ 'b
-    val row =
-      BottleneckRow().setCache(trace.fetch(spooky)).explodeTrajectory(_.splitByDistinctNames)
-    val states = row.deltaApplied
-    val groupedNames = states.map { state =>
-      state.trajectory
+    val row1 = FetchedRow(observations = trace.fetch(spooky)).squash
+
+    val row = row1
+      .explodeScope(_.splitByDistinctNames)
+
+    val groupedNames = row.dataRows.map { dataRow =>
+      dataRow.scopeUIDs
         .map {
           _.name
         }

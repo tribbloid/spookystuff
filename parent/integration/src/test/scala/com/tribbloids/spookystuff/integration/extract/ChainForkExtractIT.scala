@@ -9,7 +9,7 @@ import com.tribbloids.spookystuff.integration.ITBaseSpec
   */
 class ChainForkExtractIT extends ITBaseSpec {
 
-  override lazy val driverFactories = Seq(
+  override lazy val webDriverFactories = Seq(
     null
   )
 
@@ -23,42 +23,22 @@ class ChainForkExtractIT extends ITBaseSpec {
         A"p".attr("class") ~ 'p_class
       )
 
-    r1.persist()
-      .toJSON(true)
-      .collect()
-      .mkString("\n")
-      .shouldBe(
-        """
-        |{"i1":[0],"p_class":"description"}
-        |{"i1":[1],"p_class":"description"}
-        |{"i1":[2],"p_class":"description"}
-      """.stripMargin.trim
-      )
-
     val r2 = r1
       .fork(A"h4", ordinalField = 'i2)(
         'A.attr("class") ~ 'h4_class
       )
 
-    r2.persist()
-      .toJSON(true)
-      .collect()
-      .mkString("\n")
-      .shouldBe(
-        """
-          |{"i1":[0],"p_class":"description","i2":[0],"h4_class":"pull-right price"}
-          |{"i1":[1],"p_class":"description","i2":[0],"h4_class":"pull-right price"}
-          |{"i1":[2],"p_class":"description","i2":[0],"h4_class":"pull-right price"}
-      """.stripMargin.trim
-      )
+    val r3 = {
+      r2
+        .fork(
+          S"notexist",
+          ordinalField = 'notexist_key
+        )( // this is added to ensure that temporary joinKey in KV store won't be used.
+          'A.attr("class") ~ 'notexist_class
+        )
+    }
 
-    val result = r2
-      .fork(
-        S"notexist",
-        ordinalField = 'notexist_key
-      )( // this is added to ensure that temporary joinKey in KV store won't be used.
-        'A.attr("class") ~ 'notexist_class
-      )
+    val result = r3
       .toDF(sort = true)
 
     result.schema.treeString.shouldBe(

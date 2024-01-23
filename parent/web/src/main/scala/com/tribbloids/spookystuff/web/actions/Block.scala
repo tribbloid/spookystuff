@@ -2,7 +2,7 @@ package com.tribbloids.spookystuff.web.actions
 
 import com.tribbloids.spookystuff._
 import com.tribbloids.spookystuff.actions.{Block, Loop, Trace}
-import com.tribbloids.spookystuff.doc.{Doc, Fetched}
+import com.tribbloids.spookystuff.doc.{Doc, Observation}
 import com.tribbloids.spookystuff.row.{FetchedRow, SpookySchema}
 import com.tribbloids.spookystuff.session.Session
 
@@ -48,11 +48,11 @@ final case class WebDocIf(
   override def skeleton: Option[WebDocIf.this.type] =
     Some(this.copy(ifTrue = ifTrue.flatMap(_.skeleton), ifFalse = ifFalse.flatMap(_.skeleton)).asInstanceOf[this.type])
 
-  override def doExeNoUID(session: Session): Seq[Fetched] = {
+  override def doExeNoUID(session: Session): Seq[Observation] = {
 
     val current = Snapshot.QuickSnapshot.exe(session).head.asInstanceOf[Doc]
 
-    val pages = new ArrayBuffer[Fetched]()
+    val pages = new ArrayBuffer[Observation]()
     if (condition(current -> session)) {
       for (action <- ifTrue) {
         pages ++= action.exe(session)

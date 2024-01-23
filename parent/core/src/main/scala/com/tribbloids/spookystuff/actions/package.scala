@@ -1,6 +1,6 @@
 package com.tribbloids.spookystuff
 
-import ai.acyclic.prover.commons.compose.Fn1
+import ai.acyclic.prover.commons.function.PreDef.Fn
 import com.tribbloids.spookystuff.doc.Doc
 import com.tribbloids.spookystuff.session.Session
 
@@ -9,7 +9,7 @@ import com.tribbloids.spookystuff.session.Session
   */
 package object actions {
 
-  type DocFilter = Fn1[(Doc, Session), Doc] // TODO: merge with Selector[Doc]
+  type DocFilter = Fn[(Doc, Session), Doc] // TODO: merge with Selector[Doc]
 
-  type DocCondition = Fn1[(Doc, Session), Boolean] // TODO: merge with Selector[Doc]
+  type DocCondition = Fn[(Doc, Session), Boolean] // TODO: merge with Selector[Doc]
 }

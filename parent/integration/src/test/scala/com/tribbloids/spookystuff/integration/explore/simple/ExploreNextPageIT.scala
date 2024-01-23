@@ -9,7 +9,7 @@ import com.tribbloids.spookystuff.integration.ITBaseSpec
   */
 class ExploreNextPageIT extends ITBaseSpec {
 
-  override lazy val driverFactories = Seq(
+  override lazy val webDriverFactories = Seq(
     null
   )
 

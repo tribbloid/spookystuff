@@ -3,6 +3,7 @@ package com.tribbloids.spookystuff.doc
 import ai.acyclic.prover.commons.EqualBy
 import com.tribbloids.spookystuff._
 import com.tribbloids.spookystuff.caching.DocCacheLevel
+import com.tribbloids.spookystuff.doc.Observation.DocUID
 import com.tribbloids.spookystuff.utils.io.ResourceMetadata
 import com.tribbloids.spookystuff.utils.CommonUtils
 import org.apache.commons.csv.CSVFormat
@@ -38,7 +39,7 @@ case class Doc(
     override val metadata: ResourceMetadata =
       ResourceMetadata.empty, // for customizing parsing TODO: remove, delegate to CSVElement.
     saved: mutable.Set[String] = mutable.Set() // TODO: move out of constructor
-) extends Fetched.Success
+) extends Observation.Success
     with EqualBy {
 
   import scala.jdk.CollectionConverters._
@@ -171,11 +172,15 @@ case class Doc(
 
       try {
         os.write(raw) //       remember that apache IOUtils is defective for DFS!
+
+        val metrics = spooky.spookyMetrics
+        metrics.saved += 1
+//        metrics.savedPath.add(path -> progress.indicator.longValue())
+
+        saved += fullPath.toString
       } finally {
         os.close()
       }
-
-      saved += fullPath.toString
     }
   }
 

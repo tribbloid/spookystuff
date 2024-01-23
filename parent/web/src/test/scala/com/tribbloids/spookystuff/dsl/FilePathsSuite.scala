@@ -15,7 +15,7 @@ class FilePathsSuite extends SpookyBaseSpec {
         WaitFor("input#searchInput") +>
         Snapshot().as('A)
     )
-    .unsquashedRDD
+    .fetchedRDD
     .map(_.docs)
     .first()
     .head
@@ -26,7 +26,7 @@ class FilePathsSuite extends SpookyBaseSpec {
         WaitFor("input#searchInput").in(40.seconds) +>
         Snapshot().as('A)
     )
-    .unsquashedRDD
+    .fetchedRDD
     .map(_.docs)
     .first()
     .head

@@ -52,7 +52,7 @@ abstract class AbstractTestTrace extends SpookyBaseSpec with BaseSpec {
     assert(dry2.head == Seq(OAuthV2(Wget("http://dum.my"))))
   }
 
-  it("TraceView.autoSnapshot should not modify empty Trace") {
+  it("Trace.autoSnapshot should not modify empty Trace") {
 
     assert(
       Trace().rewriteGlobally(defaultSchema) ==
@@ -60,7 +60,7 @@ abstract class AbstractTestTrace extends SpookyBaseSpec with BaseSpec {
     )
   }
 
-  it("TraceView.autoSnapshot should append Snapshot to non-empty Trace that doesn't end with Export OR Block") {
+  it("Trace.autoSnapshot should append Snapshot to non-empty Trace that doesn't end with Export OR Block") {
 
     val trace = Trace(
       List(
@@ -73,7 +73,7 @@ abstract class AbstractTestTrace extends SpookyBaseSpec with BaseSpec {
     assert(trace.rewriteGlobally(defaultSchema) == TraceSet.of(trace +> Snapshot()))
   }
 
-  it("TraceView.autoSnapshot should append Snapshot to non-empty Trace that has no output") {
+  it("Trace.autoSnapshot should append Snapshot to non-empty Trace that has no output") {
 
     val trace = Trace(
       List(
@@ -89,7 +89,7 @@ abstract class AbstractTestTrace extends SpookyBaseSpec with BaseSpec {
     assert(trace.rewriteGlobally(defaultSchema) == TraceSet.of(trace +> Snapshot()))
   }
 
-  it("TraceView.TreeNode.toString should have indentations of TreeNode") {
+  it("Trace.TreeNode.toString should have indentations of TreeNode") {
 
     val traces = (
       Visit(HTML_URL)
@@ -100,8 +100,9 @@ abstract class AbstractTestTrace extends SpookyBaseSpec with BaseSpec {
             +> TextInput("box", "something")
             +> Snapshot()
             +> WebDocIf(
-              { (v: Doc, _: Session) =>
-                v.uri startsWith "http"
+              {
+                case (v: Doc, _: Session) =>
+                  v.uri startsWith "http"
               },
               Click("o1")
                 +> TextInput("box1", "something1")
@@ -187,9 +188,9 @@ abstract class AbstractTestTrace extends SpookyBaseSpec with BaseSpec {
   //
   //    val df = sql.read.json(sc.parallelize(trace.toSeq.map(_.toJSON)))
   //
-  //    implicit val encoder = Encoders.kryo[TraceView]
+  //    implicit val encoder = Encoders.kryo[Trace]
   //
-  //    val ds = df.as[TraceView]
+  //    val ds = df.as[Trace]
   //
   //    ds.collect().foreach(println)
   //  }
@@ -278,7 +279,7 @@ abstract class AbstractTestTrace extends SpookyBaseSpec with BaseSpec {
   }
 
   // This is fundamentally conflicting with session & driver management
-  //  ignore("TraceView.apply should yield lazy stream") {
+  //  ignore("Trace.apply should yield lazy stream") {
   //
   //    var acc: Int = 0
   //
@@ -311,7 +312,7 @@ abstract class AbstractTestTrace extends SpookyBaseSpec with BaseSpec {
   //
   //        // in comparison
   ////        acc = 0
-  ////        val notLazy = TraceView(actions)._apply(session, lazyStream = false)
+  ////        val notLazy = Trace(actions)._apply(session, lazyStream = false)
   ////        assert(acc == 3)
   //    }
   //  }

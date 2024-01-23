@@ -1,7 +1,8 @@
 package com.tribbloids.spookystuff.caching
 
 import com.tribbloids.spookystuff.actions.{Trace, Wget}
-import com.tribbloids.spookystuff.doc.{Doc, DocUID}
+import com.tribbloids.spookystuff.doc.Doc
+import com.tribbloids.spookystuff.doc.Observation.DocUID
 import com.tribbloids.spookystuff.testutils.{LocalPathDocsFixture, SpookyBaseSpec}
 import com.tribbloids.spookystuff.web.actions.{Snapshot, Visit}
 

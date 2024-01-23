@@ -10,7 +10,7 @@ import org.apache.spark.SparkException
   */
 class FetchTryWgetIT extends UncacheableIntegrationFixture {
 
-  override lazy val driverFactories = Seq(
+  override lazy val webDriverFactories = Seq(
     null
   )
 
@@ -27,7 +27,7 @@ class FetchTryWgetIT extends UncacheableIntegrationFixture {
       .extract(S.code ~ 'page)
       .persist()
     //
-    assert(RDD.unsquashedRDD.first().getOnlyDoc.isEmpty)
+    assert(RDD.fetchedRDD.first().onlyDoc.isEmpty)
 
     val pageRows = RDD.toStringRDD('page).collect()
     assert(pageRows sameElements Array(null))

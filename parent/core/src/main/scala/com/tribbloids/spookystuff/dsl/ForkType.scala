@@ -4,7 +4,7 @@ package com.tribbloids.spookystuff.dsl
   * Created by peng on 8/31/14.
   */
 //TODO: use Spark JoinType
-sealed abstract class ForkType(val isLeft: Boolean) extends Serializable with Product
+sealed abstract class ForkType(val isOuter: Boolean) extends Serializable with Product
 
 object ForkType {
 

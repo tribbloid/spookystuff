@@ -2,6 +2,7 @@ package com.tribbloids.spookystuff.actions
 
 import com.tribbloids.spookystuff.Const
 import com.tribbloids.spookystuff.caching.DocCacheLevel
+import com.tribbloids.spookystuff.doc.Observation.DocUID
 import com.tribbloids.spookystuff.doc._
 import com.tribbloids.spookystuff.extractors.impl.Lit
 import com.tribbloids.spookystuff.extractors.{Col, FR}
@@ -49,7 +50,7 @@ case class Wget(
     resolver
   }
 
-  override def doExeNoName(session: Session): Seq[Fetched] = {
+  override def doExeNoName(session: Session): Seq[Observation] = {
 
     val resolver = getResolver(session)
     val _uri = uri.value

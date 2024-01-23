@@ -2,7 +2,7 @@ package com.tribbloids.spookystuff.caching
 
 import com.tribbloids.spookystuff.SpookyContext
 import com.tribbloids.spookystuff.actions._
-import com.tribbloids.spookystuff.doc.Fetched
+import com.tribbloids.spookystuff.doc.Observation
 import com.tribbloids.spookystuff.extractors.FR
 import com.tribbloids.spookystuff.extractors.impl.Lit
 
@@ -11,7 +11,7 @@ import com.tribbloids.spookystuff.extractors.impl.Lit
   */
 trait AbstractDocCache {
 
-  def get(k: Trace, spooky: SpookyContext): Option[Seq[Fetched]] = {
+  def get(k: Trace, spooky: SpookyContext): Option[Seq[Observation]] = {
     val pagesOpt = getImpl(k, spooky)
 
     val dryRun = k.dryRun
@@ -32,9 +32,9 @@ trait AbstractDocCache {
     }
     result
   }
-  def getImpl(k: Trace, spooky: SpookyContext): Option[Seq[Fetched]]
+  def getImpl(k: Trace, spooky: SpookyContext): Option[Seq[Observation]]
 
-  def getOrElsePut(k: Trace, v: Seq[Fetched], spooky: SpookyContext): Seq[Fetched] = {
+  def getOrElsePut(k: Trace, v: Seq[Observation], spooky: SpookyContext): Seq[Observation] = {
 
     val gg = get(k, spooky)
     gg.getOrElse {
@@ -43,16 +43,16 @@ trait AbstractDocCache {
     }
   }
 
-  def cacheable(v: Seq[Fetched]): Boolean
+  def cacheable(v: Seq[Observation]): Boolean
 
-  def put(k: HasTrace, v: Seq[Fetched], spooky: SpookyContext): this.type = {
+  def put(k: HasTrace, v: Seq[Observation], spooky: SpookyContext): this.type = {
 
-    if (cacheable(v)) putImpl(k.asTrace, v, spooky)
+    if (cacheable(v)) putImpl(k.trace, v, spooky)
     else this
   }
-  def putImpl(k: Trace, v: Seq[Fetched], spooky: SpookyContext): this.type
+  def putImpl(k: Trace, v: Seq[Observation], spooky: SpookyContext): this.type
 
-  def inTimeRange(action: Action, fetched: Fetched, spooky: SpookyContext): Boolean = {
+  def inTimeRange(action: Action, fetched: Observation, spooky: SpookyContext): Boolean = {
     val range = getTimeRange(action, spooky)
 
     (range._1 < fetched.timeMillis) && (fetched.timeMillis < range._2)

@@ -4,7 +4,7 @@ import com.tribbloids.spookystuff.testutils.{BaseSpec, TestHelper}
 import org.apache.hadoop.security.UserGroupInformation
 import org.scalatest.BeforeAndAfterAll
 
-class SCFunctionsSuite extends BaseSpec with BeforeAndAfterAll {
+class SparkContextViewSuite extends BaseSpec with BeforeAndAfterAll {
 
   override def beforeAll(): Unit = {}
 
@@ -14,48 +14,45 @@ class SCFunctionsSuite extends BaseSpec with BeforeAndAfterAll {
 
     it("can stack description") {
 
-      SCFunctions.withJob("aaa") {
+      SparkContextView.withJob("aaa") {
 
-        SCFunctions.withJob("bbb") {
+        SparkContextView.withJob("bbb") {
 
           TestHelper.TestSC.parallelize(1 to 100).map(v => v * v).collect()
 
-          assert(SCFunctions.scLocalProperties.description == "aaa \u2023 bbb")
+          assert(SparkContextView.scLocalProperties.description == "aaa \u2023 bbb")
         }
       }
     }
 
     it("will not override existing groupID if not specified") {
 
-      SCFunctions.withJob("aaa", "aaa") {
+      SparkContextView.withJob("aaa", "aaa") {
 
-        SCFunctions.withJob("bbb") {
+        SparkContextView.withJob("bbb") {
 
           TestHelper.TestSC.parallelize(1 to 100).map(v => v * v).collect()
 
-          assert(SCFunctions.scLocalProperties.groupID == "aaa")
+          assert(SparkContextView.scLocalProperties.groupID == "aaa")
         }
       }
     }
 
     it("can override existing groupID") {
 
-      SCFunctions.withJob("aaa", "aaa") {
+      SparkContextView.withJob("aaa", "aaa") {
 
-        SCFunctions.withJob("bbb", "bbb") {
+        SparkContextView.withJob("bbb", "bbb") {
 
           UserGroupInformation.createRemoteUser("ccc")
 
           TestHelper.TestSC.parallelize(1 to 100).map(v => v * v).collect()
 
-          assert(SCFunctions.scLocalProperties.groupID == "bbb")
+          assert(SparkContextView.scLocalProperties.groupID == "bbb")
         }
       }
     }
   }
 
-  override def afterAll(): Unit = {
-
-//    SCFunctions.blockUntilKill(99999)
-  }
+  override def afterAll(): Unit = {}
 }

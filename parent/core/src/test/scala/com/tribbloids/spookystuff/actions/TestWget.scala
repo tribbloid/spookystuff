@@ -158,7 +158,7 @@ class TestWget extends SpookyBaseSpec {
     val set: FetchedDataset = spooky.create(df)
 
     require(set.toObjectRDD('B).collect().toSeq.map(_.asInstanceOf[Timestamp].getTime).distinct.size == rows.size)
-    val fetchedRows = set.unsquashedRDD.collect()
+    val fetchedRows = set.fetchedRDD.collect()
 
     val interpolated = fetchedRows.map { fr =>
       wget.interpolate(fr, set.schema).get

@@ -22,7 +22,7 @@ class FetchClickNextPageIT extends ITBaseSpec {
       )
       .persist()
 
-    val pageRows = rdd.explodeObservations(v => v.splitByDistinctNames).unsquashedRDD.collect()
+    val pageRows = rdd.explodeObservations(v => v.splitByDistinctNames).fetchedRDD.collect()
 //    val pageRows = rdd.unsquashedRDD.collect()
 
     val finishTime = System.currentTimeMillis()
@@ -45,7 +45,7 @@ class FetchClickNextPageIT extends ITBaseSpec {
           )
       )
 
-    val pageRows2 = rdd2.explodeObservations(v => v.splitByDistinctNames).unsquashedRDD.collect()
+    val pageRows2 = rdd2.explodeObservations(v => v.splitByDistinctNames).fetchedRDD.collect()
 
     assert(pageRows2.length === 2)
     assert(pageRows2(0).docs.map(_.name) === Seq("c", "d"))

@@ -2,6 +2,7 @@ package com.tribbloids.spookystuff.conf
 
 import com.tribbloids.spookystuff.utils.Caching
 
+// TODO: remove, merge into HasMorphism
 trait ParametricPoly1 extends GenParametricPoly1 {
 
   type In[T <: UB] = T

@@ -1,7 +1,7 @@
 package com.tribbloids.spookystuff.rdd
 
 import com.tribbloids.spookystuff.execution.{CoalescePlan, UnionPlan}
-import com.tribbloids.spookystuff.row.BottleneckRow
+import com.tribbloids.spookystuff.row.SquashedRow
 import org.apache.spark.rdd.RDD
 import org.apache.spark.storage.StorageLevel
 
@@ -25,7 +25,7 @@ trait FetchedDatasetAPI {
       shuffle: Boolean = false
   )(
       implicit
-      ord: Ordering[BottleneckRow] = null
+      ord: Ordering[SquashedRow] = null
   ): FetchedDataset = this.copy(
     CoalescePlan(plan, numPartitions, shuffle, ord)
   )
@@ -35,7 +35,7 @@ trait FetchedDatasetAPI {
       shuffle: Boolean = false
   )(
       implicit
-      ord: Ordering[BottleneckRow] = null
+      ord: Ordering[SquashedRow] = null
   ): FetchedDataset = {
 
     _coalesce(
@@ -50,7 +50,7 @@ trait FetchedDatasetAPI {
       numPartitions: Int
   )(
       implicit
-      ord: Ordering[BottleneckRow] = null
+      ord: Ordering[SquashedRow] = null
   ): FetchedDataset = {
 
     coalesce(numPartitions, shuffle = true)(ord)
@@ -111,14 +111,14 @@ trait FetchedDatasetAPI {
 
   // In contrast, checkpoint is action-like that will doExecute() immediately.
   def checkpoint(): Unit = {
-    this.bottleneckRDD.checkpoint()
+    this.squashedRDD.checkpoint()
   }
 
   def isCheckpointed: Boolean = {
-    this.bottleneckRDD.isCheckpointed
+    this.squashedRDD.isCheckpointed
   }
 
   def getCheckpointFile: Option[String] = {
-    this.bottleneckRDD.getCheckpointFile
+    this.squashedRDD.getCheckpointFile
   }
 }

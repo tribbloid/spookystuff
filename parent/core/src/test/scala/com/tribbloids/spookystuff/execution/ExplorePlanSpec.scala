@@ -1,6 +1,6 @@
 package com.tribbloids.spookystuff.execution
 
-import com.tribbloids.spookystuff.actions.{Action, Wget}
+import com.tribbloids.spookystuff.actions.{Trace, Wget}
 import com.tribbloids.spookystuff.extractors.impl.Lit
 import com.tribbloids.spookystuff.testutils.{LocalPathDocsFixture, SpookyBaseSpec}
 import com.tribbloids.spookystuff.{dsl, QueryException}
@@ -100,12 +100,27 @@ class ExplorePlanSpec extends SpookyBaseSpec with LocalPathDocsFixture {
       result
     }
 
-    lazy val computeFromMinus1 = computeFrom(-1 to 10)
+    lazy val `0..10` = computeFrom(0 to 10)
+
+    lazy val `-1..10` = computeFrom(-1 to 10)
+
+    it("0") {
+
+      `0..10`.mkString("\n")
+        .shouldBe(
+          """
+            |[/tmp/spookystuff/resources/testutils/dir,0,ArraySeq(hivetable.csv),file:///tmp/spookystuff/resources/testutils/dir/hivetable.csv]
+            |[/tmp/spookystuff/resources/testutils/dir,0,ArraySeq(table.csv),file:///tmp/spookystuff/resources/testutils/dir/table.csv]
+            |[/tmp/spookystuff/resources/testutils/dir,1,ArraySeq(hivetable.csv, Test.pdf),file:///tmp/spookystuff/resources/testutils/dir/dir/Test.pdf]
+            |[/tmp/spookystuff/resources/testutils/dir,2,ArraySeq(hivetable.csv, Test.pdf, pom.xml),file:///tmp/spookystuff/resources/testutils/dir/dir/dir/pom.xml]
+            |[/tmp/spookystuff/resources/testutils/dir,3,ArraySeq(hivetable.csv, Test.pdf, pom.xml, tribbloid.json),file:///tmp/spookystuff/resources/testutils/dir/dir/dir/dir/tribbloid.json]
+            |""".stripMargin
+        )
+    }
 
     it("-1") {
 
-      computeFromMinus1
-        .mkString("\n")
+      `-1..10`.mkString("\n")
         .shouldBe(
           """
             |[/tmp/spookystuff/resources/testutils/dir,null,null,null]
@@ -118,22 +133,14 @@ class ExplorePlanSpec extends SpookyBaseSpec with LocalPathDocsFixture {
         )
     }
 
-    it("0") {
-
-      computeFrom(0 to 10)
-        .mkString("\n")
-        .shouldBe(
-          computeFromMinus1.drop(1).mkString("\n")
-        )
-    }
-
     it("0 to 2") {
 
       computeFrom(0 to 2)
         .mkString("\n")
         .shouldBe(
-          computeFromMinus1.slice(1, 4).mkString("\n")
+          `0..10`.slice(0, 3).mkString("\n")
         )
+      // TODO: add this
     }
 
   }
@@ -158,22 +165,31 @@ class ExplorePlanSpec extends SpookyBaseSpec with LocalPathDocsFixture {
       .wget {
         DEEP_DIR_URL
       }
+
     val ds = first
       .explore(S"root directory URI".text)(
         Wget('A)
       )
       .persist()
 
-    assert(ds.bottleneckRDD.count() == 3)
+    object clue {
+      override def toString: String = {
+        ds.toDF(sort = true, removeTransient = false).show(false)
+        ds.treeString
+      }
+    }
+
+    assert(ds.squashedRDD.count() == 4, clue)
+
     assert(ds.spooky.spookyMetrics.pagesFetched.value == 4)
 
-    assert(ds.rdd.count() == 3)
+    assert(ds.rdd.count() == 4, clue)
     assert(ds.spooky.spookyMetrics.pagesFetched.value <= 4)
   }
 
   describe("When using custom keyBy function, explore plan can") {
 
-    it("avoid fetching traces with identical TraceView and preserve keyBy in its output") {
+    it("avoid fetching traces with identical Trace and preserve keyBy in its output") {
       val first = spooky
         .wget {
           DEEP_DIR_URL
@@ -185,16 +201,23 @@ class ExplorePlanSpec extends SpookyBaseSpec with LocalPathDocsFixture {
         )
         .persist()
 
-      assert(ds.bottleneckRDD.count() == 1)
-      assert(ds.spooky.spookyMetrics.pagesFetched.value == 2)
+      object clue {
+        override def toString: String = {
+          ds.toDF(sort = true, removeTransient = false).show(false)
+          ds.treeString
+        }
+      }
 
-      assert(ds.rdd.count() == 1)
-      assert(ds.spooky.spookyMetrics.pagesFetched.value <= 2)
+      assert(ds.squashedRDD.count() == 2, clue)
+      assert(ds.spooky.spookyMetrics.pagesFetched.value == 2, clue)
 
-      val rows = ds.bottleneckRDD.collect()
+      assert(ds.rdd.count() == 2, clue)
+      assert(ds.spooky.spookyMetrics.pagesFetched.value <= 2, clue)
+
+      val rows = ds.squashedRDD.collect()
 
       rows.foreach { row =>
-        assert(row.traceView.samenessDelegatedTo === ExplorePlanSpec.CustomKeyBy(row.traceView))
+        assert(row.group.samenessDelegatedTo === ExplorePlanSpec.CustomKeyBy(row.group))
       }
     }
   }
@@ -202,9 +225,9 @@ class ExplorePlanSpec extends SpookyBaseSpec with LocalPathDocsFixture {
 
 object ExplorePlanSpec {
 
-  object CustomKeyBy extends (List[Action] => Any) with Serializable {
+  object CustomKeyBy extends (Trace => Any) with Serializable {
 
-    override def apply(actions: List[Action]): Any = {
+    override def apply(actions: Trace): Any = {
 
       val uris = actions.collect {
         case v: Wget => v.uri.value

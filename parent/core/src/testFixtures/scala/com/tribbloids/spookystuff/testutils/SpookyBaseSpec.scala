@@ -5,7 +5,7 @@ import com.tribbloids.spookystuff.conf._
 import com.tribbloids.spookystuff.doc.{Doc, Unstructured}
 import com.tribbloids.spookystuff.execution.SpookyExecutionContext
 import com.tribbloids.spookystuff.extractors.{Alias, GenExtractor, GenResolved}
-import com.tribbloids.spookystuff.row.{BottleneckRow, SpookySchema, TypedField}
+import com.tribbloids.spookystuff.row.{SpookySchema, SquashedRow, TypedField}
 import com.tribbloids.spookystuff.session.DriverLike
 import com.tribbloids.spookystuff.utils.lifespan.Cleanable
 import com.tribbloids.spookystuff.utils.lifespan.Cleanable.Lifespan
@@ -96,7 +96,8 @@ abstract class SpookyBaseSpec extends SpookyEnvSpec with RemoteDocsFixture with 
 
   def emptySchema: SpookySchema = SpookySchema(SpookyExecutionContext(spooky))
 
-  implicit def withSchema(row: BottleneckRow): BottleneckRow#WSchema = row.WSchema(emptySchema)
+  implicit def rowWithCtx(row: SquashedRow): row._WithCtx = row.withCtx(spooky)
+
   implicit def extractor2Resolved[T, R](extractor: Alias[T, R]): GenResolved[T, R] = GenResolved(
     extractor.resolve(emptySchema),
     TypedField(

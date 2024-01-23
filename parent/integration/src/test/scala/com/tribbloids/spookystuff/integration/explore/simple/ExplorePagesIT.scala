@@ -6,7 +6,7 @@ import com.tribbloids.spookystuff.integration.ITBaseSpec
 
 class ExplorePagesIT extends ITBaseSpec {
 
-  override lazy val driverFactories = Seq(
+  override lazy val webDriverFactories = Seq(
     null
   )
 
@@ -54,7 +54,7 @@ class ExplorePagesIT extends ITBaseSpec {
   }
 
   override def numPages: Long = 5
-  override val remoteFetchSuboptimality: Range.Inclusive = 0 to 3
+  override val maxRedundantFetch: Range.Inclusive = 0 to 3
 
   override def pageFetchedCap: Long = 14 // TODO: this should be smaller, at least 13
 }

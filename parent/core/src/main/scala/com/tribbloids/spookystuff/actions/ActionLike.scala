@@ -2,7 +2,7 @@ package com.tribbloids.spookystuff.actions
 
 import com.tribbloids.spookystuff.actions.Trace.DryRun
 import com.tribbloids.spookystuff.caching.{DFSDocCache, InMemoryDocCache}
-import com.tribbloids.spookystuff.doc.{Doc, Fetched}
+import com.tribbloids.spookystuff.doc.{Doc, Observation}
 import com.tribbloids.spookystuff.row.{FetchedRow, SpookySchema}
 import com.tribbloids.spookystuff.session.Session
 import com.tribbloids.spookystuff.tree.TreeView
@@ -53,7 +53,8 @@ abstract class ActionLike extends Product with Serializable with Verbose {
     result
   }
 
-  // TODO: use reflection to simplify
+  // TODO: can be made automatic
+  // TODO: this.type cleanup
   /**
     * convert all extractor constructor parameters to Literals
     */
@@ -76,11 +77,12 @@ abstract class ActionLike extends Product with Serializable with Verbose {
   def dryRun: DryRun
 
   // the minimal equivalent action that can be put into backtrace
+  // TODO: this.type cleanup
   def skeleton: Option[this.type] = Some(this)
 
-  def apply(session: Session): Seq[Fetched]
+  def apply(session: Session): Seq[Observation]
 
-  def fetch(spooky: SpookyContext): Seq[Fetched] = {
+  def fetch(spooky: SpookyContext): Seq[Observation] = {
 
     val results = CommonUtils.retry(Const.remoteResourceLocalRetries) {
       fetchOnce(spooky)
@@ -91,11 +93,11 @@ abstract class ActionLike extends Product with Serializable with Verbose {
     results
   }
 
-  def fetchOnce(spooky: SpookyContext): Seq[Fetched] = {
+  def fetchOnce(spooky: SpookyContext): Seq[Observation] = {
 
     if (!this.hasOutput) return Nil
 
-    val pagesFromCache: Seq[Seq[Fetched]] =
+    val pagesFromCache: Seq[Seq[Observation]] =
       if (!spooky.spookyConf.cacheRead) Seq(null)
       else
         dryRun.map { dry =>

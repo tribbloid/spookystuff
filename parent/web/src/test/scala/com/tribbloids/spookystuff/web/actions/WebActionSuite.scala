@@ -1,7 +1,7 @@
 package com.tribbloids.spookystuff.web.actions
 
 import com.tribbloids.spookystuff.actions._
-import com.tribbloids.spookystuff.doc.Fetched
+import com.tribbloids.spookystuff.doc.Observation
 import com.tribbloids.spookystuff.session.Session
 import com.tribbloids.spookystuff.web.conf.Web
 import com.tribbloids.spookystuff.ActionException
@@ -156,14 +156,14 @@ object WebActionSuite {
 
   case object DefectiveExport extends Export {
 
-    override def doExeNoName(session: Session): Seq[Fetched] = {
+    override def doExeNoName(session: Session): Seq[Observation] = {
       sys.error("error")
     }
   }
 
   case object DefectiveWebExport extends Export with WebAction {
 
-    override def doExeNoName(session: Session): Seq[Fetched] = {
+    override def doExeNoName(session: Session): Seq[Observation] = {
       session.driverOf(Web)
       sys.error("error")
     }

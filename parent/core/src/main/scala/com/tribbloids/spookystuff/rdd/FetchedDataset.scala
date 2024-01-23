@@ -2,8 +2,9 @@ package com.tribbloids.spookystuff.rdd
 
 import com.tribbloids.spookystuff.actions._
 import com.tribbloids.spookystuff.conf.SpookyConf
-import com.tribbloids.spookystuff.doc.{Doc, Trajectory}
+import com.tribbloids.spookystuff.doc.Doc
 import com.tribbloids.spookystuff.dsl._
+import com.tribbloids.spookystuff.execution.Delta._
 import com.tribbloids.spookystuff.execution.ExplorePlan.Params
 import com.tribbloids.spookystuff.execution._
 import com.tribbloids.spookystuff.extractors._
@@ -11,22 +12,21 @@ import com.tribbloids.spookystuff.extractors.impl.Get
 import com.tribbloids.spookystuff.row._
 import com.tribbloids.spookystuff.utils.SpookyViews
 import com.tribbloids.spookystuff.{Const, SpookyContext}
+import org.apache.spark.SparkContext
 import org.apache.spark.ml.dsl.utils.refl.CatalystTypeOps
 import org.apache.spark.rdd.RDD
 import org.apache.spark.sql.catalyst.expressions.GenericInternalRow
 import org.apache.spark.sql.catalyst.{CatalystTypeConverters, InternalRow}
-import org.apache.spark.sql.types.{DataType, StructType}
+import org.apache.spark.sql.types.DataType
 import org.apache.spark.sql.utils.SparkHelper
 import org.apache.spark.sql.{DataFrame, Dataset}
 import org.apache.spark.storage.StorageLevel
-import org.apache.spark.{SparkContext, TaskContext}
 
 import scala.collection.Map
 import scala.collection.immutable.ListMap
 import scala.concurrent.duration.Duration
 import scala.language.implicitConversions
 import scala.reflect.ClassTag
-
 
 object FetchedDataset extends FetchedDatasetImp0 {
 
@@ -49,10 +49,10 @@ case class FetchedDataset(
   implicit def fromExecutionPlan(plan: ExecutionPlan): FetchedDataset = FetchedDataset(plan)
 
   def this(
-      sourceRDD: BottleneckRDD,
+      sourceRDD: SquashedRDD,
       fieldMap: ListMap[Field, DataType],
       spooky: SpookyContext,
-      beaconRDDOpt: Option[BeaconRDD[Trace]] = None
+      beaconRDDOpt: Option[BeaconRDD[LocalityGroup]] = None
   ) = {
 
     this(
@@ -77,17 +77,10 @@ case class FetchedDataset(
   }
   def isCached: Boolean = plan.isCached
 
-  def rdd: RDD[FR] = this.unsquashedRDD
-
-  def partitionRDD: RDD[(Int, Seq[FR])] = rdd.mapPartitions { ii =>
-    Iterator(TaskContext.get().partitionId() -> ii.toSeq)
-  }
-  def partitionSizeRDD: RDD[(Int, Int)] = rdd.mapPartitions { ii =>
-    Iterator(TaskContext.get().partitionId() -> ii.size)
-  }
+  def rdd: RDD[FR] = this.fetchedRDD
 
   def spooky: SpookyContext = plan.spooky
-  def schema: SpookySchema = plan.schema
+  def schema: SpookySchema = plan.outputSchema
   def fields: List[Field] = schema.fields
 
   def dataRDDSorted: RDD[DataRow] = {
@@ -97,9 +90,9 @@ case class FetchedDataset(
     val sortIndices: List[Field] = plan.allSortIndices.map(_._1.self)
 
     val dataRDD = this.dataRDD
-    plan.persist(dataRDD)
+    plan.scratchRDDPersist(dataRDD)
 
-    val sorted = dataRDD.sortBy(_.sortIndex(sortIndices))
+    val sorted = dataRDD.sortBy(v => v.sortIndex(sortIndices: _*))
     sorted.setName("sort")
 
     sorted.foreachPartition { _ => } // force execution TODO: remove, won't force
@@ -108,7 +101,7 @@ case class FetchedDataset(
     sorted
   }
   def toMapRDD(sort: Boolean = false): RDD[Map[String, Any]] =
-    sparkContext.withJob("toMapRDD", s"toMapRDD(sort=$sort)") {
+    spooky.withJob("toMapRDD", s"toMapRDD(sort=$sort)") {
       {
         if (!sort) this.dataRDD
         else dataRDDSorted
@@ -150,14 +143,21 @@ case class FetchedDataset(
       }
   }
 
-  def toDF(sort: Boolean = false): DataFrame =
-    sparkContext.withJob("toDF", s"toDF(sort=$sort)") {
+  def toDF(
+      sort: Boolean = false,
+      removeTransient: Boolean = true
+  ): DataFrame =
+    spooky.withJob("toDF", s"toDF(sort=$sort)") {
 
-      val filteredSchema: SpookySchema = schema.evictTransientFields
-      val sqlSchema: StructType = filteredSchema.structType
-      val rowRDD = toInternalRowRDD(sort, filteredSchema)
+      val effectiveSchema = {
 
-      val result = SparkHelper.internalCreateDF(spooky.sqlContext, rowRDD, sqlSchema)
+        if (removeTransient) this.transientRemoved.schema
+        else this.schema
+      }
+
+      val rowRDD = this.toInternalRowRDD(sort, effectiveSchema)
+
+      val result = SparkHelper.internalCreateDF(spooky.sqlContext, rowRDD, effectiveSchema.structType)
 
       result
     }
@@ -171,7 +171,7 @@ case class FetchedDataset(
 
     val _ex = newResolver.include(ex.toStr).head
 
-    this.unsquashedRDD.map(v => _ex.applyOrElse[FetchedRow, String](v, _ => default))
+    this.fetchedRDD.map(v => _ex.applyOrElse[FetchedRow, String](v, _ => default))
   }
 
   def toObjectRDD[T: ClassTag](
@@ -181,29 +181,29 @@ case class FetchedDataset(
 
     val _ex = newResolver.include(ex).head
 
-    this.unsquashedRDD.map(v => _ex.applyOrElse[FetchedRow, T](v, _ => default))
+    this.fetchedRDD.map(v => _ex.applyOrElse[FetchedRow, T](v, _ => default))
   }
 
   // IMPORTANT: DO NOT discard type parameter! otherwise arguments' type will be coerced into Any!
   def extract[T](exs: Extractor[T]*): FetchedDataset = {
-    MapPlan.optimised(plan, MapPlan.Extract(exs))
+    DeltaPlan.optimised(plan, Extract(exs))
   }
 
   def apply[T](exs: Extractor[T]*): FetchedDataset = {
-    MapPlan.optimised(plan, MapPlan.Extract(exs))
+    DeltaPlan.optimised(plan, Extract(exs))
   }
 
   def remove(fields: Field*): FetchedDataset = {
-    MapPlan.optimised(plan, MapPlan.Remove(fields))
+    DeltaPlan.optimised(plan, Remove(fields))
   }
 
   def explodeObservations(
-      fn: Trajectory => Seq[Trajectory]
+      fn: DataRow.WithScope => Seq[DataRow.WithScope]
   ): FetchedDataset = {
-    MapPlan.optimised(plan, MapPlan.ExplodeObservations(fn))
+    DeltaPlan.optimised(plan, ExplodeScope(fn))
   }
 
-  def removeWeaks(): FetchedDataset = this.remove(fields.filter(_.isWeak): _*)
+  def transientRemoved: FetchedDataset = this.remove(fields.filter(_.isTransient): _*)
 
   /**
     * this is an action that will be triggered immediately
@@ -241,9 +241,9 @@ case class FetchedDataset(
       .map(_.ex.typed[String])
       .getOrElse(_pageEx.defaultFileExtension)
 
-    MapPlan.optimised(
+    DeltaPlan.optimised(
       plan,
-      MapPlan.SavePages(path.ex.typed[String], _extensionEx, _pageEx, overwrite)
+      SavePages(path.ex.typed[String], _extensionEx, _pageEx, overwrite)
     )
   }
 
@@ -263,7 +263,7 @@ case class FetchedDataset(
         ff -> this.extract(ex)
     }
 
-    MapPlan.optimised(extracted.plan, MapPlan.ExplodeData(on, ordinalField, sampler, forkType))
+    DeltaPlan.optimised(extracted.plan, ExplodeData(on, ordinalField, sampler, forkType))
   }
 
   def fork(
@@ -278,12 +278,6 @@ case class FetchedDataset(
 
     result
   }
-
-  // TODO: test
-  def aggregate(exprs: Seq[FetchedRow => Any], reducer: RowReducer): FetchedDataset =
-    AggregatePlan(plan, exprs, reducer)
-//  def distinctBy(exprs: FetchedRow => Any*): FetchedDataset =
-//    agg(exprs, ((v1: Vector[DataRow], _: Vector[DataRow]) => v1): RowReducer)
 
   protected def getCooldown(v: Option[Duration]): Trace = {
     val _delay: Trace = v.map { dd =>
@@ -308,7 +302,7 @@ case class FetchedDataset(
   // Always left
   def fetch(
       traces: HasTraceSet,
-      keyBy: List[Action] => Any = identity,
+      keyBy: Trace => Any = identity,
       genPartitioner: GenPartitioner = spooky.spookyConf.defaultGenPartitioner
   ): FetchedDataset = {
 
@@ -317,24 +311,11 @@ case class FetchedDataset(
     FetchPlan(plan, _traces, keyBy, genPartitioner)
   }
 
-//  def sliceBy(
-//      slicer: SquashedRow.FetchedSlicer
-//  ): FetchedDataset = {
-//
-//    MapPlan(
-//      plan,
-//      { schema =>
-//        val rowMapper = MapPlan.SliceBy(slicer)(schema)
-//        rowMapper
-//      }
-//    )
-//  }
-
   // shorthand of fetch
   def wget(
       on: Col[String],
       cooldown: Option[Duration] = None,
-      keyBy: List[Action] => Any = identity,
+      keyBy: Trace => Any = identity,
       filter: DocFilter = Const.defaultDocumentFilter,
       failSafe: Int = -1,
       genPartitioner: GenPartitioner = spooky.spookyConf.defaultGenPartitioner
@@ -357,7 +338,7 @@ case class FetchedDataset(
       ordinalField: Field = null, // left & idempotent parameters are missing as they are always set to true
       sampler: Sampler[Any] = spooky.spookyConf.defaultForkSampler,
       cooldown: Option[Duration] = None,
-      keyBy: List[Action] => Any = identity,
+      keyBy: Trace => Any = identity,
       filter: DocFilter = Const.defaultDocumentFilter,
       failSafe: Int = -1,
       genPartitioner: GenPartitioner = spooky.spookyConf.defaultGenPartitioner
@@ -365,7 +346,7 @@ case class FetchedDataset(
 
     var trace: Trace = _defaultWget(cooldown, filter)
     if (failSafe > 0) {
-      trace = ClusterRetry(trace, failSafe).asTrace
+      trace = ClusterRetry(trace, failSafe).trace
     }
 
     this
@@ -385,11 +366,11 @@ case class FetchedDataset(
       sampler: Sampler[Any] = spooky.spookyConf.defaultForkSampler
   )(
       traces: HasTraceSet,
-      keyBy: List[Action] => Any = identity,
+      keyBy: Trace => Any = identity,
       genPartitioner: GenPartitioner = spooky.spookyConf.defaultGenPartitioner,
       depthField: Field = null,
       range: Range = spooky.spookyConf.defaultExploreRange,
-      exploreAlgorithm: ExploreAlgorithm = spooky.spookyConf.defaultExploreAlgorithm,
+      exploreAlgorithm: PathPlanning = spooky.spookyConf.defaultExploreAlgorithm,
       epochSize: Int = spooky.spookyConf.epochSize,
       checkpointInterval: Int = spooky.spookyConf.checkpointInterval // set to Int.MaxValue to disable checkpointing,
   ): FetchedDataset = {
@@ -401,7 +382,7 @@ case class FetchedDataset(
       on.withForkFieldIfMissing,
       sampler,
       forkType,
-      traces.asTraceSet.rewriteGlobally(plan.schema),
+      traces.asTraceSet.rewriteGlobally(plan.outputSchema),
       keyBy,
       genPartitioner,
       params,
@@ -420,11 +401,11 @@ case class FetchedDataset(
       filter: DocFilter = Const.defaultDocumentFilter,
       failSafe: Int = -1,
       cooldown: Option[Duration] = None,
-      keyBy: List[Action] => Any = identity,
+      keyBy: Trace => Any = identity,
       genPartitioner: GenPartitioner = spooky.spookyConf.defaultGenPartitioner,
       depthField: Field = null,
       range: Range = spooky.spookyConf.defaultExploreRange,
-      exploreAlgorithm: ExploreAlgorithm = spooky.spookyConf.defaultExploreAlgorithm,
+      exploreAlgorithm: PathPlanning = spooky.spookyConf.defaultExploreAlgorithm,
       miniBatch: Int = 500,
       checkpointInterval: Int = spooky.spookyConf.checkpointInterval // set to Int.MaxValue to disable checkpointing,
 

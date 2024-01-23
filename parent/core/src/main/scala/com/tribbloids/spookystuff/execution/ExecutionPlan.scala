@@ -1,17 +1,17 @@
 package com.tribbloids.spookystuff.execution
 
 import com.tribbloids.spookystuff.SpookyContext
-import com.tribbloids.spookystuff.actions.Trace
-import com.tribbloids.spookystuff.doc.Fetched
+import com.tribbloids.spookystuff.doc.Observation
 import com.tribbloids.spookystuff.row._
 import com.tribbloids.spookystuff.tree.TreeView
+import com.tribbloids.spookystuff.utils.lifespan.Cleanable
 import org.apache.spark.rdd.RDD
 import org.apache.spark.sql.types.DataType
 import org.apache.spark.storage.StorageLevel
-import org.slf4j.LoggerFactory
 
 import scala.collection.immutable.ListMap
-import scala.language.implicitConversions
+
+object ExecutionPlan {}
 
 //right now it vaguely resembles SparkPlan in catalyst
 //TODO: may subclass SparkPlan in the future to generate DataFrame directly, but not so fast
@@ -19,7 +19,8 @@ abstract class ExecutionPlan(
     val children: Seq[ExecutionPlan],
     val ec: SpookyExecutionContext
 ) extends TreeView.Immutable[ExecutionPlan]
-    with Serializable {
+    with Serializable
+    with Cleanable {
 
   def this(
       children: Seq[ExecutionPlan]
@@ -31,45 +32,47 @@ abstract class ExecutionPlan(
   def spooky: SpookyContext = ec.spooky
   def scratchRDDs: ScratchRDDs = ec.scratchRDDs
 
-  // Cannot be lazy, always defined on construction
-  val schema: SpookySchema = SpookySchema(
-    ec,
-    fieldTypes = children
-      .map(_.schema.fieldTypes)
-      .reduceOption(_ ++ _)
-      .getOrElse(ListMap[Field, DataType]())
-  )
+  protected def computeSchema: SpookySchema
+  final lazy val outputSchema: SpookySchema = computeSchema
 
-  implicit def withSchema(row: BottleneckRow): BottleneckRow#WSchema = row.WSchema(schema)
+  {
+    outputSchema
+  }
 
-  def fieldMap: ListMap[Field, DataType] = schema.fieldTypes
+//  implicit def withSchema(row: SquashedRow): SquashedRow.WithSchema = row.withSchema(schema)
 
-  def allSortIndices: List[IndexedField] = schema.indexedFields.filter(_._1.self.isSortIndex)
+  def fieldMap: ListMap[Field, DataType] = outputSchema.fieldTypes
+
+  def allSortIndices: List[IndexedField] = outputSchema.indexedFields.filter(_._1.self.isSortIndex)
 
   def firstChildOpt: Option[ExecutionPlan] = children.headOption
 
   // beconRDD is always empty, with fixed partitioning, cogroup with it to maximize Local Cache hitting chance
   // by default, inherit from the first child
-  final protected def inheritedBeaconRDDOpt: Option[BeaconRDD[Trace]] =
+  final protected def inheritedBeaconRDDOpt: Option[BeaconRDD[LocalityGroup]] =
     firstChildOpt.flatMap(_.beaconRDDOpt)
 
-  lazy val beaconRDDOpt: Option[BeaconRDD[Trace]] = inheritedBeaconRDDOpt
+  lazy val beaconRDDOpt: Option[BeaconRDD[LocalityGroup]] = inheritedBeaconRDDOpt
 
-  def doExecute(): BottleneckRDD
+  protected def execute: SquashedRDD
 
-  final def execute(): BottleneckRDD = {
+  final def fetch: SquashedRDD = {
 
-    this.doExecute()
+    this.execute
+      .map { row =>
+        row.group.withCtx(spooky).trajectory // always fetch before rendering an RDD
+        row
+      }
   }
 
-  var storageLevel: StorageLevel = StorageLevel.NONE
-  var _cachedRDD: BottleneckRDD = _
-  def cachedRDDOpt: Option[BottleneckRDD] = Option(_cachedRDD)
+  @volatile var storageLevel: StorageLevel = StorageLevel.NONE
+  @volatile var _cachedRDD: SquashedRDD = _
+  def cachedRDDOpt: Option[SquashedRDD] = Option(_cachedRDD)
 
   def isCached: Boolean = cachedRDDOpt.nonEmpty
 
   // TODO: cachedRDD is redundant? just make it lazy val!
-  final def bottleneckRDD: BottleneckRDD = {
+  final def squashedRDD: SquashedRDD = {
     ec.tryDeployPlugin()
     // any RDD access will cause all plugins to be deployed
 
@@ -79,7 +82,7 @@ abstract class ExecutionPlan(
         cached
       // if not cached, execute from upstream and use it.
       case None =>
-        val exe = execute()
+        val exe = fetch
         val result = exe
 
         if (storageLevel != StorageLevel.NONE) {
@@ -89,27 +92,32 @@ abstract class ExecutionPlan(
     }
   }
 
-  def squashedRDD: RDD[SquashedRow] =
-    bottleneckRDD
-      .flatMap(v => v.WSchema(schema).deltaApplied)
+  final def SquashedRDDWithSchema: SquashedRDDWithSchema = {
+    squashedRDD.map(_.withSchema(outputSchema))
+  }
 
-  def unsquashedRDD: RDD[FetchedRow] =
-    squashedRDD.flatMap(row => row.unSquashed)
+  def fetchedRDD: RDD[FetchedRow] =
+    SquashedRDDWithSchema.flatMap(row => row.withCtx.unSquash)
 
-  def observationRDD: RDD[Seq[Fetched]] = {
-    squashedRDD.map(_.trajectory.inScope)
+  def observationRDD: RDD[Seq[Observation]] = {
+    fetchedRDD.map(_.observations)
   }
 
   def dataRDD: RDD[DataRow] = {
 
-    unsquashedRDD.map(_.dataRow)
+    fetchedRDD.map(_.dataRow)
   }
 
   // -------------------------------------
 
-  def persist[T](
+  def scratchRDDPersist[T](
       rdd: RDD[T],
       storageLevel: StorageLevel = ExecutionPlan.this.spooky.spookyConf.defaultStorageLevel
   ): RDD[T] = scratchRDDs.persist(rdd, storageLevel)
 
+  override protected def cleanImpl(): Unit = {
+//    cachedRDDOpt.foreach { v => // TODO: fix lifespan
+//      v.unpersist(false)
+//    }
+  }
 }

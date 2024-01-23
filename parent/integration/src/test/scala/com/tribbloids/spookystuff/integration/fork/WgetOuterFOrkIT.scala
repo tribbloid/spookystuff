@@ -8,7 +8,7 @@ import com.tribbloids.spookystuff.extractors.Col
   */
 class WgetOuterFOrkIT extends VisitOuterFOrkIT {
 
-  override lazy val driverFactories = Seq(
+  override lazy val webDriverFactories = Seq(
     null
   )
 

@@ -32,7 +32,7 @@ case class TraceSet(self: Set[Trace]) extends HasTraceSet {
     val result = asTraceSet.flatMap { v =>
       v.rewriteGlobally(schema)
     }
-    TraceSet(result.map(_.asTrace))
+    TraceSet(result.map(_.trace))
   }
 
   def avoidEmpty: NonEmpty = {

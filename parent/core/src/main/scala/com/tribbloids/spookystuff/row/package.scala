@@ -1,21 +1,21 @@
 package com.tribbloids.spookystuff
 
-import com.tribbloids.spookystuff.actions.Trace
 import org.apache.spark.rdd.RDD
 
 package object row {
 
   type Data = Map[Field, Any] // TODO: change to SQL Row
-
   implicit val Data: Map.type = Map
 
-  type BottleneckRDD = RDD[BottleneckRow]
+  type SquashedRDD = RDD[SquashedRow]
+
+  type SquashedRDDWithSchema = RDD[SquashedRow.WithSchema]
 
   type BeaconRDD[K] = RDD[(K, Unit)]
 
   type Sampler[T] = Iterable[(T, Int)] => Iterable[(T, Int)] // with index
 
-  type RowOrdering = Ordering[(Trace, Vector[DataRow])]
+  type RowOrdering = Ordering[(LocalityGroup, Vector[DataRow])]
 
   // f(open, visited) => open
 //  type RowEliminator = (Iterable[DataRow], Iterable[DataRow]) => Iterable[DataRow]

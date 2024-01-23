@@ -56,7 +56,7 @@ class TestFetchPlan extends SpookyBaseSpec with LocalPathDocsFixture {
         Lit("Wikipedia") ~ 'name
       )
 
-    rdd1.unsquashedRDD.count()
+    rdd1.fetchedRDD.count()
 
     assert(rdd1.spooky.spookyMetrics.pagesFetched.value === 1)
   }

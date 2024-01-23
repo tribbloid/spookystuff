@@ -2,6 +2,7 @@ package com.tribbloids.spookystuff.doc
 
 import com.tribbloids.spookystuff._
 import com.tribbloids.spookystuff.caching.DocCacheLevel
+import com.tribbloids.spookystuff.doc.Observation.DocUID
 import com.tribbloids.spookystuff.utils.io.ResourceMetadata
 
 case class DocWithError(
@@ -16,7 +17,7 @@ case class DocWithError(
         .getOrElse(""),
       cause
     )
-    with Fetched.Failure {
+    with Observation.Failure {
 
   override def timeMillis: Long = delegate.timeMillis
 

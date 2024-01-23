@@ -6,7 +6,7 @@ import scala.reflect.ClassTag
 
 case class BroadcastLocalityImpl[K: ClassTag, V: ClassTag](
     override val rdd1: RDD[(K, V)]
-) extends Locality_OrdinalityImpl[K, V] {
+) extends LocalityImpl.Ordinality[K, V] {
 
   override def cogroupBase[V2: ClassTag](rdd2: RDD[(K, V2)]): RDD[(K, (V, Iterable[V2]))] = {
 

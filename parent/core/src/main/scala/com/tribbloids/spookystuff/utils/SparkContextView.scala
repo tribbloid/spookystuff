@@ -14,7 +14,7 @@ import scala.concurrent.{Await, ExecutionContext, Future}
 import scala.reflect.ClassTag
 import scala.util.Try
 
-case class SCFunctions(sc: SparkContext) {
+case class SparkContextView(sc: SparkContext) {
 
   def scLocalProperties: SparkLocalProperties = SparkLocalProperties(sc)
 
@@ -148,7 +148,7 @@ case class SCFunctions(sc: SparkContext) {
     }
   }
 
-  def blockUntilKill(timeMillis: Long): Try[Array[(Int, Int)]] = {
+  def blockUntilKilled(timeMillis: Long = Long.MaxValue): Unit = {
 
     withJob(s"⛔ Blocking for ${timeMillis}ms! This job can be killed to proceed ⛔") {
 
@@ -174,4 +174,4 @@ case class SCFunctions(sc: SparkContext) {
   //    }
 }
 
-object SCFunctions extends SCFunctions(SparkContext.getOrCreate())
+object SparkContextView extends SparkContextView(SparkContext.getOrCreate())

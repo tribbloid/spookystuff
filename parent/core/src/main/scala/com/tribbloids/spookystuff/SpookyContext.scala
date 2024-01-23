@@ -1,13 +1,15 @@
 package com.tribbloids.spookystuff
 
+import ai.acyclic.prover.commons.Same
+import ai.acyclic.prover.commons.function.PreDef
 import com.tribbloids.spookystuff.conf._
 import com.tribbloids.spookystuff.metrics.SpookyMetrics
 import com.tribbloids.spookystuff.rdd.FetchedDataset
 import com.tribbloids.spookystuff.row._
 import com.tribbloids.spookystuff.session.Session
 import com.tribbloids.spookystuff.utils.io.HDFSResolver
-import com.tribbloids.spookystuff.utils.serialization.SerDeOverride
-import com.tribbloids.spookystuff.utils.{ShippingMarks, TreeThrowable}
+import com.tribbloids.spookystuff.utils.serialization.{NOTSerializable, SerDeOverride}
+import com.tribbloids.spookystuff.utils.{ShippingMarks, SparkContextView, TreeThrowable}
 import org.apache.hadoop.conf.Configuration
 import org.apache.spark._
 import org.apache.spark.broadcast.Broadcast
@@ -32,7 +34,19 @@ object SpookyContext {
     result
   }
 
-  implicit def toFetchedDS(spooky: SpookyContext): FetchedDataset = spooky.createBlank
+  implicit def asBlankFetchedDS(spooky: SpookyContext): FetchedDataset = spooky.createBlank
+
+  implicit def asSparkContextView(spooky: SpookyContext): SparkContextView = SparkContextView(spooky.sparkContext)
+
+  trait CanRunWith {
+
+    type _WithCtx <: NOTSerializable // TODO: with AnyVal
+    def _WithCtx: SpookyContext => _WithCtx
+
+    // cached results will be dropped for being NOTSerializable
+    @transient final lazy val withCtx: Same.ByEquality.CachedFn[SpookyContext, _WithCtx] = PreDef.Fn(_WithCtx).cached
+  }
+
 }
 
 case class SpookyContext(
@@ -170,9 +184,11 @@ case class SpookyContext(
     }
   }
 
-  lazy val _blankRowRDD: RDD[BottleneckRow] = sparkContext.parallelize(Seq(BottleneckRow.empty))
+  def createBlank: FetchedDataset = {
 
-  def createBlank: FetchedDataset = this.create(_blankRowRDD)
+    lazy val _rdd: RDD[SquashedRow] = sparkContext.parallelize(Seq(FetchedRow.blank.squash))
+    this.create(_rdd)
+  }
 
   object dsl extends Serializable {
 
@@ -182,12 +198,16 @@ case class SpookyContext(
       val mapRDD = new DataFrameView(df)
         .toMapRDD()
 
-      val self: BottleneckRDD = mapRDD
+      val self: SquashedRDD = mapRDD
         .map { map =>
-          BottleneckRow(
-            Option(ListMap(map.toSeq: _*))
-              .getOrElse(ListMap())
-              .map(tuple => (Field(tuple._1), tuple._2))
+          val listMap: ListMap[Field, Any] = Option(ListMap(map.toSeq: _*))
+            .getOrElse(ListMap())
+            .map { tuple =>
+              (Field(tuple._1), tuple._2)
+            }
+
+          SquashedRow.ofData(
+            DataRow(listMap).withEmptyScope
           )
         }
       val fields = df.schema.fields.map { sf =>
@@ -217,9 +237,9 @@ case class SpookyContext(
 
         // RDD[SquashedRow] => ..
         // discard schema
-        case _ if ttg.tpe <:< typeOf[BottleneckRow] =>
+        case _ if ttg.tpe <:< typeOf[SquashedRow] =>
           //        case _ if classOf[SquashedRow] == classTag[T].runtimeClass =>
-          val self = rdd.asInstanceOf[BottleneckRDD]
+          val self = rdd.asInstanceOf[SquashedRDD]
           new FetchedDataset(
             self,
             fieldMap = ListMap(),
@@ -232,7 +252,7 @@ case class SpookyContext(
             var cells = ListMap[Field, Any]()
             if (str != null) cells = cells + (Field("_") -> str)
 
-            BottleneckRow(cells)
+            FetchedRow(DataRow(cells)).squash
           }
           new FetchedDataset(
             self,

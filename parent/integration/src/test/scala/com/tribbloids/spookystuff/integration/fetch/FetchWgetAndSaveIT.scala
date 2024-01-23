@@ -13,7 +13,7 @@ class FetchWgetAndSaveIT extends ITBaseSpec {
     "http://upload.wikimedia.org/wikipedia/en/thumb/8/80/Wikipedia-logo-v2.svg/220px-Wikipedia-logo-v2.svg.png"
   }
 
-  override lazy val driverFactories = Seq(
+  override lazy val webDriverFactories = Seq(
     null
   )
 
@@ -31,7 +31,7 @@ class FetchWgetAndSaveIT extends ITBaseSpec {
       .savePages(x"file://${CommonConst.USER_DIR}/temp/spooky-integration/save/${'name}", overwrite = true)
       .extract(S.saved ~ 'saved_path)
 
-    val savedPageRows = rdd.unsquashedRDD.collect()
+    val savedPageRows = rdd.fetchedRDD.collect()
 
     val finishTime = System.currentTimeMillis()
     assert(savedPageRows.length === 1)
@@ -60,7 +60,7 @@ class FetchWgetAndSaveIT extends ITBaseSpec {
       )
 
     val unionRDD = rdd.union(RDD2)
-    val unionRows = unionRDD.unsquashedRDD.collect()
+    val unionRows = unionRDD.fetchedRDD.collect()
 
     assert(unionRows.length === 2)
     assert(

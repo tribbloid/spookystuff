@@ -28,17 +28,17 @@ trait Caching {
     * @see
     *   WeakReference
     */
-  type ConcurrentCache[K, V] = scala.collection.concurrent.Map[K, V] with CacheTag
+  type ConcurrentCache[K, V] = mutable.Map[K, V] with CacheTag
 
   def ConcurrentCache[K, V](): ConcurrentCache[K, V] = {
 
-    // TODO: switching to https://github.com/blemale/scaffeine if faster?
+    // TODO: use counterpart in prover-commons, which uses ben-mane's caffeine, the fastest JVM caching library
     val base = guavaBuilder
       .asInstanceOf[CacheBuilder[K, V]]
       .build[K, V]()
       .asMap()
 
-    val asScala = base.asScala
+    val asScala: mutable.Map[K, V] = base.asScala
 
     asScala.asInstanceOf[ConcurrentCache[K, V]]
   }
@@ -52,9 +52,10 @@ object Caching {
 
   def javaConcurrentMap[K, V]() = new java.util.concurrent.ConcurrentHashMap[K, V]()
 
-  type ConcurrentMap[K, V] = scala.collection.concurrent.Map[K, V] with ConcurrentTag
+  type ConcurrentMap[K, V] = mutable.Map[K, V] with ConcurrentTag
   def ConcurrentMap[K, V](): ConcurrentMap[K, V] = {
-    javaConcurrentMap[K, V]().asScala.asInstanceOf[ConcurrentMap[K, V]]
+    val result: mutable.Map[K, V] = javaConcurrentMap[K, V]().asScala
+    result.asInstanceOf[ConcurrentMap[K, V]]
   }
 
   type ConcurrentSet[V] = mutable.Set[V] with ConcurrentTag

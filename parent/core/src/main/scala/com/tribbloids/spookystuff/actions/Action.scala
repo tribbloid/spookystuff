@@ -1,7 +1,7 @@
 package com.tribbloids.spookystuff.actions
 
 import com.tribbloids.spookystuff.actions.Trace.DryRun
-import com.tribbloids.spookystuff.doc.{Doc, Fetched}
+import com.tribbloids.spookystuff.doc.{Doc, Observation}
 import com.tribbloids.spookystuff.session.Session
 import com.tribbloids.spookystuff.utils.CommonUtils
 import com.tribbloids.spookystuff.{ActionException, SpookyContext}
@@ -23,7 +23,7 @@ class ActionUDT extends ScalaUDT[Action]
 trait Action extends ActionLike with HasTrace {
 
   override def children: Trace = Nil
-  @transient override lazy val asTrace: Trace = List(this)
+  @transient override lazy val trace: Trace = List(this)
 
   var timeElapsed: Long = -1 // only set once
 
@@ -55,7 +55,7 @@ trait Action extends ActionLike with HasTrace {
   }
 
   // this should handle autoSave, cache and errorDump
-  final override def apply(session: Session): Seq[Fetched] = {
+  final override def apply(session: Session): Seq[Observation] = {
 
     val results =
       try {
@@ -121,15 +121,15 @@ trait Action extends ActionLike with HasTrace {
     }
   }
 
-  final def exe(session: Session): Seq[Fetched] = {
+  final def exe(session: Session): Seq[Observation] = {
     withTimeoutDuring(session) {
       doExe(session)
     }
   }
 
-  protected def doExe(session: Session): Seq[Fetched]
+  protected def doExe(session: Session): Seq[Observation]
 
-  def andThen(f: Seq[Fetched] => Seq[Fetched]): Action = AndThen(this, f)
+  def andThen(f: Seq[Observation] => Seq[Observation]): Action = AndThen(this, f)
 
   override def injectFrom(same: ActionLike): Unit = {
     super.injectFrom(same)
@@ -161,7 +161,7 @@ trait Driverless extends Action {}
 
 trait ActionPlaceholder extends Action {
 
-  override protected def doExe(session: Session): Seq[Fetched] = {
+  override protected def doExe(session: Session): Seq[Observation] = {
     throw new UnsupportedOperationException(s"${this.getClass.getSimpleName} is a placeholder")
   }
 }

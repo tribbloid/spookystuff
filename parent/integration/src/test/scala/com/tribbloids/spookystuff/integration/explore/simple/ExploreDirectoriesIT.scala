@@ -11,7 +11,7 @@ class ExploreDirectoriesIT extends ITBaseSpec {
 
   import com.tribbloids.spookystuff.dsl._
 
-  override lazy val driverFactories = Seq(
+  override lazy val webDriverFactories = Seq(
     null
   )
 

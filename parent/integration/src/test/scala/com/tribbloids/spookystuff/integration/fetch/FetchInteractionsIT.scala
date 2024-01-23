@@ -28,7 +28,7 @@ class FetchInteractionsIT extends ITBaseSpec {
       )
       .persist()
 
-    val pageRows = RDD.unsquashedRDD.collect()
+    val pageRows = RDD.fetchedRDD.collect()
 
     val finishTime = System.currentTimeMillis()
     assert(pageRows.length === 1)
@@ -39,7 +39,7 @@ class FetchInteractionsIT extends ITBaseSpec {
         .encode("深度学习", "UTF-8"))
     )
     assert(pageRows(0).docs.head.name === Snapshot(DocFilterImpl.MustHaveTitle).toString)
-    val pageTime = pageRows(0).trajectory.head.timeMillis
+    val pageTime = pageRows(0).observations.head.timeMillis
     assert(pageTime < finishTime)
     assert(pageTime > finishTime - 120000) // long enough even after the second time it is retrieved from s3 cache
 
@@ -52,7 +52,7 @@ class FetchInteractionsIT extends ITBaseSpec {
       )
 
     val unionRDD = RDD.union(RDD2)
-    val unionRows = unionRDD.unsquashedRDD.collect()
+    val unionRows = unionRDD.fetchedRDD.collect()
 
     assert(unionRows.length === 2)
     assert(

@@ -15,7 +15,7 @@ case class LocalityRDDView[K: ClassTag, V: ClassTag](
   override def cogroupBase[V2: ClassTag](rdd2: RDD[(K, V2)]): RDD[(K, (V, Iterable[V2]))] = {
     rdd2.countApprox(5000, 0.9)
 
-    val impl: Locality_OrdinalityImpl[K, V] = {
+    val impl: LocalityImpl.Ordinality[K, V] = {
 //      if (size2 < BROADCAST_SIZE_CAP_BYTE) BroadcastLocalityImpl(rdd1)
 //      else //TODO: enable after testing.
       if (rdd1.partitioner.nonEmpty) SortingLocalityImpl(rdd1)

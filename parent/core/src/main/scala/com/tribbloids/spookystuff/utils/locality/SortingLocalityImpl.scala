@@ -6,7 +6,7 @@ import scala.reflect.ClassTag
 
 case class SortingLocalityImpl[K: ClassTag, V: ClassTag](
     override val rdd1: RDD[(K, V)]
-) extends Locality_OrdinalityImpl[K, V] {
+) extends LocalityImpl.Ordinality[K, V] {
 
   {
     assert(rdd1.partitioner.nonEmpty, s"cannot use ${this.getClass.getCanonicalName} on RDD without partitioner")
