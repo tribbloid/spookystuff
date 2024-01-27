@@ -23,7 +23,7 @@ class TestBlock extends SpookyBaseSpec {
     )
     loop.exe(session)
 
-    assert(session.Drivers.get(Web).isEmpty)
+    assert(session.Drivers.lookup.get(Web).isEmpty)
 //    assert(!loop.needDriver)
   }
 
@@ -39,7 +39,7 @@ class TestBlock extends SpookyBaseSpec {
     )
     retry.exe(session)
 
-    assert(session.Drivers.get(Web).isEmpty)
+    assert(session.Drivers.lookup.get(Web).isEmpty)
   }
 
   it("Try(Wget) can failsafe on malformed uri") {}

@@ -42,10 +42,11 @@ object Delta {
     }
 
     override lazy val fn: SquashedRow :=> SquashedRow = { v =>
-      v.withCtx(outputSchema.spooky).extract(_exs: _*)
+      {
+        v.withCtx(outputSchema.spooky): v._WithCtx
+      }.extract(_exs: _*)
     }
   }
-
   case class ExplodeData(
       onField: Field,
       ordinalField: Field,

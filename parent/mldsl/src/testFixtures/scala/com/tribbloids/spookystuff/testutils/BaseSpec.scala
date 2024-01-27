@@ -1,7 +1,10 @@
 package com.tribbloids.spookystuff.testutils
 
+import ai.acyclic.prover.commons.util.Summoner
 import org.json4s.jackson.JsonMethods
 import org.json4s.{DefaultFormats, Extraction, JValue}
+
+import scala.reflect.ClassTag
 
 object BaseSpec {
 
@@ -23,6 +26,7 @@ object BaseSpec {
 trait BaseSpec extends ai.acyclic.prover.commons.testlib.BaseSpec {
 
   import BaseSpec._
+  import org.apache.spark.sql.catalyst.ScalaReflection.universe._
 
   @transient implicit class _JsonStrView(str: String) {
 
@@ -43,6 +47,26 @@ trait BaseSpec extends ai.acyclic.prover.commons.testlib.BaseSpec {
       // TODO: can we use tree visualization capabilities of prover-commons?
       assertValidDataInJson(selfJ, gdJ)
     }
+  }
+
+  def typeOfIt[T: TypeTag](
+      subject: T
+  )(fn: T => Unit): Unit = {
+
+    val ttg: TypeTag[T] = Summoner.summon[TypeTag[T]]
+    it(ttg.tpe.toString) {
+      fn(subject)
+    }
+  }
+
+  def classOfIt[T: ClassTag](
+      subject: T
+  )(fn: T => Unit): Unit = {
+    val ctg: ClassTag[T] = Summoner.summon[ClassTag[T]]
+    it(ctg.runtimeClass.toString) {
+      fn(subject)
+    }
+
   }
 
   //  override def intercept[T <: AnyRef](f: => Any)(implicit manifest: Manifest[T]): T = {

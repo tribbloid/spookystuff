@@ -5,7 +5,7 @@ import java.io.NotSerializableException
 import com.tribbloids.spookystuff.testutils.{BaseSpec, TestHelper}
 import org.apache.spark.SparkException
 
-object NOTSerializableSuite {
+object NOTSerializableSpec {
 
   case class Thing(str: String)
   case class Thing2(str: String) extends NOTSerializable {
@@ -24,9 +24,9 @@ object NOTSerializableSuite {
   case class Thing4(str: String) extends Super2
 }
 
-class NOTSerializableSuite extends BaseSpec {
+class NOTSerializableSpec extends BaseSpec {
 
-  import NOTSerializableSuite._
+  import NOTSerializableSpec._
 
   it("base class is serializable") {
     val thing = Thing("abc")
@@ -45,7 +45,7 @@ class NOTSerializableSuite extends BaseSpec {
     assert(out == Seq("abc1", "abc2"))
   }
 
-  SerDeOverride.Default.allSerializers.foreach { ser =>
+  SerializerOverride.Default.allSerializers.foreach { ser =>
     describe(s"when using ${ser.getClass.getSimpleName}") {
       it(s"mixin will trigger a runtime error") {
         val thing = Thing2("abc")

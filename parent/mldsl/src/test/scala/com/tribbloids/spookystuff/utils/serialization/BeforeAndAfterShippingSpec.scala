@@ -5,9 +5,9 @@ import org.scalatest.BeforeAndAfterEach
 
 import java.util.concurrent.atomic.AtomicInteger
 
-class BeforeAndAfterShippingSuite extends BaseSpec with BeforeAndAfterEach {
+class BeforeAndAfterShippingSpec extends BaseSpec with BeforeAndAfterEach {
 
-  import BeforeAndAfterShippingSuite._
+  import BeforeAndAfterShippingSpec._
 
   override def beforeEach(): Unit = {
     beforeCounter.set(0)
@@ -36,7 +36,7 @@ class BeforeAndAfterShippingSuite extends BaseSpec with BeforeAndAfterEach {
   }
 }
 
-object BeforeAndAfterShippingSuite {
+object BeforeAndAfterShippingSpec {
 
   val beforeCounter: AtomicInteger = new AtomicInteger(0)
   val afterCounter: AtomicInteger = new AtomicInteger(0)

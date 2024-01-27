@@ -55,7 +55,7 @@ object PathPlanning {
       ): (LocalityGroup, Vector[DataRow]) = {
         // may return pair with empty DataRows
 
-        // TODO: Should I use pre-sorted collection? Or is it over-engineering?
+        // TODO: Should I use pre-sorted collection like SortedMap? Or is it over-engineering?
         val bestOpen: (LocalityGroup, Vector[DataRow]) = open.min(ordering)
         val bestOpenGroup = bestOpen._1
 

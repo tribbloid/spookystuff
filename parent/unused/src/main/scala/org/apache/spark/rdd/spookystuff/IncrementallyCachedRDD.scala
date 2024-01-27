@@ -35,7 +35,6 @@ case class IncrementallyCachedRDD[T: ClassTag](
     with Logging {
 
   import IncrementallyCachedRDD._
-  import com.tribbloids.spookystuff.utils.SpookyViews._
 
   /**
     * mimicking DAGScheduler.cacheLocs, but using accumulator as I don't mess with BlockManager
@@ -389,8 +388,6 @@ case class IncrementallyCachedRDD[T: ClassTag](
 }
 
 object IncrementallyCachedRDD {
-
-  import com.tribbloids.spookystuff.utils.CommonViews._
 
   case class DepCache[T <: Cleanable](
       rddID: Int

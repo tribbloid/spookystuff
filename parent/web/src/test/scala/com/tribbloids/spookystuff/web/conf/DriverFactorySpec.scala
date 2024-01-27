@@ -11,7 +11,7 @@ class DriverFactorySpec extends SpookyBaseSpec with LocalPathDocsFixture {
 
   trait BaseCase {
 
-    val pluginSys: PluginSystem.WithDriver
+    val pluginSys: PluginSystem.HasDriver
     type Driver = pluginSys.Driver
 
     def driverFactory: Transient[Driver]

@@ -18,12 +18,11 @@ object AssertSerializable {
     //          assert(!(_1 eq _2))
     //        }
     //    }
-
   }
 
   def apply[T <: Any: ClassTag](
       element: T,
-      serializers: Seq[Serializer] = SerDeOverride.Default.allSerializers,
+      serializers: Seq[Serializer] = SerializerOverride.Default.allSerializers,
       condition: (T, T) => Any = serializableCondition[T]
   ): Unit = {
 

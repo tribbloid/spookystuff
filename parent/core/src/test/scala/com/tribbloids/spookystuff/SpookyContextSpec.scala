@@ -6,14 +6,26 @@ import com.tribbloids.spookystuff.row.Field
 import com.tribbloids.spookystuff.testutils.{LocalPathDocsFixture, SpookyBaseSpec}
 import com.tribbloids.spookystuff.utils.serialization.AssertWeaklySerializable
 
-class SpookyContextSuite extends SpookyBaseSpec with LocalPathDocsFixture {
+class SpookyContextSpec extends SpookyBaseSpec with LocalPathDocsFixture {
 
   it("SpookyContext should be Serializable") {
 
-    val spooky = this.spooky
+    val spooky: SpookyContext = this.spooky
+    spooky.Plugins.registerEnabled()
 
-    AssertWeaklySerializable(
-      spooky
+    AssertWeaklySerializable[SpookyContext](
+      spooky,
+      condition = { (v1, v2) =>
+        Seq(v1, v2)
+          .map { _ =>
+            v1.Plugins.cached.lookup.values
+          }
+          .reduce { (v1, v2) =>
+            assert(v1 == v2)
+            v1
+          }
+
+      }
     )
   }
 

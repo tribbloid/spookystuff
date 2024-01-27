@@ -1,19 +1,18 @@
 package com.tribbloids.spookystuff
 
-import ai.acyclic.prover.commons.Same
 import ai.acyclic.prover.commons.function.PreDef
 import com.tribbloids.spookystuff.conf._
 import com.tribbloids.spookystuff.metrics.SpookyMetrics
 import com.tribbloids.spookystuff.rdd.FetchedDataset
+import com.tribbloids.spookystuff.relay.io.Encoder
 import com.tribbloids.spookystuff.row._
 import com.tribbloids.spookystuff.session.Session
 import com.tribbloids.spookystuff.utils.io.HDFSResolver
-import com.tribbloids.spookystuff.utils.serialization.{NOTSerializable, SerDeOverride}
+import com.tribbloids.spookystuff.utils.serialization.{NOTSerializable, SerializerOverride}
 import com.tribbloids.spookystuff.utils.{ShippingMarks, SparkContextView, TreeThrowable}
 import org.apache.hadoop.conf.Configuration
 import org.apache.spark._
 import org.apache.spark.broadcast.Broadcast
-import com.tribbloids.spookystuff.relay.io.Encoder
 import org.apache.spark.ml.dsl.utils.refl.{ToCatalyst, TypeMagnet}
 import org.apache.spark.rdd.RDD
 import org.apache.spark.sql.{DataFrame, SQLContext}
@@ -44,7 +43,7 @@ object SpookyContext {
     def _WithCtx: SpookyContext => _WithCtx
 
     // cached results will be dropped for being NOTSerializable
-    @transient final lazy val withCtx: Same.ByEquality.CachedFn[SpookyContext, _WithCtx] = PreDef.Fn(_WithCtx).cached
+    @transient final lazy val withCtx: PreDef.Fn.Cached[SpookyContext, _WithCtx] = PreDef.Fn(_WithCtx).cachedBy()
   }
 
 }
@@ -58,40 +57,53 @@ case class SpookyContext(
   // right before the shipping (implemented as serialisation hook),
   // all enabled features that are not configured will be initialised with default value
 
-  object Plugins extends PluginRegistry.Factory {
+  object Plugins extends PluginRegistry.Factory[PluginSystem] {
 
-    type UB = PluginSystem
-    implicit override lazy val ubEv: ClassTag[UB] = ClassTag(classOf[UB])
+    type Out[T <: PluginSystem] = T#Plugin
 
-    override type Out[T <: PluginSystem] = T#Plugin
-    override def compute[T <: PluginSystem](v: T): v.Plugin = {
-      requireNotShipped()
-      val result = v.default(SpookyContext.this)
-      result
+    override def init: Dependent = new Dependent {
+
+      def apply[T <: PluginSystem](arg: T): arg.Plugin = {
+        requireNotShipped()
+        val result = arg.default(SpookyContext.this)
+        result
+      }
+    }
+
+    def registered: List[PluginSystem#PluginLike] = this.lookup.values.toList.collect {
+      case plugin: PluginSystem#PluginLike =>
+        plugin
     }
 
     def deployAll(): Unit = {
-      createEnabled()
-      val trials = cache.values.toList.map { plugin =>
-        Try(plugin.deploy())
-      }
-      TreeThrowable.&&&(trials)
+
+      try {
+        registerEnabled()
+        val trials = registered.map { v =>
+          Try(v.deploy())
+        }
+
+        TreeThrowable.&&&(trials)
+      } finally {}
     }
 
     def resetAll(): Unit = {
-      Plugins.cache.values.foreach { ff =>
+      registered.foreach { ff =>
         ff.reset()
       }
     }
+
   }
 
-  def getPlugin[T <: PluginSystem](v: T): v.Plugin = Plugins.apply(v)
+  def getPlugin[T <: PluginSystem](v: T): v.Plugin = Plugins.apply(v: v.type)
   def setPlugin(vs: PluginSystem#Plugin*): this.type = {
     requireNotShipped()
 
     vs.foreach { plugin =>
-      Plugins.update(plugin.pluginSystem, plugin)
+      plugin.deploy()
+      Plugins.lookup.updateOverride(plugin.pluginSystem, plugin)
     }
+
     this
   }
 
@@ -126,9 +138,9 @@ case class SpookyContext(
     setConf(v)
   }
 
-  val hadoopConfBroadcast: Broadcast[SerDeOverride[Configuration]] = {
+  val hadoopConfBroadcast: Broadcast[SerializerOverride[Configuration]] = {
     sqlContext.sparkContext.broadcast(
-      SerDeOverride(this.sqlContext.sparkContext.hadoopConfiguration)
+      SerializerOverride(this.sqlContext.sparkContext.hadoopConfiguration)
     )
   }
   def hadoopConf: Configuration = hadoopConfBroadcast.value.value
@@ -139,7 +151,7 @@ case class SpookyContext(
 
   final override def clone: SpookyContext = {
     val result = SpookyContext(sqlContext)
-    val plugins = Plugins.cache.values.toList.map(plugin => plugin.clone)
+    val plugins = Plugins.registered.map(plugin => plugin.clone)
     result.setPlugin(plugins: _*)
 
     result

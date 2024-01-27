@@ -22,17 +22,18 @@ case class Snapshot(
   // all other fields are empty
   override def doExeNoName(session: Session): Seq[Doc] = {
 
-    val pageOpt = session.Drivers.get(Web).map { webDriver =>
-      new Doc(
-        DocUID((session.backtrace :+ this).toList, this)(),
-        webDriver.getCurrentUrl,
-        webDriver.getPageSource.getBytes("UTF8"),
-        Some("text/html; charset=UTF-8")
-        //      serializableCookies
-      )
-    }
+    val webDriver = session.Drivers(Web)
+
+    val page = new Doc(
+      DocUID((session.backtrace :+ this).toList, this)(),
+      webDriver.getCurrentUrl,
+      webDriver.getPageSource.getBytes("UTF8"),
+      Some("text/html; charset=UTF-8")
+      //      serializableCookies
+    )
     //    if (contentType != null) Seq(page.copy(declaredContentType = Some(contentType)))
-    pageOpt.map(v => Seq(v)).getOrElse(Nil)
+
+    Seq(page)
   }
 
   override def doInterpolate(pageRow: FetchedRow, schema: SpookySchema): Option[Snapshot.this.type] = {

@@ -1,16 +1,15 @@
 package com.tribbloids.spookystuff.utils.serialization
 
-import java.nio.ByteBuffer
-
 import com.tribbloids.spookystuff.utils.TreeThrowable
 import org.apache.spark.serializer.Serializer
 
+import java.nio.ByteBuffer
 import scala.reflect.ClassTag
 import scala.util.Try
 
 case class AssertWeaklySerializable[T <: Any: ClassTag](
     element: T,
-    serializers: Seq[Serializer] = SerDeOverride.Default.allSerializers,
+    serializers: Seq[Serializer] = SerializerOverride.Default.allSerializers,
     condition: (T, T) => Any = { (_: T, _: T) =>
       true
     }
@@ -25,6 +24,13 @@ case class AssertWeaklySerializable[T <: Any: ClassTag](
       //      assert(!element.eq(element2))
       condition(element, element2)
     }
+      .recover {
+        case e: Throwable =>
+          throw new AssertionError(
+            s"cannot serialize with ${ser.getClass.getSimpleName}: ${e.getMessage}",
+            e
+          )
+      }
   }
 
   TreeThrowable.&&&(

@@ -1,6 +1,6 @@
 package com.tribbloids.spookystuff.utils
 
-import org.apache.spark.ml.dsl.utils.DSLUtils
+import ai.acyclic.prover.commons.debug.Debug.CallStackRef
 
 trait ShippingMarks extends Serializable {
 
@@ -25,11 +25,13 @@ trait ShippingMarks extends Serializable {
     * can only be used on driver
     */
   def requireNotShipped(): Unit = {
-    def methodName = DSLUtils.Caller().fnName
+    def methodName = CallStackRef.below().fnName
 
     require(
-      notShipped,
-      s"${getClass.getSimpleName}: method $methodName can only be used on Spark driver, it is disabled after shipping"
+      notShipped, {
+        notShipped
+        s"${getClass.getSimpleName}: method $methodName can only be used on Spark driver, it is disabled after shipping"
+      }
     )
   }
 

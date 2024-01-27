@@ -8,8 +8,6 @@ import scala.reflect.ClassTag
 
 object Cleanable {
 
-  import com.tribbloids.spookystuff.utils.CommonViews._
-
   type Lifespan = LifespanInternal#ForShipping
   type Leaf = LeafType#Internal
 

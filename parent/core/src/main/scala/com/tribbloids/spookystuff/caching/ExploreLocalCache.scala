@@ -1,6 +1,6 @@
 package com.tribbloids.spookystuff.caching
 
-import ai.acyclic.prover.commons.util.Caching.Soft.ConcurrentCache
+import ai.acyclic.prover.commons.util.Caching.Soft.View
 import ai.acyclic.prover.commons.util.Caching.{ConcurrentMap, ConcurrentSet}
 import com.tribbloids.spookystuff.execution.ExplorePlan.ExeID
 import com.tribbloids.spookystuff.execution.ExploreRunner
@@ -13,8 +13,8 @@ object ExploreLocalCache {
 
   // (Trace, ExecutionID) -> Squashed Rows
   // exeID is used to segment Squashed Rows from different jobs
-  val committedVisited: ConcurrentCache[(LocalityGroup, ExeID), Vector[DataRow]] =
-    ConcurrentCache()
+  val committedVisited: View[(LocalityGroup, ExeID), Vector[DataRow]] =
+    View()
 
   val onGoings: ConcurrentMap[ExeID, ConcurrentSet[ExploreRunner]] =
     ConcurrentMap() // executionID -> running ExploreStateView

@@ -1,6 +1,6 @@
 package com.tribbloids.spookystuff.utils
 
-import org.apache.spark.ml.dsl.utils.DSLUtils
+import ai.acyclic.prover.commons.debug.Debug.CallStackRef
 import org.slf4j.{Logger, LoggerFactory}
 
 import scala.util.control.ControlThrowable
@@ -70,9 +70,9 @@ object Retry {
       // TODO: merge with CommonUtils
       lazy val _callerShowStr = {
         Option(showStr).getOrElse {
-          DSLUtils
-            .Caller(
-              exclude = Seq(classOf[Retry], classOf[RetryImpl[_]], classOf[CommonUtils])
+          CallStackRef
+            .below(
+              condition = Seq(classOf[Retry], classOf[RetryImpl[_]], classOf[CommonUtils])
             )
             .showStr
         }

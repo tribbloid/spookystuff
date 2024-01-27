@@ -2,8 +2,7 @@ package com.tribbloids.spookystuff.utils.serialization
 
 import ai.acyclic.prover.commons.EqualBy
 import org.apache.hadoop.io.Writable
-import org.apache.spark.serializer.{JavaSerializer, KryoSerializer, Serializer, SerializerInstance}
-import org.apache.spark.sql.catalyst.ScalaReflection.universe.TypeTag
+import org.apache.spark.serializer.SerializerInstance
 import org.apache.spark.{SerializableWritable, SparkConf}
 
 import java.io
@@ -11,40 +10,20 @@ import java.nio.ByteBuffer
 import scala.language.implicitConversions
 import scala.reflect.ClassTag
 
-object SerDeOverride {
+object SerializerOverride {
 
-  case class WithConf(conf: SparkConf) {
+  object Default extends OfSparkConf(new SparkConf())
 
-    @transient lazy val _conf: SparkConf = conf
-      .registerKryoClasses(Array(classOf[TypeTag[_]]))
+  implicit def box[T: ClassTag](v: T): SerializerOverride[T] = SerializerOverride(v)
 
-    @transient lazy val javaSerializer: JavaSerializer = new JavaSerializer(_conf)
-    @transient lazy val javaOverride: () => Some[SerializerInstance] = { // TODO: use singleton?
-      () =>
-        Some(javaSerializer.newInstance())
-    }
-
-    @transient lazy val kryoSerializer: KryoSerializer = new KryoSerializer(_conf)
-    @transient lazy val kryoOverride: () => Some[SerializerInstance] = { // TODO: use singleton?
-      () =>
-        Some(kryoSerializer.newInstance())
-    }
-
-    @transient lazy val allSerializers: List[Serializer] = List(javaSerializer, kryoSerializer)
-  }
-
-  object Default extends WithConf(new SparkConf())
-
-  implicit def box[T: ClassTag](v: T): SerDeOverride[T] = SerDeOverride(v)
-
-  implicit def unbox[T: ClassTag](v: SerDeOverride[T]): T = v.value
+  implicit def unbox[T: ClassTag](v: SerializerOverride[T]): T = v.value
 }
 
 /**
   * automatically wrap with SerializableWritable when being serialized discard original value wrapping & unwrapping is
   * lazy
   */
-case class SerDeOverride[T: ClassTag](
+case class SerializerOverride[T: ClassTag](
     // TODO: replace with twitter MeatLocker?
     @transient private val _original: T,
     overrideImpl: () => Option[SerializerInstance] = () => None // no override by default
@@ -73,6 +52,7 @@ case class SerDeOverride[T: ClassTag](
         Left(serObj)
       case Some(serde) =>
         Right(serde.serialize(serObj).array())
+      // TODO: impl cannot handle mutable object, can this be delegated to BeforeAndAfter?
     }
   }
 

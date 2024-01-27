@@ -16,7 +16,7 @@ case class SpookyExecutionContext(
     @transient scratchRDDs: ScratchRDDs = ScratchRDDs()
 ) {
 
-  @transient lazy val deployPluginsOnce: Unit = {
+  lazy val deployPluginsOnce: Unit = {
     try {
       spooky.Plugins.deployAll()
     } catch {
