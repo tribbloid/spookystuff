@@ -3,6 +3,7 @@ package com.tribbloids.spookystuff.utils.serialization
 import com.tribbloids.spookystuff.utils.TreeThrowable
 import org.apache.spark.serializer.Serializer
 
+import java.io.NotSerializableException
 import java.nio.ByteBuffer
 import scala.reflect.ClassTag
 import scala.util.Try
@@ -33,7 +34,12 @@ case class AssertWeaklySerializable[T <: Any: ClassTag](
       }
   }
 
-  TreeThrowable.&&&(
-    trials
-  )
+  try {
+    TreeThrowable.&&&(
+      trials
+    )
+  } catch {
+    case e: Throwable =>
+      throw new NotSerializableException().initCause(e)
+  }
 }

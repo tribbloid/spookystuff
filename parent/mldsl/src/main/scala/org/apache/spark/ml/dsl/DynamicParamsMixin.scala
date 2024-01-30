@@ -40,7 +40,7 @@ trait DynamicParamsMixin extends Params with Dynamic {
   }
 
   protected def Param[T: ClassTag](
-      name: String = CallStackRef.below().fnName,
+      name: String = CallStackRef.here.fnName,
       doc: String = "Pending ...",
       default: T = null
   ): Param[T] = {
@@ -53,7 +53,7 @@ trait DynamicParamsMixin extends Params with Dynamic {
   }
 
   protected def GenericParam[T: Manifest](
-      name: String = CallStackRef.below().fnName,
+      name: String = CallStackRef.here.fnName,
       doc: String = "Pending ...",
       default: T = null
   ): Param[T] = {
