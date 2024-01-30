@@ -44,7 +44,7 @@ class Session(
 
     override type Out[V <: Sys] = V#Driver
 
-    override def init = new Dependent {
+    override def init: Dependent = new Dependent {
 
       override def apply[V <: Sys](v: V): Out[V] = {
         val plugin: V#Plugin = spooky.Plugins.apply(v)

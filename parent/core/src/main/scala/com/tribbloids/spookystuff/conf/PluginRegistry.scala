@@ -17,11 +17,11 @@ trait PluginRegistry {
 
   @transient lazy val enabled: ArrayBuffer[Plugin] = ArrayBuffer.empty
 
-  def enable(v: Plugin): Unit =
-    if (!enabled.contains(v))
-      enabled += v
+  def enable(k: Plugin): Unit =
+    if (!enabled.contains(k))
+      enabled += k
 
-  def disable(v: Plugin): Unit = enabled -= v
+  def disable(k: Plugin): Unit = enabled -= k
 
   abstract class Factory[P <: Plugin](
       implicit

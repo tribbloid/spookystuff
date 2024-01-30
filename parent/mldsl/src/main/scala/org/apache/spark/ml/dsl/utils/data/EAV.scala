@@ -161,7 +161,7 @@ trait EAV extends HasEagerInnerObjects with EqualBy with RootTagged with Seriali
     ): Try[Int] = {
 
       tryGet
-        .map(v => ev(v).toInt)
+        .flatMap(v => Try(ev(v).toInt))
         .recoverWith {
           case _: Exception =>
             tryGetBoolean

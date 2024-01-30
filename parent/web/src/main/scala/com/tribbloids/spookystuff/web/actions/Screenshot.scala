@@ -18,21 +18,22 @@ case class Screenshot(
 
   override def doExeNoName(session: Session): Seq[Doc] = {
 
-    val webDriver = session.Drivers.apply(Web)
-    val content = webDriver.self match {
-      case ts: TakesScreenshot => ts.getScreenshotAs(OutputType.BYTES)
-      case _                   => throw new UnsupportedOperationException("driver doesn't support screenshot")
+    val pageOpt = session.Drivers.getExisting(Web).map { webDriver =>
+      val content = webDriver.self match {
+        case ts: TakesScreenshot => ts.getScreenshotAs(OutputType.BYTES)
+        case _                   => throw new UnsupportedOperationException("driver doesn't support screenshot")
+      }
+
+      val page = new Doc(
+        DocUID((session.backtrace :+ this).toList, this)(),
+        webDriver.getCurrentUrl,
+        content,
+        Some("image/png")
+      )
+      page
     }
 
-    val page = new Doc(
-      DocUID((session.backtrace :+ this).toList, this)(),
-      webDriver.getCurrentUrl,
-      content,
-      Some("image/png")
-    )
-
-    Seq(page)
-
+    pageOpt.map(v => Seq(v)).getOrElse(Nil)
   }
 
   override def doInterpolate(pageRow: FetchedRow, schema: SpookySchema): Option[Screenshot.this.type] = {

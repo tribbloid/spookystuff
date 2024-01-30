@@ -77,14 +77,14 @@ case class SpookyContext(
 
     def deployAll(): Unit = {
 
-      try {
+      Try {
         registerEnabled()
         val trials = registered.map { v =>
-          Try(v.deploy())
+          v.tryDeploy()
         }
 
         TreeThrowable.&&&(trials)
-      } finally {}
+      }
     }
 
     def resetAll(): Unit = {
@@ -97,10 +97,10 @@ case class SpookyContext(
 
   def getPlugin[T <: PluginSystem](v: T): v.Plugin = Plugins.apply(v: v.type)
   def setPlugin(vs: PluginSystem#Plugin*): this.type = {
+    // no deployement
     requireNotShipped()
 
     vs.foreach { plugin =>
-      plugin.deploy()
       Plugins.lookup.updateOverride(plugin.pluginSystem, plugin)
     }
 
