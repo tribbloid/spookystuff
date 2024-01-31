@@ -65,7 +65,7 @@ case class AwaitWithHeartbeat(
   protected lazy val _callerShowStr: String = {
     val result = CallStackRef
       .below(
-        condition = Seq(classOf[CommonUtils], classOf[AwaitWithHeartbeat])
+        condition = _.isUnderClasses(classOf[CommonUtils], classOf[AwaitWithHeartbeat])
       )
       .showStr
     result

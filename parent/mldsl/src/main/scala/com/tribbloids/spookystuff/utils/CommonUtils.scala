@@ -58,7 +58,7 @@ abstract class CommonUtils {
   protected def _callerShowStr: String = {
     val result = CallStackRef
       .below(
-        condition = Seq(classOf[CommonUtils])
+        condition = _.isUnderClasses(classOf[CommonUtils])
       )
       .showStr
     result
