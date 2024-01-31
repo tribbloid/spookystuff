@@ -4,10 +4,10 @@ import com.gargoylesoftware.htmlunit.BrowserVersion
 import com.tribbloids.spookystuff.SpookyContext
 import com.tribbloids.spookystuff.conf.DriverFactory
 import com.tribbloids.spookystuff.dsl.BinaryDeployment
-import com.tribbloids.spookystuff.session.{Agent, WebProxySetting}
+import com.tribbloids.spookystuff.agent.{Agent, WebProxySetting}
 import com.tribbloids.spookystuff.utils.lifespan.Cleanable.Lifespan
 import com.tribbloids.spookystuff.utils.{CommonConst, ConfUtils}
-import com.tribbloids.spookystuff.web.session.CleanWebDriver
+import com.tribbloids.spookystuff.web.agent.CleanWebDriver
 import org.apache.commons.io.FileUtils
 import org.openqa.selenium.Proxy
 import org.openqa.selenium.htmlunit.HtmlUnitDriver

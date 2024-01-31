@@ -1,6 +1,6 @@
-package com.tribbloids.spookystuff.web.session
+package com.tribbloids.spookystuff.web.agent
 
-import com.tribbloids.spookystuff.session.DriverLike
+import com.tribbloids.spookystuff.agent.DriverLike
 import com.tribbloids.spookystuff.utils.lifespan.Cleanable.Lifespan
 import com.tribbloids.spookystuff.utils.{CommonConst, CommonUtils, TreeThrowable}
 import org.openqa.selenium.remote.service.DriverService

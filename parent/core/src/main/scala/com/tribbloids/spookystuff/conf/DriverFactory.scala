@@ -17,7 +17,7 @@ package com.tribbloids.spookystuff.conf
 
 import ai.acyclic.prover.commons.util.Caching.ConcurrentMap
 import com.tribbloids.spookystuff.SpookyContext
-import com.tribbloids.spookystuff.session.{Agent, DriverLike, DriverStatus}
+import com.tribbloids.spookystuff.agent.{Agent, DriverLike, DriverStatus}
 import com.tribbloids.spookystuff.utils.lifespan.Cleanable.{BatchID, Lifespan}
 import org.apache.spark.TaskContext
 

@@ -5,7 +5,7 @@ import com.tribbloids.spookystuff.doc.{Doc, Unstructured}
 import com.tribbloids.spookystuff.extractors.Col
 import com.tribbloids.spookystuff.extractors.impl.Lit
 import com.tribbloids.spookystuff.row.{FetchedRow, SpookySchema}
-import com.tribbloids.spookystuff.session.Agent
+import com.tribbloids.spookystuff.agent.Agent
 import com.tribbloids.spookystuff.utils.SpookyUtils
 import com.tribbloids.spookystuff.web.conf.Web
 import com.tribbloids.spookystuff.{ActionException, Const}

@@ -3,7 +3,7 @@ package com.tribbloids.spookystuff.web
 import ai.acyclic.prover.commons.function.PreDef.Fn
 import com.tribbloids.spookystuff.actions.Action
 import com.tribbloids.spookystuff.doc.Doc
-import com.tribbloids.spookystuff.session.Agent
+import com.tribbloids.spookystuff.agent.Agent
 
 /**
   * Created by peng on 3/26/15.

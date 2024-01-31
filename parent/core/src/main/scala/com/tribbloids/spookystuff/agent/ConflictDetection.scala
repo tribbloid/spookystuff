@@ -1,4 +1,4 @@
-package com.tribbloids.spookystuff.session
+package com.tribbloids.spookystuff.agent
 
 import com.tribbloids.spookystuff.utils.lifespan.Cleanable
 import com.tribbloids.spookystuff.utils.{CommonUtils, TreeThrowable}

@@ -1,7 +1,7 @@
 package com.tribbloids.spookystuff.actions
 
 import com.tribbloids.spookystuff.extractors.impl.Lit
-import com.tribbloids.spookystuff.session.Agent
+import com.tribbloids.spookystuff.agent.Agent
 import com.tribbloids.spookystuff.testutils.SpookyBaseSpec
 
 import java.util.Date

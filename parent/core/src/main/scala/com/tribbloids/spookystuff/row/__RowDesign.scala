@@ -21,7 +21,7 @@ object __RowDesign {
     * Assuming the following Conventions:
     *
     *   - [[AgentState]] contains the the agent (initialized or inherited on demand, a.k.a
-    *     [[com.tribbloids.spookystuff.session.Agent]]), its backtrace (agent play history), and its latest trajectory
+    *     [[com.tribbloids.spookystuff.agent.Agent]]), its backtrace (agent play history), and its latest trajectory
     *   - [[DataRow]] is a lightweight data structure that can be mapped to a Spark SQL row
     *   - [[DataRow.WithScope]] is a lightweight structure that contains a [[DataRow]] and pointers to parts of
     *     trajectory (namesake of "Scope")

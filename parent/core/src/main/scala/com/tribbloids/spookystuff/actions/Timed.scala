@@ -1,7 +1,7 @@
 package com.tribbloids.spookystuff.actions
 
 import com.tribbloids.spookystuff.Const
-import com.tribbloids.spookystuff.session.Agent
+import com.tribbloids.spookystuff.agent.Agent
 import com.tribbloids.spookystuff.utils.Timeout
 
 trait Timed extends Action {

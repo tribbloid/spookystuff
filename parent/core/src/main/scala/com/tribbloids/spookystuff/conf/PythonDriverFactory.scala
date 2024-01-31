@@ -1,7 +1,7 @@
 package com.tribbloids.spookystuff.conf
 
 import com.tribbloids.spookystuff.SpookyContext
-import com.tribbloids.spookystuff.session.{Agent, PythonDriver}
+import com.tribbloids.spookystuff.agent.{Agent, PythonDriver}
 import com.tribbloids.spookystuff.utils.lifespan.Cleanable.Lifespan
 
 case class PythonDriverFactory(

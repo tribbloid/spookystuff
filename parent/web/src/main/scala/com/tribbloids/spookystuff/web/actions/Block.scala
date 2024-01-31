@@ -4,7 +4,7 @@ import com.tribbloids.spookystuff._
 import com.tribbloids.spookystuff.actions.{Block, Loop, Trace}
 import com.tribbloids.spookystuff.doc.{Doc, Observation}
 import com.tribbloids.spookystuff.row.{FetchedRow, SpookySchema}
-import com.tribbloids.spookystuff.session.Agent
+import com.tribbloids.spookystuff.agent.Agent
 
 import scala.collection.mutable.ArrayBuffer
 import scala.concurrent.duration.Duration

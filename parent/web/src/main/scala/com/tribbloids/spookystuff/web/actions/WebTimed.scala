@@ -1,7 +1,7 @@
 package com.tribbloids.spookystuff.web.actions
 
 import com.tribbloids.spookystuff.actions.Timed
-import com.tribbloids.spookystuff.session.Agent
+import com.tribbloids.spookystuff.agent.Agent
 import com.tribbloids.spookystuff.web.conf.Web
 import org.openqa.selenium.WebElement
 import org.openqa.selenium.support.ui.{ExpectedConditions, WebDriverWait}

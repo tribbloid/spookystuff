@@ -8,7 +8,7 @@ import com.tribbloids.spookystuff.row.LocalityGroup
 import com.tribbloids.spookystuff.testutils.{LocalURIDocsFixture, SpookyBaseSpec, TestHelper}
 import com.tribbloids.spookystuff.utils.{CommonConst, CommonUtils}
 import com.tribbloids.spookystuff.web.conf.{Web, WebDriverFactory}
-import com.tribbloids.spookystuff.web.session.CleanWebDriver
+import com.tribbloids.spookystuff.web.agent.CleanWebDriver
 import org.slf4j.LoggerFactory
 
 import java.util.Date
@@ -50,8 +50,8 @@ abstract class ITBaseSpec extends SpookyBaseSpec with LocalURIDocsFixture {
           _spooky = SpookyContext(sql)
           _spooky.setConf(
             SpookyConf(
-              defaultGenPartitioner = gp,
-              epochSize = 1 + Random.nextInt(4),
+              localityPartitioner = gp,
+              exploreEpochSize = 1 + Random.nextInt(4),
               shareMetrics = true,
               remoteResourceTimeout = 10.seconds
             ),

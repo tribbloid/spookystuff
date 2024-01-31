@@ -1,4 +1,4 @@
-package com.tribbloids.spookystuff.session
+package com.tribbloids.spookystuff.agent
 
 import com.tribbloids.spookystuff.conf.Python
 import com.tribbloids.spookystuff.driver.PythonProcess

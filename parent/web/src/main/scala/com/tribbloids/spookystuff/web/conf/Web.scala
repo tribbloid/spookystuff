@@ -4,7 +4,7 @@ import com.tribbloids.spookystuff.SpookyContext
 import com.tribbloids.spookystuff.conf.DriverFactory
 import com.tribbloids.spookystuff.conf.PluginSystem.HasDriver
 import com.tribbloids.spookystuff.metrics.AbstractMetrics
-import com.tribbloids.spookystuff.web.session.CleanWebDriver
+import com.tribbloids.spookystuff.web.agent.CleanWebDriver
 import org.apache.spark.SparkConf
 
 object Web extends HasDriver {

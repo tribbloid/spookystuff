@@ -1,7 +1,7 @@
 package com.tribbloids.spookystuff.actions
 
 import com.tribbloids.spookystuff.doc.Doc
-import com.tribbloids.spookystuff.session.Agent
+import com.tribbloids.spookystuff.agent.Agent
 
 /**
   * Created by peng on 1/21/15.

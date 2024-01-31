@@ -6,7 +6,7 @@ import com.tribbloids.spookystuff.metrics.SpookyMetrics
 import com.tribbloids.spookystuff.rdd.FetchedDataset
 import com.tribbloids.spookystuff.relay.io.Encoder
 import com.tribbloids.spookystuff.row._
-import com.tribbloids.spookystuff.session.Agent
+import com.tribbloids.spookystuff.agent.Agent
 import com.tribbloids.spookystuff.utils.io.HDFSResolver
 import com.tribbloids.spookystuff.utils.serialization.{NOTSerializable, SerializerOverride}
 import com.tribbloids.spookystuff.utils.{ShippingMarks, SparkContextView, TreeThrowable}

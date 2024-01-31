@@ -2,7 +2,7 @@ package com.tribbloids.spookystuff.conf
 
 import com.tribbloids.spookystuff.SpookyContext
 import com.tribbloids.spookystuff.metrics.AbstractMetrics
-import com.tribbloids.spookystuff.session.DriverLike
+import com.tribbloids.spookystuff.agent.DriverLike
 import com.tribbloids.spookystuff.utils.BroadcastWrapper
 import com.tribbloids.spookystuff.utils.lifespan.Cleanable
 import org.apache.spark.SparkConf

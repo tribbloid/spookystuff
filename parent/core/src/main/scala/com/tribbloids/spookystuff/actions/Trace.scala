@@ -6,7 +6,7 @@ import com.tribbloids.spookystuff.actions.Trace.Internal
 import com.tribbloids.spookystuff.caching.{DFSDocCache, InMemoryDocCache}
 import com.tribbloids.spookystuff.doc.{Doc, Observation}
 import com.tribbloids.spookystuff.row.{FetchedRow, SpookySchema}
-import com.tribbloids.spookystuff.session.Agent
+import com.tribbloids.spookystuff.agent.Agent
 import com.tribbloids.spookystuff.utils.serialization.NOTSerializable
 
 import scala.collection.mutable.ArrayBuffer

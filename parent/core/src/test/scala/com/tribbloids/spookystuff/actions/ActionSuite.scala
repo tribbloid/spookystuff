@@ -4,7 +4,7 @@ import com.tribbloids.spookystuff.doc.Observation
 import com.tribbloids.spookystuff.dsl._
 import com.tribbloids.spookystuff.extractors.impl.Lit
 import com.tribbloids.spookystuff.row.{DataRow, FetchedRow, Field}
-import com.tribbloids.spookystuff.session.Agent
+import com.tribbloids.spookystuff.agent.Agent
 import com.tribbloids.spookystuff.testutils.SpookyBaseSpec
 import com.tribbloids.spookystuff.utils.{CommonUtils, Timeout}
 import com.tribbloids.spookystuff.{ActionException, Const}

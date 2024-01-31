@@ -4,7 +4,7 @@ import com.tribbloids.spookystuff.actions.Trace.DryRun
 import com.tribbloids.spookystuff.caching.{DFSDocCache, InMemoryDocCache}
 import com.tribbloids.spookystuff.doc.{Doc, Observation}
 import com.tribbloids.spookystuff.row.{FetchedRow, SpookySchema}
-import com.tribbloids.spookystuff.session.Agent
+import com.tribbloids.spookystuff.agent.Agent
 import com.tribbloids.spookystuff.tree.TreeView
 import com.tribbloids.spookystuff.utils.CommonUtils
 import com.tribbloids.spookystuff.{Const, QueryException, SpookyContext}

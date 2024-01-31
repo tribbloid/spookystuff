@@ -1,4 +1,4 @@
-package com.tribbloids.spookystuff.session
+package com.tribbloids.spookystuff.agent
 
 /**
   * Created by peng on 30/07/15.

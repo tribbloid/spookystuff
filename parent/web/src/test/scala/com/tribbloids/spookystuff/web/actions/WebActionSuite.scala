@@ -2,7 +2,7 @@ package com.tribbloids.spookystuff.web.actions
 
 import com.tribbloids.spookystuff.actions._
 import com.tribbloids.spookystuff.doc.Observation
-import com.tribbloids.spookystuff.session.Agent
+import com.tribbloids.spookystuff.agent.Agent
 import com.tribbloids.spookystuff.web.conf.Web
 import com.tribbloids.spookystuff.ActionException
 import com.tribbloids.spookystuff.testutils.SpookyBaseSpec

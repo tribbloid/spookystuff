@@ -3,9 +3,9 @@ package com.tribbloids.spookystuff.web.actions
 import com.tribbloids.spookystuff.actions.{Delay, Loop, OAuthV2, Trace, TraceSet, Wget}
 import com.tribbloids.spookystuff.conf.DriverFactory
 import com.tribbloids.spookystuff.doc.Doc
-import com.tribbloids.spookystuff.session.Agent
+import com.tribbloids.spookystuff.agent.Agent
 import com.tribbloids.spookystuff.testutils.{BaseSpec, SpookyBaseSpec}
-import com.tribbloids.spookystuff.web.session.CleanWebDriver
+import com.tribbloids.spookystuff.web.agent.CleanWebDriver
 
 // TODO: part of this test suite should be move to core
 abstract class AbstractTestTrace extends SpookyBaseSpec with BaseSpec {

@@ -2,7 +2,7 @@ package com.tribbloids.spookystuff.actions
 
 import com.tribbloids.spookystuff.actions.Trace.DryRun
 import com.tribbloids.spookystuff.doc.{Doc, Observation}
-import com.tribbloids.spookystuff.session.Agent
+import com.tribbloids.spookystuff.agent.Agent
 import com.tribbloids.spookystuff.utils.CommonUtils
 import com.tribbloids.spookystuff.{ActionException, SpookyContext}
 import org.apache.spark.ml.dsl.utils.refl.ScalaUDT

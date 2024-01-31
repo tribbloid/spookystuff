@@ -111,7 +111,7 @@ case class Doc(
   @transient override lazy val root: Unstructured = {
     val effectiveCharset = charset.orNull
 
-    val contentStr = new String(raw, effectiveCharset)
+    lazy val contentStr = new String(raw, effectiveCharset)
     if (mimeType.contains("html") || mimeType.contains("xml") || mimeType.contains("directory")) {
       HtmlElement(contentStr, uri) // not serialize, parsing is faster
     } else if (mimeType.contains("json")) {

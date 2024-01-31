@@ -59,7 +59,7 @@ class FetchVisitIT extends ITBaseSpec {
     assert(fetchNoneRows(1).docs.length === 0)
   }
 
-  override def numPages: Long = spooky.spookyConf.defaultGenPartitioner match {
+  override def numPages: Long = spooky.spookyConf.localityPartitioner match {
 //    case FetchOptimizers.WebCacheAware => 1
     case _ => 1
   }

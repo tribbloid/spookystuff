@@ -6,7 +6,7 @@ import com.tribbloids.spookystuff.doc.Observation.DocUID
 import com.tribbloids.spookystuff.doc._
 import com.tribbloids.spookystuff.dsl.DocFilterImpl
 import com.tribbloids.spookystuff.row.{FetchedRow, SpookySchema}
-import com.tribbloids.spookystuff.session.Agent
+import com.tribbloids.spookystuff.agent.Agent
 import com.tribbloids.spookystuff.web.conf.Web
 
 /**

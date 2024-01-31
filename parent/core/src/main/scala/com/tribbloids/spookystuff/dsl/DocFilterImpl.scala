@@ -2,7 +2,7 @@ package com.tribbloids.spookystuff.dsl
 
 import com.tribbloids.spookystuff.actions.DocFilter
 import com.tribbloids.spookystuff.doc.Doc
-import com.tribbloids.spookystuff.session.Agent
+import com.tribbloids.spookystuff.agent.Agent
 
 //TODO: support chaining & extends ExpressionLike/TreeNode
 sealed trait DocFilterImpl extends DocFilter {

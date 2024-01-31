@@ -2,7 +2,7 @@ package com.tribbloids.spookystuff.web.actions
 
 import com.tribbloids.spookystuff.actions.{ClusterRetry, Delay, Loop, Wget}
 import com.tribbloids.spookystuff.extractors.impl.Lit
-import com.tribbloids.spookystuff.session.Agent
+import com.tribbloids.spookystuff.agent.Agent
 import com.tribbloids.spookystuff.testutils.SpookyBaseSpec
 import com.tribbloids.spookystuff.web.conf.Web
 

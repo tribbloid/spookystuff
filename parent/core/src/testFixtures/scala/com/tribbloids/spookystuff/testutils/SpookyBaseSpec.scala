@@ -6,7 +6,7 @@ import com.tribbloids.spookystuff.doc.{Doc, Unstructured}
 import com.tribbloids.spookystuff.execution.SpookyExecutionContext
 import com.tribbloids.spookystuff.extractors.{Alias, GenExtractor, GenResolved}
 import com.tribbloids.spookystuff.row.{SpookySchema, SquashedRow, TypedField}
-import com.tribbloids.spookystuff.session.DriverLike
+import com.tribbloids.spookystuff.agent.DriverLike
 import com.tribbloids.spookystuff.utils.lifespan.Cleanable
 import com.tribbloids.spookystuff.utils.lifespan.Cleanable.Lifespan
 import com.tribbloids.spookystuff.utils.{CommonConst, CommonUtils, Retry, TreeThrowable}
