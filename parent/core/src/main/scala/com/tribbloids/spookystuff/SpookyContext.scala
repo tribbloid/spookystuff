@@ -6,7 +6,7 @@ import com.tribbloids.spookystuff.metrics.SpookyMetrics
 import com.tribbloids.spookystuff.rdd.FetchedDataset
 import com.tribbloids.spookystuff.relay.io.Encoder
 import com.tribbloids.spookystuff.row._
-import com.tribbloids.spookystuff.session.Session
+import com.tribbloids.spookystuff.session.Agent
 import com.tribbloids.spookystuff.utils.io.HDFSResolver
 import com.tribbloids.spookystuff.utils.serialization.{NOTSerializable, SerializerOverride}
 import com.tribbloids.spookystuff.utils.{ShippingMarks, SparkContextView, TreeThrowable}
@@ -185,9 +185,9 @@ case class SpookyContext(
     this.dsl.rddToFetchedDS(this.sqlContext.sparkContext.parallelize(seq.toSeq, numSlices))
   }
 
-  def withSession[T](fn: Session => T): T = {
+  def withSession[T](fn: Agent => T): T = {
 
-    val session = new Session(this)
+    val session = new Agent(this)
 
     try {
       fn(session)

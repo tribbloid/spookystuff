@@ -4,7 +4,7 @@ import com.tribbloids.spookystuff.actions.Trace.DryRun
 import com.tribbloids.spookystuff.caching.{DFSDocCache, InMemoryDocCache}
 import com.tribbloids.spookystuff.doc.{Doc, Observation}
 import com.tribbloids.spookystuff.row.{FetchedRow, SpookySchema}
-import com.tribbloids.spookystuff.session.Session
+import com.tribbloids.spookystuff.session.Agent
 import com.tribbloids.spookystuff.tree.TreeView
 import com.tribbloids.spookystuff.utils.CommonUtils
 import com.tribbloids.spookystuff.{Const, QueryException, SpookyContext}
@@ -80,7 +80,7 @@ abstract class ActionLike extends Product with Serializable with Verbose {
   // TODO: this.type cleanup
   def skeleton: Option[this.type] = Some(this)
 
-  def apply(session: Session): Seq[Observation]
+  def apply(agent: Agent): Seq[Observation]
 
   def fetch(spooky: SpookyContext): Seq[Observation] = {
 

@@ -7,7 +7,7 @@ import com.tribbloids.spookystuff.doc.{NoDoc, Observation}
 import com.tribbloids.spookystuff.extractors.Extractor
 import com.tribbloids.spookystuff.extractors.impl.Lit
 import com.tribbloids.spookystuff.row.{FetchedRow, SpookySchema}
-import com.tribbloids.spookystuff.session.Session
+import com.tribbloids.spookystuff.session.Agent
 import com.tribbloids.spookystuff.utils.CommonUtils
 import com.tribbloids.spookystuff.utils.http.HttpUtils
 import org.slf4j.LoggerFactory
@@ -49,11 +49,11 @@ abstract class Block(
 
   def cacheEmptyOutput: DocCacheLevel.Value = DocCacheLevel.All
 
-  final override def doExe(session: Session): Seq[Observation] = {
+  final override def doExe(agent: Agent): Seq[Observation] = {
 
-    val doc = this.doExeNoUID(session)
+    val doc = this.doExeNoUID(agent)
 
-    val backtrace = (session.backtrace :+ this).toList
+    val backtrace = (agent.backtrace :+ this).toList
     val result = doc.zipWithIndex.map { tuple =>
       {
         val fetched = tuple._1
@@ -75,7 +75,7 @@ abstract class Block(
     }
   }
 
-  def doExeNoUID(session: Session): Seq[Observation]
+  def doExeNoUID(agent: Agent): Seq[Observation]
 }
 
 object ClusterRetry {
@@ -101,24 +101,24 @@ object ClusterRetry {
     override def skeleton: Option[ClusterRetryImpl.this.type] =
       Some(ClusterRetryImpl(this.childrenSkeleton)(retries, cacheEmptyOutput).asInstanceOf[this.type])
 
-    override def doExeNoUID(session: Session): Seq[Observation] = {
+    override def doExeNoUID(agent: Agent): Seq[Observation] = {
 
       val pages = new ArrayBuffer[Observation]()
 
       try {
         for (action <- children) {
-          pages ++= action.exe(session)
+          pages ++= action.exe(agent)
         }
       } catch {
         case e: Exception =>
           val logger = LoggerFactory.getLogger(this.getClass)
           // avoid endless retry if tcOpt is missing
-          val timesLeft = retries - session.taskContextOpt.map(_.attemptNumber()).getOrElse(Int.MaxValue)
+          val timesLeft = retries - agent.taskContextOpt.map(_.attemptNumber()).getOrElse(Int.MaxValue)
           if (timesLeft > 0) {
             throw new RetryingException(
               s"Retrying cluster-wise on ${e.getClass.getSimpleName}... $timesLeft time(s) left\n" +
                 "(if Spark job failed because of this, please increase your spark.task.maxFailures)" +
-                this.getSessionExceptionMessage(session),
+                this.getSessionExceptionMessage(agent),
               e
             )
           } else logger.warn(s"Failover on ${e.getClass.getSimpleName}: Cluster-wise retries has depleted")
@@ -159,13 +159,13 @@ object LocalRetry {
     override def skeleton: Option[LocalRetryImpl.this.type] =
       Some(LocalRetryImpl(this.childrenSkeleton)(retries, cacheEmptyOutput).asInstanceOf[this.type])
 
-    override def doExeNoUID(session: Session): Seq[Observation] = {
+    override def doExeNoUID(agent: Agent): Seq[Observation] = {
 
       val pages = new ArrayBuffer[Observation]()
 
       try {
         for (action <- children) {
-          pages ++= action.exe(session)
+          pages ++= action.exe(agent)
         }
       } catch {
         case _: Exception =>
@@ -173,7 +173,7 @@ object LocalRetry {
             val retriedPages = new ArrayBuffer[Observation]()
 
             for (action <- children) {
-              retriedPages ++= action.exe(session)
+              retriedPages ++= action.exe(agent)
             }
             retriedPages
           }
@@ -212,14 +212,14 @@ final case class Loop(
   override def skeleton: Option[Loop.this.type] =
     Some(this.copy(children = this.childrenSkeleton).asInstanceOf[this.type])
 
-  override def doExeNoUID(session: Session): Seq[Observation] = {
+  override def doExeNoUID(agent: Agent): Seq[Observation] = {
 
     val pages = new ArrayBuffer[Observation]()
 
     try {
       for (_ <- 0 until limit) {
         for (action <- children.trace) {
-          pages ++= action.exe(session)
+          pages ++= action.exe(agent)
         }
       }
     } catch {
@@ -241,9 +241,9 @@ final case class Loop(
 @SerialVersionUID(8623719358582480968L)
 case class OAuthV2(self: Wget) extends Block(self) with Driverless {
 
-  def rewrite(session: Session): Wget = {
+  def rewrite(agent: Agent): Wget = {
 
-    val keys = session.spooky.spookyConf.oAuthKeysFactory.apply()
+    val keys = agent.spooky.spookyConf.oAuthKeysFactory.apply()
     if (keys == null) {
       throw new QueryException("need to set SpookyConf.oAuthKeys first")
     }
@@ -258,15 +258,6 @@ case class OAuthV2(self: Wget) extends Block(self) with Driverless {
     effectiveWget
   }
 
-  //  override def doExeNoName(session: Session): Seq[Fetched] = {
-  //    val effectiveWget = this.rewrite(session)
-  //
-  //    effectiveWget.doExeNoName(session).map{
-  //      case noPage: NoPage => noPage.copy(trace = List(this))
-  //      case page: Page => page.copy(uid = PageUID(List(this),this))
-  //    }
-  //  }
-
   override def skeleton: Option[OAuthV2.this.type] = Some(this)
 
   override def doInterpolate(pageRow: FetchedRow, schema: SpookySchema): Option[this.type] =
@@ -274,11 +265,11 @@ case class OAuthV2(self: Wget) extends Block(self) with Driverless {
       this.copy(self = v).asInstanceOf[this.type]
     }
 
-  override def doExeNoUID(session: Session): Seq[Observation] = {
-    val effectiveWget = this.rewrite(session)
+  override def doExeNoUID(agent: Agent): Seq[Observation] = {
+    val effectiveWget = this.rewrite(agent)
 
     effectiveWget
-      .exe(session)
+      .exe(agent)
   }
 }
 
@@ -289,7 +280,7 @@ final case class AndThen(
 
   override def skeleton: Option[AndThen.this.type] = Some(this)
 
-  override def doExeNoUID(session: Session): Seq[Observation] = {
-    f(self.exe(session))
+  override def doExeNoUID(agent: Agent): Seq[Observation] = {
+    f(self.exe(agent))
   }
 }

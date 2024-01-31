@@ -4,7 +4,7 @@ import com.gargoylesoftware.htmlunit.BrowserVersion
 import com.tribbloids.spookystuff.SpookyContext
 import com.tribbloids.spookystuff.conf.DriverFactory
 import com.tribbloids.spookystuff.dsl.BinaryDeployment
-import com.tribbloids.spookystuff.session.{Session, WebProxySetting}
+import com.tribbloids.spookystuff.session.{Agent, WebProxySetting}
 import com.tribbloids.spookystuff.utils.lifespan.Cleanable.Lifespan
 import com.tribbloids.spookystuff.utils.{CommonConst, ConfUtils}
 import com.tribbloids.spookystuff.web.session.CleanWebDriver
@@ -42,9 +42,9 @@ object WebDriverFactory {
       browserV: BrowserVersion = BrowserVersion.getDefault
   ) extends WebDriverFactory {
 
-    override def _createImpl(session: Session, lifespan: Lifespan): CleanWebDriver = {
+    override def _createImpl(agent: Agent, lifespan: Lifespan): CleanWebDriver = {
 
-      val caps = DesiredCapabilitiesView.default.Imported(session.spooky).htmlUnit
+      val caps = DesiredCapabilitiesView.default.Imported(agent.spooky).htmlUnit
 
       val self = new HtmlUnitDriver(browserV)
       self.setJavascriptEnabled(true)
@@ -96,19 +96,19 @@ object WebDriverFactory {
       deployment.OnDriver(spooky.sparkContext).deployOnce
     }
 
-    case class DriverCreation(session: Session, lifespan: Lifespan) {
+    case class DriverCreation(agent: Agent, lifespan: Lifespan) {
 
-      val deployment: BinaryDeployment = deploy(session.spooky)
+      val deployment: BinaryDeployment = deploy(agent.spooky)
 
-      val caps: DesiredCapabilitiesView = DesiredCapabilitiesView.default.Imported(session.spooky).phantomJS
+      val caps: DesiredCapabilitiesView = DesiredCapabilitiesView.default.Imported(agent.spooky).phantomJS
       caps.setCapability(PhantomJSDriverService.PHANTOMJS_EXECUTABLE_PATH_PROPERTY, deployment.verifiedLocalPath)
 
       lazy val service: PhantomJSDriverService = {
 
-        val deployment = deploy(session.spooky)
+        val deployment = deploy(agent.spooky)
         val pathStr = deployment.verifiedLocalPath
 
-        val proxyOpt = Option(session.spooky.spookyConf.webProxy(())).map { v =>
+        val proxyOpt = Option(agent.spooky.spookyConf.webProxy(())).map { v =>
           asSeleniumProxy(v)
         }
 
@@ -122,10 +122,10 @@ object WebDriverFactory {
               "OPENSSL_CONF" -> "/dev/null" // https://github.com/bazelbuild/rules_closure/issues/351
             ).asJava
           )
-          .withLogFile(new File(s"${session.SessionLog.dirPath}/PhantomJSDriver.log"))
+          .withLogFile(new File(s"${agent.SessionLog.dirPath}/PhantomJSDriver.log"))
           //        .withLogFile(new File("/dev/null"))
           .usingGhostDriverCommandLineArguments(
-            Array(s"""service_log_path="${session.SessionLog.dirPath}/GhostDriver.log"""")
+            Array(s"""service_log_path="${agent.SessionLog.dirPath}/GhostDriver.log"""")
           )
         //        .usingGhostDriverCommandLineArguments(Array.empty)
 
@@ -148,9 +148,9 @@ object WebDriverFactory {
     }
 
     // called from executors
-    override def _createImpl(session: Session, lifespan: Lifespan): CleanWebDriver = PhantomJS.synchronized {
+    override def _createImpl(agent: Agent, lifespan: Lifespan): CleanWebDriver = PhantomJS.synchronized {
       // synchronized to avoid 2 builders competing for the same port
-      val creation = DriverCreation(session, lifespan)
+      val creation = DriverCreation(agent, lifespan)
       creation.cleanDriver
     }
   }

@@ -2,7 +2,7 @@ package com.tribbloids.spookystuff.web.conf
 
 import com.tribbloids.spookystuff.conf.DriverFactory.Transient
 import com.tribbloids.spookystuff.conf.{DriverFactory, PluginSystem, Python, PythonDriverFactory}
-import com.tribbloids.spookystuff.session.Session
+import com.tribbloids.spookystuff.session.Agent
 import com.tribbloids.spookystuff.testutils.{LocalPathDocsFixture, SpookyBaseSpec}
 import com.tribbloids.spookystuff.web.actions.Visit
 import com.tribbloids.spookystuff.SpookyContext
@@ -19,7 +19,7 @@ class DriverFactorySpec extends SpookyBaseSpec with LocalPathDocsFixture {
     lazy val taskLocalDriverFactory: DriverFactory.TaskLocal[Driver] = driverFactory.taskLocal
 
     it(s"$driverFactory can factoryReset") {
-      val session = new Session(spooky)
+      val session = new Agent(spooky)
       val driver = driverFactory.dispatch(session)
       driverFactory.factoryReset(driver)
       driverFactory.destroy(driver, session.taskContextOpt)
@@ -59,12 +59,12 @@ class DriverFactorySpec extends SpookyBaseSpec with LocalPathDocsFixture {
     val spooky = new SpookyContext(sql)
     spooky.setConf(conf)
 
-    val session1 = new Session(spooky)
+    val session1 = new Agent(spooky)
     Visit(HTML_URL).apply(session1)
     val driver1 = session1.driverOf(Web)
     session1.tryClean()
 
-    val session2 = new Session(spooky)
+    val session2 = new Agent(spooky)
     Visit(HTML_URL).apply(session2)
     val driver2 = session2.driverOf(Web)
     session2.tryClean()

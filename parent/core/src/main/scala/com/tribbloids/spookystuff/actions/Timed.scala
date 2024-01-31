@@ -1,7 +1,7 @@
 package com.tribbloids.spookystuff.actions
 
 import com.tribbloids.spookystuff.Const
-import com.tribbloids.spookystuff.session.Session
+import com.tribbloids.spookystuff.session.Agent
 import com.tribbloids.spookystuff.utils.Timeout
 
 trait Timed extends Action {
@@ -13,16 +13,16 @@ trait Timed extends Action {
     this
   }
 
-  def timeout(session: Session): Timeout = {
+  def timeout(agent: Agent): Timeout = {
     val base =
-      if (this._timeout == null) session.spooky.spookyConf.remoteResourceTimeout
+      if (this._timeout == null) agent.spooky.spookyConf.remoteResourceTimeout
       else this._timeout
 
     base
   }
 
-  def hardTerminateTimeout(session: Session): Timeout = {
-    val original = timeout(session)
+  def hardTerminateTimeout(agent: Agent): Timeout = {
+    val original = timeout(agent)
     original.copy(max = original.max + Const.hardTerminateOverhead)
   }
 

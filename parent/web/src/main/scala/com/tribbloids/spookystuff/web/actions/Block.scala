@@ -4,7 +4,7 @@ import com.tribbloids.spookystuff._
 import com.tribbloids.spookystuff.actions.{Block, Loop, Trace}
 import com.tribbloids.spookystuff.doc.{Doc, Observation}
 import com.tribbloids.spookystuff.row.{FetchedRow, SpookySchema}
-import com.tribbloids.spookystuff.session.Session
+import com.tribbloids.spookystuff.session.Agent
 
 import scala.collection.mutable.ArrayBuffer
 import scala.concurrent.duration.Duration
@@ -48,18 +48,18 @@ final case class WebDocIf(
   override def skeleton: Option[WebDocIf.this.type] =
     Some(this.copy(ifTrue = ifTrue.flatMap(_.skeleton), ifFalse = ifFalse.flatMap(_.skeleton)).asInstanceOf[this.type])
 
-  override def doExeNoUID(session: Session): Seq[Observation] = {
+  override def doExeNoUID(agent: Agent): Seq[Observation] = {
 
-    val current = Snapshot.QuickSnapshot.exe(session).head.asInstanceOf[Doc]
+    val current = Snapshot.QuickSnapshot.exe(agent).head.asInstanceOf[Doc]
 
     val pages = new ArrayBuffer[Observation]()
-    if (condition(current -> session)) {
+    if (condition(current -> agent)) {
       for (action <- ifTrue) {
-        pages ++= action.exe(session)
+        pages ++= action.exe(agent)
       }
     } else {
       for (action <- ifFalse) {
-        pages ++= action.exe(session)
+        pages ++= action.exe(agent)
       }
     }
 

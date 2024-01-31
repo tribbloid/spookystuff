@@ -6,7 +6,7 @@ import com.tribbloids.spookystuff.doc.Observation.DocUID
 import com.tribbloids.spookystuff.doc._
 import com.tribbloids.spookystuff.dsl.DocFilterImpl
 import com.tribbloids.spookystuff.row.{FetchedRow, SpookySchema}
-import com.tribbloids.spookystuff.session.Session
+import com.tribbloids.spookystuff.session.Agent
 import com.tribbloids.spookystuff.web.conf.Web
 import org.openqa.selenium.{OutputType, TakesScreenshot}
 
@@ -16,16 +16,16 @@ case class Screenshot(
     with WebAction
     with Wayback {
 
-  override def doExeNoName(session: Session): Seq[Doc] = {
+  override def doExeNoName(agent: Agent): Seq[Doc] = {
 
-    val pageOpt = session.Drivers.getExisting(Web).map { webDriver =>
+    val pageOpt = agent.Drivers.getExisting(Web).map { webDriver =>
       val content = webDriver.self match {
         case ts: TakesScreenshot => ts.getScreenshotAs(OutputType.BYTES)
         case _                   => throw new UnsupportedOperationException("driver doesn't support screenshot")
       }
 
       val page = new Doc(
-        DocUID((session.backtrace :+ this).toList, this)(),
+        DocUID((agent.backtrace :+ this).toList, this)(),
         webDriver.getCurrentUrl,
         content,
         Some("image/png")

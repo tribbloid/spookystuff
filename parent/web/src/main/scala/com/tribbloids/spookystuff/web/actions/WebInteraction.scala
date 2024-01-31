@@ -5,7 +5,7 @@ import com.tribbloids.spookystuff.doc.{Doc, Unstructured}
 import com.tribbloids.spookystuff.extractors.Col
 import com.tribbloids.spookystuff.extractors.impl.Lit
 import com.tribbloids.spookystuff.row.{FetchedRow, SpookySchema}
-import com.tribbloids.spookystuff.session.Session
+import com.tribbloids.spookystuff.session.Agent
 import com.tribbloids.spookystuff.utils.SpookyUtils
 import com.tribbloids.spookystuff.web.conf.Web
 import com.tribbloids.spookystuff.{ActionException, Const}
@@ -31,20 +31,20 @@ abstract class WebInteraction(
 
   override def globalRewriteRules(schema: SpookySchema): Seq[RewriteRule[Trace]] = Seq(AutoSnapshotRule)
 
-  override def doExe(session: Session): Seq[Doc] = {
+  override def doExe(agent: Agent): Seq[Doc] = {
 
-    super.doExe(session)
+    super.doExe(agent)
 
     if (blocking) {
-      webDriverWait(session).until(DocumentReadyCondition)
+      webDriverWait(agent).until(DocumentReadyCondition)
     }
 
     Nil
   }
 
-  def webDriverActions(session: Session): interactions.Actions = {
+  def webDriverActions(agent: Agent): interactions.Actions = {
 
-    new org.openqa.selenium.interactions.Actions(session.driverOf(Web))
+    new org.openqa.selenium.interactions.Actions(agent.driverOf(Web))
   }
 }
 
@@ -78,8 +78,8 @@ case class Visit(
     override val blocking: Boolean = Const.Interaction.blocking
 ) extends WebInteraction(cooldown, blocking) {
 
-  override def exeNoOutput(session: Session): Unit = {
-    session.driverOf(Web).get(uri.value)
+  override def exeNoOutput(agent: Agent): Unit = {
+    agent.driverOf(Web).get(uri.value)
 
     //    if (hasTitle) {
     //      val wait = new WebDriverWait(session.driver, timeout(session).toSeconds)
@@ -109,14 +109,14 @@ case class Visit(
   */
 case class WaitFor(selector: Selector) extends WebInteraction(null, false) {
 
-  override def exeNoOutput(session: Session): Unit = {
-    this.getElement(selector, session)
+  override def exeNoOutput(agent: Agent): Unit = {
+    this.getElement(selector, agent)
   }
 }
 
 case object WaitForDocumentReady extends WebInteraction(null, true) {
 
-  override def exeNoOutput(session: Session): Unit = {
+  override def exeNoOutput(agent: Agent): Unit = {
     // do nothing
   }
 }
@@ -160,8 +160,8 @@ case class Click(
     override val cooldown: Duration = Const.Interaction.delayMin,
     override val blocking: Boolean = Const.Interaction.blocking
 ) extends WebInteraction(cooldown, blocking) {
-  override def exeNoOutput(session: Session): Unit = {
-    val element = this.getClickableElement(selector, session)
+  override def exeNoOutput(agent: Agent): Unit = {
+    val element = this.getClickableElement(selector, agent)
 
     element.click()
   }
@@ -183,16 +183,16 @@ case class ClickNext(
 
   @transient lazy val clicked: mutable.HashSet[String] = mutable.HashSet(exclude: _*)
 
-  override def exeNoOutput(session: Session): Unit = {
+  override def exeNoOutput(agent: Agent): Unit = {
 
-    val elements = this.getElements(selector, session)
+    val elements = this.getElements(selector, agent)
 
     import scala.jdk.CollectionConverters._
 
     elements.asScala.foreach { element =>
       {
         if (!clicked.contains(element.getText)) {
-          webDriverWait(session).until(ExpectedConditions.elementToBeClickable(element))
+          webDriverWait(agent).until(ExpectedConditions.elementToBeClickable(element))
           clicked += element.getText
           element.click()
           return
@@ -206,29 +206,6 @@ case class ClickNext(
     Some(this.copy().asInstanceOf[this.type])
 }
 
-///**
-// * Click an element with your mouse pointer.
-// * @param selector css selector of the element, only the first element will be affected
-// */
-//case class ClickAll(
-//                     selector: Selector
-//                     )extends Interaction {
-//
-//  override def exeWithoutPage(session: Session) {
-//
-//    val elements = this.getElements(selector, session)
-//
-//    import scala.collection.JavaConversions._
-//
-//    elements.foreach{
-//      element => {
-//        driverWait(session).until(ExpectedConditions.elementToBeClickable(element))
-//        element.click()
-//      }
-//    }
-//  }
-//}
-
 /**
   * Submit a form, wait until new content returned by the submission has finished loading
   *
@@ -240,9 +217,9 @@ case class Submit(
     override val cooldown: Duration = Const.Interaction.delayMin,
     override val blocking: Boolean = Const.Interaction.blocking
 ) extends WebInteraction(cooldown, blocking) {
-  override def exeNoOutput(session: Session): Unit = {
+  override def exeNoOutput(agent: Agent): Unit = {
 
-    val element = this.getElement(selector, session)
+    val element = this.getElement(selector, agent)
 
     element.submit()
   }
@@ -262,9 +239,9 @@ case class TextInput(
     override val cooldown: Duration = Const.Interaction.delayMin,
     override val blocking: Boolean = Const.Interaction.blocking
 ) extends WebInteraction(cooldown, blocking) {
-  override def exeNoOutput(session: Session): Unit = {
+  override def exeNoOutput(agent: Agent): Unit = {
 
-    val element = this.getElement(selector, session)
+    val element = this.getElement(selector, agent)
 
     element.sendKeys(text.value)
   }
@@ -298,9 +275,9 @@ case class DropDownSelect(
     override val cooldown: Duration = Const.Interaction.delayMin,
     override val blocking: Boolean = Const.Interaction.blocking
 ) extends WebInteraction(cooldown, blocking) {
-  override def exeNoOutput(session: Session): Unit = {
+  override def exeNoOutput(agent: Agent): Unit = {
 
-    val element = this.getElement(selector, session)
+    val element = this.getElement(selector, agent)
 
     val select = new Select(element)
     select.selectByValue(value.value)
@@ -329,11 +306,11 @@ case class DropDownSelect(
   */
 //TODO: not possible to switch back, need a better abstraction
 case class ToFrame(selector: Selector) extends WebInteraction(null, false) {
-  override def exeNoOutput(session: Session): Unit = {
+  override def exeNoOutput(agent: Agent): Unit = {
 
-    val element = this.getElement(selector, session)
+    val element = this.getElement(selector, agent)
 
-    session.driverOf(Web).switchTo().frame(element)
+    agent.driverOf(Web).switchTo().frame(element)
   }
 }
 
@@ -351,17 +328,17 @@ case class ExeScript(
     override val cooldown: Duration = Const.Interaction.delayMin,
     override val blocking: Boolean = Const.Interaction.blocking
 ) extends WebInteraction(cooldown, blocking) {
-  override def exeNoOutput(session: Session): Unit = {
+  override def exeNoOutput(agent: Agent): Unit = {
 
     val element =
       if (selector == null) None
       else {
-        val element = this.getElement(selector, session)
+        val element = this.getElement(selector, agent)
         Some(element)
       }
 
     val scriptStr = script.value
-    session.driverOf(Web) match {
+    agent.driverOf(Web) match {
       case d: JavascriptExecutor => d.executeScript(scriptStr, element.toArray: _*)
       case _                     => throw new UnsupportedOperationException("this web browser driver is not supported")
     }
@@ -397,9 +374,9 @@ case class DragSlider(
     override val blocking: Boolean = Const.Interaction.blocking
 ) extends WebInteraction(cooldown, blocking) {
 
-  override def exeNoOutput(session: Session): Unit = {
+  override def exeNoOutput(agent: Agent): Unit = {
 
-    val element = this.getElement(selector, session)
+    val element = this.getElement(selector, agent)
 
     val handle = element.findElement(handleSelector.by)
 
@@ -407,25 +384,25 @@ case class DragSlider(
     val height = dim.getHeight
     val width = dim.getWidth
 
-    webDriverActions(session).clickAndHold(handle).perform()
+    webDriverActions(agent).clickAndHold(handle).perform()
 
     Thread.sleep(1000)
 
-    webDriverActions(session).moveByOffset(1, 0).perform()
+    webDriverActions(agent).moveByOffset(1, 0).perform()
 
     Thread.sleep(1000)
 
     if (width > height)
-      webDriverActions(session)
+      webDriverActions(agent)
         .moveByOffset((width * percentage).asInstanceOf[Int], 0)
         .perform()
     else
-      webDriverActions(session)
+      webDriverActions(agent)
         .moveByOffset(0, (height * percentage).asInstanceOf[Int])
         .perform()
 
     Thread.sleep(1000)
 
-    webDriverActions(session).release().perform()
+    webDriverActions(agent).release().perform()
   }
 }

@@ -1,7 +1,7 @@
 package com.tribbloids.spookystuff.actions
 
 import com.tribbloids.spookystuff.doc.Doc
-import com.tribbloids.spookystuff.session.Session
+import com.tribbloids.spookystuff.session.Agent
 
 import scala.concurrent.duration.Duration
 
@@ -10,9 +10,9 @@ abstract class Interaction extends Action {
 
   def cooldown: Duration
 
-  override def doExe(session: Session): Seq[Doc] = {
+  override def doExe(agent: Agent): Seq[Doc] = {
 
-    exeNoOutput(session: Session)
+    exeNoOutput(agent: Agent)
 
     if (cooldown != null && cooldown.toMillis > 0) {
       Thread.sleep(cooldown.toMillis)
@@ -21,5 +21,5 @@ abstract class Interaction extends Action {
     Nil
   }
 
-  def exeNoOutput(session: Session): Unit
+  def exeNoOutput(agent: Agent): Unit
 }

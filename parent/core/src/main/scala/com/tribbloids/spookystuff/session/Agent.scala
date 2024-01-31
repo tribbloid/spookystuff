@@ -16,7 +16,7 @@ import scala.util.Try
 /**
   * the only implementation should be manually cleaned By ActionLike, so don't set lifespan unless absolutely necessary
   */
-class Session(
+class Agent(
     val spooky: SpookyContext,
     override val _lifespan: Lifespan = Lifespan.TaskOrJVM().forShipping
 ) extends LocalCleanable {
@@ -50,7 +50,7 @@ class Session(
         val plugin: V#Plugin = spooky.Plugins.apply(v)
 
         progress.ping()
-        val result = plugin.driverFactory.dispatch(Session.this)
+        val result = plugin.driverFactory.dispatch(Agent.this)
         progress.ping()
 
         spooky.getMetric(Core).driverDispatched.add(plugin.driverFactory.toString -> 1L)
@@ -70,7 +70,7 @@ class Session(
       val trials = wDrivers.map { p =>
         Try {
           p.driverFactoryOpt.foreach { v =>
-            v.release(Session.this)
+            v.release(Agent.this)
             cached.lookup remove p.pluginSystem
 
             spooky.getMetric(Core).driverReleased.add(v.toString -> 1L)

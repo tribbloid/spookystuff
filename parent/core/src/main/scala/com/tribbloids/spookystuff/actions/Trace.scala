@@ -6,7 +6,7 @@ import com.tribbloids.spookystuff.actions.Trace.Internal
 import com.tribbloids.spookystuff.caching.{DFSDocCache, InMemoryDocCache}
 import com.tribbloids.spookystuff.doc.{Doc, Observation}
 import com.tribbloids.spookystuff.row.{FetchedRow, SpookySchema}
-import com.tribbloids.spookystuff.session.Session
+import com.tribbloids.spookystuff.session.Agent
 import com.tribbloids.spookystuff.utils.serialization.NOTSerializable
 
 import scala.collection.mutable.ArrayBuffer
@@ -107,14 +107,14 @@ case class Trace(
 
   override def toString: String = children.mkString("{ ", " -> ", " }")
 
-  override def apply(agent: Session): Seq[Observation] = {
+  override def apply(agent: Agent): Seq[Observation] = {
     // the state of the agent is unknown, cannot cache result so far
 
     val result = doFetch(agent)
     result
   }
 
-  protected[actions] def doFetch(agent: Session, lazyExe: Boolean = false): Seq[Observation] = {
+  protected[actions] def doFetch(agent: Agent, lazyExe: Boolean = false): Seq[Observation] = {
 
     val results: Seq[Observation] = if (this.isEmpty) {
       Nil

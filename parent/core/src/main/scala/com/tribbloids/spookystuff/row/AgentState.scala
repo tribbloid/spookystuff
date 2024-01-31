@@ -8,11 +8,11 @@ object AgentState {
 }
 
 /**
-  * [[com.tribbloids.spookystuff.session.Session]]'s interactive API, one of the two APIs [[Delta]] can interact with
+  * [[com.tribbloids.spookystuff.session.Agent]]'s interactive API, one of the two APIs [[Delta]] can interact with
   *
   * always contains a [[LocalityGroup]] for efficient [[Delta]] execution
   *
-  * always bind to exactly one [[com.tribbloids.spookystuff.session.Session]]
+  * always bind to exactly one [[com.tribbloids.spookystuff.session.Agent]]
   *
   * @param group
   *   shared agent interaction that improves efficiency

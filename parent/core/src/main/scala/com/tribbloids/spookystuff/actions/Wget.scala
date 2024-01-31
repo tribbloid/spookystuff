@@ -7,7 +7,7 @@ import com.tribbloids.spookystuff.doc._
 import com.tribbloids.spookystuff.extractors.impl.Lit
 import com.tribbloids.spookystuff.extractors.{Col, FR}
 import com.tribbloids.spookystuff.row.{FetchedRow, SpookySchema}
-import com.tribbloids.spookystuff.session.Session
+import com.tribbloids.spookystuff.session.Agent
 import com.tribbloids.spookystuff.utils.io.CompoundResolver.OmniResolver
 import org.apache.commons.io.IOUtils
 import org.apache.hadoop.shaded.org.apache.http.client.methods.HttpGet
@@ -26,18 +26,18 @@ case class Wget(
     override val filter: DocFilter = Const.defaultDocumentFilter
 ) extends HttpMethod(uri) {
 
-  def getResolver(session: Session): OmniResolver = {
+  def getResolver(agent: Agent): OmniResolver = {
 
-    val timeout = this.timeout(session).max.toMillis.toInt
-    val hadoopConf = session.spooky.hadoopConf
-    val proxy = session.spooky.spookyConf.webProxy {}
+    val timeout = this.timeout(agent).max.toMillis.toInt
+    val hadoopConf = agent.spooky.hadoopConf
+    val proxy = agent.spooky.spookyConf.webProxy {}
 
     val resolver = new OmniResolver(
       () => hadoopConf,
       timeout,
       proxy,
       { uri =>
-        val headers = session.spooky.spookyConf.httpHeadersFactory()
+        val headers = agent.spooky.spookyConf.httpHeadersFactory()
 
         val request = new HttpGet(uri)
         for (pair <- headers) {
@@ -50,9 +50,9 @@ case class Wget(
     resolver
   }
 
-  override def doExeNoName(session: Session): Seq[Observation] = {
+  override def doExeNoName(agent: Agent): Seq[Observation] = {
 
-    val resolver = getResolver(session)
+    val resolver = getResolver(agent)
     val _uri = uri.value
 
     val cacheLevel = DocCacheLevel.getDefault(uriOption)

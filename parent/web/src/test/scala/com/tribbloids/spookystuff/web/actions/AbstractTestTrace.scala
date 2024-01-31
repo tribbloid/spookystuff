@@ -3,7 +3,7 @@ package com.tribbloids.spookystuff.web.actions
 import com.tribbloids.spookystuff.actions.{Delay, Loop, OAuthV2, Trace, TraceSet, Wget}
 import com.tribbloids.spookystuff.conf.DriverFactory
 import com.tribbloids.spookystuff.doc.Doc
-import com.tribbloids.spookystuff.session.Session
+import com.tribbloids.spookystuff.session.Agent
 import com.tribbloids.spookystuff.testutils.{BaseSpec, SpookyBaseSpec}
 import com.tribbloids.spookystuff.web.session.CleanWebDriver
 
@@ -101,7 +101,7 @@ abstract class AbstractTestTrace extends SpookyBaseSpec with BaseSpec {
             +> Snapshot()
             +> WebDocIf(
               {
-                case (v: Doc, _: Session) =>
+                case (v: Doc, _: Agent) =>
                   v.uri startsWith "http"
               },
               Click("o1")
@@ -197,7 +197,7 @@ abstract class AbstractTestTrace extends SpookyBaseSpec with BaseSpec {
 
   // waiting for scalaJS rewrite
   ignore("visit and snapshot") {
-    val builder = new Session(spooky)
+    val builder = new Agent(spooky)
     Visit("http://www.wikipedia.org")(builder)
     val page = Snapshot()(builder).toList.head.asInstanceOf[Doc]
 

@@ -1,6 +1,6 @@
 package com.tribbloids.spookystuff.actions
 
-import com.tribbloids.spookystuff.session.{OAuthKeys, Session}
+import com.tribbloids.spookystuff.session.{OAuthKeys, Agent}
 import org.scalatest.tags.Retryable
 
 /**
@@ -11,7 +11,7 @@ class TestOAuth extends TestWget {
 
   override def wget(uri: String): Action = {
     val action: OAuthV2 = OAuthV2(Wget(uri))
-    val session = new Session(spooky)
+    val session = new Agent(spooky)
     val effective = action.rewrite(session)
     assert(effective.uri !== uri)
     action
