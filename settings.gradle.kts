@@ -33,7 +33,7 @@ include(
 include(
 
     // uses unstable & experimental scala features, should be modified very slowly & carefully
-    ":parent:mldsl",
+    ":parent:commons",
     ":parent:core",
     ":parent:web",
     ":parent:integration",
