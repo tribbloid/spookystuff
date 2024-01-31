@@ -37,8 +37,8 @@ trait Action extends ActionLike with HasTrace {
 
   // execute errorDumps as side effects
   protected def getSessionExceptionMessage(
-                                            agent: Agent,
-                                            docOpt: Option[Doc] = None
+      agent: Agent,
+      docOpt: Option[Doc] = None
   ): String = {
     var message: String = "\n{\n"
 

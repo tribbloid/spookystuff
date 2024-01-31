@@ -16,8 +16,8 @@ trait WebAction extends Action {
 
   // execute errorDumps as side effects
   override protected def getSessionExceptionMessage(
-                                                     agent: Agent,
-                                                     docOpt: Option[Doc] = None
+      agent: Agent,
+      docOpt: Option[Doc] = None
   ): String = {
 
     var message = super.getSessionExceptionMessage(agent, docOpt)

@@ -1,6 +1,6 @@
 package com.tribbloids.spookystuff.actions
 
-import com.tribbloids.spookystuff.session.{OAuthKeys, Agent}
+import com.tribbloids.spookystuff.session.{Agent, OAuthKeys}
 import org.scalatest.tags.Retryable
 
 /**
