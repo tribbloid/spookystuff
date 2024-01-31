@@ -2,7 +2,7 @@ package com.tribbloids.spookystuff.actions
 
 import com.tribbloids.spookystuff.actions.Trace.DryRun
 import com.tribbloids.spookystuff.doc.{Doc, Observation}
-import com.tribbloids.spookystuff.session.Session
+import com.tribbloids.spookystuff.agent.Agent
 import com.tribbloids.spookystuff.utils.CommonUtils
 import com.tribbloids.spookystuff.{ActionException, SpookyContext}
 import org.apache.spark.ml.dsl.utils.refl.ScalaUDT
@@ -37,13 +37,13 @@ trait Action extends ActionLike with HasTrace {
 
   // execute errorDumps as side effects
   protected def getSessionExceptionMessage(
-      session: Session,
+      agent: Agent,
       docOpt: Option[Doc] = None
   ): String = {
     var message: String = "\n{\n"
 
     message += {
-      session.backtrace.map { action =>
+      agent.backtrace.map { action =>
         "| " + action.toString
       } ++
         Seq("+> " + this.detailedStr)
@@ -55,14 +55,14 @@ trait Action extends ActionLike with HasTrace {
   }
 
   // this should handle autoSave, cache and errorDump
-  final override def apply(session: Session): Seq[Observation] = {
+  final override def apply(agent: Agent): Seq[Observation] = {
 
     val results =
       try {
-        exe(session)
+        exe(agent)
       } catch {
         case e: Exception =>
-          val message: String = getSessionExceptionMessage(session)
+          val message: String = getSessionExceptionMessage(agent)
 
           val ex = e match {
             case ae: ActionException => ae
@@ -71,8 +71,8 @@ trait Action extends ActionLike with HasTrace {
           throw ex
       }
 
-    this.timeElapsed = System.currentTimeMillis() - session.startTimeMillis
-    session.spooky.spookyMetrics.pagesFetchedFromRemote += results.count(_.isInstanceOf[Doc])
+    this.timeElapsed = System.currentTimeMillis() - agent.startTimeMillis
+    agent.spooky.spookyMetrics.pagesFetchedFromRemote += results.count(_.isInstanceOf[Doc])
 
     results
   }
@@ -99,20 +99,20 @@ trait Action extends ActionLike with HasTrace {
     }
   }
 
-  protected[actions] def withTimeoutDuring[T](session: Session)(f: => T): T = {
+  protected[actions] def withTimeoutDuring[T](agent: Agent)(f: => T): T = {
 
-    var baseStr = s"[${session.taskContextOpt.map(_.partitionId()).getOrElse(0)}]+> ${this.toString}"
+    var baseStr = s"[${agent.taskContextOpt.map(_.partitionId()).getOrElse(0)}]+> ${this.toString}"
     this match {
       case timed: Timed.ThreadSafe =>
-        baseStr = baseStr + s" in ${timed.timeout(session)}"
+        baseStr = baseStr + s" in ${timed.timeout(agent)}"
         LoggerFactory.getLogger(this.getClass).info(this.withDetail(baseStr))
 
-        session.progress.ping()
+        agent.progress.ping()
 
         // the following execute f in a different thread, thus `timed` has to be declared as `ThreadSafe`
-        CommonUtils.withTimeout(timed.hardTerminateTimeout(session))(
+        CommonUtils.withTimeout(timed.hardTerminateTimeout(agent))(
           f,
-          session.progress.defaultHeartbeat
+          agent.progress.defaultHeartbeat
         )
       case _ =>
         LoggerFactory.getLogger(this.getClass).info(this.withDetail(baseStr))
@@ -121,13 +121,13 @@ trait Action extends ActionLike with HasTrace {
     }
   }
 
-  final def exe(session: Session): Seq[Observation] = {
-    withTimeoutDuring(session) {
-      doExe(session)
+  final def exe(agent: Agent): Seq[Observation] = {
+    withTimeoutDuring(agent) {
+      doExe(agent)
     }
   }
 
-  protected def doExe(session: Session): Seq[Observation]
+  protected def doExe(agent: Agent): Seq[Observation]
 
   def andThen(f: Seq[Observation] => Seq[Observation]): Action = AndThen(this, f)
 
@@ -161,7 +161,7 @@ trait Driverless extends Action {}
 
 trait ActionPlaceholder extends Action {
 
-  override protected def doExe(session: Session): Seq[Observation] = {
+  override protected def doExe(agent: Agent): Seq[Observation] = {
     throw new UnsupportedOperationException(s"${this.getClass.getSimpleName} is a placeholder")
   }
 }

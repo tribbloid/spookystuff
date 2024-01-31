@@ -15,8 +15,13 @@ class TestWayback extends SpookyBaseSpec {
   import scala.concurrent.duration._
 
   it("Wget.waybackTo should work on cache") {
-    spooky.spookyConf.cacheWrite = true
-    spooky.spookyConf.IgnoreCachedDocsBefore = Some(new Date())
+
+    spooky.confUpdate(
+      _.copy(
+        cacheWrite = true,
+        IgnoreCachedDocsBefore = Some(new Date())
+      )
+    )
 
     val dates: Seq[Long] = (0 to 2).map { _ =>
       val pages = (Delay(10.seconds) +> Wget(HTML_URL)).fetch(spooky) // 5s is long enough
@@ -24,14 +29,14 @@ class TestWayback extends SpookyBaseSpec {
       pages.head.timeMillis
     }
 
-    spooky.spookyConf.cacheRead = true
+    spooky.confUpdate(_.copy(cacheRead = true))
 
     val cachedPages = (Delay(10.seconds)
       +> Wget(HTML_URL).waybackToTimeMillis(dates(1) + 2000)).fetch(spooky)
     assert(cachedPages.size == 1)
     assert(cachedPages.head.timeMillis == dates(1))
 
-    spooky.spookyConf.remote = false
+    spooky.confUpdate(_.copy(remote = false))
 
     intercept[QueryException] {
       (Delay(10.seconds)
@@ -40,8 +45,13 @@ class TestWayback extends SpookyBaseSpec {
   }
 
   it("Snapshot.waybackTo should work on cache") {
-    spooky.spookyConf.cacheWrite = true
-    spooky.spookyConf.IgnoreCachedDocsBefore = Some(new Date())
+
+    spooky.confUpdate(
+      _.copy(
+        cacheWrite = true,
+        IgnoreCachedDocsBefore = Some(new Date())
+      )
+    )
 
     val dates: Seq[Long] = (0 to 2).map { _ =>
       val pages = (
@@ -52,7 +62,7 @@ class TestWayback extends SpookyBaseSpec {
       pages.head.timeMillis
     }
 
-    spooky.spookyConf.cacheRead = true
+    spooky.confUpdate(_.copy(cacheRead = true))
 
     val cachedPages = (Delay(10.seconds)
       +> Visit(HTML_URL)
@@ -60,7 +70,7 @@ class TestWayback extends SpookyBaseSpec {
     assert(cachedPages.size == 1)
     assert(cachedPages.head.timeMillis == dates(1))
 
-    spooky.spookyConf.remote = false
+    spooky.confUpdate(_.copy(remote = false))
 
     intercept[QueryException] {
       (Delay(10.seconds)
@@ -70,8 +80,13 @@ class TestWayback extends SpookyBaseSpec {
   }
 
   it("Screenshot.waybackTo should work on cache") {
-    spooky.spookyConf.cacheWrite = true
-    spooky.spookyConf.IgnoreCachedDocsBefore = Some(new Date())
+
+    spooky.confUpdate(
+      _.copy(
+        cacheWrite = true,
+        IgnoreCachedDocsBefore = Some(new Date())
+      )
+    )
 
     val dates: Seq[Long] = (0 to 2).map { _ =>
       val pages = (Delay(10.seconds)
@@ -81,7 +96,7 @@ class TestWayback extends SpookyBaseSpec {
       pages.head.timeMillis
     }
 
-    spooky.spookyConf.cacheRead = true
+    spooky.confUpdate(_.copy(cacheRead = true))
 
     val cachedPages = (Delay(10.seconds)
       +> Visit(HTML_URL)
@@ -89,7 +104,7 @@ class TestWayback extends SpookyBaseSpec {
     assert(cachedPages.size == 1)
     assert(cachedPages.head.timeMillis == dates(1))
 
-    spooky.spookyConf.remote = false
+    spooky.confUpdate(_.copy(remote = false))
 
     intercept[QueryException] {
       (Delay(10.seconds)

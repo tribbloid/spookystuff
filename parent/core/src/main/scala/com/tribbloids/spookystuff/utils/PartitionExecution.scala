@@ -4,7 +4,7 @@ import java.util.concurrent.Executors
 
 import org.apache.spark.{FutureAction, Partition}
 import org.apache.spark.rdd.RDD
-import org.apache.spark.sql.utils.SparkHelper
+import org.apache.spark.sql._SQLHelper
 
 import scala.concurrent.{ExecutionContext, ExecutionContextExecutor}
 import scala.reflect.ClassTag
@@ -15,7 +15,7 @@ case class PartitionExecution[T](
     jobTextOvrd: Option[String] = None
 ) {
 
-  implicit val classTag: ClassTag[T] = SparkHelper.rddClassTag(rdd)
+  implicit val classTag: ClassTag[T] = _SQLHelper.rddClassTag(rdd)
 
   lazy val partition: Partition = rdd.partitions(partitionID)
 

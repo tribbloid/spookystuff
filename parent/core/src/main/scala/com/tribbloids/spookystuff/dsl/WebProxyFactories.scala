@@ -1,6 +1,6 @@
 package com.tribbloids.spookystuff.dsl
 
-import com.tribbloids.spookystuff.session.WebProxySetting
+import com.tribbloids.spookystuff.agent.WebProxySetting
 
 object WebProxyFactories {
 

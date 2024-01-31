@@ -7,7 +7,7 @@ import com.tribbloids.spookystuff.utils.lifespan.LifespanContext
 import com.tribbloids.spookystuff.utils.locality.PartitionIdPassthrough
 import org.apache.spark.SparkException
 import org.apache.spark.rdd.RDD
-import org.apache.spark.sql.utils.SparkHelper
+import org.apache.spark.sql._SQLHelper
 
 import scala.util.Random
 
@@ -66,7 +66,7 @@ class SpookyViewsSuite extends SpookyBaseSpec {
     assert(Seq(1, 2.2, "a").filterByType[java.lang.Double] == Seq(2.2: java.lang.Double))
     assert(Seq(1, 2.2, "a").filterByType[String] == Seq("a"))
 
-    assert(TraverseOps(Set(1, 2.2, "a")).filterByType[Int] == Set(1))
+    assert(IterableView(Set(1, 2.2, "a")).filterByType[Int] == Set(1))
     assert(Set(1, 2.2, "a").filterByType[java.lang.Integer] == Set(1: java.lang.Integer))
     assert(Set(1, 2.2, "a").filterByType[Double] == Set(2.2))
     assert(Set(1, 2.2, "a").filterByType[java.lang.Double] == Set(2.2: java.lang.Double))
@@ -217,7 +217,7 @@ class SpookyViewsSuite extends SpookyBaseSpec {
       // TODO: this RDD is extremely partitioned, can we use coalesce to reduce it?
       val conditions = created
         .map { tuple =>
-          tuple._2 == SparkHelper.taskLocationStrOpt.get
+          tuple._2 == _SQLHelper.taskLocationStrOpt.get
         }
         .collect()
       assert(conditions.count(identity) == 100)

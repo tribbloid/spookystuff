@@ -8,16 +8,16 @@ import org.apache.spark.SparkConf
 object Dir extends PluginSystem {
 
   case class Conf(
-      var root: String = null, // System.getProperty("spooky.dirs.root"),
-      var localRoot: String = null,
-      var autoSave: String = null, // System.getProperty("spooky.dirs.autosave"),
-      var cache: String = null, // System.getProperty("spooky.dirs.cache"),
-      var errorDump: String = null, // System.getProperty("spooky.dirs.errordump"),
-      var errorScreenshot: String = null, // System.getProperty("spooky.dirs.errorscreenshot"),
-      var checkpoint: String = null, // System.getProperty("spooky.dirs.checkpoint"),
-      var errorDumpLocal: String = null, // System.getProperty("spooky.dirs.errordump.local"),
-      var errorScreenshotLocal: String = null // System.getProperty("spooky.dirs.errorscreenshot.local")
-  ) extends MutableConfLike {
+      root: String = null, // System.getProperty("spooky.dirs.root"),
+      localRoot: String = null,
+      autoSave: String = null, // System.getProperty("spooky.dirs.autosave"),
+      cache: String = null, // System.getProperty("spooky.dirs.cache"),
+      errorDump: String = null, // System.getProperty("spooky.dirs.errordump"),
+      errorScreenshot: String = null, // System.getProperty("spooky.dirs.errorscreenshot"),
+      checkpoint: String = null, // System.getProperty("spooky.dirs.checkpoint"),
+      errorDumpLocal: String = null, // System.getProperty("spooky.dirs.errordump.local"),
+      errorScreenshotLocal: String = null // System.getProperty("spooky.dirs.errorscreenshot.local")
+  ) extends ConfLike {
 
     import com.tribbloids.spookystuff.utils.SpookyViews._
 
@@ -29,6 +29,7 @@ object Dir extends PluginSystem {
       val _localRoot =
         Option(localRoot).getOrElse(ConfUtils.getOrDefault("spooky.dirs.root", defaultConf.localRoot))
 
+      // TODO: the following boilerplates can be delegated to pureconfig
       val result = Conf(
         root = _root,
         localRoot = _localRoot,

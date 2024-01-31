@@ -2,7 +2,7 @@ package com.tribbloids.spookystuff.web.actions
 
 import com.tribbloids.spookystuff.actions.Action
 import com.tribbloids.spookystuff.doc.Doc
-import com.tribbloids.spookystuff.session.Session
+import com.tribbloids.spookystuff.agent.Agent
 import com.tribbloids.spookystuff.web.conf.Web
 import org.slf4j.LoggerFactory
 
@@ -16,26 +16,26 @@ trait WebAction extends Action {
 
   // execute errorDumps as side effects
   override protected def getSessionExceptionMessage(
-      session: Session,
+      agent: Agent,
       docOpt: Option[Doc] = None
   ): String = {
 
-    var message = super.getSessionExceptionMessage(session, docOpt)
+    var message = super.getSessionExceptionMessage(agent, docOpt)
 
-    lazy val errorDump: Boolean = session.spooky.spookyConf.errorDump
-    lazy val errorDumpScreenshot: Boolean = session.spooky.spookyConf.errorScreenshot
+    lazy val errorDump: Boolean = agent.spooky.conf.errorDump
+    lazy val errorDumpScreenshot: Boolean = agent.spooky.conf.errorScreenshot
 
-    session match {
-      case d: Session =>
+    agent match {
+      case d: Agent =>
         if (d.Drivers.lookup.get(Web).nonEmpty) {
           if (errorDump) {
-            val rawPage = Snapshot.ErrorDump.exe(session).head.asInstanceOf[Doc]
-            message += "\nSnapshot: " + this.errorDump(message, rawPage, session.spooky)
+            val rawPage = Snapshot.ErrorDump.exe(agent).head.asInstanceOf[Doc]
+            message += "\nSnapshot: " + this.errorDump(message, rawPage, agent.spooky)
           }
           if (errorDumpScreenshot) {
             try {
-              val rawPage = Screenshot.ErrorScreenshot.exe(session).head.asInstanceOf[Doc]
-              message += "\nScreenshot: " + this.errorDump(message, rawPage, session.spooky)
+              val rawPage = Screenshot.ErrorScreenshot.exe(agent).head.asInstanceOf[Doc]
+              message += "\nScreenshot: " + this.errorDump(message, rawPage, agent.spooky)
             } catch {
               case e: Exception =>
                 LoggerFactory.getLogger(this.getClass).error("Cannot take screenshot on ActionError:", e)
@@ -44,7 +44,7 @@ trait WebAction extends Action {
         } else {
           docOpt.foreach { doc =>
             if (errorDump) {
-              message += "\nSnapshot: " + this.errorDump(message, doc, session.spooky)
+              message += "\nSnapshot: " + this.errorDump(message, doc, agent.spooky)
             }
           }
         }

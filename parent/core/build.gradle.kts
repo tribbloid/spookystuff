@@ -1,12 +1,11 @@
 val vs = versions()
 
 val tikaV = "2.9.1"
-//preBuild.dependsOn(":parent:mldsl")
 
 dependencies {
 
-    api(project(":parent:mldsl"))
-    testFixturesApi(testFixtures(project(":parent:mldsl")))
+    api(project(":parent:commons"))
+    testFixturesApi(testFixtures(project(":parent:commons")))
 
     testFixturesApi("org.jprocesses:jProcesses:1.6.5")
 

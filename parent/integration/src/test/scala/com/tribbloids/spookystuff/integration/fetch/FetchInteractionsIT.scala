@@ -66,7 +66,7 @@ class FetchInteractionsIT extends ITBaseSpec {
     assert(unionRows(1).docs.head.name === "b")
   }
 
-  override def numPages: Long = spooky.spookyConf.defaultGenPartitioner match {
+  override def numPages: Long = spooky.conf.localityPartitioner match {
 //    case WebCacheAware => 1
     case _ => 1
   }

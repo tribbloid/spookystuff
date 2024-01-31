@@ -9,11 +9,11 @@ import scala.collection.mutable
 case class MapAccumulator[K, V](
     map: mutable.LinkedHashMap[K, V] = mutable.LinkedHashMap.empty[K, V],
     updater: (V, V) => V = MapAccumulator.Updater.Replace[V]()
-) extends AccumulatorV2[(K, V), MapAccumulator.MapView[K, V]] {
+) extends AccumulatorV2[(K, V), MapAccumulator.MapViz[K, V]] {
 
   import MapAccumulator._
 
-  override def value: MapView[K, V] = MapView(map)
+  override def value: MapViz[K, V] = MapViz(map)
 
   override def isZero: Boolean = map.isEmpty
 
@@ -38,7 +38,7 @@ case class MapAccumulator[K, V](
     map.update(v._1, newV)
   }
 
-  override def merge(other: AccumulatorV2[(K, V), MapView[K, V]]): Unit = {
+  override def merge(other: AccumulatorV2[(K, V), MapViz[K, V]]): Unit = {
     for (v <- other.value.self) {
       add(v)
     }
@@ -47,7 +47,7 @@ case class MapAccumulator[K, V](
 
 object MapAccumulator {
 
-  case class MapView[K, V](
+  case class MapViz[K, V](
       self: collection.Map[K, V]
   ) {
 

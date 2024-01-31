@@ -2,7 +2,7 @@ package com.tribbloids.spookystuff.conf
 
 import com.tribbloids.spookystuff.SpookyContext
 import com.tribbloids.spookystuff.metrics.AbstractMetrics
-import com.tribbloids.spookystuff.session.DriverLike
+import com.tribbloids.spookystuff.agent.DriverLike
 import com.tribbloids.spookystuff.utils.BroadcastWrapper
 import com.tribbloids.spookystuff.utils.lifespan.Cleanable
 import org.apache.spark.SparkConf
@@ -16,7 +16,7 @@ trait PluginSystem extends Serializable {
     enableOnce
   }
 
-  type Conf <: MutableConfLike
+  type Conf <: ConfLike
 
   trait HasOuter {
     def pluginSystem: PluginSystem.this.type = PluginSystem.this
@@ -25,11 +25,9 @@ trait PluginSystem extends Serializable {
   /**
     * all subclasses have to define default() in their respective companion object.
     */
-  trait MutableConfLike extends MessageAPI with HasOuter {
+  trait ConfLike extends MessageAPI with HasOuter {
 
     def importFrom(sparkConf: SparkConf): Conf // read from Spark options & env vars
-
-    final override def clone: Conf = importFrom(PluginSystem.emptySparkConf)
   }
 
   type Metrics <: AbstractMetrics

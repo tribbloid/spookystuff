@@ -1,6 +1,6 @@
 package com.tribbloids.spookystuff.metrics
 
-import ai.acyclic.prover.commons.EqualBy
+import ai.acyclic.prover.commons.same.EqualBy
 import org.apache.spark.ml.dsl.utils.ObjectSimpleNameMixin
 
 trait MetricLike extends Product with ObjectSimpleNameMixin with Serializable with EqualBy {

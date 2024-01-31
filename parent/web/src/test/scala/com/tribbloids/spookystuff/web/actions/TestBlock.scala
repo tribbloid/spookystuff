@@ -2,7 +2,7 @@ package com.tribbloids.spookystuff.web.actions
 
 import com.tribbloids.spookystuff.actions.{ClusterRetry, Delay, Loop, Wget}
 import com.tribbloids.spookystuff.extractors.impl.Lit
-import com.tribbloids.spookystuff.session.Session
+import com.tribbloids.spookystuff.agent.Agent
 import com.tribbloids.spookystuff.testutils.SpookyBaseSpec
 import com.tribbloids.spookystuff.web.conf.Web
 
@@ -18,7 +18,7 @@ class TestBlock extends SpookyBaseSpec {
       Delay(10.seconds) +> Wget("ftp://www.dummy.co")
     )
 
-    val session = new Session(
+    val session = new Agent(
       this.spooky
     )
     loop.exe(session)
@@ -34,7 +34,7 @@ class TestBlock extends SpookyBaseSpec {
       Delay(10.seconds) +> Wget("ftp://www.dummy.org")
     )
 
-    val session = new Session(
+    val session = new Agent(
       this.spooky
     )
     retry.exe(session)

@@ -1,8 +1,8 @@
 package com.tribbloids.spookystuff.conf
 
-import ai.acyclic.prover.commons.Same
 import ai.acyclic.prover.commons.function.PreDef
 import ai.acyclic.prover.commons.function.PreDef.MorphismOps
+import ai.acyclic.prover.commons.same.Same
 import ai.acyclic.prover.commons.util.Caching
 import com.tribbloids.spookystuff.utils.TreeThrowable
 import com.tribbloids.spookystuff.utils.serialization.NOTSerializable

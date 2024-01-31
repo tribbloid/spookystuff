@@ -1,7 +1,7 @@
 package com.tribbloids.spookystuff.python.ref
 
 import com.tribbloids.spookystuff.SpookyContext
-import com.tribbloids.spookystuff.session.PythonDriver
+import com.tribbloids.spookystuff.agent.PythonDriver
 import com.tribbloids.spookystuff.utils.lifespan.Cleanable.Lifespan
 import com.tribbloids.spookystuff.utils.lifespan.LocalCleanable
 

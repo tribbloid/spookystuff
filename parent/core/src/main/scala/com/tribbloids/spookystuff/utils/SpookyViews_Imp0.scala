@@ -1,6 +1,6 @@
 package com.tribbloids.spookystuff.utils
 
-import com.tribbloids.spookystuff.row._
+import com.tribbloids.spookystuff.row.Sampler
 
 import scala.collection.immutable.ListMap
 import scala.collection.{Factory, Map}
@@ -9,7 +9,7 @@ import scala.reflect.ClassTag
 
 abstract class SpookyViews_Imp0 extends CommonViews {
 
-  implicit class TraverseOps[F[t] <: Iterable[t], A](self: F[A]) {
+  implicit class IterableView[F[t] <: Iterable[t], A](self: F[A]) {
 
     def filterByType[B <: A: ClassTag](
         implicit
@@ -25,7 +25,7 @@ abstract class SpookyViews_Imp0 extends CommonViews {
     }
   }
 
-  implicit def arrayOps[A](self: Array[A]): TraverseOps[Seq, A] = new TraverseOps(self.toList)
+  implicit def arrayOps[A](self: Array[A]): IterableView[Seq, A] = new IterableView(self.toList)
 
   implicit class MapView[K, V](self: scala.collection.Map[K, V]) {
 

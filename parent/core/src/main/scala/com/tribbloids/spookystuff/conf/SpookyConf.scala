@@ -2,7 +2,7 @@ package com.tribbloids.spookystuff.conf
 
 import com.tribbloids.spookystuff.dsl._
 import com.tribbloids.spookystuff.row.Sampler
-import com.tribbloids.spookystuff.session._
+import com.tribbloids.spookystuff.agent._
 import com.tribbloids.spookystuff.utils.Timeout
 import org.apache.spark.SparkConf
 import org.apache.spark.storage.StorageLevel
@@ -27,38 +27,44 @@ object SpookyConf {
   * Created by peng on 12/06/14. will be shipped to workers
   */
 case class SpookyConf(
-    var shareMetrics: Boolean = false, // TODO: not necessary
+    shareMetrics: Boolean = false, // TODO: not necessary
 
-    var webProxy: WebProxyFactory = WebProxyFactories.NoProxy,
-    var httpHeadersFactory: () => Map[String, String] = () => SpookyConf.defaultHTTPHeaders,
-    var oAuthKeysFactory: () => OAuthKeys = () => null,
-    var browserResolution: (Int, Int) = (1920, 1080),
-    var remote: Boolean = true, // if disabled won't use remote client at all
-    var autoSave: Boolean = true,
-    var cacheWrite: Boolean = true,
-    var cacheRead: Boolean = true, // TODO: this enable both in-memory and DFS cache, should allow more refined control
+    webProxy: WebProxyFactory = WebProxyFactories.NoProxy,
+    httpHeadersFactory: () => Map[String, String] = () => SpookyConf.defaultHTTPHeaders,
+    oAuthKeysFactory: () => OAuthKeys = () => null,
+    //    var browserResolution: (Int, Int) = (1920, 1080),
+    remote: Boolean = true, // if disabled won't use remote client at all
+    //
+    autoSave: Boolean = true,
+    cacheWrite: Boolean = true,
+    cacheRead: Boolean = true, // TODO: this enable both in-memory and DFS cache, should allow more refined control
 
-    var cachedDocsLifeSpan: Duration = 7.day,
-    var IgnoreCachedDocsBefore: Option[Date] = None,
-    var cacheFilePath: ByTrace[String] = FilePaths.Hierarchical,
-    var autoSaveFilePath: ByDoc[String] = FilePaths.UUIDName(FilePaths.Hierarchical),
-    var errorDump: Boolean = true,
-    var errorScreenshot: Boolean = true,
-    var errorDumpFilePath: ByDoc[String] = FilePaths.UUIDName(FilePaths.Hierarchical),
-    var remoteResourceTimeout: Timeout = Timeout(60.seconds),
-    var DFSTimeout: Timeout = Timeout(40.seconds),
-    var failOnDFSRead: Boolean = false,
-    var defaultFlattenSampler: Sampler[Any] = identity,
-    var defaultForkSampler: Sampler[Any] = identity, // join takes remote actions and cost much more than flatten.
-    var defaultExploreRange: Range = 0 until Int.MaxValue,
-    var defaultGenPartitioner: GenPartitioner = GenPartitioners.Wide(),
-    var defaultExploreAlgorithm: PathPlanning = PathPlanners_Simple.BreadthFirst,
-    var epochSize: Int = 500,
-    var checkpointInterval: Int = 50, // disabled if <=0
+    cachedDocsLifeSpan: Duration = 7.day,
+    IgnoreCachedDocsBefore: Option[Date] = None,
+    cacheFileStructure: ByTrace[String] = FilePaths.Hierarchical,
+    autoSaveFileStructure: ByDoc[String] = FilePaths.UUIDName(FilePaths.Hierarchical),
+    //
+    errorDump: Boolean = true,
+    errorScreenshot: Boolean = true,
+    errorDumpFileStructure: ByDoc[String] = FilePaths.UUIDName(FilePaths.Hierarchical),
+    //
+    remoteResourceTimeout: Timeout = Timeout(60.seconds),
+    DFSTimeout: Timeout = Timeout(40.seconds),
+    failOnDFSRead: Boolean = false,
+    //
+    localityPartitioner: GenPartitioner = GenPartitioners.Wide(),
+    //
+    flattenSampler: Sampler[Any] = identity,
+    forkSampler: Sampler[Any] = identity, // join takes remote actions and cost much more than flatten.
+    //
+    explorePathPlanning: PathPlanning = PathPlanners_Simple.BreadthFirst,
+    exploreRange: Range = 0 until Int.MaxValue,
+    exploreEpochSize: Int = 50,
+    exploreCheckpointInterval: Int = 50, // disabled if <=0
 
     // if encounter too many out of memory error, change to MEMORY_AND_DISK_SER
-    var defaultStorageLevel: StorageLevel = StorageLevel.MEMORY_AND_DISK
-) extends Core.MutableConfLike
+    defaultStorageLevel: StorageLevel = StorageLevel.MEMORY_AND_DISK
+) extends Core.ConfLike
     with Serializable {
 
   override def importFrom(sparkConf: SparkConf): SpookyConf = {
@@ -80,13 +86,15 @@ case class SpookyConf(
     }
   }
 
-  def previewMode: this.type = {
+  def previewMode: SpookyConf = {
 
     val sampler: Samplers.FirstN = Samplers.FirstN(1)
-    this.defaultForkSampler = sampler
-    this.defaultForkSampler = sampler
-    this.defaultExploreRange = 0 to 2
 
-    this
+    this.copy(
+      flattenSampler = sampler,
+      forkSampler = sampler,
+      exploreRange = 0 to 2
+    )
+
   }
 }

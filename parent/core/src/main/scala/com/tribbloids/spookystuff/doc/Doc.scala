@@ -1,6 +1,6 @@
 package com.tribbloids.spookystuff.doc
 
-import ai.acyclic.prover.commons.EqualBy
+import ai.acyclic.prover.commons.same.EqualBy
 import com.tribbloids.spookystuff._
 import com.tribbloids.spookystuff.caching.DocCacheLevel
 import com.tribbloids.spookystuff.doc.Observation.DocUID
@@ -111,7 +111,7 @@ case class Doc(
   @transient override lazy val root: Unstructured = {
     val effectiveCharset = charset.orNull
 
-    val contentStr = new String(raw, effectiveCharset)
+    lazy val contentStr = new String(raw, effectiveCharset)
     if (mimeType.contains("html") || mimeType.contains("xml") || mimeType.contains("directory")) {
       HtmlElement(contentStr, uri) // not serialize, parsing is faster
     } else if (mimeType.contains("json")) {
@@ -189,7 +189,7 @@ case class Doc(
       overwrite: Boolean = false
   ): Unit =
     this.save(
-      spooky.dirConf.autoSave :: spooky.spookyConf.autoSaveFilePath(this) :: Nil,
+      spooky.dirConf.autoSave :: spooky.conf.autoSaveFileStructure(this) :: Nil,
       overwrite
     )(spooky)
 
@@ -203,7 +203,7 @@ case class Doc(
       else spooky.dirConf.errorDump
 
     this.save(
-      root :: spooky.spookyConf.errorDumpFilePath(this) :: Nil,
+      root :: spooky.conf.errorDumpFileStructure(this) :: Nil,
       overwrite
     )(spooky)
   }
@@ -217,12 +217,12 @@ case class Doc(
       else spooky.dirConf.errorDump
 
     this.save(
-      root :: spooky.spookyConf.errorDumpFilePath(this) :: Nil,
+      root :: spooky.conf.errorDumpFileStructure(this) :: Nil,
       overwrite
     )(spooky)
   }
 
-  def setMetadata(tuples: (String, Any)*): Doc = {
+  def withMetadata(tuples: (String, Any)*): Doc = {
 
     this.copy(
       metadata = this.metadata ++: ResourceMetadata.From.tuple(tuples: _*)

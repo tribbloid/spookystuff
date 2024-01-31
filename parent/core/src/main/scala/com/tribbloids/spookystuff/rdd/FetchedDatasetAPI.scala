@@ -94,7 +94,7 @@ trait FetchedDatasetAPI {
   // cache & persist wont' execute plans immediately, they only apply to the result of doExecute() once finished
   def cache(): this.type = persist()
 
-  def persist(): this.type = this.persist(plan.spooky.spookyConf.defaultStorageLevel)
+  def persist(): this.type = this.persist(plan.spooky.conf.defaultStorageLevel)
 
   def persist(newLevel: StorageLevel): this.type = {
     assert(newLevel != StorageLevel.NONE)

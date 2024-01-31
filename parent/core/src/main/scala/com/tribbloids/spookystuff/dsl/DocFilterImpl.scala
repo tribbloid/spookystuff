@@ -2,7 +2,7 @@ package com.tribbloids.spookystuff.dsl
 
 import com.tribbloids.spookystuff.actions.DocFilter
 import com.tribbloids.spookystuff.doc.Doc
-import com.tribbloids.spookystuff.session.Session
+import com.tribbloids.spookystuff.agent.Agent
 
 //TODO: support chaining & extends ExpressionLike/TreeNode
 sealed trait DocFilterImpl extends DocFilter {
@@ -18,14 +18,14 @@ object DocFilterImpl {
 
   case object Bypass extends DocFilterImpl {
 
-    override def apply(v: (Doc, Session)): Doc = {
+    override def apply(v: (Doc, Agent)): Doc = {
       v._1
     }
   }
 
   case object AcceptStatusCode2XX extends DocFilterImpl {
 
-    override def apply(v: (Doc, Session)): Doc = {
+    override def apply(v: (Doc, Agent)): Doc = {
       val result = v._1
       assertStatusCode(result)
       result
@@ -34,7 +34,7 @@ object DocFilterImpl {
 
   case object MustHaveTitle extends DocFilterImpl {
 
-    override def apply(v: (Doc, Session)): Doc = {
+    override def apply(v: (Doc, Agent)): Doc = {
       val result = v._1
       assertStatusCode(result)
       if (result.mimeType.contains("html")) {

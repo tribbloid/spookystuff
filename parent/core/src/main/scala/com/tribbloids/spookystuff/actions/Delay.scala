@@ -1,7 +1,7 @@
 package com.tribbloids.spookystuff.actions
 
 import com.tribbloids.spookystuff.Const
-import com.tribbloids.spookystuff.session.Session
+import com.tribbloids.spookystuff.agent.Agent
 
 import scala.concurrent.duration.Duration
 import scala.util.Random
@@ -18,7 +18,7 @@ case class Delay(
 ) extends Interaction
     with Driverless {
 
-  override def exeNoOutput(session: Session): Unit = {
+  override def exeNoOutput(agent: Agent): Unit = {
     // do nothing
   }
 }
@@ -40,7 +40,7 @@ object Delay {
 
     assert(maxDelay >= cooldown)
 
-    override def exeNoOutput(session: Session): Unit = {
+    override def exeNoOutput(agent: Agent): Unit = {
       Thread.sleep(Random.nextInt((maxDelay - cooldown).toMillis.toInt))
     }
   }

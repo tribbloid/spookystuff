@@ -23,9 +23,19 @@ class WebDriverSuite extends SpookyBaseSpec with LocalPathDocsFixture {
 
     try {
 
-      reloadSpooky
-      spooky.getConf(Web).webDriverFactory = dummyPhantomJS
-      spookyConf.IgnoreCachedDocsBefore = Some(new Date())
+      defaultCtx
+
+      spooky(Web).confUpdate(
+        _.copy(
+          webDriverFactory = dummyPhantomJS
+        )
+      )
+
+      spooky.confUpdate(
+        _.copy(
+          IgnoreCachedDocsBefore = Some(new Date())
+        )
+      )
 
       spooky
         .create(1 to 2)
@@ -45,8 +55,9 @@ class WebDriverSuite extends SpookyBaseSpec with LocalPathDocsFixture {
         docs.collect().foreach(println)
       }
     } finally {
-      reloadSpooky
-      spooky.getConf(Web).webDriverFactory = WebDriverFactory.PhantomJS()
+//      getDefaultCtx
+
+//      spooky.getConf(Web).webDriverFactory = WebDriverFactory.PhantomJS()
     }
   }
 }

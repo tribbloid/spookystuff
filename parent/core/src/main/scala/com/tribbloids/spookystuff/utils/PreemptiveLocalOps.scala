@@ -6,7 +6,7 @@ import java.util.concurrent.ArrayBlockingQueue
 import org.apache.spark.SparkContext
 import org.apache.spark.rdd.RDD
 import org.apache.spark.sql.{Dataset, SparkSession}
-import org.apache.spark.sql.utils.SparkHelper
+import org.apache.spark.sql._SQLHelper
 import org.slf4j.LoggerFactory
 
 import scala.concurrent.{ExecutionContext, Future}
@@ -37,11 +37,11 @@ case class PreemptiveLocalOps(capacity: Int)(
 
     def sc: SparkContext
 
-    def toLocalPartitionIterator: Iterator[Array[T]] = SparkHelper.withScope(sc) {
+    def toLocalPartitionIterator: Iterator[Array[T]] = _SQLHelper.withScope(sc) {
 
       val buffer = new ArrayBlockingQueue[Try[PartitionExecution[T]]](capacity)
 
-      val p = SparkLocalProperties(sc)
+      val p = LocalJobSnapshot(sc)
 
       val activeSpark = SparkSession.active
 

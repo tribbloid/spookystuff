@@ -2,7 +2,7 @@ package com.tribbloids.spookystuff
 
 import com.tribbloids.spookystuff.python.PyConverter
 import Python3DriverSuite.Runner
-import com.tribbloids.spookystuff.session.PythonDriver
+import com.tribbloids.spookystuff.agent.PythonDriver
 import com.tribbloids.spookystuff.testutils.SpookyBaseSpec
 import com.tribbloids.spookystuff.utils.lifespan.Cleanable.Lifespan
 import com.tribbloids.spookystuff.utils.{CommonConst, CommonUtils}

@@ -17,7 +17,7 @@ package com.tribbloids.spookystuff.conf
 
 import ai.acyclic.prover.commons.util.Caching.ConcurrentMap
 import com.tribbloids.spookystuff.SpookyContext
-import com.tribbloids.spookystuff.session.{DriverLike, DriverStatus, Session}
+import com.tribbloids.spookystuff.agent.{Agent, DriverLike, DriverStatus}
 import com.tribbloids.spookystuff.utils.lifespan.Cleanable.{BatchID, Lifespan}
 import org.apache.spark.TaskContext
 
@@ -33,13 +33,13 @@ sealed abstract class DriverFactory[D <: DriverLike] extends Serializable {
   // If get is called again before the previous driver is released, the old driver is destroyed to create a new one.
   // this is to facilitate multiple retries
 
-  def dispatch(session: Session): D
+  def dispatch(agent: Agent): D
 
   // release all Drivers that belong to a session
-  def release(session: Session): Unit
+  def release(agent: Agent): Unit
 
-  def driverLifespan(session: Session): Lifespan =
-    Lifespan.TaskOrJVM(ctxFactory = () => session.lifespan.ctx).forShipping
+  def driverLifespan(agent: Agent): Lifespan =
+    Lifespan.TaskOrJVM(ctxFactory = () => agent.lifespan.ctx).forShipping
 
   def deployGlobally(spooky: SpookyContext): Unit = {}
 }
@@ -55,27 +55,27 @@ object DriverFactory {
 
     // session -> driver
     // cleanup: this has no effect whatsoever
-    @transient lazy val sessionLocals: ConcurrentMap[Session, D] = ConcurrentMap()
+    @transient lazy val sessionLocals: ConcurrentMap[Agent, D] = ConcurrentMap()
 
-    def dispatch(session: Session): D = {
-      release(session)
-      val driver = create(session)
-      sessionLocals += session -> driver
+    def dispatch(agent: Agent): D = {
+      release(agent)
+      val driver = create(agent)
+      sessionLocals += agent -> driver
       driver
     }
 
-    final def create(session: Session): D = {
-      _createImpl(session, driverLifespan(session))
+    final def create(agent: Agent): D = {
+      _createImpl(agent, driverLifespan(agent))
     }
 
-    def _createImpl(session: Session, lifespan: Lifespan): D
+    def _createImpl(agent: Agent, lifespan: Lifespan): D
 
     def factoryReset(driver: D): Unit
 
-    def release(session: Session): Unit = {
-      val existingOpt = sessionLocals.remove(session)
+    def release(agent: Agent): Unit = {
+      val existingOpt = sessionLocals.remove(agent)
       existingOpt.foreach { driver =>
-        destroy(driver, session.taskContextOpt)
+        destroy(driver, agent.taskContextOpt)
       }
     }
 
@@ -101,13 +101,13 @@ object DriverFactory {
       ConcurrentMap()
     }
 
-    override def dispatch(session: Session): D = {
+    override def dispatch(agent: Agent): D = {
 
-      val ls = driverLifespan(session)
+      val ls = driverLifespan(agent)
       val taskLocalOpt = taskLocals.get(ls.registeredIDs)
 
       def newDriver: D = {
-        val fresh = delegate.create(session)
+        val fresh = delegate.create(agent)
         taskLocals.put(ls.registeredIDs, new DriverStatus(fresh))
         fresh
       }
@@ -115,7 +115,7 @@ object DriverFactory {
       taskLocalOpt
         .map { status =>
           def recreateDriver: D = {
-            delegate.destroy(status.self, session.taskContextOpt)
+            delegate.destroy(status.self, agent.taskContextOpt)
             newDriver
           }
 
@@ -138,9 +138,9 @@ object DriverFactory {
         }
     }
 
-    override def release(session: Session): Unit = {
+    override def release(agent: Agent): Unit = {
 
-      val ls = driverLifespan(session)
+      val ls = driverLifespan(agent)
       val statusOpt = taskLocals.get(ls.registeredIDs)
       statusOpt.foreach { status =>
         status.isBusy = false

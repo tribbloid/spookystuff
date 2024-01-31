@@ -2,7 +2,7 @@ package com.tribbloids.spookystuff.conf
 
 import com.tribbloids.spookystuff.SpookyContext
 import com.tribbloids.spookystuff.metrics.{AbstractMetrics, Acc}
-import com.tribbloids.spookystuff.session.PythonDriver
+import com.tribbloids.spookystuff.agent.PythonDriver
 import org.apache.spark.SparkConf
 import org.apache.spark.util.LongAccumulator
 
@@ -12,7 +12,7 @@ object Python extends PluginSystem.HasDriver {
 
   case class Conf(
       pythonDriverFactory: DriverFactory[PythonDriver] = DEFAULT_PYTHONDRIVER_FACTORY
-  ) extends MutableConfLike {
+  ) extends ConfLike {
 
     override def importFrom(sparkConf: SparkConf): Python.Conf = this.copy()
   }

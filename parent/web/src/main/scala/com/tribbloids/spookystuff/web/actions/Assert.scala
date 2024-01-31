@@ -1,13 +1,13 @@
 package com.tribbloids.spookystuff.web.actions
 
 import com.tribbloids.spookystuff.doc.Doc
-import com.tribbloids.spookystuff.session.Session
+import com.tribbloids.spookystuff.agent.Agent
 
 @SerialVersionUID(-5210711420423079523L)
 case class Assert(condition: DocCondition) extends AssertionLike {
-  override def exeNoOutput(session: Session): Unit = {
-    val page = Snapshot.QuickSnapshot.apply(session).head.asInstanceOf[Doc]
+  override def exeNoOutput(agent: Agent): Unit = {
+    val page = Snapshot.QuickSnapshot.apply(agent).head.asInstanceOf[Doc]
 
-    assert(condition(page -> session))
+    assert(condition(page -> agent))
   }
 }

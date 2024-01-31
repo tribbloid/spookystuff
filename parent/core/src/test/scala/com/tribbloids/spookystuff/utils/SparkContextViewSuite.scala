@@ -20,7 +20,7 @@ class SparkContextViewSuite extends BaseSpec with BeforeAndAfterAll {
 
           TestHelper.TestSC.parallelize(1 to 100).map(v => v * v).collect()
 
-          assert(SparkContextView.scLocalProperties.description == "aaa \u2023 bbb")
+          assert(SparkContextView.localJob.description == "aaa \u2023 bbb")
         }
       }
     }
@@ -33,7 +33,7 @@ class SparkContextViewSuite extends BaseSpec with BeforeAndAfterAll {
 
           TestHelper.TestSC.parallelize(1 to 100).map(v => v * v).collect()
 
-          assert(SparkContextView.scLocalProperties.groupID == "aaa")
+          assert(SparkContextView.localJob.groupID == "aaa")
         }
       }
     }
@@ -48,7 +48,7 @@ class SparkContextViewSuite extends BaseSpec with BeforeAndAfterAll {
 
           TestHelper.TestSC.parallelize(1 to 100).map(v => v * v).collect()
 
-          assert(SparkContextView.scLocalProperties.groupID == "bbb")
+          assert(SparkContextView.localJob.groupID == "bbb")
         }
       }
     }

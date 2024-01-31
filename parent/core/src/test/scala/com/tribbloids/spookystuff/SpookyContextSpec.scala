@@ -1,7 +1,7 @@
 package com.tribbloids.spookystuff
 
 import com.tribbloids.spookystuff.actions._
-import com.tribbloids.spookystuff.conf.SpookyConf
+import com.tribbloids.spookystuff.conf.{Core, Dir, SpookyConf}
 import com.tribbloids.spookystuff.row.Field
 import com.tribbloids.spookystuff.testutils.{LocalPathDocsFixture, SpookyBaseSpec}
 import com.tribbloids.spookystuff.utils.serialization.AssertWeaklySerializable
@@ -41,7 +41,7 @@ class SpookyContextSpec extends SpookyBaseSpec with LocalPathDocsFixture {
   it("derived instances of a SpookyContext should have the same configuration") {
 
     val spooky = this.spooky
-    spooky.spookyConf.shareMetrics = false
+    spooky(Core).confUpdate(_.copy(shareMetrics = false))
 
     val rdd2 = spooky.create(Seq("dummy"))
     assert(!(rdd2.spooky eq spooky))
@@ -54,9 +54,14 @@ class SpookyContextSpec extends SpookyBaseSpec with LocalPathDocsFixture {
   it("derived instances of a SpookyContext should have the same configuration after it has been modified") {
 
     val spooky = this.spooky
-    spooky.spookyConf.shareMetrics = false
-    spooky.dirConf.root = "s3://root"
-    spooky.dirConf.cache = "hdfs://dummy"
+    spooky(Core).confUpdate(_.copy(shareMetrics = false))
+
+    spooky(Dir).confUpdate(
+      _.copy(
+        root = "s3://root",
+        cache = "hdfs://dummy"
+      )
+    )
 
     val rdd2 = spooky.create(Seq("dummy"))
     assert(!(rdd2.spooky eq spooky))
@@ -71,7 +76,7 @@ class SpookyContextSpec extends SpookyBaseSpec with LocalPathDocsFixture {
     it("independent metrics if sharedMetrics=false") {
 
       val spooky = this.spooky
-      spooky.spookyConf.shareMetrics = false
+      spooky(Core).confUpdate(_.copy(shareMetrics = false))
 
       val d1 = spooky
         .fetch(
@@ -105,7 +110,7 @@ class SpookyContextSpec extends SpookyBaseSpec with LocalPathDocsFixture {
     it("shared metrics if sharedMetrics=true") {
 
       val spooky = this.spooky
-      spooky.spookyConf.shareMetrics = true
+      spooky(Core).confUpdate(_.copy(shareMetrics = true))
 
       val rdd1 = spooky
         .fetch(

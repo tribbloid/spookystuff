@@ -4,7 +4,7 @@ import ai.acyclic.prover.commons.util.Caching.ConcurrentMap
 import com.tribbloids.spookystuff.SpookyContext
 import com.tribbloids.spookystuff.conf.Python
 import com.tribbloids.spookystuff.python.PyConverter
-import com.tribbloids.spookystuff.session.{PythonDriver, Session}
+import com.tribbloids.spookystuff.agent.{Agent, PythonDriver}
 import com.tribbloids.spookystuff.utils.TreeThrowable
 import com.tribbloids.spookystuff.utils.lifespan.Cleanable
 import org.apache.spark.ml.dsl.utils._
@@ -98,8 +98,8 @@ trait PyRef extends Cleanable {
     new PyBinding(this, driver, spookyOpt)
   }
 
-  def Py(session: Session): Binding = {
-    _Py(session.driverOf(Python), Some(session.spooky))
+  def Py(agent: Agent): Binding = {
+    _Py(agent.driverOf(Python), Some(agent.spooky))
   }
 
   override protected def cleanImpl(): Unit = {

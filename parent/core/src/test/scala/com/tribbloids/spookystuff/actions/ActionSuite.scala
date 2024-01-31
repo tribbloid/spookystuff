@@ -4,7 +4,7 @@ import com.tribbloids.spookystuff.doc.Observation
 import com.tribbloids.spookystuff.dsl._
 import com.tribbloids.spookystuff.extractors.impl.Lit
 import com.tribbloids.spookystuff.row.{DataRow, FetchedRow, Field}
-import com.tribbloids.spookystuff.session.Session
+import com.tribbloids.spookystuff.agent.Agent
 import com.tribbloids.spookystuff.testutils.SpookyBaseSpec
 import com.tribbloids.spookystuff.utils.{CommonUtils, Timeout}
 import com.tribbloids.spookystuff.{ActionException, Const}
@@ -76,7 +76,7 @@ class ActionSuite extends SpookyBaseSpec {
   it("Timed mixin can terminate execution if it takes too long") {
 
     val a = OverdueExport
-    val session = new Session(this.spooky)
+    val session = new Agent(this.spooky)
     assert(
       a.hardTerminateTimeout(session).max == spookyConf.remoteResourceTimeout.max + Const.hardTerminateOverhead
     )
@@ -103,7 +103,7 @@ object ActionSuite {
 
   case object OverdueExport extends Export with Timed.ThreadSafe {
 
-    override def doExeNoName(session: Session): Seq[Observation] = {
+    override def doExeNoName(agent: Agent): Seq[Observation] = {
       Thread.sleep(120 * 1000)
       Nil
     }

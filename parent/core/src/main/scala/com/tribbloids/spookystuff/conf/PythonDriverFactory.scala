@@ -1,7 +1,7 @@
 package com.tribbloids.spookystuff.conf
 
 import com.tribbloids.spookystuff.SpookyContext
-import com.tribbloids.spookystuff.session.{PythonDriver, Session}
+import com.tribbloids.spookystuff.agent.{Agent, PythonDriver}
 import com.tribbloids.spookystuff.utils.lifespan.Cleanable.Lifespan
 
 case class PythonDriverFactory(
@@ -10,8 +10,8 @@ case class PythonDriverFactory(
 
   override def factoryReset(driver: PythonDriver): Unit = {}
 
-  override def _createImpl(session: Session, lifespan: Lifespan): PythonDriver = {
-    val exeStr = getExecutable(session.spooky)
+  override def _createImpl(agent: Agent, lifespan: Lifespan): PythonDriver = {
+    val exeStr = getExecutable(agent.spooky)
     new PythonDriver(exeStr, _lifespan = lifespan)
   }
 }

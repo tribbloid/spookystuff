@@ -138,7 +138,11 @@ class TestPageFromHttp extends SpookyBaseSpec {
 
     assert(results.length === 1)
     val page =
-      results.head.asInstanceOf[Doc].setMetadata("csvFormat" -> CSVFormat.newFormat('\t').withQuote('"').withHeader())
+      results.head
+        .asInstanceOf[Doc]
+        .withMetadata(
+          "csvFormat" -> CSVFormat.newFormat('\t').builder().setQuote('"').setHeader().build()
+        )
 
     assert(page.mimeType == "text/csv")
     assert(

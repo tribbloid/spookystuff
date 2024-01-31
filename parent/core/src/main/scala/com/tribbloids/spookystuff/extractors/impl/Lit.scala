@@ -1,6 +1,6 @@
 package com.tribbloids.spookystuff.extractors.impl
 
-import ai.acyclic.prover.commons.EqualBy
+import ai.acyclic.prover.commons.same.EqualBy
 import com.tribbloids.spookystuff.extractors.GenExtractor.Static
 import com.tribbloids.spookystuff.extractors._
 import com.tribbloids.spookystuff.relay.IR.Aux

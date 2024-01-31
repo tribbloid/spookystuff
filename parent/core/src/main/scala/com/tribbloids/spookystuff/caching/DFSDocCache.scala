@@ -21,7 +21,7 @@ object DFSDocCache extends AbstractDocCache {
 
     val pathStr = CommonUtils.\\\(
       spooky.dirConf.cache,
-      spooky.spookyConf.cacheFilePath(k)
+      spooky.conf.cacheFileStructure(k)
     )
 
     val (earliestTime: Long, latestTime: Long) = getTimeRange(k.last, spooky)
@@ -39,7 +39,7 @@ object DFSDocCache extends AbstractDocCache {
 
     val pathStr = CommonUtils.\\\(
       spooky.dirConf.cache,
-      spooky.spookyConf.cacheFilePath(k),
+      spooky.conf.cacheFileStructure(k),
       UUID.randomUUID().toString
     )
 

@@ -4,7 +4,7 @@ import com.tribbloids.spookystuff.actions.Trace.DryRun
 import com.tribbloids.spookystuff.caching.{DFSDocCache, InMemoryDocCache}
 import com.tribbloids.spookystuff.doc.{Doc, Observation}
 import com.tribbloids.spookystuff.row.{FetchedRow, SpookySchema}
-import com.tribbloids.spookystuff.session.Session
+import com.tribbloids.spookystuff.agent.Agent
 import com.tribbloids.spookystuff.tree.TreeView
 import com.tribbloids.spookystuff.utils.CommonUtils
 import com.tribbloids.spookystuff.{Const, QueryException, SpookyContext}
@@ -80,7 +80,7 @@ abstract class ActionLike extends Product with Serializable with Verbose {
   // TODO: this.type cleanup
   def skeleton: Option[this.type] = Some(this)
 
-  def apply(session: Session): Seq[Observation]
+  def apply(agent: Agent): Seq[Observation]
 
   def fetch(spooky: SpookyContext): Seq[Observation] = {
 
@@ -98,7 +98,7 @@ abstract class ActionLike extends Product with Serializable with Verbose {
     if (!this.hasOutput) return Nil
 
     val pagesFromCache: Seq[Seq[Observation]] =
-      if (!spooky.spookyConf.cacheRead) Seq(null)
+      if (!spooky.conf.cacheRead) Seq(null)
       else
         dryRun.map { dry =>
           val view = Trace(dry)
@@ -123,7 +123,7 @@ abstract class ActionLike extends Product with Serializable with Verbose {
     } else {
       spooky.spookyMetrics.fetchFromCacheFailure += 1
 
-      if (!spooky.spookyConf.remote)
+      if (!spooky.conf.remote)
         throw new QueryException(
           "Resource is not cached and not allowed to be fetched remotely, " +
             "the later can be enabled by setting SpookyContext.conf.remote=true"

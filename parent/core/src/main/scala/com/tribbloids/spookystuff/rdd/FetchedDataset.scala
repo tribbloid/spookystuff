@@ -18,7 +18,7 @@ import org.apache.spark.rdd.RDD
 import org.apache.spark.sql.catalyst.expressions.GenericInternalRow
 import org.apache.spark.sql.catalyst.{CatalystTypeConverters, InternalRow}
 import org.apache.spark.sql.types.DataType
-import org.apache.spark.sql.utils.SparkHelper
+import org.apache.spark.sql._SQLHelper
 import org.apache.spark.sql.{DataFrame, Dataset}
 import org.apache.spark.storage.StorageLevel
 
@@ -66,7 +66,7 @@ case class FetchedDataset(
 
   // TODO: use reflection for more clear API
   def setConf(f: SpookyConf => Unit): this.type = {
-    f(spooky.spookyConf)
+    f(spooky.conf)
     this
   }
 
@@ -157,7 +157,7 @@ case class FetchedDataset(
 
       val rowRDD = this.toInternalRowRDD(sort, effectiveSchema)
 
-      val result = SparkHelper.internalCreateDF(spooky.sqlContext, rowRDD, effectiveSchema.structType)
+      val result = _SQLHelper.internalCreateDF(spooky.sqlContext, rowRDD, effectiveSchema.structType)
 
       result
     }
@@ -251,7 +251,7 @@ case class FetchedDataset(
       ex: Extractor[Any],
       forkType: ForkType = ForkType.default,
       ordinalField: Field = null,
-      sampler: Sampler[Any] = spooky.spookyConf.defaultFlattenSampler
+      sampler: Sampler[Any] = spooky.conf.flattenSampler
   ): FetchedDataset = {
 
     val (on, extracted) = ex match {
@@ -270,7 +270,7 @@ case class FetchedDataset(
       on: Extractor[Any], // name is discarded
       forkType: ForkType = ForkType.default,
       ordinalField: Field = null, // left & idempotent parameters are missing as they are always set to true
-      sampler: Sampler[Any] = spooky.spookyConf.defaultForkSampler
+      sampler: Sampler[Any] = spooky.conf.forkSampler
   ): FetchedDataset = {
 
     val result = this
@@ -303,7 +303,7 @@ case class FetchedDataset(
   def fetch(
       traces: HasTraceSet,
       keyBy: Trace => Any = identity,
-      genPartitioner: GenPartitioner = spooky.spookyConf.defaultGenPartitioner
+      genPartitioner: GenPartitioner = spooky.conf.localityPartitioner
   ): FetchedDataset = {
 
     val _traces = traces.asTraceSet.rewriteGlobally(schema)
@@ -318,7 +318,7 @@ case class FetchedDataset(
       keyBy: Trace => Any = identity,
       filter: DocFilter = Const.defaultDocumentFilter,
       failSafe: Int = -1,
-      genPartitioner: GenPartitioner = spooky.spookyConf.defaultGenPartitioner
+      genPartitioner: GenPartitioner = spooky.conf.localityPartitioner
   ): FetchedDataset = {
 
     var trace: Trace = _defaultWget(cooldown, filter, on)
@@ -336,12 +336,12 @@ case class FetchedDataset(
       on: Extractor[Any],
       forkType: ForkType = ForkType.default,
       ordinalField: Field = null, // left & idempotent parameters are missing as they are always set to true
-      sampler: Sampler[Any] = spooky.spookyConf.defaultForkSampler,
+      sampler: Sampler[Any] = spooky.conf.forkSampler,
       cooldown: Option[Duration] = None,
       keyBy: Trace => Any = identity,
       filter: DocFilter = Const.defaultDocumentFilter,
       failSafe: Int = -1,
-      genPartitioner: GenPartitioner = spooky.spookyConf.defaultGenPartitioner
+      genPartitioner: GenPartitioner = spooky.conf.localityPartitioner
   ): FetchedDataset = {
 
     var trace: Trace = _defaultWget(cooldown, filter)
@@ -363,16 +363,16 @@ case class FetchedDataset(
       on: Extractor[Any],
       forkType: ForkType = ForkType.default,
       ordinalField: Field = null,
-      sampler: Sampler[Any] = spooky.spookyConf.defaultForkSampler
+      sampler: Sampler[Any] = spooky.conf.forkSampler
   )(
       traces: HasTraceSet,
       keyBy: Trace => Any = identity,
-      genPartitioner: GenPartitioner = spooky.spookyConf.defaultGenPartitioner,
+      genPartitioner: GenPartitioner = spooky.conf.localityPartitioner,
       depthField: Field = null,
-      range: Range = spooky.spookyConf.defaultExploreRange,
-      exploreAlgorithm: PathPlanning = spooky.spookyConf.defaultExploreAlgorithm,
-      epochSize: Int = spooky.spookyConf.epochSize,
-      checkpointInterval: Int = spooky.spookyConf.checkpointInterval // set to Int.MaxValue to disable checkpointing,
+      range: Range = spooky.conf.exploreRange,
+      pathPlanning: PathPlanning = spooky.conf.explorePathPlanning,
+      epochSize: Int = spooky.conf.exploreEpochSize,
+      checkpointInterval: Int = spooky.conf.exploreCheckpointInterval // set to Int.MaxValue to disable checkpointing,
   ): FetchedDataset = {
 
     val params = Params(depthField, ordinalField, range)
@@ -386,7 +386,7 @@ case class FetchedDataset(
       keyBy,
       genPartitioner,
       params,
-      exploreAlgorithm,
+      pathPlanning,
       epochSize,
       checkpointInterval,
       Nil
@@ -397,17 +397,17 @@ case class FetchedDataset(
       on: Extractor[Any],
       forkType: ForkType = ForkType.default,
       ordinalField: Field = null,
-      sampler: Sampler[Any] = spooky.spookyConf.defaultForkSampler,
+      sampler: Sampler[Any] = spooky.conf.forkSampler,
       filter: DocFilter = Const.defaultDocumentFilter,
       failSafe: Int = -1,
       cooldown: Option[Duration] = None,
       keyBy: Trace => Any = identity,
-      genPartitioner: GenPartitioner = spooky.spookyConf.defaultGenPartitioner,
+      genPartitioner: GenPartitioner = spooky.conf.localityPartitioner,
       depthField: Field = null,
-      range: Range = spooky.spookyConf.defaultExploreRange,
-      exploreAlgorithm: PathPlanning = spooky.spookyConf.defaultExploreAlgorithm,
+      range: Range = spooky.conf.exploreRange,
+      pathPlanning: PathPlanning = spooky.conf.explorePathPlanning,
       miniBatch: Int = 500,
-      checkpointInterval: Int = spooky.spookyConf.checkpointInterval // set to Int.MaxValue to disable checkpointing,
+      checkpointInterval: Int = spooky.conf.exploreCheckpointInterval // set to Int.MaxValue to disable checkpointing,
 
   ): FetchedDataset = {
 
@@ -420,7 +420,7 @@ case class FetchedDataset(
       genPartitioner,
       depthField,
       range,
-      exploreAlgorithm,
+      pathPlanning,
       miniBatch,
       checkpointInterval
     )

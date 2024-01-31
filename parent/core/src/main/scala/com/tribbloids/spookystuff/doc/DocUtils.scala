@@ -15,7 +15,7 @@ object DocUtils {
     try {
       val result = CommonUtils.retry(Const.DFSLocalRetries) {
         val progress = Progress()
-        CommonUtils.withTimeout(spooky.spookyConf.DFSTimeout)(
+        CommonUtils.withTimeout(spooky.conf.DFSTimeout)(
           f(progress),
           progress.defaultHeartbeat
         )
@@ -27,7 +27,7 @@ object DocUtils {
         spooky.spookyMetrics.DFSReadFailure += 1
         val ex = new DFSReadException(pathStr, e)
 
-        if (spooky.spookyConf.failOnDFSRead) throw ex
+        if (spooky.conf.failOnDFSRead) throw ex
         else {
           LoggerFactory.getLogger(this.getClass).warn(message, ex)
           null.asInstanceOf[T]
@@ -40,7 +40,7 @@ object DocUtils {
     try {
       val result = CommonUtils.retry(Const.DFSLocalRetries) {
         val progress = Progress()
-        CommonUtils.withTimeout(spooky.spookyConf.DFSTimeout)(
+        CommonUtils.withTimeout(spooky.conf.DFSTimeout)(
           f(progress),
           progress.defaultHeartbeat
         )

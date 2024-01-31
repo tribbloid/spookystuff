@@ -1,14 +1,14 @@
 package com.tribbloids.spookystuff.integration
 
 import com.tribbloids.spookystuff._
-import com.tribbloids.spookystuff.conf.{DriverFactory, SpookyConf}
+import com.tribbloids.spookystuff.conf.{Core, DriverFactory, SpookyConf}
 import com.tribbloids.spookystuff.dsl._
 import com.tribbloids.spookystuff.metrics.SpookyMetrics
 import com.tribbloids.spookystuff.row.LocalityGroup
 import com.tribbloids.spookystuff.testutils.{LocalURIDocsFixture, SpookyBaseSpec, TestHelper}
 import com.tribbloids.spookystuff.utils.{CommonConst, CommonUtils}
 import com.tribbloids.spookystuff.web.conf.{Web, WebDriverFactory}
-import com.tribbloids.spookystuff.web.session.CleanWebDriver
+import com.tribbloids.spookystuff.web.agent.CleanWebDriver
 import org.slf4j.LoggerFactory
 
 import java.util.Date
@@ -47,11 +47,11 @@ abstract class ITBaseSpec extends SpookyBaseSpec with LocalURIDocsFixture {
       for (gp <- genPartitioners) {
         it(s"$gp - $driver - $rootI") {
 
-          _spooky = SpookyContext(sql)
-          _spooky.setConf(
+          _ctxOverride = SpookyContext(sql)
+          _ctxOverride.setConf(
             SpookyConf(
-              defaultGenPartitioner = gp,
-              epochSize = 1 + Random.nextInt(4),
+              localityPartitioner = gp,
+              exploreEpochSize = 1 + Random.nextInt(4),
               shareMetrics = true,
               remoteResourceTimeout = 10.seconds
             ),
@@ -118,7 +118,10 @@ abstract class ITBaseSpec extends SpookyBaseSpec with LocalURIDocsFixture {
 
   protected def doTestBeforeCache(): Unit = {
     CommonUtils.retry(retry) {
-      spooky.spookyConf.IgnoreCachedDocsBefore = Some(new Date(System.currentTimeMillis()))
+      spooky(Core).confUpdate(
+        _.copy(IgnoreCachedDocsBefore = Some(new Date(System.currentTimeMillis())))
+      )
+
       spooky.Plugins.resetAll()
       doMain()
       assertBeforeCache()

@@ -9,7 +9,7 @@ class RangeHashBenchmark extends BaseSpec {
     Seq(
 //      CommonUtils.timed((0 until Int.MaxValue).hashCode()), // this will take forever
       CommonUtils.timed((0, Int.MaxValue).hashCode()),
-      CommonUtils.timed(RangeArg(0, Int.MaxValue).hashCode())
+      CommonUtils.timed(RangeMagnet(0, Int.MaxValue).hashCode())
     )
   }
 }

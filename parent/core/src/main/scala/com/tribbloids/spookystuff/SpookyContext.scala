@@ -6,7 +6,7 @@ import com.tribbloids.spookystuff.metrics.SpookyMetrics
 import com.tribbloids.spookystuff.rdd.FetchedDataset
 import com.tribbloids.spookystuff.relay.io.Encoder
 import com.tribbloids.spookystuff.row._
-import com.tribbloids.spookystuff.session.Session
+import com.tribbloids.spookystuff.agent.Agent
 import com.tribbloids.spookystuff.utils.io.HDFSResolver
 import com.tribbloids.spookystuff.utils.serialization.{NOTSerializable, SerializerOverride}
 import com.tribbloids.spookystuff.utils.{ShippingMarks, SparkContextView, TreeThrowable}
@@ -26,12 +26,14 @@ object SpookyContext {
 
   def apply(
       sqlContext: SQLContext,
-      conf: PluginSystem#MutableConfLike*
+      conf: PluginSystem#ConfLike*
   ): SpookyContext = {
     val result = SpookyContext(sqlContext)
     result.setConf(conf: _*)
     result
   }
+
+  implicit def asCoreAccessor(spookyContext: SpookyContext): spookyContext.Accessor[Core.type] = spookyContext(Core)
 
   implicit def asBlankFetchedDS(spooky: SpookyContext): FetchedDataset = spooky.createBlank
 
@@ -112,8 +114,8 @@ case class SpookyContext(
 
   def sparkContext: SparkContext = this.sqlContext.sparkContext
 
-  def getConf[T <: PluginSystem](v: T): v.Conf = getPlugin(v).getConf
-  def setConf(vs: PluginSystem#MutableConfLike*): this.type = {
+//  def getConf[T <: PluginSystem](v: T): v.Conf = getPlugin(v).getConf
+  def setConf(vs: PluginSystem#ConfLike*): this.type = {
     requireNotShipped()
 
     val plugins = vs.map { conf =>
@@ -127,12 +129,21 @@ case class SpookyContext(
     setPlugin(plugins: _*)
   }
 
-  def getMetric[T <: PluginSystem](v: T): v.Metrics = getPlugin(v).metrics
+  case class Accessor[T <: PluginSystem](v: T) extends NOTSerializable {
 
-  def spookyConf: SpookyConf = getPlugin(Core).getConf
-  def spookyConf_=(v: SpookyConf): Unit = {
-    setConf(v)
+    lazy val plugin: v.Plugin = getPlugin(v)
+
+    def conf: v.Conf = plugin.getConf
+    def conf_=(conf: v.Conf): SpookyContext.this.type = setConf(conf)
+    def confUpdate(updater: v.Conf => v.Conf): SpookyContext.this.type = {
+      val newConf = updater(conf)
+      conf_=(newConf)
+    }
+
+    def metric: v.Metrics = plugin.metrics
   }
+  def apply(v: PluginSystem): Accessor[v.type] = Accessor(v)
+
   def dirConf: Dir.Conf = getPlugin(Dir).getConf
   def dirConf_=(v: Dir.Conf): Unit = {
     setConf(v)
@@ -158,7 +169,7 @@ case class SpookyContext(
   }
 
   def forkForNewRDD: SpookyContext = {
-    if (spookyConf.shareMetrics) {
+    if (this.conf.shareMetrics) {
       this // TODO: this doesn't fork configuration and may still cause interference
     } else {
       this.clone
@@ -185,9 +196,9 @@ case class SpookyContext(
     this.dsl.rddToFetchedDS(this.sqlContext.sparkContext.parallelize(seq.toSeq, numSlices))
   }
 
-  def withSession[T](fn: Session => T): T = {
+  def withSession[T](fn: Agent => T): T = {
 
-    val session = new Session(this)
+    val session = new Agent(this)
 
     try {
       fn(session)

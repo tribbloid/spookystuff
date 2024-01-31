@@ -1,7 +1,7 @@
 package com.tribbloids.spookystuff.actions
 
 import com.tribbloids.spookystuff.extractors.impl.Lit
-import com.tribbloids.spookystuff.session.Session
+import com.tribbloids.spookystuff.agent.Agent
 import com.tribbloids.spookystuff.testutils.SpookyBaseSpec
 
 import java.util.Date
@@ -16,7 +16,7 @@ class TestBlock extends SpookyBaseSpec {
       Delay(10.seconds) +> Wget("ftp://www.dummy.co")
     )
 
-    val session = new Session(
+    val session = new Agent(
       this.spooky
     )
     loop.exe(session)
@@ -32,7 +32,7 @@ class TestBlock extends SpookyBaseSpec {
       Delay(10.seconds) +> Wget("ftp://www.dummy.org")
     )
 
-    val session = new Session(
+    val session = new Agent(
       this.spooky
     )
     tryy.exe(session)
