@@ -370,7 +370,7 @@ case class FetchedDataset(
       genPartitioner: GenPartitioner = spooky.conf.localityPartitioner,
       depthField: Field = null,
       range: Range = spooky.conf.exploreRange,
-      exploreAlgorithm: PathPlanning = spooky.conf.explorePathPlanner,
+      pathPlanning: PathPlanning = spooky.conf.explorePathPlanning,
       epochSize: Int = spooky.conf.exploreEpochSize,
       checkpointInterval: Int = spooky.conf.exploreCheckpointInterval // set to Int.MaxValue to disable checkpointing,
   ): FetchedDataset = {
@@ -386,7 +386,7 @@ case class FetchedDataset(
       keyBy,
       genPartitioner,
       params,
-      exploreAlgorithm,
+      pathPlanning,
       epochSize,
       checkpointInterval,
       Nil
@@ -405,7 +405,7 @@ case class FetchedDataset(
       genPartitioner: GenPartitioner = spooky.conf.localityPartitioner,
       depthField: Field = null,
       range: Range = spooky.conf.exploreRange,
-      exploreAlgorithm: PathPlanning = spooky.conf.explorePathPlanner,
+      pathPlanning: PathPlanning = spooky.conf.explorePathPlanning,
       miniBatch: Int = 500,
       checkpointInterval: Int = spooky.conf.exploreCheckpointInterval // set to Int.MaxValue to disable checkpointing,
 
@@ -420,7 +420,7 @@ case class FetchedDataset(
       genPartitioner,
       depthField,
       range,
-      exploreAlgorithm,
+      pathPlanning,
       miniBatch,
       checkpointInterval
     )

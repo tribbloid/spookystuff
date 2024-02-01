@@ -54,7 +54,7 @@ case class ExplorePlan(
     sameBy: Trace => Any,
     genPartitioner: GenPartitioner,
     params: Params,
-    exploreAlgorithm: PathPlanning,
+    pathPlanning: PathPlanning,
     miniBatchSize: Int,
     // TODO: enable more flexible stopping condition
     // TODO: test if proceeding to next miniBatch is necessary
@@ -131,7 +131,7 @@ case class ExplorePlan(
     composedDelta.outputSchema
   }
 
-  val impl: PathPlanning.Impl = exploreAlgorithm._Impl(_effectiveParams, this.outputSchema)
+  val impl: PathPlanning.Impl = pathPlanning._Impl(_effectiveParams, this.outputSchema)
 
   override def execute: SquashedRDD = {
     assert(_effectiveParams.depthField != null)

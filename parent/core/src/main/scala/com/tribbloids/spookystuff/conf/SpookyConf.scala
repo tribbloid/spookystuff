@@ -57,7 +57,7 @@ case class SpookyConf(
     flattenSampler: Sampler[Any] = identity,
     forkSampler: Sampler[Any] = identity, // join takes remote actions and cost much more than flatten.
     //
-    explorePathPlanner: PathPlanning = PathPlanners_Simple.BreadthFirst,
+    explorePathPlanning: PathPlanning = PathPlanners_Simple.BreadthFirst,
     exploreRange: Range = 0 until Int.MaxValue,
     exploreEpochSize: Int = 50,
     exploreCheckpointInterval: Int = 50, // disabled if <=0
