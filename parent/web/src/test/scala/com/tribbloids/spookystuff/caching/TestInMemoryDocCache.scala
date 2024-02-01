@@ -42,7 +42,7 @@ class TestInMemoryDocCache extends SpookyBaseSpec with LocalPathDocsFixture {
 
     assert(page2.length === 1)
     assert(page2.head.samenessDelegatedTo === visitPage.head.samenessDelegatedTo)
-    assert(visitPage.head.raw === page2.head.raw)
+    assert(visitPage.head.content === page2.head.content)
     assert(visitPage.head === page2.head)
   }
 

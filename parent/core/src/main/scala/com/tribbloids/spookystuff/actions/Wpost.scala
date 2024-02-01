@@ -83,13 +83,12 @@ object Wpost {
             val md = in.metadata.root
             val cacheLevel = DocCacheLevel.getDefault(uriOption)
 
-            new Doc(
+            Doc(
               uid = DocUID(List(this), this)(),
               uri = in.getURI,
-              raw = IOUtils.toByteArray(in.stream),
               cacheLevel = cacheLevel,
               metadata = md
-            )
+            )().setRaw(IOUtils.toByteArray(in.stream))
 
           }
 

@@ -47,7 +47,6 @@ object SpookyContext {
     // cached results will be dropped for being NOTSerializable
     @transient final lazy val withCtx: PreDef.Fn.Cached[SpookyContext, _WithCtx] = PreDef.Fn(_WithCtx).cachedBy()
   }
-
 }
 
 case class SpookyContext(
@@ -144,12 +143,14 @@ case class SpookyContext(
   }
   def apply(v: PluginSystem): Accessor[v.type] = Accessor(v)
 
-  def dirConf: Dir.Conf = getPlugin(Dir).getConf
-  def dirConf_=(v: Dir.Conf): Unit = {
-    setConf(v)
+  def dirConf: Dir.Conf = apply(Dir).conf
+  def dirConf_=(v: Dir.Conf): SpookyContext.this.type = {
+    val dir = apply(Dir)
+    dir.conf = v
   }
 
   val hadoopConfBroadcast: Broadcast[SerializerOverride[Configuration]] = {
+    // TODO: this is still memory-consuming, can it be done only once?
     sqlContext.sparkContext.broadcast(
       SerializerOverride(this.sqlContext.sparkContext.hadoopConfiguration)
     )
@@ -160,7 +161,7 @@ case class SpookyContext(
 
   def spookyMetrics: SpookyMetrics = getPlugin(Core).metrics
 
-  final override def clone: SpookyContext = {
+  final override def clone: SpookyContext = { // TODO: clean
     val result = SpookyContext(sqlContext)
     val plugins = Plugins.registered.map(plugin => plugin.clone)
     result.setPlugin(plugins: _*)
@@ -179,7 +180,7 @@ case class SpookyContext(
   def create(df: DataFrame): FetchedDataset = this.dsl.dfToFetchedDS(df)
   def create[T: TypeTag](rdd: RDD[T]): FetchedDataset = this.dsl.rddToFetchedDS(rdd)
 
-  // TODO: merge after 2.0.x
+  // TODO: create Dataset directly
   def create[T: TypeTag](
       seq: IterableOnce[T]
   ): FetchedDataset = {

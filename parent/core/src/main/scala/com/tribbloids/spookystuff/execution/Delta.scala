@@ -138,7 +138,7 @@ object Delta {
           pathStr.foreach { str =>
             val docOpt = _docExpr.lift(fetchedRow)
 
-            docOpt.foreach(_.save(Seq(str), overwrite)(outputSchema.spooky))
+            docOpt.foreach(_.save(outputSchema.spooky, overwrite)(Seq(str)))
           }
         }
       v

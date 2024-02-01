@@ -2,26 +2,73 @@ package com.tribbloids.spookystuff.doc
 
 import com.tribbloids.spookystuff.SpookyContext
 import com.tribbloids.spookystuff.utils.TreeThrowable
+import com.tribbloids.spookystuff.utils.io.HDFSResolver
 import com.tribbloids.spookystuff.utils.serialization.NOTSerializable
+import org.apache.commons.io.IOUtils
 import org.apache.hadoop.fs.{FSDataOutputStream, Path}
 import org.apache.hadoop.shaded.org.apache.http.entity.ContentType
 import org.apache.tika.io.TikaInputStream
 import org.apache.tika.metadata.{HttpHeaders, Metadata}
+import org.apache.tika.mime.{MimeType, MimeTypes}
 import org.apache.tika.parser.{AutoDetectParser, ParseContext}
 import org.apache.tika.sax.ToHTMLContentHandler
 
 import java.nio.charset.Charset
 import java.util.UUID
 
-sealed trait Content extends SpookyContext.CanRunWith {
+sealed trait Content extends SpookyContext.CanRunWith with Serializable {
 
   import Content._
+  import scala.jdk.CollectionConverters._
 
   def blob: Blob
+  def withBlob(blob: Blob): Content
+
+  def contentType: ContentType
+
+  @transient final lazy val charsetOpt: Option[Charset] = Option(contentType.getCharset)
+
+  def charset: Charset = charsetOpt.getOrElse(defaultCharset)
+
+  @transient final lazy val mimeType: String = contentType.getMimeType
+
+  def isImage: Boolean = mimeType.startsWith("image")
+
+  lazy val tikaMimeType: MimeType = MimeTypes.getDefaultMimeTypes.forName(mimeType)
+  lazy val fileExtensions: Seq[String] = tikaMimeType.getExtensions.asScala.toSeq.map { str =>
+    if (str.startsWith(".")) str.splitAt(1)._2
+    else str
+  }
+  def defaultFileExtension: Option[String] = fileExtensions.headOption
+
+  @transient lazy val converted: Converted = {
+
+    Content.this match {
+      case v: Converted => v
+      case v: Raw =>
+        val handler = new ToHTMLContentHandler()
+
+        val metadata = new Metadata()
+        val stream = TikaInputStream.get(blob.raw, metadata)
+        val html: String =
+          try {
+            metadata.set(HttpHeaders.CONTENT_ENCODING, charsetOpt.map(_.name()).orNull)
+            metadata.set(HttpHeaders.CONTENT_TYPE, v.mimeType)
+            val parser = new AutoDetectParser()
+            val context = new ParseContext()
+            parser.parse(stream, handler, metadata, context)
+            handler.toString
+          } finally {
+            stream.close()
+          }
+
+        Converted(InMemoryBlob(html.getBytes(v.preferredCharset)), v.preferredCharset)
+    }
+  }
 
   case class _WithCtx(ctx: SpookyContext) extends NOTSerializable {
 
-    lazy val data: Array[Byte] = blob.load(ctx)
+    lazy val raw: Array[Byte] = blob.raw
 
     def doSave1(
         path: String,
@@ -46,7 +93,7 @@ sealed trait Content extends SpookyContext.CanRunWith {
         val os = progress.WrapOStream(fos)
 
         try {
-          os.write(data) //       remember that apache IOUtils is defective for DFS!
+          os.write(raw) //       remember that apache IOUtils is defective for DFS!
 
           val metrics = ctx.spookyMetrics
           metrics.saved += 1
@@ -64,90 +111,64 @@ sealed trait Content extends SpookyContext.CanRunWith {
     def save1(
         path: String,
         overwrite: Boolean = false
-    ): DFSSavedBlob = {
+    ): Content = {
 
       val absolutePath = doSave1(path, overwrite).toString
 
-      blob match {
+      val newBlob = blob match {
         case v: InMemoryBlob =>
-          DFSSavedBlob(v, absolutePath)
+          DFSSavedBlob(v, ctx.pathResolver, absolutePath)
         case v: DFSSavedBlob =>
-          v.withNewPath(absolutePath)
+          v.addPath(absolutePath)
           v.copy(
             paths = v.paths + (absolutePath -> v.paths.size)
           )
       }
+
+      Content.this.withBlob(newBlob)
     }
 
-    lazy val parsed: Parsed = {
-
-      Content.this match {
-        case v: Parsed => v
-        case v: Raw =>
-          val handler = new ToHTMLContentHandler()
-
-          val metadata = new Metadata()
-          val stream = TikaInputStream.get(data, metadata)
-          val html: String =
-            try {
-              metadata.set(HttpHeaders.CONTENT_ENCODING, blob.charSet.name())
-              metadata.set(HttpHeaders.CONTENT_TYPE, v.mimeType)
-              val parser = new AutoDetectParser()
-              val context = new ParseContext()
-              parser.parse(stream, handler, metadata, context)
-              handler.toString
-            } finally {
-              stream.close()
-            }
-
-          Parsed(InMemoryBlob(html.getBytes(v.preferredCharset)))
-      }
-    }
   }
+
 }
 
 object Content {
 
-  sealed trait Blob {
+  sealed trait Blob extends Serializable {
 
-    def load(ctx: SpookyContext): Array[Byte]
-
-    def charSet: Charset
-
+    def raw: Array[Byte]
+    def saved: Seq[String] = Nil
   }
 
   case class InMemoryBlob(
-      raw: Array[Byte],
-      charSet: Charset = Charset.defaultCharset()
-  ) extends Blob {
-
-    override def load(ctx: SpookyContext): Array[Byte] = {
-      raw
-    }
-  }
+      raw: Array[Byte]
+  ) extends Blob {}
 
   case class DFSSavedBlob(
       @transient original: InMemoryBlob,
+      pathResolver: HDFSResolver,
       path1: String,
       paths: Map[String, Int] = Map.empty // DFS path -> precedence
   ) extends Blob {
     // can reconstruct actual content from any of the paths
 
-    final override def charSet: Charset = original.charSet
-
-    def withNewPath(v: String): DFSSavedBlob = {
+    def addPath(v: String): DFSSavedBlob = {
       val oldSize = paths.size
       this.copy(
         paths = paths + (v -> oldSize)
       )
     }
 
-    override def load(ctx: SpookyContext): Array[Byte] = {
+    override def saved: Seq[String] = Seq(path1) ++ paths.toSeq.sortBy(_._2).map(_._1)
 
-      val sortedPath = Seq(path1) ++ paths.toSeq.sortBy(_._2).map(_._1)
+    override def raw: Array[Byte] = {
 
-      val trials = sortedPath.map { path => () =>
-        DocUtils.load(path)(ctx)
+      val trials = saved.map { path => () =>
+        val result = pathResolver.input(path) { in =>
+          IOUtils.toByteArray(in.stream)
+        }
+
+        result
       }
 
       val result = TreeThrowable.|||^(trials)
@@ -162,16 +183,26 @@ object Content {
       transcode: Option[Charset] = None
   ) extends Content {
 
-    def mimeType: String = contentType.getMimeType
+    def withBlob(blob: Blob): Content = this.copy(blob = blob)
 
-    @transient lazy val preferredCharset: Charset = transcode.getOrElse(
-      blob.charSet
-    )
+    @transient lazy val preferredCharset: Charset = transcode
+      .getOrElse(
+        charset
+      )
   }
 
-  case class Parsed(
-      blob: Blob
-      // mimeType is always text/html
-      // preferredCharset is always bytes.charSet
-  ) extends Content {}
+  case class Converted(
+      blob: Blob,
+      preferredCharset: Charset
+  ) extends Content {
+
+    def withBlob(blob: Blob): Content = this.copy(blob = blob)
+
+    override lazy val contentType: ContentType = ContentType.TEXT_HTML.withCharset(preferredCharset)
+    // mimeType is always text/html
+    // charset is always preferredCharset
+
+  }
+
+  lazy val defaultCharset: Charset = Charset.defaultCharset()
 }

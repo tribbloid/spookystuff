@@ -13,15 +13,16 @@ class TestPageFromFile extends TestPageFromHttp with LocalPathDocsFixture {
     val page = resultsList(0).asInstanceOf[Doc]
 
     assert(page.mimeType == "inode/directory")
-    assert(page.charset.map(_.toLowerCase).get == "utf-8")
+    assert(page.charsetOpt.map(_.name().toLowerCase).get == "utf-8")
     assert(page.findAll("title").texts.isEmpty)
 
     assert(page.code.get.contains("<URI>file:///tmp/spookystuff/resources/testutils/files/Wikipedia.html</URI>"))
 
-    page.autoSave(spooky, overwrite = true)
+    val raw = page.content.blob.raw
+    page.save(spooky, overwrite = true).auto()
 
     val loadedContent = DocUtils.load(page.saved.head)(spooky)
 
-    assert(loadedContent === page.raw)
+    assert(loadedContent === raw)
   }
 }

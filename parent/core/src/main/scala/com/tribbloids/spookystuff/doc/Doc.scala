@@ -3,20 +3,20 @@ package com.tribbloids.spookystuff.doc
 import ai.acyclic.prover.commons.same.EqualBy
 import com.tribbloids.spookystuff._
 import com.tribbloids.spookystuff.caching.DocCacheLevel
+import com.tribbloids.spookystuff.conf.SpookyConf.DocVersion
+import com.tribbloids.spookystuff.doc.Content.InMemoryBlob
 import com.tribbloids.spookystuff.doc.Observation.DocUID
-import com.tribbloids.spookystuff.utils.io.ResourceMetadata
 import com.tribbloids.spookystuff.utils.CommonUtils
+import com.tribbloids.spookystuff.utils.io.ResourceMetadata
+import com.tribbloids.spookystuff.utils.serialization.NOTSerializable
 import org.apache.commons.csv.CSVFormat
-import org.apache.hadoop.fs.Path
 import org.apache.hadoop.shaded.org.apache.http.StatusLine
 import org.apache.hadoop.shaded.org.apache.http.entity.ContentType
 import org.apache.tika.io.TikaInputStream
 import org.apache.tika.metadata.{Metadata, TikaCoreProperties}
-import org.apache.tika.mime.{MimeType, MimeTypes}
 import org.mozilla.universalchardet.UniversalDetector
 
-import java.util.UUID
-import scala.collection.mutable
+import scala.language.implicitConversions
 
 object Doc {
 
@@ -24,100 +24,119 @@ object Doc {
   val CSV_FORMAT: String = "csvFormat"
 
   val defaultCSVFormat: CSVFormat = CSVFormat.DEFAULT
+
+  implicit def asContent(v: Doc): Content = v.content
 }
 
 @SerialVersionUID(94865098324L)
 case class Doc(
     override val uid: DocUID,
     uri: String, // redirected
-    raw: Array[Byte],
     declaredContentType: Option[String] = None,
     //                 cookie: Seq[SerializableCookie] = Nil,
     override val timeMillis: Long = System.currentTimeMillis(),
     override val cacheLevel: DocCacheLevel.Value = DocCacheLevel.All,
     httpStatus: Option[StatusLine] = None,
-    override val metadata: ResourceMetadata =
-      ResourceMetadata.empty, // for customizing parsing TODO: remove, delegate to CSVElement.
-    saved: mutable.Set[String] = mutable.Set() // TODO: move out of constructor
+    metadata: ResourceMetadata = ResourceMetadata.empty
+)(
+    var content: Content = null
 ) extends Observation.Success
     with EqualBy {
 
-  import scala.jdk.CollectionConverters._
-
-  lazy val samenessDelegatedTo: Any = (uid, uri, declaredContentType, timeMillis, httpStatus.toString)
+  @transient lazy val samenessDelegatedTo: Any = (uid, uri, metadata, timeMillis, httpStatus.toString)
 
   override def updated(
       uid: DocUID = this.uid,
       cacheLevel: DocCacheLevel.Value = this.cacheLevel
-  ): Doc.this.type = this.copy(uid = uid, cacheLevel = cacheLevel).asInstanceOf[this.type]
+  ): Doc.this.type = this.copy(uid = uid, cacheLevel = cacheLevel)(content).asInstanceOf[this.type]
 
-  private def detectCharset(contentType: ContentType): String = {
-    val charsetD = new UniversalDetector(null)
-    val ss = 4096
+  def withMetadata(tuples: (String, Any)*): Doc = {
 
-    for (i <- 0.until(raw.length, ss)) {
-      val length = Math.min(raw.length - i, ss)
-      charsetD.handleData(raw, i, length)
-      if (charsetD.isDone) return charsetD.getDetectedCharset
-    }
-
-    charsetD.dataEnd()
-    val detected = charsetD.getDetectedCharset
-
-    if (detected == null) {
-      if (contentType.getMimeType.contains("text")) Const.defaultTextCharset
-      else if (contentType.getMimeType.contains("application")) Const.defaultApplicationCharset
-      else Const.defaultApplicationCharset
-    } else detected
+    this.copy(
+      metadata = this.metadata ++: ResourceMetadata.From.tuple(tuples: _*)
+    )(content)
   }
 
-  @transient lazy val parsedContentType: ContentType = {
+  def setRaw(raw: Array[Byte]): this.type = {
 
-    val strOpt = metadata.`content-type`.get
-      .map("" + _)
-      .orElse(declaredContentType)
-    strOpt match {
-      case Some(str) =>
-        val ct = ContentType.parse(str)
-        if (ct.getCharset == null) {
+    object ContentTypeDetection extends NOTSerializable {
 
-          ct.withCharset(detectCharset(ct))
-        } else ct
-      case None =>
-        val metadata = new Metadata()
-        val slash: Int = uri.lastIndexOf('/')
-        metadata.set(TikaCoreProperties.RESOURCE_NAME_KEY, uri.substring(slash + 1))
-        val stream = TikaInputStream.get(raw, metadata)
-        try {
-          val mediaType = Const.tikaDetector.detect(stream, metadata)
-          //        val mimeType = mediaType.getBaseType.toString
-          //        val charset = new CharsetDetector().getString(content, null)
-          //        ContentType.create(mimeType, charset)
+      lazy val declaredOpt: Option[CSSQuery] = {
+        metadata.`content-type`.get
+          .map(v => "" + v) // TODO: why?
+          .orElse(declaredContentType)
+      }
 
-          val str = mediaType.toString
+      lazy val detected: ContentType = declaredOpt match {
+        case Some(str) =>
           val result = ContentType.parse(str)
-          if (result.getCharset == null) {
+          result
 
-            result.withCharset(detectCharset(result))
-          } else result
-        } finally {
-          stream.close()
-        }
+        case None =>
+          val metadata = new Metadata()
+          val slash: Int = uri.lastIndexOf('/')
+          metadata.set(TikaCoreProperties.RESOURCE_NAME_KEY, uri.substring(slash + 1))
+          val stream = TikaInputStream.get(raw, metadata)
+          try {
+            val mediaType = Const.tikaDetector.detect(stream, metadata)
+            //        val mimeType = mediaType.getBaseType.toString
+            //        val charset = new CharsetDetector().getString(content, null)
+            //        ContentType.create(mimeType, charset)
+
+            val str = mediaType.toString
+            val result = ContentType.parse(str)
+            result
+
+          } finally {
+            stream.close()
+          }
+      }
+
+      lazy val output: ContentType = {
+
+        if (detected.getCharset == null) {
+
+          val charsetDetecter = new UniversalDetector(null)
+          val ss = 4096
+
+          for (i <- 0.until(raw.length, ss)) {
+            val length = Math.min(raw.length - i, ss)
+            charsetDetecter.handleData(raw, i, length)
+            if (charsetDetecter.isDone) charsetDetecter.getDetectedCharset
+          }
+
+          charsetDetecter.dataEnd()
+          val charSetOpt = Option(charsetDetecter.getDetectedCharset)
+
+          val charSet: String = charSetOpt.getOrElse {
+
+            if (detected.getMimeType.contains("text")) Const.defaultTextCharset
+            else if (detected.getMimeType.contains("application")) Const.defaultApplicationCharset
+            else Const.defaultApplicationCharset
+          }
+
+          detected.withCharset(charSet)
+        } else detected
+      }
     }
+
+    this.content = Content.Raw(InMemoryBlob(raw), ContentTypeDetection.output)
+    this
   }
 
-  override type RootType = Unstructured
   // TODO: use reflection to find any element implementation that can resolve supplied MIME type
-  @transient override lazy val root: Unstructured = {
-    val effectiveCharset = charset.orNull
+  @transient lazy val rootOpt: Option[Unstructured] = {
 
-    lazy val contentStr = new String(raw, effectiveCharset)
+    val content = this.content
+    import content._
+
+    lazy val contentStr = new String(blob.raw, charset)
     if (mimeType.contains("html") || mimeType.contains("xml") || mimeType.contains("directory")) {
-      HtmlElement(contentStr, uri) // not serialize, parsing is faster
+      Some(HtmlElement(contentStr, uri)) // not serialize, parsing is faster
     } else if (mimeType.contains("json")) {
-      JsonElement(contentStr, null, uri) // not serialize, parsing is faster
+      Some(JsonElement(contentStr, null, uri)) // not serialize, parsing is faster
     } else if (mimeType.contains("csv")) {
-      val csvFormat: CSVFormat = this.metadata.asMap
+      val csvFormat: CSVFormat = metadata.asMap
         .get(Doc.CSV_FORMAT)
         .map {
           case v: CSVFormat => v
@@ -125,107 +144,78 @@ case class Doc(
         }
         .getOrElse(Doc.defaultCSVFormat)
 
-      CSVElement.Block.apply(contentStr, uri, csvFormat) // not serialize, parsing is faster
+      Some(CSVElement.Block.apply(contentStr, uri, csvFormat)) // not serialize, parsing is faster
     } else if (mimeType.contains("plain") || mimeType.contains("text")) {
-      PlainElement(contentStr, uri) // not serialize, parsing is faster
+      Some(PlainElement(contentStr, uri)) // not serialize, parsing is faster
     } else {
-      HtmlElement.fromBytes(raw, effectiveCharset, mimeType, uri)
-    }
-  }
-  def charset: Option[String] = Option(parsedContentType.getCharset).map(_.name())
-  def mimeType: String = parsedContentType.getMimeType
-
-  def isImage: Boolean = mimeType.startsWith("image")
-
-  def contentType: String = parsedContentType.toString
-
-  lazy val tikaMimeType: MimeType = MimeTypes.getDefaultMimeTypes.forName(mimeType)
-  lazy val fileExtensions: Seq[String] = tikaMimeType.getExtensions.asScala.toSeq.map { str =>
-    if (str.startsWith(".")) str.splitAt(1)._2
-    else str
-  }
-  def defaultFileExtension: Option[String] = fileExtensions.headOption
-
-  // ---------------------------------------------------------------------------------------------------
-
-  def save(
-      pathParts: Seq[String],
-      overwrite: Boolean = false
-  )(spooky: SpookyContext): Unit = {
-
-    val path = CommonUtils.\\\(pathParts: _*)
-
-    DocUtils.dfsWrite("save", path, spooky) { progress =>
-      val fullPath = new Path(path)
-      val fs = fullPath.getFileSystem(spooky.hadoopConf)
-      //      if (!overwrite && fs.exists(fullPath)) fullPath = new Path(path + "-" + UUID.randomUUID())
-      val fos =
-        try {
-          fs.create(fullPath, overwrite)
-        } catch {
-          case _: Exception =>
-            val altPath = new Path(path + "-" + UUID.randomUUID())
-            fs.create(altPath, overwrite)
-        }
-
-      val os = progress.WrapOStream(fos)
-
-      try {
-        os.write(raw) //       remember that apache IOUtils is defective for DFS!
-
-        val metrics = spooky.spookyMetrics
-        metrics.saved += 1
-//        metrics.savedPath.add(path -> progress.indicator.longValue())
-
-        saved += fullPath.toString
-      } finally {
-        os.close()
-      }
+      None
     }
   }
 
-  def autoSave(
-      spooky: SpookyContext,
-      overwrite: Boolean = false
-  ): Unit =
-    this.save(
-      spooky.dirConf.autoSave :: spooky.conf.autoSaveFileStructure(this) :: Nil,
-      overwrite
-    )(spooky)
+  @transient lazy val effective: Doc = {
+    rootOpt match {
+      case Some(_) =>
+        this
+      case None =>
+        this.copy()(
+          content = this.content.converted
+        )
+    }
+  }
 
-  // TODO: merge into cascade retries
-  def errorDump(
+  override type RootType = Unstructured
+  def root: Unstructured = effective.rootOpt.get
+
+  def versionsForSaving(docVersion: DocVersion): Seq[Doc] = {
+
+    docVersion match {
+      case DocVersion.disabled  => Nil
+      case DocVersion.original  => Seq(Doc.this)
+      case DocVersion.effective => Seq(effective)
+      case DocVersion.both      => Seq(Doc.this, effective).distinct
+    }
+  }
+
+  def saved: Seq[CSSQuery] = content.blob.saved
+
+  case class save(
       spooky: SpookyContext,
       overwrite: Boolean = false
-  ): Unit = {
-    val root =
-      if (this.isImage) spooky.dirConf.errorScreenshot
+  ) {
+
+    def apply(
+        pathParts: Seq[String]
+    ): Content = {
+
+      val path = CommonUtils.\\\(pathParts: _*)
+
+      val saved = content.withCtx(spooky).save1(path, overwrite)
+      Doc.this.content = saved
+      saved
+    }
+
+    def auto(): Content = {
+      apply(spooky.dirConf.autoSave :: spooky.conf.autoSaveFileStructure(Doc.this) :: Nil)
+
+    }
+
+    private lazy val errorScreenshotRoot =
+      if (Doc.this.isImage) spooky.dirConf.errorScreenshot
       else spooky.dirConf.errorDump
 
-    this.save(
-      root :: spooky.conf.errorDumpFileStructure(this) :: Nil,
-      overwrite
-    )(spooky)
+    // TODO: merge into cascade retries
+    def errorDump(): Content = {
+
+      apply(errorScreenshotRoot :: spooky.conf.errorDumpFileStructure(Doc.this) :: Nil)
+
+    }
+
+    def errorDumpLocally(): Content = {
+
+      apply(
+        errorScreenshotRoot :: spooky.conf.errorDumpFileStructure(Doc.this) :: Nil
+      )
+    }
   }
 
-  def errorDumpLocally(
-      spooky: SpookyContext,
-      overwrite: Boolean = false
-  ): Unit = {
-    val root =
-      if (this.isImage) spooky.dirConf.errorScreenshot
-      else spooky.dirConf.errorDump
-
-    this.save(
-      root :: spooky.conf.errorDumpFileStructure(this) :: Nil,
-      overwrite
-    )(spooky)
-  }
-
-  def withMetadata(tuples: (String, Any)*): Doc = {
-
-    this.copy(
-      metadata = this.metadata ++: ResourceMetadata.From.tuple(tuples: _*)
-    )
-  }
 }

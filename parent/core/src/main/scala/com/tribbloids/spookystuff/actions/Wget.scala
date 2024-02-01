@@ -60,25 +60,23 @@ case class Wget(
       if (in.isDirectory) {
         val xmlStr = in.metadata.all.toXMLStr()
 
-        new Doc(
+        Doc(
           uid = DocUID(List(this), this)(),
           uri = in.getURI,
-          raw = xmlStr.getBytes("utf-8"),
           declaredContentType = Some("inode/directory; charset=UTF-8"),
           cacheLevel = cacheLevel,
           metadata = in.metadata.root
-        )
+        )().setRaw(xmlStr.getBytes("utf-8"))
       } else {
 
         val raw = IOUtils.toByteArray(in.stream)
 
-        new Doc(
+        Doc(
           uid = DocUID(List(this), this)(),
           uri = in.getURI,
-          raw = raw,
           cacheLevel = cacheLevel,
           metadata = in.metadata.root
-        )
+        )().setRaw(raw)
       }
     }
     Seq(doc)

@@ -40,7 +40,7 @@ class FetchWgetAndSaveIT extends ITBaseSpec {
     assert(pageTime < finishTime)
     assert(pageTime > finishTime - 60000) // long enough even after the second time it is retrieved from s3 cache
 
-    val content = savedPageRows(0).docs.head.raw
+    val raw = savedPageRows(0).docs.head.blob.raw
 
     assert(
       savedPageRows(0).dataRow.get('saved_path).get.asInstanceOf[Iterable[Any]].toSeq contains
@@ -50,7 +50,7 @@ class FetchWgetAndSaveIT extends ITBaseSpec {
     val loadedContent =
       DocUtils.load(s"file://${CommonConst.USER_DIR}/temp/spooky-integration/save/Wikipedia.png")(spooky)
 
-    assert(loadedContent === content)
+    assert(loadedContent === raw)
 
     Thread.sleep(10000) // this delay is necessary to circumvent eventual consistency of HDFS-based cache
 
@@ -64,13 +64,13 @@ class FetchWgetAndSaveIT extends ITBaseSpec {
 
     assert(unionRows.length === 2)
     assert(
-      unionRows(0).docs.head.copy(timeMillis = 0, raw = null) ===
-        unionRows(1).docs.head.copy(timeMillis = 0, raw = null)
+      unionRows(0).docs.head.copy(timeMillis = 0)(null) ===
+        unionRows(1).docs.head.copy(timeMillis = 0)(null)
     )
 
     assert(unionRows(0).docs.head.timeMillis === unionRows(1).docs.head.timeMillis)
-    assert(unionRows(0).docs.head.raw === unionRows(1).docs.head.raw)
-    assert(unionRows(0).docs.head.raw === unionRows(1).docs.head.raw)
+    assert(unionRows(0).docs.head.content === unionRows(1).docs.head.content)
+    assert(unionRows(0).docs.head.content === unionRows(1).docs.head.content)
     assert(unionRows(1).docs.head.name === "b")
   }
 

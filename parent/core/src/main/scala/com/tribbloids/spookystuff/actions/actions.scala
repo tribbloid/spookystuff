@@ -77,21 +77,21 @@ trait Action extends ActionLike with HasTrace {
     results
   }
 
-  protected def errorDump(message: String, rawPage: Doc, spooky: SpookyContext): String = {
+  protected def errorDump(message: String, rawDoc: Doc, spooky: SpookyContext): String = {
 
     val backtrace: Trace =
-      if (rawPage.uid.backtrace.lastOption.exists(_ eq this)) rawPage.uid.backtrace
-      else rawPage.uid.backtrace :+ this
-    val uid = rawPage.uid.copy(backtrace = backtrace)(name = null)
-    val page = rawPage.copy(uid = uid)
+      if (rawDoc.uid.backtrace.lastOption.exists(_ eq this)) rawDoc.uid.backtrace
+      else rawDoc.uid.backtrace :+ this
+    val uid = rawDoc.uid.copy(backtrace = backtrace)(name = null)
+    val doc = rawDoc.copy(uid = uid)(rawDoc.content)
     try {
-      page.errorDump(spooky)
-      "saved to: " + page.saved.last
+      doc.save(spooky).errorDump()
+      "saved to: " + doc.saved.last
     } catch {
       case _: Exception =>
         try {
-          page.errorDumpLocally(spooky)
-          "DFS inaccessible.........saved to: " + page.saved.last
+          doc.save(spooky).errorDumpLocally()
+          "DFS inaccessible.........saved to: " + doc.saved.last
         } catch {
           case _: Exception =>
             "all file systems inaccessible.........not saved"

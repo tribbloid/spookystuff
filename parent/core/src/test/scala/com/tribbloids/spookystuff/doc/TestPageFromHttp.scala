@@ -15,14 +15,16 @@ class TestPageFromHttp extends SpookyBaseSpec {
     val page = results.head.asInstanceOf[Doc]
 
     assert(page.mimeType == "text/html")
-    assert(page.charset.map(_.toLowerCase).get == "utf-8")
+    assert(page.charsetOpt.map(_.name().toLowerCase).get == "utf-8")
     assert(page.findAll("title").texts.head startsWith "Wikipedia")
 
-    page.autoSave(spooky, overwrite = true)
+    val raw = page.blob.raw
+
+    page.save(spooky, overwrite = true).auto()
 
     val loadedContent = DocUtils.load(page.saved.head)(spooky)
 
-    assert(loadedContent === page.raw)
+    assert(loadedContent === raw)
   }
 
   it("wget json, save and load") {
@@ -33,18 +35,19 @@ class TestPageFromHttp extends SpookyBaseSpec {
     val page = results.head.asInstanceOf[Doc]
 
     assert(page.mimeType == "application/json")
-    assert(page.charset.map(_.toLowerCase).get == "utf-8")
+    assert(page.charsetOpt.map(_.name().toLowerCase).get == "utf-8")
     assert(page.\("html_url").texts == "https://github.com/tribbloid" :: Nil)
     assert(page.\\("html_url").texts == "https://github.com/tribbloid" :: Nil)
 
     assert(page.\("notexist").isEmpty)
     assert(page.\\("notexist").isEmpty)
 
-    page.autoSave(spooky, overwrite = true)
+    val raw = page.blob.raw
+    page.save(spooky, overwrite = true).auto()
 
     val loadedContent = DocUtils.load(page.saved.head)(spooky)
 
-    assert(loadedContent === page.raw)
+    assert(loadedContent === raw)
   }
 
   it("wget image, save and load") {
@@ -55,14 +58,15 @@ class TestPageFromHttp extends SpookyBaseSpec {
     val page = results.head.asInstanceOf[Doc]
 
     assert(page.mimeType == "image/png")
-    assert(page.charset.map(_.toLowerCase).get == "utf-8")
+    assert(page.charsetOpt.map(_.name().toLowerCase).get == "utf-8")
     assert(page.findAll("title").text.get == "")
 
-    page.autoSave(spooky, overwrite = true)
+    val raw = page.blob.raw
+    page.save(spooky, overwrite = true).auto()
 
     val loadedContent = DocUtils.load(page.saved.head)(spooky)
 
-    assert(loadedContent === page.raw)
+    assert(loadedContent === raw)
   }
 
   it("wget pdf, save and load") {
@@ -73,14 +77,15 @@ class TestPageFromHttp extends SpookyBaseSpec {
     val page = results.head.asInstanceOf[Doc]
 
     assert(page.mimeType == "application/pdf")
-    assert(page.charset.map(_.toLowerCase).get == "utf-8")
+    assert(page.charsetOpt.map(_.name().toLowerCase).get == "utf-8")
     assert(page.findAll("title").text.get == "Microsoft Word - Document1")
 
-    page.autoSave(spooky, overwrite = true)
+    val raw = page.blob.raw
+    page.save(spooky, overwrite = true).auto()
 
     val loadedContent = DocUtils.load(page.saved.head)(spooky)
 
-    assert(loadedContent === page.raw)
+    assert(loadedContent === raw)
   }
 
   it("childrenWithSiblings") {
@@ -120,16 +125,17 @@ class TestPageFromHttp extends SpookyBaseSpec {
     val page = results.head.asInstanceOf[Doc]
 
     assert(page.mimeType == "application/xml")
-    assert(page.charset.map(_.toLowerCase).get == "utf-8")
+    assert(page.charsetOpt.map(_.name().toLowerCase).get == "utf-8")
     assert(page.findAll("title").texts.isEmpty)
 
     assert(page.findAll("profiles > profile").size == 5)
 
-    page.autoSave(spooky, overwrite = true)
+    val raw = page.blob.raw
+    page.save(spooky, overwrite = true).auto()
 
     val loadedContent = DocUtils.load(page.saved.head)(spooky)
 
-    assert(loadedContent === page.raw)
+    assert(loadedContent === raw)
   }
 
   it("wget csv, save and load") {
@@ -146,16 +152,17 @@ class TestPageFromHttp extends SpookyBaseSpec {
 
     assert(page.mimeType == "text/csv")
     assert(
-      Set("iso-8859-1", "utf-8") contains page.charset.map(_.toLowerCase).get
+      Set("iso-8859-1", "utf-8") contains page.charsetOpt.map(_.name().toLowerCase).get
     ) // the file is just using ASCII chars
     assert(page.findAll("title").texts.isEmpty)
 
     assert(page.findAll("Name").size == 14)
 
-    page.autoSave(spooky, overwrite = true)
+    val raw = page.blob.raw
+    page.save(spooky, overwrite = true).auto()
 
     val loadedContent = DocUtils.load(page.saved.head)(spooky)
 
-    assert(loadedContent === page.raw)
+    assert(loadedContent === raw)
   }
 }

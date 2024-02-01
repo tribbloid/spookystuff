@@ -117,9 +117,9 @@ trait GenExtractorImplicits extends CatalystTypeOps.ImplicitMixin {
 
     def uid: Extractor[DocUID] = self.andMap(_.uid)
 
-    def contentType: Extractor[String] = self.andMap(_.contentType)
+    def contentType: Extractor[String] = self.andMap(_.contentType.toString)
 
-    def content: Extractor[Seq[Byte]] = self.andMap(_.raw.toSeq)
+    def content: Extractor[Seq[Byte]] = self.andMap(_.blob.raw.toSeq)
 
     def timestamp: Extractor[Timestamp] = self.andMap(_.timestamp)
 
@@ -127,7 +127,7 @@ trait GenExtractorImplicits extends CatalystTypeOps.ImplicitMixin {
 
     def mimeType: Extractor[String] = self.andMap(_.mimeType)
 
-    def charSet: Extractor[String] = self.andFlatMap(_.charset)
+    def charSet: Extractor[String] = self.andFlatMap(_.charsetOpt.map(_.name()))
 
     def fileExtensions: Extractor[Seq[String]] = self.andMap(_.fileExtensions.toSeq)
 

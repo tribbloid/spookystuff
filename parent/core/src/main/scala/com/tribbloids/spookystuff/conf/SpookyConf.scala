@@ -21,6 +21,12 @@ object SpookyConf {
     "User-Agent" ->
       "Mozilla/5.0 (X11; Linux x86_64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/37.0.2062.120 Safari/537.36"
   )
+
+  object DocVersion extends Enumeration {
+
+    val disabled, original, effective, both = Value
+  }
+  type DocVersion = DocVersion.Value
 }
 
 /**
@@ -35,7 +41,7 @@ case class SpookyConf(
     //    var browserResolution: (Int, Int) = (1920, 1080),
     remote: Boolean = true, // if disabled won't use remote client at all
     //
-    autoSave: Boolean = true,
+    autoSave: SpookyConf.DocVersion = SpookyConf.DocVersion.effective,
     cacheWrite: Boolean = true,
     cacheRead: Boolean = true, // TODO: this enable both in-memory and DFS cache, should allow more refined control
 

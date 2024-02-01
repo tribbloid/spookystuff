@@ -19,17 +19,16 @@ case class Screenshot(
   override def doExeNoName(agent: Agent): Seq[Doc] = {
 
     val pageOpt = agent.Drivers.getExisting(Web).map { webDriver =>
-      val content = webDriver.self match {
+      val raw: Array[Byte] = webDriver.self match {
         case ts: TakesScreenshot => ts.getScreenshotAs(OutputType.BYTES)
         case _                   => throw new UnsupportedOperationException("driver doesn't support screenshot")
       }
 
-      val page = new Doc(
+      val page = Doc(
         DocUID((agent.backtrace :+ this).toList, this)(),
         webDriver.getCurrentUrl,
-        content,
         Some("image/png")
-      )
+      )().setRaw(raw)
       page
     }
 

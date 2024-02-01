@@ -68,7 +68,7 @@ trait PluginSystem extends Serializable {
 
     // end of definitions
 
-    final override def clone: Plugin = {
+    final override def clone: Plugin = { // TODO: clean
       default(spooky).withEffectiveConf(getConf)
     }
 
