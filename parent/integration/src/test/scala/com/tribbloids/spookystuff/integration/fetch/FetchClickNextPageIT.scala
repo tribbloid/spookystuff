@@ -52,7 +52,7 @@ class FetchClickNextPageIT extends ITBaseSpec {
     assert(pageRows2(1).docs.map(_.name) === Seq("d"))
   }
 
-  override def numPages: Long = spooky.spookyConf.localityPartitioner match {
+  override def numPages: Long = spooky.conf.localityPartitioner match {
 //    case FetchOptimizers.WebCacheAware => 3
     case _ => 3
   }

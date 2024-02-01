@@ -23,7 +23,7 @@ class TestWget extends SpookyBaseSpec {
   def wget(uri: String): Action = Wget(uri)
 
   lazy val noProxyIP: String = {
-    spooky.spookyConf.webProxy = WebProxyFactories.NoProxy
+    spooky.confUpdate(_.copy(webProxy = WebProxyFactories.NoProxy))
 
     getIP()
   }
@@ -35,7 +35,8 @@ class TestWget extends SpookyBaseSpec {
     it(s"use TOR socks5 proxy for ${tuple._1} wget", Tag(classOf[LocalOnly].getCanonicalName)) {
 
       val newIP = {
-        spooky.spookyConf.webProxy = WebProxyFactories.Tor
+
+        spooky.confUpdate(_.copy(webProxy = WebProxyFactories.Tor))
 
         getIP(tuple._2)
       }
@@ -48,13 +49,13 @@ class TestWget extends SpookyBaseSpec {
     it(s"revert from TOR socks5 proxy for ${tuple._1} wget", Tag(classOf[LocalOnly].getCanonicalName)) {
 
       val newIP = {
-        spooky.spookyConf.webProxy = WebProxyFactories.Tor
+        spooky.confUpdate(_.copy(webProxy = WebProxyFactories.Tor))
 
         getIP(tuple._2)
       }
 
       val noProxyIP2 = {
-        spooky.spookyConf.webProxy = WebProxyFactories.NoProxy
+        spooky.confUpdate(_.copy(webProxy = WebProxyFactories.NoProxy))
 
         getIP(tuple._2)
       }
@@ -71,7 +72,7 @@ class TestWget extends SpookyBaseSpec {
 
   // TODO: add canonized URI check
   it("wget should encode malformed url") {
-    spooky.spookyConf.webProxy = WebProxyFactories.NoProxy
+    spooky.confUpdate(_.copy(webProxy = WebProxyFactories.NoProxy))
 
     val results = wget("https://www.google.com/?q=giant robot").fetch(spooky)
 
@@ -123,7 +124,7 @@ class TestWget extends SpookyBaseSpec {
   //  }
 
   it("output of wget should not include session's backtrace") {
-    spooky.spookyConf.webProxy = WebProxyFactories.NoProxy
+    spooky.confUpdate(_.copy(webProxy = WebProxyFactories.NoProxy))
 
     import duration._
 

@@ -75,7 +75,7 @@ class VisitOuterFOrkIT extends ITBaseSpec {
     )
   }
 
-  override def numPages: Long = spooky.spookyConf.localityPartitioner match {
+  override def numPages: Long = spooky.conf.localityPartitioner match {
     //    case FetchOptimizers.WebCacheAware => 6
     case _ => 6
   }

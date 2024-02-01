@@ -12,7 +12,7 @@ object Python extends PluginSystem.HasDriver {
 
   case class Conf(
       pythonDriverFactory: DriverFactory[PythonDriver] = DEFAULT_PYTHONDRIVER_FACTORY
-  ) extends MutableConfLike {
+  ) extends ConfLike {
 
     override def importFrom(sparkConf: SparkConf): Python.Conf = this.copy()
   }

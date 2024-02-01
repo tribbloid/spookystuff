@@ -22,8 +22,8 @@ trait WebAction extends Action {
 
     var message = super.getSessionExceptionMessage(agent, docOpt)
 
-    lazy val errorDump: Boolean = agent.spooky.spookyConf.errorDump
-    lazy val errorDumpScreenshot: Boolean = agent.spooky.spookyConf.errorScreenshot
+    lazy val errorDump: Boolean = agent.spooky.conf.errorDump
+    lazy val errorDumpScreenshot: Boolean = agent.spooky.conf.errorScreenshot
 
     agent match {
       case d: Agent =>

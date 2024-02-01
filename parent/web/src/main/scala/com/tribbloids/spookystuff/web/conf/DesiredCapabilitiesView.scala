@@ -63,7 +63,7 @@ case class DesiredCapabilitiesView(
 
     def base: DesiredCapabilitiesView = {
       fork().configure { caps =>
-        val proxyOpt = Option(spooky.spookyConf.webProxy(())).map { v =>
+        val proxyOpt = Option(spooky.conf.webProxy(())).map { v =>
           asSeleniumProxy(v)
         }
 
@@ -90,10 +90,10 @@ case class DesiredCapabilitiesView(
 
         caps.setCapability(
           PhantomJSDriverService.PHANTOMJS_PAGE_SETTINGS_PREFIX + "resourceTimeout",
-          spooky.spookyConf.remoteResourceTimeout.max.toMillis
+          spooky.conf.remoteResourceTimeout.max.toMillis
         )
 
-        val headersOpt = Option(spooky.spookyConf.httpHeadersFactory).flatMap(v => Option(v.apply()))
+        val headersOpt = Option(spooky.conf.httpHeadersFactory).flatMap(v => Option(v.apply()))
         headersOpt.foreach { headers =>
           headers.foreach {
             case (k, v) =>

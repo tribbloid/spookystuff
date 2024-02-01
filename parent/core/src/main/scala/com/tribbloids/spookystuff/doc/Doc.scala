@@ -189,7 +189,7 @@ case class Doc(
       overwrite: Boolean = false
   ): Unit =
     this.save(
-      spooky.dirConf.autoSave :: spooky.spookyConf.autoSaveFilePath(this) :: Nil,
+      spooky.dirConf.autoSave :: spooky.conf.autoSaveFileStructure(this) :: Nil,
       overwrite
     )(spooky)
 
@@ -203,7 +203,7 @@ case class Doc(
       else spooky.dirConf.errorDump
 
     this.save(
-      root :: spooky.spookyConf.errorDumpFilePath(this) :: Nil,
+      root :: spooky.conf.errorDumpFileStructure(this) :: Nil,
       overwrite
     )(spooky)
   }
@@ -217,7 +217,7 @@ case class Doc(
       else spooky.dirConf.errorDump
 
     this.save(
-      root :: spooky.spookyConf.errorDumpFilePath(this) :: Nil,
+      root :: spooky.conf.errorDumpFileStructure(this) :: Nil,
       overwrite
     )(spooky)
   }

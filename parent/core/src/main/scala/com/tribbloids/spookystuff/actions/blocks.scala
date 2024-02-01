@@ -243,7 +243,7 @@ case class OAuthV2(self: Wget) extends Block(self) with Driverless {
 
   def rewrite(agent: Agent): Wget = {
 
-    val keys = agent.spooky.spookyConf.oAuthKeysFactory.apply()
+    val keys = agent.spooky.conf.oAuthKeysFactory.apply()
     if (keys == null) {
       throw new QueryException("need to set SpookyConf.oAuthKeys first")
     }

@@ -20,7 +20,7 @@ class SpookyConfSuite extends SpookyBaseSpec {
     AssertSerializable(
       conf,
       condition = { (v1: SpookyConf, v2: SpookyConf) =>
-        v1.cacheFilePath == v2.cacheFilePath
+        v1.cacheFileStructure == v2.cacheFileStructure
       }
     )
   }

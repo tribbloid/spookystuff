@@ -1,6 +1,7 @@
 package com.tribbloids.spookystuff.actions
 
 import com.tribbloids.spookystuff.agent.{Agent, OAuthKeys}
+import com.tribbloids.spookystuff.conf.Core
 import org.scalatest.tags.Retryable
 
 /**
@@ -19,12 +20,16 @@ class TestOAuth extends TestWget {
 
   override def beforeEach(): Unit = {
     super.beforeEach()
-    spooky.spookyConf.oAuthKeysFactory = () =>
-      OAuthKeys(
-        "consumerKey",
-        "consumerSecret",
-        "token",
-        "tokenSecret"
+    spooky(Core).confUpdate(
+      _.copy(
+        oAuthKeysFactory = () =>
+          OAuthKeys(
+            "consumerKey",
+            "consumerSecret",
+            "token",
+            "tokenSecret"
+          )
       )
+    )
   }
 }

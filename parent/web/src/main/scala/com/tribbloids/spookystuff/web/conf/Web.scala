@@ -17,8 +17,8 @@ object Web extends HasDriver {
   final val TEST_WEBDRIVER_FACTORY = WebDriverFactory.PhantomJS(loadImages = true).taskLocal
 
   case class Conf(
-      var webDriverFactory: DriverFactory[CleanWebDriver] = DEFAULT_WEBDRIVER_FACTORY
-  ) extends MutableConfLike {
+      webDriverFactory: DriverFactory[CleanWebDriver] = DEFAULT_WEBDRIVER_FACTORY
+  ) extends ConfLike {
 
     override def importFrom(sparkConf: SparkConf): Conf = this.copy()
   }

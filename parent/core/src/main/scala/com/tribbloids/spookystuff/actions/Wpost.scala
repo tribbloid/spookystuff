@@ -49,14 +49,14 @@ object Wpost {
 
       val timeout = this.timeout(agent).max.toMillis.toInt
       val hadoopConf = agent.spooky.hadoopConf
-      val proxy = agent.spooky.spookyConf.webProxy {}
+      val proxy = agent.spooky.conf.webProxy {}
 
       val resolver = new OmniResolver(
         () => hadoopConf,
         timeout,
         proxy,
         { uri: URI =>
-          val headers = agent.spooky.spookyConf.httpHeadersFactory()
+          val headers = agent.spooky.conf.httpHeadersFactory()
 
           val post = new HttpPost(uri)
           for (pair <- headers) {

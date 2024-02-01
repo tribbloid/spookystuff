@@ -133,11 +133,11 @@ case class Trace(
 
           val spooky = agent.spooky
 
-          if (spooky.spookyConf.autoSave) actionResult.foreach {
+          if (spooky.conf.autoSave) actionResult.foreach {
             case page: Doc => page.autoSave(spooky)
             case _         =>
           }
-          if (spooky.spookyConf.cacheWrite) {
+          if (spooky.conf.cacheWrite) {
             val effectiveBacktrace = actionResult.head.uid.backtrace
             InMemoryDocCache.put(effectiveBacktrace, actionResult, spooky)
             DFSDocCache.put(effectiveBacktrace, actionResult, spooky)

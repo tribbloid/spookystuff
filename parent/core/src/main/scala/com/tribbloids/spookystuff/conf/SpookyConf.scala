@@ -27,43 +27,44 @@ object SpookyConf {
   * Created by peng on 12/06/14. will be shipped to workers
   */
 case class SpookyConf(
-    var shareMetrics: Boolean = false, // TODO: not necessary
+    shareMetrics: Boolean = false, // TODO: not necessary
 
-    var webProxy: WebProxyFactory = WebProxyFactories.NoProxy,
-    var httpHeadersFactory: () => Map[String, String] = () => SpookyConf.defaultHTTPHeaders,
-    var oAuthKeysFactory: () => OAuthKeys = () => null,
-    var browserResolution: (Int, Int) = (1920, 1080),
-    var remote: Boolean = true, // if disabled won't use remote client at all
+    webProxy: WebProxyFactory = WebProxyFactories.NoProxy,
+    httpHeadersFactory: () => Map[String, String] = () => SpookyConf.defaultHTTPHeaders,
+    oAuthKeysFactory: () => OAuthKeys = () => null,
+    //    var browserResolution: (Int, Int) = (1920, 1080),
+    remote: Boolean = true, // if disabled won't use remote client at all
     //
-    var autoSave: Boolean = true,
-    var cacheWrite: Boolean = true,
-    var cacheRead: Boolean = true, // TODO: this enable both in-memory and DFS cache, should allow more refined control
+    autoSave: Boolean = true,
+    cacheWrite: Boolean = true,
+    cacheRead: Boolean = true, // TODO: this enable both in-memory and DFS cache, should allow more refined control
 
-    var cachedDocsLifeSpan: Duration = 7.day,
-    var IgnoreCachedDocsBefore: Option[Date] = None,
-    var cacheFilePath: ByTrace[String] = FilePaths.Hierarchical,
-    var autoSaveFilePath: ByDoc[String] = FilePaths.UUIDName(FilePaths.Hierarchical),
+    cachedDocsLifeSpan: Duration = 7.day,
+    IgnoreCachedDocsBefore: Option[Date] = None,
+    cacheFileStructure: ByTrace[String] = FilePaths.Hierarchical,
+    autoSaveFileStructure: ByDoc[String] = FilePaths.UUIDName(FilePaths.Hierarchical),
     //
-    var errorDump: Boolean = true,
-    var errorScreenshot: Boolean = true,
-    var errorDumpFilePath: ByDoc[String] = FilePaths.UUIDName(FilePaths.Hierarchical),
-    var remoteResourceTimeout: Timeout = Timeout(60.seconds),
-    var DFSTimeout: Timeout = Timeout(40.seconds),
-    var failOnDFSRead: Boolean = false,
+    errorDump: Boolean = true,
+    errorScreenshot: Boolean = true,
+    errorDumpFileStructure: ByDoc[String] = FilePaths.UUIDName(FilePaths.Hierarchical),
     //
-    var localityPartitioner: GenPartitioner = GenPartitioners.Wide(),
+    remoteResourceTimeout: Timeout = Timeout(60.seconds),
+    DFSTimeout: Timeout = Timeout(40.seconds),
+    failOnDFSRead: Boolean = false,
     //
-    var flattenSampler: Sampler[Any] = identity,
-    var forkSampler: Sampler[Any] = identity, // join takes remote actions and cost much more than flatten.
+    localityPartitioner: GenPartitioner = GenPartitioners.Wide(),
     //
-    var explorePathPlanner: PathPlanning = PathPlanners_Simple.BreadthFirst,
-    var exploreRange: Range = 0 until Int.MaxValue,
-    var exploreEpochSize: Int = 50,
-    var exploreCheckpointInterval: Int = 50, // disabled if <=0
+    flattenSampler: Sampler[Any] = identity,
+    forkSampler: Sampler[Any] = identity, // join takes remote actions and cost much more than flatten.
+    //
+    explorePathPlanner: PathPlanning = PathPlanners_Simple.BreadthFirst,
+    exploreRange: Range = 0 until Int.MaxValue,
+    exploreEpochSize: Int = 50,
+    exploreCheckpointInterval: Int = 50, // disabled if <=0
 
     // if encounter too many out of memory error, change to MEMORY_AND_DISK_SER
-    var defaultStorageLevel: StorageLevel = StorageLevel.MEMORY_AND_DISK
-) extends Core.MutableConfLike
+    defaultStorageLevel: StorageLevel = StorageLevel.MEMORY_AND_DISK
+) extends Core.ConfLike
     with Serializable {
 
   override def importFrom(sparkConf: SparkConf): SpookyConf = {
@@ -85,13 +86,15 @@ case class SpookyConf(
     }
   }
 
-  def previewMode: this.type = {
+  def previewMode: SpookyConf = {
 
     val sampler: Samplers.FirstN = Samplers.FirstN(1)
-    this.forkSampler = sampler
-    this.forkSampler = sampler
-    this.exploreRange = 0 to 2
 
-    this
+    this.copy(
+      flattenSampler = sampler,
+      forkSampler = sampler,
+      exploreRange = 0 to 2
+    )
+
   }
 }

@@ -66,7 +66,7 @@ case class FetchedDataset(
 
   // TODO: use reflection for more clear API
   def setConf(f: SpookyConf => Unit): this.type = {
-    f(spooky.spookyConf)
+    f(spooky.conf)
     this
   }
 
@@ -251,7 +251,7 @@ case class FetchedDataset(
       ex: Extractor[Any],
       forkType: ForkType = ForkType.default,
       ordinalField: Field = null,
-      sampler: Sampler[Any] = spooky.spookyConf.flattenSampler
+      sampler: Sampler[Any] = spooky.conf.flattenSampler
   ): FetchedDataset = {
 
     val (on, extracted) = ex match {
@@ -270,7 +270,7 @@ case class FetchedDataset(
       on: Extractor[Any], // name is discarded
       forkType: ForkType = ForkType.default,
       ordinalField: Field = null, // left & idempotent parameters are missing as they are always set to true
-      sampler: Sampler[Any] = spooky.spookyConf.forkSampler
+      sampler: Sampler[Any] = spooky.conf.forkSampler
   ): FetchedDataset = {
 
     val result = this
@@ -303,7 +303,7 @@ case class FetchedDataset(
   def fetch(
       traces: HasTraceSet,
       keyBy: Trace => Any = identity,
-      genPartitioner: GenPartitioner = spooky.spookyConf.localityPartitioner
+      genPartitioner: GenPartitioner = spooky.conf.localityPartitioner
   ): FetchedDataset = {
 
     val _traces = traces.asTraceSet.rewriteGlobally(schema)
@@ -318,7 +318,7 @@ case class FetchedDataset(
       keyBy: Trace => Any = identity,
       filter: DocFilter = Const.defaultDocumentFilter,
       failSafe: Int = -1,
-      genPartitioner: GenPartitioner = spooky.spookyConf.localityPartitioner
+      genPartitioner: GenPartitioner = spooky.conf.localityPartitioner
   ): FetchedDataset = {
 
     var trace: Trace = _defaultWget(cooldown, filter, on)
@@ -336,12 +336,12 @@ case class FetchedDataset(
       on: Extractor[Any],
       forkType: ForkType = ForkType.default,
       ordinalField: Field = null, // left & idempotent parameters are missing as they are always set to true
-      sampler: Sampler[Any] = spooky.spookyConf.forkSampler,
+      sampler: Sampler[Any] = spooky.conf.forkSampler,
       cooldown: Option[Duration] = None,
       keyBy: Trace => Any = identity,
       filter: DocFilter = Const.defaultDocumentFilter,
       failSafe: Int = -1,
-      genPartitioner: GenPartitioner = spooky.spookyConf.localityPartitioner
+      genPartitioner: GenPartitioner = spooky.conf.localityPartitioner
   ): FetchedDataset = {
 
     var trace: Trace = _defaultWget(cooldown, filter)
@@ -363,17 +363,16 @@ case class FetchedDataset(
       on: Extractor[Any],
       forkType: ForkType = ForkType.default,
       ordinalField: Field = null,
-      sampler: Sampler[Any] = spooky.spookyConf.forkSampler
+      sampler: Sampler[Any] = spooky.conf.forkSampler
   )(
-               traces: HasTraceSet,
-               keyBy: Trace => Any = identity,
-               genPartitioner: GenPartitioner = spooky.spookyConf.localityPartitioner,
-               depthField: Field = null,
-               range: Range = spooky.spookyConf.exploreRange,
-               exploreAlgorithm: PathPlanning = spooky.spookyConf.explorePathPlanner,
-               epochSize: Int = spooky.spookyConf.exploreEpochSize,
-               checkpointInterval: Int =
-        spooky.spookyConf.exploreCheckpointInterval // set to Int.MaxValue to disable checkpointing,
+      traces: HasTraceSet,
+      keyBy: Trace => Any = identity,
+      genPartitioner: GenPartitioner = spooky.conf.localityPartitioner,
+      depthField: Field = null,
+      range: Range = spooky.conf.exploreRange,
+      exploreAlgorithm: PathPlanning = spooky.conf.explorePathPlanner,
+      epochSize: Int = spooky.conf.exploreEpochSize,
+      checkpointInterval: Int = spooky.conf.exploreCheckpointInterval // set to Int.MaxValue to disable checkpointing,
   ): FetchedDataset = {
 
     val params = Params(depthField, ordinalField, range)
@@ -395,21 +394,20 @@ case class FetchedDataset(
   }
 
   def wgetExplore(
-                   on: Extractor[Any],
-                   forkType: ForkType = ForkType.default,
-                   ordinalField: Field = null,
-                   sampler: Sampler[Any] = spooky.spookyConf.forkSampler,
-                   filter: DocFilter = Const.defaultDocumentFilter,
-                   failSafe: Int = -1,
-                   cooldown: Option[Duration] = None,
-                   keyBy: Trace => Any = identity,
-                   genPartitioner: GenPartitioner = spooky.spookyConf.localityPartitioner,
-                   depthField: Field = null,
-                   range: Range = spooky.spookyConf.exploreRange,
-                   exploreAlgorithm: PathPlanning = spooky.spookyConf.explorePathPlanner,
-                   miniBatch: Int = 500,
-                   checkpointInterval: Int =
-        spooky.spookyConf.exploreCheckpointInterval // set to Int.MaxValue to disable checkpointing,
+      on: Extractor[Any],
+      forkType: ForkType = ForkType.default,
+      ordinalField: Field = null,
+      sampler: Sampler[Any] = spooky.conf.forkSampler,
+      filter: DocFilter = Const.defaultDocumentFilter,
+      failSafe: Int = -1,
+      cooldown: Option[Duration] = None,
+      keyBy: Trace => Any = identity,
+      genPartitioner: GenPartitioner = spooky.conf.localityPartitioner,
+      depthField: Field = null,
+      range: Range = spooky.conf.exploreRange,
+      exploreAlgorithm: PathPlanning = spooky.conf.explorePathPlanner,
+      miniBatch: Int = 500,
+      checkpointInterval: Int = spooky.conf.exploreCheckpointInterval // set to Int.MaxValue to disable checkpointing,
 
   ): FetchedDataset = {
 

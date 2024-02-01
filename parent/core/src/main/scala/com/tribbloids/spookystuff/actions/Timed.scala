@@ -15,7 +15,7 @@ trait Timed extends Action {
 
   def timeout(agent: Agent): Timeout = {
     val base =
-      if (this._timeout == null) agent.spooky.spookyConf.remoteResourceTimeout
+      if (this._timeout == null) agent.spooky.conf.remoteResourceTimeout
       else this._timeout
 
     base

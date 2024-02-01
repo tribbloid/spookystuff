@@ -74,7 +74,7 @@ class FetchWgetAndSaveIT extends ITBaseSpec {
     assert(unionRows(1).docs.head.name === "b")
   }
 
-  override def numPages: Long = spooky.spookyConf.localityPartitioner match {
+  override def numPages: Long = spooky.conf.localityPartitioner match {
     //    case FetchOptimizers.WebCacheAware => 1
     case _ => 1
   }

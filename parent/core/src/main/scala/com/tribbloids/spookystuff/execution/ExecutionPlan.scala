@@ -112,7 +112,7 @@ abstract class ExecutionPlan(
 
   def scratchRDDPersist[T](
       rdd: RDD[T],
-      storageLevel: StorageLevel = ExecutionPlan.this.spooky.spookyConf.defaultStorageLevel
+      storageLevel: StorageLevel = ExecutionPlan.this.spooky.conf.defaultStorageLevel
   ): RDD[T] = scratchRDDs.persist(rdd, storageLevel)
 
   override protected def cleanImpl(): Unit = {

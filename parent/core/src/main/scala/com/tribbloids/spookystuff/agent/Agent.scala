@@ -53,7 +53,7 @@ class Agent(
         val result = plugin.driverFactory.dispatch(Agent.this)
         progress.ping()
 
-        spooky.getMetric(Core).driverDispatched.add(plugin.driverFactory.toString -> 1L)
+        spooky.apply(Core).metric.driverDispatched.add(plugin.driverFactory.toString -> 1L)
 
         result
       }
@@ -73,7 +73,7 @@ class Agent(
             v.release(Agent.this)
             cached.lookup remove p.pluginSystem
 
-            spooky.getMetric(Core).driverReleased.add(v.toString -> 1L)
+            spooky(Core).metric.driverReleased.add(v.toString -> 1L)
           }
         }
       }
