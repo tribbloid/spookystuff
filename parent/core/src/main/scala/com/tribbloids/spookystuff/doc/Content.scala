@@ -162,7 +162,7 @@ object Content {
       transcode: Option[Charset] = None
   ) extends Content {
 
-    @transient def mimeType: String = contentType.getMimeType
+    def mimeType: String = contentType.getMimeType
 
     @transient lazy val preferredCharset: Charset = transcode.getOrElse(
       blob.charSet

@@ -23,7 +23,7 @@ class WebDriverSuite extends SpookyBaseSpec with LocalPathDocsFixture {
 
     try {
 
-      getDefaultCtx
+      defaultCtx
 
       spooky(Web).confUpdate(
         _.copy(

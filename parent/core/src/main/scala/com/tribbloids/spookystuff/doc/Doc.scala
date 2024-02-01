@@ -222,7 +222,7 @@ case class Doc(
     )(spooky)
   }
 
-  def setMetadata(tuples: (String, Any)*): Doc = {
+  def withMetadata(tuples: (String, Any)*): Doc = {
 
     this.copy(
       metadata = this.metadata ++: ResourceMetadata.From.tuple(tuples: _*)

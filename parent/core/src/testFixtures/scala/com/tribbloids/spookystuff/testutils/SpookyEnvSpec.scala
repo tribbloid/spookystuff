@@ -7,13 +7,7 @@ trait SpookyEnvSpec extends SparkEnvSpec {
 
   var _ctxOverride: SpookyContext = _
 
-  def getDefaultCtx: SpookyContext = {
-    val sql = this.sql
-    val result = SpookyContext(sql, SpookyConf.default)
-//    _ctxOverride = result
-    result
-  }
-  final lazy val defaultCtx = getDefaultCtx
+  lazy val defaultCtx: SpookyContext = SpookyEnvSpec.defaultCtx
 
   final def spooky: SpookyContext = {
     Option(_ctxOverride)
@@ -43,4 +37,12 @@ trait SpookyEnvSpec extends SparkEnvSpec {
 //  }
 }
 
-object SpookyEnvSpec {}
+object SpookyEnvSpec {
+
+  lazy val defaultCtx: SpookyContext = {
+    val sql = TestHelper.TestSQL
+    val result = SpookyContext(sql, SpookyConf.default)
+    //    _ctxOverride = result
+    result
+  }
+}
