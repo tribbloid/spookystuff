@@ -3,12 +3,11 @@ package com.tribbloids.spookystuff.utils
 import scala.collection.immutable.NumericRange
 import scala.language.implicitConversions
 
-case class RangeArg(
+case class RangeMagnet(
     start: Long,
     last: Long
-//    delegate: NumericRange[Long]
 ) {
-//  override def _equalBy: Any = delegate
+  // much longer than ordinary scala range
 
   lazy val delegate: NumericRange.Inclusive[Long] = start to last
 
@@ -33,21 +32,23 @@ case class RangeArg(
   }
 }
 
-object RangeArg {
+object RangeMagnet {
 
-  implicit def fromRange(v: Range): RangeArg = {
+  implicit def fromRange(v: Range): RangeMagnet = {
     assert(v.step == 1, "Range with step != 1 is not supported")
-    RangeArg(v.start.toLong, v.last.toLong)
+    RangeMagnet(v.start.toLong, v.last.toLong)
   }
 
   implicit def fromAnyNumericRange[T](v: NumericRange[T])(
       implicit
       ev: T => Number
-  ): RangeArg = {
+  ): RangeMagnet = {
     assert(v.step.intValue() == 1, "Range with step != 1 is not supported")
     val end = ev(v.end).longValue()
     val last = if (v.isInclusive) end else end - 1L
-    RangeArg(v.start.longValue(), last.longValue())
+    RangeMagnet(v.start.longValue(), last.longValue())
   }
 
+  val zero: RangeMagnet = RangeMagnet(0L, 0L)
+  val maxLength: RangeMagnet = RangeMagnet(0L, Long.MaxValue)
 }

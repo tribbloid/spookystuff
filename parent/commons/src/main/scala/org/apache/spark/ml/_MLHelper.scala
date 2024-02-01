@@ -1,4 +1,4 @@
-package org.apache.spark.ml.dsl
+package org.apache.spark.ml
 
 import org.apache.spark.SparkContext
 import org.apache.spark.ml.param.Params
@@ -8,7 +8,7 @@ import org.json4s.{JObject, JValue}
 /**
   * Created by peng on 17/05/17.
   */
-object SparkHelper {
+object _MLHelper {
 
   //  def serviceUGI: UserGroupInformation = {
   //

@@ -1,6 +1,6 @@
 package com.tribbloids.spookystuff.row
 
-import ai.acyclic.prover.commons.EqualBy
+import ai.acyclic.prover.commons.same.EqualBy
 import com.tribbloids.spookystuff.QueryException
 import com.tribbloids.spookystuff.relay.{ProtoAPI, TreeIR}
 import com.tribbloids.spookystuff.row.Field.ConflictResolving

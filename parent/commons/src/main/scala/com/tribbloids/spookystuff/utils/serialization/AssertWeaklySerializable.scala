@@ -10,7 +10,7 @@ import scala.util.Try
 
 case class AssertWeaklySerializable[T <: Any: ClassTag](
     element: T,
-    serializers: Seq[Serializer] = SerializerOverride.Default.allSerializers,
+    serializers: Seq[Serializer] = SerializerEnv.Default.allSerializers,
     condition: (T, T) => Any = { (_: T, _: T) =>
       true
     }

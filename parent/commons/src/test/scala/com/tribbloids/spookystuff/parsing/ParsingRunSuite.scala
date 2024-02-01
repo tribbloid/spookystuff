@@ -3,7 +3,7 @@ package com.tribbloids.spookystuff.parsing
 import com.tribbloids.spookystuff.parsing.FSMParserDSL._
 import com.tribbloids.spookystuff.parsing.PhaseVec.{Depth, Eye, NoOp}
 import com.tribbloids.spookystuff.testutils.BaseSpec
-import com.tribbloids.spookystuff.utils.RangeArg
+import com.tribbloids.spookystuff.utils.RangeMagnet
 
 class ParsingRunSuite extends BaseSpec {
 
@@ -21,7 +21,7 @@ class ParsingRunSuite extends BaseSpec {
       val p = P_*('$').!- :~> FINISH
 
       val cache = p.initialFState.subRuleCache
-      assert(cache.map(_._1) == Seq[RangeArg](0L to Long.MaxValue))
+      assert(cache.map(_._1) == Seq[RangeMagnet](0L to Long.MaxValue))
 
       p.parse("abcd$efg")
         .ioMapToString
@@ -38,7 +38,7 @@ class ParsingRunSuite extends BaseSpec {
       val p = (a :~> bs) U (EOS_* :~> FINISH)
 
       val cache = bs.initialFState.subRuleCache
-      assert(cache.map(_._1) == Seq[RangeArg](0L to 0L, 1L to Long.MaxValue))
+      assert(cache.map(_._1) == Seq[RangeMagnet](0L to 0L, 1L to Long.MaxValue))
 
       p.parse("xyz<-")
         .ioMapToString

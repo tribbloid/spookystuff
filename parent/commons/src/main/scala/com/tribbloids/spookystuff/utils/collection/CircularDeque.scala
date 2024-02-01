@@ -1,7 +1,6 @@
-package com.tribbloids.spookystuff.utils
+package com.tribbloids.spookystuff.utils.collection
 
 import java.util.concurrent.LinkedBlockingDeque
-
 import scala.language.implicitConversions
 
 case class CircularDeque[T](size: Int = 10) {

@@ -2,7 +2,7 @@ package com.tribbloids.spookystuff.parsing
 
 import com.tribbloids.spookystuff.parsing.Pattern.Token
 import com.tribbloids.spookystuff.parsing.exception.{BacktrackableFailure, BacktrackableMixin, ParsingError}
-import com.tribbloids.spookystuff.utils.RangeArg
+import com.tribbloids.spookystuff.utils.RangeMagnet
 
 import scala.collection.mutable
 
@@ -23,7 +23,7 @@ case class BacktrackingManager(
       //      gotos: Seq[Transition]
   ) {
 
-    val subRuleCache: Seq[(RangeArg, Transitions)] = prevPhase._1.subRuleCache
+    val subRuleCache: Seq[(RangeMagnet, Transitions)] = prevPhase._1.subRuleCache
 
     def getEnd(length: Long): Long = start + length
 

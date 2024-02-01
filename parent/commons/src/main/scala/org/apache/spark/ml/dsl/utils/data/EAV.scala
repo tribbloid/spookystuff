@@ -1,6 +1,6 @@
 package org.apache.spark.ml.dsl.utils.data
 
-import ai.acyclic.prover.commons.EqualBy
+import ai.acyclic.prover.commons.same.EqualBy
 import com.tribbloids.spookystuff.relay.RootTagged
 import com.tribbloids.spookystuff.relay.xml.Xml
 import com.tribbloids.spookystuff.utils.{CommonUtils, TreeThrowable}

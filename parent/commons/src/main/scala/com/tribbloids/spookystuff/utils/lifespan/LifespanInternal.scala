@@ -1,6 +1,6 @@
 package com.tribbloids.spookystuff.utils.lifespan
 
-import ai.acyclic.prover.commons.EqualBy
+import ai.acyclic.prover.commons.same.EqualBy
 import com.tribbloids.spookystuff.utils.lifespan.Cleanable.{Batch, BatchID}
 import com.tribbloids.spookystuff.utils.serialization.BeforeAndAfterShipping
 

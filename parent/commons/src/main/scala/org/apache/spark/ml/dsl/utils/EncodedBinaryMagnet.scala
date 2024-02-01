@@ -1,7 +1,6 @@
 package org.apache.spark.ml.dsl.utils
 
-import ai.acyclic.prover.commons.EqualBy
-
+import ai.acyclic.prover.commons.same.EqualBy
 import java.security.Key
 import javax.crypto.spec.SecretKeySpec
 import javax.xml.bind.DatatypeConverter

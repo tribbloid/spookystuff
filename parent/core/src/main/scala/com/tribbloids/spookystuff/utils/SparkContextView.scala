@@ -5,7 +5,7 @@ import java.util.UUID
 import com.tribbloids.spookystuff.SpookyViewsConst
 import org.apache.spark.SparkContext
 import org.apache.spark.rdd.RDD
-import org.apache.spark.sql.utils.SparkHelper
+import org.apache.spark.sql._SQLHelper
 import org.slf4j.LoggerFactory
 
 import scala.collection.immutable
@@ -14,9 +14,9 @@ import scala.concurrent.{Await, ExecutionContext, Future}
 import scala.reflect.ClassTag
 import scala.util.Try
 
-case class SparkContextView(sc: SparkContext) {
+case class SparkContextView(ctx: SparkContext) {
 
-  def scLocalProperties: SparkLocalProperties = SparkLocalProperties(sc)
+  def localJob: LocalJobSnapshot = LocalJobSnapshot(ctx)
 
   import SpookyViews._
 
@@ -28,7 +28,7 @@ case class SparkContextView(sc: SparkContext) {
       delimiter: String = " \u2023 "
   )(fn: => T): T = {
 
-    val old = scLocalProperties
+    val old = localJob
 
     val _descriptionParts =
       if (descriptionBreadcrumb)
@@ -42,14 +42,14 @@ case class SparkContextView(sc: SparkContext) {
 
     val _groupID = Seq(old.groupID, groupID).flatten(Option(_)).lastOption.orNull
 
-    sc.setJobGroup(_groupID, _description)
+    ctx.setJobGroup(_groupID, _description)
 
     val result =
       try {
         fn
       } finally {
 
-        sc.setJobGroup(old.groupID, old.description)
+        ctx.setJobGroup(old.groupID, old.description)
       }
 
     result
@@ -66,9 +66,9 @@ case class SparkContextView(sc: SparkContext) {
       parallelismOpt: Option[Int] = None,
       mustHaveNonEmptyPartitions: Boolean = false
   ): RDD[(Int, T)] = {
-    val size = parallelismOpt.getOrElse(sc.defaultParallelism)
+    val size = parallelismOpt.getOrElse(ctx.defaultParallelism)
     val kvs = seq.zipWithIndex.map(_.swap)
-    val raw: RDD[(Int, T)] = sc.parallelize(kvs, size)
+    val raw: RDD[(Int, T)] = ctx.parallelize(kvs, size)
     val sorted = raw.sortByKey(ascending = true, numPartitions = size)
     //        .partitionBy(new HashPartitioner(self.defaultParallelism)) //TODO: should use RangePartitioner?
     //        .persist()
@@ -105,7 +105,7 @@ case class SparkContextView(sc: SparkContext) {
       debuggingInfo: Option[String] = None
   ): RDD[(Int, UUID)] = {
 
-    val n = parallelismOpt.getOrElse(sc.defaultParallelism)
+    val n = parallelismOpt.getOrElse(ctx.defaultParallelism)
     val uuids: immutable.Seq[UUID] = (1 to n).map(_ => UUID.randomUUID())
     debuggingInfo.foreach { info =>
       LoggerFactory
@@ -131,7 +131,7 @@ case class SparkContextView(sc: SparkContext) {
         None
       }
 
-    val n = sc.defaultParallelism * SpookyViewsConst.REPLICATING_FACTOR
+    val n = ctx.defaultParallelism * SpookyViewsConst.REPLICATING_FACTOR
     val onExecutors = uuidSeed(Some(n))
       .mapOncePerWorker(f)
       .collect()
@@ -144,7 +144,7 @@ case class SparkContextView(sc: SparkContext) {
 
   def allTaskLocationStrs: Seq[String] = {
     runEverywhere(alsoOnDriver = false) { _ =>
-      SparkHelper.taskLocationStrOpt.get
+      _SQLHelper.taskLocationStrOpt.get
     }
   }
 
@@ -172,6 +172,9 @@ case class SparkContextView(sc: SparkContext) {
   //      }
   //        .collect()
   //    }
+
+  val groupID: String = ctx.getLocalProperty(SpookyViewsConst.SPARK_JOB_GROUP_ID)
+  val description: String = ctx.getLocalProperty(SpookyViewsConst.SPARK_JOB_DESCRIPTION)
 }
 
 object SparkContextView extends SparkContextView(SparkContext.getOrCreate())

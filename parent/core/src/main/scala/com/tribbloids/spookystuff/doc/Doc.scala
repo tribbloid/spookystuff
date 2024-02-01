@@ -1,6 +1,6 @@
 package com.tribbloids.spookystuff.doc
 
-import ai.acyclic.prover.commons.EqualBy
+import ai.acyclic.prover.commons.same.EqualBy
 import com.tribbloids.spookystuff._
 import com.tribbloids.spookystuff.caching.DocCacheLevel
 import com.tribbloids.spookystuff.doc.Observation.DocUID

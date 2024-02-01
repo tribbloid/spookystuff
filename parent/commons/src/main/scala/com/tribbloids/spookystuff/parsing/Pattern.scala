@@ -1,11 +1,11 @@
 package com.tribbloids.spookystuff.parsing
 
 import com.tribbloids.spookystuff.parsing.Pattern.Token
-import com.tribbloids.spookystuff.utils.RangeArg
+import com.tribbloids.spookystuff.utils.RangeMagnet
 
 case class Pattern(
     token: Token,
-    range: RangeArg = Pattern.RangeArgs.next
+    range: RangeMagnet = RangeMagnet.zero
 ) {
 
   override def toString: String = s"'$token' $range"
@@ -20,7 +20,7 @@ case class Pattern(
     def outer: Pattern = Pattern.this
 
     def token: Token = outer.token
-    def range: RangeArg = outer.range
+    def range: RangeMagnet = outer.range
 
     override def toString: String = outer.toString
 
@@ -65,9 +65,4 @@ object Pattern {
     new String(chars.toArray)
   }
 
-  object RangeArgs {
-
-    val next: RangeArg = RangeArg(0L, 0L)
-    val maxLength: RangeArg = RangeArg(0L, Long.MaxValue)
-  }
 }

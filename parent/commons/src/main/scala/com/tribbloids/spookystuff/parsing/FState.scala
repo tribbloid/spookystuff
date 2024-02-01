@@ -1,7 +1,7 @@
 package com.tribbloids.spookystuff.parsing
 
 import com.tribbloids.spookystuff.graph.Module
-import com.tribbloids.spookystuff.utils.RangeArg
+import com.tribbloids.spookystuff.utils.RangeMagnet
 
 object FState {
 
@@ -16,7 +16,7 @@ object FState {
 
   case object FINISH extends Type
 
-  def isEnclosing(supr: RangeArg, sub: RangeArg): Boolean = {
+  def isEnclosing(supr: RangeMagnet, sub: RangeMagnet): Boolean = {
     supr.start <= sub.start &&
     supr.last >= sub.last
   }
@@ -51,10 +51,10 @@ case class FState(
     proto.toList.distinct.sortBy(_ - 1)
   }
 
-  lazy val subRuleCache: Seq[(RangeArg, Transitions)] = {
+  lazy val subRuleCache: Seq[(RangeMagnet, Transitions)] = {
 
     for (i <- 1 until markers.size) yield {
-      val range: RangeArg = markers(i - 1) to (markers(i) - 1)
+      val range: RangeMagnet = markers(i - 1) to (markers(i) - 1)
 
       val inRange = transitions.filter(v => FState.isEnclosing(v._1.range, range))
       range -> Transitions(inRange)

@@ -1,11 +1,10 @@
 package com.tribbloids.spookystuff.utils
 
 import com.tribbloids.spookystuff.execution.ScratchRDDs
-import com.tribbloids.spookystuff.utils.SpookyViews.doNothingFn
 import com.tribbloids.spookystuff.utils.locality.PartitionIdPassthrough
 import org.apache.spark.rdd.RDD
 import org.apache.spark.rdd.spookystuff.NarrowDispersedRDD
-import org.apache.spark.sql.DataFrame
+import org.apache.spark.sql.{_SQLHelper, DataFrame}
 import org.apache.spark.storage.{RDDInfo, StorageLevel}
 import org.apache.spark.{HashPartitioner, SparkContext, TaskContext}
 
@@ -18,13 +17,15 @@ import scala.util.Random
 /**
   * Created by peng on 11/7/14. implicit conversions in this package are used for development only
   */
-abstract class SpookyViews extends SpookyViews_Imp0 {
+object SpookyViews extends SpookyViews_Imp0 {
 
   import com.tribbloids.spookystuff.SpookyViewsConst._
 
   implicit def sparkContextView(self: SparkContext): SparkContextView = SparkContextView(self)
 
-  implicit class RDDView[T](val self: RDD[T]) extends RDDViewBase[T] {
+  implicit class RDDView[T](val self: RDD[T]) {
+
+    implicit lazy val rddClassTag: ClassTag[T] = _SQLHelper.rddClassTag(self)
 
     def sc: SparkContext = self.sparkContext
 
@@ -70,54 +71,7 @@ abstract class SpookyViews extends SpookyViews_Imp0 {
       }
       sys.error("impossible")
 
-      //      self.mapPartitions{
-      //        itr =>
-      //          var intermediateResult: Iterator[Either[T, IterableOnce[U]]] = itr.map(v => Left(v))
-      //
-      //          var unfinished = true
-      //          while (unfinished) {
-      //
-      //            var counter = 0
-      //            val updated: Iterator[Either[T, IterableOnce[U]]] = intermediateResult.map {
-      //              case Left(src) =>
-      //                f(src) match {
-      //                  case Some(res) => Right(res)
-      //                  case None =>
-      //                    counter = counter + 1
-      //                    Left(src)
-      //                }
-      //              case Right(res) => Right(res)
-      //            }
-      //            intermediateResult = updated
-      //
-      //            if (counter == 0) unfinished = false
-      //          }
-      //
-      //          intermediateResult.flatMap(_.right.get)
-      //      }
     }
-
-    //    def persistDuring[T](newLevel: StorageLevel, blocking: Boolean = true)(fn: => T): T =
-    //      if (self.getStorageLevel == StorageLevel.NONE){
-    //        self.persist(newLevel)
-    //        val result = fn
-    //        self.unpersist(blocking)
-    //        result
-    //      }
-    //      else {
-    //        val result = fn
-    //        self.unpersist(blocking)
-    //        result
-    //      }
-
-    //  def checkpointNow(): Unit = { TODO: is it useless now?
-    //    persistDuring(StorageLevel.MEMORY_ONLY) {
-    //      self.checkpoint()
-    //      self.foreach(_ =>)
-    //      self
-    //    }
-    //    Unit
-    //  }
 
     def injectPassthroughPartitioner: RDD[(Int, T)] = {
 
@@ -149,7 +103,7 @@ abstract class SpookyViews extends SpookyViews_Imp0 {
 
     def forceExecute(): self.type = {
 
-      self.foreach(doNothingFn)
+      self.foreach(_ => ())
       self
     }
 
@@ -352,46 +306,5 @@ abstract class SpookyViews extends SpookyViews_Imp0 {
 
       filtered
     }
-  }
-
-  //  implicit class IterableOnceView[A, Coll[A] <: IterableOnce[A], Raw](self: Raw)(implicit cast: Raw => Coll[A]) {
-  //
-  //    def filterByType[B: ClassTag]: Coll[B] = {
-  //      val result = cast(self).flatMap{
-  //        case tt: B => Some(tt)
-  //        case _ => None
-  //      }
-  //      result.to[Coll[B]]
-  //    }
-  //  }
-
-  //  implicit class ArrayView[A](self: Array[A]) {
-  //
-  //    def filterByType[B <: A: ClassTag]: Array[B] = {
-  //      val result: Array[B] = self.flatMap{
-  //        case tt: B => Some(tt)
-  //        case _ => None
-  //      }
-  //      result
-  //    }
-  //  }
-
-  //  implicit class TraversableLikeView[+A, +Repr, Raw](self: Raw)(implicit cast: Raw => TraversableLike[A,Repr]) {
-  //
-  //    def filterByType[B] = {
-  //      val v = cast(self)
-  //      val result = v.flatMap{
-  //        case tt: B => Some(tt)
-  //        case _ => None
-  //      }
-  //      result
-  //    }
-  //  }
-}
-
-object SpookyViews extends SpookyViews {
-
-  lazy val doNothingFn: Any => Unit = { _: Any =>
-    {}
   }
 }

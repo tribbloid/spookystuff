@@ -18,7 +18,7 @@ import org.apache.spark.rdd.RDD
 import org.apache.spark.sql.catalyst.expressions.GenericInternalRow
 import org.apache.spark.sql.catalyst.{CatalystTypeConverters, InternalRow}
 import org.apache.spark.sql.types.DataType
-import org.apache.spark.sql.utils.SparkHelper
+import org.apache.spark.sql._SQLHelper
 import org.apache.spark.sql.{DataFrame, Dataset}
 import org.apache.spark.storage.StorageLevel
 
@@ -157,7 +157,7 @@ case class FetchedDataset(
 
       val rowRDD = this.toInternalRowRDD(sort, effectiveSchema)
 
-      val result = SparkHelper.internalCreateDF(spooky.sqlContext, rowRDD, effectiveSchema.structType)
+      val result = _SQLHelper.internalCreateDF(spooky.sqlContext, rowRDD, effectiveSchema.structType)
 
       result
     }

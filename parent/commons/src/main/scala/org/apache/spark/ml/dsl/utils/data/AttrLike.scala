@@ -1,6 +1,6 @@
 package org.apache.spark.ml.dsl.utils.data
 
-import ai.acyclic.prover.commons.EqualBy
+import ai.acyclic.prover.commons.same.EqualBy
 import com.tribbloids.spookystuff.utils.TreeThrowable
 import org.apache.spark.ml.dsl.utils.?
 

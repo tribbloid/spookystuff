@@ -1,6 +1,7 @@
 package com.tribbloids.spookystuff.utils
 
 import com.tribbloids.spookystuff.testutils.BaseSpec
+import com.tribbloids.spookystuff.utils.collection.BacktrackingIterator
 
 import scala.util.Random
 

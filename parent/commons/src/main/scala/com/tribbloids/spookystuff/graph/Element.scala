@@ -1,6 +1,6 @@
 package com.tribbloids.spookystuff.graph
 
-import ai.acyclic.prover.commons.EqualBy
+import ai.acyclic.prover.commons.same.EqualBy
 import com.tribbloids.spookystuff.graph.IDAlgebra.Rotator
 import com.tribbloids.spookystuff.graph.Module.{Heads, Tails}
 import com.tribbloids.spookystuff.utils.CommonTypes

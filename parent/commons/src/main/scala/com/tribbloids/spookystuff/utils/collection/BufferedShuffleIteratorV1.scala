@@ -1,4 +1,4 @@
-package com.tribbloids.spookystuff.utils
+package com.tribbloids.spookystuff.utils.collection
 
 import ai.acyclic.prover.commons.util.Caching
 

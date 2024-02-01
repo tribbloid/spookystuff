@@ -1,7 +1,7 @@
 package com.tribbloids.spookystuff.utils.lifespan
 
-import ai.acyclic.prover.commons.EqualBy
-import org.apache.spark.sql.utils.SparkHelper
+import ai.acyclic.prover.commons.same.EqualBy
+import org.apache.spark.sql._SQLHelper
 import org.apache.spark.storage.BlockManagerId
 import org.apache.spark.{SparkEnv, TaskContext}
 
@@ -54,7 +54,7 @@ case class LifespanContext(
     }
     .getOrElse("")
 
-  val taskLocationStr: Option[String] = SparkHelper.taskLocationStrOpt
+  val taskLocationStr: Option[String] = _SQLHelper.taskLocationStrOpt
 
   override def toString: String =
     if (taskStr.isEmpty || threadStr.contains(taskStr)) {

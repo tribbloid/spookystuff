@@ -1,7 +1,7 @@
 package com.tribbloids.spookystuff.relay.io
 
 import com.tribbloids.spookystuff.relay.{IR, Relay}
-import org.apache.spark.ml.dsl.SparkHelper
+import org.apache.spark.ml._MLHelper
 import org.apache.spark.ml.param.{ParamMap, Params}
 import org.apache.spark.ml.util._
 import org.json4s.JObject
@@ -12,21 +12,6 @@ import org.json4s.JObject
 object MLReadWriteSupports {
 
   class MsgReadable[Obj: Relay]() extends MLReadable[Obj] {
-
-    //    object FlowReader extends MLReader[Flow] {
-    //
-    //      /** Checked against metadata when loading model */
-    //      private val className = classOf[Flow].getName
-    //
-    //      override def load(path: String): Flow = {
-    //        val (
-    //          uid,
-    //          stages
-    //          ) = SharedReadWrite.load(className, this.sc, path) //TODO: not sure if it can be reused
-    //
-    //        null
-    //      }
-    //    }
 
     override def read: MLReader[Obj] = {
 
@@ -73,7 +58,7 @@ object MLReadWriteSupports {
       val instance = new _Params(Identifiable.randomUID(message.ir.body.getClass.getSimpleName))
 
       val jV = JObject("metadata" -> message.toJValue)
-      SparkHelper._DefaultParamsWriter.saveMetadata(instance, path, sc, Some(jV), None)
+      _MLHelper._DefaultParamsWriter.saveMetadata(instance, path, sc, Some(jV), None)
 
       // Save stages
       //    val stagesDir = new Path(path, "stages").toString

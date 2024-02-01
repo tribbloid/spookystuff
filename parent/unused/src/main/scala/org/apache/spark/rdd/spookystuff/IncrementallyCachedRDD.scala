@@ -1,6 +1,6 @@
 package org.apache.spark.rdd.spookystuff
 
-import ai.acyclic.prover.commons.EqualBy
+import ai.acyclic.prover.commons.same.EqualBy
 import ai.acyclic.prover.commons.util.Caching
 import ai.acyclic.prover.commons.util.Caching.ConcurrentMap
 import com.tribbloids.spookystuff.unused.ExternalAppendOnlyArray
@@ -15,7 +15,7 @@ import org.apache.spark.ml.dsl.utils.LazyVar
 import org.apache.spark.rdd.RDD
 import org.apache.spark.scheduler.TaskLocation
 import org.apache.spark.serializer.Serializer
-import org.apache.spark.sql.utils.SparkHelper
+import org.apache.spark.sql._SQLHelper
 import org.apache.spark.storage.StorageLevel
 import org.apache.spark.util.AccumulatorV2
 import org.apache.spark.{OneToOneDependency, Partition, SparkEnv, TaskContext}
@@ -44,7 +44,7 @@ case class IncrementallyCachedRDD[T: ClassTag](
 
   @transient var prevWithLocations: RDD[T] = prev.mapPartitions { itr =>
     val pid = TaskContext.get.partitionId
-    val loc = SparkHelper.taskLocationOpt.get
+    val loc = _SQLHelper.taskLocationOpt.get
 
     cacheLocAccum.add(pid -> Seq(loc))
     itr
@@ -373,7 +373,7 @@ case class IncrementallyCachedRDD[T: ClassTag](
 
       this
         .mapOncePerWorker { _ =>
-          logInfo(info + s" - executor ${SparkHelper.taskLocationStrOpt.getOrElse("??")}")
+          logInfo(info + s" - executor ${_SQLHelper.taskLocationStrOpt.getOrElse("??")}")
           val result = depCache.cleanUp()
 
           result

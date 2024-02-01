@@ -1,17 +1,17 @@
-package com.tribbloids.spookystuff.utils
+package com.tribbloids.spookystuff.utils.collection
 
-import com.tribbloids.spookystuff.utils.MultiMapView.Self
+import com.tribbloids.spookystuff.utils.collection.MultiMapOps.Self
 
 import scala.collection.mutable
 import scala.language.implicitConversions
 
-trait MultiMapView[K, +V] {
+trait MultiMapOps[K, +V] {
 
   def self: Self[K, V]
 
-  protected def mergeProto[V2 >: V](other: MultiMapView[K, V2]): MultiMapView.Mutable[K, V2] = {
+  protected def mergeProto[V2 >: V](other: MultiMapOps[K, V2]): MultiMapOps.Mutable[K, V2] = {
 
-    val buffer: MultiMapView.Mutable[K, V2] = mutable.HashMap.empty[K, Seq[V2]]
+    val buffer: MultiMapOps.Mutable[K, V2] = mutable.HashMap.empty[K, Seq[V2]]
 
     val operands: Seq[collection.Map[K, Seq[V2]]] = Seq(this.self, other.self)
 
@@ -26,32 +26,32 @@ trait MultiMapView[K, +V] {
     buffer
   }
 
-  def merge[V2 >: V](other: MultiMapView[K, V2]): MultiMapView.Mutable[K, V2] = {
+  def merge[V2 >: V](other: MultiMapOps[K, V2]): MultiMapOps.Mutable[K, V2] = {
 
     val buffer = mergeProto(other)
     buffer
   }
 
-  def +:+[V2 >: V](other: MultiMapView[K, V2]): MultiMapView.Mutable[K, V2] = merge(other)
+  def +:+[V2 >: V](other: MultiMapOps[K, V2]): MultiMapOps.Mutable[K, V2] = merge(other)
 }
 
 /**
   * not thread safe
   */
-object MultiMapView {
+object MultiMapOps {
 
   type Self[K, +V] = collection.Map[K, Seq[V]]
   type MSelf[K, V] = mutable.Map[K, Seq[V]]
 
   implicit def fromSelf[K, V](self: Self[K, V]): Immutable[K, V] = new Immutable(self)
-  implicit def toSelf[K, V](v: MultiMapView[K, V]): Self[K, V] = v.self
+  implicit def toSelf[K, V](v: MultiMapOps[K, V]): Self[K, V] = v.self
 
   implicit def fromMSelf[K, V](self: MSelf[K, V]): Mutable[K, V] = new Mutable(self)
   implicit def toMSelf[K, V](v: Mutable[K, V]): MSelf[K, V] = v.self
 
-  class Immutable[K, V](override val self: Self[K, V]) extends MultiMapView[K, V] {}
+  class Immutable[K, V](override val self: Self[K, V]) extends MultiMapOps[K, V] {}
 
-  class Mutable[K, V](override val self: MSelf[K, V]) extends Immutable[K, V](self) with MultiMapView[K, V] {
+  class Mutable[K, V](override val self: MSelf[K, V]) extends Immutable[K, V](self) with MultiMapOps[K, V] {
 
     def put1(k: K, v: V): Unit = {
 

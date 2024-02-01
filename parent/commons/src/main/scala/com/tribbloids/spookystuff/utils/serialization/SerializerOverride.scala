@@ -1,9 +1,9 @@
 package com.tribbloids.spookystuff.utils.serialization
 
-import ai.acyclic.prover.commons.EqualBy
+import ai.acyclic.prover.commons.same.EqualBy
 import org.apache.hadoop.io.Writable
 import org.apache.spark.serializer.SerializerInstance
-import org.apache.spark.{SerializableWritable, SparkConf}
+import org.apache.spark.SerializableWritable
 
 import java.io
 import java.nio.ByteBuffer
@@ -11,8 +11,6 @@ import scala.language.implicitConversions
 import scala.reflect.ClassTag
 
 object SerializerOverride {
-
-  object Default extends OfSparkConf(new SparkConf())
 
   implicit def box[T: ClassTag](v: T): SerializerOverride[T] = SerializerOverride(v)
 

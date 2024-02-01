@@ -1,7 +1,7 @@
 package org.apache.spark.ml.dsl.utils
 
 import com.tribbloids.spookystuff.testutils.BaseSpec
-import com.tribbloids.spookystuff.utils.MultiMapView
+import com.tribbloids.spookystuff.utils.collection.MultiMapOps
 
 import scala.collection.mutable.ArrayBuffer
 import scala.reflect.ClassTag
@@ -11,8 +11,8 @@ trait PairwiseConversionMixin extends BaseSpec {
   import PairwiseConversionMixin._
 
   val registryKeys: ArrayBuffer[String] = ArrayBuffer.empty[String]
-  val registry: MultiMapView.Mutable[String, () => Unit] =
-    MultiMapView.Mutable.empty
+  val registry: MultiMapOps.Mutable[String, () => Unit] =
+    MultiMapOps.Mutable.empty
 
   trait PairwiseCases extends Serializable {
 

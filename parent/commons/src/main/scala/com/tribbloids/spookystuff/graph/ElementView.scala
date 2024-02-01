@@ -1,6 +1,6 @@
 package com.tribbloids.spookystuff.graph
 
-import ai.acyclic.prover.commons.EqualBy
+import ai.acyclic.prover.commons.same.EqualBy
 import com.tribbloids.spookystuff.graph.Layout.Facet
 
 import scala.collection.mutable.ArrayBuffer

@@ -47,7 +47,7 @@ sealed trait Level1 extends Level2 {
   implicit def symbol2GetUnstructured(symbol: Symbol): UnstructuredExView =
     GetUnstructuredExpr(symbol.name)
 
-  implicit class StrContextHelper(val strC: StringContext) extends Serializable {
+  implicit class StrContextOps(val strC: StringContext) extends Serializable {
 
     def x(parts: Col[String]*): Interpolate = Interpolate(strC.parts, parts.map(_.ex))
 

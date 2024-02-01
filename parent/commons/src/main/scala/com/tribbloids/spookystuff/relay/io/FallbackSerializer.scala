@@ -1,6 +1,6 @@
 package com.tribbloids.spookystuff.relay.io
 
-import com.tribbloids.spookystuff.utils.serialization.SerializerOverride
+import com.tribbloids.spookystuff.utils.serialization.SerializerEnv
 import org.apache.spark.ml.dsl.utils.EncodedBinaryMagnet.Base64
 import org.json4s._
 import org.slf4j.LoggerFactory
@@ -80,4 +80,4 @@ abstract class FallbackSerializer(
   }
 }
 
-object FallbackSerializer extends FallbackSerializer(SerializerOverride.Default.javaSerializer)
+object FallbackSerializer extends FallbackSerializer(SerializerEnv.Default.javaSerializer)

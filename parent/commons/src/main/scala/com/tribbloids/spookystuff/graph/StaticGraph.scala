@@ -1,7 +1,8 @@
 package com.tribbloids.spookystuff.graph
 
 import com.tribbloids.spookystuff.graph.Element.Edge
-import com.tribbloids.spookystuff.utils.{CommonTypes, MultiMapView}
+import com.tribbloids.spookystuff.utils.CommonTypes
+import com.tribbloids.spookystuff.utils.collection.MultiMapOps
 
 import scala.collection.mutable
 import scala.reflect.ClassTag
@@ -12,7 +13,7 @@ trait StaticGraph[T <: Domain] extends Module[T] {
   def connect_!(edge: _Edge): Unit
 
   def getLinkedNodes(ids: Seq[ID]): Map[ID, _NodeTriplet]
-  def getEdges(ids: Seq[(ID, ID)]): MultiMapView.Immutable[(ID, ID), _Edge]
+  def getEdges(ids: Seq[(ID, ID)]): MultiMapOps.Immutable[(ID, ID), _Edge]
 }
 
 object StaticGraph {

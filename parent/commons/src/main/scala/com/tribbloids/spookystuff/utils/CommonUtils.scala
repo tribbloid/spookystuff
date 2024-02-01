@@ -4,8 +4,6 @@ import ai.acyclic.prover.commons.debug.Debug.CallStackRef
 import com.tribbloids.spookystuff.utils.AwaitWithHeartbeat.Heartbeat
 
 import java.io.{File, PrintWriter, StringWriter}
-import org.apache.spark.SparkEnv
-import org.apache.spark.storage.BlockManagerId
 import org.slf4j.LoggerFactory
 
 import scala.collection.immutable.ListMap
@@ -13,7 +11,7 @@ import scala.concurrent.TimeoutException
 import scala.reflect.ClassTag
 import scala.util.{Failure, Random, Success, Try}
 
-abstract class CommonUtils {
+object CommonUtils {
 
   import scala.concurrent.duration._
 
@@ -58,7 +56,7 @@ abstract class CommonUtils {
   protected def _callerShowStr: String = {
     val result = CallStackRef
       .below(
-        condition = _.isUnderClasses(classOf[CommonUtils])
+        condition = _.isUnderClasses(classOf[CommonUtils.type])
       )
       .showStr
     result
@@ -112,10 +110,6 @@ abstract class CommonUtils {
     Random.nextString(len)
   }
 
-  def blockManagerIDOpt: Option[BlockManagerId] = {
-    Option(SparkEnv.get).map(v => v.blockManager.blockManagerId)
-  }
-
   def toStrNullSafe(v: Any): String = "" + v
 
   def tryParseBoolean(str: => String): Try[Boolean] = {
@@ -165,5 +159,3 @@ abstract class CommonUtils {
     }
   }
 }
-
-object CommonUtils extends CommonUtils

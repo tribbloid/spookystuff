@@ -2,6 +2,7 @@ package com.tribbloids.spookystuff.parsing
 
 import com.tribbloids.spookystuff.graph.Module
 import com.tribbloids.spookystuff.parsing.FSMParserGraph.Layout._
+import com.tribbloids.spookystuff.utils.RangeMagnet
 
 import scala.language.implicitConversions
 
@@ -189,11 +190,11 @@ object FSMParserDSL extends DSL {
     implicit def toRule[T](v: P): Pattern#Rule[String] = v.!!.rule
   }
 
-  def P(v: Char): P = P(Pattern(Pattern.CharToken(v), Pattern.RangeArgs.next))
-  def P_*(v: Char): P = P(Pattern(Pattern.CharToken(v), Pattern.RangeArgs.maxLength))
+  def P(v: Char): P = P(Pattern(Pattern.CharToken(v), RangeMagnet.zero))
+  def P_*(v: Char): P = P(Pattern(Pattern.CharToken(v), RangeMagnet.maxLength))
 
-  def EOS: P = P(Pattern(Pattern.EndOfStream, Pattern.RangeArgs.next))
-  def EOS_* : P = P(Pattern(Pattern.EndOfStream, Pattern.RangeArgs.maxLength))
+  def EOS: P = P(Pattern(Pattern.EndOfStream, RangeMagnet.zero))
+  def EOS_* : P = P(Pattern(Pattern.EndOfStream, RangeMagnet.maxLength))
 
   def ESC(v: Char): Parser[Nothing]#Loop = {
     val p: Parser[Nothing] = P_*(v).--.% { _ =>
