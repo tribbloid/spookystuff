@@ -29,6 +29,7 @@ object Dir extends PluginSystem {
       val _localRoot =
         Option(localRoot).getOrElse(ConfUtils.getOrDefault("spooky.dirs.root", defaultConf.localRoot))
 
+      // TODO: the following boilerplates can be delegated to pureconfig
       val result = Conf(
         root = _root,
         localRoot = _localRoot,
