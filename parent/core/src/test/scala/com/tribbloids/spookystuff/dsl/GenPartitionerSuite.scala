@@ -1,5 +1,6 @@
 package com.tribbloids.spookystuff.dsl
 
+import ai.acyclic.prover.commons.function.Impl
 import com.tribbloids.spookystuff.testutils.SpookyBaseSpec
 import org.apache.spark.HashPartitioner
 import org.apache.spark.rdd.RDD
@@ -17,7 +18,9 @@ class GenPartitionerSuite extends SpookyBaseSpec {
     val numPartitions = Random.nextInt(80) + 9
 
     val gp = GenPartitioners
-      .DocCacheAware(_ => new HashPartitioner(numPartitions))
+      .DocCacheAware(Impl { _ =>
+        new HashPartitioner(numPartitions)
+      })
       .getInstance[Int](defaultSchema)
     val beaconOpt = gp.createBeaconRDD(sc.emptyRDD[Int])
     //    val beacon = sc.makeRDD(1 to 1000, 1000).map(v => v -> v*v)

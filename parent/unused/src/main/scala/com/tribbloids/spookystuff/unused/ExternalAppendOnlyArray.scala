@@ -1,10 +1,11 @@
 package com.tribbloids.spookystuff.unused
 
+import ai.acyclic.prover.commons.spark.Envs
 import ai.acyclic.prover.commons.util.Caching
 import com.tribbloids.spookystuff.utils.lifespan.Cleanable.Lifespan
 import com.tribbloids.spookystuff.utils.lifespan.{LocalCleanable, ThreadLocal}
 import com.tribbloids.spookystuff.utils.serialization.NOTSerializable
-import com.tribbloids.spookystuff.utils.{CommonConst, CommonUtils}
+import com.tribbloids.spookystuff.utils.CommonUtils
 import org.apache.spark.rdd.spookystuff.{ConsumedIterator, FallbackIterator, FastForwardingIterator}
 import org.apache.spark.serializer
 import org.apache.spark.serializer.SerializerInstance
@@ -335,7 +336,7 @@ object ExternalAppendOnlyArray {
   val INCREMENT_LARGE: Int = 65536
 
   val rootPath: String = CommonUtils.\\\(
-    CommonConst.ROOT_TEMP_DIR,
+    Envs.ROOT_TEMP_DIR,
     classOf[ExternalAppendOnlyArray[_]].getSimpleName
   )
 

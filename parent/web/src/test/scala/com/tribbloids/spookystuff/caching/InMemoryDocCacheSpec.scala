@@ -12,7 +12,7 @@ import scala.concurrent.duration._
 /**
   * Created by peng on 10/17/14.
   */
-class TestInMemoryDocCache extends SpookyBaseSpec with LocalPathDocsFixture {
+class InMemoryDocCacheSpec extends SpookyBaseSpec with LocalPathDocsFixture {
 
   lazy val cache: AbstractDocCache = InMemoryDocCache
 
@@ -30,77 +30,105 @@ class TestInMemoryDocCache extends SpookyBaseSpec with LocalPathDocsFixture {
   lazy val shortLifeSpan: FiniteDuration = 15.seconds
 
   it("cache and restore") {
-    val visitPage = this.visitPage
+    val doc = this.visitPage
 
     spooky(Core).confUpdate(_.copy(cachedDocsLifeSpan = shortLifeSpan))
 
-    assert(visitPage.head.uid === DocUID(Visit(HTML_URL) :: Snapshot().as('U) :: Nil, Snapshot())())
+    assert(doc.head.uid === DocUID(Visit(HTML_URL) :: Snapshot().as('U) :: Nil, Snapshot())())
 
-    cache.put(visit, visitPage, spooky)
+    cache.put(visit, doc, spooky)
 
-    val page2 = cache.get(visitPage.head.uid.backtrace, spooky).get.map(_.asInstanceOf[Doc])
+    val doc2 = cache.get(doc.head.uid.backtrace, spooky).get.map(_.asInstanceOf[Doc])
 
-    assert(page2.length === 1)
-    assert(page2.head.samenessDelegatedTo === visitPage.head.samenessDelegatedTo)
-    assert(visitPage.head.raw === page2.head.raw)
-    assert(visitPage.head === page2.head)
+    assert(doc2.length === 1)
+
+    {
+      val docs = Seq(doc, doc2)
+      docs.map(_.head.samenessDelegatedTo.toString).shouldBeIdentical()
+      docs.map(_.head.content.contentStr).shouldBeIdentical()
+      docs.map(_.head.code.toString).shouldBeIdentical()
+    }
+
+    assert(doc.head === doc2.head)
   }
 
   it("cache visit and restore with different name") {
-    val visitPage = this.visitPage
+    val doc = this.visitPage
 
     spooky(Core).confUpdate(_.copy(cachedDocsLifeSpan = shortLifeSpan))
 
-    cache.put(visit, visitPage, spooky)
+    cache.put(visit, doc, spooky)
 
     val newTrace = Visit(HTML_URL) +> Snapshot().as('new)
 
     Thread.sleep(1000)
-    val page2 = cache.get(newTrace, spooky).get.map(_.asInstanceOf[Doc])
+    val doc2 = cache.get(newTrace, spooky).get.map(_.asInstanceOf[Doc])
 
-    assert(page2.size === 1)
-    assert(page2.head.samenessDelegatedTo === visitPage.head.samenessDelegatedTo)
-    assert(page2.head.code === page2.head.code)
-    assert(page2.head.name === "new")
+    assert(doc2.size === 1)
+
+    {
+      val docs = Seq(doc, doc2)
+      docs.map(_.head.samenessDelegatedTo.toString).shouldBeIdentical()
+      docs.map(_.head.content.contentStr).shouldBeIdentical()
+      docs.map(_.head.code.toString).shouldBeIdentical()
+    }
+
+    assert(doc2.head.name === "new")
 
     Thread.sleep(shortLifeSpan.toMillis)
 
-    val page3 = cache.get(visitPage.head.uid.backtrace, spooky).orNull
-    assert(page3 === null)
+    val doc3 = cache.get(doc.head.uid.backtrace, spooky).orNull
+    assert(doc3 === null)
 
     spooky(Core).confUpdate(_.copy(cachedDocsLifeSpan = 30.days))
 
-    assert(page2.size === 1)
-    assert(page2.head === visitPage.head)
-    assert(page2.head.code === page2.head.code)
+    val doc4 = cache.get(newTrace, spooky).get.map(_.asInstanceOf[Doc])
+    assert(doc4.size === 1)
+
+    {
+      val docs = Seq(doc, doc4)
+      docs.map(_.head.samenessDelegatedTo.toString).shouldBeIdentical()
+      docs.map(_.head.content.contentStr).shouldBeIdentical()
+      docs.map(_.head.code.toString).shouldBeIdentical()
+    }
   }
 
   it("cache wget and restore with different name") {
-    val wgetPage = this.wgetPage
+    val doc = this.wgetPage
     spooky(Core).confUpdate(_.copy(cachedDocsLifeSpan = shortLifeSpan))
 
-    cache.put(wget, wgetPage, spooky)
+    cache.put(wget, doc, spooky)
 
     val newTrace = Wget(HTML_URL).as('newWget) :: Nil
 
     Thread.sleep(1000)
-    val page2 = cache.get(newTrace, spooky).get.map(_.asInstanceOf[Doc])
+    val doc2 = cache.get(newTrace, spooky).get.map(_.asInstanceOf[Doc])
 
-    assert(page2.size === 1)
-    assert(page2.head === wgetPage.head)
-//    assert(page2.head.code === page2.head.code)
-    assert(page2.head.name === "newWget")
+    assert(doc2.size === 1)
+
+    {
+      val docs = Seq(doc, doc2)
+      docs.map(_.head.samenessDelegatedTo.toString).shouldBeIdentical()
+      docs.map(_.head.content.contentStr).shouldBeIdentical()
+      docs.map(_.head.code.toString).shouldBeIdentical()
+    }
 
     Thread.sleep(shortLifeSpan.toMillis)
 
-    val page3 = cache.get(wgetPage.head.uid.backtrace, spooky).orNull
-    assert(page3 === null)
+    val doc3 = cache.get(doc.head.uid.backtrace, spooky).orNull
+    assert(doc3 === null)
 
     spooky(Core).confUpdate(_.copy(cachedDocsLifeSpan = 30.days))
 
-    assert(page2.size === 1)
-    assert(page2.head.samenessDelegatedTo === wgetPage.head.samenessDelegatedTo)
-//    assert(page2.head.code === page2.head.code)
+    val doc4 = cache.get(newTrace, spooky).get.map(_.asInstanceOf[Doc])
+    assert(doc4.size === 1)
+
+    {
+      val docs = Seq(doc, doc4)
+      docs.map(_.head.samenessDelegatedTo.toString).shouldBeIdentical()
+      docs.map(_.head.content.contentStr).shouldBeIdentical()
+      docs.map(_.head.code.toString).shouldBeIdentical()
+    }
   }
 
   // TODO: test trace, block and more complex cases

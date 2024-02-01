@@ -1,6 +1,6 @@
 package com.tribbloids.spookystuff.utils.io
 
-import com.tribbloids.spookystuff.utils.Retry
+import ai.acyclic.prover.commons.util.Retry
 import org.apache.commons.io.FileUtils
 
 import java.io.{File, InputStream, OutputStream}

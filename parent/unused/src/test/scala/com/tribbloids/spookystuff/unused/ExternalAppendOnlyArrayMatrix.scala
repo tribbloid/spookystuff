@@ -1,13 +1,12 @@
 package com.tribbloids.spookystuff.unused
 
+import ai.acyclic.prover.commons.spark.TestHelper.TestSC
 import com.tribbloids.spookystuff.testutils.BaseSpec
 import org.scalatest.Suite
 
 import scala.util.Random
 
 class ExternalAppendOnlyArrayMatrix extends BaseSpec {
-
-  import com.tribbloids.spookystuff.testutils.TestHelper._
 
   val p1: Int = Random.shuffle(1 to TestSC.defaultParallelism).head
   val p2: Int = Random.shuffle((1 + TestSC.defaultParallelism) to (TestSC.defaultParallelism * 4)).head

@@ -15,7 +15,7 @@ object LoadMore {
 
   def apply(
       selector: String,
-      limit: Int = Const.maxLoop,
+      limit: Int = Block.maxLoop,
       delay: Duration = Const.Interaction.delayMin
   ): Loop =
     Loop(
@@ -28,7 +28,7 @@ object Paginate {
 
   def apply(
       selector: String,
-      limit: Int = Const.maxLoop,
+      limit: Int = Block.maxLoop,
       delay: Duration = Const.Interaction.delayMin
   ): Loop = {
     Loop(

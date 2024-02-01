@@ -6,7 +6,7 @@ import com.tribbloids.spookystuff.testutils.SpookyBaseSpec
 
 import java.util.Date
 
-class TestBlock extends SpookyBaseSpec {
+class BlockSpec extends SpookyBaseSpec {
 
   import scala.concurrent.duration._
 

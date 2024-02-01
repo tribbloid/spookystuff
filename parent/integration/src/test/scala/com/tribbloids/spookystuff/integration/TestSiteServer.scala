@@ -1,14 +1,12 @@
 package com.tribbloids.spookystuff.integration
 
-import com.tribbloids.spookystuff.utils.CommonConst
+import ai.acyclic.prover.commons.spark.Envs
 import org.sparkproject.jetty.server.handler.{DefaultHandler, HandlerList, HandlerWrapper, ResourceHandler}
 import org.sparkproject.jetty.server.{Request, Server}
 
 import javax.servlet.http.{HttpServletRequest, HttpServletResponse}
 
 object TestSiteServer {
-
-  import com.tribbloids.spookystuff.utils.CommonViews._
 
   object RedirectHandler extends HandlerWrapper {
 
@@ -48,7 +46,7 @@ object TestSiteServer {
 
     resourceHandler.setDirectoriesListed(true)
     resourceHandler.setWelcomeFiles(Array[String]("test-sites.html"))
-    resourceHandler.setResourceBase(CommonConst.USER_DIR \\ "test-sites")
+    resourceHandler.setResourceBase(Envs.USER_DIR :\ "test-sites")
 
     val handlers = new HandlerList
     handlers.setHandlers(Array(RedirectHandler, resourceHandler, new DefaultHandler))

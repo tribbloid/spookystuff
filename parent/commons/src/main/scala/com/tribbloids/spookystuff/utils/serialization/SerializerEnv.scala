@@ -1,6 +1,6 @@
 package com.tribbloids.spookystuff.utils.serialization
 
-import ai.acyclic.prover.commons.function.PreDef
+import ai.acyclic.prover.commons.function.Impl
 import ai.acyclic.prover.commons.same.Same
 import org.apache.spark.SparkConf
 import org.apache.spark.serializer.{JavaSerializer, KryoSerializer, Serializer, SerializerInstance}
@@ -29,10 +29,9 @@ object SerializerEnv {
     @transient lazy val allSerializers: List[Serializer] = List(javaSerializer, kryoSerializer)
   }
 
-  lazy val apply: PreDef.Fn.Cached[SparkConf, Ops] = PreDef
-    .Fn { v: SparkConf =>
-      Ops(v)
-    }
+  lazy val apply = Impl { v: SparkConf =>
+    Ops(v)
+  }
     .cachedBy(Same.ByConstruction.Lookup())
 
   lazy val Default: Ops = apply(new SparkConf())

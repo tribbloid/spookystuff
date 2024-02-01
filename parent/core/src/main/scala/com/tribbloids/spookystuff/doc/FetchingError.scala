@@ -5,7 +5,7 @@ import com.tribbloids.spookystuff.caching.DocCacheLevel
 import com.tribbloids.spookystuff.doc.Observation.DocUID
 import com.tribbloids.spookystuff.utils.io.ResourceMetadata
 
-case class DocWithError(
+case class FetchingError(
     delegate: Doc,
     header: String = "",
     override val cause: Throwable = null
@@ -26,7 +26,7 @@ case class DocWithError(
   override def updated(
       uid: DocUID = this.uid,
       cacheLevel: DocCacheLevel.Value = this.cacheLevel
-  ): DocWithError.this.type = {
+  ): FetchingError.this.type = {
     this.copy(delegate = delegate.updated(uid, cacheLevel)).asInstanceOf[this.type]
   }
 
@@ -36,4 +36,6 @@ case class DocWithError(
   override def root: Unstructured = delegate.root
 
   override def metadata: ResourceMetadata = delegate.metadata
+
+  override def docForAuditing: Option[Doc] = Some(delegate)
 }

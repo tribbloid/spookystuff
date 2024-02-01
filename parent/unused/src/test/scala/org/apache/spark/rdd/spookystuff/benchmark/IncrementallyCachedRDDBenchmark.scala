@@ -6,6 +6,7 @@ import org.apache.spark.SparkEnv
 import org.apache.spark.rdd.RDD
 import org.apache.spark.rdd.spookystuff.IncrementallyCachedRDD
 import org.apache.spark.serializer.Serializer
+import org.apache.spark.sql.SQLContext
 import org.apache.spark.sql.catalyst.InternalRow
 import org.apache.spark.storage.StorageLevel
 import org.apache.spark.util.LongAccumulator
@@ -15,7 +16,8 @@ import scala.util.Random
 
 abstract class IncrementallyCachedRDDBenchmark extends BaseSpec with BeforeAndAfterEach with SubSuite {
 
-  import TestHelper.TestSQL.implicits._
+  val sql: SQLContext = TestHelper.TestSQL
+  import sql.implicits._
 
   TestHelper.enableCheckpoint
 

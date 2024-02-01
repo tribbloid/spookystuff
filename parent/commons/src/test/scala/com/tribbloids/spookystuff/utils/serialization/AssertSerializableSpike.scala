@@ -1,5 +1,6 @@
 package com.tribbloids.spookystuff.utils.serialization
 
+import ai.acyclic.prover.commons.function.Impl
 import ai.acyclic.prover.commons.util.Caching
 import com.tribbloids.spookystuff.testutils.BaseSpec
 
@@ -24,6 +25,24 @@ class AssertSerializableSpike extends BaseSpec {
 
       //    TestHelper.TestSC.parallelize(Seq(ee))
       //      .collect() //TODO: this failed, why?
+    }
+
+    describe("inner closure of an object that is not serializable") {
+
+      it("vanilla function") {
+
+        AssertWeaklySerializable(Outer.inner1)
+      }
+
+      it("Fn by single method interface") {
+
+        AssertWeaklySerializable(Outer.inner2)
+      }
+
+      it("Fn by conversion") {
+
+        AssertWeaklySerializable(Outer.inner3)
+      }
     }
 
   }
@@ -69,4 +88,18 @@ class AssertSerializableSpike extends BaseSpec {
     }
   }
 
+  object Outer extends NOTSerializable {
+
+    val inner1: String => Int = { _: String =>
+      3
+    }
+
+    val inner2: Impl.Fn[String, Int] = Impl { _ =>
+      3
+    }
+
+    val inner3: String => Int = inner1
+  }
 }
+
+object AssertSerializableSpike {}

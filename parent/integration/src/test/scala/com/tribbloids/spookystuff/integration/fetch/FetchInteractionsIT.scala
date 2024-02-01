@@ -56,12 +56,13 @@ class FetchInteractionsIT extends ITBaseSpec {
 
     assert(unionRows.length === 2)
     assert(
-      unionRows(0).docs.head.copy(timeMillis = 0, raw = null)
-        === unionRows(1).docs.head.copy(timeMillis = 0, raw = null)
+      unionRows(0).docs.head.copy(timeMillis = 0)(content = null)
+        === unionRows(1).docs.head.copy(timeMillis = 0)(content = null)
     )
 
-    assert(unionRows(0).docs.head.timeMillis === unionRows(1).docs.head.timeMillis)
-    assert(unionRows(0).docs.head.raw === unionRows(1).docs.head.raw)
+    unionRows.map(_.docs.head.timeMillis.toString).shouldBeIdentical()
+    unionRows.map(_.docs.head.content.contentStr).shouldBeIdentical()
+
     assert(unionRows(0).docs.head.name === Snapshot(DocFilterImpl.MustHaveTitle).toString)
     assert(unionRows(1).docs.head.name === "b")
   }

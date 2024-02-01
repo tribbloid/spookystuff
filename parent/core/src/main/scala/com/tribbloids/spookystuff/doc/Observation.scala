@@ -34,7 +34,7 @@ object Observation {
 
 // all subclasses should be small, will be shipped around by Spark
 @SQLUserDefinedType(udt = classOf[FetchedUDT])
-trait Observation extends Serializable {
+sealed trait Observation extends Serializable {
 
   import Observation._
 
@@ -63,4 +63,6 @@ trait Observation extends Serializable {
   type RootType
   def root: RootType
   def metadata: ResourceMetadata
+
+  def docForAuditing: Option[Doc]
 }

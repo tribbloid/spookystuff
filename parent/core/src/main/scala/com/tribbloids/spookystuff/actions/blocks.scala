@@ -14,6 +14,11 @@ import org.slf4j.LoggerFactory
 
 import scala.collection.mutable.ArrayBuffer
 
+object Block {
+
+  val maxLoop: Int = Int.MaxValue
+}
+
 /**
   * Only for complex workflow control, each defines a nested/non-linear subroutine that may or may not be executed once
   * or multiple times depending on situations.
@@ -204,7 +209,7 @@ object Loop {}
   */
 final case class Loop(
     override val children: Trace,
-    limit: Int = Const.maxLoop
+    limit: Int = Block.maxLoop
 ) extends Block(children) {
 
   assert(limit > 0)

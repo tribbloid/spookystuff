@@ -1,5 +1,7 @@
 package com.tribbloids.spookystuff.conf
 
+import ai.acyclic.prover.commons.function.Impl
+import ai.acyclic.prover.commons.function.PreDef.:=>
 import com.tribbloids.spookystuff.dsl._
 import com.tribbloids.spookystuff.row.Sampler
 import com.tribbloids.spookystuff.agent._
@@ -30,19 +32,20 @@ case class SpookyConf(
     shareMetrics: Boolean = false, // TODO: not necessary
 
     webProxy: WebProxyFactory = WebProxyFactories.NoProxy,
-    httpHeadersFactory: () => Map[String, String] = () => SpookyConf.defaultHTTPHeaders,
-    oAuthKeysFactory: () => OAuthKeys = () => null,
+    httpHeadersFactory: Unit :=> Map[String, String] = Impl(_ => SpookyConf.defaultHTTPHeaders),
+    oAuthKeysFactory: Unit :=> OAuthKeys = Impl(_ => null),
     //    var browserResolution: (Int, Int) = (1920, 1080),
     remote: Boolean = true, // if disabled won't use remote client at all
     //
-    autoSave: Boolean = true,
+    auditing: Auditing = Auditing.Both,
+    auditingFileStructure: ByDoc[String] = FilePaths.UUIDName(FilePaths.Hierarchical),
+    //
     cacheWrite: Boolean = true,
     cacheRead: Boolean = true, // TODO: this enable both in-memory and DFS cache, should allow more refined control
 
     cachedDocsLifeSpan: Duration = 7.day,
     IgnoreCachedDocsBefore: Option[Date] = None,
     cacheFileStructure: ByTrace[String] = FilePaths.Hierarchical,
-    autoSaveFileStructure: ByDoc[String] = FilePaths.UUIDName(FilePaths.Hierarchical),
     //
     errorDump: Boolean = true,
     errorScreenshot: Boolean = true,

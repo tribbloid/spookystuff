@@ -1,16 +1,11 @@
 package com.tribbloids.spookystuff.row
 
+import com.tribbloids.spookystuff.doc.Observation.{Failure, Success}
 import com.tribbloids.spookystuff.doc._
 
 object FetchedRow {
 
   lazy val blank: FetchedRow = FetchedRow()
-
-  //  def ofDatum(dataRow: DataRow): SquashedRow = ofData(Seq(dataRow))
-
-  //  lazy val blank: SquashedRow = {
-  //    ofData(Seq(DataRow.blank))
-  //  }
 }
 
 /**
@@ -24,7 +19,7 @@ case class FetchedRow(
     ordinal: Int = 0
 ) {
 
-  lazy val dataRowWithScope: DataRow.WithScope = DataRow.WithScope(dataRow, observations.map(_.uid))
+  @transient lazy val dataRowWithScope: DataRow.WithScope = DataRow.WithScope(dataRow, observations.map(_.uid))
 
   def squash: SquashedRow = {
     SquashedRow
@@ -34,19 +29,35 @@ case class FetchedRow(
       .cache(observations)
   }
 
-  lazy val docs: Seq[Doc] = observations.flatMap {
-    case page: Doc => Some(page)
-    case _         => None
+  @transient lazy val success: Seq[Success] = observations.collect {
+    case v: Success => v
   }
 
-  lazy val onlyDoc: Option[Doc] = {
-    val pages = this.docs
+  @transient lazy val failure: Seq[Failure] = observations.collect {
+    case v: Failure => v
+  }
 
-    if (pages.size > 1)
+  @transient lazy val docs: Seq[Doc] = observations.collect {
+    case v: Doc => v
+  }
+
+  @transient lazy val onlyDoc: Option[Doc] = {
+
+    if (docs.size > 1)
       throw new UnsupportedOperationException(
         "Ambiguous key referring to multiple pages"
       )
-    else pages.headOption
+    else docs.headOption
+  }
+
+  @transient lazy val converted: FetchedRow = {
+
+    this.copy(
+      observations = this.observations.map {
+        case v: Doc => v.converted
+        case v      => v
+      }
+    )
   }
 
   def getDoc(keyStr: String): Option[Doc] = {

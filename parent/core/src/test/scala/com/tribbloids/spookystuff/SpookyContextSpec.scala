@@ -178,7 +178,7 @@ class SpookyContextSpec extends SpookyBaseSpec with LocalPathDocsFixture {
       !Seq(
         root,
         localRoot,
-        autoSave,
+        auditing,
         cache,
         errorDump,
         errorScreenshot,
@@ -203,7 +203,7 @@ class SpookyContextSpec extends SpookyBaseSpec with LocalPathDocsFixture {
       !Seq(
         root,
         localRoot,
-        autoSave,
+        auditing,
         cache,
         errorDump,
         errorScreenshot,
@@ -228,7 +228,7 @@ class SpookyContextSpec extends SpookyBaseSpec with LocalPathDocsFixture {
       !Seq(
         root,
         localRoot,
-        autoSave,
+        auditing,
         cache,
         errorDump,
         errorScreenshot,

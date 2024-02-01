@@ -24,13 +24,12 @@ case class Snapshot(
     // no effect if WebDriver is missing
 
     val pageOpt = agent.Drivers.getExisting(Web).map { webDriver =>
-      new Doc(
+      Doc(
         DocUID((agent.backtrace :+ this).toList, this)(),
         webDriver.getCurrentUrl,
-        webDriver.getPageSource.getBytes("UTF8"),
         Some("text/html; charset=UTF-8")
         //      serializableCookies
-      )
+      )().setRaw(webDriver.getPageSource.getBytes("UTF8"))
     }
     //    if (contentType != null) Seq(page.copy(declaredContentType = Some(contentType)))
     pageOpt.map(v => Seq(v)).getOrElse(Nil)

@@ -13,24 +13,26 @@ class ExploreClickNextPageIT extends ITBaseSpec {
 
   override def doMain(): Unit = {
 
-    val snapshotAllPages = (Snapshot()
-      +> Loop(
+    val clickNext = {
+      Snapshot() +> Loop(
         Click("ul.pagination a[rel=next]")
           +> Snapshot()
-      ))
+      )
+    }
 
     val base = spooky
       .fetch(
         Visit("http://localhost:10092/test-sites/e-commerce/static")
-          +> snapshotAllPages
+          +> clickNext
       )
       .explodeObservations(v => v.splitByDistinctNames)
 
     val fetched = base
       .explore(S"div.sidebar-nav a", ordinalField = 'index)(
         Visit('A.href)
-          +> snapshotAllPages,
-        depthField = 'depth
+          +> clickNext,
+        depthField = 'depth,
+        epochSize = 2
       )
       .explodeObservations(v => v.splitByDistinctNames)
       .extract(

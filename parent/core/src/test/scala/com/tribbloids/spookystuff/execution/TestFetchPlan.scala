@@ -1,5 +1,6 @@
 package com.tribbloids.spookystuff.execution
 
+import ai.acyclic.prover.commons.function.Impl
 import com.tribbloids.spookystuff.actions.Wget
 import com.tribbloids.spookystuff.extractors.impl.Lit
 import com.tribbloids.spookystuff.testutils.{LocalPathDocsFixture, SpookyBaseSpec}
@@ -72,7 +73,9 @@ class TestFetchPlan extends SpookyBaseSpec with LocalPathDocsFixture {
     val rdd1 = src
       .fetch(
         Wget(HTML_URL),
-        genPartitioner = GenPartitioners.DocCacheAware(_ => partitioner)
+        genPartitioner = GenPartitioners.DocCacheAware(Impl { _ =>
+          partitioner
+        })
       )
 
     assert(rdd1.plan.beaconRDDOpt.get.partitioner.get eq partitioner)
@@ -86,7 +89,9 @@ class TestFetchPlan extends SpookyBaseSpec with LocalPathDocsFixture {
       .extract(Lit("abc") ~ 'dummy)
       .fetch(
         Wget(HTML_URL),
-        genPartitioner = GenPartitioners.DocCacheAware(_ => partitioner)
+        genPartitioner = GenPartitioners.DocCacheAware(Impl { _ =>
+          partitioner
+        })
       )
 
     assert(rdd1.plan.beaconRDDOpt.get.partitioner.get eq partitioner)
@@ -95,7 +100,9 @@ class TestFetchPlan extends SpookyBaseSpec with LocalPathDocsFixture {
     val rdd2 = rdd1
       .fetch(
         Wget(HTML_URL),
-        genPartitioner = GenPartitioners.DocCacheAware(_ => partitioner2)
+        genPartitioner = GenPartitioners.DocCacheAware(Impl { _ =>
+          partitioner2
+        })
       )
 
     assert(rdd2.plan.beaconRDDOpt.get.partitioner.get eq partitioner)

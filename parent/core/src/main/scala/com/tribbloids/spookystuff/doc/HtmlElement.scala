@@ -1,10 +1,6 @@
 package com.tribbloids.spookystuff.doc
 
 import de.l3s.boilerpipe.extractors.ArticleExtractor
-import org.apache.tika.io.TikaInputStream
-import org.apache.tika.metadata.{HttpHeaders, Metadata}
-import org.apache.tika.parser.{AutoDetectParser, ParseContext}
-import org.apache.tika.sax.ToHTMLContentHandler
 import org.jsoup.Jsoup
 import org.jsoup.nodes.Element
 
@@ -22,25 +18,6 @@ object HtmlElement {
 
   def apply(html: String, uri: String): HtmlElement = new HtmlElement(null, html, None, uri)
 
-  def fromBytes(content: Array[Byte], charSet: String, mimeType: String, uri: String): HtmlElement = {
-
-    val handler = new ToHTMLContentHandler()
-
-    val metadata = new Metadata()
-    val stream = TikaInputStream.get(content, metadata)
-    val html: CSSQuery =
-      try {
-        metadata.set(HttpHeaders.CONTENT_ENCODING, charSet)
-        metadata.set(HttpHeaders.CONTENT_TYPE, mimeType)
-        val parser = new AutoDetectParser()
-        val context = new ParseContext()
-        parser.parse(stream, handler, metadata, context)
-        handler.toString
-      } finally {
-        stream.close()
-      }
-    HtmlElement.apply(html, uri)
-  }
 }
 
 class HtmlElement private (

@@ -1,11 +1,11 @@
 package com.tribbloids.spookystuff.integration.fetch
 
+import ai.acyclic.prover.commons.spark.Envs
 import com.tribbloids.spookystuff.actions._
 import com.tribbloids.spookystuff.doc.DocUtils
 import com.tribbloids.spookystuff.dsl._
 import com.tribbloids.spookystuff.extractors.impl.Lit
 import com.tribbloids.spookystuff.integration.ITBaseSpec
-import com.tribbloids.spookystuff.utils.CommonConst
 
 class FetchWgetAndSaveIT extends ITBaseSpec {
 
@@ -28,7 +28,7 @@ class FetchWgetAndSaveIT extends ITBaseSpec {
     //    fetched.count()
 
     val rdd = fetched
-      .savePages(x"file://${CommonConst.USER_DIR}/temp/spooky-integration/save/${'name}", overwrite = true)
+      .savePages(x"file://${Envs.USER_DIR}/temp/spooky-integration/save/${'name}", overwrite = true)
       .extract(S.saved ~ 'saved_path)
 
     val savedPageRows = rdd.fetchedRDD.collect()
@@ -40,17 +40,17 @@ class FetchWgetAndSaveIT extends ITBaseSpec {
     assert(pageTime < finishTime)
     assert(pageTime > finishTime - 60000) // long enough even after the second time it is retrieved from s3 cache
 
-    val content = savedPageRows(0).docs.head.raw
+    val raw = savedPageRows(0).docs.head.blob.raw
 
     assert(
       savedPageRows(0).dataRow.get('saved_path).get.asInstanceOf[Iterable[Any]].toSeq contains
-        s"file:${CommonConst.USER_DIR}/temp/spooky-integration/save/Wikipedia.png"
+        s"file:${Envs.USER_DIR}/temp/spooky-integration/save/Wikipedia.png"
     )
 
-    val loadedContent =
-      DocUtils.load(s"file://${CommonConst.USER_DIR}/temp/spooky-integration/save/Wikipedia.png")(spooky)
+    val loaded =
+      DocUtils.load(s"file://${Envs.USER_DIR}/temp/spooky-integration/save/Wikipedia.png")(spooky)
 
-    assert(loadedContent === content)
+    assert(loaded === raw)
 
     Thread.sleep(10000) // this delay is necessary to circumvent eventual consistency of HDFS-based cache
 
@@ -64,13 +64,13 @@ class FetchWgetAndSaveIT extends ITBaseSpec {
 
     assert(unionRows.length === 2)
     assert(
-      unionRows(0).docs.head.copy(timeMillis = 0, raw = null) ===
-        unionRows(1).docs.head.copy(timeMillis = 0, raw = null)
+      unionRows(0).docs.head.copy(timeMillis = 0)(null) ===
+        unionRows(1).docs.head.copy(timeMillis = 0)(null)
     )
 
-    assert(unionRows(0).docs.head.timeMillis === unionRows(1).docs.head.timeMillis)
-    assert(unionRows(0).docs.head.raw === unionRows(1).docs.head.raw)
-    assert(unionRows(0).docs.head.raw === unionRows(1).docs.head.raw)
+    unionRows.map(_.docs.head.timeMillis.toString).shouldBeIdentical()
+    unionRows.map(_.docs.head.content.contentStr).shouldBeIdentical()
+
     assert(unionRows(1).docs.head.name === "b")
   }
 

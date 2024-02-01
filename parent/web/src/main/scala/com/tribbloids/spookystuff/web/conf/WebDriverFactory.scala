@@ -1,12 +1,13 @@
 package com.tribbloids.spookystuff.web.conf
 
+import ai.acyclic.prover.commons.spark.Envs
 import com.gargoylesoftware.htmlunit.BrowserVersion
 import com.tribbloids.spookystuff.SpookyContext
 import com.tribbloids.spookystuff.conf.DriverFactory
 import com.tribbloids.spookystuff.dsl.BinaryDeployment
 import com.tribbloids.spookystuff.agent.{Agent, WebProxySetting}
 import com.tribbloids.spookystuff.utils.lifespan.Cleanable.Lifespan
-import com.tribbloids.spookystuff.utils.{CommonConst, ConfUtils}
+import com.tribbloids.spookystuff.utils.ConfUtils
 import com.tribbloids.spookystuff.web.agent.CleanWebDriver
 import org.apache.commons.io.FileUtils
 import org.openqa.selenium.Proxy
@@ -25,8 +26,6 @@ abstract class WebDriverFactory extends DriverFactory.Transient[CleanWebDriver] 
 }
 
 object WebDriverFactory {
-
-  import com.tribbloids.spookystuff.utils.CommonViews._
 
   def asSeleniumProxy(s: WebProxySetting): Proxy = {
     val seleniumProxy: Proxy = new Proxy
@@ -65,7 +64,7 @@ object WebDriverFactory {
     // TODO: separate win/mac/linux32/linux64 versions
     final val defaultRemoteURL = "https://docs.google.com/uc?export=download&id=1tHWQTXy471_MTu5XBYwgvN6zEg741cD8"
 
-    final def DEFAULT_PATH: String = CommonConst.USER_HOME \\ ".spookystuff" \\ "phantomjs"
+    final def DEFAULT_PATH: String = Envs.USER_HOME :\ ".spookystuff" :\ "phantomjs"
 
     def defaultLocalPath: String = {
       ConfUtils.getOrDefault("phantomjs.path", DEFAULT_PATH)

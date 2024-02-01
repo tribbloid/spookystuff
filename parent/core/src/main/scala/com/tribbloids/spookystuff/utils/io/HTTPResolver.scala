@@ -1,7 +1,7 @@
 package com.tribbloids.spookystuff.utils.io
 
+import ai.acyclic.prover.commons.util.Retry
 import com.tribbloids.spookystuff.agent.WebProxySetting
-import com.tribbloids.spookystuff.utils.Retry
 import com.tribbloids.spookystuff.utils.http._
 import org.apache.hadoop.shaded.org.apache.http.client.HttpClient
 import org.apache.hadoop.shaded.org.apache.http.client.config.RequestConfig

@@ -26,7 +26,7 @@ abstract class Export extends Named {
         } catch {
           case e: Exception =>
             val message = getSessionExceptionMessage(agent, Some(doc))
-            val wrapped = DocWithError(doc, message, e)
+            val wrapped = FetchingError(doc, message, e)
 
             throw wrapped
         }

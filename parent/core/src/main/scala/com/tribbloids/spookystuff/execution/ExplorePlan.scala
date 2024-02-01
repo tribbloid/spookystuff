@@ -1,7 +1,6 @@
 package com.tribbloids.spookystuff.execution
 
 import ai.acyclic.prover.commons.function.PreDef
-import ai.acyclic.prover.commons.function.PreDef.:=>
 import com.tribbloids.spookystuff.actions.{Trace, TraceSet}
 import com.tribbloids.spookystuff.caching.ExploreLocalCache
 import com.tribbloids.spookystuff.dsl.{ForkType, GenPartitioner, PathPlanning}
@@ -105,7 +104,7 @@ case class ExplorePlan(
     lazy val composedDelta: Delta = {
 
       val applied = {
-        var state = resolver.build -> PreDef.Fn.identity[SquashedRow]
+        var state = resolver.build -> PreDef.FnImpl.identity[SquashedRow]
 
         toDeltas.foreach { toDelta =>
           val delta = toDelta(state._1)
@@ -118,7 +117,7 @@ case class ExplorePlan(
       }
 
       new Delta {
-        override def fn: SquashedRow :=> SquashedRow = applied._2
+        override def fn = applied._2
 
         override def outputSchema: SpookySchema = applied._1
       }

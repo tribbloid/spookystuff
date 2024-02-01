@@ -2,7 +2,7 @@ package com.tribbloids.spookystuff.graph
 
 import com.tribbloids.spookystuff.graph.Element.Edge
 import com.tribbloids.spookystuff.graph.IDAlgebra.Rotator
-import com.tribbloids.spookystuff.utils.CommonTypes
+import com.tribbloids.spookystuff.utils.Types
 
 import scala.language.implicitConversions
 
@@ -11,13 +11,13 @@ trait Module[T <: Domain] extends Algebra.Aliases[T] {
   protected def _replicate(m: DataMutator)(
       implicit
       idRotator: Rotator[ID],
-      node_+ : CommonTypes.Binary[NodeData]
+      node_+ : Types.Binary[NodeData]
   ): _Module
 
   def replicate(m: DataMutator = DataAlgebra.Mutator.identity)(
       implicit
       idRotator: Rotator[ID],
-      node_+ : CommonTypes.Binary[NodeData] = nodeAlgebra.add
+      node_+ : Types.Binary[NodeData] = nodeAlgebra.add
   ): this.type =
     _replicate(m).asInstanceOf[this.type]
 }

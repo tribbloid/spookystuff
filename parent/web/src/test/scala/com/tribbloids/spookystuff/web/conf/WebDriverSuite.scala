@@ -50,7 +50,7 @@ class WebDriverSuite extends SpookyBaseSpec with LocalPathDocsFixture {
           .fetch(
             Visit(HTML_URL)
           )
-          .observationRDD
+          .map(_.observations)
 
         docs.collect().foreach(println)
       }

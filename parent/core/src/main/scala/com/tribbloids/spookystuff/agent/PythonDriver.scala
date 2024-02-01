@@ -1,12 +1,14 @@
 package com.tribbloids.spookystuff.agent
 
+import ai.acyclic.prover.commons.spark.Envs
+import ai.acyclic.prover.commons.util.Retry
 import com.tribbloids.spookystuff.conf.Python
 import com.tribbloids.spookystuff.driver.PythonProcess
 import com.tribbloids.spookystuff.utils.classpath.ClasspathResolver
 import com.tribbloids.spookystuff.utils.io.{LocalResolver, WriteMode}
 import com.tribbloids.spookystuff.utils.lifespan.Cleanable.Lifespan
-import com.tribbloids.spookystuff.utils.{BypassingRule, CommonConst, CommonUtils, SpookyUtils}
-import com.tribbloids.spookystuff.{PyException, PyInterpretationException, SpookyContext}
+import com.tribbloids.spookystuff.utils.{CommonUtils, SpookyUtils}
+import com.tribbloids.spookystuff.{CommonConst, PyException, PyInterpretationException, SpookyContext}
 import org.apache.commons.io.FileUtils
 import org.apache.spark.ml.dsl.utils.DSLUtils
 import org.slf4j.LoggerFactory
@@ -20,9 +22,7 @@ import scala.util.Try
 
 object PythonDriver {
 
-  import com.tribbloids.spookystuff.utils.SpookyViews._
-
-  final val DEFAULT_PYTHON_PATH = CommonConst.USER_HOME \\ ".spookystuff" \\ "python"
+  final val DEFAULT_PYTHON_PATH = Envs.USER_HOME :\ ".spookystuff" :\ "python"
   //  final val MODULE_NAME = "pyspookystuff"
   //  final val MODULE_RESOURCE = "com/tribbloids/" :/ MODULE_NAME
   final val PYTHON_RESOURCE = "python"
@@ -159,7 +159,7 @@ class PythonDriver(
           }
         } catch {
           case e: TimeoutException =>
-            throw BypassingRule.Silent(e)
+            throw Retry.BypassingRule.Silent(e)
           case e: Exception =>
             throw e
         }

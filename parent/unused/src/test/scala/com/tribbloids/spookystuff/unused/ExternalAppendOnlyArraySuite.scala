@@ -1,5 +1,6 @@
 package com.tribbloids.spookystuff.unused
 
+import ai.acyclic.prover.commons.spark.TestHelper.TestSC
 import com.tribbloids.spookystuff.testutils.{SparkEnvSpec, SubSuite}
 import org.apache.spark.rdd.{RDD, UnionRDD}
 import org.apache.spark.storage.StorageLevel
@@ -15,8 +16,6 @@ abstract class ExternalAppendOnlyArraySuite(
     storageLevel: StorageLevel = StorageLevel.MEMORY_AND_DISK_SER
 ) extends SparkEnvSpec
     with SubSuite {
-
-  import com.tribbloids.spookystuff.testutils.TestHelper._
 
   import scala.jdk.CollectionConverters._
 

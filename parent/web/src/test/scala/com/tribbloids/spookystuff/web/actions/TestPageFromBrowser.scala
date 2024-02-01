@@ -34,10 +34,11 @@ class TestPageFromBrowser extends SpookyBaseSpec {
     assert(resultsList.length === 1)
     val page = resultsList(0).asInstanceOf[Doc]
 
-    page.autoSave(spooky, overwrite = true)
+    val raw = page.blob.raw
+    page.save(spooky, overwrite = true).auditing()
 
     val loadedContent = DocUtils.load(page.saved.head)(spooky)
 
-    assert(loadedContent === page.raw)
+    assert(loadedContent === raw)
   }
 }

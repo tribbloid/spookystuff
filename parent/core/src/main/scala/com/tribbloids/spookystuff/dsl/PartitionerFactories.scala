@@ -1,6 +1,6 @@
 package com.tribbloids.spookystuff.dsl
 
-import ai.acyclic.prover.commons.function.PreDef.:=>
+import ai.acyclic.prover.commons.function.Impl.:=>
 import org.apache.spark.{HashPartitioner, Partitioner}
 import org.apache.spark.rdd.RDD
 

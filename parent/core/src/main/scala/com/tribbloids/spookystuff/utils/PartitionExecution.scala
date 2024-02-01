@@ -1,10 +1,10 @@
 package com.tribbloids.spookystuff.utils
 
+import org.apache.spark.sql._SQLHelper
 import java.util.concurrent.Executors
 
 import org.apache.spark.{FutureAction, Partition}
 import org.apache.spark.rdd.RDD
-import org.apache.spark.sql._SQLHelper
 
 import scala.concurrent.{ExecutionContext, ExecutionContextExecutor}
 import scala.reflect.ClassTag

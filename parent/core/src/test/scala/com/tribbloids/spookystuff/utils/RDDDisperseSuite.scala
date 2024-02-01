@@ -4,6 +4,7 @@ import com.tribbloids.spookystuff.testutils.{SpookyBaseSpec, TestHelper}
 import com.tribbloids.spookystuff.utils.collection.BufferedShuffleIteratorV1
 import org.apache.spark.ml.dsl.utils.ObjectSimpleNameMixin
 import org.apache.spark.rdd.RDD
+import org.apache.spark.rdd.spookystuff.NarrowDispersedRDD
 import org.apache.spark.storage.StorageLevel
 import org.apache.spark.util.LongAccumulator
 import org.scalatest
@@ -16,7 +17,7 @@ class RDDDisperseSuite extends SpookyBaseSpec {
 
   implicit val concurrentCtx: ExecutionContextExecutor = ExecutionContext.global
 
-  object Consts {
+  object Fixtures {
 
     val size: Int = Random.nextInt(90000) + 10000
     val data: Range = 1 to size
@@ -50,7 +51,7 @@ class RDDDisperseSuite extends SpookyBaseSpec {
 //    }
 //  }
 
-  import Consts._
+  import Fixtures._
 
   def assertWellFormed(rdd: RDD[Int]): Unit = {
 
@@ -99,11 +100,17 @@ class RDDDisperseSuite extends SpookyBaseSpec {
   }
 
   def assertCanBeBalanced_raw(rdd: RDD[Int]): Unit = {
-    import SpookyViews._
 
-    val balanced = rdd
-      .Disperse(pSizeGen)
-      .asRDD(tgtNPart)
+    val balanced = {
+
+      val result = new NarrowDispersedRDD(
+        rdd,
+        tgtNPart,
+        NarrowDispersedRDD.ByRange(pSizeGen)
+      )
+      result
+
+    }
 
     assertWellFormed(balanced)
 

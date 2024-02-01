@@ -1,12 +1,13 @@
 package com.tribbloids.spookystuff.integration
 
+import ai.acyclic.prover.commons.spark.Envs
 import com.tribbloids.spookystuff._
 import com.tribbloids.spookystuff.conf.{Core, DriverFactory, SpookyConf}
 import com.tribbloids.spookystuff.dsl._
 import com.tribbloids.spookystuff.metrics.SpookyMetrics
 import com.tribbloids.spookystuff.row.LocalityGroup
 import com.tribbloids.spookystuff.testutils.{LocalURIDocsFixture, SpookyBaseSpec, TestHelper}
-import com.tribbloids.spookystuff.utils.{CommonConst, CommonUtils}
+import com.tribbloids.spookystuff.utils.CommonUtils
 import com.tribbloids.spookystuff.web.conf.{Web, WebDriverFactory}
 import com.tribbloids.spookystuff.web.agent.CleanWebDriver
 import org.slf4j.LoggerFactory
@@ -22,7 +23,7 @@ abstract class ITBaseSpec extends SpookyBaseSpec with LocalURIDocsFixture {
 
   lazy val roots: Seq[String] = {
 
-    val local = Seq(CommonUtils.\\\(CommonConst.USER_TEMP_DIR, "spooky-integration"))
+    val local: Seq[String] = Seq(Envs.USER_TEMP_DIR :\ "spooky-integration")
 
     local ++ TestHelper.S3Path
   }

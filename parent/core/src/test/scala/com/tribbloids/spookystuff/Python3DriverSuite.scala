@@ -5,7 +5,7 @@ import Python3DriverSuite.Runner
 import com.tribbloids.spookystuff.agent.PythonDriver
 import com.tribbloids.spookystuff.testutils.SpookyBaseSpec
 import com.tribbloids.spookystuff.utils.lifespan.Cleanable.Lifespan
-import com.tribbloids.spookystuff.utils.{CommonConst, CommonUtils}
+import com.tribbloids.spookystuff.utils.CommonUtils
 import org.slf4j.LoggerFactory
 
 import scala.concurrent.Future

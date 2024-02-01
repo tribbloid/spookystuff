@@ -2,6 +2,29 @@ package com.tribbloids.spookystuff.doc
 
 import org.apache.spark.sql.types.SQLUserDefinedType
 
+object Unstructured {
+
+  object Unrecognisable extends Unstructured {
+    override def uri: String = ""
+    override def findAll(selector: CSSQuery): Elements[Unstructured] = Elements.empty
+    override def findAllWithSiblings(selector: CSSQuery, range: Range): Elements[Siblings[Unstructured]] =
+      Elements.empty
+    override def children(selector: CSSQuery): Elements[Unstructured] = Elements.empty
+    override def childrenWithSiblings(selector: CSSQuery, range: Range): Elements[Siblings[Unstructured]] =
+      Elements.empty
+    override def code: Option[String] = None
+    override def formattedCode: Option[String] = None
+    override def text: Option[String] = None
+    override def ownText: Option[String] = None
+    override def boilerPipe: Option[String] = None
+    override def breadcrumb: Option[Seq[String]] = None
+    override def allAttr: Option[Map[String, String]] = None
+    override def attr(attr: String, noEmpty: Boolean): Option[String] = None
+    override def href: Option[String] = None
+    override def src: Option[String] = None
+  }
+}
+
 @SQLUserDefinedType(udt = classOf[UnstructuredUDT])
 trait Unstructured extends Serializable {
 

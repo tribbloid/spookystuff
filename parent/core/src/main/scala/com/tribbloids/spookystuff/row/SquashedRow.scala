@@ -1,6 +1,6 @@
 package com.tribbloids.spookystuff.row
 
-import ai.acyclic.prover.commons.function.PreDef
+import ai.acyclic.prover.commons.function.Impl
 import com.tribbloids.spookystuff.SpookyContext
 import com.tribbloids.spookystuff.actions.{Trace, TraceSet}
 import com.tribbloids.spookystuff.doc.Observation
@@ -238,7 +238,7 @@ case class SquashedRow(
     def extract(ex: Resolved[Any]*): SquashedRow = extractImpl(ex)
   }
 
-  @transient lazy val withSchema: PreDef.Fn[SpookySchema, WithSchema] = { v =>
+  @transient lazy val withSchema = Impl { v =>
     WithSchema(this, v)
   }
 }

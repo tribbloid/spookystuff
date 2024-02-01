@@ -2,7 +2,7 @@ package com.tribbloids.spookystuff.graph
 
 import com.tribbloids.spookystuff.graph.Element.{Edge, NodeTriplet}
 import com.tribbloids.spookystuff.graph.IDAlgebra.Rotator
-import com.tribbloids.spookystuff.utils.CommonTypes
+import com.tribbloids.spookystuff.utils.Types
 import com.tribbloids.spookystuff.utils.collection.MultiMapOps
 
 import scala.collection.mutable
@@ -24,7 +24,7 @@ case class LocalGraph[D <: Domain] private (
   override def _replicate(m: DataMutator)(
       implicit
       idRotator: Rotator[ID],
-      node_+ : CommonTypes.Binary[NodeData]
+      node_+ : Types.Binary[NodeData]
   ): LocalGraph[D] = {
 
     new LocalGraph.BuilderImpl[D]()
@@ -96,7 +96,7 @@ object LocalGraph {
     override def fromSeq(
         nodes: Seq[_NodeLike],
         edges: Seq[_Edge],
-        node_+ : CommonTypes.Binary[NodeData]
+        node_+ : Types.Binary[NodeData]
     ): GG = {
 
       val existingIDs = nodes.map(_.samenessDelegatedTo).toSet
@@ -151,7 +151,7 @@ object LocalGraph {
     protected def linkedNode_+(
         v1: _NodeTriplet,
         v2: _NodeTriplet,
-        node_+ : CommonTypes.Binary[NodeData]
+        node_+ : Types.Binary[NodeData]
     ): _NodeTriplet = {
 
       require(
@@ -170,7 +170,7 @@ object LocalGraph {
     def union(
         v1: GG,
         v2: GG,
-        node_+ : CommonTypes.Binary[NodeData]
+        node_+ : Types.Binary[NodeData]
     ): GG = {
 
       val v2Reduced: mutable.Map[D#ID, _NodeTriplet] = v2.nodeMap.map {

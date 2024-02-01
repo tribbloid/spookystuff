@@ -1,6 +1,7 @@
 package com.tribbloids.spookystuff.utils
 
 import ai.acyclic.prover.commons.debug.Debug.CallStackRef
+import ai.acyclic.prover.commons.util.Retry
 import com.tribbloids.spookystuff.utils.AwaitWithHeartbeat.Heartbeat
 
 import java.io.{File, PrintWriter, StringWriter}
@@ -56,7 +57,7 @@ object CommonUtils {
   protected def _callerShowStr: String = {
     val result = CallStackRef
       .below(
-        condition = _.isUnderClasses(classOf[CommonUtils.type])
+        condition = _.isDefinedAtClasses(classOf[CommonUtils.type])
       )
       .showStr
     result
@@ -80,7 +81,13 @@ object CommonUtils {
       await.result(future, timeout)
     } catch {
       case e: TimeoutException =>
-        if (interrupt) future.interrupt()
+        if (interrupt) {
+//          try {
+          future.interrupt()
+//          } catch {
+//            case _: InterruptedException => // already interrupted, no point in throwing the exception
+//          }
+        }
         LoggerFactory.getLogger(this.getClass).debug(TIMEOUT)
         throw e
     }

@@ -1,6 +1,7 @@
 package com.tribbloids.spookystuff.execution
 
-import ai.acyclic.prover.commons.function.PreDef.:=>
+import ai.acyclic.prover.commons.function.Impl
+import ai.acyclic.prover.commons.function.Impl.:=>
 import com.tribbloids.spookystuff.doc.Doc
 import com.tribbloids.spookystuff.dsl.ForkType
 import com.tribbloids.spookystuff.extractors.impl.Get
@@ -22,7 +23,7 @@ object Delta {
 
   case class NoDelta(outputSchema: SpookySchema) extends Delta {
 
-    override def fn: SquashedRow :=> SquashedRow = { v => v }
+    override def fn: SquashedRow :=> SquashedRow = Impl(v => v)
   }
 
   /**
@@ -41,7 +42,7 @@ object Delta {
       resolver.build
     }
 
-    override lazy val fn: SquashedRow :=> SquashedRow = { v =>
+    override lazy val fn: SquashedRow :=> SquashedRow = Impl { v =>
       {
         v.withCtx(outputSchema.spooky): v._WithCtx
       }.extract(_exs: _*)
@@ -75,7 +76,7 @@ object Delta {
 
     override val outputSchema: SpookySchema = resolver.build
 
-    override lazy val fn: SquashedRow :=> SquashedRow = { v =>
+    override lazy val fn: SquashedRow :=> SquashedRow = Impl { v =>
       val result = v.explodeData(onField, effectiveOrdinalField, forkType, sampler)
       result
     }
@@ -88,7 +89,7 @@ object Delta {
 
     override def outputSchema: SpookySchema = childSchema
 
-    override lazy val fn: SquashedRow :=> SquashedRow = { v =>
+    override lazy val fn: SquashedRow :=> SquashedRow = Impl { v =>
       v.explodeScope(scopeFn)
     }
   }
@@ -100,15 +101,15 @@ object Delta {
 
     override val outputSchema: SpookySchema = childSchema -- toBeRemoved
 
-    override lazy val fn: SquashedRow :=> SquashedRow = { v =>
+    override lazy val fn: SquashedRow :=> SquashedRow = Impl { v =>
       v.remove(toBeRemoved: _*)
     }
   }
 
-  case class SavePages(
+  case class SaveContent(
       path: Extractor[String],
       extension: Extractor[String],
-      page: Extractor[Doc],
+      doc: Extractor[Doc],
       overwrite: Boolean
   )(val childSchema: SpookySchema)
       extends Delta {
@@ -117,11 +118,11 @@ object Delta {
 
     val _ext: Resolved[String] = resolver.include(extension).head
     val _path: Resolved[String] = resolver.include(path).head
-    val _docExpr: Resolved[Doc] = resolver.include(page).head
+    val _docExpr: Resolved[Doc] = resolver.include(doc).head
 
     override val outputSchema: SpookySchema = childSchema
 
-    override lazy val fn: SquashedRow :=> SquashedRow = { v =>
+    override lazy val fn: SquashedRow :=> SquashedRow = Impl { v =>
       val withCtx = v.withCtx(childSchema.spooky)
 
       withCtx.unSquash
@@ -138,7 +139,7 @@ object Delta {
           pathStr.foreach { str =>
             val docOpt = _docExpr.lift(fetchedRow)
 
-            docOpt.foreach(_.save(Seq(str), overwrite)(outputSchema.spooky))
+            docOpt.foreach(_.save(outputSchema.spooky, overwrite)(Seq(str)))
           }
         }
       v
