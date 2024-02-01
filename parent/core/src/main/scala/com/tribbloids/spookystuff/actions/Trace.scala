@@ -142,7 +142,7 @@ case class Trace(
               dd.save(spooky).auto()
             }
 
-            doc.content = saved.last
+//            doc.content = saved.last
           }
 
           if (spooky.conf.cacheWrite) {

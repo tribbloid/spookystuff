@@ -69,8 +69,7 @@ class FetchWgetAndSaveIT extends ITBaseSpec {
     )
 
     assert(unionRows(0).docs.head.timeMillis === unionRows(1).docs.head.timeMillis)
-    assert(unionRows(0).docs.head.content === unionRows(1).docs.head.content)
-    assert(unionRows(0).docs.head.content === unionRows(1).docs.head.content)
+    assert(unionRows(0).docs.head.blob.raw === unionRows(1).docs.head.blob.raw)
     assert(unionRows(1).docs.head.name === "b")
   }
 

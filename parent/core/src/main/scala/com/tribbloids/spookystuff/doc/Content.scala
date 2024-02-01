@@ -39,7 +39,10 @@ sealed trait Content extends SpookyContext.CanRunWith with Serializable {
     if (str.startsWith(".")) str.splitAt(1)._2
     else str
   }
-  def defaultFileExtension: Option[String] = fileExtensions.headOption
+
+  def defaultFileExtension: Option[String] = {
+    fileExtensions.headOption
+  }
 
   @transient lazy val converted: Converted = {
 
@@ -202,6 +205,11 @@ object Content {
     // mimeType is always text/html
     // charset is always preferredCharset
 
+    override def defaultFileExtension: Option[String] = {
+      fileExtensions.headOption.map { v =>
+        s"converted.$v"
+      }
+    }
   }
 
   lazy val defaultCharset: Charset = Charset.defaultCharset()

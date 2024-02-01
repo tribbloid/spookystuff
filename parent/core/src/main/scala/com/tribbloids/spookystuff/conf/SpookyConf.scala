@@ -41,7 +41,7 @@ case class SpookyConf(
     //    var browserResolution: (Int, Int) = (1920, 1080),
     remote: Boolean = true, // if disabled won't use remote client at all
     //
-    autoSave: SpookyConf.DocVersion = SpookyConf.DocVersion.effective,
+    autoSave: SpookyConf.DocVersion = SpookyConf.DocVersion.original,
     cacheWrite: Boolean = true,
     cacheRead: Boolean = true, // TODO: this enable both in-memory and DFS cache, should allow more refined control
 
