@@ -5,6 +5,8 @@ FWDIR="$(cd "`dirname "$0"`"/..; pwd)"
 # shellcheck source=profiles/apache-stable/.common.sh
 source "${FWDIR}/profiles/${1}/.common.sh"
 
+"${FWDIR}"/../gradlew
+
 if [ "${2}" = "prepare" ]; then
   exit 0
 fi
