@@ -89,7 +89,7 @@ case class FetchedDataset(
 
     val sortIndices: List[Field] = plan.allSortIndices.map(_._1.self)
 
-    val dataRDD = this.dataRDD
+    val dataRDD = this.map(_.dataRow)
     plan.scratchRDDPersist(dataRDD)
 
     val sorted = dataRDD.sortBy(v => v.sortIndex(sortIndices: _*))
@@ -103,7 +103,7 @@ case class FetchedDataset(
   def toMapRDD(sort: Boolean = false): RDD[Map[String, Any]] =
     spooky.withJob("toMapRDD", s"toMapRDD(sort=$sort)") {
       {
-        if (!sort) this.dataRDD
+        if (!sort) this.map(_.dataRow)
         else dataRDDSorted
       }.map(_.toMap)
     }
@@ -118,7 +118,7 @@ case class FetchedDataset(
   ): RDD[InternalRow] = {
 
     val dataRDD =
-      if (!sort) this.dataRDD
+      if (!sort) this.map(_.dataRow)
       else dataRDDSorted
 
     // TOOD: how to make it serializable so it can be reused by different partitions?

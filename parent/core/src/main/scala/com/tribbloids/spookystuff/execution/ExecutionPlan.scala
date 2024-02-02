@@ -1,7 +1,6 @@
 package com.tribbloids.spookystuff.execution
 
 import com.tribbloids.spookystuff.SpookyContext
-import com.tribbloids.spookystuff.doc.Observation
 import com.tribbloids.spookystuff.row._
 import com.tribbloids.spookystuff.tree.TreeView
 import com.tribbloids.spookystuff.utils.lifespan.Cleanable
@@ -92,21 +91,12 @@ abstract class ExecutionPlan(
     }
   }
 
-  final def SquashedRDDWithSchema: SquashedRDDWithSchema = {
+  @transient final lazy val SquashedRDDWithSchema: SquashedRDDWithSchema = {
     squashedRDD.map(_.withSchema(outputSchema))
   }
 
-  def fetchedRDD: RDD[FetchedRow] =
+  @transient final lazy val fetchedRDD: RDD[FetchedRow] =
     SquashedRDDWithSchema.flatMap(row => row.withCtx.unSquash)
-
-  def observationRDD: RDD[Seq[Observation]] = {
-    fetchedRDD.map(_.observations)
-  }
-
-  def dataRDD: RDD[DataRow] = {
-
-    fetchedRDD.map(_.dataRow)
-  }
 
   // -------------------------------------
 

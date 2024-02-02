@@ -5,7 +5,7 @@ import com.tribbloids.spookystuff.driver.PythonProcess
 import com.tribbloids.spookystuff.utils.classpath.ClasspathResolver
 import com.tribbloids.spookystuff.utils.io.{LocalResolver, WriteMode}
 import com.tribbloids.spookystuff.utils.lifespan.Cleanable.Lifespan
-import com.tribbloids.spookystuff.utils.{BypassingRule, CommonConst, CommonUtils, SpookyUtils}
+import com.tribbloids.spookystuff.utils.{CommonConst, CommonUtils, Retry, SpookyUtils}
 import com.tribbloids.spookystuff.{PyException, PyInterpretationException, SpookyContext}
 import org.apache.commons.io.FileUtils
 import org.apache.spark.ml.dsl.utils.DSLUtils
@@ -159,7 +159,7 @@ class PythonDriver(
           }
         } catch {
           case e: TimeoutException =>
-            throw BypassingRule.Silent(e)
+            throw Retry.BypassingRule.Silent(e)
           case e: Exception =>
             throw e
         }
