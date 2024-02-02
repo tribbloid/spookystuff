@@ -10,7 +10,7 @@ object Dir extends PluginSystem {
   case class Conf(
       root: String = null, // System.getProperty("spooky.dirs.root"),
       localRoot: String = null,
-      autoSave: String = null, // System.getProperty("spooky.dirs.autosave"),
+      auditing: String = null, // System.getProperty("spooky.dirs.auditing"),
       cache: String = null, // System.getProperty("spooky.dirs.cache"),
       errorDump: String = null, // System.getProperty("spooky.dirs.errordump"),
       errorScreenshot: String = null, // System.getProperty("spooky.dirs.errorscreenshot"),
@@ -33,8 +33,8 @@ object Dir extends PluginSystem {
       val result = Conf(
         root = _root,
         localRoot = _localRoot,
-        autoSave = Option(autoSave).getOrElse(
-          ConfUtils.getOrDefault("spooky.dirs.autosave", _root \\ "autosave")
+        auditing = Option(auditing).getOrElse(
+          ConfUtils.getOrDefault("spooky.dirs.auditing", _root \\ "auditing")
         ),
         cache = Option(cache).getOrElse(
           ConfUtils.getOrDefault("spooky.dirs.cache", _root \\ "cache")

@@ -22,7 +22,7 @@ class TestOAuth extends TestWget {
     super.beforeEach()
     spooky(Core).confUpdate(
       _.copy(
-        oAuthKeysFactory = () =>
+        oAuthKeysFactory = _ =>
           OAuthKeys(
             "consumerKey",
             "consumerSecret",

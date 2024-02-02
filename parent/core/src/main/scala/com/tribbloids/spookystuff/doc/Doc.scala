@@ -3,9 +3,9 @@ package com.tribbloids.spookystuff.doc
 import ai.acyclic.prover.commons.same.EqualBy
 import com.tribbloids.spookystuff._
 import com.tribbloids.spookystuff.caching.DocCacheLevel
-import com.tribbloids.spookystuff.conf.SpookyConf.DocVersion
 import com.tribbloids.spookystuff.doc.Content.InMemoryBlob
 import com.tribbloids.spookystuff.doc.Observation.DocUID
+import com.tribbloids.spookystuff.doc.Unstructured.Unrecognisable
 import com.tribbloids.spookystuff.utils.CommonUtils
 import com.tribbloids.spookystuff.utils.io.ResourceMetadata
 import com.tribbloids.spookystuff.utils.serialization.NOTSerializable
@@ -120,7 +120,7 @@ case class Doc(
       }
     }
 
-    this.content = Content.Raw(InMemoryBlob(raw), ContentTypeDetection.output)
+    this.content = Content.Original(InMemoryBlob(raw), ContentTypeDetection.output)
     this
   }
 
@@ -130,7 +130,6 @@ case class Doc(
     val content = this.content
     import content._
 
-    lazy val contentStr = new String(blob.raw, charset)
     if (mimeType.contains("html") || mimeType.contains("xml") || mimeType.contains("directory")) {
       Some(HtmlElement(contentStr, uri)) // not serialize, parsing is faster
     } else if (mimeType.contains("json")) {
@@ -152,28 +151,26 @@ case class Doc(
     }
   }
 
-  @transient lazy val effective: Doc = {
+  @transient lazy val converted: Observation = {
     rootOpt match {
       case Some(_) =>
         this
       case None =>
-        this.copy()(
-          content = this.content.converted
-        )
+        try {
+          this.copy()(
+            content = this.content.converted
+          )
+        } catch {
+          case e: Throwable =>
+            ConversionError(this, e)
+        }
     }
   }
 
   override type RootType = Unstructured
-  def root: Unstructured = effective.rootOpt.get
-
-  def versionsForSaving(docVersion: DocVersion): Seq[Doc] = {
-
-    docVersion match {
-      case DocVersion.disabled  => Nil
-      case DocVersion.original  => Seq(Doc.this)
-      case DocVersion.effective => Seq(effective)
-      case DocVersion.both      => Seq(Doc.this, effective).distinct
-    }
+  def root: Unstructured = converted match {
+    case d: Doc => d.rootOpt.getOrElse(Unrecognisable)
+    case _      => Unrecognisable
   }
 
   def saved: Seq[CSSQuery] = content.blob.saved
@@ -194,28 +191,29 @@ case class Doc(
       saved
     }
 
-    def auto(): Content = {
-      apply(spooky.dirConf.autoSave :: spooky.conf.autoSaveFileStructure(Doc.this) :: Nil)
+    def auditing(): Content = {
+      apply(spooky.dirConf.auditing :: spooky.conf.auditingFileStructure(Doc.this) :: Nil)
 
     }
 
-    private lazy val errorScreenshotRoot =
+    private lazy val errorDumpRoot =
       if (Doc.this.isImage) spooky.dirConf.errorScreenshot
       else spooky.dirConf.errorDump
 
     // TODO: merge into cascade retries
     def errorDump(): Content = {
 
-      apply(errorScreenshotRoot :: spooky.conf.errorDumpFileStructure(Doc.this) :: Nil)
+      apply(errorDumpRoot :: spooky.conf.errorDumpFileStructure(Doc.this) :: Nil)
 
     }
 
     def errorDumpLocally(): Content = {
 
       apply(
-        errorScreenshotRoot :: spooky.conf.errorDumpFileStructure(Doc.this) :: Nil
+        errorDumpRoot :: spooky.conf.errorDumpFileStructure(Doc.this) :: Nil
       )
     }
   }
 
+  override def docForAuditing: Option[Doc] = Some(this)
 }

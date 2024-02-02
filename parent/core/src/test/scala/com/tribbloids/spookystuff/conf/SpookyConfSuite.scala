@@ -29,7 +29,7 @@ class SpookyConfSuite extends SpookyBaseSpec {
 
     val sparkConf = new SparkConf()
     val dummyV = "dummy" + Random.nextLong()
-    sparkConf.set("spooky.dirs.autosave", dummyV)
+    sparkConf.set("spooky.dirs.auditing", dummyV)
     val imported = dirConf.importFrom(sparkConf)
     AssertSerializable(
       imported
@@ -39,10 +39,10 @@ class SpookyConfSuite extends SpookyBaseSpec {
   it("DirConf.import can read from SparkConf") {
     val sparkConf = new SparkConf()
     val dummyV = "dummy" + Random.nextLong()
-    sparkConf.set("spooky.dirs.autosave", dummyV)
+    sparkConf.set("spooky.dirs.auditing", dummyV)
     val imported = dirConf.importFrom(sparkConf)
 
-    assert(imported.autoSave == dummyV)
+    assert(imported.auditing == dummyV)
   }
 
   it("getProperty() can load property from spark property") {

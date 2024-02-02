@@ -4,7 +4,7 @@ import ai.acyclic.prover.commons.util.Capabilities
 import com.tribbloids.spookystuff.SpookyContext
 import com.tribbloids.spookystuff.actions.Trace.Internal
 import com.tribbloids.spookystuff.caching.{DFSDocCache, InMemoryDocCache}
-import com.tribbloids.spookystuff.doc.{Doc, Observation}
+import com.tribbloids.spookystuff.doc.Observation
 import com.tribbloids.spookystuff.row.{FetchedRow, SpookySchema}
 import com.tribbloids.spookystuff.agent.Agent
 import com.tribbloids.spookystuff.utils.serialization.NOTSerializable
@@ -126,33 +126,38 @@ case class Trace(
         else children
 
       _children.flatMap { action =>
-        val actionResult = action.apply(agent)
+        val observed: Seq[Observation] = action.apply(agent)
         agent.backtrace ++= action.skeleton
 
         if (action.hasOutput) {
 
           val spooky = agent.spooky
 
-          val docs = actionResult.collect {
-            case v: Doc => v
-          }
-
-          docs.foreach { doc =>
-            val saved = doc.versionsForSaving(spooky.conf.autoSave).map { dd =>
-              dd.save(spooky).auto()
+          observed.foreach { observed =>
+            spooky.conf.auditing.apply(observed).map { doc =>
+              doc.save(spooky).auditing()
             }
-
-//            doc.content = saved.last
+            // TODO: doc.content can now use the file saved for auditing
           }
 
           if (spooky.conf.cacheWrite) {
-            val effectiveBacktrace = actionResult.head.uid.backtrace
-            InMemoryDocCache.put(effectiveBacktrace, actionResult, spooky)
-            DFSDocCache.put(effectiveBacktrace, actionResult, spooky)
+
+            val failures = observed.collect {
+              case v: Observation.Failure => v
+            }
+            // will not cache even if there is only 1 failure
+            if (failures.isEmpty) {
+
+              observed.headOption.foreach { v =>
+                val effectiveBacktrace = v.uid.backtrace
+                InMemoryDocCache.put(effectiveBacktrace, observed, spooky)
+                DFSDocCache.put(effectiveBacktrace, observed, spooky)
+              }
+            }
           }
-          actionResult
+          observed
         } else {
-          assert(actionResult.isEmpty)
+          assert(observed.isEmpty)
           Nil
         }
       }

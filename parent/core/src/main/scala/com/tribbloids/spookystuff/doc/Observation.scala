@@ -63,4 +63,6 @@ trait Observation extends Serializable {
   type RootType
   def root: RootType
   def metadata: ResourceMetadata
+
+  def docForAuditing: Option[Doc]
 }

@@ -40,9 +40,10 @@ class FetchVisitIT extends ITBaseSpec {
         === unionRows(1).docs.head.copy(timeMillis = 0)(content = null)
     )
 
-    assert(unionRows(0).docs.head.timeMillis === unionRows(1).docs.head.timeMillis)
-    assert(unionRows(0).docs.head.content === unionRows(1).docs.head.content)
-    assert(unionRows(0).onlyDoc.get.content === unionRows(1).docs.head.content)
+    unionRows.map(_.docs.head.timeMillis.toString).shouldBeIdentical()
+    unionRows.map(_.docs.head.content.contentStr).shouldBeIdentical()
+    unionRows.map(_.onlyDoc.get.content.contentStr).shouldBeIdentical()
+
     assert(unionRows(0).onlyDoc.get.name === Snapshot(DocFilterImpl.MustHaveTitle).toString)
     assert(unionRows(1).onlyDoc.get.name === "b")
 

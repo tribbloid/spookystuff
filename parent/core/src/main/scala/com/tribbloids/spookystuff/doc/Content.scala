@@ -19,6 +19,7 @@ import java.util.UUID
 sealed trait Content extends SpookyContext.CanRunWith with Serializable {
 
   import Content._
+
   import scala.jdk.CollectionConverters._
 
   def blob: Blob
@@ -29,6 +30,8 @@ sealed trait Content extends SpookyContext.CanRunWith with Serializable {
   @transient final lazy val charsetOpt: Option[Charset] = Option(contentType.getCharset)
 
   def charset: Charset = charsetOpt.getOrElse(defaultCharset)
+
+  @transient lazy val contentStr = new String(blob.raw, charset)
 
   @transient final lazy val mimeType: String = contentType.getMimeType
 
@@ -47,8 +50,9 @@ sealed trait Content extends SpookyContext.CanRunWith with Serializable {
   @transient lazy val converted: Converted = {
 
     Content.this match {
-      case v: Converted => v
-      case v: Raw =>
+      case v: Converted =>
+        v
+      case v: Original =>
         val handler = new ToHTMLContentHandler()
 
         val metadata = new Metadata()
@@ -162,24 +166,30 @@ object Content {
       )
     }
 
-    override def saved: Seq[String] = Seq(path1) ++ paths.toSeq.sortBy(_._2).map(_._1)
+    @transient override lazy val saved: Seq[String] = Seq(path1) ++ paths.toSeq.sortBy(_._2).map(_._1)
 
-    override def raw: Array[Byte] = {
+    @transient override lazy val raw: Array[Byte] = {
 
-      val trials = saved.map { path => () =>
-        val result = pathResolver.input(path) { in =>
-          IOUtils.toByteArray(in.stream)
+      Option(original)
+        .map(_.raw)
+        .getOrElse {
+
+          val trials = saved.map { path => () =>
+            val result = pathResolver.input(path) { in =>
+              IOUtils.toByteArray(in.stream)
+            }
+
+            result
+          }
+
+          val result = TreeThrowable.|||^(trials)
+          result.get
         }
-
-        result
-      }
-
-      val result = TreeThrowable.|||^(trials)
-      result.get
     }
+
   }
 
-  case class Raw(
+  case class Original(
       blob: Blob,
       // can be different from bytes.charSet, will transcode on demand
       contentType: ContentType,

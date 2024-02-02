@@ -23,4 +23,6 @@ case class NoDoc(
 
   override type RootType = Unit
   override def root: Unit = {}
+
+  override def docForAuditing: Option[Doc] = None
 }

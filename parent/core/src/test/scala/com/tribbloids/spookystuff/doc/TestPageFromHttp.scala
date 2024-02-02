@@ -20,7 +20,7 @@ class TestPageFromHttp extends SpookyBaseSpec {
 
     val raw = page.blob.raw
 
-    page.save(spooky, overwrite = true).auto()
+    page.save(spooky, overwrite = true).auditing()
 
     val loadedContent = DocUtils.load(page.saved.head)(spooky)
 
@@ -43,7 +43,7 @@ class TestPageFromHttp extends SpookyBaseSpec {
     assert(page.\\("notexist").isEmpty)
 
     val raw = page.blob.raw
-    page.save(spooky, overwrite = true).auto()
+    page.save(spooky, overwrite = true).auditing()
 
     val loadedContent = DocUtils.load(page.saved.head)(spooky)
 
@@ -62,7 +62,7 @@ class TestPageFromHttp extends SpookyBaseSpec {
     assert(page.findAll("title").text.get == "")
 
     val raw = page.blob.raw
-    page.save(spooky, overwrite = true).auto()
+    page.save(spooky, overwrite = true).auditing()
 
     val loadedContent = DocUtils.load(page.saved.head)(spooky)
 
@@ -81,7 +81,7 @@ class TestPageFromHttp extends SpookyBaseSpec {
     assert(page.findAll("title").text.get == "Microsoft Word - Document1")
 
     val raw = page.blob.raw
-    page.save(spooky, overwrite = true).auto()
+    page.save(spooky, overwrite = true).auditing()
 
     val loadedContent = DocUtils.load(page.saved.head)(spooky)
 
@@ -131,7 +131,7 @@ class TestPageFromHttp extends SpookyBaseSpec {
     assert(page.findAll("profiles > profile").size == 5)
 
     val raw = page.blob.raw
-    page.save(spooky, overwrite = true).auto()
+    page.save(spooky, overwrite = true).auditing()
 
     val loadedContent = DocUtils.load(page.saved.head)(spooky)
 
@@ -159,7 +159,7 @@ class TestPageFromHttp extends SpookyBaseSpec {
     assert(page.findAll("Name").size == 14)
 
     val raw = page.blob.raw
-    page.save(spooky, overwrite = true).auto()
+    page.save(spooky, overwrite = true).auditing()
 
     val loadedContent = DocUtils.load(page.saved.head)(spooky)
 

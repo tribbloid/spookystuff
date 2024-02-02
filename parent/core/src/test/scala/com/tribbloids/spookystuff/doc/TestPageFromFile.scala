@@ -19,7 +19,7 @@ class TestPageFromFile extends TestPageFromHttp with LocalPathDocsFixture {
     assert(page.code.get.contains("<URI>file:///tmp/spookystuff/resources/testutils/files/Wikipedia.html</URI>"))
 
     val raw = page.content.blob.raw
-    page.save(spooky, overwrite = true).auto()
+    page.save(spooky, overwrite = true).auditing()
 
     val loadedContent = DocUtils.load(page.saved.head)(spooky)
 

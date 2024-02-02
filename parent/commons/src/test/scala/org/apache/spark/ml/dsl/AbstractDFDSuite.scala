@@ -12,7 +12,7 @@ import scala.util.matching.Regex
   */
 abstract class AbstractDFDSuite extends BaseSpec with BeforeAndAfterAll {
 
-  implicit class StringView(str: String) extends super._StringView(str) {
+  implicit class StringView(str: String) extends super._StringOps(str) {
 
     def treeNodeShouldBe(
         groundTruth: String = null,

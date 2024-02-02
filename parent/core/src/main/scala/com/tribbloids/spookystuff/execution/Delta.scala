@@ -105,10 +105,10 @@ object Delta {
     }
   }
 
-  case class SavePages(
+  case class SaveContent(
       path: Extractor[String],
       extension: Extractor[String],
-      page: Extractor[Doc],
+      doc: Extractor[Doc],
       overwrite: Boolean
   )(val childSchema: SpookySchema)
       extends Delta {
@@ -117,7 +117,7 @@ object Delta {
 
     val _ext: Resolved[String] = resolver.include(extension).head
     val _path: Resolved[String] = resolver.include(path).head
-    val _docExpr: Resolved[Doc] = resolver.include(page).head
+    val _docExpr: Resolved[Doc] = resolver.include(doc).head
 
     override val outputSchema: SpookySchema = childSchema
 

@@ -243,7 +243,7 @@ case class FetchedDataset(
 
     DeltaPlan.optimised(
       plan,
-      SavePages(path.ex.typed[String], _extensionEx, _pageEx, overwrite)
+      SaveContent(path.ex.typed[String], _extensionEx, _pageEx, overwrite)
     )
   }
 

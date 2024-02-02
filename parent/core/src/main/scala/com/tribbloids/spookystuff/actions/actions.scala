@@ -54,7 +54,8 @@ trait Action extends ActionLike with HasTrace {
     message
   }
 
-  // this should handle autoSave, cache and errorDump
+  // also handle auditing, cache and errorDump
+  // TODO: according to RL convention, should only return 1 Observation
   final override def apply(agent: Agent): Seq[Observation] = {
 
     val results =

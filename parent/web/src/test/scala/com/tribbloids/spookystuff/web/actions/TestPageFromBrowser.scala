@@ -35,7 +35,7 @@ class TestPageFromBrowser extends SpookyBaseSpec {
     val page = resultsList(0).asInstanceOf[Doc]
 
     val raw = page.blob.raw
-    page.save(spooky, overwrite = true).auto()
+    page.save(spooky, overwrite = true).auditing()
 
     val loadedContent = DocUtils.load(page.saved.head)(spooky)
 

@@ -47,10 +47,10 @@ class FetchWgetAndSaveIT extends ITBaseSpec {
         s"file:${CommonConst.USER_DIR}/temp/spooky-integration/save/Wikipedia.png"
     )
 
-    val loadedContent =
+    val loaded =
       DocUtils.load(s"file://${CommonConst.USER_DIR}/temp/spooky-integration/save/Wikipedia.png")(spooky)
 
-    assert(loadedContent === raw)
+    assert(loaded === raw)
 
     Thread.sleep(10000) // this delay is necessary to circumvent eventual consistency of HDFS-based cache
 
@@ -68,8 +68,9 @@ class FetchWgetAndSaveIT extends ITBaseSpec {
         unionRows(1).docs.head.copy(timeMillis = 0)(null)
     )
 
-    assert(unionRows(0).docs.head.timeMillis === unionRows(1).docs.head.timeMillis)
-    assert(unionRows(0).docs.head.blob.raw === unionRows(1).docs.head.blob.raw)
+    unionRows.map(_.docs.head.timeMillis.toString).shouldBeIdentical()
+    unionRows.map(_.docs.head.content.contentStr).shouldBeIdentical()
+
     assert(unionRows(1).docs.head.name === "b")
   }
 
