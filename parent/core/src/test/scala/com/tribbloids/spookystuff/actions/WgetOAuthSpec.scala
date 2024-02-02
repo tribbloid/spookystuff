@@ -8,7 +8,7 @@ import org.scalatest.tags.Retryable
   * Adding OAuth parameters should not affect results of other queries
   */
 @Retryable
-class TestOAuth extends TestWget {
+class WgetOAuthSpec extends WgetSpec {
 
   override def wget(uri: String): Action = {
     val action: OAuthV2 = OAuthV2(Wget(uri))

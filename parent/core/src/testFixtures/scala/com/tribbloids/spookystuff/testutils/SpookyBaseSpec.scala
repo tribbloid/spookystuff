@@ -89,8 +89,6 @@ object SpookyBaseSpec {
 
 abstract class SpookyBaseSpec extends SpookyEnvSpec with RemoteDocsFixture with BeforeAndAfterEach with Retries {
 
-  val exitingPIDs: Set[String] = SpookyBaseSpec.getProcesses.map(_.getPid).toSet
-
   lazy val defaultEC: SpookyExecutionContext = SpookyExecutionContext(spooky)
   lazy val defaultSchema: SpookySchema = SpookySchema(defaultEC)
 
@@ -119,6 +117,7 @@ abstract class SpookyBaseSpec extends SpookyEnvSpec with RemoteDocsFixture with 
   import com.tribbloids.spookystuff.utils.SpookyViews._
 
   def _externalProcessNames: Seq[String] = Seq("phantomjs", s"${PythonDriverFactory.python3} -iu")
+  val exitingPIDs: Set[String] = SpookyBaseSpec.getProcesses.map(_.getPid).toSet
   final lazy val conditions: Seq[ProcessInfo => Boolean] = {
     val _processNames = this._externalProcessNames
     val exitingPIDs = this.exitingPIDs

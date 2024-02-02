@@ -10,13 +10,12 @@ import org.scalatest.tags.Retryable
 
 import scala.concurrent.duration
 
-object TestWget {
+object WgetSpec {
 
   case class Sample(A: String, B: Timestamp)
 }
 
-@Retryable
-class TestWget extends SpookyBaseSpec {
+class WgetSpec extends SpookyBaseSpec {
 
   import com.tribbloids.spookystuff.dsl._
 
@@ -151,7 +150,7 @@ class TestWget extends SpookyBaseSpec {
     ) waybackTo 'B.typed[Timestamp]
 
     val rows = 1 to 5 map { i =>
-      TestWget.Sample("http://dummy.com" + i, new Timestamp(i * 100000))
+      WgetSpec.Sample("http://dummy.com" + i, new Timestamp(i * 100000))
     }
     require(rows.map(_.B.getTime).distinct.size == rows.size)
 
