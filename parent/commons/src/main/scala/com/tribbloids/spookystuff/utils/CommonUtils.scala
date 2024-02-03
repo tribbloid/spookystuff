@@ -80,7 +80,13 @@ object CommonUtils {
       await.result(future, timeout)
     } catch {
       case e: TimeoutException =>
-        if (interrupt) future.interrupt()
+        if (interrupt) {
+//          try {
+          future.interrupt()
+//          } catch {
+//            case _: InterruptedException => // already interrupted, no point in throwing the exception
+//          }
+        }
         LoggerFactory.getLogger(this.getClass).debug(TIMEOUT)
         throw e
     }
