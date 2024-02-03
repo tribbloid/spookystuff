@@ -186,7 +186,9 @@ case class Doc(
 
       val path = CommonUtils.\\\(pathParts: _*)
 
-      val saved = content.withCtx(spooky).save1(path, overwrite)
+      def wCtx = content.withCtx(spooky)
+
+      val saved = wCtx.save1(path, overwrite)
       Doc.this.content = saved
       saved
     }

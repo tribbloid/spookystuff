@@ -6,7 +6,6 @@ import com.tribbloids.spookystuff.doc.Doc
 import com.tribbloids.spookystuff.rdd.FetchedDataset
 import com.tribbloids.spookystuff.testutils.{LocalOnly, SpookyBaseSpec}
 import org.scalatest.Tag
-import org.scalatest.tags.Retryable
 
 import scala.concurrent.duration
 

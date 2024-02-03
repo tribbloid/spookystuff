@@ -1,6 +1,6 @@
 package com.tribbloids.spookystuff.web
 
-import ai.acyclic.prover.commons.function.PreDef.Fn
+import ai.acyclic.prover.commons.function.Impl.Fn
 import com.tribbloids.spookystuff.actions.Action
 import com.tribbloids.spookystuff.doc.Doc
 import com.tribbloids.spookystuff.agent.Agent

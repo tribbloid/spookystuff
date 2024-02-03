@@ -1,6 +1,7 @@
 package com.tribbloids.spookystuff.execution
 
-import ai.acyclic.prover.commons.function.PreDef.:=>
+import ai.acyclic.prover.commons.function.Impl
+import ai.acyclic.prover.commons.function.Impl.:=>
 import com.tribbloids.spookystuff.doc.Doc
 import com.tribbloids.spookystuff.dsl.ForkType
 import com.tribbloids.spookystuff.extractors.impl.Get
@@ -22,7 +23,7 @@ object Delta {
 
   case class NoDelta(outputSchema: SpookySchema) extends Delta {
 
-    override def fn: SquashedRow :=> SquashedRow = { v => v }
+    override def fn: SquashedRow :=> SquashedRow = Impl(v => v)
   }
 
   /**
@@ -41,7 +42,7 @@ object Delta {
       resolver.build
     }
 
-    override lazy val fn: SquashedRow :=> SquashedRow = { v =>
+    override lazy val fn: SquashedRow :=> SquashedRow = Impl { v =>
       {
         v.withCtx(outputSchema.spooky): v._WithCtx
       }.extract(_exs: _*)
@@ -75,7 +76,7 @@ object Delta {
 
     override val outputSchema: SpookySchema = resolver.build
 
-    override lazy val fn: SquashedRow :=> SquashedRow = { v =>
+    override lazy val fn: SquashedRow :=> SquashedRow = Impl { v =>
       val result = v.explodeData(onField, effectiveOrdinalField, forkType, sampler)
       result
     }
@@ -88,7 +89,7 @@ object Delta {
 
     override def outputSchema: SpookySchema = childSchema
 
-    override lazy val fn: SquashedRow :=> SquashedRow = { v =>
+    override lazy val fn: SquashedRow :=> SquashedRow = Impl { v =>
       v.explodeScope(scopeFn)
     }
   }
@@ -100,7 +101,7 @@ object Delta {
 
     override val outputSchema: SpookySchema = childSchema -- toBeRemoved
 
-    override lazy val fn: SquashedRow :=> SquashedRow = { v =>
+    override lazy val fn: SquashedRow :=> SquashedRow = Impl { v =>
       v.remove(toBeRemoved: _*)
     }
   }
@@ -121,7 +122,7 @@ object Delta {
 
     override val outputSchema: SpookySchema = childSchema
 
-    override lazy val fn: SquashedRow :=> SquashedRow = { v =>
+    override lazy val fn: SquashedRow :=> SquashedRow = Impl { v =>
       val withCtx = v.withCtx(childSchema.spooky)
 
       withCtx.unSquash

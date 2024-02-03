@@ -1,6 +1,6 @@
 package com.tribbloids.spookystuff
 
-import ai.acyclic.prover.commons.function.PreDef
+import ai.acyclic.prover.commons.function.{Impl, System}
 import com.tribbloids.spookystuff.conf._
 import com.tribbloids.spookystuff.metrics.SpookyMetrics
 import com.tribbloids.spookystuff.rdd.FetchedDataset
@@ -45,7 +45,8 @@ object SpookyContext {
     def _WithCtx: SpookyContext => _WithCtx
 
     // cached results will be dropped for being NOTSerializable
-    @transient final lazy val withCtx: PreDef.Fn.Cached[SpookyContext, _WithCtx] = PreDef.Fn(_WithCtx).cachedBy()
+    @transient final lazy val withCtx: System.FnImpl.Cached[SpookyContext, _WithCtx] =
+      Impl(_WithCtx).cachedBy()
   }
 }
 

@@ -1,5 +1,6 @@
 package com.tribbloids.spookystuff.actions
 
+import ai.acyclic.prover.commons.function.Impl
 import com.tribbloids.spookystuff.agent.{Agent, OAuthKeys}
 import com.tribbloids.spookystuff.conf.Core
 import org.scalatest.tags.Retryable
@@ -20,16 +21,18 @@ class WgetOAuthSpec extends WgetSpec {
 
   override def beforeEach(): Unit = {
     super.beforeEach()
-    spooky(Core).confUpdate(
-      _.copy(
-        oAuthKeysFactory = _ =>
+    spooky(Core).confUpdate { v =>
+      val result = v.copy(
+        oAuthKeysFactory = Impl(_ =>
           OAuthKeys(
             "consumerKey",
             "consumerSecret",
             "token",
             "tokenSecret"
           )
+        )
       )
-    )
+      result
+    }
   }
 }

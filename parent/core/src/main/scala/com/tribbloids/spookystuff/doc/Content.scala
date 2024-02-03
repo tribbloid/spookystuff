@@ -27,13 +27,13 @@ sealed trait Content extends SpookyContext.CanRunWith with Serializable {
 
   def contentType: ContentType
 
-  @transient final lazy val charsetOpt: Option[Charset] = Option(contentType.getCharset)
+  @transient lazy val charsetOpt: Option[Charset] = Option(contentType.getCharset)
 
   def charset: Charset = charsetOpt.getOrElse(defaultCharset)
 
   @transient lazy val contentStr = new String(blob.raw, charset)
 
-  @transient final lazy val mimeType: String = contentType.getMimeType
+  @transient lazy val mimeType: String = contentType.getMimeType
 
   def isImage: Boolean = mimeType.startsWith("image")
 

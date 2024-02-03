@@ -1,10 +1,9 @@
 package com.tribbloids.spookystuff.conf
 
-import ai.acyclic.prover.commons.function.PreDef
-import PreDef.:=>
+import ai.acyclic.prover.commons.function.Impl
 import com.tribbloids.spookystuff.doc.{Doc, Observation}
 
-trait Auditing extends (Observation :=> Seq[Doc]) {}
+trait Auditing extends Impl.Fn[Observation, Seq[Doc]] {}
 
 object Auditing extends Enumeration {
 

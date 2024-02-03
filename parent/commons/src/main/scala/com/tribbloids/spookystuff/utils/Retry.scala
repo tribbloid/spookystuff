@@ -98,7 +98,7 @@ object Retry {
         Option(showStr).getOrElse {
           CallStackRef
             .below(
-              condition = _.isUnderClasses(classOf[Retry], classOf[RetryImpl[_]], classOf[CommonUtils.type])
+              condition = _.isDefinedAtClasses(classOf[Retry], classOf[RetryImpl[_]], classOf[CommonUtils.type])
             )
             .showStr
         }
