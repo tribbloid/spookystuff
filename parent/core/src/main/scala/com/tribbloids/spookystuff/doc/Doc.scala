@@ -120,7 +120,7 @@ case class Doc(
       }
     }
 
-    this.content = Content.Original(InMemoryBlob(raw), ContentTypeDetection.output)
+    this.content = Content.Original(new InMemoryBlob(raw), ContentTypeDetection.output)
     this
   }
 

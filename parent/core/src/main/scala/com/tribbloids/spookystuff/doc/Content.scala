@@ -69,7 +69,7 @@ sealed trait Content extends SpookyContext.CanRunWith with Serializable {
             stream.close()
           }
 
-        Converted(InMemoryBlob(html.getBytes(v.preferredCharset)), v.preferredCharset)
+        Converted(new InMemoryBlob(html.getBytes(v.preferredCharset)), v.preferredCharset)
     }
   }
 
@@ -147,8 +147,8 @@ object Content {
     def saved: Seq[String] = Nil
   }
 
-  case class InMemoryBlob(
-      raw: Array[Byte]
+  class InMemoryBlob(
+      val raw: Array[Byte]
   ) extends Blob {}
 
   case class DFSSavedBlob(
