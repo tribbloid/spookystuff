@@ -11,14 +11,18 @@ class FetchClickNextPageIT extends ITBaseSpec {
 
   override def doMain(): Unit = {
 
+    val clickNext = {
+      Loop(
+        Click("ul.pagination a[rel=next]")
+          +> Snapshot().as('b)
+      )
+    }
+
     val rdd = spooky
       .fetch(
         Visit("http://localhost:10092/test-sites/e-commerce/static/computers/laptops")
           +> Snapshot().as('a)
-          +> Loop(
-            Click("ul.pagination a[rel=next]")
-              +> Snapshot().as('b)
-          )
+          +> clickNext
       )
       .persist()
 
