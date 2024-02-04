@@ -1,19 +1,21 @@
 package com.tribbloids.spookystuff.unused
 
+import ai.acyclic.prover.commons.spark.TestHelper.TestSC
 import com.tribbloids.spookystuff.dsl.Samplers
-import com.tribbloids.spookystuff.testutils.BaseSpec
-import com.tribbloids.spookystuff.testutils.TestHelper.TestSC
+import com.tribbloids.spookystuff.testutils.{BaseSpec, TestHelper}
 import com.tribbloids.spookystuff.utils.PreemptiveLocalOps
 import org.apache.spark.rdd.RDD
 import org.apache.spark.rdd.spookystuff.IncrementallyCachedRDDSuite
 import org.apache.spark.rdd.spookystuff.IncrementallyCachedRDDSuite.TestSubject
+import org.apache.spark.sql.SQLContext
 import org.apache.spark.sql.catalyst.InternalRow
 import org.apache.spark.storage.StorageLevel
 import org.scalatest.BeforeAndAfterAll
 
 object IncrementallyCachedRDDMatrix {
 
-  import com.tribbloids.spookystuff.testutils.TestHelper.TestSQL.implicits._
+  val sql: SQLContext = TestHelper.TestSQL
+  import sql.implicits._
 
   class Group(nPartition: Int) {
 

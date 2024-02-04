@@ -1,11 +1,11 @@
 package com.tribbloids.spookystuff.integration.fetch
 
+import ai.acyclic.prover.commons.spark.Envs
 import com.tribbloids.spookystuff.actions._
 import com.tribbloids.spookystuff.doc.DocUtils
 import com.tribbloids.spookystuff.dsl._
 import com.tribbloids.spookystuff.extractors.impl.Lit
 import com.tribbloids.spookystuff.integration.ITBaseSpec
-import com.tribbloids.spookystuff.utils.CommonConst
 
 class FetchWgetAndSaveIT extends ITBaseSpec {
 
@@ -28,7 +28,7 @@ class FetchWgetAndSaveIT extends ITBaseSpec {
     //    fetched.count()
 
     val rdd = fetched
-      .savePages(x"file://${CommonConst.USER_DIR}/temp/spooky-integration/save/${'name}", overwrite = true)
+      .savePages(x"file://${Envs.USER_DIR}/temp/spooky-integration/save/${'name}", overwrite = true)
       .extract(S.saved ~ 'saved_path)
 
     val savedPageRows = rdd.fetchedRDD.collect()
@@ -44,11 +44,11 @@ class FetchWgetAndSaveIT extends ITBaseSpec {
 
     assert(
       savedPageRows(0).dataRow.get('saved_path).get.asInstanceOf[Iterable[Any]].toSeq contains
-        s"file:${CommonConst.USER_DIR}/temp/spooky-integration/save/Wikipedia.png"
+        s"file:${Envs.USER_DIR}/temp/spooky-integration/save/Wikipedia.png"
     )
 
     val loaded =
-      DocUtils.load(s"file://${CommonConst.USER_DIR}/temp/spooky-integration/save/Wikipedia.png")(spooky)
+      DocUtils.load(s"file://${Envs.USER_DIR}/temp/spooky-integration/save/Wikipedia.png")(spooky)
 
     assert(loaded === raw)
 

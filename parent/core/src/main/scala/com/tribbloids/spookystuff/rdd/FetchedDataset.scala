@@ -13,12 +13,12 @@ import com.tribbloids.spookystuff.row._
 import com.tribbloids.spookystuff.utils.SpookyViews
 import com.tribbloids.spookystuff.{Const, SpookyContext}
 import org.apache.spark.SparkContext
+import org.apache.spark.sql._SQLHelper
 import org.apache.spark.ml.dsl.utils.refl.CatalystTypeOps
 import org.apache.spark.rdd.RDD
 import org.apache.spark.sql.catalyst.expressions.GenericInternalRow
 import org.apache.spark.sql.catalyst.{CatalystTypeConverters, InternalRow}
 import org.apache.spark.sql.types.DataType
-import org.apache.spark.sql._SQLHelper
 import org.apache.spark.sql.{DataFrame, Dataset}
 import org.apache.spark.storage.StorageLevel
 

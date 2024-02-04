@@ -1,5 +1,7 @@
 package com.tribbloids.spookystuff.testutils
 
+import ai.acyclic.prover.commons.spark.Envs
+import ai.acyclic.prover.commons.util.Retry
 import com.tribbloids.spookystuff.SpookyContext
 import com.tribbloids.spookystuff.conf._
 import com.tribbloids.spookystuff.doc.{Doc, Unstructured}
@@ -9,7 +11,7 @@ import com.tribbloids.spookystuff.row.{SpookySchema, SquashedRow, TypedField}
 import com.tribbloids.spookystuff.agent.DriverLike
 import com.tribbloids.spookystuff.utils.lifespan.Cleanable
 import com.tribbloids.spookystuff.utils.lifespan.Cleanable.Lifespan
-import com.tribbloids.spookystuff.utils.{CommonConst, CommonUtils, Retry, TreeThrowable}
+import com.tribbloids.spookystuff.utils.{CommonUtils, TreeThrowable}
 import org.jutils.jprocesses.JProcesses
 import org.jutils.jprocesses.model.ProcessInfo
 import org.scalatest.{BeforeAndAfterEach, Outcome, Retries}
@@ -174,7 +176,7 @@ abstract class SpookyBaseSpec extends SpookyEnvSpec with RemoteDocsFixture with 
         cacheRead = false
       ),
       Dir.Conf(
-        root = CommonUtils.\\\(CommonConst.USER_TEMP_DIR, "spooky-unit")
+        root = CommonUtils.\\\(Envs.USER_TEMP_DIR, "spooky-unit")
       )
     )
   }

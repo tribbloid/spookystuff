@@ -1,6 +1,6 @@
 package org.apache.spark.rdd.spookystuff
 
-import com.tribbloids.spookystuff.testutils.TestHelper.TestSC
+import ai.acyclic.prover.commons.spark.TestHelper.TestSC
 import com.tribbloids.spookystuff.testutils.{SparkEnvSpec, SubSuite, TestHelper}
 import com.tribbloids.spookystuff.utils.Stopwatch
 import org.apache.spark.rdd.RDD

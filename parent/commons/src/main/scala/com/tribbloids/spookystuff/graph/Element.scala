@@ -3,7 +3,7 @@ package com.tribbloids.spookystuff.graph
 import ai.acyclic.prover.commons.same.EqualBy
 import com.tribbloids.spookystuff.graph.IDAlgebra.Rotator
 import com.tribbloids.spookystuff.graph.Module.{Heads, Tails}
-import com.tribbloids.spookystuff.utils.CommonTypes
+import com.tribbloids.spookystuff.utils.Types
 
 import scala.collection.mutable
 
@@ -44,7 +44,7 @@ object Element {
     override protected def _replicate(m: DataMutator)(
         implicit
         idRotator: Rotator[ID],
-        node_+ : CommonTypes.Binary[NodeData]
+        node_+ : Types.Binary[NodeData]
     ): Edge[T] = {
       val newIDs = idRotator(from) -> idRotator(to)
       if (newIDs == from_to) this
@@ -118,7 +118,7 @@ object Element {
     override def _replicate(m: DataMutator)(
         implicit
         idRotator: Rotator[ID],
-        node_+ : CommonTypes.Binary[NodeData]
+        node_+ : Types.Binary[NodeData]
     ): _Module = {
       val newID = idRotator(this.samenessDelegatedTo)
       if (newID == this.samenessDelegatedTo)
@@ -142,7 +142,7 @@ object Element {
     override protected def _replicate(m: DataMutator)(
         implicit
         idRotator: Rotator[ID],
-        node_+ : CommonTypes.Binary[NodeData]
+        node_+ : Types.Binary[NodeData]
     ): _NodeTriplet = {
       new NodeTriplet[D](
         node.replicate(m),

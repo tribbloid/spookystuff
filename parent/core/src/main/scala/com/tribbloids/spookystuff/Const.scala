@@ -2,10 +2,13 @@ package com.tribbloids.spookystuff
 
 import com.tribbloids.spookystuff.dsl.DocFilterImpl
 import com.tribbloids.spookystuff.row.Field
-import com.tribbloids.spookystuff.utils.CommonConst
 import org.apache.tika.detect.DefaultDetector
 
-object Const extends CommonConst {
+import scala.language.implicitConversions
+
+object Const {
+
+  implicit def asCommonConst(v: this.type): CommonConst.type = CommonConst
 
   val defaultInputKey: String = "_"
   val keyDelimiter: String = "'"

@@ -1,7 +1,7 @@
 
 val vs = versions()
 
-val sparkV = "3.5.0"
+val sparkV = vs.spark.v
 val jacksonV = "2.12.3"
 
 plugins {

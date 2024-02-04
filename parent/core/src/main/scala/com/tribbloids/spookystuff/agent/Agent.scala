@@ -67,7 +67,7 @@ class Agent(
           p
       }
 
-      val trials = wDrivers.map { p =>
+      val trials = wDrivers.map { p: Sys#Plugin =>
         Try {
           p.driverFactoryOpt.foreach { v =>
             v.release(Agent.this)

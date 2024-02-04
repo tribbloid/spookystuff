@@ -1,9 +1,9 @@
 package com.tribbloids.spookystuff.utils.io
 
+import ai.acyclic.prover.commons.spark.Envs
 import com.tribbloids.spookystuff.testutils.{LocalPathDocsFixture, SparkEnvSpec}
 import com.tribbloids.spookystuff.utils.io.AbstractURIResolverSuite.SequentialCheck
 import com.tribbloids.spookystuff.utils.serialization.AssertSerializable
-import com.tribbloids.spookystuff.utils.CommonConst
 import org.apache.commons.io.IOUtils
 import org.apache.spark.SparkContext
 import org.apache.spark.broadcast.Broadcast
@@ -53,7 +53,7 @@ abstract class AbstractURIResolverSuite extends SparkEnvSpec with LocalPathDocsF
 
   lazy val temp: TempResource = TempResource(
     resolver,
-    CommonConst.TEMP
+    Envs.TEMP
   )
 
   lazy val existingFile: TempResource = temp \ "a-file.txt"
@@ -75,12 +75,12 @@ abstract class AbstractURIResolverSuite extends SparkEnvSpec with LocalPathDocsF
   it("can convert relative path of non-existing file") {
     {
       val abs = resolver.toAbsolute(nonExistingFile.pathStr)
-      assert(abs == schemaPrefix + CommonConst.USER_DIR + "/" + nonExistingFile.pathStr)
+      assert(abs == schemaPrefix + Envs.USER_DIR + "/" + nonExistingFile.pathStr)
     }
 
     {
       val abs = resolver.toAbsolute(nonExistingSubFile.pathStr)
-      assert(abs == schemaPrefix + CommonConst.USER_DIR + "/" + nonExistingSubFile.pathStr)
+      assert(abs == schemaPrefix + Envs.USER_DIR + "/" + nonExistingSubFile.pathStr)
     }
   }
 

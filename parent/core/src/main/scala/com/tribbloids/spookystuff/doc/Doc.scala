@@ -26,6 +26,9 @@ object Doc {
   val defaultCSVFormat: CSVFormat = CSVFormat.DEFAULT
 
   implicit def asContent(v: Doc): Content = v.content
+
+  val defaultTextCharset: String = "ISO-8859-1"
+  val defaultApplicationCharset: String = "UTF-8"
 }
 
 @SerialVersionUID(94865098324L)
@@ -42,6 +45,8 @@ case class Doc(
     var content: Content = null
 ) extends Observation.Success
     with EqualBy {
+
+  import Doc._
 
   @transient lazy val samenessDelegatedTo: Any = (uid, uri, metadata, timeMillis, httpStatus.toString)
 
@@ -110,9 +115,9 @@ case class Doc(
 
           val charSet: String = charSetOpt.getOrElse {
 
-            if (detected.getMimeType.contains("text")) Const.defaultTextCharset
-            else if (detected.getMimeType.contains("application")) Const.defaultApplicationCharset
-            else Const.defaultApplicationCharset
+            if (detected.getMimeType.contains("text")) defaultTextCharset
+            else if (detected.getMimeType.contains("application")) defaultApplicationCharset
+            else defaultApplicationCharset
           }
 
           detected.withCharset(charSet)

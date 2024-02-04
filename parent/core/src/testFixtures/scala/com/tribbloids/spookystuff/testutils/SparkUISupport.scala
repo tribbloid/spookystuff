@@ -1,6 +1,6 @@
 package com.tribbloids.spookystuff.testutils
 
-import com.tribbloids.spookystuff.utils.SparkContextView
+import ai.acyclic.prover.commons.spark.SparkContextView
 import org.scalatest.{Status, Suite}
 
 import java.util.concurrent.atomic.AtomicInteger

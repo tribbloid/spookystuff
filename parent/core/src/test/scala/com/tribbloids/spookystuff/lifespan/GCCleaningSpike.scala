@@ -1,6 +1,6 @@
 package com.tribbloids.spookystuff.lifespan
 
-import com.tribbloids.spookystuff.utils.Retry
+import ai.acyclic.prover.commons.util.Retry
 import org.scalatest.Ignore
 import org.scalatest.funspec.AnyFunSpec
 

@@ -1,12 +1,12 @@
 package com.tribbloids.spookystuff.rdd
 
+import ai.acyclic.prover.commons.spark.Envs
 import com.tribbloids.spookystuff.actions._
 import com.tribbloids.spookystuff.extractors.impl.Lit
 import com.tribbloids.spookystuff.metrics.Acc
 import com.tribbloids.spookystuff.testutils.{LocalPathDocsFixture, SpookyBaseSpec}
 import com.tribbloids.spookystuff.testutils.beans.Composite
 import com.tribbloids.spookystuff.dsl
-import com.tribbloids.spookystuff.utils.CommonConst
 
 import java.io.File
 
@@ -292,7 +292,7 @@ class FetchedDatasetSuite extends SpookyBaseSpec with LocalPathDocsFixture {
   describe("savePage") {
 
     def dummyFileExists() = {
-      val file = new File(s"${CommonConst.USER_DIR}/temp/dummy.html")
+      val file = new File(Envs.USER_DIR :\ "temp" :\ "dummy.html")
       val exists_deleted = file.exists() -> file.delete()
       exists_deleted._1 && exists_deleted._2
     }
@@ -303,7 +303,7 @@ class FetchedDatasetSuite extends SpookyBaseSpec with LocalPathDocsFixture {
         .fetch(
           Wget(HTML_URL)
         )
-        .savePages(s"file://${CommonConst.USER_DIR}/temp/dummy", overwrite = true)
+        .savePages(s"file://${Envs.USER_DIR}/temp/dummy", overwrite = true)
         .collect()
 
       assert(dummyFileExists())
@@ -319,7 +319,7 @@ class FetchedDatasetSuite extends SpookyBaseSpec with LocalPathDocsFixture {
 
       vv.collect()
 
-      vv.savePages(s"file://${CommonConst.USER_DIR}/temp/dummy", overwrite = true)
+      vv.savePages(s"file://${Envs.USER_DIR}/temp/dummy", overwrite = true)
         .collect()
 
       assert(dummyFileExists())
@@ -332,7 +332,7 @@ class FetchedDatasetSuite extends SpookyBaseSpec with LocalPathDocsFixture {
         .fetch(
           Wget(HTML_URL)
         )
-        .savePages_!(s"file://${CommonConst.USER_DIR}/temp/dummy", overwrite = true)
+        .savePages_!(s"file://${Envs.USER_DIR}/temp/dummy", overwrite = true)
 
       assert(dummyFileExists())
     }

@@ -1,6 +1,7 @@
 package com.tribbloids.spookystuff
 
 import ai.acyclic.prover.commons.function.{Impl, System}
+import ai.acyclic.prover.commons.spark.{DatasetView, SparkContextView}
 import com.tribbloids.spookystuff.conf._
 import com.tribbloids.spookystuff.metrics.SpookyMetrics
 import com.tribbloids.spookystuff.rdd.FetchedDataset
@@ -9,7 +10,7 @@ import com.tribbloids.spookystuff.row._
 import com.tribbloids.spookystuff.agent.Agent
 import com.tribbloids.spookystuff.utils.io.HDFSResolver
 import com.tribbloids.spookystuff.utils.serialization.{NOTSerializable, SerializerOverride}
-import com.tribbloids.spookystuff.utils.{ShippingMarks, SparkContextView, TreeThrowable}
+import com.tribbloids.spookystuff.utils.{ShippingMarks, TreeThrowable}
 import org.apache.hadoop.conf.Configuration
 import org.apache.spark._
 import org.apache.spark.broadcast.Broadcast
@@ -220,7 +221,7 @@ case class SpookyContext(
     import com.tribbloids.spookystuff.utils.SpookyViews._
 
     implicit def dfToFetchedDS(df: DataFrame): FetchedDataset = {
-      val mapRDD = new DataFrameView(df)
+      val mapRDD = DatasetView(df)
         .toMapRDD()
 
       val self: SquashedRDD = mapRDD
