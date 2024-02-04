@@ -176,7 +176,7 @@ abstract class SpookyBaseSpec extends SpookyEnvSpec with RemoteDocsFixture with 
         cacheRead = false
       ),
       Dir.Conf(
-        root = CommonUtils.\\\(Envs.USER_TEMP_DIR, "spooky-unit")
+        root = Envs.USER_TEMP_DIR :\ "spooky-unit"
       )
     )
   }
