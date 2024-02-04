@@ -37,7 +37,7 @@ case class SpookyConf(
     //    var browserResolution: (Int, Int) = (1920, 1080),
     remote: Boolean = true, // if disabled won't use remote client at all
     //
-    auditing: Auditing = Auditing.Original,
+    auditing: Auditing = Auditing.Both,
     auditingFileStructure: ByDoc[String] = FilePaths.UUIDName(FilePaths.Hierarchical),
     //
     cacheWrite: Boolean = true,

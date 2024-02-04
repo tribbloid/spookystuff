@@ -22,7 +22,7 @@ object Auditing extends Enumeration {
   object Both extends Auditing {
     override def apply(v1: Observation): Seq[Doc] = {
 
-      Original(v1) ++ Converted(v1)
+      (Original(v1) ++ Converted(v1)).distinct
     }
   }
 }
