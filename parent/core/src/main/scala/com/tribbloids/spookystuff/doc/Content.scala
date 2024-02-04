@@ -25,7 +25,7 @@ sealed trait Content extends SpookyContext.CanRunWith with Serializable {
   def blob: Blob
   def withBlob(blob: Blob): Content
 
-  def contentType: ContentType
+  def contentType: ContentTypeView
 
   @transient lazy val charsetOpt: Option[Charset] = Option(contentType.getCharset)
 
@@ -69,7 +69,12 @@ sealed trait Content extends SpookyContext.CanRunWith with Serializable {
             stream.close()
           }
 
-        Converted(new InMemoryBlob(html.getBytes(v.preferredCharset)), v.preferredCharset)
+        Converted(
+          new InMemoryBlob(html.getBytes(v.preferredCharset)),
+          ContentTypeView(
+            ContentType.TEXT_HTML.withCharset(v.preferredCharset)
+          )
+        )
     }
   }
 
@@ -141,6 +146,9 @@ sealed trait Content extends SpookyContext.CanRunWith with Serializable {
 
 object Content {
 
+  lazy val defaultCharset: Charset = Charset.defaultCharset()
+//  lazy val HTML_Default: ContentType = ContentType.TEXT_HTML.withCharset(defaultCharset)
+
   sealed trait Blob extends Serializable {
 
     def raw: Array[Byte]
@@ -192,13 +200,16 @@ object Content {
   case class Original(
       blob: Blob,
       // can be different from bytes.charSet, will transcode on demand
-      contentType: ContentType,
-      transcode: Option[Charset] = None
+      contentType: ContentTypeView,
+      transcode: Option[String] = None
   ) extends Content {
 
     def withBlob(blob: Blob): Content = this.copy(blob = blob)
 
     @transient lazy val preferredCharset: Charset = transcode
+      .map { v =>
+        Charset.forName(v)
+      }
       .getOrElse(
         charset
       )
@@ -206,14 +217,10 @@ object Content {
 
   case class Converted(
       blob: Blob,
-      preferredCharset: Charset
+      contentType: ContentTypeView
   ) extends Content {
 
     def withBlob(blob: Blob): Content = this.copy(blob = blob)
-
-    override lazy val contentType: ContentType = ContentType.TEXT_HTML.withCharset(preferredCharset)
-    // mimeType is always text/html
-    // charset is always preferredCharset
 
     override def defaultFileExtension: Option[String] = {
       fileExtensions.headOption.map { v =>
@@ -222,5 +229,4 @@ object Content {
     }
   }
 
-  lazy val defaultCharset: Charset = Charset.defaultCharset()
 }

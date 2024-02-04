@@ -72,7 +72,7 @@ case class Doc(
           .orElse(declaredContentType)
       }
 
-      lazy val detected: ContentType = declaredOpt match {
+      lazy val detectedUsingTika: ContentType = declaredOpt match {
         case Some(str) =>
           val result = ContentType.parse(str)
           result
@@ -97,9 +97,9 @@ case class Doc(
           }
       }
 
-      lazy val output: ContentType = {
+      lazy val detected: ContentType = {
 
-        if (detected.getCharset == null) {
+        if (detectedUsingTika.getCharset == null) {
 
           val charsetDetecter = new UniversalDetector(null)
           val ss = 4096
@@ -115,17 +115,24 @@ case class Doc(
 
           val charSet: String = charSetOpt.getOrElse {
 
-            if (detected.getMimeType.contains("text")) defaultTextCharset
-            else if (detected.getMimeType.contains("application")) defaultApplicationCharset
+            if (detectedUsingTika.getMimeType.contains("text")) defaultTextCharset
+            else if (detectedUsingTika.getMimeType.contains("application")) defaultApplicationCharset
             else defaultApplicationCharset
           }
 
-          detected.withCharset(charSet)
-        } else detected
+          detectedUsingTika.withCharset(charSet)
+        } else {
+          detectedUsingTika
+        }
       }
+
+      lazy val output: ContentTypeView = ContentTypeView(detected)
     }
 
-    this.content = Content.Original(new InMemoryBlob(raw), ContentTypeDetection.output)
+    this.content = Content.Original(
+      new InMemoryBlob(raw),
+      ContentTypeDetection.output
+    )
     this
   }
 
