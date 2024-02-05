@@ -18,7 +18,7 @@ fun isEnabled(profile: String?): Boolean {
 include(
     // should be skipped on CI, contains local experiments only
     ":repack",
-    ":repack:selenium-repack"
+    ":repack:selenium"
 )
 
 include(":parent")

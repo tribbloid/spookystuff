@@ -57,24 +57,27 @@ sealed trait Content extends SpookyContext.CanRunWith with Serializable {
 
         val metadata = new Metadata()
         val stream = TikaInputStream.get(blob.raw, metadata)
-        val html: String =
+        val result = {
           try {
             metadata.set(HttpHeaders.CONTENT_ENCODING, charsetOpt.map(_.name()).orNull)
             metadata.set(HttpHeaders.CONTENT_TYPE, v.mimeType)
             val parser = new AutoDetectParser()
             val context = new ParseContext()
             parser.parse(stream, handler, metadata, context)
-            handler.toString
+            val html = handler.toString
+
+            Converted(
+              new InMemoryBlob(html.getBytes(v.preferredCharset)),
+              ContentTypeView(
+                ContentType.TEXT_HTML.withCharset(v.preferredCharset)
+              )
+            )
           } finally {
             stream.close()
           }
+        }
+        result
 
-        Converted(
-          new InMemoryBlob(html.getBytes(v.preferredCharset)),
-          ContentTypeView(
-            ContentType.TEXT_HTML.withCharset(v.preferredCharset)
-          )
-        )
     }
   }
 
