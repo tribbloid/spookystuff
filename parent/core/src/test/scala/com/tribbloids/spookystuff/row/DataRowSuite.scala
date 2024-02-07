@@ -41,49 +41,49 @@ class DataRowSuite extends SpookyBaseSpec {
 
   it("getTypedArray can extract from Array") {
     val map = Map(Field("abc") -> 1, Field("def") -> Array("d", "e", "f"))
-    val result = DataRow(map).getTypedArray[String]('def).get
+    val result = DataRow(map).getArray[String]('def).get
     assert(result.toSeq == Seq("d", "e", "f"))
   }
 
   it("getTypedArray can extract from Iterator") {
     val map = Map(Field("abc") -> 1, Field("def") -> Seq("d", "e", "f").iterator)
-    val result = DataRow(map).getTypedArray[String]('def).get
+    val result = DataRow(map).getArray[String]('def).get
     assert(result.toSeq == Seq("d", "e", "f"))
   }
 
   it("getTypedArray can extract from Set") {
     val map = Map(Field("abc") -> 1, Field("def") -> Set("d", "e", "f"))
-    val result = DataRow(map).getTypedArray[String]('def).get
+    val result = DataRow(map).getArray[String]('def).get
     assert(result.toSet == Set("d", "e", "f"))
   }
 
   it("getTypedArray can extract from Array that has different types") {
     val map = Map(Field("abc") -> 1, Field("def") -> Set(2, 3.3, "def"))
-    val result = DataRow(map).getTypedArray[String]('def).get
+    val result = DataRow(map).getArray[String]('def).get
     assert(result.toSet == Set("def"))
   }
 
   it("getIntArray can extract from Array") {
     val map = Map(Field("abc") -> 1, Field("def") -> Array[Int](2, 3, 4))
-    val result = DataRow(map).getIntArray('def).get
+    val result = DataRow(map).getArray[Int]('def).get
     assert(result.toSeq == Seq(2, 3, 4))
   }
 
   it("getIntArray can extract from Iterator") {
     val map = Map(Field("abc") -> 1, Field("def") -> Seq[Int](2, 3, 4).iterator)
-    val result = DataRow(map).getIntArray('def).get
+    val result = DataRow(map).getArray[Int]('def).get
     assert(result.toSeq == Seq(2, 3, 4))
   }
 
   it("getIntArray can extract from Set") {
     val map = Map(Field("abc") -> 1, Field("def") -> Set[Int](2, 3, 4))
-    val result = DataRow(map).getIntArray('def).get
+    val result = DataRow(map).getArray[Int]('def).get
     assert(result.toSet == Set(2, 3, 4))
   }
 
   it("getIntArray can extract from Array that has different types") {
     val map = Map(Field("abc") -> 1, Field("def") -> Set(2, 3.3, "def"))
-    val result = DataRow(map).getIntArray('def).get
+    val result = DataRow(map).getArray[Int]('def).get
     assert(result.toSet == Set(2))
   }
 

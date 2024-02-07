@@ -63,14 +63,6 @@ object DataRow {
 //    implicit def box(v: DataRow): WithScope = v.withEmptyScope
   }
 
-//  case class WithLineageID( TODO: enable this as the only lineageID evidence for better type safety
-//      self: DataRow,
-//      lineageID: UUID
-//  )
-//  object WithLineageID {
-//    implicit def unbox(v: WithScope): DataRow = v.self
-//  }
-
   trait Reducer extends Reducer.Fn with Serializable {
 
     import Reducer._
@@ -105,11 +97,16 @@ object DataRow {
   *   only used in [[com.tribbloids.spookystuff.dsl.PathPlanning]], multiple [[DataRow]] with identical [[lineageID]]
   *   are assumed to be scrapped from the same graph traversal path, and are preserved or removed in
   *   [[com.tribbloids.spookystuff.dsl.PathPlanning]] as a unit
+  *
+  * @param isOutOfRange
+  *   only used in [[com.tribbloids.spookystuff.execution.ExploreRunner]], out of range rows are cleaned at the end of
+  *   all [[com.tribbloids.spookystuff.execution.ExplorePlan]] minibatches
   */
 @SerialVersionUID(6534469387269426194L)
 case class DataRow(
     data: Data = Data.empty,
-    lineageID: Option[UUID] = None
+    lineageID: Option[UUID] = None,
+    isOutOfRange: Boolean = false
 ) extends ProtoAPI {
   // TODO: will become TypedRow that leverage extensible Record and frameless
   // TODO: how to easily reconstruct vertices/edges for graphX/graphframe?
@@ -120,9 +117,9 @@ case class DataRow(
 
   import SpookyViews._
 
-  def ++(m: Iterable[(Field, Any)]): DataRow = this.copy(data = data ++ m)
+  def ++(m: Iterable[(Field, Any)]): DataRow = this.copy(data = data ++ m, isOutOfRange = false)
 
-  def --(m: Iterable[Field]): DataRow = this.copy(data = data -- m)
+  def --(m: Iterable[Field]): DataRow = this.copy(data = data -- m, isOutOfRange = false)
 
   def nameToField(name: String): Option[Field] = {
     Some(Field(name, isTransient = true))
@@ -161,7 +158,7 @@ case class DataRow(
   def sortIndex(fields: Field*): Seq[List[Int]] = {
     val result = fields.map(key =>
       this
-        .getIntArray(key)
+        .getArray[Int](key)
         .map(_.toList)
         .getOrElse(List.empty)
     )
@@ -207,16 +204,13 @@ case class DataRow(
 
   // T cannot <: AnyVal otherwise will run into https://issues.scala-lang.org/browse/SI-6967
   // getIntIterable cannot use it for the same reason
-  def getTypedArray[T <: Any: ClassTag](field: Field): Option[Array[T]] = {
+  def getArray[T <: Any: ClassTag](field: Field): Option[Array[T]] = {
+    // TODO: remove, use getArray everywhere
     val result = data.get(field).map { v =>
       SpookyUtils.asArray[T](v)
     }
     result
   }
-  def getArray(field: Field): Option[Array[Any]] = getTypedArray[Any](field)
-
-  // TODO: cleanup getters after this line, they are useless
-  def getIntArray(field: Field): Option[Array[Int]] = getTypedArray[Int](field)
 
   def getTypedIterable[T <: Any: ClassTag](field: Field): Option[Iterable[T]] = {
     val res = data.get(field).map { v =>

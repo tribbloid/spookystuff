@@ -1,5 +1,6 @@
 package com.tribbloids.spookystuff.execution
 
+import ai.acyclic.prover.commons.function.Impl.:=>
 import ai.acyclic.prover.commons.function.PreDef
 import com.tribbloids.spookystuff.actions.{Trace, TraceSet}
 import com.tribbloids.spookystuff.caching.ExploreLocalCache
@@ -32,6 +33,9 @@ object ExplorePlan {
       require(range.min >= -1, "explore range cannot be lower than -1")
       range
     }
+
+    lazy val maxRange: Int = effectiveRange.max
+    lazy val minRange: Int = effectiveRange.min
 
     lazy val includeStateBeforeExplore: Boolean = effectiveRange.contains(-1)
   }
@@ -117,7 +121,7 @@ case class ExplorePlan(
       }
 
       new Delta {
-        override def fn = applied._2
+        override def fn: SquashedRow :=> SquashedRow = applied._2
 
         override def outputSchema: SpookySchema = applied._1
       }
@@ -230,7 +234,11 @@ case class ExplorePlan(
         val visitedOpt = v._2.visited
 
         visitedOpt.map { visited =>
-          SquashedRow(AgentState(v._1), visited.map(_.withEmptyScope))
+          val inRange = visited.filterNot { row =>
+            row.isOutOfRange
+          }
+
+          SquashedRow(AgentState(v._1), inRange.map(_.withEmptyScope))
             .withCtx(spooky)
             .resetScope
         }

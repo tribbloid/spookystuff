@@ -81,7 +81,7 @@ class ExplorePlanSpec extends SpookyBaseSpec with LocalPathDocsFixture {
     assert(rdd2.plan.beaconRDDOpt.get eq beaconRDD)
   }
 
-  describe("should work on directory, with range starting from") {
+  describe("should work on directory, range:") {
 
     val resourcePath = DEEP_DIR_URL
 
@@ -107,13 +107,15 @@ class ExplorePlanSpec extends SpookyBaseSpec with LocalPathDocsFixture {
       result
     }
 
-    lazy val `0..10` = computeFrom(0 to 10)
+    lazy val bigInt = Int.MaxValue - 10
 
-    lazy val `-1..10` = computeFrom(-1 to 10)
+    lazy val `0..` = computeFrom(0 to bigInt)
 
-    it("0") {
+    lazy val `-1..` = computeFrom(-1 to bigInt)
 
-      `0..10`.mkString("\n")
+    it("from 0") {
+
+      `0..`.mkString("\n")
         .shouldBe(
           """
             |[/tmp/spookystuff/resources/testutils/dir,0,ArraySeq(hivetable.csv),file:///tmp/spookystuff/resources/testutils/dir/hivetable.csv]
@@ -125,9 +127,9 @@ class ExplorePlanSpec extends SpookyBaseSpec with LocalPathDocsFixture {
         )
     }
 
-    it("-1") {
+    it("from -1") {
 
-      `-1..10`.mkString("\n")
+      `-1..`.mkString("\n")
         .shouldBe(
           """
             |[/tmp/spookystuff/resources/testutils/dir,null,null,null]
@@ -145,9 +147,26 @@ class ExplorePlanSpec extends SpookyBaseSpec with LocalPathDocsFixture {
       computeFrom(0 to 2)
         .mkString("\n")
         .shouldBe(
-          `0..10`.slice(0, 3).mkString("\n")
+          `0..`.slice(0, 3).mkString("\n")
         )
-      // TODO: add this
+    }
+
+    it("from 2") {
+
+      computeFrom(2 to bigInt)
+        .mkString("\n")
+        .shouldBe(
+          `0..`.slice(3, bigInt).mkString("\n")
+        )
+    }
+
+    it("2 to 2") {
+
+      computeFrom(2 to 3)
+        .mkString("\n")
+        .shouldBe(
+          `0..`.slice(3, 4).mkString("\n")
+        )
     }
 
   }

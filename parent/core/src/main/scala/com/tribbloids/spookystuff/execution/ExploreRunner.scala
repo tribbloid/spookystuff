@@ -24,6 +24,7 @@ case class ExploreRunner(
 ) extends NOTSerializable {
 
   import dsl._
+  import pathPlanningImpl.params._
 
   def exeID: ExeID = pathPlanningImpl.params.executionID
 
@@ -126,8 +127,6 @@ case class ExploreRunner(
       // should include flatten & extract
   ): Unit = {
 
-    import pathPlanningImpl.params._
-
     val selectedRow = selectNext()
 
     if (selectedRow.dataRows.isEmpty) return
@@ -140,7 +139,19 @@ case class ExploreRunner(
       // commit transformed data into visited
       val data = transformed.dataRows.map(_.self).toVector
 
-      Commit(transformed.group, data).intoVisited()
+      val inRange: Vector[DataRow] = data.flatMap { row =>
+        val depth = row.getInt(depthField).getOrElse(Int.MaxValue)
+
+        if (depth < minRange) {
+          Some(
+            row.copy(isOutOfRange = true)
+          )
+        } else if (depth < maxRange) {
+          Some(row)
+        } else None
+      }
+
+      Commit(transformed.group, inRange).intoVisited()
     }
 
     {
@@ -165,24 +176,24 @@ case class ExploreRunner(
         .view
         .mapValues(_.map(_._2))
 
-      val maxRange = effectiveRange.max // TODO: use effectiveRange.min
       // this will be used to filter dataRows yield by the next fork, it will not affect current transformation
 
       val filtered = grouped
-        .mapValues { v =>
-          val inRange = v.filter { dataRow =>
-            val depth = dataRow.getInt(depthField).getOrElse(Int.MaxValue)
-            depth < maxRange - 1
-          }
-          inRange
-        }
+//        .mapValues { v =>
+//          val inRange = v.flatMap { dataRow =>
+//            val depth = dataRow.getInt(depthField).getOrElse(Int.MaxValue)
+//            if (depth < minRange) Some(dataRow.copy(isOutOfRange = true))
+//            else if (depth < maxRange - 1) Some(dataRow)
+//            else None
+//          }
+//          inRange
+//        }
         .filter {
           case (_, v) =>
             v.nonEmpty
-        }
-        .toList
+        }.toList
 
-      filtered.foreach { newOpen =>
+      filtered.foreach { newOpen: (LocalityGroup, Seq[DataRow]) =>
         val trace_+ = newOpen._1
         Commit(trace_+, newOpen._2.toVector).intoOpen()
       }
