@@ -4,8 +4,6 @@ import com.tribbloids.spookystuff.SpookyContext
 import com.tribbloids.spookystuff.execution.Delta
 import com.tribbloids.spookystuff.utils.serialization.NOTSerializable
 
-import scala.language.implicitConversions
-
 object DeltaRowLike {
 
   case class SrcRow(

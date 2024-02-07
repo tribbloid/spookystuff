@@ -31,8 +31,8 @@ object ExploreLocalCache {
   }
 
   def commitVisited(
-                     v: ExploreRunner,
-                     reducer: DataRow.Reducer
+      v: ExploreRunner,
+      reducer: DataRow.Reducer
   ): Unit = {
 
     // TODO relax synchronized check to accelerate?

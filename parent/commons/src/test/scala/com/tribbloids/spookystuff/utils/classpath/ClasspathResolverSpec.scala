@@ -2,7 +2,6 @@ package com.tribbloids.spookystuff.utils.classpath
 
 import ai.acyclic.prover.commons.spark.Envs
 import com.tribbloids.spookystuff.utils.io.{LocalResolver, WriteMode}
-import com.tribbloids.spookystuff.utils.CommonUtils
 import org.scalatest.funspec.AnyFunSpec
 
 import java.io.File
