@@ -5,6 +5,7 @@ import org.apache.commons.io.output.NullOutputStream
 import org.apache.spark.ml.dsl.utils.LazyVar
 
 import java.io.{IOException, InputStream, OutputStream}
+import scala.collection.immutable.ListMap
 import scala.language.implicitConversions
 import scala.util.Try
 
@@ -91,17 +92,19 @@ abstract class Resource extends LocalCleanable {
 
     final lazy val all: ResourceMetadata = {
 
-      val grouped = children
+      val grouped: Map[String, Seq[ResourceMetadata]] = children
         .map(exe => exe.input(in => in.metadata.root))
         .groupBy(_.asMap("Type").toString)
 
-      val childMaps: Map[String, Seq[Map[String, Any]]] = grouped.view.mapValues {
+      val childMaps = grouped.view.mapValues {
         _.map { md =>
           md.asMap
         }
-      }.toMap
+      }
 
-      val result = root :++ ResourceMetadata._EAV(childMaps)
+      val sorted = ListMap(childMaps.toSeq.sortBy(_._1): _*)
+
+      val result = root :++ ResourceMetadata._EAV(sorted)
       result
     }
 
