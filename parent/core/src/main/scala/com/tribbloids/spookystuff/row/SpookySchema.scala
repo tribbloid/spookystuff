@@ -39,7 +39,7 @@ case class SpookySchema(
 
 //  lazy val evictTransientFields: SpookySchema = filterFields(_.isNonTransient)
 
-  lazy val structFields: Seq[StructField] = fieldTypes.toSeq
+  @transient lazy val structFields: Seq[StructField] = fieldTypes.toSeq
     .map { tuple =>
       StructField(
         tuple._1.name,
@@ -47,7 +47,7 @@ case class SpookySchema(
       )
     }
 
-  lazy val structType: StructType = {
+  @transient lazy val structType: StructType = {
 
     StructType(structFields)
   }
@@ -55,6 +55,8 @@ case class SpookySchema(
   def --(field: Iterable[Field]): SpookySchema = this.copy(
     fieldTypes = fieldTypes -- field
   )
+
+  @transient lazy val sortIndices: List[Field] = fields.filter(_.isSortIndex)
 
   def newResolver: Resolver = new Resolver()
 

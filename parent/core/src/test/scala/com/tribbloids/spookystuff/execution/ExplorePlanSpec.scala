@@ -1,5 +1,6 @@
 package com.tribbloids.spookystuff.execution
 
+import ai.acyclic.prover.commons.debug.print_@
 import ai.acyclic.prover.commons.function.Impl
 import com.tribbloids.spookystuff.actions.{Trace, Wget}
 import com.tribbloids.spookystuff.extractors.impl.Lit
@@ -31,7 +32,7 @@ class ExplorePlanSpec extends SpookyBaseSpec with LocalPathDocsFixture {
         S"h1".text ~ 'header
       )
 
-    println(explored.plan.toString)
+    print_@(explored.plan.toString)
   }
 
   it("should create a new beaconRDD if its upstream doesn't have one") {
@@ -92,12 +93,14 @@ class ExplorePlanSpec extends SpookyBaseSpec with LocalPathDocsFixture {
         .fetch {
           Wget('_)
         }
-        .explore(S"root directory URI".text)(
+        .explore(
+          S"root directory URI".text
+        )(
           Wget('A),
           depthField = 'depth,
           range = range
         )
-        .fork(S"root file")(
+        .fork(S"root file", ordinalField = 'index)(
           A"name".text into 'leaf,
           A"URI".text ~ 'fullPath
         )
@@ -113,32 +116,26 @@ class ExplorePlanSpec extends SpookyBaseSpec with LocalPathDocsFixture {
 
     lazy val `-1..` = computeFrom(-1 to bigInt)
 
-    it("from 0") {
-
-      `0..`.mkString("\n")
-        .shouldBe(
-          """
-            |[/tmp/spookystuff/resources/testutils/dir,0,ArraySeq(hivetable.csv),file:///tmp/spookystuff/resources/testutils/dir/hivetable.csv]
-            |[/tmp/spookystuff/resources/testutils/dir,0,ArraySeq(table.csv),file:///tmp/spookystuff/resources/testutils/dir/table.csv]
-            |[/tmp/spookystuff/resources/testutils/dir,1,ArraySeq(hivetable.csv, Test.pdf),file:///tmp/spookystuff/resources/testutils/dir/dir/Test.pdf]
-            |[/tmp/spookystuff/resources/testutils/dir,2,ArraySeq(hivetable.csv, Test.pdf, pom.xml),file:///tmp/spookystuff/resources/testutils/dir/dir/dir/pom.xml]
-            |[/tmp/spookystuff/resources/testutils/dir,3,ArraySeq(hivetable.csv, Test.pdf, pom.xml, tribbloid.json),file:///tmp/spookystuff/resources/testutils/dir/dir/dir/dir/tribbloid.json]
-            |""".stripMargin
-        )
-    }
-
     it("from -1") {
 
       `-1..`.mkString("\n")
         .shouldBe(
           """
-            |[/tmp/spookystuff/resources/testutils/dir,null,null,null]
-            |[/tmp/spookystuff/resources/testutils/dir,0,ArraySeq(hivetable.csv),file:///tmp/spookystuff/resources/testutils/dir/hivetable.csv]
-            |[/tmp/spookystuff/resources/testutils/dir,0,ArraySeq(table.csv),file:///tmp/spookystuff/resources/testutils/dir/table.csv]
-            |[/tmp/spookystuff/resources/testutils/dir,1,ArraySeq(hivetable.csv, Test.pdf),file:///tmp/spookystuff/resources/testutils/dir/dir/Test.pdf]
-            |[/tmp/spookystuff/resources/testutils/dir,2,ArraySeq(hivetable.csv, Test.pdf, pom.xml),file:///tmp/spookystuff/resources/testutils/dir/dir/dir/pom.xml]
-            |[/tmp/spookystuff/resources/testutils/dir,3,ArraySeq(hivetable.csv, Test.pdf, pom.xml, tribbloid.json),file:///tmp/spookystuff/resources/testutils/dir/dir/dir/dir/tribbloid.json]
+            |[/tmp/spookystuff/resources/testutils/dir,null,null,null,null]
+            |[/tmp/spookystuff/resources/testutils/dir,0,ArraySeq(0),ArraySeq(hivetable.csv),file:///tmp/spookystuff/resources/testutils/dir/hivetable.csv]
+            |[/tmp/spookystuff/resources/testutils/dir,0,ArraySeq(1),ArraySeq(table.csv),file:///tmp/spookystuff/resources/testutils/dir/table.csv]
+            |[/tmp/spookystuff/resources/testutils/dir,1,ArraySeq(0, 0),ArraySeq(hivetable.csv, Test.pdf),file:///tmp/spookystuff/resources/testutils/dir/dir/Test.pdf]
+            |[/tmp/spookystuff/resources/testutils/dir,2,ArraySeq(0, 0, 0),ArraySeq(hivetable.csv, Test.pdf, pom.xml),file:///tmp/spookystuff/resources/testutils/dir/dir/dir/pom.xml]
+            |[/tmp/spookystuff/resources/testutils/dir,3,ArraySeq(0, 0, 0, 0),ArraySeq(hivetable.csv, Test.pdf, pom.xml, tribbloid.json),file:///tmp/spookystuff/resources/testutils/dir/dir/dir/dir/tribbloid.json]
             |""".stripMargin
+        )
+    }
+
+    it("from 0") {
+
+      `0..`.mkString("\n")
+        .shouldBe(
+          `-1..`.slice(1, bigInt).mkString("\n")
         )
     }
 

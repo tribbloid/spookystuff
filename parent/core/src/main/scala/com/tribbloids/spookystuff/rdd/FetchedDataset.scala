@@ -368,7 +368,7 @@ case class FetchedDataset(
       traces: HasTraceSet,
       keyBy: Trace => Any = identity,
       genPartitioner: GenPartitioner = spooky.conf.localityPartitioner,
-      depthField: Field = null,
+      depthField: Field = null, // TODO: Some of them has to be moved upwards
       range: Range = spooky.conf.exploreRange,
       pathPlanning: PathPlanning = spooky.conf.explorePathPlanning,
       epochSize: Int = spooky.conf.exploreEpochSize,

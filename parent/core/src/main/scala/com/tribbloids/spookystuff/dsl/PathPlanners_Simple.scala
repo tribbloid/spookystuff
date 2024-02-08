@@ -36,7 +36,7 @@ object PathPlanners_Simple {
 
           val result = candidates
             .minBy { v =>
-              val indices = v.map(_.sortIndex(depthField, ordinalField))
+              val indices = v.map(_.sortIndex(schema.sortIndices: _*))
               indices
             }
 
@@ -58,7 +58,7 @@ object PathPlanners_Simple {
           val dataRows = tuple._2
           val firstDataRow = dataRows.head
 
-          val sortEvs = firstDataRow.sortIndex(depthField, ordinalField)
+          val sortEvs = firstDataRow.sortIndex(schema.sortIndices: _*)
           0 -> sortEvs
         }
         result
