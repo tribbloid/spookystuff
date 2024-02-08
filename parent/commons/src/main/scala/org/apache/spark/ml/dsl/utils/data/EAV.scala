@@ -34,7 +34,7 @@ trait EAV extends HasEagerInnerObjects with EqualBy with RootTagged with Seriali
     kvs
   }
 
-  @transient lazy val sortedBy: Iterable[String] = {
+  @transient lazy val sortedBy: List[String] = {
     kvs.map(v => "" + v._2)
   }
 

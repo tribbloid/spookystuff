@@ -15,8 +15,12 @@ trait EAVSystem {
     final override def system: EAVSystem = EAVSystem.this
   }
 
-  private lazy val _defaultOrdering: Ordering[_ <: ThisEAV] = Ordering.by { v: ThisEAV =>
-    v.sortedBy
+  private lazy val _defaultOrdering: Ordering[_ <: ThisEAV] = {
+    import Ordering.Implicits._
+
+    Ordering.by { v: ThisEAV =>
+      v.sortedBy
+    }
   }
 
   implicit def defaultOrdering[T <: ThisEAV]: Ordering[T] = _defaultOrdering.asInstanceOf[Ordering[T]]
