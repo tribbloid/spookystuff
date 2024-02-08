@@ -1,8 +1,8 @@
 package org.apache.spark.ml.dsl.utils.data
 
-import org.apache.spark.ml.dsl.utils.DSLUtils
 import com.tribbloids.spookystuff.relay.io.Encoder.HasEncoder
 import com.tribbloids.spookystuff.relay.{Relay, TreeIR}
+import org.apache.spark.ml.dsl.utils.DSLUtils
 
 import java.lang.reflect.{InvocationTargetException, Method}
 import scala.collection.immutable.ListMap
@@ -15,12 +15,19 @@ trait EAVSystem {
     final override def system: EAVSystem = EAVSystem.this
   }
 
+  private lazy val _defaultOrdering: Ordering[_ <: ThisEAV] = Ordering.by { v: ThisEAV =>
+    v.sortedBy
+  }
+
+  implicit def defaultOrdering[T <: ThisEAV]: Ordering[T] = _defaultOrdering.asInstanceOf[Ordering[T]]
+
   object ThisEAV extends HasEncoder[_EAV] {
 
     implicit def relay(
         implicit
         cc: ClassTag[Bound]
     ): Relay[_EAV] = _Relay()
+
   }
 
   type _EAV <: ThisEAV

@@ -96,10 +96,15 @@ abstract class Resource extends LocalCleanable {
         .map(exe => exe.input(in => in.metadata.root))
         .groupBy(_.asMap("Type").toString)
 
-      val childMaps = grouped.view.mapValues {
-        _.map { md =>
-          md.asMap
-        }
+//      val sorted: MapView[String, Seq[ResourceMetadata]] = grouped.mapValues { seq =>
+//        seq.sortBy(_.name.value)
+//      }
+
+      val childMaps = grouped.view.mapValues { vs =>
+        vs.sorted
+          .map { md =>
+            md.asMap
+          }
       }
 
       val sorted = ListMap(childMaps.toSeq.sortBy(_._1): _*)

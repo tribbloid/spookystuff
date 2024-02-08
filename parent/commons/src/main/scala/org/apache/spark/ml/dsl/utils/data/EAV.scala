@@ -26,18 +26,26 @@ trait EAV extends HasEagerInnerObjects with EqualBy with RootTagged with Seriali
 
   override lazy val rootTag: String = Xml.ROOT
 
-  private lazy val _asMap: ListMap[String, Bound] = {
-
-    val keys = internal.keys.toSeq
+  @transient private lazy val kvs: List[(String, Bound)] = {
+    val keys = internal.keys.toList
     val kvs = keys.sorted.map { k =>
       k -> internal(k)
     }
+    kvs
+  }
+
+  @transient lazy val sortedBy: Iterable[String] = {
+    kvs.map(v => "" + v._2)
+  }
+
+  @transient private lazy val _asMap: ListMap[String, Bound] = {
+
     ListMap(kvs: _*)
   }
-  lazy val asCaseInsensitiveMap: CaseInsensitiveMap[Bound] = CaseInsensitiveMap(_asMap)
+  @transient lazy val asCaseInsensitiveMap: CaseInsensitiveMap[Bound] = CaseInsensitiveMap(_asMap)
 
   def asMap: Map[String, Bound] = _asMap
-  lazy val asMapOfString: MapView[String, String] = asMap.view.mapValues(v => "" + v)
+  @transient lazy val asMapOfString: MapView[String, String] = asMap.view.mapValues(v => "" + v)
 
   // TODO: change to declaredAttrs?
   override def samenessDelegatedTo: Any = asMap
