@@ -18,9 +18,7 @@ import scala.collection.{mutable, MapView}
 case class ExploreRunner(
     partition: Iterator[(LocalityGroup, State)],
     pathPlanningImpl: PathPlanning.Impl,
-    sameBy: Trace => Any,
-    depth0: Resolved[Int],
-    `depth_++`: Resolved[Int]
+    sameBy: Trace => Any
 ) extends NOTSerializable {
 
   import dsl._
@@ -90,21 +88,17 @@ case class ExploreRunner(
         .nextOption()
         .map { row =>
           row
-            .withCtx(spooky)
-            .extract(depth0)
         }
         .getOrElse {
 
           val selected: (LocalityGroup, Vector[DataRow]) = pathPlanningImpl.selectNextOpen(open)
-          val withDepth = SquashedRow(AgentState(selected._1), selected._2.map(_.withEmptyScope))
+          val withLineage = SquashedRow(AgentState(selected._1), selected._2.map(_.withEmptyScope))
             .withCtx(spooky)
             .resetScope
-            .withCtx(spooky)
-            .extract(depth_++)
             .withLineageIDs
 
           //          val transformed = delta.fn(withDepth)
-          withDepth
+          withLineage
         }
       row
     }
@@ -115,6 +109,8 @@ case class ExploreRunner(
 
     selectedRow
   }
+
+  lazy val _depth_++ : Resolved[Int] = pathPlanningImpl.schema.newResolver.include(depth_++).head
 
   protected def executeOnce(
       forkExpr: Resolved[Any],
@@ -133,11 +129,14 @@ case class ExploreRunner(
 
     this.fetchingInProgressOpt = Some(selectedRow.group)
 
-    val transformed = delta.fn(selectedRow)
+    val deltaApplied = delta
+      .fn(selectedRow)
+      .withCtx(spooky)
+      .extract(_depth_++)
 
     {
       // commit transformed data into visited
-      val data = transformed.dataRows.map(_.self).toVector
+      val data = deltaApplied.dataRows.map(_.self).toVector
 
       val inRange: Vector[DataRow] = data.flatMap { row =>
         val depth = row.getInt(depthField).getOrElse(Int.MaxValue)
@@ -151,11 +150,11 @@ case class ExploreRunner(
         } else None
       }
 
-      Commit(transformed.group, inRange).intoVisited()
+      Commit(deltaApplied.group, inRange).intoVisited()
     }
 
     {
-      val forked = transformed
+      val forked = deltaApplied
         .withCtx(spooky)
         .extract(forkExpr)
         .explodeData(forkExpr.field, ordinalField, forkType, sampler)
@@ -178,20 +177,10 @@ case class ExploreRunner(
 
       // this will be used to filter dataRows yield by the next fork, it will not affect current transformation
 
-      val filtered = grouped
-//        .mapValues { v =>
-//          val inRange = v.flatMap { dataRow =>
-//            val depth = dataRow.getInt(depthField).getOrElse(Int.MaxValue)
-//            if (depth < minRange) Some(dataRow.copy(isOutOfRange = true))
-//            else if (depth < maxRange - 1) Some(dataRow)
-//            else None
-//          }
-//          inRange
-//        }
-        .filter {
-          case (_, v) =>
-            v.nonEmpty
-        }.toList
+      val filtered = grouped.filter {
+        case (_, v) =>
+          v.nonEmpty
+      }.toList
 
       filtered.foreach { newOpen: (LocalityGroup, Seq[DataRow]) =>
         val trace_+ = newOpen._1

@@ -29,13 +29,23 @@ object ExplorePlan {
       executionID: ExeID = nextExeID()
   ) {
 
-    lazy val effectiveRange: Range = {
+    @transient lazy val effectiveRange: Range = {
       require(range.min >= -1, "explore range cannot be lower than -1")
       range
     }
 
-    lazy val maxRange: Int = effectiveRange.max
-    lazy val minRange: Int = effectiveRange.min
+    @transient lazy val maxRange: Int = effectiveRange.max
+    @transient lazy val minRange: Int = effectiveRange.min
+
+    @transient lazy val depth_++ : Alias.Impl[FR, Int] = {
+      Get(depthField)
+        .typed[Int]
+        .andMap(_ + 1)
+        .orElse(
+          Lit(0)
+        )
+        .withAlias(depthField.!!)
+    }
 
     lazy val includeStateBeforeExplore: Boolean = effectiveRange.contains(-1)
   }
@@ -96,12 +106,14 @@ case class ExplorePlan(
       )
     }
 
-    val depth_0: Resolved[Int] = resolver.include(Lit(0) withAlias _effectiveParams.depthField).head
-    val depth_++ : Resolved[Int] = resolver
-      .include(
-        Get(_effectiveParams.depthField).typed[Int].andMap(_ + 1) withAlias _effectiveParams.depthField.!!
-      )
-      .head
+//    val depth_0: Resolved[Int] = resolver.include(Lit(0) withAlias _effectiveParams.depthField).head
+//    val depth_++ : Resolved[Int] = resolver
+//      .include(
+//        Get(_effectiveParams.depthField).typed[Int].andMap(_ + 1) withAlias _effectiveParams.depthField.!!
+//      )
+//      .head
+
+    resolver.includeTyped(TypedField(_effectiveParams.depthField, IntegerType)).head
 
     resolver.includeTyped(TypedField(_effectiveParams.ordinalField, ArrayType(IntegerType))).head
 
@@ -177,7 +189,7 @@ case class ExplorePlan(
         openSetAcc.reset
 
         val stateRDD_+ : RDD[(LocalityGroup, State)] = stateRDD.mapPartitions { itr =>
-          val runner = ExploreRunner(itr, impl, sameBy, depth_0, depth_++)
+          val runner = ExploreRunner(itr, impl, sameBy)
           val state_+ = runner.run(
             _on,
             sampler,

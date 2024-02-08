@@ -38,7 +38,7 @@ class TestDSL extends SpookyBaseSpec with LocalPathDocsFixture {
     assert(renamed.asInstanceOf[Alias[_, _]].field.name == "name1")
     val renamed2 = renamed as 'name2
     assert(renamed2.asInstanceOf[Alias[_, _]].field.name == "name2")
-    val notRenamed = renamed withAliasIfMissing 'name2
+    val notRenamed = renamed withFieldIfMissing 'name2
     assert(notRenamed.field.name == "name1")
   }
 

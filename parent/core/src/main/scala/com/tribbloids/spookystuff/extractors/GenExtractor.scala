@@ -81,6 +81,28 @@ object GenExtractor extends GenExtractorImplicits {
     //    override def toString = meta.getOrElse("Elem").toString
   }
 
+  case class OrElse[T, +R](
+      a: GenExtractor[T, R],
+      b: GenExtractor[T, R]
+  ) extends GenExtractor[T, R] {
+
+    // resolve to a Spark SQL DataType according to an exeuction plan
+    override def resolveType(tt: DataType): DataType = {
+      val Seq(at, bt) = Seq(a, b).map(_.resolveType(tt))
+      require(at == bt, s"conflicting types: $at and $bt")
+      at
+    }
+
+    override def resolve(tt: DataType): PartialFunction[T, R] = {
+      val af = a.resolve(tt)
+      val bf = b.resolve(tt)
+
+      af.orElse(bf)
+    }
+
+    override def _args: Seq[GenExtractor[_, _]] = Seq(a, b)
+  }
+
   case class AndThen[A, B, +C](
       a: GenExtractor[A, B],
       b: GenExtractor[B, C],
@@ -194,25 +216,31 @@ trait GenExtractor[T, +R] extends CatalystTypeOps.ImplicitMixin with Product wit
   }
 
   // will not rename an already-named Alias.
-  def withAliasIfMissing(field: Field): Alias[T, R] = {
+  def withFieldIfMissing(field: Field): Alias[T, R] = {
     this match {
       case alias: Alias[T, R] => alias
       case _                  => this.withAlias(field)
     }
   }
 
-  def withForkFieldIfMissing: Alias[T, R] = withAliasIfMissing(Const.defaultForkField)
+  def withForkFieldIfMissing: Alias[T, R] = withFieldIfMissing(Const.defaultForkField)
 
   // TODO: should merge into andMap
   def andEx[R2 >: R, A](g: GenExtractor[R2, A], meta: Option[Any] = None): GenExtractor[T, A] =
     AndThen[T, R2, A](this, g, meta)
 
+  // TODO: map
   def andMap[A: TypeTag](g: R => A, meta: Option[Any] = None): GenExtractor[T, A] = {
     andEx(g, meta)
   }
 
+  // TOD flatMap
   def andFlatMap[A: TypeTag](g: R => Option[A], meta: Option[Any] = None): GenExtractor[T, A] = {
     andEx(GenExtractor.fromOptionFn(g), meta)
+  }
+
+  def orElse[R2 >: R](g: GenExtractor[T, R2]): GenExtractor[T, R2] = {
+    OrElse(this, g)
   }
 
   def andTyped[R2 >: R, A](
