@@ -96,7 +96,9 @@ abstract class Resource extends LocalCleanable {
         .groupBy(_.lookup("Type").toString)
 
       val childMaps = grouped.view.mapValues { vs =>
-        vs.sorted
+        val sorted = vs.sortBy(_.sortEvidence)
+
+        sorted
           .map { md =>
             md.internal
           }

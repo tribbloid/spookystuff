@@ -1,14 +1,12 @@
 package com.tribbloids.spookystuff.metrics
 
-import com.tribbloids.spookystuff.utils.CommonUtils
 import com.tribbloids.spookystuff.relay.TreeIR
+import com.tribbloids.spookystuff.utils.CommonUtils
 import org.apache.spark.ml.dsl.utils.refl.ReflectionUtils
 import org.apache.spark.util.AccumulatorV2
 
-import java.lang.reflect.Modifier
 import scala.collection.mutable
 import scala.language.implicitConversions
-import scala.util.Try
 
 /**
   * Created by peng on 03/10/15.
@@ -83,60 +81,6 @@ abstract class AbstractMetrics extends MetricLike {
 }
 
 object AbstractMetrics {
-
-//  case object Empty extends AbstractMetrics
-
-  // TODO: useless at the moment
-  abstract class HasExtraMembers extends AbstractMetrics {
-
-    def initialise(): Unit = {
-
-      // lazy members has to be initialised before shipping
-      extraMembers
-    }
-
-    final protected def writeReplace(): Any = {
-      initialise()
-      this
-    }
-
-    @transient private lazy val extraMembers: List[(String, MetricLike)] = {
-      val methods = this.getClass.getMethods.toList
-        .filter { method =>
-          val parameterMatch = method.getParameterCount == 0
-          val returnTypeMatch = classOf[MetricLike].isAssignableFrom(method.getReturnType)
-
-          returnTypeMatch && parameterMatch
-        }
-        .sortBy(_.getName)
-
-      val publicMethods = methods.filter { method =>
-        val mod = method.getModifiers
-        !method.getName.startsWith("copy") && Modifier.isPublic(mod) && !Modifier.isStatic(mod)
-      }
-
-      val extra = publicMethods.flatMap { method =>
-        Try {
-          val value = method.invoke(this).asInstanceOf[MetricLike]
-          if (value == null)
-            throw new UnsupportedOperationException(s"member `${method.getName}` has not been initialised")
-
-          if (value.eq(this) || value == null) {
-            None
-          } else {
-            Some(method.getName -> value)
-          }
-        }.toOption.toSeq.flatten
-      }
-
-      extra
-    }
-
-    override protected def _symbol2children: List[(String, Any)] = {
-
-      super._symbol2children ++ extraMembers
-    }
-  }
 
   implicit def asView(v: AbstractMetrics): v.View.type = v.View
 }

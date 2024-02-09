@@ -28,22 +28,6 @@ trait EAVSystem {
     }
 
     implicit def relay: Relay[^] = _Relay()
-
-    /**
-      * will determine ordering by the following evidences, in descending precedence:
-      *   - values of the defined attributes, in the order of definition
-      */
-    private lazy val _defaultOrdering: Ordering[_ <: EAV] = {
-      import Ordering.Implicits._
-
-      Ordering.by { v: EAV =>
-        v.sortEvidence
-      }
-    }
-
-    implicit def defaultOrdering[T <: EAV]: Ordering[T] = {
-      _defaultOrdering.asInstanceOf[Ordering[T]]
-    }
   }
 
   type ^ <: EAV
@@ -172,12 +156,12 @@ trait EAVSystem {
         (m.getParameterTypes.length == 0) &&
         DSLUtils.isSerializable(m.getReturnType)
       }
-      val commonGetters = _methods
+      val commonGetters: Array[(String, Method)] = _methods
         .filter { m =>
           m.getName.startsWith("get")
         }
         .map(v => v.getName.stripPrefix("get") -> v)
-      val booleanGetters = _methods
+      val booleanGetters: Array[(String, Method)] = _methods
         .filter { m =>
           m.getName.startsWith("is")
         }

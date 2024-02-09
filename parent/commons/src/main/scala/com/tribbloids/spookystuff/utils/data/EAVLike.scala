@@ -1,6 +1,5 @@
 package com.tribbloids.spookystuff.utils.data
 
-import ai.acyclic.prover.commons.same.EqualBy
 import com.tribbloids.spookystuff.relay.RootTagged
 import com.tribbloids.spookystuff.relay.xml.Xml
 import com.tribbloids.spookystuff.utils.{CommonUtils, TreeThrowable}
@@ -15,7 +14,7 @@ import scala.util.Try
 /**
   * entity-(with)-attribute-value
   */
-trait EAVLike extends HasEagerInnerObjects with EqualBy with RootTagged with Serializable {
+trait EAVLike extends HasEagerInnerObjects with RootTagged with Serializable {
 
   def internal: collection.Map[String, Any]
 
@@ -91,13 +90,6 @@ trait EAVLike extends HasEagerInnerObjects with EqualBy with RootTagged with Ser
         }
     }
   }
-
-  @transient protected lazy val sortEvidence: Seq[String] = {
-
-    val result = KVs.declared.map(v => v._2.map(_.toString).orNull)
-    result
-  }
-  override def samenessDelegatedTo: Any = sortEvidence
 
   @transient lazy val asProperties: Properties = {
     val properties = new Properties()

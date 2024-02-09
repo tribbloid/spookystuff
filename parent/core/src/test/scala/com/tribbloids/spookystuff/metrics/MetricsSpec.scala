@@ -1,12 +1,12 @@
 package com.tribbloids.spookystuff.metrics
 
-import com.tribbloids.spookystuff.metrics.MetricsSuite.{DummyMetrics, DummyMetrics_HasMembers, DummyTreeMetrics}
+import com.tribbloids.spookystuff.metrics.MetricsSpec.{DummyMetrics, DummyTreeMetrics}
 import com.tribbloids.spookystuff.testutils.{BaseSpec, TestHelper}
 import com.tribbloids.spookystuff.relay.io.Encoder
 import org.apache.spark.sql.execution.streaming.EventTimeStatsAccum
 import org.apache.spark.util.{DoubleAccumulator, LongAccumulator}
 
-object MetricsSuite {
+object MetricsSpec {
 
   case class DummyMetrics(
       v1: Acc[LongAccumulator] = "v1" -> 0L,
@@ -17,21 +17,14 @@ object MetricsSuite {
       v3: Acc[EventTimeStatsAccum] = "v3" -> 2L,
       sub: DummyMetrics = DummyMetrics()
   ) extends AbstractMetrics
-
-  case class DummyMetrics_HasMembers() extends AbstractMetrics.HasExtraMembers {
-
-    lazy val v1: Acc[LongAccumulator] = "v1" -> 0L
-    lazy val v2: Acc[DoubleAccumulator] = "v2" -> 1.0
-
-  }
 }
 
-class MetricsSuite extends BaseSpec {
+class MetricsSpec extends BaseSpec {
 
   TestHelper.TestSC
 
   it("can be converted to JSON") {
-    Seq(DummyMetrics(), DummyMetrics_HasMembers()).foreach { v =>
+    Seq(DummyMetrics()).foreach { v =>
       val m = v.View
       m.toTreeIR
         .toJSON()

@@ -21,5 +21,11 @@ object ResourceMetadata extends EAVSystem {
     case object StatusCode extends Attr[Int](List("status-code"))
 
     case object `isDir` extends Attr[Boolean]()
+
+    @transient lazy val sortEvidence: Option[String] = {
+
+      val result = URI.get
+      result
+    }
   }
 }
