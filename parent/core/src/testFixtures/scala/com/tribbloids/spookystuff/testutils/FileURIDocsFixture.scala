@@ -3,7 +3,7 @@ package com.tribbloids.spookystuff.testutils
 /**
   * Created by peng on 17/05/16.
   */
-trait LocalURIDocsFixture extends LocalPathDocsFixture {
+trait FileURIDocsFixture extends FileDocsFixture {
 
   override def HTML_URL: String = "file://" + super.HTML_URL
   override def JSON_URL: String = "file://" + super.JSON_URL

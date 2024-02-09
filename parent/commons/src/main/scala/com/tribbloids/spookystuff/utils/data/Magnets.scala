@@ -1,4 +1,4 @@
-package org.apache.spark.ml.dsl.utils.data
+package com.tribbloids.spookystuff.utils.data
 
 import scala.language.implicitConversions
 
@@ -12,7 +12,7 @@ object Magnets {
   object AttrValueMag {
 
     implicit def fromTuple1[T](kv: (String, T)): AttrValueMag[T] = AttrValueMag(kv._1, Some(kv._2))
-    implicit def fromTuple2[T](kv: (AttrLike[T], T)): AttrValueMag[T] = AttrValueMag(kv._1.primaryName, Some(kv._2))
+    implicit def fromTuple2[T](kv: (AttrLike[T], T)): AttrValueMag[T] = AttrValueMag(kv._1.name, Some(kv._2))
 
     implicit def fromItr[T, Src](kvs: Iterable[Src])(
         implicit

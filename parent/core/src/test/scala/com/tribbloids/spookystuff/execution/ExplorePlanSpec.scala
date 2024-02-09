@@ -4,14 +4,14 @@ import ai.acyclic.prover.commons.debug.print_@
 import ai.acyclic.prover.commons.function.Impl
 import com.tribbloids.spookystuff.actions.{Trace, Wget}
 import com.tribbloids.spookystuff.extractors.impl.Lit
-import com.tribbloids.spookystuff.testutils.{LocalPathDocsFixture, SpookyBaseSpec}
+import com.tribbloids.spookystuff.testutils.{FileDocsFixture, SpookyBaseSpec}
 import com.tribbloids.spookystuff.{dsl, QueryException}
 import org.apache.spark.HashPartitioner
 
 /**
   * Created by peng on 05/04/16.
   */
-class ExplorePlanSpec extends SpookyBaseSpec with LocalPathDocsFixture {
+class ExplorePlanSpec extends SpookyBaseSpec with FileDocsFixture {
 
   import dsl._
 

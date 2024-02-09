@@ -1,14 +1,14 @@
-package org.apache.spark.ml.dsl.utils.data
+package com.tribbloids.spookystuff.utils.data
 
 import com.tribbloids.spookystuff.testutils.BaseSpec
 import com.tribbloids.spookystuff.relay.Relay
 
-class EAVSuite extends BaseSpec {
+class EAVLikeSuite extends BaseSpec {
 
-  import EAVSuite._
+  import EAVLikeSuite._
   import EAVSystem.NoAttr._
 
-  val wellformed = EAVSystem.NoAttr.From(
+  val wellformed: ^ = EAVSystem.NoAttr.From(
     "int" -> 1,
     "double" -> 2.5,
     "itr" -> Seq("a", "b"),
@@ -16,19 +16,19 @@ class EAVSuite extends BaseSpec {
     "path" -> "file://home/dir"
   )
 
-  val nested = wellformed :++ EAVSystem.NoAttr.From(
+  val nested: ^ = wellformed :++ EAVSystem.NoAttr.From(
     "children" -> wellformed
   )
 
-  val withNull = wellformed :++ EAVSystem.NoAttr.From("nullable" -> null)
+  val withNull: ^ = wellformed :++ EAVSystem.NoAttr.From("nullable" -> null)
 
-  val withEnum: WithEnum._EAV = WithEnum._EAV(wellformed.updated("enumField" -> "bb").internal)
+  val withEnum: WithEnum.^ = WithEnum.^(wellformed.updated("enumField" -> "bb").internal)
 
-  val noAttrDecoderView = Relay.toFallbackDecoderView(EAVSystem.NoAttr.relay)
+  val noAttrDecoderView: EAVSystem.NoAttr._Relay#DecoderView = Relay.toFallbackDecoderView(EAVSystem.NoAttr.relay)
 
   it("wellformed <=> JSON") {
 
-    val o: _EAV = wellformed
+    val o: ^ = wellformed
     val json = o.toJSON()
     json.shouldBe(
       """
@@ -104,19 +104,18 @@ class EAVSuite extends BaseSpec {
 
   it("tryGetEnum can convert String to Enumeration") {
 
-    val v = withEnum.enumField.tryGetEnum(EAVSuite.EE)
-    assert(v.get == EAVSuite.EE.bb)
+    val v = withEnum.enumField.asEnum(EAVLikeSuite.EE).tryGet
+    assert(v.get == EAVLikeSuite.EE.bb)
   }
 }
 
-object EAVSuite {
+object EAVLikeSuite {
 
   object WithEnum extends EAVSystem {
 
-    case class _EAV(internal: collection.Map[String, Any]) extends ThisEAV {
-      override type Bound = Any
+    case class ^(internal: collection.Map[String, Any]) extends EAV {
 
-      object enumField extends Attr[String]()
+      case object enumField extends Attr[String]()
     }
   }
 

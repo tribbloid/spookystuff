@@ -1,6 +1,6 @@
 package com.tribbloids.spookystuff.testutils
 
-trait LocalPathDocsFixture extends RemoteDocsFixture {
+trait FileDocsFixture extends RemoteDocsFixture {
 
   import TestDocsResolver._
 

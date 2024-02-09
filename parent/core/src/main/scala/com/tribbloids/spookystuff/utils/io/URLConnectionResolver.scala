@@ -63,7 +63,7 @@ case class URLConnectionResolver(
             else list
           result.asInstanceOf[Any]
         }.toMap
-        ResourceMetadata._EAV(map)
+        ResourceMetadata.^(map)
       }
 
       override protected def _newIStream: InputStream = {

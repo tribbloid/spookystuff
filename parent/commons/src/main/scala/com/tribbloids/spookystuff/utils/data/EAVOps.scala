@@ -1,8 +1,8 @@
-package org.apache.spark.ml.dsl.utils.data
+package com.tribbloids.spookystuff.utils.data
 
 import com.tribbloids.spookystuff.utils.CommonUtils
 
-case class EAVOps[T <: EAV](self: T)(
+case class EAVOps[T <: EAVLike](self: T)(
     implicit
     val sys: EAVSystem.Aux[T]
 ) {
@@ -12,7 +12,7 @@ case class EAVOps[T <: EAV](self: T)(
     */
   def :++(that: T): T = {
 
-    sys._EAV(CommonUtils.mergePreserveOrder(self.internal, that.internal))
+    sys.^(CommonUtils.mergePreserveOrder(self.internal, that.internal))
   }
 
   /**
@@ -27,11 +27,11 @@ case class EAVOps[T <: EAV](self: T)(
       that: T
   ): T = {
 
-    val _include: List[String] = (self.asMap.keys ++ that.asMap.keys).toList
+    val _include: List[String] = (self.lookup.keys ++ that.lookup.keys).toList
 
     val result = _include.flatMap { key =>
       val vs = Seq(self, that).map { v =>
-        v.asMap.get(key)
+        v.lookup.get(key)
       }.flatten
 
       val mergedOpt = vs match {
@@ -50,11 +50,11 @@ case class EAVOps[T <: EAV](self: T)(
     sys.From.tuple(result: _*)
   }
 
-  def updated(kvs: Magnets.AttrValueMag[self.Bound]*): T = {
+  def updated(kvs: Magnets.AttrValueMag[Any]*): T = {
     ++:(sys.From(kvs: _*))
   }
 
-  def drop(vs: Magnets.AttrMag*): T = sys.From.iterable(self.asMap -- vs.flatMap(_.names))
+  def drop(vs: Magnets.AttrMag*): T = sys.From.iterable(self.lookup -- vs.flatMap(_.names))
 
   def dropAll(vs: Iterable[Magnets.AttrMag]): T = drop(vs.toSeq: _*)
 

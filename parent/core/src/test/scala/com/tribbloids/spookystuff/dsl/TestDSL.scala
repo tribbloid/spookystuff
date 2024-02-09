@@ -5,12 +5,12 @@ import com.tribbloids.spookystuff.doc.Observation
 import com.tribbloids.spookystuff.extractors.Alias
 import com.tribbloids.spookystuff.rdd.FetchedDataset
 import com.tribbloids.spookystuff.row.{DataRow, FetchedRow, Field, SquashedRow}
-import com.tribbloids.spookystuff.testutils.{LocalPathDocsFixture, SpookyBaseSpec}
+import com.tribbloids.spookystuff.testutils.{FileDocsFixture, SpookyBaseSpec}
 
 /**
   * Created by peng on 12/3/14.
   */
-class TestDSL extends SpookyBaseSpec with LocalPathDocsFixture {
+class TestDSL extends SpookyBaseSpec with FileDocsFixture {
 
   lazy val pages: Seq[Observation] = (
     Wget(HTML_URL) ~ 'page

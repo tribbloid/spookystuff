@@ -2,8 +2,15 @@ package org.apache.spark.ml.dsl.utils
 
 trait HasEagerInnerObjects {
 
+  @volatile private var innerObjectsInitialised: Boolean = false
+
+  protected def requireInitialised(): Unit = {
+    require(innerObjectsInitialised, "initialisation not finished")
+  }
+
   {
     declaredEagerInnerObjects
+    innerObjectsInitialised = true
   }
 
   private lazy val declaredEagerInnerObjects: List[EagerInnerObject] = {

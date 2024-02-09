@@ -1,4 +1,4 @@
-package org.apache.spark.ml.dsl.utils.data
+package com.tribbloids.spookystuff.utils.data
 
 import com.tribbloids.spookystuff.testutils.BaseSpec
 import org.apache.hadoop.fs.Path

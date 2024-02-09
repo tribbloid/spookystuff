@@ -1,7 +1,7 @@
 package com.tribbloids.spookystuff.web.conf
 
 import com.tribbloids.spookystuff.actions.Wget
-import com.tribbloids.spookystuff.testutils.{LocalPathDocsFixture, SpookyBaseSpec}
+import com.tribbloids.spookystuff.testutils.{FileDocsFixture, SpookyBaseSpec}
 import com.tribbloids.spookystuff.web.actions.Visit
 import org.apache.spark.SparkException
 
@@ -10,7 +10,7 @@ import java.util.Date
 /**
   * Created by peng on 24/11/16.
   */
-class WebDriverSuite extends SpookyBaseSpec with LocalPathDocsFixture {
+class WebDriverSuite extends SpookyBaseSpec with FileDocsFixture {
 
   it("PhantomJS DriverFactory can degrade gracefully if remote URI is unreachable") {
 

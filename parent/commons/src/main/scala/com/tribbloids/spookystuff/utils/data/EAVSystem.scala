@@ -1,59 +1,69 @@
-package org.apache.spark.ml.dsl.utils.data
+package com.tribbloids.spookystuff.utils.data
 
 import com.tribbloids.spookystuff.relay.io.Encoder.HasEncoder
 import com.tribbloids.spookystuff.relay.{Relay, TreeIR}
 import org.apache.spark.ml.dsl.utils.DSLUtils
+import org.apache.spark.sql.catalyst.util.CaseInsensitiveMap
 
 import java.lang.reflect.{InvocationTargetException, Method}
 import scala.collection.immutable.ListMap
+import scala.language.implicitConversions
 import scala.reflect.ClassTag
 
 trait EAVSystem {
 
-  trait ThisEAV extends EAV {
+  trait EAV extends EAVLike {
 
     final override def system: EAVSystem = EAVSystem.this
+
+    @transient lazy val canonical: ^ = ^(Map(KVs.defined: _*))
   }
 
-  private lazy val _defaultOrdering: Ordering[_ <: ThisEAV] = {
-    import Ordering.Implicits._
+  object EAV extends HasEncoder[^] {
 
-    Ordering.by { v: ThisEAV =>
-      v.sortedBy
+    // TODO: don't know how to do this, causing problem in generating KVs
+    trait CaseInsensitive extends EAV {
+
+      override protected def getLookup: Map[String, Any] = CaseInsensitiveMap(super.getLookup)
+    }
+
+    implicit def relay: Relay[^] = _Relay()
+
+    /**
+      * will determine ordering by the following evidences, in descending precedence:
+      *   - values of the defined attributes, in the order of definition
+      */
+    private lazy val _defaultOrdering: Ordering[_ <: EAV] = {
+      import Ordering.Implicits._
+
+      Ordering.by { v: EAV =>
+        v.sortEvidence
+      }
+    }
+
+    implicit def defaultOrdering[T <: EAV]: Ordering[T] = {
+      _defaultOrdering.asInstanceOf[Ordering[T]]
     }
   }
 
-  implicit def defaultOrdering[T <: ThisEAV]: Ordering[T] = _defaultOrdering.asInstanceOf[Ordering[T]]
+  type ^ <: EAV
+  val ^ : collection.Map[String, Any] => ^
 
-  object ThisEAV extends HasEncoder[_EAV] {
+  lazy val empty: `^` = From.tuple()
 
-    implicit def relay(
-        implicit
-        cc: ClassTag[Bound]
-    ): Relay[_EAV] = _Relay()
-
-  }
-
-  type _EAV <: ThisEAV
-  val _EAV: collection.Map[String, Bound] => _EAV
-
-  final type Bound = _EAV#Bound
-
-  lazy val empty: _EAV = From.tuple()
-
-  class From[V >: Bound](
-      private val constructor: collection.Map[String, V] => _EAV
+  class From[V >: Any](
+      private val constructor: collection.Map[String, V] => ^
   ) {
 
-    final def iterableInternal(kvs: Iterable[(String, V)]): _EAV = {
+    final def iterableInternal(kvs: Iterable[(String, V)]): ^ = {
 
       constructor(ListMap[String, V](kvs.toSeq: _*))
     }
 
-    final def iterable(kvs: Iterable[Tuple2[_, V]]): _EAV = {
+    final def iterable(kvs: Iterable[Tuple2[_, V]]): ^ = {
       val _kvs = kvs.map {
-        case (k: _EAV#Attr[_], v) =>
-          k.primaryName -> v
+        case (k: `^` #Attr[_], v) =>
+          k.name -> v
         case (k: String, v) =>
           k -> v
         case (k, _) =>
@@ -63,11 +73,11 @@ trait EAVSystem {
       iterableInternal(_kvs)
     }
 
-    final def tuple(kvs: Tuple2[_, V]*): _EAV = {
+    final def tuple(kvs: Tuple2[_, V]*): ^ = {
       iterable(kvs)
     }
 
-    final def apply(kvs: Magnets.AttrValueMag[_ <: V]*): _EAV = {
+    final def apply(kvs: Magnets.AttrValueMag[_ <: V]*): ^ = {
       val _kvs = kvs.flatMap { m =>
         m.vOpt.map { v =>
           m.k -> v
@@ -78,42 +88,34 @@ trait EAVSystem {
     }
   }
 
-  case object From extends From[Bound](_EAV) {
-
-    case class FromAny()(
-        implicit
-        clazz: ClassTag[Bound]
-    ) extends From[Any](
+  case object From extends From[Any](^) {
+    // TODO: cleanup, useless
+    case class FromAny()
+        extends From[Any](
           { map =>
             val _map = map.collect {
-              case (k, v: Bound) => k -> v
-              case (k, null)     => k -> null.asInstanceOf[Bound]
+              case (k, v: Any) => k -> v
+              case (k, null)   => k -> null.asInstanceOf[Any]
             }
-            _EAV(_map)
+            ^(_map)
           }
         )
 
-    def any(
-        implicit
-        clazz: ClassTag[Bound]
-    ): FromAny = FromAny()(clazz)
+    def any: FromAny = FromAny()
   }
 
-  case class _Relay()(
-      implicit
-      cc: ClassTag[Bound]
-  ) extends Relay[_EAV] {
+  case class _Relay() extends Relay[^] {
 
     final type IR_>> = TreeIR[Any]
     final type IR_<< = TreeIR.Leaf[Any]
 
-    override def toMessage_>>(eav: _EAV): IR_>> = {
-      val raw: TreeIR.Leaf[_EAV] = TreeIR.leaf(eav)
+    override def toMessage_>>(eav: ^): IR_>> = {
+      val raw: TreeIR.Leaf[^] = TreeIR.leaf(eav)
 
       val expanded = raw.DepthFirstTransform
         .down[Any] {
-          case ll @ TreeIR.Leaf(v: EAV, _) =>
-            val sub = v.asMap.toSeq
+          case ll @ TreeIR.Leaf(v: EAVLike, _) =>
+            val sub = v.KVs.raw
             val subNodes: Seq[(String, TreeIR.Leaf[Any])] = sub.map {
               case (kk, vv) =>
                 kk -> TreeIR.leaf[Any](vv)
@@ -128,7 +130,7 @@ trait EAVSystem {
       expanded
     }
 
-    override def toProto_<<(m: IR_<<): _EAV = {
+    override def toProto_<<(m: IR_<<): ^ = {
 
       val canonical = {
         m.explode.explodeStringMap()
@@ -151,14 +153,13 @@ trait EAVSystem {
         }
         .execute
 
-      folded.body.asInstanceOf[_EAV]
+      folded.body.asInstanceOf[^]
     }
   }
 
   case class ReflectionParser[TT]()(
       implicit
-      tcc: ClassTag[TT],
-      bcc: ClassTag[Bound]
+      tcc: ClassTag[TT]
   ) {
 
     @transient lazy val clazz: Class[_] = tcc.runtimeClass
@@ -185,7 +186,7 @@ trait EAVSystem {
       (commonGetters ++ booleanGetters).sortBy(_._1)
     }
 
-    def apply(obj: TT): _EAV = {
+    def apply(obj: TT): ^ = {
       val kvs: Seq[(String, Any)] = validGetters.flatMap { tuple =>
         try {
           tuple._2.setAccessible(true)
@@ -199,29 +200,21 @@ trait EAVSystem {
     }
   }
 
-  implicit def sys: EAVSystem.Aux[_EAV] = EAVSystem.this
+  implicit def sys: EAVSystem.Aux[^] = EAVSystem.this
 
-  def relay(
-      implicit
-      cc: ClassTag[Bound]
-  ): _Relay = _Relay()
+  def relay: _Relay = _Relay()
 
-  implicit def toRelay(v: this.type)(
-      implicit
-      cc: ClassTag[Bound]
-  ): _Relay = relay
+  implicit def toRelay(v: this.type): _Relay = relay
 }
 
 object EAVSystem {
 
-  type Aux[T] = EAVSystem { type _EAV = T }
+  type Aux[T] = EAVSystem { type ^ = T }
 
   object NoAttr extends EAVSystem {
 
-    case class _EAV(internal: collection.Map[String, Any]) extends ThisEAV {
-      override type Bound = Any
-    }
+    case class ^(internal: collection.Map[String, Any]) extends EAV {}
   }
-  type NoAttr = NoAttr._EAV
+  type NoAttr = NoAttr.^
 
 }

@@ -4,7 +4,7 @@ import ai.acyclic.prover.commons.spark.Envs
 import com.tribbloids.spookystuff.actions._
 import com.tribbloids.spookystuff.extractors.impl.Lit
 import com.tribbloids.spookystuff.metrics.Acc
-import com.tribbloids.spookystuff.testutils.{LocalPathDocsFixture, SpookyBaseSpec}
+import com.tribbloids.spookystuff.testutils.{FileDocsFixture, SpookyBaseSpec}
 import com.tribbloids.spookystuff.testutils.beans.Composite
 import com.tribbloids.spookystuff.dsl
 
@@ -13,7 +13,7 @@ import java.io.File
 /**
   * Created by peng on 5/10/15.
   */
-class FetchedDatasetSuite extends SpookyBaseSpec with LocalPathDocsFixture {
+class FetchedDatasetSpec extends SpookyBaseSpec with FileDocsFixture {
 
   import dsl._
 
@@ -130,84 +130,87 @@ class FetchedDatasetSuite extends SpookyBaseSpec with LocalPathDocsFixture {
     }
   }
 
-  it("toDF can handle simple types") {
+  describe("toDF can") {
 
-    val set = spooky
-      .fetch(
-        Wget(HTML_URL)
-      )
-      .extract(
-        S.uri ~ 'uri,
-        S.children("h1").size ~ 'size,
-        S.timestamp ~ 'timestamp,
-        S.andFlatMap { page =>
-          page.saved.headOption
-        } ~ 'saved
-      )
-    val df = set.toDF()
+    it("handle simple types") {
 
-    df.schema.treeString.shouldBe(
-      """
-        |root
-        | |-- uri: string (nullable = true)
-        | |-- size: integer (nullable = true)
-        | |-- timestamp: timestamp (nullable = true)
-        | |-- saved: string (nullable = true)
+      val set = spooky
+        .fetch(
+          Wget(HTML_URL)
+        )
+        .extract(
+          S.uri ~ 'uri,
+          S.children("h1").size ~ 'size,
+          S.timestamp ~ 'timestamp,
+          S.andFlatMap { page =>
+            page.saved.headOption
+          } ~ 'saved
+        )
+      val df = set.toDF()
+
+      df.schema.treeString.shouldBe(
+        """
+          |root
+          | |-- uri: string (nullable = true)
+          | |-- size: integer (nullable = true)
+          | |-- timestamp: timestamp (nullable = true)
+          | |-- saved: string (nullable = true)
       """.stripMargin
-    )
-
-    df.show(false)
-  }
-
-  it("toDF can handle composite types") {
-    val set = spooky
-      .extract(
-        Lit(0 -> "str") ~ 'tuple,
-        Lit(Composite()) ~ 'composite
       )
 
-    val df = set.toDF()
+      df.show(false)
+    }
 
-    df.schema.treeString.shouldBe(
-      """
-        |root
-        | |-- tuple: struct (nullable = true)
-        | |    |-- _1: integer (nullable = false)
-        | |    |-- _2: string (nullable = true)
-        | |-- composite: struct (nullable = true)
-        | |    |-- n: integer (nullable = false)
-        | |    |-- str: string (nullable = true)
+    it("handle composite types") {
+      val set = spooky
+        .extract(
+          Lit(0 -> "str") ~ 'tuple,
+          Lit(Composite()) ~ 'composite
+        )
+
+      val df = set.toDF()
+
+      df.schema.treeString.shouldBe(
+        """
+          |root
+          | |-- tuple: struct (nullable = true)
+          | |    |-- _1: integer (nullable = false)
+          | |    |-- _2: string (nullable = true)
+          | |-- composite: struct (nullable = true)
+          | |    |-- n: integer (nullable = false)
+          | |    |-- str: string (nullable = true)
       """.stripMargin
-    )
-
-    df.show(false)
-  }
-
-  it("toDF can yield a DataFrame excluding Fields with .isSelected = false") {
-
-    val set = spooky
-      .fetch(
-        Wget(HTML_URL)
       )
-      .extract(
-        S.uri ~ 'uri.*,
-        S.children("h1").size ~ 'size.*,
-        S.timestamp ~ 'timestamp,
-        S.andFlatMap { page =>
-          page.saved.headOption
-        } ~ 'saved
-      )
-    val df = set.toDF()
 
-    df.schema.treeString.shouldBe(
-      """
-        |root
-        | |-- timestamp: timestamp (nullable = true)
-        | |-- saved: string (nullable = true)
+      df.show(false)
+    }
+
+    it("yield a DataFrame excluding Fields with .isSelected = false") {
+
+      val set = spooky
+        .fetch(
+          Wget(HTML_URL)
+        )
+        .extract(
+          S.uri ~ 'uri.*,
+          S.children("h1").size ~ 'size.*,
+          S.timestamp ~ 'timestamp,
+          S.andFlatMap { page =>
+            page.saved.headOption
+          } ~ 'saved
+        )
+      val df = set.toDF()
+
+      df.schema.treeString.shouldBe(
+        """
+          |root
+          | |-- timestamp: timestamp (nullable = true)
+          | |-- saved: string (nullable = true)
       """.stripMargin
-    )
+      )
 
-    df.show(false)
+      df.show(false)
+    }
   }
 
   it("fetch plan can be persisted") {

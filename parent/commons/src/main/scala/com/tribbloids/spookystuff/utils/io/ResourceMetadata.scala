@@ -1,28 +1,25 @@
 package com.tribbloids.spookystuff.utils.io
 
-import org.apache.spark.ml.dsl.utils.data.EAVSystem
+import com.tribbloids.spookystuff.utils.data.EAVSystem
 
 object ResourceMetadata extends EAVSystem {
 
-  case class _EAV(
+  case class ^(
       override val internal: collection.Map[String, Any]
-  ) extends ThisEAV {
+  ) extends EAV.CaseInsensitive {
 
-    type Bound = Any
+    case object URI extends Attr[String]()
 
-    object uri extends Attr[String]()
+    case object Name extends Attr[String]()
 
-    object name extends Attr[String]()
+    case object Type extends Attr[String]()
 
-    object `type` extends Attr[String]()
+    case object ContentType extends Attr[String](List("content-type"))
 
-    object `content-type` extends Attr[String]()
+    case object Length extends Attr[Long](List("Len"))
 
-    object length extends Attr[Long]()
+    case object StatusCode extends Attr[Int](List("status-code"))
 
-    object `status-code` extends Attr[Int]()
-
-    object `isDir` extends Attr[Boolean]()
+    case object `isDir` extends Attr[Boolean]()
   }
-
 }

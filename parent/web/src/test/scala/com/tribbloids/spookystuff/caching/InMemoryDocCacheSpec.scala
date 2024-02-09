@@ -4,7 +4,7 @@ import com.tribbloids.spookystuff.actions.{Trace, Wget}
 import com.tribbloids.spookystuff.conf.Core
 import com.tribbloids.spookystuff.doc.Doc
 import com.tribbloids.spookystuff.doc.Observation.DocUID
-import com.tribbloids.spookystuff.testutils.{LocalPathDocsFixture, SpookyBaseSpec}
+import com.tribbloids.spookystuff.testutils.{FileDocsFixture, SpookyBaseSpec}
 import com.tribbloids.spookystuff.web.actions.{Snapshot, Visit}
 
 import scala.concurrent.duration._
@@ -12,7 +12,7 @@ import scala.concurrent.duration._
 /**
   * Created by peng on 10/17/14.
   */
-class InMemoryDocCacheSpec extends SpookyBaseSpec with LocalPathDocsFixture {
+class InMemoryDocCacheSpec extends SpookyBaseSpec with FileDocsFixture {
 
   lazy val cache: AbstractDocCache = InMemoryDocCache
 

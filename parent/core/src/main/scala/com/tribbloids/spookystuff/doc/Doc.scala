@@ -67,7 +67,7 @@ case class Doc(
     object ContentTypeDetection extends NOTSerializable {
 
       lazy val declaredOpt: Option[CSSQuery] = {
-        metadata.`content-type`.get
+        metadata.ContentType.get
           .map(v => "" + v) // TODO: why?
           .orElse(declaredContentType)
       }
@@ -126,7 +126,9 @@ case class Doc(
         }
       }
 
-      lazy val output: ContentTypeView = ContentTypeView(detected)
+      lazy val output: ContentTypeView = {
+        ContentTypeView(detected)
+      }
     }
 
     this.content = Content.Original(
@@ -136,7 +138,7 @@ case class Doc(
     this
   }
 
-  // TODO: use reflection to find any element implementation that can resolve supplied MIME type
+  // TODO: use compile-time summoning to find an element implementation that can resolve supplied MIME type
   @transient lazy val rootOpt: Option[Unstructured] = {
 
     val content = this.content
@@ -147,7 +149,7 @@ case class Doc(
     } else if (mimeType.contains("json")) {
       Some(JsonElement(contentStr, null, uri)) // not serialize, parsing is faster
     } else if (mimeType.contains("csv")) {
-      val csvFormat: CSVFormat = metadata.asMap
+      val csvFormat: CSVFormat = metadata.lookup
         .get(Doc.CSV_FORMAT)
         .map {
           case v: CSVFormat => v

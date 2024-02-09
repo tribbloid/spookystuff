@@ -6,7 +6,7 @@ import com.tribbloids.spookystuff.conf.{Core, DriverFactory, SpookyConf}
 import com.tribbloids.spookystuff.dsl._
 import com.tribbloids.spookystuff.metrics.SpookyMetrics
 import com.tribbloids.spookystuff.row.LocalityGroup
-import com.tribbloids.spookystuff.testutils.{LocalURIDocsFixture, SpookyBaseSpec, TestHelper}
+import com.tribbloids.spookystuff.testutils.{FileURIDocsFixture, SpookyBaseSpec, TestHelper}
 import com.tribbloids.spookystuff.utils.CommonUtils
 import com.tribbloids.spookystuff.web.conf.{Web, WebDriverFactory}
 import com.tribbloids.spookystuff.web.agent.CleanWebDriver
@@ -16,7 +16,7 @@ import java.util.Date
 import scala.concurrent.duration
 import scala.util.Random
 
-abstract class ITBaseSpec extends SpookyBaseSpec with LocalURIDocsFixture {
+abstract class ITBaseSpec extends SpookyBaseSpec with FileURIDocsFixture {
 
   val phantomJS: WebDriverFactory.PhantomJS = WebDriverFactory.PhantomJS()
   val htmlUnit: WebDriverFactory.HtmlUnit = WebDriverFactory.HtmlUnit()

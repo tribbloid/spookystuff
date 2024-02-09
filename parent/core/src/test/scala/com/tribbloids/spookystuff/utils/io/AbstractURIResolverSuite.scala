@@ -1,7 +1,7 @@
 package com.tribbloids.spookystuff.utils.io
 
 import ai.acyclic.prover.commons.spark.Envs
-import com.tribbloids.spookystuff.testutils.{LocalPathDocsFixture, SparkEnvSpec}
+import com.tribbloids.spookystuff.testutils.{FileDocsFixture, SparkEnvSpec}
 import com.tribbloids.spookystuff.utils.io.AbstractURIResolverSuite.SequentialCheck
 import com.tribbloids.spookystuff.utils.serialization.AssertSerializable
 import org.apache.commons.io.IOUtils
@@ -44,7 +44,7 @@ object AbstractURIResolverSuite {
 /**
   * Created by peng on 07/10/15.
   */
-abstract class AbstractURIResolverSuite extends SparkEnvSpec with LocalPathDocsFixture {
+abstract class AbstractURIResolverSuite extends SparkEnvSpec with FileDocsFixture {
 
   @transient val resolver: URIResolver
   @transient val schemaPrefix: String
@@ -134,7 +134,7 @@ abstract class AbstractURIResolverSuite extends SparkEnvSpec with LocalPathDocsF
         md
       }
       val mds = mdRDD.collect().map {
-        _.asMap.filterNot(_._1.contains("Space")).map(identity)
+        _.lookup.filterNot(_._1.contains("Space")).map(identity)
       }
 
       AssertSerializable(mds.head)

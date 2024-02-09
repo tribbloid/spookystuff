@@ -3,6 +3,7 @@ package com.tribbloids.spookystuff.utils
 import com.tribbloids.spookystuff.tree.TreeView
 import com.tribbloids.spookystuff.utils.TreeThrowable.ExceptionWithCauses
 
+import scala.util.control.NoStackTrace
 import scala.util.{Failure, Success, Try}
 
 object TreeThrowable {
@@ -151,6 +152,7 @@ object TreeThrowable {
   protected case class ExceptionWithCauses(
       override val causes: Seq[Throwable] = Nil
   ) extends Exception
+      with NoStackTrace
       with TreeThrowable {
 
     override def getCause: Throwable = causes.headOption.orNull
