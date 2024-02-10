@@ -5,7 +5,7 @@ import com.tribbloids.spookystuff.extractors.GenExtractor.Static
 import com.tribbloids.spookystuff.extractors._
 import com.tribbloids.spookystuff.relay.IR.Aux
 import com.tribbloids.spookystuff.relay.{Relay, TreeIR}
-import org.apache.spark.ml.dsl.utils.refl.UnreifiedObjectType
+import com.tribbloids.spookystuff.utils.refl.UnreifiedObjectType
 import org.apache.spark.sql.catalyst.ScalaReflection.universe.TypeTag
 import org.apache.spark.sql.types._
 

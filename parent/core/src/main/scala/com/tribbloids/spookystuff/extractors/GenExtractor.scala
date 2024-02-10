@@ -4,7 +4,7 @@ import com.tribbloids.spookystuff.Const
 import com.tribbloids.spookystuff.row.Field
 import com.tribbloids.spookystuff.tree.TreeView
 import com.tribbloids.spookystuff.utils.SpookyUtils
-import org.apache.spark.ml.dsl.utils.refl.{CatalystTypeOps, TypeMagnet, UnreifiedObjectType}
+import com.tribbloids.spookystuff.utils.refl.{CatalystTypeOps, TypeMagnet, UnreifiedObjectType}
 import org.apache.spark.sql.catalyst.ScalaReflection.universe
 import org.apache.spark.sql.catalyst.ScalaReflection.universe.TypeTag
 

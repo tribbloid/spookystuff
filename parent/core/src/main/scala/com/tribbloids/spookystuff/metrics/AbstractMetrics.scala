@@ -2,7 +2,7 @@ package com.tribbloids.spookystuff.metrics
 
 import com.tribbloids.spookystuff.relay.TreeIR
 import com.tribbloids.spookystuff.utils.CommonUtils
-import org.apache.spark.ml.dsl.utils.refl.ReflectionUtils
+import com.tribbloids.spookystuff.utils.refl.ReflectionUtils
 import org.apache.spark.util.AccumulatorV2
 
 import scala.collection.mutable

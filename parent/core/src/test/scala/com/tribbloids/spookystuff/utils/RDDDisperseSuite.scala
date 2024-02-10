@@ -2,7 +2,7 @@ package com.tribbloids.spookystuff.utils
 
 import com.tribbloids.spookystuff.testutils.{SpookyBaseSpec, TestHelper}
 import com.tribbloids.spookystuff.utils.collection.BufferedShuffleIteratorV1
-import org.apache.spark.ml.dsl.utils.ObjectSimpleNameMixin
+import org.apache.spark.ml.dsl.utils.ClassOpsMixin
 import org.apache.spark.rdd.RDD
 import org.apache.spark.rdd.spookystuff.NarrowDispersedRDD
 import org.apache.spark.storage.StorageLevel
@@ -117,7 +117,7 @@ class RDDDisperseSuite extends SpookyBaseSpec {
     rdd.unpersist(true)
   }
 
-  trait Facet extends ObjectSimpleNameMixin {
+  trait Facet extends ClassOpsMixin {
 
     val acc: LongAccumulator = sc.longAccumulator(this.facetName)
     var nPart: Int = -1
@@ -144,7 +144,7 @@ class RDDDisperseSuite extends SpookyBaseSpec {
 
     def doAssert(rdd: RDD[Int]): scalatest.Assertion
 
-    def facetName: String = this.objectSimpleName
+    def facetName: String = this.getClass.simpleName_Scala
 
     describe(facetName) {
 

@@ -2,5 +2,5 @@ package com.tribbloids.spookystuff.utils
 
 object Types {
 
-  type Binary[T] = (T, T) => T
+  type Compose[T] = (T, T) => T
 }

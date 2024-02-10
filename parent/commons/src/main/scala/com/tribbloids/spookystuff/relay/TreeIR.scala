@@ -2,7 +2,7 @@ package com.tribbloids.spookystuff.relay
 
 import com.tribbloids.spookystuff.tree.TreeView
 import com.tribbloids.spookystuff.relay.io.Decoder
-import org.apache.spark.ml.dsl.utils.refl.ReflectionUtils
+import com.tribbloids.spookystuff.utils.refl.ReflectionUtils
 
 import scala.collection.immutable.ListMap
 import scala.language.implicitConversions

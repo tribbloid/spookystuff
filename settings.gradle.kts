@@ -35,6 +35,7 @@ include(
 
     // uses unstable & experimental scala features, should be modified very slowly & carefully
     ":parent:commons",
+    ":parent:parsing",
     ":parent:core",
     ":parent:web",
     ":parent:integration",

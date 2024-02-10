@@ -2,10 +2,9 @@ package com.tribbloids.spookystuff.utils
 
 import java.io.File
 import java.net._
-import java.nio.file.{Files, _}
+import java.nio.file._
 import com.tribbloids.spookystuff.utils.io.LocalResolver
 import org.apache.commons.io.IOUtils
-import org.apache.spark.ml.dsl.UnsafeUtils
 import org.apache.spark.rdd.RDD
 import org.slf4j.LoggerFactory
 
@@ -126,7 +125,7 @@ object SpookyUtils {
 
     assert(url.toString.startsWith("file"))
 
-    UnsafeUtils.invoke(
+    UnsafeReflections.invoke(
       classOf[URLClassLoader],
       ClassLoader.getSystemClassLoader,
       "addURL",
