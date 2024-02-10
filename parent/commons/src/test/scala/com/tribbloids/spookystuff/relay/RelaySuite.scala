@@ -1,27 +1,14 @@
 package com.tribbloids.spookystuff.relay
 
-import java.util.Date
-import org.apache.spark.ml.dsl.AbstractDFDSuite
 import com.tribbloids.spookystuff.relay.TestBeans._
 import com.tribbloids.spookystuff.relay.io.Encoder
+import com.tribbloids.spookystuff.testutils.BaseSpec
 import org.json4s.MappingException
 import org.json4s.reflect.{Executable, ParanamerReader}
 
-class RelaySuite extends AbstractDFDSuite {
+import java.util.Date
 
-  // TODO: disabled before FallbackSerializer is really put to use
-  ignore("SerializingParam[Function1] should work") {
-    val fn = { k: Int =>
-      2 * k
-    }
-    val reader = new Relay.ToSelf[Int => Int]()
-    val param = reader.Param("id", "name", "")
-
-    val json = param.jsonEncode(fn)
-    println(json) // TODO: assert
-    val fn2 = param.jsonDecode(json)
-    assert(fn2(2) == 4)
-  }
+class RelaySuite extends BaseSpec {
 
   val date: Date = new Date()
 

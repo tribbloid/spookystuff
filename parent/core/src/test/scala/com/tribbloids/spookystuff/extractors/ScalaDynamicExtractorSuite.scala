@@ -8,7 +8,7 @@ import com.tribbloids.spookystuff.rdd.FetchedDataset
 import com.tribbloids.spookystuff.row.SpookySchema
 import com.tribbloids.spookystuff.testutils.{FileDocsFixture, SpookyBaseSpec}
 import com.tribbloids.spookystuff.utils.CommonUtils
-import org.apache.spark.ml.dsl.utils.refl.CatalystTypeOps
+import com.tribbloids.spookystuff.utils.refl.CatalystTypeOps
 import org.apache.spark.rdd.RDD
 import org.apache.spark.sql.DataFrame
 import org.apache.spark.sql.types._

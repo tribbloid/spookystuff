@@ -1,6 +1,6 @@
 package com.tribbloids.spookystuff.relay
 
-import org.apache.spark.ml.dsl.utils.refl.TypeMagnet
+import com.tribbloids.spookystuff.utils.refl.TypeMagnet
 
 trait RootTagged {
 

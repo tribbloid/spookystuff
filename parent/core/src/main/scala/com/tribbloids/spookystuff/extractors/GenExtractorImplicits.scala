@@ -6,7 +6,7 @@ import com.tribbloids.spookystuff.extractors.GenExtractor.AndThen
 import com.tribbloids.spookystuff.extractors.impl.Extractors._
 import com.tribbloids.spookystuff.extractors.impl.{AppendSeq, Get, Zipped}
 import com.tribbloids.spookystuff.row.Field
-import org.apache.spark.ml.dsl.utils.refl.{CatalystTypeOps, UnreifiedObjectType}
+import com.tribbloids.spookystuff.utils.refl.{CatalystTypeOps, UnreifiedObjectType}
 import org.apache.spark.sql.types.MapType
 
 import java.sql.Timestamp

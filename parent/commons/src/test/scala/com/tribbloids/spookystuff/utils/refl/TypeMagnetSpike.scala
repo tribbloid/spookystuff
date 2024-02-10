@@ -1,6 +1,7 @@
-package org.apache.spark.ml.dsl.utils.refl
+package com.tribbloids.spookystuff.utils.refl
 
 import com.tribbloids.spookystuff.testutils.BaseSpec
+import com.tribbloids.spookystuff.utils.refl.TypeUtils
 import com.tribbloids.spookystuff.utils.serialization.AssertSerializable
 import org.apache.spark.sql.catalyst.ScalaReflection
 import org.apache.spark.sql.catalyst.ScalaReflection.universe

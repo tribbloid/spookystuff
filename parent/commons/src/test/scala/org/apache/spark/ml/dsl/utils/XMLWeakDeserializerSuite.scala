@@ -1,7 +1,7 @@
 package org.apache.spark.ml.dsl.utils
 
-import org.apache.spark.ml.dsl.AbstractDFDSuite
 import com.tribbloids.spookystuff.relay.xml.XMLFormats
+import com.tribbloids.spookystuff.testutils.BaseSpec
 import org.json4s.{DefaultFormats, Formats, JObject}
 
 object XMLWeakDeserializerSuite {
@@ -40,7 +40,7 @@ object XMLWeakDeserializerSuite {
   )
 }
 
-class XMLWeakDeserializerSuite extends AbstractDFDSuite {
+class XMLWeakDeserializerSuite extends BaseSpec {
 
   implicit val formats: Formats = XMLFormats.defaultFormats
 

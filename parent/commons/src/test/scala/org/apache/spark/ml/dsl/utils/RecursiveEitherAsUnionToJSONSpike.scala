@@ -4,7 +4,6 @@ import com.tribbloids.spookystuff.testutils.BaseSpec
 import org.apache.spark.ml.dsl.utils.RecursiveEitherAsUnionToJSONSpike._
 import com.tribbloids.spookystuff.relay.Relay
 import com.tribbloids.spookystuff.relay.io.Encoder
-import org.scalatest.Ignore
 import org.slf4j.LoggerFactory
 
 object RecursiveEitherAsUnionToJSONSpike {
@@ -26,7 +25,6 @@ object RecursiveEitherAsUnionToJSONSpike {
   case class InclusiveOpt(v: Option[Union], x: String)
 }
 
-@Ignore
 class RecursiveEitherAsUnionToJSONSpike extends BaseSpec {
 
   val u1: Union = Right(Test1("abc", 2))

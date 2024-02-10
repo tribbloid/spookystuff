@@ -1,4 +1,4 @@
-package org.apache.spark.ml.dsl.utils.refl
+package com.tribbloids.spookystuff.utils.refl
 
 import scala.reflect.runtime.universe
 import scala.collection.concurrent.TrieMap

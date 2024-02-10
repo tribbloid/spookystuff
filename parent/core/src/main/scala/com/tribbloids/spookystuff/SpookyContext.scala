@@ -9,12 +9,12 @@ import com.tribbloids.spookystuff.relay.io.Encoder
 import com.tribbloids.spookystuff.row._
 import com.tribbloids.spookystuff.agent.Agent
 import com.tribbloids.spookystuff.utils.io.HDFSResolver
+import com.tribbloids.spookystuff.utils.refl.{ToCatalyst, TypeMagnet}
 import com.tribbloids.spookystuff.utils.serialization.{NOTSerializable, SerializerOverride}
 import com.tribbloids.spookystuff.utils.{ShippingMarks, TreeThrowable}
 import org.apache.hadoop.conf.Configuration
 import org.apache.spark._
 import org.apache.spark.broadcast.Broadcast
-import org.apache.spark.ml.dsl.utils.refl.{ToCatalyst, TypeMagnet}
 import org.apache.spark.rdd.RDD
 import org.apache.spark.sql.{DataFrame, SQLContext}
 

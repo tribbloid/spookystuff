@@ -1,13 +1,13 @@
-package org.apache.spark.ml.dsl.utils.refl
+package com.tribbloids.spookystuff.utils.refl
 
 import java.sql.Timestamp
-
 import com.tribbloids.spookystuff.testutils.BaseSpec
 import com.tribbloids.spookystuff.utils.serialization.AssertSerializable
 import org.apache.spark.ml.dsl.utils.PairwiseConversionMixin
 import org.apache.spark.ml.dsl.utils.PairwiseConversionMixin.Repr
 import com.tribbloids.spookystuff.relay.TestBeans._
-import org.apache.spark.ml.dsl.utils.refl.TypeMagnetSuite.TypeTagRepr
+import com.tribbloids.spookystuff.utils.refl.TypeMagnetSuite.TypeTagRepr
+import com.tribbloids.spookystuff.utils.refl.{CatalystTypeOps, ToCatalyst, TypeMagnet}
 import org.apache.spark.sql.catalyst.ScalaReflection
 import org.apache.spark.sql.catalyst.ScalaReflection.universe
 import org.apache.spark.sql.types._

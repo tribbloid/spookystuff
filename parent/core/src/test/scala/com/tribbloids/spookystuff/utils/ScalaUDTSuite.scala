@@ -3,8 +3,8 @@ package com.tribbloids.spookystuff.utils
 import com.tribbloids.spookystuff.actions.Action
 import com.tribbloids.spookystuff.doc.{Observation, Unstructured}
 import com.tribbloids.spookystuff.testutils.{BaseSpec, SpookyBaseSpec}
+import com.tribbloids.spookystuff.utils.refl.{CatalystTypeOps, TypeUtils, UnreifiedObjectType}
 import com.tribbloids.spookystuff.utils.serialization.AssertSerializable
-import org.apache.spark.ml.dsl.utils.refl.{CatalystTypeOps, TypeUtils, UnreifiedObjectType}
 import org.apache.spark.sql.types.DataType
 
 /**
