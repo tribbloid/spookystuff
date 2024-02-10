@@ -133,12 +133,15 @@ abstract class AbstractURIResolverSuite extends SparkEnvSpec with FileDocsFixtur
         val md = resolver.input(HTML_URL)(_.metadata.all)
         md
       }
-      val mds = mdRDD.collect().map {
-        _.lookup.filterNot(_._1.contains("Space")).map(identity)
-      }
+      val mds = mdRDD
+        .collect()
+        .map { v =>
+          v.KVs.raw.filterNot(_._1.contains("Space"))
+        }
+        .toList
 
       AssertSerializable(mds.head)
-      assert(mds.head == mds.last)
+      assert(mds.distinct.size == 1)
     }
 
     it("all accessors can be mutated after creation") {
