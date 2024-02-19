@@ -1,7 +1,7 @@
 package com.tribbloids.spookystuff.utils.data
 
 import ai.acyclic.prover.commons.same.EqualBy
-import org.apache.spark.ml.dsl.utils.?
+import org.apache.spark.ml.dsl.utils.??
 
 import scala.util.Try
 
@@ -17,7 +17,7 @@ trait AttrLike[T] extends Serializable with EqualBy {
     Magnets.AttrValueMag[T](this.name, Some(v))
   }
 
-  def -?>(vOpt: T `?` _): Magnets.AttrValueMag[T] = {
+  def -?>(vOpt: T ?? _): Magnets.AttrValueMag[T] = {
 
     Magnets.AttrValueMag[T](this.name, vOpt.asOption)
   }
