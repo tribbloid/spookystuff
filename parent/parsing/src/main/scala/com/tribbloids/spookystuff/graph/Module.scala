@@ -11,13 +11,13 @@ trait Module[T <: Domain] extends Algebra.Aliases[T] {
   protected def _replicate(m: DataMutator)(
       implicit
       idRotator: Rotator[ID],
-      node_+ : Types.Binary[NodeData]
+      node_+ : Types.Compose[NodeData]
   ): _Module
 
   def replicate(m: DataMutator = DataAlgebra.Mutator.identity)(
       implicit
       idRotator: Rotator[ID],
-      node_+ : Types.Binary[NodeData] = nodeAlgebra.add
+      node_+ : Types.Compose[NodeData] = nodeAlgebra.add
   ): this.type =
     _replicate(m).asInstanceOf[this.type]
 }

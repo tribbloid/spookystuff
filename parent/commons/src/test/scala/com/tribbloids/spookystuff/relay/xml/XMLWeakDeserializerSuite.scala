@@ -1,6 +1,5 @@
-package org.apache.spark.ml.dsl.utils
+package com.tribbloids.spookystuff.relay.xml
 
-import com.tribbloids.spookystuff.relay.xml.XMLFormats
 import com.tribbloids.spookystuff.testutils.BaseSpec
 import org.json4s.{DefaultFormats, Formats, JObject}
 

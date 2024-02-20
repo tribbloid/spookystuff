@@ -15,9 +15,9 @@
  * limitations under the License.
  */
 
-package org.apache.spark.ml.dsl
+package com.tribbloids.spookystuff.utils
 
-object UnsafeUtils {
+object UnsafeReflections {
 
   def setSuperField(obj: Object, fieldName: String, fieldValue: Object): Unit = {
     setAncestorField(obj, 1, fieldName, fieldValue)

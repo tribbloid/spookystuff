@@ -24,7 +24,7 @@ case class LocalGraph[D <: Domain] private (
   override def _replicate(m: DataMutator)(
       implicit
       idRotator: Rotator[ID],
-      node_+ : Types.Binary[NodeData]
+      node_+ : Types.Compose[NodeData]
   ): LocalGraph[D] = {
 
     new LocalGraph.BuilderImpl[D]()
@@ -96,7 +96,7 @@ object LocalGraph {
     override def fromSeq(
         nodes: Seq[_NodeLike],
         edges: Seq[_Edge],
-        node_+ : Types.Binary[NodeData]
+        node_+ : Types.Compose[NodeData]
     ): GG = {
 
       val existingIDs = nodes.map(_.samenessDelegatedTo).toSet
@@ -151,7 +151,7 @@ object LocalGraph {
     protected def linkedNode_+(
         v1: _NodeTriplet,
         v2: _NodeTriplet,
-        node_+ : Types.Binary[NodeData]
+        node_+ : Types.Compose[NodeData]
     ): _NodeTriplet = {
 
       require(
@@ -170,7 +170,7 @@ object LocalGraph {
     def union(
         v1: GG,
         v2: GG,
-        node_+ : Types.Binary[NodeData]
+        node_+ : Types.Compose[NodeData]
     ): GG = {
 
       val v2Reduced: mutable.Map[D#ID, _NodeTriplet] = v2.nodeMap.map {
