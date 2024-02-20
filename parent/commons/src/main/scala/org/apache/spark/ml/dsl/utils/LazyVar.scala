@@ -16,7 +16,7 @@ class LazyVar[T](
 ) extends Serializable
     with EqualBy {
 
-  @volatile protected var cached: T ?? _ = _
+  @volatile protected var cached: T ?? _ = null.asInstanceOf[T]
 
   def peek: Option[T] = cached.asOption
 
