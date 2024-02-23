@@ -3,7 +3,7 @@ package com.tribbloids.spookystuff.utils.data
 import com.tribbloids.spookystuff.relay.RootTagged
 import com.tribbloids.spookystuff.relay.xml.Xml
 import com.tribbloids.spookystuff.utils.{CommonUtils, TreeThrowable}
-import org.apache.spark.ml.dsl.utils.{??, HasEagerInnerObjects}
+import org.apache.spark.ml.dsl.utils.??
 
 import java.util.Properties
 import scala.collection.mutable

@@ -2,7 +2,7 @@ package com.tribbloids.spookystuff.utils.data
 
 import com.tribbloids.spookystuff.relay.io.Encoder.HasEncoder
 import com.tribbloids.spookystuff.relay.{Relay, TreeIR}
-import org.apache.spark.ml.dsl.utils.DSLUtils
+import com.tribbloids.spookystuff.utils.DSLUtils
 import org.apache.spark.sql.catalyst.util.CaseInsensitiveMap
 
 import java.lang.reflect.{InvocationTargetException, Method}

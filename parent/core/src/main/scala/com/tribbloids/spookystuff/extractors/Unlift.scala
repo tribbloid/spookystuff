@@ -1,6 +1,6 @@
 package com.tribbloids.spookystuff.extractors
 
-import org.apache.spark.ml.dsl.utils.DSLUtils
+import ai.acyclic.prover.commons.debug.Debug.CallStackRef
 
 import java.util.UUID
 import scala.collection.concurrent.TrieMap
@@ -14,7 +14,7 @@ case class Unlift[-T, +R](
   // TODO: this should be moved into prover-commons function
 
   val id: String = UUID.randomUUID().toString
-  Unlift.id2ConstructionStack += id -> DSLUtils.getBreakpointInfo().toList
+  Unlift.id2ConstructionStack += id -> CallStackRef.here.stack
 
   final override def isDefinedAt(x: T): Boolean = liftFn(x).isDefined
 
@@ -28,5 +28,5 @@ case class Unlift[-T, +R](
 
 object Unlift {
 
-  def id2ConstructionStack: TrieMap[String, List[StackTraceElement]] = TrieMap.empty
+  def id2ConstructionStack: TrieMap[String, Seq[StackTraceElement]] = TrieMap.empty
 }

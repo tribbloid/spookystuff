@@ -1,4 +1,4 @@
-package org.apache.spark.ml.dsl.utils
+package com.tribbloids.spookystuff.utils.data
 
 trait HasEagerInnerObjects {
 

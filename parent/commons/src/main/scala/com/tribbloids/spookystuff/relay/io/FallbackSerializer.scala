@@ -1,11 +1,11 @@
 package com.tribbloids.spookystuff.relay.io
 
 import com.tribbloids.spookystuff.utils.serialization.SerializerEnv
-import org.apache.spark.ml.dsl.utils.EncodedBinaryMagnet.Base64
 import org.json4s._
 import org.slf4j.LoggerFactory
 
 import java.nio.ByteBuffer
+import java.util.Base64
 
 // fallback mechanism that works for any java object
 abstract class FallbackSerializer(
@@ -13,6 +13,10 @@ abstract class FallbackSerializer(
 ) extends Serializer[Any] {
 
   val VID: Long = -47597349821L
+
+  @transient lazy val base64: (Base64.Encoder, Base64.Decoder) = {
+    Base64.getEncoder -> Base64.getDecoder
+  }
 
   def deserialize(
       implicit
@@ -26,7 +30,7 @@ abstract class FallbackSerializer(
             s"JSON === [${this.getClass.getSimpleName}] ==> Object"
           )
         try {
-          val bytes = Base64.fromStr(str.trim)
+          val bytes = base64._2.decode(str.trim)
 
           val ser = sparkSerializer.newInstance()
 
@@ -65,7 +69,7 @@ abstract class FallbackSerializer(
           val ser = sparkSerializer.newInstance()
           val buffer: ByteBuffer = ser.serialize(v)
 
-          val str = Base64(buffer.array()).asBase64Str
+          val str = base64._1.encodeToString(buffer.array())
 
           Some(JString(str))
         } catch {
@@ -80,4 +84,4 @@ abstract class FallbackSerializer(
   }
 }
 
-object FallbackSerializer extends FallbackSerializer(SerializerEnv.Default.javaSerializer)
+object FallbackSerializer extends FallbackSerializer(SerializerEnv.Default.javaSerializer) {}

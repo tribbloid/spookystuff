@@ -6,10 +6,10 @@ import com.tribbloids.spookystuff.doc.{Doc, Observation}
 import com.tribbloids.spookystuff.row.{FetchedRow, SpookySchema}
 import com.tribbloids.spookystuff.agent.Agent
 import com.tribbloids.spookystuff.tree.TreeView
-import com.tribbloids.spookystuff.utils.CommonUtils
+import com.tribbloids.spookystuff.utils.{CommonUtils, Verbose}
 import com.tribbloids.spookystuff.{Const, QueryException, SpookyContext}
 import com.tribbloids.spookystuff.relay.AutomaticRelay
-import org.apache.spark.ml.dsl.utils.{DurationJSONSerializer, Verbose}
+import com.tribbloids.spookystuff.relay.io.DurationJSONSerializer
 import org.json4s.Formats
 import org.slf4j.LoggerFactory
 

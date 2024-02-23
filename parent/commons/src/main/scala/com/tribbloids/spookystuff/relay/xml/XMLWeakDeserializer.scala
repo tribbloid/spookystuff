@@ -2,7 +2,7 @@ package com.tribbloids.spookystuff.relay.xml
 
 import ai.acyclic.prover.commons.util.Caching
 import com.tribbloids.spookystuff.relay.MessageAPI
-import org.apache.spark.ml.dsl.utils.Verbose
+import com.tribbloids.spookystuff.utils.Verbose
 import org.json4s._
 import org.json4s.reflect.TypeInfo
 
