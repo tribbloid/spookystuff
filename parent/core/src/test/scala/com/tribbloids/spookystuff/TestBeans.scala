@@ -1,7 +1,7 @@
 package com.tribbloids.spookystuff
 
-import com.tribbloids.spookystuff.utils.refl.ScalaUDT
-import com.tribbloids.spookystuff.utils.serialization.{AssertSerializable, NOTSerializable}
+import com.tribbloids.spookystuff.commons.refl.ScalaUDT
+import com.tribbloids.spookystuff.commons.serialization.{AssertSerializable, NOTSerializable}
 import org.apache.spark.sql.types.SQLUserDefinedType
 import org.scalatest.Assertions
 

@@ -1,8 +1,8 @@
 package com.tribbloids.spookystuff.execution
 
+import com.tribbloids.spookystuff.commons.refl.CatalystTypeOps
 import com.tribbloids.spookystuff.execution.Delta.ToDelta
 import com.tribbloids.spookystuff.row._
-import com.tribbloids.spookystuff.utils.refl.CatalystTypeOps
 
 case class DeltaPlan(
     override val child: ExecutionPlan,

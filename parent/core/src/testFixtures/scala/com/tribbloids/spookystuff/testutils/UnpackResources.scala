@@ -1,10 +1,10 @@
 package com.tribbloids.spookystuff.testutils
 
 import com.tribbloids.spookystuff.CommonConst
-import com.tribbloids.spookystuff.utils.classpath.ClasspathResolver
-import com.tribbloids.spookystuff.utils.io.{LocalResolver, WriteMode}
-import com.tribbloids.spookystuff.utils.lifespan.Cleanable
-import com.tribbloids.spookystuff.utils.CommonUtils
+import com.tribbloids.spookystuff.commons.classpath.ClasspathResolver
+import com.tribbloids.spookystuff.commons.lifespan.Cleanable
+import com.tribbloids.spookystuff.commons.CommonUtils
+import com.tribbloids.spookystuff.io.{LocalResolver, WriteMode}
 
 import java.net.URL
 import java.nio.file.{Path, Paths}

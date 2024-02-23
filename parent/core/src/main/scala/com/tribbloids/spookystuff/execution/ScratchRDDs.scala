@@ -1,7 +1,7 @@
 package com.tribbloids.spookystuff.execution
 
 import com.tribbloids.spookystuff.utils.ShippingMarks
-import com.tribbloids.spookystuff.utils.lifespan.LocalCleanable
+import com.tribbloids.spookystuff.commons.lifespan.LocalCleanable
 import org.apache.spark.SparkContext
 import org.apache.spark.broadcast.Broadcast
 import org.apache.spark.rdd.RDD

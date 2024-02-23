@@ -5,8 +5,8 @@ import com.tribbloids.spookystuff.SpookyContext
 import com.tribbloids.spookystuff.conf.Python
 import com.tribbloids.spookystuff.python.PyConverter
 import com.tribbloids.spookystuff.agent.{Agent, PythonDriver}
-import com.tribbloids.spookystuff.utils.{DSLUtils, TreeThrowable}
-import com.tribbloids.spookystuff.utils.lifespan.Cleanable
+import com.tribbloids.spookystuff.commons.{DSLUtils, TreeThrowable}
+import com.tribbloids.spookystuff.commons.lifespan.Cleanable
 
 import scala.util.Try
 

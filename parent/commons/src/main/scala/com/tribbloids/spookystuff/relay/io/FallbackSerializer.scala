@@ -1,6 +1,6 @@
 package com.tribbloids.spookystuff.relay.io
 
-import com.tribbloids.spookystuff.utils.serialization.SerializerEnv
+import com.tribbloids.spookystuff.commons.serialization.SerializerEnv
 import org.json4s._
 import org.slf4j.LoggerFactory
 

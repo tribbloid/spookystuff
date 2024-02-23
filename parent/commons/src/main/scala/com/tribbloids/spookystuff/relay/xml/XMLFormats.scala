@@ -1,6 +1,6 @@
 package com.tribbloids.spookystuff.relay.xml
 
-import com.tribbloids.spookystuff.utils.lifespan.ThreadLocal
+import com.tribbloids.spookystuff.commons.lifespan.ThreadLocal
 import org.json4s.{DateFormat, DefaultFormats, Formats}
 
 import java.text.SimpleDateFormat

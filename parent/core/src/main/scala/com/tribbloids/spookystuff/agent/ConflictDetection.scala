@@ -1,7 +1,7 @@
 package com.tribbloids.spookystuff.agent
 
-import com.tribbloids.spookystuff.utils.lifespan.Cleanable
-import com.tribbloids.spookystuff.utils.{CommonUtils, TreeThrowable}
+import com.tribbloids.spookystuff.commons.lifespan.Cleanable
+import com.tribbloids.spookystuff.commons.{CommonUtils, TreeThrowable}
 
 import scala.util.Try
 

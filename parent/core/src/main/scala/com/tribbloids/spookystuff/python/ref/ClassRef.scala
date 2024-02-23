@@ -1,8 +1,8 @@
 package com.tribbloids.spookystuff.python.ref
 
+import com.tribbloids.spookystuff.commons.refl.ReflectionUtils
 import com.tribbloids.spookystuff.utils.SpookyUtils
 import com.tribbloids.spookystuff.relay.MessageAPI
-import com.tribbloids.spookystuff.utils.refl.ReflectionUtils
 
 trait ClassRef extends PyRef {
 

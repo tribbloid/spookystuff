@@ -2,7 +2,7 @@ package com.tribbloids.spookystuff.parsing
 
 import com.tribbloids.spookystuff.graph.Module
 import com.tribbloids.spookystuff.parsing.FSMParserGraph.Layout._
-import com.tribbloids.spookystuff.utils.RangeMagnet
+import com.tribbloids.spookystuff.commons.RangeMagnet
 
 import scala.language.implicitConversions
 

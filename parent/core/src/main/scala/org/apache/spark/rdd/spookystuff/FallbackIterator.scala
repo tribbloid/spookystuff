@@ -1,6 +1,6 @@
 package org.apache.spark.rdd.spookystuff
 
-import com.tribbloids.spookystuff.utils.lifespan.LifespanContext
+import com.tribbloids.spookystuff.commons.lifespan.LifespanContext
 import org.slf4j.LoggerFactory
 
 /**

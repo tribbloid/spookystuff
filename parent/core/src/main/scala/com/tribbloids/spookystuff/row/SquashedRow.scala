@@ -3,11 +3,11 @@ package com.tribbloids.spookystuff.row
 import ai.acyclic.prover.commons.function.Impl
 import com.tribbloids.spookystuff.SpookyContext
 import com.tribbloids.spookystuff.actions.{Trace, TraceSet}
+import com.tribbloids.spookystuff.commons.serialization.NOTSerializable
 import com.tribbloids.spookystuff.doc.Observation
 import com.tribbloids.spookystuff.dsl.ForkType
 import com.tribbloids.spookystuff.extractors.Resolved
 import com.tribbloids.spookystuff.row.DataRow.WithScope
-import com.tribbloids.spookystuff.utils.serialization.NOTSerializable
 
 object SquashedRow {
 

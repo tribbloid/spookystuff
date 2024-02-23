@@ -2,7 +2,7 @@ package com.tribbloids.spookystuff.doc
 
 import com.tribbloids.spookystuff.caching.DocCacheLevel
 import com.tribbloids.spookystuff.doc.Observation.DocUID
-import com.tribbloids.spookystuff.utils.io.ResourceMetadata
+import com.tribbloids.spookystuff.io.ResourceMetadata
 
 case class ConversionError(
     delegate: Doc,

@@ -1,9 +1,11 @@
 package com.tribbloids.spookystuff.utils
 
+import com.tribbloids.spookystuff.commons.{CommonUtils, UnsafeReflections}
+import com.tribbloids.spookystuff.io.LocalResolver
+
 import java.io.File
 import java.net._
 import java.nio.file._
-import com.tribbloids.spookystuff.utils.io.LocalResolver
 import org.apache.commons.io.IOUtils
 import org.apache.spark.rdd.RDD
 import org.slf4j.LoggerFactory

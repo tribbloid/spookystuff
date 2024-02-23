@@ -7,7 +7,7 @@ import com.tribbloids.spookystuff.dsl._
 import com.tribbloids.spookystuff.metrics.SpookyMetrics
 import com.tribbloids.spookystuff.row.LocalityGroup
 import com.tribbloids.spookystuff.testutils.{FileURIDocsFixture, SpookyBaseSpec, TestHelper}
-import com.tribbloids.spookystuff.utils.CommonUtils
+import com.tribbloids.spookystuff.commons.CommonUtils
 import com.tribbloids.spookystuff.web.conf.{Web, WebDriverFactory}
 import com.tribbloids.spookystuff.web.agent.CleanWebDriver
 import org.slf4j.LoggerFactory

@@ -1,7 +1,7 @@
 package com.tribbloids.spookystuff
 
 import com.tribbloids.spookystuff.testutils.{BaseSpec, TestHelper}
-import com.tribbloids.spookystuff.utils.WaitBeforeAppExit
+import com.tribbloids.spookystuff.commons.WaitBeforeAppExit
 import org.scalatest.Ignore
 
 /**

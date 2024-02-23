@@ -4,7 +4,7 @@ import com.tribbloids.spookystuff.SpookyContext
 import com.tribbloids.spookystuff.metrics.AbstractMetrics
 import com.tribbloids.spookystuff.agent.DriverLike
 import com.tribbloids.spookystuff.utils.BroadcastWrapper
-import com.tribbloids.spookystuff.utils.lifespan.Cleanable
+import com.tribbloids.spookystuff.commons.lifespan.Cleanable
 import org.apache.spark.SparkConf
 import com.tribbloids.spookystuff.relay.MessageAPI
 

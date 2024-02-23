@@ -2,8 +2,8 @@ package com.tribbloids.spookystuff.doc
 
 import java.util.Date
 import com.tribbloids.spookystuff._
-import com.tribbloids.spookystuff.utils.CommonUtils
-import com.tribbloids.spookystuff.utils.io.{Progress, WriteMode}
+import com.tribbloids.spookystuff.commons.CommonUtils
+import com.tribbloids.spookystuff.io.{Progress, WriteMode}
 import org.apache.commons.io.IOUtils
 import org.apache.hadoop.fs.{FileStatus, Path}
 import org.apache.spark.SparkEnv

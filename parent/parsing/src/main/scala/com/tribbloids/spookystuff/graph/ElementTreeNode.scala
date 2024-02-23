@@ -1,7 +1,6 @@
 package com.tribbloids.spookystuff.graph
 
-import com.tribbloids.spookystuff.tree.TreeView
-
+import com.tribbloids.spookystuff.commons.TreeView
 import scala.language.implicitConversions
 
 // technically only StaticGraph is required, DSL is optional, but whatever

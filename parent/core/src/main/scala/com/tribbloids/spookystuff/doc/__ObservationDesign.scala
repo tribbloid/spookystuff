@@ -11,8 +11,8 @@ object __ObservationDesign {
     *     most cases it should be saved as a file on DFS, and be excluded from serialization & shipping, the shipped
     *     object can easily reconstruct its Content by reading from the same file.
     *   - Others (including [[com.tribbloids.spookystuff.actions.Trace]],
-    *     [[com.tribbloids.spookystuff.utils.io.ResourceMetadata]] etc.): describes the observation process, usually
-    *     small in size and can be easily serialized
+    *     [[com.tribbloids.spookystuff.io.ResourceMetadata]] etc.): describes the observation process, usually small in
+    *     size and can be easily serialized
     *
     * Content can be Raw or Parsed (by Apache Tika), [[com.tribbloids.spookystuff.agent.Agent]] is only capable of
     * observing Raw content, if it has an unsupported format, Apache Tika will be used to convert it into Parsed. Both

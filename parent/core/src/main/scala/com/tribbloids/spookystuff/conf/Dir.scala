@@ -2,7 +2,7 @@ package com.tribbloids.spookystuff.conf
 
 import com.tribbloids.spookystuff.SpookyContext
 import com.tribbloids.spookystuff.metrics.AbstractMetrics
-import com.tribbloids.spookystuff.utils.ConfUtils
+import com.tribbloids.spookystuff.commons.ConfUtils
 import org.apache.spark.SparkConf
 
 object Dir extends PluginSystem {

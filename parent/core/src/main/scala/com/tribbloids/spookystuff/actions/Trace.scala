@@ -7,7 +7,7 @@ import com.tribbloids.spookystuff.caching.{DFSDocCache, InMemoryDocCache}
 import com.tribbloids.spookystuff.doc.Observation
 import com.tribbloids.spookystuff.row.{FetchedRow, SpookySchema}
 import com.tribbloids.spookystuff.agent.Agent
-import com.tribbloids.spookystuff.utils.serialization.NOTSerializable
+import com.tribbloids.spookystuff.commons.serialization.NOTSerializable
 
 import scala.collection.mutable.ArrayBuffer
 import scala.language.implicitConversions

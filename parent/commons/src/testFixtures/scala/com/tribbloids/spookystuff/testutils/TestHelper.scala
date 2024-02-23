@@ -3,10 +3,10 @@ package com.tribbloids.spookystuff.testutils
 import ai.acyclic.prover.commons.spark
 import ai.acyclic.prover.commons.spark.Envs
 import ai.acyclic.prover.commons.spark.TestHelper.{AWSAccessKeyId, AWSSecretKey, S3Path, TestSC}
-import com.tribbloids.spookystuff.utils.classpath.ClasspathResolver
-import com.tribbloids.spookystuff.utils.lifespan.Cleanable.Lifespan
-import com.tribbloids.spookystuff.utils.lifespan.LocalCleanable
-import com.tribbloids.spookystuff.utils.CommonUtils
+import com.tribbloids.spookystuff.commons.classpath.ClasspathResolver
+import com.tribbloids.spookystuff.commons.lifespan.Cleanable.Lifespan
+import com.tribbloids.spookystuff.commons.lifespan.LocalCleanable
+import com.tribbloids.spookystuff.commons.CommonUtils
 import org.apache.hadoop.fs.FileUtil
 import org.slf4j.LoggerFactory
 

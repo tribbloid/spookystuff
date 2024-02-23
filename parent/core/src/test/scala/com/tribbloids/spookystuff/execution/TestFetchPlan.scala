@@ -2,9 +2,9 @@ package com.tribbloids.spookystuff.execution
 
 import ai.acyclic.prover.commons.function.Impl
 import com.tribbloids.spookystuff.actions.Wget
+import com.tribbloids.spookystuff.commons.serialization.AssertWeaklySerializable
 import com.tribbloids.spookystuff.extractors.impl.Lit
 import com.tribbloids.spookystuff.testutils.{FileDocsFixture, SpookyBaseSpec}
-import com.tribbloids.spookystuff.utils.serialization.AssertWeaklySerializable
 import com.tribbloids.spookystuff.dsl
 import org.apache.spark.HashPartitioner
 

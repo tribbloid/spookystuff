@@ -1,7 +1,7 @@
 package com.tribbloids.spookystuff.relay.io
 
 import com.tribbloids.spookystuff.relay.{IR, TreeIR}
-import com.tribbloids.spookystuff.utils.DSLUtils
+import com.tribbloids.spookystuff.commons.DSLUtils
 import pprint.PPrinter
 
 import scala.language.implicitConversions

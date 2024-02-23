@@ -6,8 +6,8 @@ import ai.acyclic.prover.commons.util.{Caching, Retry}
 import ai.acyclic.prover.commons.util.Caching.ConcurrentMap
 import com.tribbloids.spookystuff.unused.ExternalAppendOnlyArray
 import com.tribbloids.spookystuff.utils.accumulator.MapAccumulator
-import com.tribbloids.spookystuff.utils.lifespan.Cleanable.Lifespan
-import com.tribbloids.spookystuff.utils.lifespan.{Cleanable, LocalCleanable}
+import com.tribbloids.spookystuff.commons.lifespan.Cleanable.Lifespan
+import com.tribbloids.spookystuff.commons.lifespan.{Cleanable, LocalCleanable}
 import org.apache.spark
 import org.apache.spark.broadcast.Broadcast
 import org.apache.spark.internal.Logging

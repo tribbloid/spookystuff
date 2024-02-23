@@ -1,7 +1,7 @@
 package com.tribbloids.spookystuff
 
 import com.tribbloids.spookystuff.testutils.BaseSpec
-import com.tribbloids.spookystuff.utils.TreeThrowable
+import com.tribbloids.spookystuff.commons.TreeThrowable
 
 class SpookyExceptionSuite extends BaseSpec {
 

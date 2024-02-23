@@ -5,7 +5,7 @@ import java.util.UUID
 
 import com.tribbloids.spookystuff.actions.Trace
 import com.tribbloids.spookystuff.doc.Doc
-import com.tribbloids.spookystuff.utils.{CommonUtils, SpookyUtils}
+import com.tribbloids.spookystuff.utils.SpookyUtils
 
 object FilePaths {
   // TODO: should be "TracePath"
@@ -41,12 +41,12 @@ object FilePaths {
         val last = actionStrs.last
         val omitted = File.separator + (trace.length - 4) + "more" + File.separator
 
-        CommonUtils.\\\(oneTwoThree: _*) + omitted + last
-      } else CommonUtils.\\\(actionStrs: _*)
+        SpookyUtils.\\\(oneTwoThree: _*) + omitted + last
+      } else SpookyUtils.\\\(actionStrs: _*)
 
       val hash = "" + trace.hashCode
 
-      SpookyUtils.canonizeUrn(CommonUtils.\\\(actionConcat, hash))
+      SpookyUtils.canonizeUrn(SpookyUtils.\\\(actionConcat, hash))
     }
   }
 
@@ -54,11 +54,11 @@ object FilePaths {
   case class UUIDName(encoder: ByTrace[_ <: Any]) extends ByDoc[String] {
 
     override def apply(page: Doc): String =
-      CommonUtils.\\\(encoder(page.uid.backtrace).toString, UUID.randomUUID().toString)
+      SpookyUtils.\\\(encoder(page.uid.backtrace).toString, UUID.randomUUID().toString)
   }
 
   case class TimeStampName(encoder: ByTrace[_ <: Any]) extends ByDoc[String] {
     override def apply(page: Doc): String =
-      CommonUtils.\\\(encoder(page.uid.backtrace).toString, SpookyUtils.canonizeFileName(page.timeMillis.toString))
+      SpookyUtils.\\\(encoder(page.uid.backtrace).toString, SpookyUtils.canonizeFileName(page.timeMillis.toString))
   }
 }

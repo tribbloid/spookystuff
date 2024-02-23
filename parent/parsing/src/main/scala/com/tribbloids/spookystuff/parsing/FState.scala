@@ -1,7 +1,7 @@
 package com.tribbloids.spookystuff.parsing
 
 import com.tribbloids.spookystuff.graph.Module
-import com.tribbloids.spookystuff.utils.RangeMagnet
+import com.tribbloids.spookystuff.commons.RangeMagnet
 
 object FState {
 

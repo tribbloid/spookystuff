@@ -1,9 +1,9 @@
 package com.tribbloids.spookystuff.doc
 
 import com.tribbloids.spookystuff.SpookyContext
-import com.tribbloids.spookystuff.utils.TreeThrowable
-import com.tribbloids.spookystuff.utils.io.HDFSResolver
-import com.tribbloids.spookystuff.utils.serialization.NOTSerializable
+import com.tribbloids.spookystuff.commons.TreeThrowable
+import com.tribbloids.spookystuff.commons.serialization.NOTSerializable
+import com.tribbloids.spookystuff.io.HDFSResolver
 import org.apache.commons.io.IOUtils
 import org.apache.hadoop.fs.{FSDataOutputStream, Path}
 import org.apache.hadoop.shaded.org.apache.http.entity.ContentType

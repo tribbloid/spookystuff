@@ -3,7 +3,7 @@ package com.tribbloids.spookystuff.python.ref
 import com.tribbloids.spookystuff.SpookyContext
 import com.tribbloids.spookystuff.agent.PythonDriver
 import com.tribbloids.spookystuff.utils.SpookyUtils
-import com.tribbloids.spookystuff.utils.lifespan.LocalCleanable
+import com.tribbloids.spookystuff.commons.lifespan.LocalCleanable
 import com.tribbloids.spookystuff.relay.TreeIR
 import com.tribbloids.spookystuff.relay.io.Encoder
 import org.json4s

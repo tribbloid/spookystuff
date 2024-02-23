@@ -1,5 +1,6 @@
 package com.tribbloids.spookystuff.utils
 
+import com.tribbloids.spookystuff.commons.CommonViews
 import com.tribbloids.spookystuff.row.Sampler
 
 import scala.collection.immutable.ListMap

@@ -2,12 +2,12 @@ package com.tribbloids.spookystuff.execution
 
 import ai.acyclic.prover.commons.function.Impl
 import ai.acyclic.prover.commons.function.Impl.:=>
+import com.tribbloids.spookystuff.commons.refl.CatalystTypeOps
 import com.tribbloids.spookystuff.doc.Doc
 import com.tribbloids.spookystuff.dsl.ForkType
 import com.tribbloids.spookystuff.extractors.impl.Get
 import com.tribbloids.spookystuff.extractors.{Extractor, Resolved}
 import com.tribbloids.spookystuff.row.{DataRow, Field, Sampler, SpookySchema, SquashedRow, TypedField}
-import com.tribbloids.spookystuff.utils.refl.CatalystTypeOps
 import org.apache.spark.sql.types.{ArrayType, IntegerType}
 
 trait Delta extends Serializable {

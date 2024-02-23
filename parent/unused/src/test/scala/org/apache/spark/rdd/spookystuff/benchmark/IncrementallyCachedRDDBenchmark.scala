@@ -1,7 +1,7 @@
 package org.apache.spark.rdd.spookystuff.benchmark
 
 import com.tribbloids.spookystuff.testutils.{BaseSpec, SubSuite, TestHelper}
-import com.tribbloids.spookystuff.utils.Stopwatch
+import com.tribbloids.spookystuff.commons.Stopwatch
 import org.apache.spark.SparkEnv
 import org.apache.spark.rdd.RDD
 import org.apache.spark.rdd.spookystuff.IncrementallyCachedRDD

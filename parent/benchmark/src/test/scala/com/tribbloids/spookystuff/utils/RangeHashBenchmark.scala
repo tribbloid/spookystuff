@@ -1,5 +1,6 @@
 package com.tribbloids.spookystuff.utils
 
+import com.tribbloids.spookystuff.commons.{CommonUtils, RangeMagnet}
 import com.tribbloids.spookystuff.testutils.BaseSpec
 
 class RangeHashBenchmark extends BaseSpec {

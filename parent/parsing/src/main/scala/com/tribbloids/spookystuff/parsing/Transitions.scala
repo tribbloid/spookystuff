@@ -1,7 +1,7 @@
 package com.tribbloids.spookystuff.parsing
 
 import com.tribbloids.spookystuff.parsing.Pattern.Token
-import com.tribbloids.spookystuff.utils.collection.MultiMapOps
+import com.tribbloids.spookystuff.commons.collection.MultiMapOps
 
 case class Transitions(vs: Seq[Transition]) {
 

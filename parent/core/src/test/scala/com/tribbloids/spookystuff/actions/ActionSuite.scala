@@ -6,7 +6,7 @@ import com.tribbloids.spookystuff.extractors.impl.Lit
 import com.tribbloids.spookystuff.row.{DataRow, FetchedRow, Field}
 import com.tribbloids.spookystuff.agent.Agent
 import com.tribbloids.spookystuff.testutils.SpookyBaseSpec
-import com.tribbloids.spookystuff.utils.{CommonUtils, Timeout}
+import com.tribbloids.spookystuff.commons.{CommonUtils, Timeout}
 import com.tribbloids.spookystuff.{ActionException, Const}
 
 import scala.collection.immutable.ListMap

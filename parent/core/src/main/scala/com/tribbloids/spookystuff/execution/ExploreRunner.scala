@@ -3,11 +3,11 @@ package com.tribbloids.spookystuff.execution
 import ai.acyclic.prover.commons.util.Caching.ConcurrentMap
 import com.tribbloids.spookystuff.actions.{Trace, TraceSet}
 import com.tribbloids.spookystuff.caching.ExploreLocalCache
+import com.tribbloids.spookystuff.commons.serialization.NOTSerializable
 import com.tribbloids.spookystuff.dsl.PathPlanning
 import com.tribbloids.spookystuff.execution.ExplorePlan.{ExeID, State}
 import com.tribbloids.spookystuff.extractors.Resolved
 import com.tribbloids.spookystuff.row._
-import com.tribbloids.spookystuff.utils.serialization.NOTSerializable
 import com.tribbloids.spookystuff.{dsl, SpookyContext}
 
 import scala.collection.{mutable, MapView}

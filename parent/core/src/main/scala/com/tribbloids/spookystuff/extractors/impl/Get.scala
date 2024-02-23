@@ -1,9 +1,9 @@
 package com.tribbloids.spookystuff.extractors.impl
 
+import com.tribbloids.spookystuff.commons.refl.CatalystTypeOps
 import com.tribbloids.spookystuff.extractors.GenExtractor.Leaf
 import com.tribbloids.spookystuff.extractors._
 import com.tribbloids.spookystuff.row._
-import com.tribbloids.spookystuff.utils.refl.CatalystTypeOps
 import org.apache.spark.sql.types._
 
 /**

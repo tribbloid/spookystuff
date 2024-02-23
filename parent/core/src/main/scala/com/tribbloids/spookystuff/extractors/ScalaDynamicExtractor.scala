@@ -1,7 +1,7 @@
 package com.tribbloids.spookystuff.extractors
 
-import com.tribbloids.spookystuff.utils.DSLUtils
-import com.tribbloids.spookystuff.utils.refl.{CatalystTypeOps, TypeMagnet, TypeUtils, UnreifiedObjectType}
+import com.tribbloids.spookystuff.commons.DSLUtils
+import com.tribbloids.spookystuff.commons.refl.{CatalystTypeOps, TypeMagnet, TypeUtils, UnreifiedObjectType}
 import org.apache.spark.sql.catalyst.ScalaReflection.universe._
 
 import java.lang.reflect.Method

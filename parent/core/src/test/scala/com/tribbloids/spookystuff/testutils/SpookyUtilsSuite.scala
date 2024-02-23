@@ -1,6 +1,7 @@
 package com.tribbloids.spookystuff.testutils
 
-import com.tribbloids.spookystuff.utils.{AwaitWithHeartbeat, CommonUtils, SpookyUtils, SpookyViews}
+import com.tribbloids.spookystuff.commons.{AwaitWithHeartbeat, CommonUtils}
+import com.tribbloids.spookystuff.utils.{SpookyUtils, SpookyViews}
 import org.apache.spark.TaskContext
 import org.apache.spark.rdd.RDD
 

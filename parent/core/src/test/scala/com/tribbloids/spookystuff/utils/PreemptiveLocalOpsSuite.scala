@@ -1,5 +1,6 @@
 package com.tribbloids.spookystuff.utils
 
+import com.tribbloids.spookystuff.commons.CommonUtils
 import com.tribbloids.spookystuff.testutils.{BaseSpec, TestHelper}
 import org.apache.spark.SparkContext
 

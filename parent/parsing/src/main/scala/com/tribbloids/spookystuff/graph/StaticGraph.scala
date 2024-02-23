@@ -1,8 +1,8 @@
 package com.tribbloids.spookystuff.graph
 
 import com.tribbloids.spookystuff.graph.Element.Edge
-import com.tribbloids.spookystuff.utils.Types
-import com.tribbloids.spookystuff.utils.collection.MultiMapOps
+import com.tribbloids.spookystuff.commons.Types
+import com.tribbloids.spookystuff.commons.collection.MultiMapOps
 
 import scala.collection.mutable
 import scala.reflect.ClassTag

@@ -1,8 +1,8 @@
 package com.tribbloids.spookystuff.execution
 
+import com.tribbloids.spookystuff.commons.refl.UnreifiedObjectType
 import com.tribbloids.spookystuff.extractors.impl.Lit
 import com.tribbloids.spookystuff.testutils.SpookyBaseSpec
-import com.tribbloids.spookystuff.utils.refl.UnreifiedObjectType
 import org.apache.spark.sql.types.{IntegerType, StringType, StructField, StructType}
 
 /**

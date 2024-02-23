@@ -1,7 +1,7 @@
 package com.tribbloids.spookystuff.graph
 
 import com.tribbloids.spookystuff.graph.Visualisation.Format
-import com.tribbloids.spookystuff.utils.CommonUtils
+import com.tribbloids.spookystuff.commons.CommonUtils
 import org.scalameta.ascii.graph.Graph
 import org.scalameta.ascii.layout.GraphLayout
 import org.scalameta.ascii.layout.prefs.LayoutPrefsImpl

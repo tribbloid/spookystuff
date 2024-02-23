@@ -3,10 +3,11 @@ package com.tribbloids.spookystuff.agent
 import com.tribbloids.spookystuff.SpookyContext
 import com.tribbloids.spookystuff.actions.Action
 import com.tribbloids.spookystuff.conf.{Core, PluginRegistry, PluginSystem}
-import com.tribbloids.spookystuff.utils.{SpookyUtils, TreeThrowable}
-import com.tribbloids.spookystuff.utils.io.Progress
-import com.tribbloids.spookystuff.utils.lifespan.Cleanable.Lifespan
-import com.tribbloids.spookystuff.utils.lifespan.LocalCleanable
+import com.tribbloids.spookystuff.commons.TreeThrowable
+import com.tribbloids.spookystuff.commons.lifespan.Cleanable.Lifespan
+import com.tribbloids.spookystuff.commons.lifespan.LocalCleanable
+import com.tribbloids.spookystuff.io.Progress
+import com.tribbloids.spookystuff.utils.SpookyUtils
 import org.apache.spark.TaskContext
 
 import java.util.Date

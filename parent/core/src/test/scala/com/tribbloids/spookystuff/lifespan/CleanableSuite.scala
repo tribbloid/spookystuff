@@ -1,10 +1,10 @@
 package com.tribbloids.spookystuff.lifespan
 
 import com.tribbloids.spookystuff.testutils.SpookyBaseSpec
-import com.tribbloids.spookystuff.utils.CommonUtils
-import com.tribbloids.spookystuff.utils.lifespan.Cleanable.Lifespan
-import com.tribbloids.spookystuff.utils.lifespan.{Cleanable, LeafType, LocalCleanable}
-import com.tribbloids.spookystuff.utils.serialization.AssertSerializable
+import com.tribbloids.spookystuff.commons.CommonUtils
+import com.tribbloids.spookystuff.commons.lifespan.Cleanable.Lifespan
+import com.tribbloids.spookystuff.commons.lifespan.{Cleanable, LeafType, LocalCleanable}
+import com.tribbloids.spookystuff.commons.serialization.AssertSerializable
 import org.apache.spark.{HashPartitioner, SparkException, TaskContext}
 
 import java.util.concurrent.atomic.AtomicInteger

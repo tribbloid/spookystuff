@@ -2,11 +2,10 @@ package org.apache.spark.rdd.spookystuff
 
 import java.io.Serializable
 import java.util.concurrent.atomic.AtomicInteger
-
-import com.tribbloids.spookystuff.utils.serialization.NOTSerializable
 import org.apache.spark._
 import org.apache.spark.rdd.RDD
 import NarrowDispersedRDD._
+import com.tribbloids.spookystuff.commons.serialization.NOTSerializable
 
 import scala.reflect.ClassTag
 import scala.util.Random

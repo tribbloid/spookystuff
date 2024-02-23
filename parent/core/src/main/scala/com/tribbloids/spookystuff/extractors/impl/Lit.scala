@@ -1,11 +1,11 @@
 package com.tribbloids.spookystuff.extractors.impl
 
 import ai.acyclic.prover.commons.same.EqualBy
+import com.tribbloids.spookystuff.commons.refl.UnreifiedObjectType
 import com.tribbloids.spookystuff.extractors.GenExtractor.Static
 import com.tribbloids.spookystuff.extractors._
 import com.tribbloids.spookystuff.relay.IR.Aux
 import com.tribbloids.spookystuff.relay.{Relay, TreeIR}
-import com.tribbloids.spookystuff.utils.refl.UnreifiedObjectType
 import org.apache.spark.sql.catalyst.ScalaReflection.universe.TypeTag
 import org.apache.spark.sql.types._
 

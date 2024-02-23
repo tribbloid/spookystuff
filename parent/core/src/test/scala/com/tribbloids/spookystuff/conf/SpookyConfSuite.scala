@@ -1,8 +1,8 @@
 package com.tribbloids.spookystuff.conf
 
 import com.tribbloids.spookystuff.testutils.SpookyBaseSpec
-import com.tribbloids.spookystuff.utils.ConfUtils
-import com.tribbloids.spookystuff.utils.serialization.AssertSerializable
+import com.tribbloids.spookystuff.commons.ConfUtils
+import com.tribbloids.spookystuff.commons.serialization.AssertSerializable
 import org.apache.spark.SparkConf
 
 import scala.util.Random

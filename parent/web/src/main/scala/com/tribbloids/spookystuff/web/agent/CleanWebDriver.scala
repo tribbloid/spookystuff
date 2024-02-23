@@ -2,8 +2,8 @@ package com.tribbloids.spookystuff.web.agent
 
 import com.tribbloids.spookystuff.CommonConst
 import com.tribbloids.spookystuff.agent.DriverLike
-import com.tribbloids.spookystuff.utils.lifespan.Cleanable.Lifespan
-import com.tribbloids.spookystuff.utils.{CommonUtils, TreeThrowable}
+import com.tribbloids.spookystuff.commons.lifespan.Cleanable.Lifespan
+import com.tribbloids.spookystuff.commons.{CommonUtils, TreeThrowable}
 import org.openqa.selenium.remote.service.DriverService
 import org.openqa.selenium.{NoSuchSessionException, WebDriver}
 

@@ -6,8 +6,8 @@ import com.tribbloids.spookystuff.SpookyContext
 import com.tribbloids.spookystuff.conf.DriverFactory
 import com.tribbloids.spookystuff.dsl.BinaryDeployment
 import com.tribbloids.spookystuff.agent.{Agent, WebProxySetting}
-import com.tribbloids.spookystuff.utils.lifespan.Cleanable.Lifespan
-import com.tribbloids.spookystuff.utils.ConfUtils
+import com.tribbloids.spookystuff.commons.lifespan.Cleanable.Lifespan
+import com.tribbloids.spookystuff.commons.ConfUtils
 import com.tribbloids.spookystuff.web.agent.CleanWebDriver
 import org.apache.commons.io.FileUtils
 import org.openqa.selenium.Proxy

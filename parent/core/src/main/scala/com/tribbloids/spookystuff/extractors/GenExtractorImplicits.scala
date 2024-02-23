@@ -1,12 +1,12 @@
 package com.tribbloids.spookystuff.extractors
 
+import com.tribbloids.spookystuff.commons.refl.{CatalystTypeOps, UnreifiedObjectType}
 import com.tribbloids.spookystuff.doc.Observation.DocUID
 import com.tribbloids.spookystuff.doc._
 import com.tribbloids.spookystuff.extractors.GenExtractor.AndThen
 import com.tribbloids.spookystuff.extractors.impl.Extractors._
 import com.tribbloids.spookystuff.extractors.impl.{AppendSeq, Get, Zipped}
 import com.tribbloids.spookystuff.row.Field
-import com.tribbloids.spookystuff.utils.refl.{CatalystTypeOps, UnreifiedObjectType}
 import org.apache.spark.sql.types.MapType
 
 import java.sql.Timestamp

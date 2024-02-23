@@ -1,7 +1,7 @@
 package com.tribbloids.spookystuff.parsing
 
 import com.tribbloids.spookystuff.testutils.BaseSpec
-import com.tribbloids.spookystuff.utils.InterleavedIterator
+import com.tribbloids.spookystuff.commons.InterleavedIterator
 import fastparse.internal.Logger
 import org.apache.spark.benchmark.BenchmarkHelper
 import org.scalatest.Ignore

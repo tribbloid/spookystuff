@@ -9,9 +9,9 @@ import com.tribbloids.spookystuff.execution.SpookyExecutionContext
 import com.tribbloids.spookystuff.extractors.{Alias, GenExtractor, GenResolved}
 import com.tribbloids.spookystuff.row.{SpookySchema, SquashedRow, TypedField}
 import com.tribbloids.spookystuff.agent.DriverLike
-import com.tribbloids.spookystuff.utils.lifespan.Cleanable
-import com.tribbloids.spookystuff.utils.lifespan.Cleanable.Lifespan
-import com.tribbloids.spookystuff.utils.{CommonUtils, TreeThrowable}
+import com.tribbloids.spookystuff.commons.lifespan.Cleanable
+import com.tribbloids.spookystuff.commons.lifespan.Cleanable.Lifespan
+import com.tribbloids.spookystuff.commons.{CommonUtils, TreeThrowable}
 import org.jutils.jprocesses.JProcesses
 import org.jutils.jprocesses.model.ProcessInfo
 import org.scalatest.{BeforeAndAfterEach, Outcome, Retries}

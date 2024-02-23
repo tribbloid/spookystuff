@@ -1,9 +1,9 @@
 package com.tribbloids.spookystuff.execution
 
 import com.tribbloids.spookystuff.SpookyContext
+import com.tribbloids.spookystuff.commons.TreeView
 import com.tribbloids.spookystuff.row._
-import com.tribbloids.spookystuff.tree.TreeView
-import com.tribbloids.spookystuff.utils.lifespan.Cleanable
+import com.tribbloids.spookystuff.commons.lifespan.Cleanable
 import org.apache.spark.rdd.RDD
 import org.apache.spark.sql.types.DataType
 import org.apache.spark.storage.StorageLevel

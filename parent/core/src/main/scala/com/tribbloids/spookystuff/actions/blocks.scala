@@ -8,7 +8,7 @@ import com.tribbloids.spookystuff.extractors.Extractor
 import com.tribbloids.spookystuff.extractors.impl.Lit
 import com.tribbloids.spookystuff.row.{FetchedRow, SpookySchema}
 import com.tribbloids.spookystuff.agent.Agent
-import com.tribbloids.spookystuff.utils.CommonUtils
+import com.tribbloids.spookystuff.commons.CommonUtils
 import com.tribbloids.spookystuff.utils.http.HttpUtils
 import org.slf4j.LoggerFactory
 

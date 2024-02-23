@@ -1,7 +1,8 @@
 package com.tribbloids.spookystuff.utils
 
+import com.tribbloids.spookystuff.commons.CommonUtils
 import com.tribbloids.spookystuff.testutils.{SpookyBaseSpec, TestHelper}
-import com.tribbloids.spookystuff.utils.collection.BufferedShuffleIteratorV1
+import com.tribbloids.spookystuff.commons.collection.BufferedShuffleIteratorV1
 import org.apache.spark.ml.dsl.utils.ClassOpsMixin
 import org.apache.spark.rdd.RDD
 import org.apache.spark.rdd.spookystuff.NarrowDispersedRDD

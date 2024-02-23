@@ -1,6 +1,6 @@
 package com.tribbloids.spookystuff.utils
 
-import com.tribbloids.spookystuff.utils.lifespan.Cleanable
+import com.tribbloids.spookystuff.commons.lifespan.Cleanable
 import org.apache.spark.SparkContext
 import org.apache.spark.broadcast.Broadcast
 import org.slf4j.LoggerFactory

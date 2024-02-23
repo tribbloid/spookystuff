@@ -1,8 +1,8 @@
 //package com.tribbloids.spookystuff.unused
 //
-//import com.tribbloids.spookystuff.utils.lifespan.Cleanable.Lifespan
-//import com.tribbloids.spookystuff.utils.lifespan.LocalCleanable
-//import com.tribbloids.spookystuff.utils.serialization.NOTSerializable
+//import com.tribbloids.spookystuff.commons.lifespan.Cleanable.Lifespan
+//import com.tribbloids.spookystuff.commons.lifespan.LocalCleanable
+//import com.tribbloids.spookystuff.commons.serialization.NOTSerializable
 //import org.apache.spark.rdd.spookystuff.{ConsumedIterator, FallbackIterator, FastForwardingIterator}
 //import org.apache.spark.serializer
 //import org.apache.spark.storage.StorageLevel

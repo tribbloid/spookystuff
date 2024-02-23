@@ -5,8 +5,7 @@ import com.tribbloids.spookystuff.caching.{DFSDocCache, InMemoryDocCache}
 import com.tribbloids.spookystuff.doc.{Doc, Observation}
 import com.tribbloids.spookystuff.row.{FetchedRow, SpookySchema}
 import com.tribbloids.spookystuff.agent.Agent
-import com.tribbloids.spookystuff.tree.TreeView
-import com.tribbloids.spookystuff.utils.{CommonUtils, Verbose}
+import com.tribbloids.spookystuff.commons.{CommonUtils, TreeView, Verbose}
 import com.tribbloids.spookystuff.{Const, QueryException, SpookyContext}
 import com.tribbloids.spookystuff.relay.AutomaticRelay
 import com.tribbloids.spookystuff.relay.io.DurationJSONSerializer

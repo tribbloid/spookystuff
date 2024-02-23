@@ -3,7 +3,7 @@ package com.tribbloids.spookystuff.parsing
 import com.tribbloids.spookystuff.parsing.FSMParserDSL._
 import com.tribbloids.spookystuff.parsing.PhaseVec.{Depth, Eye, NoOp}
 import com.tribbloids.spookystuff.testutils.BaseSpec
-import com.tribbloids.spookystuff.utils.RangeMagnet
+import com.tribbloids.spookystuff.commons.RangeMagnet
 
 class ParsingRunSuite extends BaseSpec {
 

@@ -2,7 +2,7 @@ package com.tribbloids.spookystuff.parsing
 
 import com.tribbloids.spookystuff.parsing.Pattern.Token
 import com.tribbloids.spookystuff.parsing.exception.{BacktrackableFailure, BacktrackableMixin, ParsingError}
-import com.tribbloids.spookystuff.utils.RangeMagnet
+import com.tribbloids.spookystuff.commons.RangeMagnet
 
 import scala.collection.mutable
 

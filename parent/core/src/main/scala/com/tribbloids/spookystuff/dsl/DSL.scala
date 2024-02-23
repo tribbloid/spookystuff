@@ -2,11 +2,6 @@ package com.tribbloids.spookystuff.dsl
 
 import com.tribbloids.spookystuff.doc._
 import com.tribbloids.spookystuff.extractors._
-import com.tribbloids.spookystuff.extractors.impl.Extractors._
-import com.tribbloids.spookystuff.extractors.impl.{Get, Interpolate}
-import com.tribbloids.spookystuff.row.Field
-
-import scala.language.implicitConversions
 
 /**
   * this hierarchy aims to create a short DSL for selecting components from PageRow, e.g.: 'abc: cells with key "abc",
@@ -18,51 +13,8 @@ import scala.language.implicitConversions
   * that match the selector 'abc.S("div#a1").attr("src"): first "src" attribute of an unstructured field that match the
   * selector 'abc.S("div#a1").attrs("src"): first "src" attribute of an unstructured field that match the selector
   */
-sealed trait Level2 {
 
-  import GenExtractor._
-
-  // --------------------------------------------------
-
-  implicit def symbol2Field(symbol: Symbol): Field =
-    Option(symbol).map(v => Field(v.name)).orNull
-
-  implicit def symbol2Get1(symbol: Symbol): Get =
-    Get(symbol.name)
-
-  implicit def symbol2Get2(symbol: Symbol): ExtractorView[Any] =
-    new ExtractorView[Any](Get(symbol.name))
-
-  implicit def symbol2DocExView(symbol: Symbol): DocExView =
-    GetDocExpr(symbol.name)
-
-  implicit def symbol2GetItr(symbol: Symbol): IterableExView[Any] =
-    IterableExView(Get(symbol.name).GetSeq)
-}
-
-sealed trait Level1 extends Level2 {
-
-  import GenExtractor._
-
-  implicit def symbol2GetUnstructured(symbol: Symbol): UnstructuredExView =
-    GetUnstructuredExpr(symbol.name)
-
-  implicit class StrContextOps(val strC: StringContext) extends Serializable {
-
-    def x(parts: Col[String]*): Interpolate = Interpolate(strC.parts, parts.map(_.ex))
-
-    def CSS(parts: Col[String]*): GenExtractor[FR, Elements[Unstructured]] =
-      GetOnlyDocExpr.andMap(_.root).findAll(strC.s(parts: _*))
-    def S(parts: Col[String]*): GenExtractor[FR, Elements[Unstructured]] = CSS(parts: _*)
-
-    def CSS_*(parts: Col[String]*) = GetAllDocsExpr.findAll(strC.s(parts: _*))
-    def S_*(parts: Col[String]*) = CSS_*(parts: _*)
-
-    def A(parts: Col[String]*): GenExtractor[FR, Elements[Unstructured]] = 'A.findAll(strC.s(parts: _*))
-  }
-}
-
-class DSL extends Level1 {
+class DSL extends DSL_Imp0 {
 
   import com.tribbloids.spookystuff.extractors.impl.Extractors._
 

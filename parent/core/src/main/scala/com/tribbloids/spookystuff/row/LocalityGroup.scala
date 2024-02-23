@@ -4,8 +4,8 @@ import ai.acyclic.prover.commons.same.EqualBy
 import com.tribbloids.spookystuff.SpookyContext
 import com.tribbloids.spookystuff.actions.Trace
 import com.tribbloids.spookystuff.actions.Trace.Rollout
+import com.tribbloids.spookystuff.commons.serialization.NOTSerializable
 import com.tribbloids.spookystuff.doc.Observation
-import com.tribbloids.spookystuff.utils.serialization.NOTSerializable
 
 import scala.collection.MapView
 import scala.language.implicitConversions

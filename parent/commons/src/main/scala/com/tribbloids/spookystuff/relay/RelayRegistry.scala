@@ -1,6 +1,7 @@
 package com.tribbloids.spookystuff.relay
 
-import com.tribbloids.spookystuff.utils.refl.TypeMagnet
+import com.tribbloids.spookystuff.commons.refl.TypeMagnet
+
 import scala.collection.mutable
 import scala.util.{Failure, Success, Try}
 

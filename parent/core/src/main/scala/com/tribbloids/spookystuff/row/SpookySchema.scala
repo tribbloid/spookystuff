@@ -1,9 +1,9 @@
 package com.tribbloids.spookystuff.row
 
 import com.tribbloids.spookystuff.SpookyContext
+import com.tribbloids.spookystuff.commons.refl.ScalaUDT
 import com.tribbloids.spookystuff.execution._
 import com.tribbloids.spookystuff.extractors._
-import com.tribbloids.spookystuff.utils.refl.ScalaUDT
 import org.apache.spark.sql.types.{DataType, StructField, StructType}
 
 import scala.collection.immutable.ListMap

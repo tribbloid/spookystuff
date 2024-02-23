@@ -2,7 +2,7 @@ package com.tribbloids.spookystuff.doc
 
 import com.tribbloids.spookystuff.actions.{Export, Trace}
 import com.tribbloids.spookystuff.caching.DocCacheLevel
-import com.tribbloids.spookystuff.utils.io.ResourceMetadata
+import com.tribbloids.spookystuff.io.ResourceMetadata
 import org.apache.spark.sql.types.SQLUserDefinedType
 
 import java.sql.{Date, Time, Timestamp}

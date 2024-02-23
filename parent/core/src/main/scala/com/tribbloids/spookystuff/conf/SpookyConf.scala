@@ -5,7 +5,7 @@ import ai.acyclic.prover.commons.function.PreDef.:=>
 import com.tribbloids.spookystuff.dsl._
 import com.tribbloids.spookystuff.row.Sampler
 import com.tribbloids.spookystuff.agent._
-import com.tribbloids.spookystuff.utils.Timeout
+import com.tribbloids.spookystuff.commons.Timeout
 import org.apache.spark.SparkConf
 import org.apache.spark.storage.StorageLevel
 

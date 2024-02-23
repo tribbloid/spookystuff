@@ -6,9 +6,9 @@ import com.tribbloids.spookystuff.caching.DocCacheLevel
 import com.tribbloids.spookystuff.doc.Content.InMemoryBlob
 import com.tribbloids.spookystuff.doc.Observation.DocUID
 import com.tribbloids.spookystuff.doc.Unstructured.Unrecognisable
-import com.tribbloids.spookystuff.utils.CommonUtils
-import com.tribbloids.spookystuff.utils.io.ResourceMetadata
-import com.tribbloids.spookystuff.utils.serialization.NOTSerializable
+import com.tribbloids.spookystuff.commons.CommonUtils
+import com.tribbloids.spookystuff.commons.serialization.NOTSerializable
+import com.tribbloids.spookystuff.io.ResourceMetadata
 import org.apache.commons.csv.CSVFormat
 import org.apache.hadoop.shaded.org.apache.http.StatusLine
 import org.apache.hadoop.shaded.org.apache.http.entity.ContentType

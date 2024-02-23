@@ -1,6 +1,6 @@
 package com.tribbloids.spookystuff.relay
 
-import com.tribbloids.spookystuff.utils.refl.ReflectionUtils
+import com.tribbloids.spookystuff.commons.refl.ReflectionUtils
 
 object AutomaticRelay {}
 

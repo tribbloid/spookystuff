@@ -3,7 +3,7 @@ package com.tribbloids.spookystuff.graph
 import java.util.UUID
 
 import com.tribbloids.spookystuff.graph.IDAlgebra.Rotator
-import com.tribbloids.spookystuff.utils.UUIDUtils
+import com.tribbloids.spookystuff.commons.UUIDUtils
 
 trait IDAlgebra[ID, -NodeData, -EdgeData] {
 

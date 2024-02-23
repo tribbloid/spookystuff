@@ -1,8 +1,9 @@
 package com.tribbloids.spookystuff.dsl
 
 import ai.acyclic.prover.commons.util.Retry
-import com.tribbloids.spookystuff.utils.io.{LocalResolver, URLConnectionResolver, WriteMode}
-import com.tribbloids.spookystuff.utils.{CommonUtils, SpookyUtils, TreeThrowable}
+import com.tribbloids.spookystuff.commons.{CommonUtils, TreeThrowable}
+import com.tribbloids.spookystuff.io.{LocalResolver, URLConnectionResolver, WriteMode}
+import com.tribbloids.spookystuff.utils.SpookyUtils
 import org.apache.commons.io.IOUtils
 import org.apache.spark.{SparkContext, SparkFiles}
 import org.slf4j.LoggerFactory

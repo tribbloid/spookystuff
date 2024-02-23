@@ -1,6 +1,6 @@
 package com.tribbloids.spookystuff.assembly
 
-import com.tribbloids.spookystuff.utils.classpath.ClasspathResolver
+import com.tribbloids.spookystuff.commons.classpath.ClasspathResolver
 import org.scalatest.funspec.AnyFunSpec
 
 object JarHellDetection {}

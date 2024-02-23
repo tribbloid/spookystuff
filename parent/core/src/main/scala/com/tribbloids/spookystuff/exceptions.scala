@@ -2,7 +2,7 @@ package com.tribbloids.spookystuff
 
 import java.io.IOException
 
-import com.tribbloids.spookystuff.utils.TreeThrowable
+import com.tribbloids.spookystuff.commons.TreeThrowable
 
 /**
   * Created by peng on 9/11/14. doesn't have to catch it every time

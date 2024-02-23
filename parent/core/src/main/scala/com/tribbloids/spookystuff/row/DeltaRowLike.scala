@@ -1,8 +1,8 @@
 package com.tribbloids.spookystuff.row
 
 import com.tribbloids.spookystuff.SpookyContext
+import com.tribbloids.spookystuff.commons.serialization.NOTSerializable
 import com.tribbloids.spookystuff.execution.Delta
-import com.tribbloids.spookystuff.utils.serialization.NOTSerializable
 
 object DeltaRowLike {
 

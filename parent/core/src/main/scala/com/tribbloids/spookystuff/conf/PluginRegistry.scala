@@ -4,8 +4,8 @@ import ai.acyclic.prover.commons.function.System.MorphismOps
 import ai.acyclic.prover.commons.function.Impl
 import ai.acyclic.prover.commons.same.Same
 import ai.acyclic.prover.commons.util.Caching
-import com.tribbloids.spookystuff.utils.TreeThrowable
-import com.tribbloids.spookystuff.utils.serialization.NOTSerializable
+import com.tribbloids.spookystuff.commons.TreeThrowable
+import com.tribbloids.spookystuff.commons.serialization.NOTSerializable
 
 import scala.collection.mutable.ArrayBuffer
 import scala.language.implicitConversions

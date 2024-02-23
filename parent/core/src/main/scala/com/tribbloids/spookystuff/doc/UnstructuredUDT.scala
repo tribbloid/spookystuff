@@ -1,5 +1,5 @@
 package com.tribbloids.spookystuff.doc
 
-import com.tribbloids.spookystuff.utils.refl.ScalaUDT
+import com.tribbloids.spookystuff.commons.refl.ScalaUDT
 
 class UnstructuredUDT extends ScalaUDT[Unstructured]

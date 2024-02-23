@@ -2,7 +2,7 @@ package com.tribbloids.spookystuff.graph
 
 import com.tribbloids.spookystuff.graph.Element.Edge
 import com.tribbloids.spookystuff.graph.IDAlgebra.Rotator
-import com.tribbloids.spookystuff.utils.Types
+import com.tribbloids.spookystuff.commons.Types
 
 import scala.language.implicitConversions
 

@@ -1,8 +1,8 @@
 package com.tribbloids.spookystuff.metrics
 
 import com.tribbloids.spookystuff.relay.TreeIR
-import com.tribbloids.spookystuff.utils.CommonUtils
-import com.tribbloids.spookystuff.utils.refl.ReflectionUtils
+import com.tribbloids.spookystuff.commons.CommonUtils
+import com.tribbloids.spookystuff.commons.refl.ReflectionUtils
 import org.apache.spark.util.AccumulatorV2
 
 import scala.collection.mutable

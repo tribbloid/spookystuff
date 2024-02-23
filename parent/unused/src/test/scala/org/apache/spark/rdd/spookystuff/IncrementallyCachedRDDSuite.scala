@@ -2,7 +2,7 @@ package org.apache.spark.rdd.spookystuff
 
 import ai.acyclic.prover.commons.spark.TestHelper.TestSC
 import com.tribbloids.spookystuff.testutils.{SparkEnvSpec, SubSuite, TestHelper}
-import com.tribbloids.spookystuff.utils.Stopwatch
+import com.tribbloids.spookystuff.commons.Stopwatch
 import org.apache.spark.rdd.RDD
 import org.apache.spark.sql.execution.UnsafeRowSerializer
 import org.apache.spark.util.LongAccumulator

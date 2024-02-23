@@ -4,10 +4,11 @@ import ai.acyclic.prover.commons.spark.Envs
 import ai.acyclic.prover.commons.util.Retry
 import com.tribbloids.spookystuff.conf.Python
 import com.tribbloids.spookystuff.driver.PythonProcess
-import com.tribbloids.spookystuff.utils.classpath.ClasspathResolver
-import com.tribbloids.spookystuff.utils.io.{LocalResolver, WriteMode}
-import com.tribbloids.spookystuff.utils.lifespan.Cleanable.Lifespan
-import com.tribbloids.spookystuff.utils.{CommonUtils, DSLUtils, SpookyUtils}
+import com.tribbloids.spookystuff.commons.classpath.ClasspathResolver
+import com.tribbloids.spookystuff.commons.lifespan.Cleanable.Lifespan
+import com.tribbloids.spookystuff.commons.{CommonUtils, DSLUtils}
+import com.tribbloids.spookystuff.io.{LocalResolver, WriteMode}
+import com.tribbloids.spookystuff.utils.SpookyUtils
 import com.tribbloids.spookystuff.{CommonConst, PyException, PyInterpretationException, SpookyContext}
 import org.apache.commons.io.FileUtils
 import org.slf4j.LoggerFactory

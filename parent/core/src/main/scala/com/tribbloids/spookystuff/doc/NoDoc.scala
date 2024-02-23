@@ -3,7 +3,7 @@ package com.tribbloids.spookystuff.doc
 import com.tribbloids.spookystuff.actions._
 import com.tribbloids.spookystuff.caching.DocCacheLevel
 import com.tribbloids.spookystuff.doc.Observation.DocUID
-import com.tribbloids.spookystuff.utils.io.ResourceMetadata
+import com.tribbloids.spookystuff.io.ResourceMetadata
 
 //Merely a placeholder if a conditional block is not applicable
 case class NoDoc(

@@ -3,8 +3,8 @@ package com.tribbloids.spookystuff.actions
 import com.tribbloids.spookystuff.actions.Trace.DryRun
 import com.tribbloids.spookystuff.doc.{Doc, Observation}
 import com.tribbloids.spookystuff.agent.Agent
-import com.tribbloids.spookystuff.utils.CommonUtils
-import com.tribbloids.spookystuff.utils.refl.ScalaUDT
+import com.tribbloids.spookystuff.commons.CommonUtils
+import com.tribbloids.spookystuff.commons.refl.ScalaUDT
 import com.tribbloids.spookystuff.{ActionException, SpookyContext}
 import org.apache.spark.sql.types.SQLUserDefinedType
 import org.slf4j.LoggerFactory

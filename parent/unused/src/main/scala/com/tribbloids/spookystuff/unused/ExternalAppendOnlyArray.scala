@@ -2,10 +2,10 @@ package com.tribbloids.spookystuff.unused
 
 import ai.acyclic.prover.commons.spark.Envs
 import ai.acyclic.prover.commons.util.Caching
-import com.tribbloids.spookystuff.utils.lifespan.Cleanable.Lifespan
-import com.tribbloids.spookystuff.utils.lifespan.{LocalCleanable, ThreadLocal}
-import com.tribbloids.spookystuff.utils.serialization.NOTSerializable
-import com.tribbloids.spookystuff.utils.CommonUtils
+import com.tribbloids.spookystuff.commons.lifespan.Cleanable.Lifespan
+import com.tribbloids.spookystuff.commons.lifespan.{LocalCleanable, ThreadLocal}
+import com.tribbloids.spookystuff.commons.CommonUtils
+import com.tribbloids.spookystuff.commons.serialization.NOTSerializable
 import org.apache.spark.rdd.spookystuff.{ConsumedIterator, FallbackIterator, FastForwardingIterator}
 import org.apache.spark.serializer
 import org.apache.spark.serializer.SerializerInstance
