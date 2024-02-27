@@ -20,6 +20,16 @@ class TypedRowSpec extends BaseSpec {
     Summoner.summon[TypedEncoder[TypedRow[TypedRowSpec.RR]]]
   }
 
+  it("construction") {
+    val gd = Record(x = 1, y = "ab", z = 1.1)
+
+    val t1 = TypedRow.ofRecord(x = 1, y = "ab", z = 1.1)
+    assert(t1.asRecord == gd)
+
+    val t2 = TypedRow.ofTuple(1, "ab", 1.1)
+    assert(t2.asRecord == gd)
+  }
+
   it("in Dataset") {
 
     val r1 = Record(x = 1, y = "ab", z = 1.1)
@@ -45,6 +55,25 @@ class TypedRowSpec extends BaseSpec {
     assert(row.x == 1)
     assert(row.y == "ab")
     assert(row.z == 1.1)
+  }
+
+  it("enableOrdering") {
+
+    val r1 = TypedRow.ofRecord(a = 1, b = "ab").enableOrdering
+
+    assert(r1.a == 1)
+
+    import TypedRow.Caps._
+    r1.a: Int @@ TypedRow.Caps.AffectOrdering
+
+    val r2 = TypedRow.ofRecord(c = 1.1) ++ r1
+    r2.a: Int @@ TypedRow.Caps.AffectOrdering
+    r2.c: Int @@ TypedRow.Caps.AffectOrdering
+  }
+
+  it("ResolveOrdering") {
+
+    val row = TypedRow.ofRecord()
   }
 }
 
