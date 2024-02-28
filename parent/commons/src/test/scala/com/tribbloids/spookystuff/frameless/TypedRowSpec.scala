@@ -1,23 +1,24 @@
 package com.tribbloids.spookystuff.frameless
 
-import ai.acyclic.prover.commons.testlib.BaseSpec
-import ai.acyclic.prover.commons.util.Summoner
 import com.tribbloids.spookystuff.testutils.TestHelper
 import frameless.{TypedDataset, TypedEncoder}
 import org.apache.spark.sql.SparkSession
+import org.scalatest.BeforeAndAfterAll
+import org.scalatest.funspec.AnyFunSpec
 import shapeless.HList
 import shapeless.record.Record
 
-class TypedRowSpec extends BaseSpec {
+class TypedRowSpec extends AnyFunSpec with BeforeAndAfterAll {
 
-  implicit lazy val session: SparkSession = TestHelper.TestSparkSession
+  implicit def session: SparkSession = TestHelper.TestSparkSession
+  import TypedRow.Caps._
 
   it("Encoder") {
 
     implicitly[TypedRowSpec.RR <:< HList]
 
     implicitly[TypedEncoder[TypedRow[TypedRowSpec.RR]]]
-    Summoner.summon[TypedEncoder[TypedRow[TypedRowSpec.RR]]]
+    implicitly[TypedEncoder[TypedRow[TypedRowSpec.RR]]]
   }
 
   it("construction") {
@@ -38,13 +39,14 @@ class TypedRowSpec extends BaseSpec {
     val rdd = session.sparkContext.parallelize(Seq(r2))
     val ds = TypedDataset.create(rdd)
 
-    ds.schema.treeString.shouldBe(
-      """
-        |root
-        | |-- x: integer (nullable = true)
-        | |-- y: string (nullable = true)
-        | |-- z: double (nullable = true)
-        |""".stripMargin
+    assert(
+      ds.schema.treeString.==(
+        """root
+          | |-- x: integer (nullable = true)
+          | |-- y: string (nullable = true)
+          | |-- z: double (nullable = true)
+          |""".stripMargin
+      )
     )
 
     assert(ds.toDF().collect().head.toString() == "[1,ab,1.1]")
@@ -62,13 +64,15 @@ class TypedRowSpec extends BaseSpec {
     val r1 = TypedRow.ofRecord(a = 1, b = "ab").enableOrdering
 
     assert(r1.a == 1)
-
-    import TypedRow.Caps._
-    r1.a: Int @@ TypedRow.Caps.AffectOrdering
+    r1.a: Int ^^ AffectOrdering
 
     val r2 = TypedRow.ofRecord(c = 1.1) ++ r1
-    r2.a: Int @@ TypedRow.Caps.AffectOrdering
-    r2.c: Int @@ TypedRow.Caps.AffectOrdering
+    r2.a: Int ^^ AffectOrdering
+    r2.c: Double
+
+    shapeless.test.illTyped("""
+      r2.c: Double ^^ AffectOrdering
+    """)
   }
 
   it("ResolveOrdering") {

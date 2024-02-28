@@ -44,7 +44,7 @@ object Element {
     override protected def _replicate(m: DataMutator)(
         implicit
         idRotator: Rotator[ID],
-        node_+ : Types.Compose[NodeData]
+        node_+ : Types.Reduce[NodeData]
     ): Edge[T] = {
       val newIDs = idRotator(from) -> idRotator(to)
       if (newIDs == from_to) this
@@ -118,7 +118,7 @@ object Element {
     override def _replicate(m: DataMutator)(
         implicit
         idRotator: Rotator[ID],
-        node_+ : Types.Compose[NodeData]
+        node_+ : Types.Reduce[NodeData]
     ): _Module = {
       val newID = idRotator(this.samenessDelegatedTo)
       if (newID == this.samenessDelegatedTo)
@@ -142,7 +142,7 @@ object Element {
     override protected def _replicate(m: DataMutator)(
         implicit
         idRotator: Rotator[ID],
-        node_+ : Types.Compose[NodeData]
+        node_+ : Types.Reduce[NodeData]
     ): _NodeTriplet = {
       new NodeTriplet[D](
         node.replicate(m),

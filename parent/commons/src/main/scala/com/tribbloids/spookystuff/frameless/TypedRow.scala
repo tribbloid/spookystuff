@@ -1,14 +1,13 @@
 package com.tribbloids.spookystuff.frameless
 
-import ai.acyclic.prover.commons.function.PreDef
 import ai.acyclic.prover.commons.util.Capabilities
 import frameless.TypedEncoder
 import org.apache.spark.sql.catalyst.InternalRow
 import org.apache.spark.sql.types.{DataType, ObjectType}
 import shapeless.ops.hlist.{Partition, Prepend}
-import shapeless.ops.record.{MapValues, RemoveAll, Remover, Selector, Values}
+import shapeless.ops.record._
 import shapeless.tag.@@
-import shapeless.{HList, HNil, ProductArgs, RecordArgs}
+import shapeless.{HList, HNil, Poly1, ProductArgs, RecordArgs}
 
 import scala.collection.immutable.ArraySeq
 import scala.language.{dynamics, implicitConversions}
@@ -24,58 +23,61 @@ import scala.reflect.ClassTag
   * @tparam L
   *   Record type
   */
-case class TypedRow[L <: HList](
-    cells: ArraySeq[Any]
-) extends Dynamic {
+case class TypedRow[L <: HList](cells: ArraySeq[Any]) extends Dynamic {
 
-  import TypedRow._
+  import TypedRow.Caps._
   import shapeless.record._
 
   @transient override lazy val toString: String = cells.mkString("[", ",", "]")
 
   def apply(i: Int): Any = cells.apply(i)
 
-  @transient lazy val asRecord: L = cells
-    .foldRight[HList](HNil) { (s, x) =>
-      s :: x
-    }
-    .asInstanceOf[L]
+  @transient lazy val asRecord: L =
+    cells.foldRight[HList](HNil)((s, x) => s :: x).asInstanceOf[L]
 
   /**
     * Allows dynamic-style access to fields of the record whose keys are Symbols. See
     * [[shapeless.syntax.DynamicRecordOps[_]] for original version
     */
-  def selectDynamic(key: String)(
+  def selectDynamic(
+      key: String
+  )(
       implicit
       selector: Selector[L, Symbol @@ key.type]
   ): selector.Out = selector(asRecord)
 
   def enableOrdering(
       implicit
-      ev: MapValues[Caps.AffectOrdering.Enable.asShapeless.type, L]
+      ev: MapValues[AffectOrdering.Enable.type, L]
   ): TypedRow[ev.Out] = {
 
-    val mapped = asRecord.mapValues(Caps.AffectOrdering.Enable.asShapeless)(ev)
+    val mapped = asRecord.mapValues(AffectOrdering.Enable)(ev)
 
     TypedRow.fromHList(mapped)
   }
 
-  def prependAll[L2 <: HList](that: TypedRow[L2])(
+  def prependAll[L2 <: HList](
+      that: TypedRow[L2]
+  )(
       implicit
       prepend: Prepend[L, L2]
-  ): TypedRow[Prepend[L, L2]#Out] = {
+  ): TypedRow[prepend.Out] = {
 
-    TypedRow.fromHList(this.asRecord ++ that.asRecord)
+    TypedRow.fromHList(prepend(this.asRecord, that.asRecord))
   }
 
-  def ++[L2 <: HList](that: TypedRow[L2])(
+  def ++[L2 <: HList](
+      that: TypedRow[L2]
+  )(
       implicit
       prepend: Prepend[L, L2]
-  ): TypedRow[Prepend[L, L2]#Out] = prependAll(that)
+  ): TypedRow[prepend.Out] = prependAll(that)(prepend)
 
   // DO NOT define ++: & :++ as the direction of induction is highly subjective
 
-  def remove1[K, L2 <: HList](key: K)(
+  def remove1[K, L2 <: HList](
+      key: K
+  )(
       implicit
       remover: Remover.Aux[L, key.type, L2]
   ): TypedRow[L2] = {
@@ -84,7 +86,9 @@ case class TypedRow[L <: HList](
     TypedRow.fromHList(newRecord)
   }
 
-  def removeAll[KS <: HList, L2 <: HList](keys: KS)(
+  def removeAll[KS <: HList, L2 <: HList](
+      keys: KS
+  )(
       implicit
       removeAll: RemoveAll.Aux[L, KS, L2]
   ): TypedRow[L2] = {
@@ -94,7 +98,7 @@ case class TypedRow[L <: HList](
   }
 }
 
-object TypedRow extends RecordArgs {
+object TypedRow {
 
   object ofRecord extends RecordArgs {
 
@@ -143,112 +147,35 @@ object TypedRow extends RecordArgs {
   object Caps extends Capabilities {
 
     trait AffectOrdering extends Cap
+
     object AffectOrdering {
 
-      object Enable extends PreDef.Poly {
+      object Enable extends Poly1 {
 
-        implicit def only[T]: T =>> (T @@ AffectOrdering) = at[T] { v =>
-          v.asInstanceOf[T @@ AffectOrdering]
+        implicit def only[T] = at[T] { v =>
+          v.asInstanceOf[T ^^ AffectOrdering]
         }
       }
     }
   }
 
-//  trait OrderingFactory[L <: HList] {
-//    def get: Ordering[L]
-//  }
-//
-//  trait OrderingFactory_Imp0 {
-//
-//    import shapeless.::
-//
-//    implicit def discard[H, T <: HList](
-//        implicit
-//        prev: Ordering[T],
-//        neo: Ordering[H]
-//    ) = {
-//
-//      new OrderingFactory[H :: T] {
-//        override def get = {
-//
-//          Ordering
-//            .by { v: (H :: T) =>
-//              v.tail
-//            }(prev)
-//        }
-//      }
-//    }
-//  }
-
-//  object OrderingFactory {
-//
-//    import shapeless.::
-//
-//    implicit def empty: OrderingFactory[HNil] = {
-//
-//      new OrderingFactory[HNil] {
-//        Ordering
-//
-//      }
-//
-//      new Ordering[HNil] {
-//
-//        override def compare(x: HNil, y: HNil): Int = 0
-//      }
-//    }
-//
-//    implicit def factor[H, T <: HList](
-//        implicit
-//        prev: Ordering[T],
-//        neo: Ordering[H]
-//    ): Ordering[(H @@ TypedRow.Caps.AffectOrdering) :: T] = {
-//
-//      Ordering
-//        .by { v: ((H @@ Caps.AffectOrdering) :: T) =>
-//          v.tail
-//        }(prev)
-//        .orElseBy { v: (H :: T) =>
-//          v.head
-//        }(neo)
-//    }
-//  }
-
-//  case class DecideOrdering[T](ordering: Option[Ordering[T]]) {}
-//
-//  trait DecideOrdering_Imp0 {
-//
-//    def cannot = DecideOrdering(None)
-//  }
-//
-//  object DecideOrdering extends DecideOrdering_Imp0 {
-//
-//    import Caps._
-//
-//    def can[T <: _ @@ AffectOrdering](
-//        implicit
-//        ev: Ordering[T]
-//    ) = DecideOrdering(Some(ev))
-//
-//  }
-
   case class NativeOrderingResolving[R <: HList]() {
 
+    import Caps._
     import shapeless.record._
 
-    case class Resolve[
-        V <: HList,
-        V2 <: HList
-    ]()(
+    case class Resolve[V <: HList, V2 <: HList](
+    )(
         implicit
         ev: Values.Aux[R, V],
-        partition: Partition.Aux[V, Caps.AffectOrdering, V2, _]
+        partition: Partition.Aux[V, AffectOrdering, V2, _]
     ) {
       // to use it you have to import syntax.hlist.*
 
       lazy val fn: TypedRow[R] => V2 = { row: TypedRow[R] =>
         val values = row.asRecord.values
 
-        val filtered = values.filter[Caps.AffectOrdering]
+        val filtered = values.filter[AffectOrdering]
 
         filtered
       }
@@ -261,28 +188,6 @@ object TypedRow extends RecordArgs {
         Ordering.by(fn)
       }
     }
-
-//    implicit def nativeOrdering[
-//        V <: HList,
-//        V2 <: HList
-//    ](
-//        implicit
-//        ev: Values.Aux[R, V],
-//        partition: Partition.Aux[V, Caps.AffectOrdering, V2, _],
-//        hlistOrdering: Ordering[V2]
-//    ): Ordering[TypedRow[R]] = {
-//      // to use it you have to import syntax.hlist.*
-//
-//      import shapeless.record._
-//
-//      Ordering.by { row: TypedRow[R] =>
-//        val values = row.asRecord.values
-//
-//        val filtered = values.filter[Caps.AffectOrdering]
-//
-//        filtered
-//      }
-//    }
   }
 
 }
