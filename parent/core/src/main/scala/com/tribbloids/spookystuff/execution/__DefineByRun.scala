@@ -1,6 +1,6 @@
 package com.tribbloids.spookystuff.execution
 
-object __DefineByRunDesign {
+object __DefineByRun {
 
   /**
     * This will be the largest rewrite since its creation

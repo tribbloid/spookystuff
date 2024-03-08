@@ -18,6 +18,8 @@ case class UncleanTaskContext(
 
   override def isCompleted(): Boolean = self.isCompleted()
 
+  override def isFailed(): Boolean = self.isFailed()
+
   override def isInterrupted(): Boolean = self.isInterrupted()
 
   override def cpus(): Int = self.cpus()

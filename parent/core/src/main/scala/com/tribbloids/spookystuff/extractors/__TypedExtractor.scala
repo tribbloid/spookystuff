@@ -1,6 +1,6 @@
 package com.tribbloids.spookystuff.extractors
 
-object __TypedExtractorDesign {
+object __TypedExtractor {
 
   /**
     * This rewrite could introduce the following capabilities, and drastically simplify extractor impl (by eliminating
