@@ -14,7 +14,7 @@ dependencies {
 
     val seleniumV = "4.1.4"
     val phantomJSV = "1.5.0"
-    val htmlUnitV = "4.13.0"
+    val htmlUnitV = "3.61.0"
 
     // Selenium
     api("org.seleniumhq.selenium:selenium-api:${seleniumV}")

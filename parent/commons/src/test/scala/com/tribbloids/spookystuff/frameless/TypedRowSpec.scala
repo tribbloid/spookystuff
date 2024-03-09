@@ -82,26 +82,22 @@ class TypedRowSpec extends BaseSpec {
 
       {
         val fn = TypedRow.For[r1.Repr].NativeOrdering().fn
-
-        fn(r1).runtimeList.mkString(",").shouldBe("")
+        fn(r1).runtimeList.mkString(",").shouldBe("()")
       }
 
       val r2 = r1.enableOrdering
 
-//      {
-//
-//        val resolving = TypedRow.For[r2.Repr].NativeOrdering()
-//
-//        TypeViz[resolving.Values].diagram_hierarchy.toString.shouldBe()
-//
-//        TypeViz[resolving.Mapped].diagram_hierarchy.toString.shouldBe()
-//
-//        val fn = resolving.fn
-//
-//        val result = fn(r2)
-//
-//        fn(r2).runtimeList.mkString(",").shouldBe("")
-//      }
+      {
+        val fn = TypedRow.For[r2.Repr].NativeOrdering().fn
+        fn(r2).runtimeList.mkString(",").shouldBe("1")
+      }
+
+      val r3 = TypedRow.ofRecord(b = 1.1) ++ r2
+
+      {
+        val fn = TypedRow.For[r3.Repr].NativeOrdering().fn
+        fn(r3).runtimeList.mkString(",").shouldBe("(),1")
+      }
     }
   }
 

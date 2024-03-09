@@ -23,7 +23,7 @@ object Trace {
 
   def of(vs: Action*): Trace = Trace(vs.toList)
 
-  case class Rollout(trace: Trace) extends HasTrace with Rollout.NoCap with SpookyContext.CanRunWith {
+  case class Rollout(trace: Trace) extends HasTrace with SpookyContext.CanRunWith {
     // unlike trace, it is always executed by the agent from scratch
     // thus, execution result can be cached, as replaying it will most likely have the same result (if the trace is deterministic)
 

@@ -244,13 +244,15 @@ object TypedRow extends RecordArgs {
 
     object NativeOrderingBy extends NativeOrderingBy_Imp0 {
 
-      implicit def accept[T <: Caps.AffectOrdering]: T =>> T = at[T] { v: T =>
+      implicit def accept[T <: Caps.^^[_, Caps.AffectOrdering]]: T =>> T = at[T] { v: T =>
         v
       }
     }
+
+    def apply[R <: HList] = new For[R]
   }
 
-  case class For[R <: HList]() {
+  class For[R <: HList] {
 
     // applicable to all cases of HList, even without KeyTags
     case class NativeOrdering[
