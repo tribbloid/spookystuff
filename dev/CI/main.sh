@@ -4,6 +4,7 @@ FWDIR="$(cd "`dirname "$0"`"/..; pwd)"
 
 # shellcheck source=profiles/apache-stable/.common.sh
 source "${FWDIR}/profiles/${1}/.common.sh"
+source "${FWDIR}/CI/.download.sh"
 
 "${FWDIR}"/../gradlew
 
