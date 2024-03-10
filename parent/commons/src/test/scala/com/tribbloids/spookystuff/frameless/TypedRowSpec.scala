@@ -2,12 +2,12 @@ package com.tribbloids.spookystuff.frameless
 
 import ai.acyclic.prover.commons.testlib.BaseSpec
 import ai.acyclic.prover.commons.util.Summoner
-import ai.acyclic.prover.commons.viz.TypeViz
 import com.tribbloids.spookystuff.testutils.TestHelper
 import frameless.{TypedDataset, TypedEncoder}
 import org.apache.spark.sql.SparkSession
 import shapeless.HList
 import shapeless.record.Record
+import shapeless.test.illTyped
 
 class TypedRowSpec extends BaseSpec {
 
@@ -26,10 +26,10 @@ class TypedRowSpec extends BaseSpec {
     val gd = Record(x = 1, y = "ab", z = 1.1)
 
     val t1 = TypedRow.ofRecord(x = 1, y = "ab", z = 1.1)
-    assert(t1.asRecord == gd)
+    assert(t1.asRepr == gd)
 
     val t2 = TypedRow.ofTuple(1, "ab", 1.1)
-    assert(t2.asRecord == gd)
+    assert(t2.asRepr == gd)
   }
 
   it("in Dataset") {
@@ -54,9 +54,9 @@ class TypedRowSpec extends BaseSpec {
     val row = ds.dataset.collect.head
     assert(row == r2)
 
-    assert(row.x == 1)
-    assert(row.y == "ab")
-    assert(row.z == 1.1)
+    assert(row.values.x == 1)
+    assert(row.values.y == "ab")
+    assert(row.values.z == 1.1)
   }
 
   describe("ordering") {
@@ -65,15 +65,16 @@ class TypedRowSpec extends BaseSpec {
 
       val r1 = TypedRow.ofRecord(a = 1, b = "ab").enableOrdering
 
-      assert(r1.a == 1)
-      r1.a: Int ^^ AffectOrdering
+      assert(r1.values.a == 1)
+      r1.values.a: Int ^^ AffectOrdering
 
       val r2 = TypedRow.ofRecord(c = 1.1) ++ r1
-      r2.a: Int ^^ AffectOrdering
-      r2.c: Double
+      r2.values.a: Int ^^ AffectOrdering
+      r2.values.c: Double
 
-//      r2.c: Double ^^ AffectOrdering
-
+      illTyped(
+        "r2.c: Double ^^ AffectOrdering"
+      )
     }
 
     it("native") {

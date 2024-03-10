@@ -1,6 +1,6 @@
 package com.tribbloids.spookystuff.frameless
 
-import ai.acyclic.prover.commons.function.PreDef
+import ai.acyclic.prover.commons.function.Hom
 import ai.acyclic.prover.commons.util.Capabilities
 import frameless.TypedEncoder
 import org.apache.spark.sql.catalyst.InternalRow
@@ -11,7 +11,7 @@ import shapeless.tag.@@
 import shapeless.{HList, HNil, ProductArgs, RecordArgs}
 
 import scala.collection.immutable.ArraySeq
-import scala.language.{dynamics, implicitConversions}
+import scala.language.dynamics
 import scala.reflect.ClassTag
 
 /**
@@ -26,7 +26,7 @@ import scala.reflect.ClassTag
   */
 case class TypedRow[L <: HList](
     cells: ArraySeq[Any]
-) extends Dynamic {
+) {
 
   import TypedRow._
   import shapeless.record._
@@ -35,29 +35,33 @@ case class TypedRow[L <: HList](
 
   @transient override lazy val toString: String = cells.mkString("[", ",", "]")
 
-  def apply(i: Int): Any = cells.apply(i)
+  // DO NOT MOVE! used by reflection-based Catalyst Encoder
+  def getValue(i: Int): Any = cells.apply(i)
 
-  @transient lazy val asRecord: L = cells
+  object values extends Dynamic {
+
+    /**
+      * Allows dynamic-style access to fields of the record whose keys are Symbols. See
+      * [[shapeless.syntax.DynamicRecordOps[_]] for original version
+      */
+    def selectDynamic(key: String)(
+        implicit
+        selector: Selector[L, Symbol @@ key.type]
+    ): selector.Out = selector(asRepr)
+  }
+
+  @transient lazy val asRepr: L = cells
     .foldRight[HList](HNil) { (s, x) =>
       s :: x
     }
     .asInstanceOf[L]
-
-  /**
-    * Allows dynamic-style access to fields of the record whose keys are Symbols. See
-    * [[shapeless.syntax.DynamicRecordOps[_]] for original version
-    */
-  def selectDynamic(key: String)(
-      implicit
-      selector: Selector[L, Symbol @@ key.type]
-  ): selector.Out = selector(asRecord)
 
   def enableOrdering(
       implicit
       ev: MapValues[Caps.AffectOrdering.Enable.asShapeless.type, L]
   ): TypedRow[ev.Out] = {
 
-    val mapped = asRecord.mapValues(Caps.AffectOrdering.Enable)(ev)
+    val mapped = asRepr.mapValues(Caps.AffectOrdering.Enable)(ev)
 
     TypedRow.fromHList(mapped)
   }
@@ -67,7 +71,7 @@ case class TypedRow[L <: HList](
       prepend: Prepend[L, L2]
   ): TypedRow[prepend.Out] = {
 
-    TypedRow.fromHList(prepend(this.asRecord, that.asRecord))
+    TypedRow.fromHList(prepend(this.asRepr, that.asRepr))
   }
 
   def ++[L2 <: HList](that: TypedRow[L2])(
@@ -82,7 +86,7 @@ case class TypedRow[L <: HList](
       remover: Remover.Aux[L, key.type, L2]
   ): TypedRow[L2] = {
 
-    val newRecord = asRecord.remove(key)
+    val newRecord = asRepr.remove(key)
     TypedRow.fromHList(newRecord)
   }
 
@@ -91,7 +95,7 @@ case class TypedRow[L <: HList](
       removeAll: RemoveAll.Aux[L, KS, L2]
   ): TypedRow[L2] = {
 
-    val newRecord = removeAll.apply(asRecord)
+    val newRecord = removeAll.apply(asRepr)
     TypedRow.fromHList(newRecord)
   }
 }
@@ -147,7 +151,7 @@ object TypedRow extends RecordArgs {
     trait AffectOrdering extends Cap
     object AffectOrdering {
 
-      object Enable extends PreDef.Poly {
+      object Enable extends Hom.Poly {
 
         implicit def only[T] = at[T] { v =>
           v.asInstanceOf[T ^^ AffectOrdering]
@@ -156,88 +160,11 @@ object TypedRow extends RecordArgs {
     }
   }
 
-//  trait OrderingFactory[L <: HList] {
-//    def get: Ordering[L]
-//  }
-//
-//  trait OrderingFactory_Imp0 {
-//
-//    import shapeless.::
-//
-//    implicit def discard[H, T <: HList](
-//        implicit
-//        prev: Ordering[T],
-//        neo: Ordering[H]
-//    ) = {
-//
-//      new OrderingFactory[H :: T] {
-//        override def get = {
-//
-//          Ordering
-//            .by { v: (H :: T) =>
-//              v.tail
-//            }(prev)
-//        }
-//      }
-//    }
-//  }
-
-//  object OrderingFactory {
-//
-//    import shapeless.::
-//
-//    implicit def empty: OrderingFactory[HNil] = {
-//
-//      new OrderingFactory[HNil] {
-//        Ordering
-//
-//      }
-//
-//      new Ordering[HNil] {
-//
-//        override def compare(x: HNil, y: HNil): Int = 0
-//      }
-//    }
-//
-//    implicit def factor[H, T <: HList](
-//        implicit
-//        prev: Ordering[T],
-//        neo: Ordering[H]
-//    ): Ordering[(H @@ TypedRow.Caps.AffectOrdering) :: T] = {
-//
-//      Ordering
-//        .by { v: ((H @@ Caps.AffectOrdering) :: T) =>
-//          v.tail
-//        }(prev)
-//        .orElseBy { v: (H :: T) =>
-//          v.head
-//        }(neo)
-//    }
-//  }
-
-//  case class DecideOrdering[T](ordering: Option[Ordering[T]]) {}
-//
-//  trait DecideOrdering_Imp0 {
-//
-//    def cannot = DecideOrdering(None)
-//  }
-//
-//  object DecideOrdering extends DecideOrdering_Imp0 {
-//
-//    import Caps._
-//
-//    def can[T <: _ @@ AffectOrdering](
-//        implicit
-//        ev: Ordering[T]
-//    ) = DecideOrdering(Some(ev))
-//
-//  }
-
   object For {
 
-    trait NativeOrderingBy_Imp0 extends PreDef.Poly {
+    trait NativeOrderingBy_Imp0 extends Hom.Poly {
 
-      implicit def ignore[T]: T =>> Unit = at[T] { v: T =>
+      implicit def ignore[T]: T =>> Unit = at[T] { _: T =>
         ()
       }
     }
@@ -266,7 +193,7 @@ object TypedRow extends RecordArgs {
       type Mapped = MO
 
       lazy val fn: TypedRow[R] => MO = { row: TypedRow[R] =>
-        val mapped = mapper.apply(row.asRecord)
+        val mapped = mapper.apply(row.asRepr)
 
         mapped
       }
@@ -280,27 +207,6 @@ object TypedRow extends RecordArgs {
       }
     }
 
-//    implicit def nativeOrdering[
-//        V <: HList,
-//        V2 <: HList
-//    ](
-//        implicit
-//        ev: Values.Aux[R, V],
-//        partition: Partition.Aux[V, Caps.AffectOrdering, V2, _],
-//        hlistOrdering: Ordering[V2]
-//    ): Ordering[TypedRow[R]] = {
-//      // to use it you have to import syntax.hlist.*
-//
-//      import shapeless.record._
-//
-//      Ordering.by { row: TypedRow[R] =>
-//        val values = row.asRecord.values
-//
-//        val filtered = values.filter[Caps.AffectOrdering]
-//
-//        filtered
-//      }
-//    }
   }
 
 }

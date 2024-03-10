@@ -38,6 +38,9 @@ abstract class RecordEncoder[F, G <: HList, H <: HList](
 
 object RecordEncoder {
 
+  final private val _GET_VALUE = "getValue"
+  final private val _FROM_INTERNAL_ROW = "fromInternalRow"
+
   case class ForTypedRow[G <: HList, H <: HList](
   )(
       implicit
@@ -47,16 +50,13 @@ object RecordEncoder {
 
     import stage1._
 
-    final private val _apply = "apply"
-    final private val _fromInternalRow = "fromInternalRow"
-
     def toCatalyst(path: Expression): Expression = {
 
       val valueExprs = fields.value.value.zipWithIndex.map {
         case (field, i) =>
           val fieldPath = Invoke(
             path,
-            _apply,
+            _GET_VALUE,
             field.encoder.jvmRepr,
             Seq(Literal.create(i, IntegerType))
           )
@@ -79,7 +79,7 @@ object RecordEncoder {
 
       val newExpr = Invoke(
         Literal.fromObject(partial),
-        _fromInternalRow,
+        _FROM_INTERNAL_ROW,
         TypedRow.catalystType,
         Seq(aggregated)
       )

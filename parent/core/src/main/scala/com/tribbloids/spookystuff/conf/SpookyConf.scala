@@ -1,7 +1,7 @@
 package com.tribbloids.spookystuff.conf
 
 import ai.acyclic.prover.commons.function.Impl
-import ai.acyclic.prover.commons.function.PreDef.:=>
+import ai.acyclic.prover.commons.function.Hom.:=>
 import com.tribbloids.spookystuff.dsl._
 import com.tribbloids.spookystuff.row.Sampler
 import com.tribbloids.spookystuff.agent._
