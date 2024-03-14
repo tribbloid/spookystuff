@@ -5,11 +5,10 @@ import org.apache.spark.sql.FramelessInternals
 import org.apache.spark.sql.catalyst.expressions._
 import org.apache.spark.sql.catalyst.expressions.objects.Invoke
 import org.apache.spark.sql.types._
-import shapeless._
 
 import scala.reflect.ClassTag
 
-abstract class RecordEncoder[F, G <: HList, H <: HList](
+abstract class RecordEncoder[F, G <: Tuple, H <: Tuple](
     implicit
     stage1: RecordEncoderStage1[G, H],
     classTag: ClassTag[F]
@@ -38,10 +37,10 @@ abstract class RecordEncoder[F, G <: HList, H <: HList](
 
 object RecordEncoder {
 
-  final private val _GET_VALUE = "getValue"
+  final private val _GET_VALUE = "_valueAtIndex"
   final private val _FROM_INTERNAL_ROW = "fromInternalRow"
 
-  case class ForTypedRow[G <: HList, H <: HList](
+  case class ForTypedRow[G <: Tuple, H <: Tuple](
   )(
       implicit
       stage1: RecordEncoderStage1[G, H],

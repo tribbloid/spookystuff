@@ -44,10 +44,18 @@ class AssertSerializableSpike extends BaseSpec {
         AssertWeaklySerializable(Outer.inner3)
       }
     }
-
   }
 
-  ignore("should be Serializable with equality - ") {
+  describe("should be Serializable with equality - ") {
+
+    typeOfIt {
+      (): Unit
+    } { v =>
+      AssertWeaklySerializable(v)
+    }
+  }
+
+  ignore("not working") {
 
     typeOfIt {
       val cache = Caching.Strong.underlyingBuilder.build[String, Int]()

@@ -57,10 +57,10 @@ object StaticGraph {
       *   merged graph -> mappings that converts evicted edges to created edges
       */
     def serial(
-                base: (GG, _Heads),
-                top: (GG, _Tails),
-                node_+ : Types.Reduce[NodeData] = nodeAlgebra.add,
-                edge_+ : Types.Reduce[EdgeData] = edgeAlgebra.add
+        base: (GG, _Heads),
+        top: (GG, _Tails),
+        node_+ : Types.Reduce[NodeData] = nodeAlgebra.add,
+        edge_+ : Types.Reduce[EdgeData] = edgeAlgebra.add
     ): (GG, Map[_Edge, _Edge]) = {
 
       val uu: GG = union(base._1, top._1, node_+)

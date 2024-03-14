@@ -23,52 +23,182 @@ class TypedRowSpec extends BaseSpec {
   }
 
   it("construction") {
-    val gd = Record(x = 1, y = "ab", z = 1.1)
 
-    val t1 = TypedRow.ofRecord(x = 1, y = "ab", z = 1.1)
-    assert(t1.asRepr == gd)
+    val t1 = TypedRow.ofNamedArgs(x = 1, y = "ab", z = 1.1)
 
-    val t2 = TypedRow.ofTuple(1, "ab", 1.1)
-    assert(t2.asRepr == gd)
+    val gd = HList(1, "ab", 1.1)
+    assert(t1.repr == gd)
+
+    //    TypeViz[t1.Repr].toString.shouldBe()
   }
 
-  it("in Dataset") {
+  describe("merge") {
 
-    val r1 = Record(x = 1, y = "ab", z = 1.1)
-    val r2 = TypedRow.fromHList(r1)
+    it("mayCauseDuplicatedNames") {
 
-    val rdd = session.sparkContext.parallelize(Seq(r2))
-    val ds = TypedDataset.create(rdd)
+      val t1 = TypedRow.ofNamedArgs(x = 1, y = "ab")
+      val t2 = TypedRow.ofNamedArgs(y = 1.0, z = 1.1)
+      val merged = t1 ++ t2
 
-    ds.schema.treeString.shouldBe(
-      """
-        |root
-        | |-- x: integer (nullable = true)
-        | |-- y: string (nullable = true)
-        | |-- z: double (nullable = true)
-        |""".stripMargin
-    )
+      assert(merged.keys.runtimeList == List('x, 'y, 'y, 'z))
+      assert(merged.repr.runtimeList == List(1, "ab", 1.0, 1.1))
 
-    assert(ds.toDF().collect().head.toString() == "[1,ab,1.1]")
+      assert(t1.values.x == 1)
+      assert(merged.values.x == 1)
+      assert(merged.values.y == "ab") // favours the first operand
+    }
 
-    val row = ds.dataset.collect.head
-    assert(row == r2)
+    it("right") {
 
-    assert(row.values.x == 1)
-    assert(row.values.y == "ab")
-    assert(row.values.z == 1.1)
+      val t1 = TypedRow.ofNamedArgs(x = 1, y = "ab")
+      val t2 = TypedRow.ofNamedArgs(y = 1.0, z = 1.1)
+      val merged = t1 ++< t2
+
+      assert(merged.keys.runtimeList == List('x, 'y, 'z))
+      assert(merged.repr.runtimeList == List(1, 1.0, 1.1))
+
+      assert(merged.values.y == 1.0) // favours the first operand
+    }
+
+    it("left") {
+
+      val t1 = TypedRow.ofNamedArgs(x = 1, y = "ab")
+      val t2 = TypedRow.ofNamedArgs(y = 1.0, z = 1.1)
+      val merged = t1 >++ t2
+
+      assert(merged.keys.runtimeList == List('x, 'y, 'z))
+      assert(merged.repr.runtimeList == List(1, "ab", 1.1))
+
+      assert(merged.values.y == "ab") // favours the first operand
+    }
+  }
+
+  //  it("removeAll") {
+  //    // TODO implementations of records.Updater/Update/UpdateAll are all defective due to macro
+  //
+  //    val t1 = TypedRow.ofNamedArgs(x = 1, y = "ab", z = 1.1)
+  ////    val r1 = t1.removeAll(Columns("x", "y"))
+  //
+  //    implicitly[
+  //      Remover[
+  //        t1.Repr,
+  //        Col["x"]
+  //      ]
+  //    ]
+  //
+  //    implicitly[
+  //      RemoveAll[
+  //        t1.Repr,
+  //        Col["x"] :: HNil
+  //      ]
+  //    ]
+  //
+  ////    assert(r1.keys.runtimeList == List())
+  //
+  //  }
+
+  describe("columns") {
+
+    it("value") {
+
+      val t1 = TypedRow.ofNamedArgs(x = 1, y = "ab")
+      val col = t1.columns.y
+
+      assert(col.value == "ab")
+    }
+
+    it("asTypedRow") {
+
+      val t1 = TypedRow.ofNamedArgs(x = 1, y = "ab")
+      val col = t1.columns.y
+
+      val colAsRow = col.asTypedRow
+      val colAsRowGT = TypedRow.ofNamedArgs(y = "ab")
+
+      implicitly[colAsRow.Repr =:= colAsRowGT.Repr]
+
+    }
+
+    it("update") {
+
+      val t1 = TypedRow.ofNamedArgs(x = 1, y = "ab")
+      val col = t1.columns.y
+
+      val t2 = col.update(1.0)
+      val t2GT = t1 ++< TypedRow.ofNamedArgs(y = 1.0)
+
+      implicitly[t2.Repr =:= t2GT.Repr]
+
+      assert(t2GT.keys.runtimeList == List('x, 'y))
+
+      assert(t2.keys.runtimeList == List('x, 'y))
+
+      assert(t2.values.y == 1.0)
+    }
+
+    //    it("remove") {}
+
+  }
+
+  describe("in Dataset") {
+
+    it("named columns") {
+
+      val t1 = TypedRow.ofNamedArgs(x = 1, y = "ab", z = 1.1)
+
+      val rdd = session.sparkContext.parallelize(Seq(t1))
+      val ds = TypedDataset.create(rdd)
+
+      ds.schema.treeString.shouldBe(
+        """
+          |root
+          | |-- x: integer (nullable = true)
+          | |-- y: string (nullable = true)
+          | |-- z: double (nullable = true)
+          |""".stripMargin
+      )
+
+      assert(ds.toDF().collect().head.toString() == "[1,ab,1.1]")
+
+      val row = ds.dataset.collect.head
+      assert(row == row)
+
+      assert(row.values.x == 1)
+      assert(row.values.y == "ab")
+      assert(row.values.z == 1.1)
+    }
+
+    it(" ... with duplicated names") {
+
+      val tx = TypedRow.ofNamedArgs(x = 1, y = "ab")
+      val ty = TypedRow.ofNamedArgs(y = 1.0, z = 1.1)
+      val t1 = tx ++ ty
+
+      val rdd = session.sparkContext.parallelize(Seq(t1))
+      val ds = TypedDataset.create(rdd)
+
+      ds.schema.treeString.shouldBe(
+        """
+          |root
+          | |-- x: integer (nullable = true)
+          | |-- y: string (nullable = true)
+          | |-- y: double (nullable = true)
+          | |-- z: double (nullable = true)
+          |""".stripMargin
+      )
+    }
   }
 
   describe("ordering") {
 
     it("enable") {
 
-      val r1 = TypedRow.ofRecord(a = 1, b = "ab").enableOrdering
+      val r1 = TypedRow.ofNamedArgs(a = 1, b = "ab").enableOrdering
 
       assert(r1.values.a == 1)
       r1.values.a: Int ^^ AffectOrdering
 
-      val r2 = TypedRow.ofRecord(c = 1.1) ++ r1
+      val r2 = TypedRow.ofNamedArgs(c = 1.1) ++ r1
       r2.values.a: Int ^^ AffectOrdering
       r2.values.c: Double
 
@@ -77,28 +207,11 @@ class TypedRowSpec extends BaseSpec {
       )
     }
 
-    it("native") {
+    it("summon") {
 
-      val r1 = TypedRow.ofRecord(a = 1)
+      val r1 = TypedRow.ofNamedArgs(a = 1, b = "ab").enableOrdering
 
-      {
-        val fn = TypedRow.For[r1.Repr].NativeOrdering().fn
-        fn(r1).runtimeList.mkString(",").shouldBe("()")
-      }
-
-      val r2 = r1.enableOrdering
-
-      {
-        val fn = TypedRow.For[r2.Repr].NativeOrdering().fn
-        fn(r2).runtimeList.mkString(",").shouldBe("1")
-      }
-
-      val r3 = TypedRow.ofRecord(b = 1.1) ++ r2
-
-      {
-        val fn = TypedRow.For[r3.Repr].NativeOrdering().fn
-        fn(r3).runtimeList.mkString(",").shouldBe("(),1")
-      }
+      val ordering = implicitly[Ordering[TypedRow[r1.Repr]]]
     }
   }
 

@@ -2,9 +2,9 @@ package com.tribbloids.spookystuff.frameless
 
 import frameless.{NewInstanceExprs, RecordEncoderFields}
 import org.apache.spark.sql.catalyst.expressions.{CreateNamedStruct, Expression, GetStructField, Literal}
-import shapeless.{HList, Lazy}
+import shapeless.Lazy
 
-case class RecordEncoderStage1[G <: HList, H <: HList](
+case class RecordEncoderStage1[G <: Tuple, H <: Tuple](
 )(
     implicit
 //    i1: DropUnitValues.Aux[G, H],
@@ -39,7 +39,7 @@ case class RecordEncoderStage1[G <: HList, H <: HList](
 
 object RecordEncoderStage1 {
 
-  implicit def usingDerivation[G <: HList, H <: HList](
+  implicit def usingDerivation[G <: Tuple, H <: Tuple](
       implicit
       i3: Lazy[RecordEncoderFields[H]],
       i4: Lazy[NewInstanceExprs[G]]
