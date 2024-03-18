@@ -1,7 +1,6 @@
 package com.tribbloids.spookystuff.frameless
 
 import ai.acyclic.prover.commons.function.Hom
-import com.tribbloids.spookystuff.frameless.TypedRow.Caps
 import shapeless.ops.hlist.Mapper
 
 class TypedRowOrdering {
@@ -10,6 +9,8 @@ class TypedRowOrdering {
 }
 
 object TypedRowOrdering {
+
+  import Field._
 
   object Default extends TypedRowOrdering {
 
@@ -22,7 +23,7 @@ object TypedRowOrdering {
 
     object By extends By_Imp0 {
 
-      implicit def accept[T <: Caps.^^[_, Caps.AffectOrdering]]: T =>> T = at[T] { v: T =>
+      implicit def accept[T <: _ ^^ CanSort]: T =>> T = at[T] { v: T =>
         v
       }
     }

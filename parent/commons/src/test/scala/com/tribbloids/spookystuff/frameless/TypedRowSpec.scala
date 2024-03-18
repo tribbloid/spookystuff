@@ -7,12 +7,11 @@ import frameless.{TypedDataset, TypedEncoder}
 import org.apache.spark.sql.SparkSession
 import shapeless.HList
 import shapeless.record.Record
-import shapeless.test.illTyped
 
 class TypedRowSpec extends BaseSpec {
 
   implicit def session: SparkSession = TestHelper.TestSparkSession
-  import TypedRow.Caps._
+  import TypedRow._
 
   it("Encoder") {
 
@@ -102,7 +101,7 @@ class TypedRowSpec extends BaseSpec {
     it("value") {
 
       val t1 = TypedRow.ofNamedArgs(x = 1, y = "ab")
-      val col = t1.columns.y
+      val col = t1.fields.y
 
       assert(col.value == "ab")
     }
@@ -110,7 +109,7 @@ class TypedRowSpec extends BaseSpec {
     it("asTypedRow") {
 
       val t1 = TypedRow.ofNamedArgs(x = 1, y = "ab")
-      val col = t1.columns.y
+      val col = t1.fields.y
 
       val colAsRow = col.asTypedRow
       val colAsRowGT = TypedRow.ofNamedArgs(y = "ab")
@@ -122,7 +121,7 @@ class TypedRowSpec extends BaseSpec {
     it("update") {
 
       val t1 = TypedRow.ofNamedArgs(x = 1, y = "ab")
-      val col = t1.columns.y
+      val col = t1.fields.y
 
       val t2 = col.update(1.0)
       val t2GT = t1 ++< TypedRow.ofNamedArgs(y = 1.0)
@@ -186,32 +185,6 @@ class TypedRowSpec extends BaseSpec {
           | |-- z: double (nullable = true)
           |""".stripMargin
       )
-    }
-  }
-
-  describe("ordering") {
-
-    it("enable") {
-
-      val r1 = TypedRow.ofNamedArgs(a = 1, b = "ab").enableOrdering
-
-      assert(r1.values.a == 1)
-      r1.values.a: Int ^^ AffectOrdering
-
-      val r2 = TypedRow.ofNamedArgs(c = 1.1) ++ r1
-      r2.values.a: Int ^^ AffectOrdering
-      r2.values.c: Double
-
-      illTyped(
-        "r2.c: Double ^^ AffectOrdering"
-      )
-    }
-
-    it("summon") {
-
-      val r1 = TypedRow.ofNamedArgs(a = 1, b = "ab").enableOrdering
-
-      val ordering = implicitly[Ordering[TypedRow[r1.Repr]]]
     }
   }
 

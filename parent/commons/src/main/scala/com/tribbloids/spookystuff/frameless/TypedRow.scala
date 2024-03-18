@@ -1,11 +1,10 @@
 package com.tribbloids.spookystuff.frameless
 
 import ai.acyclic.prover.commons.function.Hom
-import ai.acyclic.prover.commons.util.Capabilities
+import com.tribbloids.spookystuff.frameless.Field.CanSort
 import frameless.TypedEncoder
 import org.apache.spark.sql.catalyst.InternalRow
 import org.apache.spark.sql.types.{DataType, ObjectType}
-import shapeless.ops.record._
 import shapeless.{Poly2, RecordArgs}
 
 import scala.collection.immutable.ArraySeq
@@ -29,8 +28,8 @@ case class TypedRow[L <: Tuple](
   //  since graphframe table always demand id/src/tgt columns, should the default
   //  representation be SemiRow? that contains both structured and newType part?
 
-  import TypedRow._
   import shapeless.record._
+  import shapeless.ops.record._
 
   type Repr = L
 
@@ -39,16 +38,20 @@ case class TypedRow[L <: Tuple](
   // DO NOT RENAME! used by reflection-based Catalyst Encoder
   def _valueAtIndex(i: Int): Any = cells.apply(i)
 
-  sealed class Select[K, V](
-      key: K
+  sealed class FieldView[K, V](
+      val key: K
   )(
       val selector: Selector.Aux[L, K, V]
   ) {
 
-    lazy val value: V = selector(repr)
+    lazy val valueWithField: V = selector(repr)
+
+    lazy val value: V = {
+      valueWithField // TODO: should remove Field capability mixins
+    }
 
     lazy val asTypedRow: TypedRow[(K ->> V) *: Tuple.Empty] = {
-      TypedRow.ofTuple(->>[K](value) *: Tuple.Empty)
+      TypedRow.ofTuple(->>[K](valueWithField) *: Tuple.Empty)
     }
 
     //    lazy val value: V = selector(asRepr)
@@ -86,39 +89,31 @@ case class TypedRow[L <: Tuple](
       * To be used in [[org.apache.spark.sql.Dataset]].flatMap
       */
 
-    def explode[VV](
+    def explode[VV, R](
+        fn: VV => R
     )(
         implicit
         ev0: V <:< Seq[VV],
-        ev1: MergeWith[L, (K ->> VV) *: Tuple.Empty, mergeKeepRight.fn.type]
+        ev1: MergeWith[L, (K ->> R) *: Tuple.Empty, mergeKeepRight.fn.type]
     ): Seq[TypedRow[ev1.Out]] = {
 
-      val results = value.map { v: VV =>
-        update(v)(ev1)
+      val results = valueWithField.map { v: VV =>
+        val r = fn(v)
+        update(r)(ev1)
       }
       results
     }
   }
 
-  object columns extends Dynamic {
+  object fields extends Dynamic {
 
     def selectDynamic(key: String with Singleton)(
         implicit
         selector: Selector[L, Col[key.type]]
-    ) = new Select[Col[key.type], selector.Out](Col(key))(selector)
+    ) = new FieldView[Col[key.type], selector.Out](Col(key))(selector)
   }
 
-  object values extends Dynamic {
-
-    /**
-      * Allows dynamic-style access to fields of the record whose keys are Symbols. See
-      * [[shapeless.syntax.DynamicRecordOps[_]] for original version
-      */
-    def selectDynamic(key: String with Singleton)(
-        implicit
-        selector: Selector[L, Col[key.type]]
-    ): selector.Out = selector(repr)
-  }
+  @transient lazy val values: TypedRow.DynamicValues[L] = TypedRow.DynamicValues(this)
 
   @transient lazy val repr: L = cells
     .foldRight[Tuple](Tuple.Empty) { (s, x) =>
@@ -126,12 +121,12 @@ case class TypedRow[L <: Tuple](
     }
     .asInstanceOf[L]
 
-  def enableOrdering(
+  def canSortAll(
       implicit
-      ev: MapValues[Caps.AffectOrdering.Enable.asShapeless.type, L]
+      ev: MapValues[CanSort.Enable.asShapeless.type, L]
   ): TypedRow[ev.Out] = {
 
-    val mapped = repr.mapValues(Caps.AffectOrdering.Enable)(ev)
+    val mapped = repr.mapValues(CanSort.Enable)(ev)
 
     TypedRow.ofTuple(mapped)
   }
@@ -197,6 +192,25 @@ case class TypedRow[L <: Tuple](
 
 object TypedRow extends TypedRowOrdering.Default.Implicits {
 
+  import shapeless.ops.record._
+
+  case class DynamicValues[T <: Tuple](row: TypedRow[T]) extends Dynamic {
+
+    def fields: row.fields.type = row.fields
+
+    /**
+      * Allows dynamic-style access to fields of the record whose keys are Symbols. See
+      * [[shapeless.syntax.DynamicRecordOps[_]] for original version
+      */
+    def selectDynamic(key: String with Singleton)(
+        implicit
+        selector: Selector[T, Col[key.type]]
+    ): selector.Out = {
+
+      fields.selectDynamic(key).value
+    }
+  }
+
   object ofNamedArgs extends RecordArgs {
 
     def applyRecord[L <: Tuple](list: L): TypedRow[L] = ofTuple(list)
@@ -236,20 +250,6 @@ object TypedRow extends TypedRowOrdering.Default.Implicits {
       stage1: RecordEncoderStage1[G, G],
       classTag: ClassTag[TypedRow[G]]
   ): TypedEncoder[TypedRow[G]] = RecordEncoder.ForTypedRow[G, G]()
-
-  object Caps extends Capabilities {
-
-    trait AffectOrdering extends Cap
-    object AffectOrdering {
-
-      object Enable extends Hom.Poly {
-
-        implicit def only[T] = at[T] { v =>
-          v.asInstanceOf[T ^^ AffectOrdering]
-        }
-      }
-    }
-  }
 
   trait FromAny extends Hom.Poly {
 

@@ -35,11 +35,6 @@ object Field {
 case class Field(
     name: String,
     isTransient: Boolean = false,
-    // can be referred by extractions, but has lower priority
-    // is removed when conflict resolving with an identical field
-    //    isTemporary: Boolean = false, // TODO: enable
-    // temporary fields should be evicted after every ExecutionPlan
-    isReserved: Boolean = false,
     conflictResolving: Field.ConflictResolving = Field.Error,
     // TODO, this entire conflict resolving mechanism should be moved to typed Extractor, along with "isTransient"
     isOrdinal: Boolean = false, // represents ordinal index in flatten/explore
@@ -50,9 +45,7 @@ case class Field(
 
   lazy val samenessDelegatedTo: List[Any] = List(
     name,
-    isTransient,
-//    isTemporary,
-    isReserved
+    isTransient
   )
 
   def ! : Field = this.copy(conflictResolving = Field.ReplaceIfNotNull)
