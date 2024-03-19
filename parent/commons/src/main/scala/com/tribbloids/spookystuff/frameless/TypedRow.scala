@@ -113,7 +113,7 @@ case class TypedRow[L <: Tuple](
     ) = new FieldView[Col[key.type], selector.Out](Col(key))(selector)
   }
 
-  @transient lazy val values: TypedRow.DynamicValues[L] = TypedRow.DynamicValues(this)
+  @transient lazy val values: TypedRow.DynamicProductAPI[L] = TypedRow.DynamicProductAPI(this)
 
   @transient lazy val repr: L = cells
     .foldRight[Tuple](Tuple.Empty) { (s, x) =>
@@ -194,9 +194,9 @@ object TypedRow extends TypedRowOrdering.Default.Implicits {
 
   import shapeless.ops.record._
 
-  case class DynamicValues[T <: Tuple](row: TypedRow[T]) extends Dynamic {
+  case class DynamicProductAPI[T <: Tuple](internal: TypedRow[T]) extends Dynamic {
 
-    def fields: row.fields.type = row.fields
+    def fields: internal.fields.type = internal.fields
 
     /**
       * Allows dynamic-style access to fields of the record whose keys are Symbols. See
