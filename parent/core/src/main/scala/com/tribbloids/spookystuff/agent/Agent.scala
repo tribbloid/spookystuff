@@ -79,7 +79,7 @@ class Agent(
         }
       }
 
-      require(cached.lookup.underlying.isEmpty, "cache not empty")
+      require(cached.lookup.isEmpty, "cache not empty")
 
       TreeThrowable.&&&(trials)
     }
