@@ -184,7 +184,7 @@ case class IncrementallyCachedRDD[T: ClassTag](
 
       def apply(from: InTask, by: InTask): Commissioned = {
 
-        val result = existing.getOrElseUpdateSynchronously(from -> by) {
+        val result = existing.getOrElseUpdateOnce(from -> by) {
 
           new Commissioned(from, by)
         }
@@ -398,7 +398,7 @@ object IncrementallyCachedRDD {
 
     def getOrCreate(id: Int)(create: => T): T = {
 
-      existing.getOrElseUpdateSynchronously(id) {
+      existing.getOrElseUpdateOnce(id) {
 
         create
       }

@@ -75,7 +75,7 @@ object Cleanable {
 
   case class Select1Batch(id: BatchID) {
 
-    def getOrExecute(exe: () => Batch): Batch = uncleaned.getOrElseUpdateSynchronously(id) {
+    def getOrExecute(exe: () => Batch): Batch = uncleaned.getOrElseUpdateOnce(id) {
 
       exe()
     }

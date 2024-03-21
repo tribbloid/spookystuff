@@ -1,6 +1,6 @@
 package com.tribbloids.spookystuff.commons
 
-import com.tribbloids.spookystuff.commons.collection.MultiMapOps
+import ai.acyclic.prover.commons.collection.MultiMaps
 import com.tribbloids.spookystuff.testutils.BaseSpec
 
 import scala.collection.mutable.ArrayBuffer
@@ -11,8 +11,8 @@ trait PairwiseConversionMixin extends BaseSpec {
   import PairwiseConversionMixin._
 
   val registryKeys: ArrayBuffer[String] = ArrayBuffer.empty[String]
-  val registry: MultiMapOps.Mutable[String, () => Unit] =
-    MultiMapOps.Mutable.empty
+  val registry: MultiMaps.Mutable[String, () => Unit] =
+    MultiMaps.Mutable.empty
 
   trait PairwiseCases extends Serializable {
 

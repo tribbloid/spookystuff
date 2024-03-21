@@ -63,7 +63,8 @@ object PathPlanning {
 
         val allVisitedOpt =
           ExploreLocalCache
-            .get(bestOpenGroup -> params.executionID)
+            .getExecution(params.executionID)
+            .getData(bestOpenGroup)
             .reduceOption(visitedReducer)
 
         val selected = allVisitedOpt match {

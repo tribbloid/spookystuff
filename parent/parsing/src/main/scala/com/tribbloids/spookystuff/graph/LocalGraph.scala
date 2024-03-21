@@ -3,10 +3,10 @@ package com.tribbloids.spookystuff.graph
 import com.tribbloids.spookystuff.graph.Element.{Edge, NodeTriplet}
 import com.tribbloids.spookystuff.graph.IDAlgebra.Rotator
 import com.tribbloids.spookystuff.commons.Types
-import com.tribbloids.spookystuff.commons.collection.MultiMapOps
 
 import scala.collection.mutable
 import scala.reflect.ClassTag
+import ai.acyclic.prover.commons.collection.MultiMaps
 
 //optimised for speed rather than memory usage
 //NOT thread safe!
@@ -15,7 +15,7 @@ import scala.reflect.ClassTag
 //TODO: also need SparkGraphImpl, use GraphX or GraphFrame depending on their maturity
 case class LocalGraph[D <: Domain] private (
     nodeMap: mutable.Map[D#ID, NodeTriplet[D]],
-    edgeMap: MultiMapOps.Mutable[(D#ID, D#ID), Edge[D]]
+    edgeMap: MultiMaps.Mutable[(D#ID, D#ID), Edge[D]]
 )(
     implicit
     override val algebra: Algebra[D]
@@ -77,7 +77,7 @@ case class LocalGraph[D <: Domain] private (
       nodeMap.get(id).map(id -> _)
     }: _*)
 
-  override def getEdges(ids: Seq[(ID, ID)]): MultiMapOps.Immutable[(ID, ID), _Edge] =
+  override def getEdges(ids: Seq[(ID, ID)]): MultiMaps.Immutable[(ID, ID), _Edge] =
     Map(ids.flatMap { pair =>
       edgeMap.get(pair).map(pair -> _)
     }: _*)
@@ -122,7 +122,7 @@ object LocalGraph {
           result
       }
 
-      val nodeMap: MultiMapOps.Mutable[ID, _NodeTriplet] = MultiMapOps.Mutable.empty
+      val nodeMap: MultiMaps.Mutable[ID, _NodeTriplet] = MultiMaps.Mutable.empty
       for (nn <- linkedNodes) {
         nodeMap.put1(nn.samenessDelegatedTo, nn)
       }
@@ -137,7 +137,7 @@ object LocalGraph {
         mutable.Map(result.toSeq: _*)
       }
 
-      val edgeMap: MultiMapOps.Mutable[(ID, ID), _Edge] = MultiMapOps.Mutable.empty
+      val edgeMap: MultiMaps.Mutable[(ID, ID), _Edge] = MultiMaps.Mutable.empty
       for (ee <- edges) {
         edgeMap.put1(ee.from_to, ee)
       }
@@ -185,7 +185,7 @@ object LocalGraph {
       }
 
       val uNodeMap: mutable.Map[ID, _NodeTriplet] = v1.nodeMap ++ v2Reduced
-      val uEdgeMap: MultiMapOps.Mutable[(ID, ID), _Edge] = {
+      val uEdgeMap: MultiMaps.Mutable[(ID, ID), _Edge] = {
         val result = v1.edgeMap +:+ v2.edgeMap
         result.distinctAllValues()
         result

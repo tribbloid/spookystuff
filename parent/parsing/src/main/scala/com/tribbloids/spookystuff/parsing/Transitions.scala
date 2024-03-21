@@ -1,7 +1,7 @@
 package com.tribbloids.spookystuff.parsing
 
+import ai.acyclic.prover.commons.collection.MultiMaps
 import com.tribbloids.spookystuff.parsing.Pattern.Token
-import com.tribbloids.spookystuff.commons.collection.MultiMapOps
 
 case class Transitions(vs: Seq[Transition]) {
 
@@ -10,8 +10,8 @@ case class Transitions(vs: Seq[Transition]) {
   }
 
   // Not the fastest, Charset doesn't grow dynamically
-  val transitionsMap: MultiMapOps[Token, Transition] = {
+  val transitionsMap: MultiMaps.Immutable[Token, Transition] = {
 
-    MultiMapOps.Immutable.apply(kvs: _*)
+    MultiMaps.Immutable.apply(kvs: _*)
   }
 }

@@ -1,6 +1,6 @@
 package com.tribbloids.spookystuff.conf
 
-import ai.acyclic.prover.commons.function.System.MorphismOps
+import ai.acyclic.prover.commons.function.HomSystem.MorphismOps
 import ai.acyclic.prover.commons.function.Impl
 import ai.acyclic.prover.commons.same.Same
 import ai.acyclic.prover.commons.util.Caching

@@ -1,6 +1,9 @@
 package com.tribbloids.spookystuff.caching
 
-import ai.acyclic.prover.commons.util.Caching.Soft.View
+import ai.acyclic.prover.commons.function
+import ai.acyclic.prover.commons.function.Impl
+import ai.acyclic.prover.commons.same.Same
+import ai.acyclic.prover.commons.util.Caching
 import ai.acyclic.prover.commons.util.Caching.{ConcurrentMap, ConcurrentSet}
 import com.tribbloids.spookystuff.execution.ExplorePlan.ExeID
 import com.tribbloids.spookystuff.execution.ExploreRunner
@@ -11,23 +14,34 @@ import com.tribbloids.spookystuff.row.{DataRow, LocalityGroup}
   */
 object ExploreLocalCache {
 
-  // (Trace, ExecutionID) -> Squashed Rows
-  // exeID is used to segment Squashed Rows from different jobs
-  val committedVisited: View[(LocalityGroup, ExeID), Vector[DataRow]] =
-    View()
+  case class Execution(
+      ongoing: ConcurrentSet[ExploreRunner] = ConcurrentSet(), // no eviction
+      visited: ConcurrentMap[LocalityGroup, Vector[DataRow]] = ConcurrentMap() // no eviction
+  ) {
 
-  val onGoings: ConcurrentMap[ExeID, ConcurrentSet[ExploreRunner]] =
-    ConcurrentMap() // executionID -> running ExploreStateView
+    def getData(key: LocalityGroup): Set[Vector[DataRow]] = {
+
+      val ongoingVisited = ongoing
+        .flatMap { v =>
+          v.visited.get(key)
+        }
+
+      val committedVisited = visited.get(key)
+
+      ongoingVisited.toSet ++ committedVisited
+    }
+  }
+
+  val getExecution: function.HomSystem.FnImpl.Cached[ExeID, Execution] = {
+    val raw = Impl { _: ExeID =>
+      Execution()
+    }
+    raw.cachedBy(Same.ByEquality.Lookup(Caching.Soft.build()))
+  }
 
   def getOnGoingRunners(exeID: ExeID): ConcurrentSet[ExploreRunner] = {
     //    onGoings.synchronized{
-    onGoings
-      .getOrElseUpdate(
-        exeID, {
-          val v = ConcurrentSet[ExploreRunner]()
-          v
-        }
-      )
+    getExecution(exeID).ongoing
   }
 
   def commitVisited(
@@ -42,10 +56,12 @@ object ExploreLocalCache {
         reducer: DataRow.Reducer
     ): Unit = {
 
-      committedVisited.synchronized {
-        val oldVs = committedVisited.get(key)
+      val exe = getExecution(key._2)
+
+      exe.visited.synchronized {
+        val oldVs = exe.visited.get(key._1)
         val newVs = (Seq(value) ++ oldVs).reduce(reducer)
-        committedVisited.put(key, newVs)
+        exe.visited.put(key._1, newVs)
       }
     }
 
@@ -68,38 +84,6 @@ object ExploreLocalCache {
   }
 
   def deregisterAll(exeID: ExeID): Unit = {
-    onGoings -= exeID
-  }
-
-  def get(key: (LocalityGroup, ExeID)): Set[Vector[DataRow]] = {
-    val onGoing = this
-      .getOnGoingRunners(key._2)
-
-    val onGoingVisitedSet = onGoing
-      .flatMap { v =>
-        v.visited.get(key._1)
-      }
-
-    onGoingVisitedSet.toSet ++ committedVisited.get(key)
-  }
-
-  @deprecated // TODO: remove, useless
-  def getAll(exeID: ExeID): Map[LocalityGroup, Vector[DataRow]] = {
-    val onGoing: Map[LocalityGroup, Vector[DataRow]] = this
-      .getOnGoingRunners(exeID)
-      .map(_.visited.toMap)
-      .reduceOption { (v1, v2) =>
-        v1 ++ v2
-      }
-      .getOrElse(Map.empty)
-
-    val commited = committedVisited.toMap.view
-      .filterKeys(_._2 == exeID)
-      .map {
-        case (k, v) =>
-          k._1 -> v
-      }
-
-    onGoing ++ commited
+    getExecution.underlyingCache.remove(exeID)
   }
 }

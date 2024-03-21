@@ -70,7 +70,7 @@ class AssertSerializableSpike extends BaseSpec {
       v.put("a", 1)
       v
     } { v =>
-      AssertWeaklySerializable[Caching.Strong.View[String, Int]](
+      AssertWeaklySerializable[Caching.Strong.Impl[String, Int]](
         v,
         condition = { (v1, v2) =>
           v1 == v2
@@ -88,7 +88,7 @@ class AssertSerializableSpike extends BaseSpec {
     }
 
     typeOfIt {
-      val v = Caching.Weak.View[String, Int]()
+      val v = Caching.Weak.Impl[String, Int]()
       v.put("a", 1)
       v
     } { v =>

@@ -1,6 +1,6 @@
 package com.tribbloids.spookystuff
 
-import ai.acyclic.prover.commons.function.{Impl, System}
+import ai.acyclic.prover.commons.function.{HomSystem, Impl}
 import ai.acyclic.prover.commons.spark.{DatasetView, SparkContextView}
 import com.tribbloids.spookystuff.conf._
 import com.tribbloids.spookystuff.metrics.SpookyMetrics
@@ -47,7 +47,7 @@ object SpookyContext {
     def _WithCtx: SpookyContext => _WithCtx
 
     // cached results will be dropped for being NOTSerializable
-    @transient final lazy val withCtx: System.FnImpl.Cached[SpookyContext, _WithCtx] =
+    @transient final lazy val withCtx: HomSystem.FnImpl.Cached[SpookyContext, _WithCtx] =
       Impl(_WithCtx).cachedBy()
   }
 }
@@ -105,7 +105,7 @@ case class SpookyContext(
     requireNotShipped()
 
     vs.foreach { plugin =>
-      Plugins.lookup.updateOverride(plugin.pluginSystem, plugin)
+      Plugins.lookup.update(plugin.pluginSystem, plugin)
     }
 
     this
