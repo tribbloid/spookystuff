@@ -6,20 +6,21 @@ import ai.acyclic.prover.commons.same.Same
 import ai.acyclic.prover.commons.util.Caching
 import ai.acyclic.prover.commons.util.Caching.{ConcurrentMap, ConcurrentSet}
 import com.tribbloids.spookystuff.execution.ExplorePlan.ExeID
-import com.tribbloids.spookystuff.execution.ExploreRunner
-import com.tribbloids.spookystuff.row.{DataRow, LocalityGroup}
+import com.tribbloids.spookystuff.execution.{ExploreRunner, ExploreSupport}
+import com.tribbloids.spookystuff.row.{Data, LocalityGroup}
 
 /**
   * Singleton, always in the JVM and shared by all executors on the same machine.
   */
 object ExploreLocalCache {
+  // can it be justified to make this be created on driver and broadcasted to all executors?
 
   case class Execution(
       ongoing: ConcurrentSet[ExploreRunner] = ConcurrentSet(), // no eviction
       visited: ConcurrentMap[LocalityGroup, Vector[DataRow]] = ConcurrentMap() // no eviction
   ) {
 
-    def getData(key: LocalityGroup): Set[Vector[DataRow]] = {
+    def getData(key: LocalityGroup): Set[Vector[Data.WithLineage[_]]] = {
 
       val ongoingVisited = ongoing
         .flatMap { v =>
@@ -39,21 +40,21 @@ object ExploreLocalCache {
     raw.cachedBy(Same.ByEquality.Lookup(Caching.Soft.build()))
   }
 
-  def getOnGoingRunners(exeID: ExeID): ConcurrentSet[ExploreRunner] = {
+  def getOnGoingRunners(exeID: ExeID): ConcurrentSet[ExploreRunner[D]] = {
     //    onGoings.synchronized{
     getExecution(exeID).ongoing
   }
 
   def commitVisited(
-      v: ExploreRunner,
-      reducer: DataRow.Reducer
+      v: ExploreRunner[D],
+      reducer: Reducer
   ): Unit = {
 
     // TODO relax synchronized check to accelerate?
     def commit1(
         key: (LocalityGroup, ExeID),
-        value: Vector[DataRow],
-        reducer: DataRow.Reducer
+        value: Vector[Lineage],
+        reducer: Reducer
     ): Unit = {
 
       val exe = getExecution(key._2)
@@ -75,11 +76,11 @@ object ExploreLocalCache {
     }
   }
 
-  def register(v: ExploreRunner): Unit = {
+  def register(v: ExploreRunner[D]): Unit = {
     getOnGoingRunners(v.exeID) += v
   }
 
-  def deregister(v: ExploreRunner): Unit = {
+  def deregister(v: ExploreRunner[D]): Unit = {
     getOnGoingRunners(v.exeID) -= v
   }
 

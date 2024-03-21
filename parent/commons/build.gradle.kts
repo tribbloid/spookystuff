@@ -12,9 +12,8 @@ dependencies {
 
     api("org.scala-lang.modules:scala-collection-compat_${vs.scala.binaryV}:2.11.0")
 
-    testImplementation(project(":prover-commons:meta2"))
-
 // https://mvnrepository.com/artifact/org.typelevel/frameless-dataset
-    implementation("org.typelevel:frameless-dataset_${vs.scala.binaryV}:0.16.0")
+    api("org.typelevel:frameless-dataset_${vs.scala.binaryV}:0.16.0")
 
+    testImplementation(project(":prover-commons:meta2"))
 }

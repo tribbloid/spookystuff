@@ -11,15 +11,6 @@ trait Actions extends ActionLike {
 
   final protected def childrenSkeleton: Trace = children.flatMap(_.skeleton)
 
-  final def doInterpolateSeq(pr: FetchedRow, schema: SpookySchema): Option[Trace] = {
-
-    val seq = children.map(_.doInterpolate(pr, schema))
-
-    if (seq.contains(None)) None
-    else Some(seq.flatten)
-
-  }
-
   // names are not encoded in PageUID and are injected after being read from cache
   override def injectFrom(same: ActionLike): Unit = {
     super.injectFrom(same)

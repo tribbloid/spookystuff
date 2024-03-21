@@ -28,13 +28,6 @@ case class TraceSet(self: Set[Trace]) extends HasTraceSet {
 
   def outputNames: Set[String] = asTraceSet.map(_.outputNames).reduce(_ ++ _)
 
-  def rewriteGlobally(schema: SpookySchema): TraceSet = {
-    val result = asTraceSet.flatMap { v =>
-      v.rewriteGlobally(schema)
-    }
-    TraceSet(result.map(_.trace))
-  }
-
   def avoidEmpty: NonEmpty = {
     val result = if (self.isEmpty) {
       TraceSet(Set(Trace.NoOp))

@@ -174,7 +174,7 @@ class ScalaDynamicExtractorSuite extends SpookyBaseSpec with FileDocsFixture wit
       Some(List[Get]('B))
     )
     val staticFn: (FR) => Option[Any] = { fr =>
-      val dr = fr.dataRow
+      val dr = fr.data
       val result =
         for (
           a <- dr.get('A);
@@ -197,7 +197,7 @@ class ScalaDynamicExtractorSuite extends SpookyBaseSpec with FileDocsFixture wit
       Some(List[Get]('B))
     )
     val staticFn: (FR) => Option[Any] = { fr =>
-      val dr = fr.dataRow
+      val dr = fr.data
       val result =
         for (
           a <- dr.get('A);
@@ -219,7 +219,7 @@ class ScalaDynamicExtractorSuite extends SpookyBaseSpec with FileDocsFixture wit
       Some(List[Get]('C))
     )
     val staticFn: (FR) => Option[Any] = { fr =>
-      val dr = fr.dataRow
+      val dr = fr.data
       val result = for (c <- dr.get('C)) yield {
         "abcde" concat c.asInstanceOf[String]
       }

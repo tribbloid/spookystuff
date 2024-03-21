@@ -43,7 +43,7 @@ class FetchWgetAndSaveIT extends ITBaseSpec {
     val raw = savedPageRows(0).docs.head.blob.raw
 
     assert(
-      savedPageRows(0).dataRow.get('saved_path).get.asInstanceOf[Iterable[Any]].toSeq contains
+      savedPageRows(0).data.get('saved_path).get.asInstanceOf[Iterable[Any]].toSeq contains
         s"file:${Envs.USER_DIR}/temp/spooky-integration/save/Wikipedia.png"
     )
 

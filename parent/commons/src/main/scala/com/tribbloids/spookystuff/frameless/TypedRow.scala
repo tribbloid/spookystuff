@@ -190,7 +190,7 @@ case class TypedRow[L <: Tuple](
 
 }
 
-object TypedRow extends TypedRowOrdering.Default.Implicits {
+object TypedRow extends TypedRowOrdering.Default.Giver {
 
   import shapeless.ops.record._
 

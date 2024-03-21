@@ -6,5 +6,5 @@ import scala.language.implicitConversions
 
 trait FetchedDatasetImp0 {
 
-  implicit def asPlan(self: FetchedDataset): ExecutionPlan = self.plan
+  implicit def asPlan[D](self: FetchedDataset[D]): ExecutionPlan[D] = self.plan
 }

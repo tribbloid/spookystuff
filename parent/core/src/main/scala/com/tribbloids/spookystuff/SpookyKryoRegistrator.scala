@@ -21,7 +21,7 @@ class SpookyKryoRegistrator extends KryoRegistrator {
     val array: Array[Class[_]] = Array(
       // used by PageRow
       classOf[TypeTag[_]],
-      classOf[FetchedRow],
+      classOf[FetchedRow[_]],
       classOf[ListMap[_, _]],
       classOf[UUID],
       classOf[Elements[_]],

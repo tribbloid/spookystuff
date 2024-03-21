@@ -2,7 +2,7 @@ package com.tribbloids.spookystuff.execution
 
 import com.tribbloids.spookystuff.actions._
 import com.tribbloids.spookystuff.dsl.GenPartitioner
-import com.tribbloids.spookystuff.row.{AgentState, DataRow, LocalityGroup, SquashedRDD, SquashedRow}
+import com.tribbloids.spookystuff.row.{AgentState, Lineage, LocalityGroup, SquashedRDD, SquashedRow}
 import org.apache.spark.rdd.RDD
 
 /**
@@ -18,7 +18,7 @@ case class FetchPlan(
 
   override def execute: SquashedRDD = {
 
-    val trace_DataRowRDD: RDD[(LocalityGroup, DataRow)] = child.squashedRDD
+    val trace_DataRowRDD: RDD[(LocalityGroup, Lineage)] = child.squashedRDD
       .flatMap { v =>
         v.withSchema(outputSchema).interpolateAndRewrite(traces)
       }

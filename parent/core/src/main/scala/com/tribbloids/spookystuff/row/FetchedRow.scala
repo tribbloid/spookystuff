@@ -5,26 +5,26 @@ import com.tribbloids.spookystuff.doc._
 
 object FetchedRow {
 
-  lazy val blank: FetchedRow = FetchedRow()
+//  lazy val blank: FetchedRow[Unit] = FetchedRow(())
 }
 
 /**
   * abstracted data structure where expression can be resolved. not the main data structure in execution plan,
   * SquashedPageRow is
   */
-case class FetchedRow(
-    dataRow: DataRow = DataRow.blank,
+case class FetchedRow[D](
+    data: D,
     // TODO: scope here is only to simplify SquashedRow.extract, all references in it are already lost
     observations: Seq[Observation] = Seq.empty,
     ordinal: Int = 0
 ) {
 
-  @transient lazy val dataRowWithScope: DataRow.WithScope = DataRow.WithScope(dataRow, observations.map(_.uid))
+  @transient lazy val dataWithScope: Data.WithScope[D] = Data.WithScope(data, observations.map(_.uid))
 
-  def squash: SquashedRow = {
+  def squash: SquashedRow[D] = {
     SquashedRow
       .ofData(
-        dataRowWithScope
+        dataWithScope
       )
       .cache(observations)
   }
@@ -50,7 +50,7 @@ case class FetchedRow(
     else docs.headOption
   }
 
-  @transient lazy val converted: FetchedRow = {
+  @transient lazy val converted: FetchedRow[D] = {
 
     this.copy(
       observations = this.observations.map {
@@ -70,13 +70,13 @@ case class FetchedRow(
     else pages.headOption
   }
 
-  def getUnstructured(field: Field): Option[Unstructured] = {
-
-    val page = getDoc(field.name)
-    val value = dataRow.getTyped[Unstructured](field)
-
-    if (page.nonEmpty && value.nonEmpty)
-      throw new UnsupportedOperationException("Ambiguous key referring to both pages and data")
-    else page.map(_.root).orElse(value)
-  }
+//  def getUnstructured(field: Field): Option[Unstructured] = {
+//
+//    val page = getDoc(field.name)
+//    val value = data.getTyped[Unstructured](field)
+//
+//    if (page.nonEmpty && value.nonEmpty)
+//      throw new UnsupportedOperationException("Ambiguous key referring to both pages and data")
+//    else page.map(_.root).orElse(value)
+//  }
 }

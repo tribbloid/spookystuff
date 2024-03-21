@@ -4,8 +4,6 @@ import com.tribbloids.spookystuff.SpookyContext
 import com.tribbloids.spookystuff.actions.Wayback.WaybackLike
 import com.tribbloids.spookystuff.actions._
 import com.tribbloids.spookystuff.doc.Observation
-import com.tribbloids.spookystuff.extractors.FR
-import com.tribbloids.spookystuff.extractors.impl.Lit
 
 /**
   * Created by peng on 07/06/16.
@@ -62,8 +60,7 @@ trait AbstractDocCache {
   def getTimeRange(action: Action, spooky: SpookyContext): (Long, Long) = {
     val waybackOption = action match {
       case w: WaybackLike =>
-        Option(w.wayback).map { expr =>
-          val result = expr.asInstanceOf[Lit[FR, Long]].value
+        w.wayback.map { result =>
           spooky.conf.IgnoreCachedDocsBefore match {
             case Some(date) =>
               assert(result > date.getTime, "SpookyConf.pageNotExpiredSince cannot be set to later than wayback date")

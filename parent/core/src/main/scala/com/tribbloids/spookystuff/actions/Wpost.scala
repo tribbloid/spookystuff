@@ -1,13 +1,10 @@
 package com.tribbloids.spookystuff.actions
 
 import com.tribbloids.spookystuff.Const
+import com.tribbloids.spookystuff.agent.Agent
 import com.tribbloids.spookystuff.caching.DocCacheLevel
 import com.tribbloids.spookystuff.doc.Observation.DocUID
 import com.tribbloids.spookystuff.doc._
-import com.tribbloids.spookystuff.extractors.impl.Lit
-import com.tribbloids.spookystuff.extractors.{Col, FR}
-import com.tribbloids.spookystuff.row.{FetchedRow, SpookySchema}
-import com.tribbloids.spookystuff.agent.Agent
 import com.tribbloids.spookystuff.io.CompoundResolver.OmniResolver
 import com.tribbloids.spookystuff.io.{HTTPResolver, ResourceMetadata, WriteMode}
 import org.apache.commons.io.IOUtils
@@ -20,14 +17,14 @@ import java.net.URI
 object Wpost {
 
   def apply(
-      uri: Col[String],
+      uri: String,
       filter: DocFilter = Const.defaultDocumentFilter,
       entity: HttpEntity = new StringEntity("")
   ): WpostImpl = WpostImpl(uri, filter)(entity)
 
   @SerialVersionUID(2416628905154681500L)
   case class WpostImpl private[actions] (
-      uri: Col[String],
+      uri: String,
       override val filter: DocFilter
   )(
       entity: HttpEntity // TODO: cannot be dumped or serialized, fix it!
@@ -72,8 +69,6 @@ object Wpost {
 
     override def doExeNoName(agent: Agent): Seq[Observation] = {
 
-      val uri = this.uri.value
-
       val resolver = getResolver(agent)
       val impl = resolver.getImpl(uri)
 
@@ -105,14 +100,6 @@ object Wpost {
           }
       }
       Seq(doc)
-    }
-
-    override def doInterpolate(pageRow: FetchedRow, schema: SpookySchema): Option[this.type] = {
-      val uriLit: Option[Lit[FR, String]] = resolveURI(pageRow, schema)
-
-      uriLit.flatMap(lit =>
-        this.copy(uri = lit)(entity).asInstanceOf[this.type].injectWayback(this.wayback, pageRow, schema)
-      )
     }
   }
 

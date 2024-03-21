@@ -183,46 +183,7 @@ case class Trace(
     result.map(v => v: Trace).toList
   }
 
-  // always has output (Sometimes Empty) to handle left join
-  override def doInterpolate(row: FetchedRow, schema: SpookySchema): Option[this.type] = {
-    val opt = this.doInterpolateSeq(row, schema)
-
-    opt.map { seq =>
-      new Trace(seq).asInstanceOf[this.type]
-    }
-  }
-
-  override def globalRewriteRules(schema: SpookySchema): List[RewriteRule[Trace]] =
-    children.flatMap(_.globalRewriteRules(schema)).distinct
-
-  def rewriteGlobally(schema: SpookySchema): TraceSet = {
-    val result = RewriteRule.Rules(globalRewriteRules(schema)).rewriteAll(Seq(this))
-    TraceSet.of(result: _*)
-  }
-
-  /**
-    * @param row
-    *   with regard to
-    * @param schema
-    *   with regard to
-    * @return
-    *
-    * will never return collection that contains NoOp
-    *
-    * may return empty TraceSet Which means interpolation has failed, leading to no executable trace
-    */
-  def interpolateAndRewrite(row: FetchedRow, schema: SpookySchema): TraceSet = {
-
-    val interpolated = interpolate(row, schema)
-    val rewritten: Seq[Trace] = interpolated.toSeq.flatMap { v =>
-      v.rewriteLocally(schema)
-    }
-
-    val result = TraceSet.of(rewritten.filter(_.nonEmpty): _*)
-    result
-  }
-
-  def rewriteLocally(schema: SpookySchema): TraceSet = {
+  def rewriteLocally[D](schema: SpookySchema[D]): TraceSet = {
 
     TraceSet.of(RewriteRule.Rules(localRewriteRules(schema)).rewriteAll(Seq(this)): _*)
   }

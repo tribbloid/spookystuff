@@ -2,27 +2,24 @@ package com.tribbloids.spookystuff.execution
 
 import com.tribbloids.spookystuff.SpookyContext
 import com.tribbloids.spookystuff.commons.TreeView
-import com.tribbloids.spookystuff.row._
 import com.tribbloids.spookystuff.commons.lifespan.Cleanable
+import com.tribbloids.spookystuff.row._
 import org.apache.spark.rdd.RDD
-import org.apache.spark.sql.types.DataType
 import org.apache.spark.storage.StorageLevel
-
-import scala.collection.immutable.ListMap
 
 object ExecutionPlan {}
 
 //right now it vaguely resembles SparkPlan in catalyst
 //TODO: may subclass SparkPlan in the future to generate DataFrame directly, but not so fast
-abstract class ExecutionPlan(
-    val children: Seq[ExecutionPlan],
+abstract class ExecutionPlan[D](
+    val children: Seq[ExecutionPlan[_]],
     val ec: SpookyExecutionContext
-) extends TreeView.Immutable[ExecutionPlan]
+) extends TreeView.Immutable[ExecutionPlan[_]]
     with Serializable
     with Cleanable {
 
   def this(
-      children: Seq[ExecutionPlan]
+      children: Seq[ExecutionPlan[_]]
   ) = this(
     children,
     children.map(_.ec).reduce(_ :++ _)
@@ -31,20 +28,14 @@ abstract class ExecutionPlan(
   def spooky: SpookyContext = ec.spooky
   def scratchRDDs: ScratchRDDs = ec.scratchRDDs
 
-  protected def computeSchema: SpookySchema
-  final lazy val outputSchema: SpookySchema = computeSchema
+  protected def computeSchema: SpookySchema[D]
+  final lazy val outputSchema: SpookySchema[D] = computeSchema
 
   {
     outputSchema
   }
 
-//  implicit def withSchema(row: SquashedRow): SquashedRow.WithSchema = row.withSchema(schema)
-
-  def fieldMap: ListMap[Field, DataType] = outputSchema.fieldTypes
-
-  def allSortIndices: List[IndexedField] = outputSchema.indexedFields.filter(_._1.self.isSortIndex)
-
-  def firstChildOpt: Option[ExecutionPlan] = children.headOption
+  def firstChildOpt: Option[ExecutionPlan[_]] = children.headOption
 
   // beconRDD is always empty, with fixed partitioning, cogroup with it to maximize Local Cache hitting chance
   // by default, inherit from the first child
@@ -53,9 +44,9 @@ abstract class ExecutionPlan(
 
   lazy val beaconRDDOpt: Option[BeaconRDD[LocalityGroup]] = inheritedBeaconRDDOpt
 
-  protected def execute: SquashedRDD
+  protected def execute: SquashedRDD[D]
 
-  final def fetch: SquashedRDD = {
+  final def fetch: SquashedRDD[D] = {
 
     this.execute
       .map { row =>
@@ -65,13 +56,13 @@ abstract class ExecutionPlan(
   }
 
   @volatile var storageLevel: StorageLevel = StorageLevel.NONE
-  @volatile var _cachedRDD: SquashedRDD = _
-  def cachedRDDOpt: Option[SquashedRDD] = Option(_cachedRDD)
+  @volatile var _cachedRDD: SquashedRDD[D] = _
+  def cachedRDDOpt: Option[SquashedRDD[D]] = Option(_cachedRDD)
 
   def isCached: Boolean = cachedRDDOpt.nonEmpty
 
   // TODO: cachedRDD is redundant? just make it lazy val!
-  final def squashedRDD: SquashedRDD = {
+  final def squashedRDD: SquashedRDD[D] = {
     ec.tryDeployPlugin()
     // any RDD access will cause all plugins to be deployed
 
@@ -91,11 +82,11 @@ abstract class ExecutionPlan(
     }
   }
 
-  @transient final lazy val SquashedRDDWithSchema: SquashedRDDWithSchema = {
+  @transient final lazy val SquashedRDDWithSchema = {
     squashedRDD.map(_.withSchema(outputSchema))
   }
 
-  @transient final lazy val fetchedRDD: RDD[FetchedRow] =
+  @transient final lazy val fetchedRDD: RDD[FetchedRow[D]] =
     SquashedRDDWithSchema.flatMap(row => row.withCtx.unSquash)
 
   // -------------------------------------

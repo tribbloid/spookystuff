@@ -1,7 +1,6 @@
 package com.tribbloids.spookystuff
 
 import com.tribbloids.spookystuff.dsl.DocFilterImpl
-import com.tribbloids.spookystuff.row.Field
 import org.apache.tika.detect.DefaultDetector
 
 import scala.language.implicitConversions
@@ -16,8 +15,6 @@ object Const {
   val allPagesExtractor: String = "S_*"
 
   val groupIndexExtractor: String = "G"
-
-  val defaultForkField: Field = Field("A", isTransient = true)
 
   val tikaDetector: DefaultDetector = new DefaultDetector()
 

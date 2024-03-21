@@ -4,7 +4,7 @@ import com.tribbloids.spookystuff.actions.Wget
 import com.tribbloids.spookystuff.doc.Observation
 import com.tribbloids.spookystuff.extractors.Alias
 import com.tribbloids.spookystuff.rdd.FetchedDataset
-import com.tribbloids.spookystuff.row.{DataRow, FetchedRow, Field, SquashedRow}
+import com.tribbloids.spookystuff.row.{Lineage, FetchedRow, Field, SquashedRow}
 import com.tribbloids.spookystuff.testutils.{FileDocsFixture, SpookyBaseSpec}
 
 /**
@@ -17,7 +17,7 @@ class TestDSL extends SpookyBaseSpec with FileDocsFixture {
   ).fetch(spooky)
 
   lazy val row: FetchedRow = SquashedRow
-    .ofData(DataRow.blank)
+    .ofData(Lineage.blank)
     .cache(pages)
     .withCtx(spooky)
     .resetScope
@@ -57,7 +57,7 @@ class TestDSL extends SpookyBaseSpec with FileDocsFixture {
   it("double quotes in selector by attribute should work") {
     val pages = Wget(HTML_URL).fetch(spooky).toArray
     val row = SquashedRow
-      .ofData(DataRow.blank)
+      .ofData(Lineage.blank)
       .cache(pages)
       .withCtx(spooky)
       .resetScope
@@ -88,7 +88,7 @@ class TestDSL extends SpookyBaseSpec with FileDocsFixture {
 
     val plan = ds.plan
     val rdd = plan.squashedRDD
-    assert(rdd.collect().toSeq == Seq(SquashedRow.ofData(DataRow.blank)))
+    assert(rdd.collect().toSeq == Seq(SquashedRow.ofData(Lineage.blank)))
     assert(ds.schema.fields == Nil)
     assert(!(plan.spooky eq spooky)) // configs should be deep copied
   }

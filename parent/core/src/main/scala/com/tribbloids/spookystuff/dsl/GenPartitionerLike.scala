@@ -1,7 +1,8 @@
 package com.tribbloids.spookystuff.dsl
 
 import com.tribbloids.spookystuff.dsl.GenPartitionerLike.Instance
-import com.tribbloids.spookystuff.row.{BeaconRDD, SpookySchema}
+import com.tribbloids.spookystuff.execution.SpookyExecutionContext
+import com.tribbloids.spookystuff.row.BeaconRDD
 import com.tribbloids.spookystuff.utils.locality.LocalityRDDView
 import org.apache.spark.rdd.RDD
 
@@ -13,7 +14,7 @@ import scala.reflect.ClassTag
 //TODO: name should be 'planner'?
 trait GenPartitionerLike[L, -U >: L] {
 
-  def getInstance[K >: L <: U: ClassTag](schema: SpookySchema): Instance[K]
+  def getInstance[K >: L <: U: ClassTag](ec: SpookyExecutionContext): Instance[K]
 }
 
 object GenPartitionerLike {
@@ -69,7 +70,7 @@ object GenPartitionerLike {
       val ctg: ClassTag[K]
   ) extends Instance[K] {
 
-    def schema: SpookySchema
+    def ec: SpookyExecutionContext
 
     def reduceByKey[V: ClassTag](
         rdd: RDD[(K, V)],
@@ -77,7 +78,6 @@ object GenPartitionerLike {
         beaconRDDOpt: Option[BeaconRDD[K]] = None
     ): RDD[(K, V)] = {
 
-      val ec = schema.ec
       ec.persist(rdd) // TODO: optional?
       val keys = rdd.keys
 
@@ -100,7 +100,7 @@ object GenPartitionerLike {
 
   trait PassThrough extends AnyGenPartitioner {
 
-    def getInstance[K: ClassTag](schema: SpookySchema): Instance[K] = {
+    def getInstance[K: ClassTag](ec: SpookyExecutionContext): Instance[K] = {
       Inst[K]()
     }
 

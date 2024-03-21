@@ -6,7 +6,7 @@ object __TypedExtractor {
     * This rewrite could introduce the following capabilities, and drastically simplify extractor impl (by eliminating
     * the need for 2-stage resolving)
     *
-    *   - Typed and Columnar [[com.tribbloids.spookystuff.row.DataRow]]
+    *   - Typed and Columnar [[com.tribbloids.spookystuff.row.Lineage]]
     *   - A NamedTuple API that can be smoothly transformed to Scala 3's canonical implementation in the future
     *   - Better frameless interoperability
     *   - more fluent API for custom extractors

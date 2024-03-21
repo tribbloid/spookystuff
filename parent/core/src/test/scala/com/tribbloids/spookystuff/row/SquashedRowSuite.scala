@@ -10,7 +10,7 @@ class SquashedRowSuite extends SpookyBaseSpec {
 
   it("execution yields at least 1 trajectory") {
     val row = FetchedRow.blank.squash
-    val grouped = row.dataRows.map(_.scopeUIDs)
+    val grouped = row.dataSeq.map(_.scopeUIDs)
     assert(grouped == Seq(Seq()))
   }
 
@@ -24,9 +24,9 @@ class SquashedRowSuite extends SpookyBaseSpec {
     val row1 = FetchedRow(observations = trace.fetch(spooky)).squash
 
     val row = row1
-      .explodeScope(_.splitByDistinctNames)
+      .flatMap(_.splitByDistinctNames)
 
-    val groupedNames = row.dataRows.map { dataRow =>
+    val groupedNames = row.dataSeq.map { dataRow =>
       dataRow.scopeUIDs
         .map {
           _.name

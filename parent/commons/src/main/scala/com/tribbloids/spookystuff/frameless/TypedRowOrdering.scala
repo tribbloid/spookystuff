@@ -59,7 +59,7 @@ object TypedRowOrdering {
       }
     }
 
-    trait Implicits {
+    trait Giver {
 
       implicit def _ordering[
           R <: Tuple,

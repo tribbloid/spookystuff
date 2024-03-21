@@ -3,7 +3,7 @@ package com.tribbloids.spookystuff.dsl
 import ai.acyclic.prover.commons.function.Hom.:=>
 import com.tribbloids.spookystuff.dsl.GenPartitionerLike.Instance
 import com.tribbloids.spookystuff.execution.SpookyExecutionContext
-import com.tribbloids.spookystuff.row.{BeaconRDD, SpookySchema}
+import com.tribbloids.spookystuff.row.BeaconRDD
 import org.apache.spark.Partitioner
 import org.apache.spark.rdd.RDD
 import org.apache.spark.storage.StorageLevel
@@ -17,7 +17,7 @@ object GenPartitioners {
   // this won't merge identical traces and do lookup, only used in case each resolve may yield different result
   case object Narrow extends AnyGenPartitioner {
 
-    def getInstance[K: ClassTag](schema: SpookySchema): Instance[K] = {
+    def getInstance[K: ClassTag](ec: SpookyExecutionContext): Instance[K] = {
       Inst[K]()
     }
 
@@ -47,7 +47,7 @@ object GenPartitioners {
       }
   ) extends AnyGenPartitioner {
 
-    def getInstance[K: ClassTag](schema: SpookySchema): Instance[K] = {
+    def getInstance[K: ClassTag](ec: SpookyExecutionContext): Instance[K] = {
       Inst[K]()
     }
 
@@ -76,8 +76,8 @@ object GenPartitioners {
       }
   ) extends AnyGenPartitioner {
 
-    def getInstance[K: ClassTag](schema: SpookySchema): Instance[K] = {
-      Inst[K](schema.ec)
+    def getInstance[K: ClassTag](ec: SpookyExecutionContext): Instance[K] = {
+      Inst[K](ec)
     }
 
     case class Inst[K](

@@ -2,13 +2,10 @@ package com.tribbloids.spookystuff.actions
 
 import com.tribbloids.spookystuff._
 import com.tribbloids.spookystuff.actions.Wayback.WaybackLike
-import com.tribbloids.spookystuff.caching.DocCacheLevel
-import com.tribbloids.spookystuff.doc.{NoDoc, Observation}
-import com.tribbloids.spookystuff.extractors.Extractor
-import com.tribbloids.spookystuff.extractors.impl.Lit
-import com.tribbloids.spookystuff.row.{FetchedRow, SpookySchema}
 import com.tribbloids.spookystuff.agent.Agent
+import com.tribbloids.spookystuff.caching.DocCacheLevel
 import com.tribbloids.spookystuff.commons.CommonUtils
+import com.tribbloids.spookystuff.doc.{NoDoc, Observation}
 import com.tribbloids.spookystuff.utils.http.HttpUtils
 import org.slf4j.LoggerFactory
 
@@ -29,17 +26,16 @@ abstract class Block(
     with Named
     with WaybackLike {
 
-  override def wayback: Extractor[Long] =
+  override def wayback: Option[Long] =
     children
       .flatMap {
         case w: WaybackLike => Some(w)
         case _              => None
       }
       .lastOption
-      .map {
+      .flatMap {
         _.wayback
       }
-      .orNull
 
   //  override def as(name: Symbol) = {
   //    super.as(name)
@@ -133,13 +129,6 @@ object ClusterRetry {
       pages.toSeq
     }
 
-    override def doInterpolate(row: FetchedRow, schema: SpookySchema): Option[this.type] = {
-      val opt = this.doInterpolateSeq(row, schema)
-      opt.map { seq =>
-        this.copy(children = seq)(this.retries, this.cacheEmptyOutput).asInstanceOf[this.type]
-      }
-
-    }
   }
 }
 
@@ -187,12 +176,6 @@ object LocalRetry {
       pages.toSeq
     }
 
-    override def doInterpolate(pageRow: FetchedRow, schema: SpookySchema): Option[this.type] = {
-      val opt = this.doInterpolateSeq(pageRow, schema)
-      opt.map { seq =>
-        this.copy(children = seq)(this.retries, this.cacheEmptyOutput).asInstanceOf[this.type]
-      }
-    }
   }
 }
 
@@ -235,12 +218,6 @@ final case class Loop(
     pages.toSeq
   }
 
-  override def doInterpolate(pageRow: FetchedRow, schema: SpookySchema): Option[this.type] = {
-    val opt = this.doInterpolateSeq(pageRow, schema)
-    opt.map { seq =>
-      this.copy(children = seq).asInstanceOf[this.type]
-    }
-  }
 }
 
 @SerialVersionUID(8623719358582480968L)
@@ -256,7 +233,7 @@ case class OAuthV2(self: Wget) extends Block(self) with Driverless {
       case Some(uri) =>
         val signed =
           HttpUtils.OauthV2(uri.toString, keys.consumerKey, keys.consumerSecret, keys.token, keys.tokenSecret)
-        self.copy(uri = Lit.erased(signed))
+        self.copy(uri = signed)
       case None =>
         self
     }
@@ -264,11 +241,6 @@ case class OAuthV2(self: Wget) extends Block(self) with Driverless {
   }
 
   override def skeleton: Option[OAuthV2.this.type] = Some(this)
-
-  override def doInterpolate(pageRow: FetchedRow, schema: SpookySchema): Option[this.type] =
-    self.interpolate(pageRow, schema).map { v =>
-      this.copy(self = v).asInstanceOf[this.type]
-    }
 
   override def doExeNoUID(agent: Agent): Seq[Observation] = {
     val effectiveWget = this.rewrite(agent)

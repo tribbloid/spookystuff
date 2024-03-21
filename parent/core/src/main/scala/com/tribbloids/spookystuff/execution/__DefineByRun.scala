@@ -11,7 +11,7 @@ object __DefineByRun {
     *     fetch & extract.
     *   - extract will be gone, fetch now becomes an alias of apply
     *   - define-by-run API takes a function [[com.tribbloids.spookystuff.row.AgentState]] =>
-    *     [[com.tribbloids.spookystuff.row.DataRow]] as its only argument
+    *     [[com.tribbloids.spookystuff.row.Lineage]] as its only argument
     *   - [[com.tribbloids.spookystuff.row.AgentState]] can read from state of
     *     [[com.tribbloids.spookystuff.agent.DriverLike]]s directly, there is no need for Snapshot/Screenshot
     *   - [[com.tribbloids.spookystuff.actions.Action]].interpolate will be gone, all their constructors only accept
@@ -27,7 +27,7 @@ object __DefineByRun {
     *     - CAUTION: but this is not always possible, some error may be marked successful in a partially executed
     *       dataset, only to be discovered in later stage. A typical example of this case is to use a LLM inference
     *       service for dynamic web scraping:
-    *       - the input collection of websites are sub-sampled and uploaded to LLM
+    *       - the input collection of websites are sub-sampled and uploaded to a foundation LLM
     *       - the LLM is prompted to generate executable code/cssSelector/xpathSelector for interaction & data
     *         extraction, which are validated saved/checkpointed for repeated execution
     *       - the code is executed for every input website

@@ -134,7 +134,7 @@ class SpookyContextSpec extends SpookyBaseSpec with FileDocsFixture {
     val spooky = this.spooky
     val rdd = spooky.create(Seq("a", "b"))
 
-    val data = rdd.squashedRDD.collect().flatMap(_.dataRows).map(_.data).toList
+    val data = rdd.squashedRDD.collect().flatMap(_.dataSeq).map(_.data).toList
     assert(data == List(Map(Field("_") -> "a"), Map(Field("_") -> "b")))
   }
 
@@ -143,7 +143,7 @@ class SpookyContextSpec extends SpookyBaseSpec with FileDocsFixture {
     val spooky = this.spooky
     val rdd = spooky.create(Seq(Map("1" -> "a"), Map("2" -> "b")))
 
-    val data = rdd.squashedRDD.collect().flatMap(_.dataRows).map(_.data).toList
+    val data = rdd.squashedRDD.collect().flatMap(_.dataSeq).map(_.data).toList
     assert(data == List(Map(Field("1") -> "a"), Map(Field("2") -> "b")))
   }
 
@@ -152,7 +152,7 @@ class SpookyContextSpec extends SpookyBaseSpec with FileDocsFixture {
     val spooky = this.spooky
     val rdd = spooky.create(Seq(Map('a1 -> "a"), Map('a2 -> "b")))
 
-    val data = rdd.squashedRDD.collect().flatMap(_.dataRows).map(_.data).toList
+    val data = rdd.squashedRDD.collect().flatMap(_.dataSeq).map(_.data).toList
     assert(data == List(Map(Field("a1") -> "a"), Map(Field("a2") -> "b")))
   }
 
@@ -161,7 +161,7 @@ class SpookyContextSpec extends SpookyBaseSpec with FileDocsFixture {
     val spooky = this.spooky
     val rdd = spooky.create(Seq(Map(1 -> "a"), Map(2 -> "b")))
 
-    val data = rdd.squashedRDD.collect().flatMap(_.dataRows).map(_.data).toList
+    val data = rdd.squashedRDD.collect().flatMap(_.dataSeq).map(_.data).toList
     assert(data == List(Map(Field("1") -> "a"), Map(Field("2") -> "b")))
   }
 

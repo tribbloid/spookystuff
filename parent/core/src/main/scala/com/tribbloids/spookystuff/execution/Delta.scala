@@ -5,9 +5,7 @@ import ai.acyclic.prover.commons.function.Impl.:=>
 import com.tribbloids.spookystuff.commons.refl.CatalystTypeOps
 import com.tribbloids.spookystuff.doc.Doc
 import com.tribbloids.spookystuff.dsl.ForkType
-import com.tribbloids.spookystuff.extractors.impl.Get
-import com.tribbloids.spookystuff.extractors.{Extractor, Resolved}
-import com.tribbloids.spookystuff.row.{DataRow, Field, Sampler, SpookySchema, SquashedRow, TypedField}
+import com.tribbloids.spookystuff.row.{Sampler, SpookySchema, SquashedRow}
 import org.apache.spark.sql.types.{ArrayType, IntegerType}
 
 trait Delta extends Serializable {
@@ -83,14 +81,14 @@ object Delta {
   }
 
   case class ExplodeScope(
-      scopeFn: DataRow.WithScope => Seq[DataRow.WithScope]
+      scopeFn: Lineage.WithScope => Seq[Lineage.WithScope]
   )(val childSchema: SpookySchema)
       extends Delta {
 
     override def outputSchema: SpookySchema = childSchema
 
     override lazy val fn: SquashedRow :=> SquashedRow = Impl { v =>
-      v.explodeScope(scopeFn)
+      v.flatMap(scopeFn)
     }
   }
 

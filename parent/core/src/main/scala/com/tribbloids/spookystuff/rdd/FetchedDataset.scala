@@ -30,7 +30,7 @@ import scala.reflect.ClassTag
 
 object FetchedDataset extends FetchedDatasetImp0 {
 
-  implicit def asRDD(self: FetchedDataset): RDD[FetchedRow] = self.rdd
+  implicit def asRDD[D](self: FetchedDataset[D]): RDD[FetchedRow[D]] = self.rdd
 }
 
 /**
@@ -39,18 +39,17 @@ object FetchedDataset extends FetchedDatasetImp0 {
   * names set to their {function name}.{variable names} CAUTION: naming convention: all function ended with _! will be
   * executed immediately, others will yield a logical plan that can be optimized & lazily executed
   */
-case class FetchedDataset(
-    plan: ExecutionPlan
+case class FetchedDataset[D](
+    plan: ExecutionPlan[D]
 ) extends FetchedDatasetAPI
     with CatalystTypeOps.ImplicitMixin {
 
   import SpookyViews._
 
-  implicit def fromExecutionPlan(plan: ExecutionPlan): FetchedDataset = FetchedDataset(plan)
+  implicit def fromExecutionPlan(plan: ExecutionPlan[D]): FetchedDataset[D] = FetchedDataset(plan)
 
   def this(
-      sourceRDD: SquashedRDD,
-      fieldMap: ListMap[Field, DataType],
+      sourceRDD: SquashedRDD[D],
       spooky: SpookyContext,
       beaconRDDOpt: Option[BeaconRDD[LocalityGroup]] = None
   ) = {
@@ -83,13 +82,13 @@ case class FetchedDataset(
   def schema: SpookySchema = plan.outputSchema
   def fields: List[Field] = schema.fields
 
-  def dataRDDSorted: RDD[DataRow] = {
+  def dataRDDSorted: RDD[Lineage] = {
 
     import scala.Ordering.Implicits._ // DO NOT DELETE!
 
     val sortIndices: List[Field] = plan.allSortIndices.map(_._1.self)
 
-    val dataRDD = this.map(_.dataRow)
+    val dataRDD = this.map(_.data)
     plan.scratchRDDPersist(dataRDD)
 
     val sorted = dataRDD.sortBy(v => v.sortIndex(sortIndices: _*))
@@ -103,7 +102,7 @@ case class FetchedDataset(
   def toMapRDD(sort: Boolean = false): RDD[Map[String, Any]] =
     spooky.withJob("toMapRDD", s"toMapRDD(sort=$sort)") {
       {
-        if (!sort) this.map(_.dataRow)
+        if (!sort) this.map(_.data)
         else dataRDDSorted
       }.map(_.toMap)
     }
@@ -118,7 +117,7 @@ case class FetchedDataset(
   ): RDD[InternalRow] = {
 
     val dataRDD =
-      if (!sort) this.map(_.dataRow)
+      if (!sort) this.map(_.data)
       else dataRDDSorted
 
     // TOOD: how to make it serializable so it can be reused by different partitions?
@@ -198,7 +197,7 @@ case class FetchedDataset(
   }
 
   def explodeObservations(
-      fn: DataRow.WithScope => Seq[DataRow.WithScope]
+      fn: Lineage.WithScope => Seq[Lineage.WithScope]
   ): FetchedDataset = {
     DeltaPlan.optimised(plan, ExplodeScope(fn))
   }
@@ -306,9 +305,7 @@ case class FetchedDataset(
       genPartitioner: GenPartitioner = spooky.conf.localityPartitioner
   ): FetchedDataset = {
 
-    val _traces = traces.asTraceSet.rewriteGlobally(schema)
-
-    FetchPlan(plan, _traces, keyBy, genPartitioner)
+    FetchPlan(plan, traces, keyBy, genPartitioner)
   }
 
   // shorthand of fetch

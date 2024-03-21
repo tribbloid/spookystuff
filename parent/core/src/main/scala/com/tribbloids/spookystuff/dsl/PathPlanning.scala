@@ -3,60 +3,61 @@ package com.tribbloids.spookystuff.dsl
 import ai.acyclic.prover.commons.util.Caching.ConcurrentMap
 import com.tribbloids.spookystuff.caching.ExploreLocalCache
 import com.tribbloids.spookystuff.execution.ExplorePlan.Params
+import com.tribbloids.spookystuff.execution.ExploreSupport
 import com.tribbloids.spookystuff.row._
 
 trait PathPlanning {
 
-  type _Impl <: PathPlanning.Impl
-  def _Impl: (Params, SpookySchema) => _Impl
+  type _Impl[D] <: PathPlanning.Impl[D]
+  def _Impl[D](params: Params, schema: SpookySchema[D]): _Impl[D]
 }
 
 object PathPlanning {
 
-  trait Impl extends Serializable {
+  trait Impl[D] extends ExploreSupport[D] with Serializable {
 
     val params: Params
-    val schema: SpookySchema
+    val schema: SpookySchema[D]
 
-    def openReducer: DataRow.Reducer
+    def openReducer: Reducer
 
-    def openReducer_global: DataRow.Reducer = openReducer
+    def openReducer_global: Reducer = openReducer
 
     def selectNextOpen(
-        open: ConcurrentMap[LocalityGroup, Vector[DataRow]]
-    ): (LocalityGroup, Vector[DataRow])
+        open: ConcurrentMap[LocalityGroup, Vector[Lineage]]
+    ): (LocalityGroup, Vector[Lineage])
 
-    def visitedReducer: DataRow.Reducer // precede eliminator
+    def visitedReducer: Reducer // precede eliminator
 
-    def visitedReducer_global: DataRow.Reducer = visitedReducer
+    def visitedReducer_global: Reducer = visitedReducer
   }
 
   object Impl {
 
-    trait CanPruneSelected extends Impl {
+    trait CanPruneSelected[D] extends Impl[D] {
 
       val ordering: RowOrdering
 
       final def pruneSelected(
-          open: Vector[DataRow],
-          inCacheVisited: Vector[DataRow]
-      ): Vector[DataRow] = {
+          open: Vector[Lineage],
+          inCacheVisited: Vector[Lineage]
+      ): Vector[Lineage] = {
         if (open.isEmpty || inCacheVisited.isEmpty) open
         else pruneSelectedNonEmpty(open, inCacheVisited)
       }
 
       protected def pruneSelectedNonEmpty(
-          open: Vector[DataRow],
-          inCacheVisited: Vector[DataRow]
-      ): Vector[DataRow]
+          open: Vector[Lineage],
+          inCacheVisited: Vector[Lineage]
+      ): Vector[Lineage]
 
       final override def selectNextOpen(
-          open: ConcurrentMap[LocalityGroup, Vector[DataRow]]
-      ): (LocalityGroup, Vector[DataRow]) = {
+          open: ConcurrentMap[LocalityGroup, Vector[Lineage]]
+      ): (LocalityGroup, Vector[Lineage]) = {
         // may return pair with empty DataRows
 
         // TODO: Should I use pre-sorted collection like SortedMap? Or is it over-engineering?
-        val bestOpen: (LocalityGroup, Vector[DataRow]) = open.min(ordering)
+        val bestOpen: (LocalityGroup, Vector[Lineage]) = open.min(ordering)
         val bestOpenGroup = bestOpen._1
 
         open -= bestOpenGroup

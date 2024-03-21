@@ -1,14 +1,12 @@
 package com.tribbloids.spookystuff.execution
 
-import ai.acyclic.prover.commons.function.Impl.:=>
 import ai.acyclic.prover.commons.function.Hom
+import ai.acyclic.prover.commons.function.Impl.:=>
 import com.tribbloids.spookystuff.actions.{Trace, TraceSet}
 import com.tribbloids.spookystuff.caching.ExploreLocalCache
 import com.tribbloids.spookystuff.dsl.{ForkType, GenPartitioner, PathPlanning}
 import com.tribbloids.spookystuff.execution.Delta.ToDelta
 import com.tribbloids.spookystuff.execution.ExplorePlan.{Params, State}
-import com.tribbloids.spookystuff.extractors._
-import com.tribbloids.spookystuff.extractors.impl.{Get, Lit}
 import com.tribbloids.spookystuff.row._
 import org.apache.spark.rdd.RDD
 import org.apache.spark.sql.types.{ArrayType, IntegerType}
@@ -23,8 +21,6 @@ object ExplorePlan {
   def nextExeID(): ExeID = UUID.randomUUID()
 
   case class Params(
-      depthField: Field, // can be null
-      ordinalField: Field, // can be null
       range: Range,
       executionID: ExeID = nextExeID()
   ) {
@@ -37,29 +33,19 @@ object ExplorePlan {
     @transient lazy val maxRange: Int = effectiveRange.max
     @transient lazy val minRange: Int = effectiveRange.min
 
-    @transient lazy val depth_++ : Alias.Impl[FR, Int] = {
-      Get(depthField)
-        .typed[Int]
-        .andMap(_ + 1)
-        .orElse(
-          Lit(0)
-        )
-        .withAlias(depthField.!!)
-    }
-
     lazy val includeStateBeforeExplore: Boolean = effectiveRange.contains(-1)
   }
 
   // use Array to minimize serialization footage
-  case class State(
-      row0: Option[SquashedRow] = None, // always be executed first
-      open: Option[Vector[DataRow]] = None, // a.k.a. pending row
-      visited: Option[Vector[DataRow]] = None
+  case class State[D](
+      row0: Option[SquashedRow[D]] = None, // always be executed first
+      open: Option[Vector[Data.WithLineage[D]]] = None, // a.k.a. pending row
+      visited: Option[Vector[Data.WithLineage[D]]] = None
   )
 }
 
-case class ExplorePlan(
-    override val child: ExecutionPlan,
+case class ExplorePlan[D](
+    override val child: ExecutionPlan[D],
     on: Alias[FetchedRow, Any],
     sampler: Sampler[Any],
     forkType: ForkType,
@@ -158,12 +144,12 @@ case class ExplorePlan(
       .map { row0 =>
         val _row0s = row0.withLineageIDs
 
-        val visited0: Option[Vector[DataRow]] = {
+        val visited0: Option[Vector[Lineage]] = {
           if (_effectiveParams.includeStateBeforeExplore) {
             // an extra visited row that store the state before explore
             Some(
-              _row0s.dataRows.map { v =>
-                v.self
+              _row0s.dataSeq.map { v =>
+                v.data
               }.toVector
             )
           } else {
@@ -264,11 +250,11 @@ case class ExplorePlan(
   ): RDD[(LocalityGroup, State)] = {
 
     val globalReducer: (State, State) => State = { (v1, v2) =>
-      val open: Option[Vector[DataRow]] = (v1.open ++ v2.open).toSeq
+      val open: Option[Vector[Lineage]] = (v1.open ++ v2.open).toSeq
         .reduceOption(impl.openReducer_global)
         .map(_.toVector)
 
-      val visited: Option[Vector[DataRow]] = (v1.visited ++ v2.visited).toSeq
+      val visited: Option[Vector[Lineage]] = (v1.visited ++ v2.visited).toSeq
         .reduceOption(impl.visitedReducer_global)
         .map(_.toVector)
 

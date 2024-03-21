@@ -1,25 +1,22 @@
 package com.tribbloids.spookystuff
 
 import ai.acyclic.prover.commons.function.{HomSystem, Impl}
-import ai.acyclic.prover.commons.spark.{DatasetView, SparkContextView}
-import com.tribbloids.spookystuff.conf._
-import com.tribbloids.spookystuff.metrics.SpookyMetrics
-import com.tribbloids.spookystuff.rdd.FetchedDataset
-import com.tribbloids.spookystuff.relay.io.Encoder
-import com.tribbloids.spookystuff.row._
+import ai.acyclic.prover.commons.spark.SparkContextView
 import com.tribbloids.spookystuff.agent.Agent
 import com.tribbloids.spookystuff.commons.TreeThrowable
-import com.tribbloids.spookystuff.commons.refl.{ToCatalyst, TypeMagnet}
 import com.tribbloids.spookystuff.commons.serialization.{NOTSerializable, SerializerOverride}
+import com.tribbloids.spookystuff.conf._
 import com.tribbloids.spookystuff.io.HDFSResolver
+import com.tribbloids.spookystuff.metrics.SpookyMetrics
+import com.tribbloids.spookystuff.rdd.FetchedDataset
+import com.tribbloids.spookystuff.row._
 import com.tribbloids.spookystuff.utils.ShippingMarks
 import org.apache.hadoop.conf.Configuration
 import org.apache.spark._
 import org.apache.spark.broadcast.Broadcast
 import org.apache.spark.rdd.RDD
-import org.apache.spark.sql.{DataFrame, SQLContext}
+import org.apache.spark.sql.{Dataset, SQLContext}
 
-import scala.collection.immutable.ListMap
 import scala.language.implicitConversions
 import scala.reflect.ClassTag
 import scala.util.Try
@@ -37,7 +34,7 @@ object SpookyContext {
 
   implicit def asCoreAccessor(spookyContext: SpookyContext): spookyContext.Accessor[Core.type] = spookyContext(Core)
 
-  implicit def asBlankFetchedDS(spooky: SpookyContext): FetchedDataset = spooky.createBlank
+  implicit def asBlankFetchedDS(spooky: SpookyContext): FetchedDataset[Unit] = spooky.createBlank
 
   implicit def asSparkContextView(spooky: SpookyContext): SparkContextView = SparkContextView(spooky.sparkContext)
 
@@ -111,9 +108,6 @@ case class SpookyContext(
     this
   }
 
-  import org.apache.spark.sql.catalyst.ScalaReflection.universe._
-  import sqlContext.sparkSession.implicits._
-
   def sparkContext: SparkContext = this.sqlContext.sparkContext
 
 //  def getConf[T <: PluginSystem](v: T): v.Conf = getPlugin(v).getConf
@@ -180,24 +174,22 @@ case class SpookyContext(
     }
   }
 
-  def create(df: DataFrame): FetchedDataset = this.dsl.dfToFetchedDS(df)
-  def create[T: TypeTag](rdd: RDD[T]): FetchedDataset = this.dsl.rddToFetchedDS(rdd)
+  def create[T](rdd: RDD[T]): FetchedDataset[T] = this.dsl.fromRDD(rdd)
+  def create[T](ds: Dataset[T]): FetchedDataset[T] = this.dsl.fromDataset(ds)
 
   // TODO: create Dataset directly
-  def create[T: TypeTag](
+  def create[T: ClassTag](
       seq: IterableOnce[T]
-  ): FetchedDataset = {
+  ): FetchedDataset[T] = {
 
-    implicit val ctg: ClassTag[T] = TypeMagnet.FromTypeTag[T].asClassTag
-    this.dsl.rddToFetchedDS(this.sqlContext.sparkContext.parallelize(seq.toSeq))
+    this.dsl.fromRDD(this.sqlContext.sparkContext.parallelize(seq.toSeq))
   }
-  def create[T: TypeTag](
+  def create[T: ClassTag](
       seq: IterableOnce[T],
       numSlices: Int
-  ): FetchedDataset = {
+  ): FetchedDataset[T] = {
 
-    implicit val ctg: ClassTag[T] = TypeMagnet.FromTypeTag[T].asClassTag
-    this.dsl.rddToFetchedDS(this.sqlContext.sparkContext.parallelize(seq.toSeq, numSlices))
+    this.dsl.fromRDD(this.sqlContext.sparkContext.parallelize(seq.toSeq, numSlices))
   }
 
   def withSession[T](fn: Agent => T): T = {
@@ -211,82 +203,31 @@ case class SpookyContext(
     }
   }
 
-  def createBlank: FetchedDataset = {
+  def createBlank: FetchedDataset[Unit] = {
 
-    lazy val _rdd: RDD[SquashedRow] = sparkContext.parallelize(Seq(FetchedRow.blank.squash))
+    lazy val _rdd: RDD[Unit] = sparkContext.parallelize(Seq(()))
     this.create(_rdd)
   }
 
   object dsl extends Serializable {
 
-    import com.tribbloids.spookystuff.utils.SpookyViews._
+    implicit def fromDataset[D](ds: Dataset[D]): FetchedDataset[D] = {
 
-    implicit def dfToFetchedDS(df: DataFrame): FetchedDataset = {
-      val mapRDD = DatasetView(df)
-        .toMapRDD()
-
-      val self: SquashedRDD = mapRDD
-        .map { map =>
-          val listMap: ListMap[Field, Any] = Option(ListMap(map.toSeq: _*))
-            .getOrElse(ListMap())
-            .map { tuple =>
-              (Field(tuple._1), tuple._2)
-            }
-
-          SquashedRow.ofData(
-            DataRow(listMap).withEmptyScope
-          )
-        }
-      val fields = df.schema.fields.map { sf =>
-        Field(sf.name) -> sf.dataType
-      }
-      new FetchedDataset(
-        self,
-        fieldMap = ListMap(fields: _*),
-        spooky = forkForNewRDD
-      )
+      fromRDD(ds.rdd)
     }
 
     // every input or noInput will generate a new metrics
-    implicit def rddToFetchedDS[T: TypeTag](rdd: RDD[T]): FetchedDataset = {
+    implicit def fromRDD[T](rdd: RDD[T]): FetchedDataset[T] = {
 
-      val ttg = implicitly[TypeTag[T]]
+//      val ttg = implicitly[TypeTag[T]]
 
-      rdd match {
-        // RDD[Map] => JSON => DF => ..
-        case _ if ttg.tpe <:< typeOf[Map[_, _]] =>
-          //        classOf[Map[_,_]].isAssignableFrom(classTag[T].runtimeClass) => //use classOf everywhere?
-          val canonRdd = rdd.map(map => map.asInstanceOf[Map[_, _]].canonizeKeysToColumnNames)
-
-          val jsonDS = sqlContext.createDataset[String](canonRdd.map(map => Encoder.forValue(map).compactJSON))
-          val dataFrame = sqlContext.read.json(jsonDS)
-          dfToFetchedDS(dataFrame)
-
-        // RDD[SquashedRow] => ..
-        // discard schema
-        case _ if ttg.tpe <:< typeOf[SquashedRow] =>
-          //        case _ if classOf[SquashedRow] == classTag[T].runtimeClass =>
-          val self = rdd.asInstanceOf[SquashedRDD]
-          new FetchedDataset(
-            self,
-            fieldMap = ListMap(),
-            spooky = forkForNewRDD
-          )
-
-        // RDD[T] => RDD('_ -> T) => ...
-        case _ =>
-          val self = rdd.map { str =>
-            var cells = ListMap[Field, Any]()
-            if (str != null) cells = cells + (Field("_") -> str)
-
-            FetchedRow(DataRow(cells)).squash
-          }
-          new FetchedDataset(
-            self,
-            fieldMap = ListMap(Field("_") -> ToCatalyst(TypeMagnet.FromTypeTag(ttg)).asCatalystType),
-            spooky = forkForNewRDD
-          )
+      val self = rdd.map { data =>
+        FetchedRow(data).squash
       }
+      new FetchedDataset(
+        self,
+        spooky = forkForNewRDD
+      )
     }
   }
 }

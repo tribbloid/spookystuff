@@ -92,7 +92,7 @@ object SpookyBaseSpec {
 abstract class SpookyBaseSpec extends SpookyEnvSpec with RemoteDocsFixture with BeforeAndAfterEach with Retries {
 
   lazy val defaultEC: SpookyExecutionContext = SpookyExecutionContext(spooky)
-  lazy val defaultSchema: SpookySchema = SpookySchema(defaultEC)
+  lazy val defaultSchema: SpookySchema[Unit] = SpookySchema(defaultEC)
 
   def emptySchema: SpookySchema = SpookySchema(SpookyExecutionContext(spooky))
 

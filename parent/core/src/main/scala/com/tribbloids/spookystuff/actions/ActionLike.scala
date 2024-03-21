@@ -1,14 +1,14 @@
 package com.tribbloids.spookystuff.actions
 
 import com.tribbloids.spookystuff.actions.Trace.DryRun
-import com.tribbloids.spookystuff.caching.{DFSDocCache, InMemoryDocCache}
-import com.tribbloids.spookystuff.doc.{Doc, Observation}
-import com.tribbloids.spookystuff.row.{FetchedRow, SpookySchema}
 import com.tribbloids.spookystuff.agent.Agent
+import com.tribbloids.spookystuff.caching.{DFSDocCache, InMemoryDocCache}
 import com.tribbloids.spookystuff.commons.{CommonUtils, TreeView, Verbose}
-import com.tribbloids.spookystuff.{Const, QueryException, SpookyContext}
+import com.tribbloids.spookystuff.doc.{Doc, Observation}
 import com.tribbloids.spookystuff.relay.AutomaticRelay
 import com.tribbloids.spookystuff.relay.io.DurationJSONSerializer
+import com.tribbloids.spookystuff.row.SpookySchema
+import com.tribbloids.spookystuff.{Const, QueryException, SpookyContext}
 import org.json4s.Formats
 import org.slf4j.LoggerFactory
 
@@ -30,37 +30,18 @@ object ActionLike extends AutomaticRelay[ActionLike] {
 @SerialVersionUID(8566489926281786854L)
 abstract class ActionLike extends Product with Serializable with Verbose {
 
-//  override lazy val productPrefix: String = this.getClass.getSimpleName.stripSuffix("$")
-
   def children: Trace
 
   lazy val TreeNode: ActionLike.TreeNodeView = ActionLike.TreeNodeView(this)
 
-  def globalRewriteRules(schema: SpookySchema): Seq[RewriteRule[Trace]] = Nil
-
   /**
-    * invoked on executors, immediately after interpolation *IMPORTANT!* may be called several times, before or after
+    * invoked on executors, immediately after definition *IMPORTANT!* may be called several times, before or after
     * GenPartitioner.
     */
-  def localRewriteRules(schema: SpookySchema): Seq[RewriteRule[Trace]] = Nil
-
-  final def interpolate(row: FetchedRow, schema: SpookySchema): Option[this.type] = {
-    val result = this.doInterpolate(row, schema)
-    result.foreach { action =>
-      action.injectFrom(this)
-    }
-    result
-  }
-
-  // TODO: can be made automatic
-  // TODO: this.type cleanup
-  /**
-    * convert all extractor constructor parameters to Literals
-    */
-  def doInterpolate(row: FetchedRow, schema: SpookySchema): Option[this.type] = Some(this)
+  def localRewriteRules[D](schema: SpookySchema[D]): Seq[RewriteRule[Trace]] = Nil
 
   def injectFrom(same: ActionLike): Unit = {}
-  // TODO: change to immutable pattern to avoid one Trace being used twice with different names
+  // TODO: remove, or change to immutable pattern to avoid one Trace being used twice with different names
 
   //  final def injectTo(same: ActionLike): Unit = same.injectFrom(this)
 

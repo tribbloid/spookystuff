@@ -6,8 +6,8 @@ import com.tribbloids.spookystuff.execution.Delta
 
 object DeltaRowLike {
 
-  case class SrcRow(
-      self: SquashedRow
+  case class SrcRow[D](
+      self: SquashedRow[D]
   ) extends DeltaRowLike {}
 
   case class DeltaRow(

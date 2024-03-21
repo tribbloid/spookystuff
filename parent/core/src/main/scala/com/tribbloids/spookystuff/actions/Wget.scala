@@ -1,14 +1,12 @@
 package com.tribbloids.spookystuff.actions
 
 import com.tribbloids.spookystuff.Const
+import com.tribbloids.spookystuff.agent.Agent
 import com.tribbloids.spookystuff.caching.DocCacheLevel
 import com.tribbloids.spookystuff.doc.Observation.DocUID
 import com.tribbloids.spookystuff.doc._
-import com.tribbloids.spookystuff.extractors.impl.Lit
-import com.tribbloids.spookystuff.extractors.{Col, FR}
-import com.tribbloids.spookystuff.row.{FetchedRow, SpookySchema}
-import com.tribbloids.spookystuff.agent.Agent
 import com.tribbloids.spookystuff.io.CompoundResolver.OmniResolver
+import com.tribbloids.spookystuff.row.{FetchedRow, SpookySchema}
 import org.apache.commons.io.IOUtils
 import org.apache.hadoop.shaded.org.apache.http.client.methods.HttpGet
 
@@ -22,7 +20,7 @@ import org.apache.hadoop.shaded.org.apache.http.client.methods.HttpGet
   */
 @SerialVersionUID(-8687280136721213696L)
 case class Wget(
-    uri: Col[String],
+    uri: String,
     override val filter: DocFilter = Const.defaultDocumentFilter
 ) extends HttpMethod(uri) {
 
@@ -53,10 +51,9 @@ case class Wget(
   override def doExeNoName(agent: Agent): Seq[Observation] = {
 
     val resolver = getResolver(agent)
-    val _uri = uri.value
 
     val cacheLevel = DocCacheLevel.getDefault(uriOption)
-    val doc = resolver.input(_uri) { in =>
+    val doc = resolver.input(uri) { in =>
       if (in.isDirectory) {
         val xmlStr = in.metadata.all.toXMLStr()
 
@@ -82,9 +79,4 @@ case class Wget(
     Seq(doc)
   }
 
-  override def doInterpolate(pageRow: FetchedRow, schema: SpookySchema): Option[this.type] = {
-    val uriLit: Option[Lit[FR, String]] = resolveURI(pageRow, schema)
-
-    uriLit.flatMap(lit => this.copy(uri = lit).asInstanceOf[this.type].injectWayback(this.wayback, pageRow, schema))
-  }
 }

@@ -12,23 +12,21 @@ object PathPlanners_Simple {
 
   case object BreadthFirst extends PathPlanning {
 
-    case class _Impl(
+    case class _Impl[D](
         override val params: Params,
-        schema: SpookySchema
-    ) extends Impl.CanPruneSelected {
-
-      import params._
+        schema: SpookySchema[D]
+    ) extends Impl.CanPruneSelected[D] {
 
       import scala.Ordering.Implicits._
 
-      override val openReducer: DataRow.Reducer = { (v1, v2) =>
+      override val openReducer: Reducer = { (v1, v2) =>
         val map = {
           (v1 ++ v2).groupBy { v =>
             v.lineageID.get
           }
         }
 
-        val candidates: Seq[Vector[DataRow]] = map.values.toSeq
+        val candidates: Seq[Vector[Lineage]] = map.values.toSeq
 
         if (candidates.isEmpty) Vector.empty
         else if (candidates.size == 1) candidates.head
@@ -36,17 +34,20 @@ object PathPlanners_Simple {
 
           val result = candidates
             .minBy { v =>
-              val indices = v.map(_.sortIndex(schema.sortIndices: _*))
-              indices
-            }
+              val data = v.map(_.data)
+
+              val minData = data.min(schema.ordering)
+              // TODO: this may need validation, not sure if consistent with old impl
+              minData
+            }(schema.ordering)
 
           result
         }
       }
 
-      override val visitedReducer: DataRow.Reducer = openReducer
+      override val visitedReducer: Reducer = openReducer
 
-      override val ordering: RowOrdering = Ordering.by { tuple: (LocalityGroup, Vector[DataRow]) =>
+      override val ordering: RowOrdering = Ordering.by { tuple: (LocalityGroup, Vector[Lineage]) =>
         val inProgress: mutable.Set[LocalityGroup] = ExploreLocalCache
           .getOnGoingRunners(params.executionID)
           .flatMap(_.fetchingInProgressOpt)
@@ -65,9 +66,9 @@ object PathPlanners_Simple {
       }
 
       override protected def pruneSelectedNonEmpty(
-          open: Vector[DataRow],
-          visited: Vector[DataRow]
-      ): Vector[DataRow] = {
+          open: Vector[Lineage],
+          visited: Vector[Lineage]
+      ): Vector[Lineage] = {
 
         val visitedDepth = visited.head.getInt(depthField)
         open.filter { row =>

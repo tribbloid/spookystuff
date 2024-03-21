@@ -52,15 +52,15 @@ abstract class AbstractTestTrace extends SpookyBaseSpec with BaseSpec {
     assert(dry2.head == Trace.of(OAuthV2(Wget("http://dum.my"))))
   }
 
-  it("Trace.autoSnapshot should not modify empty Trace") {
+  it("rewriteLocally should not modify empty Trace") {
 
     assert(
-      Trace().rewriteGlobally(defaultSchema) ==
+      Trace().rewriteLocally(defaultSchema) ==
         TraceSet.of(Trace())
     )
   }
 
-  it("Trace.autoSnapshot should append Snapshot to non-empty Trace that doesn't end with Export OR Block") {
+  it("rewriteLocally should append Snapshot to non-empty Trace that doesn't end with Export OR Block") {
 
     val trace = Trace(
       List(
@@ -70,10 +70,10 @@ abstract class AbstractTestTrace extends SpookyBaseSpec with BaseSpec {
       )
     )
 
-    assert(trace.rewriteGlobally(defaultSchema) == TraceSet.of(trace +> Snapshot()))
+    assert(trace.rewriteLocally(defaultSchema) == TraceSet.of(trace +> Snapshot()))
   }
 
-  it("Trace.autoSnapshot should append Snapshot to non-empty Trace that has no output") {
+  it("autoSnapshot should append Snapshot to non-empty Trace that has no output") {
 
     val trace = Trace(
       List(
@@ -86,10 +86,10 @@ abstract class AbstractTestTrace extends SpookyBaseSpec with BaseSpec {
       )
     )
 
-    assert(trace.rewriteGlobally(defaultSchema) == TraceSet.of(trace +> Snapshot()))
+    assert(trace.rewriteLocally(defaultSchema) == TraceSet.of(trace +> Snapshot()))
   }
 
-  it("Trace.TreeNode.toString should have indentations of TreeNode") {
+  it("TreeNode.toString should have indentations of TreeNode") {
 
     val traces = (
       Visit(HTML_URL)
@@ -279,7 +279,7 @@ abstract class AbstractTestTrace extends SpookyBaseSpec with BaseSpec {
   }
 
   // This is fundamentally conflicting with session & driver management
-  //  ignore("Trace.apply should yield lazy stream") {
+  //  ignore("apply should yield lazy stream") {
   //
   //    var acc: Int = 0
   //

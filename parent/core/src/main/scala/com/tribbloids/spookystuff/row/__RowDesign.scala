@@ -22,10 +22,10 @@ object __RowDesign {
     *
     *   - [[AgentState]] contains the the agent (initialized or inherited on demand, a.k.a
     *     [[com.tribbloids.spookystuff.agent.Agent]]), its backtrace (agent play history), and its latest trajectory
-    *   - [[DataRow]] is a lightweight data structure that can be mapped to a Spark SQL row
-    *   - [[DataRow.WithScope]] is a lightweight structure that contains a [[DataRow]] and pointers to parts of
+    *   - [[Lineage]] is a lightweight data structure that can be mapped to a Spark SQL row
+    *   - [[Lineage.WithScope]] is a lightweight structure that contains a [[Lineage]] and pointers to parts of
     *     trajectory (namesake of "Scope")
-    *   - [[SquashedRow]] contains an [[AgentState]] and several [[DataRow.WithScope]]s
+    *   - [[SquashedRow]] contains an [[AgentState]] and several [[Lineage.WithScope]]s
     *   - [[com.tribbloids.spookystuff.execution.Delta]] is a function: RowState => RowState
     *   - [[LocalityGroup]] contains a deterministic trace of agent actions shared by all
     *     [[com.tribbloids.spookystuff.execution.Delta]]s within a backbone row, as its name suggested, used to make
@@ -33,8 +33,8 @@ object __RowDesign {
     *
     * There are 2 competing designs for such row:
     *
-    *   - \1. [[DeltaRowLike]]: consisting of a [[LocalityGroup]], unmodified [[DataRow]]s, and a series of
-    *     [[com.tribbloids.spookystuff.execution.Delta]], each play the agent or modify [[DataRow]]s in a certain way.
+    *   - \1. [[DeltaRowLike]]: consisting of a [[LocalityGroup]], unmodified [[Lineage]]s, and a series of
+    *     [[com.tribbloids.spookystuff.execution.Delta]], each play the agent or modify [[Lineage]]s in a certain way.
     *     Upon rollout, all [[com.tribbloids.spookystuff.execution.Delta]]s being executed will attach a trajectory,
     *     which can be discarded later on demand
     *     - this has some weaknesses:
@@ -43,7 +43,7 @@ object __RowDesign {
     *     - Several RDDs consisting of SquashedRows that are identical in data but differs only in delta may be created.
     *       How would you decide which one to persist/checkpoint? Should they all be persisted?
     *
-    *   - \2. [[SquashedRow]]: consisting of a [[LocalityGroup]], modified [[DataRow.WithScope]]s, and an
+    *   - \2. [[SquashedRow]]: consisting of a [[LocalityGroup]], modified [[Lineage.WithScope]]s, and an
     *     [[AgentState]]. When [[AgentState]] is serialized, the trajectory can be discarded on demand, but the agent is
     *     always discarded, recreated on deserialization, and replay all the backtrace to reach the same state
     *     - this has some weaknesses:
