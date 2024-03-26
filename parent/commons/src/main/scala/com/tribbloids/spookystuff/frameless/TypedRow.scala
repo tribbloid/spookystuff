@@ -31,8 +31,6 @@ case class TypedRow[L <: Tuple](
   import shapeless.record._
   import shapeless.ops.record._
 
-  type Repr = L
-
   @transient override lazy val toString: String = cells.mkString("[", ",", "]")
 
   // DO NOT RENAME! used by reflection-based Catalyst Encoder
@@ -113,23 +111,14 @@ case class TypedRow[L <: Tuple](
     ) = new FieldView[Col[key.type], selector.Out](Col(key))(selector)
   }
 
-  @transient lazy val values: TypedRow.DynamicProductAPI[L] = TypedRow.DynamicProductAPI(this)
+  @transient lazy val values: TypedRow.ProductView[L] = new TypedRow.ProductView(this)
 
+  type Repr = L
   @transient lazy val repr: L = cells
     .foldRight[Tuple](Tuple.Empty) { (s, x) =>
       s *: x
     }
     .asInstanceOf[L]
-
-  def canSortAll(
-      implicit
-      ev: MapValues[CanSort.Enable.asShapeless.type, L]
-  ): TypedRow[ev.Out] = {
-
-    val mapped = repr.mapValues(CanSort.Enable)(ev)
-
-    TypedRow.ofTuple(mapped)
-  }
 
   def keys(
       implicit
@@ -194,13 +183,16 @@ object TypedRow extends TypedRowOrdering.Default.Giver {
 
   import shapeless.ops.record._
 
-  case class DynamicProductAPI[T <: Tuple](internal: TypedRow[T]) extends Dynamic {
+  // TODO: this is the actual TypedRow, the main class is the internal
+  class ProductView[T <: Tuple](internal: TypedRow[T]) extends Dynamic {
 
-    def fields: internal.fields.type = internal.fields
+    private def fields: internal.fields.type = internal.fields
 
     /**
       * Allows dynamic-style access to fields of the record whose keys are Symbols. See
       * [[shapeless.syntax.DynamicRecordOps[_]] for original version
+      *
+      * CAUTION: this takes all the slots for nullary fields, none the following functions will be nullary
       */
     def selectDynamic(key: String with Singleton)(
         implicit
@@ -211,7 +203,7 @@ object TypedRow extends TypedRowOrdering.Default.Giver {
     }
   }
 
-  object ofNamedArgs extends RecordArgs {
+  object ProductView extends RecordArgs {
 
     def applyRecord[L <: Tuple](list: L): TypedRow[L] = ofTuple(list)
   }
@@ -228,6 +220,20 @@ object TypedRow extends TypedRowOrdering.Default.Giver {
     val cells = record.runtimeList
 
     new TypedRow[L](cells.to(ArraySeq))
+  }
+
+  protected trait ofData_Imp0 extends Hom.Poly {
+
+    implicit def fromV[V]: V =>> TypedRow[Col_->>["value", V] *: Tuple.Empty] = at[V] { v =>
+      ofTuple(Col_->>["value"](v) *: Tuple.Empty)
+    }
+  }
+
+  object ofData extends ofData_Imp0 {
+
+    implicit def passThrough[L <: Tuple]: TypedRow[L] =>> TypedRow[L] = at[TypedRow[L]] {
+      identity[TypedRow[L]] _
+    }
   }
 
   case class WithCatalystTypes(schema: Seq[DataType]) {
@@ -251,18 +257,4 @@ object TypedRow extends TypedRowOrdering.Default.Giver {
       classTag: ClassTag[TypedRow[G]]
   ): TypedEncoder[TypedRow[G]] = RecordEncoder.ForTypedRow[G, G]()
 
-  trait FromAny extends Hom.Poly {
-
-    implicit def noOP[L <: Tuple]: TypedRow[L] =>> TypedRow[L] = at[TypedRow[L]] {
-      identity[TypedRow[L]] _
-    }
-  }
-
-  // can this be replaced by a
-  object FromAny extends FromAny {
-
-    implicit def fromValue[V]: V =>> TypedRow[Col_->>["value", V] *: Tuple.Empty] = at[V] { v =>
-      ofTuple(Col_->>["value"](v) *: Tuple.Empty)
-    }
-  }
 }

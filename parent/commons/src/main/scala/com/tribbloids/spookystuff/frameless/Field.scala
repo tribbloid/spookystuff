@@ -2,6 +2,7 @@ package com.tribbloids.spookystuff.frameless
 
 import ai.acyclic.prover.commons.function.Hom
 import ai.acyclic.prover.commons.util.Capabilities
+import shapeless.ops.record.MapValues
 
 object Field extends Capabilities {
   // ... is a compile-time-only construct
@@ -9,6 +10,19 @@ object Field extends Capabilities {
   trait CanSort extends Cap
 
   object CanSort extends Factory[CanSort] {
+
+    import shapeless.record._
+
+    def apply[L <: Tuple](typedRow: TypedRow[L])(
+        implicit
+        ev: MapValues[Enable.asShapeless.type, L]
+    ): TypedRow[ev.Out] = {
+
+      val mapped = typedRow.repr.mapValues(Enable)(ev)
+
+      TypedRow.ofTuple(mapped)
+
+    }
 
     object Enable extends Hom.Poly with Factory[CanSort] {
 

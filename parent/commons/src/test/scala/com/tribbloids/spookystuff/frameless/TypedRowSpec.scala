@@ -21,22 +21,35 @@ class TypedRowSpec extends BaseSpec {
     Summoner.summon[TypedEncoder[TypedRow[TypedRowSpec.RR]]]
   }
 
-  it("construction") {
+  describe("construction") {
 
-    val t1 = TypedRow.ofNamedArgs(x = 1, y = "ab", z = 1.1)
+    it("ofNamedArgs") {
 
-    val gd = HList(1, "ab", 1.1)
-    assert(t1.repr == gd)
+      val t1 = TypedRow.ProductView(x = 1, y = "ab", z = 1.1)
 
-    //    TypeViz[t1.Repr].toString.shouldBe()
+      val gd = HList(1, "ab", 1.1)
+      assert(t1.repr == gd)
+
+      //    TypeViz[t1.Repr].toString.shouldBe()
+    }
+
+//    it("ofTuple") {
+//
+//      val gd = HList(1, "ab", 1.1)
+//      val t1 = TypedRow.ofTuple(gd)
+//      assert(t1.repr == gd)
+//
+////      val rdd = session.sparkContext.parallelize(Seq(t1))
+//      val ds = TypedDataset.create(Seq(t1))
+//    }
   }
 
   describe("merge") {
 
     it("mayCauseDuplicatedNames") {
 
-      val t1 = TypedRow.ofNamedArgs(x = 1, y = "ab")
-      val t2 = TypedRow.ofNamedArgs(y = 1.0, z = 1.1)
+      val t1 = TypedRow.ProductView(x = 1, y = "ab")
+      val t2 = TypedRow.ProductView(y = 1.0, z = 1.1)
       val merged = t1 ++ t2
 
       assert(merged.keys.runtimeList == List('x, 'y, 'y, 'z))
@@ -49,8 +62,8 @@ class TypedRowSpec extends BaseSpec {
 
     it("right") {
 
-      val t1 = TypedRow.ofNamedArgs(x = 1, y = "ab")
-      val t2 = TypedRow.ofNamedArgs(y = 1.0, z = 1.1)
+      val t1 = TypedRow.ProductView(x = 1, y = "ab")
+      val t2 = TypedRow.ProductView(y = 1.0, z = 1.1)
       val merged = t1 ++< t2
 
       assert(merged.keys.runtimeList == List('x, 'y, 'z))
@@ -61,8 +74,8 @@ class TypedRowSpec extends BaseSpec {
 
     it("left") {
 
-      val t1 = TypedRow.ofNamedArgs(x = 1, y = "ab")
-      val t2 = TypedRow.ofNamedArgs(y = 1.0, z = 1.1)
+      val t1 = TypedRow.ProductView(x = 1, y = "ab")
+      val t2 = TypedRow.ProductView(y = 1.0, z = 1.1)
       val merged = t1 >++ t2
 
       assert(merged.keys.runtimeList == List('x, 'y, 'z))
@@ -100,7 +113,7 @@ class TypedRowSpec extends BaseSpec {
 
     it("value") {
 
-      val t1 = TypedRow.ofNamedArgs(x = 1, y = "ab")
+      val t1 = TypedRow.ProductView(x = 1, y = "ab")
       val col = t1.fields.y
 
       assert(col.value == "ab")
@@ -108,11 +121,11 @@ class TypedRowSpec extends BaseSpec {
 
     it("asTypedRow") {
 
-      val t1 = TypedRow.ofNamedArgs(x = 1, y = "ab")
+      val t1 = TypedRow.ProductView(x = 1, y = "ab")
       val col = t1.fields.y
 
       val colAsRow = col.asTypedRow
-      val colAsRowGT = TypedRow.ofNamedArgs(y = "ab")
+      val colAsRowGT = TypedRow.ProductView(y = "ab")
 
       implicitly[colAsRow.Repr =:= colAsRowGT.Repr]
 
@@ -120,11 +133,11 @@ class TypedRowSpec extends BaseSpec {
 
     it("update") {
 
-      val t1 = TypedRow.ofNamedArgs(x = 1, y = "ab")
+      val t1 = TypedRow.ProductView(x = 1, y = "ab")
       val col = t1.fields.y
 
       val t2 = col.update(1.0)
-      val t2GT = t1 ++< TypedRow.ofNamedArgs(y = 1.0)
+      val t2GT = t1 ++< TypedRow.ProductView(y = 1.0)
 
       implicitly[t2.Repr =:= t2GT.Repr]
 
@@ -143,7 +156,7 @@ class TypedRowSpec extends BaseSpec {
 
     it("named columns") {
 
-      val t1 = TypedRow.ofNamedArgs(x = 1, y = "ab", z = 1.1)
+      val t1 = TypedRow.ProductView(x = 1, y = "ab", z = 1.1)
 
       val rdd = session.sparkContext.parallelize(Seq(t1))
       val ds = TypedDataset.create(rdd)
@@ -169,8 +182,8 @@ class TypedRowSpec extends BaseSpec {
 
     it(" ... with duplicated names") {
 
-      val tx = TypedRow.ofNamedArgs(x = 1, y = "ab")
-      val ty = TypedRow.ofNamedArgs(y = 1.0, z = 1.1)
+      val tx = TypedRow.ProductView(x = 1, y = "ab")
+      val ty = TypedRow.ProductView(y = 1.0, z = 1.1)
       val t1 = tx ++ ty
 
       val rdd = session.sparkContext.parallelize(Seq(t1))
