@@ -40,7 +40,7 @@ object TypedRowOrdering {
       ) {
 
         lazy val fn: TypedRow[R] => MO = { row: TypedRow[R] =>
-          val mapped = mapper.apply(row.repr)
+          val mapped = mapper.apply(row._internal.repr)
 
           mapped
         }

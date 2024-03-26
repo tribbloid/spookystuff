@@ -38,7 +38,7 @@ class TypedRowOrderingSpec extends BaseSpec {
 
     val r1 = CanSort(TypedRow.ProductView(a = 1, b = "ab"))
 
-    val ordering = implicitly[Ordering[TypedRow[r1.Repr]]]
+    val ordering = implicitly[Ordering[TypedRow[r1._internal.Repr]]]
   }
 
   it("Default") {
@@ -47,24 +47,24 @@ class TypedRowOrderingSpec extends BaseSpec {
     val r1 = TypedRow.ProductView(a = 1)
 
     {
-      val fn = ordering.at[r1.Repr].Factory().fn
+      val fn = ordering.at[r1._internal.Repr].Factory().fn
       fn(r1).runtimeList.mkString(",").shouldBe("()")
     }
 
     val r2 = CanSort(r1)
 
     {
-      val fn = ordering.at[r2.Repr].Factory().fn
+      val fn = ordering.at[r2._internal.Repr].Factory().fn
       fn(r2).runtimeList.mkString(",").shouldBe("1")
     }
 
     val r3 = TypedRow.ProductView(b = 1.1) ++ r2
 
     {
-      val fn = ordering.at[r3.Repr].Factory().fn
+      val fn = ordering.at[r3._internal.Repr].Factory().fn
       fn(r3).runtimeList.mkString(",").shouldBe("(),1")
 
-      val oo = ordering.at[r3.Repr].Factory().get
+      val oo = ordering.at[r3._internal.Repr].Factory().get
     }
   }
 }

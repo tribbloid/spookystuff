@@ -18,7 +18,7 @@ object Field extends Capabilities {
         ev: MapValues[Enable.asShapeless.type, L]
     ): TypedRow[ev.Out] = {
 
-      val mapped = typedRow.repr.mapValues(Enable)(ev)
+      val mapped = typedRow._internal.repr.mapValues(Enable)(ev)
 
       TypedRow.ofTuple(mapped)
 

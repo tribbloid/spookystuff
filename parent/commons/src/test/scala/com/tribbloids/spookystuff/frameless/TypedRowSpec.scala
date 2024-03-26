@@ -11,7 +11,6 @@ import shapeless.record.Record
 class TypedRowSpec extends BaseSpec {
 
   implicit def session: SparkSession = TestHelper.TestSparkSession
-  import TypedRow._
 
   it("Encoder") {
 
@@ -28,7 +27,7 @@ class TypedRowSpec extends BaseSpec {
       val t1 = TypedRow.ProductView(x = 1, y = "ab", z = 1.1)
 
       val gd = HList(1, "ab", 1.1)
-      assert(t1.repr == gd)
+      assert(t1._internal.repr == gd)
 
       //    TypeViz[t1.Repr].toString.shouldBe()
     }
@@ -52,8 +51,8 @@ class TypedRowSpec extends BaseSpec {
       val t2 = TypedRow.ProductView(y = 1.0, z = 1.1)
       val merged = t1 ++ t2
 
-      assert(merged.keys.runtimeList == List('x, 'y, 'y, 'z))
-      assert(merged.repr.runtimeList == List(1, "ab", 1.0, 1.1))
+      assert(merged._internal.keys.runtimeList == List('x, 'y, 'y, 'z))
+      assert(merged._internal.repr.runtimeList == List(1, "ab", 1.0, 1.1))
 
       assert(t1.values.x == 1)
       assert(merged.values.x == 1)
@@ -66,8 +65,8 @@ class TypedRowSpec extends BaseSpec {
       val t2 = TypedRow.ProductView(y = 1.0, z = 1.1)
       val merged = t1 ++< t2
 
-      assert(merged.keys.runtimeList == List('x, 'y, 'z))
-      assert(merged.repr.runtimeList == List(1, 1.0, 1.1))
+      assert(merged._internal.keys.runtimeList == List('x, 'y, 'z))
+      assert(merged._internal.repr.runtimeList == List(1, 1.0, 1.1))
 
       assert(merged.values.y == 1.0) // favours the first operand
     }
@@ -78,8 +77,8 @@ class TypedRowSpec extends BaseSpec {
       val t2 = TypedRow.ProductView(y = 1.0, z = 1.1)
       val merged = t1 >++ t2
 
-      assert(merged.keys.runtimeList == List('x, 'y, 'z))
-      assert(merged.repr.runtimeList == List(1, "ab", 1.1))
+      assert(merged._internal.keys.runtimeList == List('x, 'y, 'z))
+      assert(merged._internal.repr.runtimeList == List(1, "ab", 1.1))
 
       assert(merged.values.y == "ab") // favours the first operand
     }
@@ -114,7 +113,7 @@ class TypedRowSpec extends BaseSpec {
     it("value") {
 
       val t1 = TypedRow.ProductView(x = 1, y = "ab")
-      val col = t1.fields.y
+      val col = t1._fields.y
 
       assert(col.value == "ab")
     }
@@ -122,28 +121,28 @@ class TypedRowSpec extends BaseSpec {
     it("asTypedRow") {
 
       val t1 = TypedRow.ProductView(x = 1, y = "ab")
-      val col = t1.fields.y
+      val col = t1._fields.y
 
       val colAsRow = col.asTypedRow
       val colAsRowGT = TypedRow.ProductView(y = "ab")
 
-      implicitly[colAsRow.Repr =:= colAsRowGT.Repr]
+      implicitly[colAsRow._internal.Repr =:= colAsRowGT._internal.Repr]
 
     }
 
     it("update") {
 
       val t1 = TypedRow.ProductView(x = 1, y = "ab")
-      val col = t1.fields.y
+      val col = t1._fields.y
 
-      val t2 = col.update(1.0)
+      val t2 = col := 1.0
       val t2GT = t1 ++< TypedRow.ProductView(y = 1.0)
 
-      implicitly[t2.Repr =:= t2GT.Repr]
+      implicitly[t2._internal.Repr =:= t2GT._internal.Repr]
 
-      assert(t2GT.keys.runtimeList == List('x, 'y))
+      assert(t2GT._internal.keys.runtimeList == List('x, 'y))
 
-      assert(t2.keys.runtimeList == List('x, 'y))
+      assert(t2._internal.keys.runtimeList == List('x, 'y))
 
       assert(t2.values.y == 1.0)
     }

@@ -1,7 +1,6 @@
 package com.tribbloids.spookystuff.frameless
 
 import ai.acyclic.prover.commons.function.Hom
-import com.tribbloids.spookystuff.frameless.Field.CanSort
 import frameless.TypedEncoder
 import org.apache.spark.sql.catalyst.InternalRow
 import org.apache.spark.sql.types.{DataType, ObjectType}
@@ -21,15 +20,15 @@ import scala.reflect.ClassTag
   * @tparam L
   *   Record type
   */
-case class TypedRow[L <: Tuple](
+class TypedRow[L <: Tuple](
     cells: ArraySeq[Any]
 ) {
   // TODO: how to easily reconstruct vertices/edges for graphX/graphframe?
   //  since graphframe table always demand id/src/tgt columns, should the default
   //  representation be SemiRow? that contains both structured and newType part?
 
-  import shapeless.record._
   import shapeless.ops.record._
+  import shapeless.record._
 
   @transient override lazy val toString: String = cells.mkString("[", ",", "]")
 
@@ -42,7 +41,7 @@ case class TypedRow[L <: Tuple](
       val selector: Selector.Aux[L, K, V]
   ) {
 
-    lazy val valueWithField: V = selector(repr)
+    lazy val valueWithField: V = selector(_internal.repr)
 
     lazy val value: V = {
       valueWithField // TODO: should remove Field capability mixins
@@ -69,19 +68,19 @@ case class TypedRow[L <: Tuple](
     //    }
     //    def - : remove.type = remove
 
-    object update {
+    object set {
 
       def apply[VV](value: VV)(
           implicit
-          ev0: MergeWith[L, (K ->> VV) *: Tuple.Empty, mergeKeepRight.fn.type]
+          ev0: MergeWith[L, (K ->> VV) *: Tuple.Empty, _merge.keepRight.fn.type]
       ): TypedRow[ev0.Out] = {
 
         val neo: TypedRow[(K ->> VV) *: Tuple.Empty] = TypedRow.ofTuple(->>[K](value) *: Tuple.Empty)
-        val result = mergeKeepRight(neo)(ev0)
+        val result = _merge.keepRight(neo)(ev0)
         result
       }
     }
-    def + : update.type = update
+    def := : set.type = set
 
     /**
       * To be used in [[org.apache.spark.sql.Dataset]].flatMap
@@ -92,18 +91,18 @@ case class TypedRow[L <: Tuple](
     )(
         implicit
         ev0: V <:< Seq[VV],
-        ev1: MergeWith[L, (K ->> R) *: Tuple.Empty, mergeKeepRight.fn.type]
+        ev1: MergeWith[L, (K ->> R) *: Tuple.Empty, _merge.keepRight.fn.type]
     ): Seq[TypedRow[ev1.Out]] = {
 
       val results = valueWithField.map { v: VV =>
         val r = fn(v)
-        update(r)(ev1)
+        set(r)(ev1)
       }
       results
     }
   }
 
-  object fields extends Dynamic {
+  object _fields extends Dynamic {
 
     def selectDynamic(key: String with Singleton)(
         implicit
@@ -113,70 +112,76 @@ case class TypedRow[L <: Tuple](
 
   @transient lazy val values: TypedRow.ProductView[L] = new TypedRow.ProductView(this)
 
-  type Repr = L
-  @transient lazy val repr: L = cells
-    .foldRight[Tuple](Tuple.Empty) { (s, x) =>
-      s *: x
-    }
-    .asInstanceOf[L]
+  @transient lazy val _internal: TypedRowInternal[L] = {
 
-  def keys(
-      implicit
-      ev: Keys[L]
-  ): Keys[L]#Out = repr.keys
+    val repr = cells
+      .foldRight[Tuple](Tuple.Empty) { (s, x) =>
+        s *: x
+      }
+      .asInstanceOf[L]
 
-  // in Scala 3, all these objects can be both API and lemma
-  // but it will take some time before Spark upgrade to it
-  @deprecated
-  object merge_mayCauseDuplicates {
-
-    def apply[L2 <: Tuple](that: TypedRow[L2])(
-        implicit
-        ev: Merger[L, L2]
-    ): TypedRow[ev.Out] = {
-
-      TypedRow.ofTuple(ev(repr, that.repr))
-    }
-  }
-  @deprecated
-  def ++ : merge_mayCauseDuplicates.type = merge_mayCauseDuplicates
-
-  trait MergeWithFn {
-
-    val fn: Poly2
-
-    def apply[L2 <: Tuple](that: TypedRow[L2])(
-        implicit
-        ev0: MergeWith[L, L2, fn.type]
-    ): TypedRow[ev0.Out] = {
-
-      val result = repr.mergeWith(that.repr)(fn)(ev0)
-      TypedRow.ofTuple(result)
-    }
+    TypedRowInternal(repr)
   }
 
-  object mergeKeepRight extends MergeWithFn {
+  object update {}
 
-    object fn extends Poly2 {
+  object _merge {
 
-      implicit def only[T, U]: Case.Aux[T, U, U] = at[T, U] { (_, r) =>
-        r
+    trait MergeWithFn {
+
+      val fn: Poly2
+
+      def apply[L2 <: Tuple](that: TypedRow[L2])(
+          implicit
+          ev0: MergeWith[L, L2, fn.type]
+      ): TypedRow[ev0.Out] = {
+
+        val result = _internal.repr.mergeWith(that._internal.repr)(fn)(ev0)
+        TypedRow.ofTuple(result)
+      }
+    }
+
+    // in Scala 3, all these objects can be both API and lemma
+    // but it will take some time before Spark upgrade to it
+    @deprecated
+    object mayCauseDuplicates {
+
+      def apply[L2 <: Tuple](that: TypedRow[L2])(
+          implicit
+          ev: Merger[L, L2]
+      ): TypedRow[ev.Out] = {
+
+        TypedRow.ofTuple(ev(_internal.repr, that._internal.repr))
+      }
+    }
+
+    object keepRight extends MergeWithFn {
+
+      object fn extends Poly2 {
+
+        implicit def only[T, U]: Case.Aux[T, U, U] = at[T, U] { (_, r) =>
+          r
+        }
+      }
+    }
+
+    object keepLeft extends MergeWithFn {
+
+      object fn extends Poly2 {
+
+        implicit def only[T, U]: Case.Aux[T, U, T] = at[T, U] { (l, _) =>
+          l
+        }
       }
     }
   }
-  def ++< : mergeKeepRight.type = mergeKeepRight
 
-  object mergeKeepLeft extends MergeWithFn {
+  @deprecated
+  def ++ : _merge.mayCauseDuplicates.type = _merge.mayCauseDuplicates
 
-    object fn extends Poly2 {
+  def ++< : _merge.keepRight.type = _merge.keepRight
 
-      implicit def only[T, U]: Case.Aux[T, U, T] = at[T, U] { (l, _) =>
-        l
-      }
-    }
-  }
-  def >++ : mergeKeepLeft.type = mergeKeepLeft
-
+  def >++ : _merge.keepLeft.type = _merge.keepLeft
 }
 
 object TypedRow extends TypedRowOrdering.Default.Giver {
@@ -186,7 +191,7 @@ object TypedRow extends TypedRowOrdering.Default.Giver {
   // TODO: this is the actual TypedRow, the main class is the internal
   class ProductView[T <: Tuple](internal: TypedRow[T]) extends Dynamic {
 
-    private def fields: internal.fields.type = internal.fields
+    private def fields: internal._fields.type = internal._fields
 
     /**
       * Allows dynamic-style access to fields of the record whose keys are Symbols. See
