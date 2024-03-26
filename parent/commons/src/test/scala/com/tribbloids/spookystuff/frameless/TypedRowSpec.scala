@@ -35,7 +35,7 @@ class TypedRowSpec extends BaseSpec {
 //    it("ofTuple") {
 //
 //      val gd = HList(1, "ab", 1.1)
-//      val t1 = TypedRow.ofTuple(gd)
+//      val t1 = TypedRowInternal.ofTuple(gd)
 //      assert(t1.repr == gd)
 //
 ////      val rdd = session.sparkContext.parallelize(Seq(t1))

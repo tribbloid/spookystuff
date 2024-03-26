@@ -38,7 +38,7 @@ abstract class RecordEncoder[F, G <: Tuple, H <: Tuple](
 object RecordEncoder {
 
   final private val _GET_VALUE = "_valueAtIndex"
-  final private val _FROM_INTERNAL_ROW = "fromInternalRow"
+  final private val _FROM_INTERNAL_ROW = "_fromInternalRow"
 
   case class ForTypedRow[G <: Tuple, H <: Tuple](
   )(
@@ -74,12 +74,12 @@ object RecordEncoder {
       val newArgs = stage1.fromCatalystToCells(path)
       val aggregated = CreateStruct(newArgs)
 
-      val partial = TypedRow.WithCatalystTypes(newArgs.map(_.dataType))
+      val partial = TypedRowInternal.WithCatalystTypes(newArgs.map(_.dataType))
 
       val newExpr = Invoke(
         Literal.fromObject(partial),
         _FROM_INTERNAL_ROW,
-        TypedRow.catalystType,
+        TypedRowInternal.catalystType,
         Seq(aggregated)
       )
 

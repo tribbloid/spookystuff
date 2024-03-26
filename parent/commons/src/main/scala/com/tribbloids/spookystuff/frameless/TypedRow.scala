@@ -1,9 +1,6 @@
 package com.tribbloids.spookystuff.frameless
 
-import ai.acyclic.prover.commons.function.Hom
 import frameless.TypedEncoder
-import org.apache.spark.sql.catalyst.InternalRow
-import org.apache.spark.sql.types.{DataType, ObjectType}
 import shapeless.{Poly2, RecordArgs}
 
 import scala.collection.immutable.ArraySeq
@@ -48,7 +45,7 @@ class TypedRow[L <: Tuple](
     }
 
     lazy val asTypedRow: TypedRow[(K ->> V) *: Tuple.Empty] = {
-      TypedRow.ofTuple(->>[K](valueWithField) *: Tuple.Empty)
+      TypedRowInternal.ofTuple(->>[K](valueWithField) *: Tuple.Empty)
     }
 
     //    lazy val value: V = selector(asRepr)
@@ -63,7 +60,7 @@ class TypedRow[L <: Tuple](
     ////        val tuple = repr.remove(key)(ev)
     //        val tuple = ev.apply(repr)
     //
-    //        TypedRow.ofTuple(tuple._2)
+    //        TypedRowInternal.ofTuple(tuple._2)
     //      }
     //    }
     //    def - : remove.type = remove
@@ -75,7 +72,7 @@ class TypedRow[L <: Tuple](
           ev0: MergeWith[L, (K ->> VV) *: Tuple.Empty, _merge.keepRight.fn.type]
       ): TypedRow[ev0.Out] = {
 
-        val neo: TypedRow[(K ->> VV) *: Tuple.Empty] = TypedRow.ofTuple(->>[K](value) *: Tuple.Empty)
+        val neo: TypedRow[(K ->> VV) *: Tuple.Empty] = TypedRowInternal.ofTuple(->>[K](value) *: Tuple.Empty)
         val result = _merge.keepRight(neo)(ev0)
         result
       }
@@ -137,7 +134,7 @@ class TypedRow[L <: Tuple](
       ): TypedRow[ev0.Out] = {
 
         val result = _internal.repr.mergeWith(that._internal.repr)(fn)(ev0)
-        TypedRow.ofTuple(result)
+        TypedRowInternal.ofTuple(result)
       }
     }
 
@@ -151,7 +148,7 @@ class TypedRow[L <: Tuple](
           ev: Merger[L, L2]
       ): TypedRow[ev.Out] = {
 
-        TypedRow.ofTuple(ev(_internal.repr, that._internal.repr))
+        TypedRowInternal.ofTuple(ev(_internal.repr, that._internal.repr))
       }
     }
 
@@ -210,53 +207,10 @@ object TypedRow extends TypedRowOrdering.Default.Giver {
 
   object ProductView extends RecordArgs {
 
-    def applyRecord[L <: Tuple](list: L): TypedRow[L] = ofTuple(list)
+    def applyRecord[L <: Tuple](list: L): TypedRow[L] = TypedRowInternal.ofTuple(list)
   }
 
-  // TODO: remove, nameless columns is not supported in RecordEncoderField
-  //  object ofArgs extends ProductArgs {
-  //    def applyProduct[L <: Tuple](list: L): TypedRow[L] = fromTuple(list)
-  //  }
-
-  def ofTuple[L <: Tuple](
-      record: L
-  ): TypedRow[L] = {
-
-    val cells = record.runtimeList
-
-    new TypedRow[L](cells.to(ArraySeq))
-  }
-
-  protected trait ofData_Imp0 extends Hom.Poly {
-
-    implicit def fromV[V]: V =>> TypedRow[Col_->>["value", V] *: Tuple.Empty] = at[V] { v =>
-      ofTuple(Col_->>["value"](v) *: Tuple.Empty)
-    }
-  }
-
-  object ofData extends ofData_Imp0 {
-
-    implicit def passThrough[L <: Tuple]: TypedRow[L] =>> TypedRow[L] = at[TypedRow[L]] {
-      identity[TypedRow[L]] _
-    }
-  }
-
-  case class WithCatalystTypes(schema: Seq[DataType]) {
-
-    // DO NOT RENAME! used by reflection-based Catalyst Encoder
-    def fromInternalRow(row: InternalRow): TypedRow[Tuple] = {
-      val data = row.toSeq(schema)
-
-      val seq = data.to(ArraySeq)
-      new TypedRow[Tuple](seq)
-    }
-  }
-
-  //  object WithCatalystTypes {}
-
-  lazy val catalystType: ObjectType = ObjectType(classOf[TypedRow[_]])
-
-  implicit def getEncoder[G <: Tuple](
+  implicit def _getEncoder[G <: Tuple](
       implicit
       stage1: RecordEncoderStage1[G, G],
       classTag: ClassTag[TypedRow[G]]

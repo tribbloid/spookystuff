@@ -20,7 +20,7 @@ object Field extends Capabilities {
 
       val mapped = typedRow._internal.repr.mapValues(Enable)(ev)
 
-      TypedRow.ofTuple(mapped)
+      TypedRowInternal.ofTuple(mapped)
 
     }
 
