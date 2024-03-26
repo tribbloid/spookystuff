@@ -19,13 +19,27 @@ import scala.reflect.ClassTag
   */
 class TypedRow[L <: Tuple](
     cells: ArraySeq[Any]
-) {
+) extends Dynamic {
   // TODO: how to easily reconstruct vertices/edges for graphX/graphframe?
   //  since graphframe table always demand id/src/tgt columns, should the default
   //  representation be SemiRow? that contains both structured and newType part?
 
   import shapeless.ops.record._
   import shapeless.record._
+
+  /**
+    * Allows dynamic-style access to fields of the record whose keys are Symbols. See
+    * [[shapeless.syntax.DynamicRecordOps[_]] for original version
+    *
+    * CAUTION: this takes all the slots for nullary fields, none the following functions will be nullary
+    */
+  def selectDynamic(key: String with Singleton)(
+      implicit
+      selector: Selector[L, Col[key.type]]
+  ): selector.Out = {
+
+    _fields.selectDynamic(key).value
+  }
 
   @transient override lazy val toString: String = cells.mkString("[", ",", "]")
 
@@ -107,8 +121,6 @@ class TypedRow[L <: Tuple](
     ) = new FieldView[Col[key.type], selector.Out](Col(key))(selector)
   }
 
-  @transient lazy val values: TypedRow.ProductView[L] = new TypedRow.ProductView(this)
-
   @transient lazy val _internal: TypedRowInternal[L] = {
 
     val repr = cells
@@ -119,8 +131,6 @@ class TypedRow[L <: Tuple](
 
     TypedRowInternal(repr)
   }
-
-  object update {}
 
   object _merge {
 
@@ -179,36 +189,16 @@ class TypedRow[L <: Tuple](
   def ++< : _merge.keepRight.type = _merge.keepRight
 
   def >++ : _merge.keepLeft.type = _merge.keepLeft
+
+  object update extends RecordArgs {
+
+    // TODO: call ++<
+  }
 }
 
-object TypedRow extends TypedRowOrdering.Default.Giver {
+object TypedRow extends TypedRowOrdering.Default.Giver with RecordArgs {
 
-  import shapeless.ops.record._
-
-  // TODO: this is the actual TypedRow, the main class is the internal
-  class ProductView[T <: Tuple](internal: TypedRow[T]) extends Dynamic {
-
-    private def fields: internal._fields.type = internal._fields
-
-    /**
-      * Allows dynamic-style access to fields of the record whose keys are Symbols. See
-      * [[shapeless.syntax.DynamicRecordOps[_]] for original version
-      *
-      * CAUTION: this takes all the slots for nullary fields, none the following functions will be nullary
-      */
-    def selectDynamic(key: String with Singleton)(
-        implicit
-        selector: Selector[T, Col[key.type]]
-    ): selector.Out = {
-
-      fields.selectDynamic(key).value
-    }
-  }
-
-  object ProductView extends RecordArgs {
-
-    def applyRecord[L <: Tuple](list: L): TypedRow[L] = TypedRowInternal.ofTuple(list)
-  }
+  def applyRecord[L <: Tuple](list: L): TypedRow[L] = TypedRowInternal.ofTuple(list)
 
   implicit def _getEncoder[G <: Tuple](
       implicit
