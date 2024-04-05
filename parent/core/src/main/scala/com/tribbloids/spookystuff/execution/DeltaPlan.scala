@@ -1,40 +1,49 @@
 package com.tribbloids.spookystuff.execution
 
 import com.tribbloids.spookystuff.commons.refl.CatalystTypeOps
-import com.tribbloids.spookystuff.execution.Delta.ToDelta
 import com.tribbloids.spookystuff.row._
-
-case class DeltaPlan(
-    override val child: ExecutionPlan,
-    toDelta: ToDelta
-) extends UnaryPlan(child) {
-
-  @transient lazy val delta: Delta = {
-    toDelta.apply(child.outputSchema)
-  }
-
-  override def computeSchema: SpookySchema = delta.outputSchema
-
-  final override def execute: SquashedRDD = {
-
-    val rdd = child.squashedRDD
-    val result = rdd.map(v => delta.fn(v))
-    result
-  }
-}
 
 object DeltaPlan extends CatalystTypeOps.ImplicitMixin {
 
-  def optimised(
-      child: ExecutionPlan,
-      toDelta: ToDelta
-  ): UnaryPlan = {
+  type Out[O] = Seq[Data.WithScope[O]]
+  type Fn[I, O] = FetchedRow[I] => Out[O]
 
-    child match {
-      case plan: ExplorePlan if !plan.isCached =>
-        plan.copy(toDeltas = plan.toDeltas :+ toDelta)
-      case _ =>
-        DeltaPlan(child, toDelta)
+  def optimised[I, O](
+      child: ExecutionPlan[I],
+      fn: Fn[I, O]
+  ): UnaryPlan[I, O] = {
+
+    //    child match {
+    //      case plan: ExplorePlan[I, O] if !plan.isCached =>
+    //        plan.copy(deltas = plan.deltas :+ toDelta)
+    //      case _ =>
+    //        DeltaPlan(child, toDelta)
+    //    }
+    // TODO: enable optimisation later
+    DeltaPlan(child, fn)
+  }
+}
+
+case class DeltaPlan[I, O](
+    override val child: ExecutionPlan[I],
+    fn: DeltaPlan.Fn[I, O]
+) extends UnaryPlan[I, O](child) {
+
+  final override def execute: SquashedRDD[O] = {
+
+    val rdd = child.squashedRDD
+    val result = rdd.map { squashed =>
+      val rows: Seq[FetchedRow[I]] = squashed.withSchema(child.outputSchema).unSquash
+
+      val results = rows.flatMap { row =>
+        fn(row)
+      }
+
+      squashed.copy(
+        dataSeq = results
+      )
+
     }
+    result
   }
 }

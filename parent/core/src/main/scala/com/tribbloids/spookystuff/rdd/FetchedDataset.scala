@@ -5,28 +5,18 @@ import com.tribbloids.spookystuff.commons.refl.CatalystTypeOps
 import com.tribbloids.spookystuff.conf.SpookyConf
 import com.tribbloids.spookystuff.doc.Doc
 import com.tribbloids.spookystuff.dsl._
-import com.tribbloids.spookystuff.execution.Delta._
-import com.tribbloids.spookystuff.execution.ExplorePlan.Params
 import com.tribbloids.spookystuff.execution._
-import com.tribbloids.spookystuff.extractors._
-import com.tribbloids.spookystuff.extractors.impl.Get
 import com.tribbloids.spookystuff.row._
 import com.tribbloids.spookystuff.utils.SpookyViews
 import com.tribbloids.spookystuff.{Const, SpookyContext}
+import frameless.{TypedDataset, TypedEncoder}
 import org.apache.spark.SparkContext
-import org.apache.spark.sql._SQLHelper
 import org.apache.spark.rdd.RDD
-import org.apache.spark.sql.catalyst.expressions.GenericInternalRow
-import org.apache.spark.sql.catalyst.{CatalystTypeConverters, InternalRow}
-import org.apache.spark.sql.types.DataType
-import org.apache.spark.sql.{DataFrame, Dataset}
+import org.apache.spark.sql.DataFrame
 import org.apache.spark.storage.StorageLevel
 
-import scala.collection.Map
-import scala.collection.immutable.ListMap
 import scala.concurrent.duration.Duration
 import scala.language.implicitConversions
-import scala.reflect.ClassTag
 
 object FetchedDataset extends FetchedDatasetImp0 {
 
@@ -56,7 +46,7 @@ case class FetchedDataset[D](
 
     this(
       RDDPlan(
-        SpookySchema(SpookyExecutionContext(spooky), fieldMap),
+        SpookySchema(SpookyExecutionContext(spooky)),
         sourceRDD,
         beaconRDDOpt
       )
@@ -74,113 +64,71 @@ case class FetchedDataset[D](
   def storageLevel_=(lv: StorageLevel): Unit = {
     plan.storageLevel = lv
   }
-  def isCached: Boolean = plan.isCached
 
-  def rdd: RDD[FR] = this.fetchedRDD
+  def rdd: RDD[FetchedRow[D]] = this.fetchedRDD
 
   def spooky: SpookyContext = plan.spooky
   def schema: SpookySchema = plan.outputSchema
-  def fields: List[Field] = schema.fields
 
-  def dataRDDSorted: RDD[Lineage] = {
+  def isCached: Boolean = plan.isCached
 
-    import scala.Ordering.Implicits._ // DO NOT DELETE!
+//  /** TODO: remove, caching should be handled else
+//    * only 1 RDD/Dataset will be cached at a time, if a cached instance with a higher precedence is computed, other
+//    * instances with lower precedence will be dropped, its data representation will instead be reconstructed from
+//    */
+//  trait Cached {}
 
-    val sortIndices: List[Field] = plan.allSortIndices.map(_._1.self)
+  trait DataView {
+
+    def dataRDD: RDD[D]
+
+    final def toDataset(
+        implicit
+        ev1: TypedEncoder[D]
+    ): TypedDataset[D] = {
+
+      val rdd = dataRDD
+
+      val ds = TypedDataset.create(rdd)(ev1, spooky.sparkSession)
+
+      ds
+    }
+
+    def toDF(
+        implicit
+        ev1: TypedEncoder[D]
+    ): DataFrame = toDataset.toDF()
+
+//    def toMapRDD(
+//        implicit
+//        ev1: TypedEncoder[D]
+//    ): RDD[Map[String, Any]] = {
+//      toDataset. TODO: translate with schema
+//    }
+
+    def toJSON(
+        implicit
+        ev1: TypedEncoder[D]
+    ): TypedDataset[String] = {
+      toDataset.toJSON
+    }
+  }
+
+  def dataRDDSorted(
+      implicit
+      ev: Ordering[D]
+  ): RDD[D] = { // DO NOT DELETE!
 
     val dataRDD = this.map(_.data)
     plan.scratchRDDPersist(dataRDD)
 
-    val sorted = dataRDD.sortBy(v => v.sortIndex(sortIndices: _*))
+    val sorted = dataRDD.sortBy(identity, ascending = true, 1)
     sorted.setName("sort")
 
     sorted.foreachPartition { _ => } // force execution TODO: remove, won't force
     plan.scratchRDDs.unpersist(dataRDD)
 
     sorted
-  }
-  def toMapRDD(sort: Boolean = false): RDD[Map[String, Any]] =
-    spooky.withJob("toMapRDD", s"toMapRDD(sort=$sort)") {
-      {
-        if (!sort) this.map(_.data)
-        else dataRDDSorted
-      }.map(_.toMap)
-    }
-
-  def toJSON(sort: Boolean = false): Dataset[String] = {
-    toDF(sort).toJSON
-  }
-
-  protected def toInternalRowRDD(
-      sort: Boolean = false,
-      spookySchema: SpookySchema
-  ): RDD[InternalRow] = {
-
-    val dataRDD =
-      if (!sort) this.map(_.data)
-      else dataRDDSorted
-
-    // TOOD: how to make it serializable so it can be reused by different partitions?
-    @transient lazy val field2Converter: Map[Field, Any => Any] = spookySchema.fieldTypes.map {
-      case (k, tpe) =>
-        val reified = tpe.reified
-        val converter = CatalystTypeConverters.createToCatalystConverter(reified)
-        k -> converter
-    }
-
-    dataRDD
-      .map { v =>
-        val converted: Seq[Any] = spookySchema.fields.map { field =>
-          val raw: Any = v.data.get(field).orNull
-          //              val encoder: ExpressionEncoder[Any] = field2Encoder(field)
-          val converter = field2Converter(field)
-          converter.apply(raw)
-        }
-        val InternalRow = new GenericInternalRow(converted.toArray)
-
-        InternalRow
-      }
-  }
-
-  def toDF(
-      sort: Boolean = false,
-      removeTransient: Boolean = true
-  ): DataFrame =
-    spooky.withJob("toDF", s"toDF(sort=$sort)") {
-
-      val effectiveSchema = {
-
-        if (removeTransient) this.transientRemoved.schema
-        else this.schema
-      }
-
-      val rowRDD = this.toInternalRowRDD(sort, effectiveSchema)
-
-      val result = _SQLHelper.internalCreateDF(spooky.sqlContext, rowRDD, effectiveSchema.structType)
-
-      result
-    }
-
-  def newResolver: SpookySchema#Resolver = schema.newResolver
-
-  def toStringRDD(
-      ex: Extractor[Any],
-      default: String = null
-  ): RDD[String] = {
-
-    val _ex = newResolver.include(ex.toStr).head
-
-    this.fetchedRDD.map(v => _ex.applyOrElse[FetchedRow, String](v, _ => default))
-  }
-
-  def toObjectRDD[T: ClassTag](
-      ex: Extractor[T],
-      default: T = null
-  ): RDD[T] = {
-
-    val _ex = newResolver.include(ex).head
-
-    this.fetchedRDD.map(v => _ex.applyOrElse[FetchedRow, T](v, _ => default))
   }
 
   // IMPORTANT: DO NOT discard type parameter! otherwise arguments' type will be coerced into Any!
@@ -190,10 +138,6 @@ case class FetchedDataset[D](
 
   def apply[T](exs: Extractor[T]*): FetchedDataset = {
     DeltaPlan.optimised(plan, Extract(exs))
-  }
-
-  def remove(fields: Field*): FetchedDataset = {
-    DeltaPlan.optimised(plan, Remove(fields))
   }
 
   def explodeObservations(

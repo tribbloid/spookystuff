@@ -5,11 +5,11 @@ import com.tribbloids.spookystuff.row.{BeaconRDD, LocalityGroup, SpookySchema, S
 /**
   * Basic Plan with no children, isExecuted always= true
   */
-case class RDDPlan(
+case class RDDPlan[D](
     override val computeSchema: SpookySchema,
-    @transient execute: SquashedRDD,
+    @transient execute: SquashedRDD[D],
     @transient beaconRDD: Option[BeaconRDD[LocalityGroup]] = None
-) extends ExecutionPlan(
+) extends ExecutionPlan[D](
       Seq(),
       computeSchema.ec
     ) {

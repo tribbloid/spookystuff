@@ -11,7 +11,7 @@ object ExecutionPlan {}
 
 //right now it vaguely resembles SparkPlan in catalyst
 //TODO: may subclass SparkPlan in the future to generate DataFrame directly, but not so fast
-abstract class ExecutionPlan[D](
+abstract class ExecutionPlan[O](
     val children: Seq[ExecutionPlan[_]],
     val ec: SpookyExecutionContext
 ) extends TreeView.Immutable[ExecutionPlan[_]]
@@ -28,8 +28,11 @@ abstract class ExecutionPlan[D](
   def spooky: SpookyContext = ec.spooky
   def scratchRDDs: ScratchRDDs = ec.scratchRDDs
 
-  protected def computeSchema: SpookySchema[D]
-  final lazy val outputSchema: SpookySchema[D] = computeSchema
+  protected def computeSchema: SpookySchema = {
+    // TODO: merge into outputSchema
+    SpookySchema(ec)
+  }
+  final lazy val outputSchema: SpookySchema = computeSchema
 
   {
     outputSchema
@@ -44,9 +47,9 @@ abstract class ExecutionPlan[D](
 
   lazy val beaconRDDOpt: Option[BeaconRDD[LocalityGroup]] = inheritedBeaconRDDOpt
 
-  protected def execute: SquashedRDD[D]
+  protected def execute: SquashedRDD[O]
 
-  final def fetch: SquashedRDD[D] = {
+  final def fetch: SquashedRDD[O] = {
 
     this.execute
       .map { row =>
@@ -56,13 +59,13 @@ abstract class ExecutionPlan[D](
   }
 
   @volatile var storageLevel: StorageLevel = StorageLevel.NONE
-  @volatile var _cachedRDD: SquashedRDD[D] = _
-  def cachedRDDOpt: Option[SquashedRDD[D]] = Option(_cachedRDD)
+  @volatile var _cachedRDD: SquashedRDD[O] = _
+  def cachedRDDOpt: Option[SquashedRDD[O]] = Option(_cachedRDD)
 
   def isCached: Boolean = cachedRDDOpt.nonEmpty
 
   // TODO: cachedRDD is redundant? just make it lazy val!
-  final def squashedRDD: SquashedRDD[D] = {
+  final def squashedRDD: SquashedRDD[O] = {
     ec.tryDeployPlugin()
     // any RDD access will cause all plugins to be deployed
 
@@ -86,7 +89,7 @@ abstract class ExecutionPlan[D](
     squashedRDD.map(_.withSchema(outputSchema))
   }
 
-  @transient final lazy val fetchedRDD: RDD[FetchedRow[D]] =
+  @transient final lazy val fetchedRDD: RDD[FetchedRow[O]] =
     SquashedRDDWithSchema.flatMap(row => row.withCtx.unSquash)
 
   // -------------------------------------

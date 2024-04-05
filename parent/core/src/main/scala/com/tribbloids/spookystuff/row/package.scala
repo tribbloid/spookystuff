@@ -15,8 +15,6 @@ package object row {
 
   type Sampler[T] = Iterable[(T, Int)] => Iterable[(T, Int)] // with index
 
-  type RowOrdering = Ordering[(LocalityGroup, Vector[Lineage[_]])]
-
   // f(open, visited) => open
 //  type RowEliminator = (Iterable[DataRow], Iterable[DataRow]) => Iterable[DataRow]
 

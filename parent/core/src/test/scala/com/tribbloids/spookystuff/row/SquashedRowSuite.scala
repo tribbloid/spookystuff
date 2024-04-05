@@ -24,7 +24,7 @@ class SquashedRowSuite extends SpookyBaseSpec {
     val row1 = FetchedRow(observations = trace.fetch(spooky)).squash
 
     val row = row1
-      .flatMap(_.splitByDistinctNames)
+      .flatMapData(_.splitByDistinctNames)
 
     val groupedNames = row.dataSeq.map { dataRow =>
       dataRow.scopeUIDs

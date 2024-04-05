@@ -2,6 +2,7 @@ package com.tribbloids.spookystuff.dsl
 
 import com.tribbloids.spookystuff.caching.ExploreLocalCache
 import com.tribbloids.spookystuff.execution.ExplorePlan.Params
+import com.tribbloids.spookystuff.execution.{Explore, ExploreRunner}
 import com.tribbloids.spookystuff.row._
 
 import scala.collection.mutable
@@ -12,70 +13,81 @@ object PathPlanners_Simple {
 
   case object BreadthFirst extends PathPlanning {
 
-    case class _Impl[D](
+    case class _Impl[I, O](
         override val params: Params,
-        schema: SpookySchema[D]
-    ) extends Impl.CanPruneSelected[D] {
+        schema: SpookySchema
+    ) extends Impl.CanPruneSelected[I, O] {
 
       import scala.Ordering.Implicits._
 
-      override val openReducer: Reducer = { (v1, v2) =>
-        val map = {
-          (v1 ++ v2).groupBy { v =>
-            v.lineageID.get
+      class ReducerProto[T] extends Explore.ReducerK[T] {
+        override def reduce(v1: Elems, v2: Elems): Elems = {
+
+          val map = {
+            (v1 ++ v2).groupBy { v =>
+              v.lineageID.get
+            }
           }
-        }
 
-        val candidates: Seq[Vector[Lineage]] = map.values.toSeq
+          val candidates = map.values.toSeq
 
-        if (candidates.isEmpty) Vector.empty
-        else if (candidates.size == 1) candidates.head
-        else {
+          if (candidates.isEmpty) Vector.empty
+          else if (candidates.size == 1) candidates.head
+          else {
 
-          val result = candidates
-            .minBy { v =>
-              val data = v.map(_.data)
+            val result = candidates
+              .minBy { vs =>
+                val sortEv = vs.map(_.sortEv).min
+                // TODO: this may need validation, not sure if consistent with old impl
+                sortEv
+              }
 
-              val minData = data.min(schema.ordering)
-              // TODO: this may need validation, not sure if consistent with old impl
-              minData
-            }(schema.ordering)
-
-          result
+            result
+          }
         }
       }
 
-      override val visitedReducer: Reducer = openReducer
+      override val openReducer: OpenReducer = {
+        new ReducerProto[I]
+      }
 
-      override val ordering: RowOrdering = Ordering.by { tuple: (LocalityGroup, Vector[Lineage]) =>
+      override val visitedReducer: VisitedReducer = {
+
+        new ReducerProto[O]
+      }
+
+      override val ordering: RowOrdering = Ordering.by { tuple: (LocalityGroup, Vector[Elem]) =>
         val inProgress: mutable.Set[LocalityGroup] = ExploreLocalCache
           .getOnGoingRunners(params.executionID)
-          .flatMap(_.fetchingInProgressOpt)
+          .flatMap { v: ExploreRunner[I, O] =>
+            v.fetchingInProgressOpt
+          }
 
-        val result: (Int, Seq[List[Int]]) = if (inProgress contains tuple._1) {
-          Int.MaxValue -> Vector.empty
+        val result = if (inProgress contains tuple._1) {
+          (Int.MaxValue, None, Vector.empty)
           // if in progress by any local executor, do not select, wait for another executor to finish it first
         } else {
           val dataRows = tuple._2
-          val firstDataRow = dataRows.head
+          val firstDataRow: Elem = dataRows.head
 
-          val sortEvs = firstDataRow.sortIndex(schema.sortIndices: _*)
-          0 -> sortEvs
+          (0, firstDataRow.depthOpt, firstDataRow.ordinal)
         }
+
         result
       }
 
       override protected def pruneSelectedNonEmpty(
-          open: Vector[Lineage],
-          visited: Vector[Lineage]
-      ): Vector[Lineage] = {
+          open: Elems,
+          visited: Outs
+      ): Vector[Elem] = {
 
-        val visitedDepth = visited.head.getInt(depthField)
+        val visitedDepth = visited.head.depthOpt
         open.filter { row =>
-          row.getInt(depthField) < visitedDepth
+          row.depthOpt < visitedDepth
         }
       }
     }
+
   }
 
 //  abstract class DepthFirst extends PathPlanning {}

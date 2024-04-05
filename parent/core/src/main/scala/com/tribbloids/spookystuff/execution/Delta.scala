@@ -2,145 +2,155 @@ package com.tribbloids.spookystuff.execution
 
 import ai.acyclic.prover.commons.function.Impl
 import ai.acyclic.prover.commons.function.Impl.:=>
-import com.tribbloids.spookystuff.commons.refl.CatalystTypeOps
 import com.tribbloids.spookystuff.doc.Doc
-import com.tribbloids.spookystuff.dsl.ForkType
-import com.tribbloids.spookystuff.row.{Sampler, SpookySchema, SquashedRow}
-import org.apache.spark.sql.types.{ArrayType, IntegerType}
+import com.tribbloids.spookystuff.row._
 
-trait Delta extends Serializable {
+trait Delta[I, O] extends Serializable {
 
-  def fn: SquashedRow :=> SquashedRow
-  def outputSchema: SpookySchema
+  // TODO: too complex? Should follow DeltaPlan.Fn
+  def repr(schema: SpookySchema): SquashedRow[I] :=> SquashedRow[O]
 
 }
 
 object Delta {
 
-  type ToDelta = SpookySchema => Delta
+//  case class DeltaView[I, O](self: Delta[I, O])(
+//      implicit
+//      ordering: Ordering[O]
+//  ) {
+//
+//    def apply
+//  }
 
-  case class NoDelta(outputSchema: SpookySchema) extends Delta {
+//  case class Repr[I, O](
+//      fn: SquashedRow[I] :=> SquashedRow[O],
+//      schema: SpookySchema
+//  )
 
-    override def fn: SquashedRow :=> SquashedRow = Impl(v => v)
-  }
+//  case class Composed[I, X, Y](
+//      left: Delta[I, X],
+//      right: Delta[X, Y]
+//  ) extends Delta[I, Y] {
+//
+//    override def repr(schema: SpookySchema): SquashedRow[I] :=> SquashedRow[Y] = {
+//
+//      val leftRepr = left.repr(schema)
+//      val rightRepr = right.repr(schema)
+//
+//      leftRepr.andThen(rightRepr)
+//    }
+//  }
 
-  /**
-    * extract parts of each Page and insert into their respective context if a key already exist in old context it will
-    * be replaced with the new one.
-    *
-    * @return
-    *   new PageRowRDD
-    */
-  case class Extract(exs: Seq[Extractor[_]])(val childSchema: SpookySchema) extends Delta {
+  case class FlatMap[I, O](
+      fn: FetchedRow[I] :=> Seq[O]
+  ) extends Delta[I, O] {
 
-    val resolver: childSchema.Resolver = childSchema.newResolver
-    val _exs: Seq[Resolved[Any]] = resolver.include(exs: _*)
+    override def repr(schema: SpookySchema): SquashedRow[I] :=> SquashedRow[O] = Impl { squashedRow =>
+      val rows = squashedRow.withCtx(schema.ctx).unSquash
 
-    override val outputSchema: SpookySchema = {
-      resolver.build
-    }
-
-    override lazy val fn: SquashedRow :=> SquashedRow = Impl { v =>
-      {
-        v.withCtx(outputSchema.spooky): v._WithCtx
-      }.extract(_exs: _*)
-    }
-  }
-  case class ExplodeData(
-      onField: Field,
-      ordinalField: Field,
-      sampler: Sampler[Any],
-      forkType: ForkType
-  )(val childSchema: SpookySchema)
-      extends Delta {
-
-    val resolver: childSchema.Resolver = childSchema.newResolver
-
-    val _on: TypedField = {
-      val flattenType = CatalystTypeOps(Get(onField).resolveType(childSchema)).unboxArrayOrMap
-      val tf = TypedField(onField.!!, flattenType)
-
-      resolver.includeTyped(tf).head
-    }
-
-    val effectiveOrdinalField: Field = Option(ordinalField) match {
-      case Some(ff) =>
-        ff.copy(isOrdinal = true)
-      case None =>
-        Field(_on.self.name + "_ordinal", isTransient = true, isOrdinal = true)
-    }
-
-    val _: TypedField = resolver.includeTyped(TypedField(effectiveOrdinalField, ArrayType(IntegerType))).head
-
-    override val outputSchema: SpookySchema = resolver.build
-
-    override lazy val fn: SquashedRow :=> SquashedRow = Impl { v =>
-      val result = v.explodeData(onField, effectiveOrdinalField, forkType, sampler)
-      result
-    }
-  }
-
-  case class ExplodeScope(
-      scopeFn: Lineage.WithScope => Seq[Lineage.WithScope]
-  )(val childSchema: SpookySchema)
-      extends Delta {
-
-    override def outputSchema: SpookySchema = childSchema
-
-    override lazy val fn: SquashedRow :=> SquashedRow = Impl { v =>
-      v.flatMap(scopeFn)
-    }
-  }
-
-  case class Remove(
-      toBeRemoved: Seq[Field]
-  )(val childSchema: SpookySchema)
-      extends Delta {
-
-    override val outputSchema: SpookySchema = childSchema -- toBeRemoved
-
-    override lazy val fn: SquashedRow :=> SquashedRow = Impl { v =>
-      v.remove(toBeRemoved: _*)
-    }
-  }
-
-  case class SaveContent(
-      path: Extractor[String],
-      extension: Extractor[String],
-      doc: Extractor[Doc],
-      overwrite: Boolean
-  )(val childSchema: SpookySchema)
-      extends Delta {
-
-    val resolver: childSchema.Resolver = childSchema.newResolver
-
-    val _ext: Resolved[String] = resolver.include(extension).head
-    val _path: Resolved[String] = resolver.include(path).head
-    val _docExpr: Resolved[Doc] = resolver.include(doc).head
-
-    override val outputSchema: SpookySchema = childSchema
-
-    override lazy val fn: SquashedRow :=> SquashedRow = Impl { v =>
-      val withCtx = v.withCtx(childSchema.spooky)
-
-      withCtx.unSquash
-        .foreach { fetchedRow =>
-          var pathStr: Option[String] = _path.lift(fetchedRow).map(_.toString).map { str =>
-            val splitted = str.split(":")
-            if (splitted.size <= 2) str
-            else splitted.head + ":" + splitted.slice(1, Int.MaxValue).mkString("%3A")
-          }
-
-          val ext = _ext.lift(fetchedRow).getOrElse("")
-          if (ext.nonEmpty) pathStr = pathStr.map(_ + "." + ext)
-
-          pathStr.foreach { str =>
-            val docOpt = _docExpr.lift(fetchedRow)
-
-            docOpt.foreach(_.save(outputSchema.spooky, overwrite)(Seq(str)))
-          }
+      val nextData = rows.flatMap { row =>
+        fn(row).map { nextData =>
+          row.copy(data = nextData).dataWithScope
         }
-      v
+      }
+      squashedRow.copy(dataSeq = nextData)
+    }
+  }
+
+//
+//  /**
+//    * extract parts of each Page and insert into their respective context if a key already exist in old context it will
+//    * be replaced with the new one.
+//    *
+//    * @return
+//    *   new PageRowRDD
+//    */
+//  class Extract[
+//      I,
+//      IT <: Tuple,
+//      N,
+//      NT <: Tuple,
+//      OT <: Tuple
+//  ](
+//      fn: FetchedRow[I] :=> Seq[N]
+//  )(
+//      implicit
+//      ev1: TypedRow.ofData.=>>[I, IT],
+//      ev2: TypedRow.ofData.=>>[N, NT]
+//  ) extends Delta[OT] {
+//
+//    val resolver: childSchema.Resolver = childSchema.newResolver
+//    val _exs: Seq[Resolved[Any]] = resolver.include(exs: _*)
+//
+//    override lazy val repr: SquashedRow :=> SquashedRow = Impl { v =>
+//      {
+//        v.withCtx(outputSchema.spooky): v._WithCtx
+//      }.extract(_exs: _*)
+//    }
+//  }
+
+//  case class ExplodeData[I](
+//      onField: Field,
+//      ordinalField: Field,
+//      sampler: Sampler[Any],
+//      forkType: ForkType
+//  ) extends Delta[I] {
+//
+//    val resolver: childSchema.Resolver = childSchema.newResolver
+//
+//    val _on: TypedField = {
+//      val flattenType = CatalystTypeOps(Get(onField).resolveType(childSchema)).unboxArrayOrMap
+//      val tf = TypedField(onField.!!, flattenType)
+//
+//      resolver.includeTyped(tf).head
+//    }
+//
+//    val effectiveOrdinalField: Field = Option(ordinalField) match {
+//      case Some(ff) =>
+//        ff.copy(isOrdinal = true)
+//      case None =>
+//        Field(_on.self.name + "_ordinal", isTransient = true, isOrdinal = true)
+//    }
+//
+//    val _: TypedField = resolver.includeTyped(TypedField(effectiveOrdinalField, ArrayType(IntegerType))).head
+//
+//    override lazy val repr(schema: SpookySchema[I]): SquashedRow :=> SquashedRow = Impl { v =>
+//      val result = v.explodeData(onField, effectiveOrdinalField, forkType, sampler)
+//      result
+//    }
+//  }
+
+  case class ExplodeScope[I](
+      scopeFn: Data.WithScope[I] => Seq[Data.WithScope[I]]
+      // TODO: should be from FetchedRow
+  ) extends Delta[I, I] {
+
+    override def repr(schema: SpookySchema): SquashedRow[I] :=> SquashedRow[I] = Impl { v =>
+      v.flatMapData(scopeFn)
+    }
+  }
+
+  case class SaveContent[I](
+      getDocs: FetchedRow[I] => Map[String, Doc],
+      overwrite: Boolean
+  ) extends Delta[I, I] {
+
+    override def repr(schema: SpookySchema): SquashedRow[I] :=> SquashedRow[I] = {
+
+      Impl { v =>
+        val withCtx = v.withCtx(schema.ctx)
+
+        withCtx.unSquash
+          .foreach { fetchedRow =>
+            val docs = getDocs(fetchedRow)
+
+            docs.foreach {
+              case (k, doc) =>
+                doc.save(schema.ctx, overwrite)(Seq(k))
+            }
+          }
+        v
+      }
     }
   }
 }

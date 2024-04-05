@@ -1,6 +1,5 @@
 package com.tribbloids.spookystuff.row
 
-import com.tribbloids.spookystuff.commons.Types.Reduce
 import com.tribbloids.spookystuff.doc.Observation.DocUID
 
 import java.util.UUID
@@ -10,44 +9,18 @@ import scala.language.implicitConversions
 
 object Data {
 
-  object WithLineage {}
+  object WithScope {
 
-  /**
-    * contains all schematic data accumulated over graph traversal path, but contains no schema, ad-hoc local access
-    * requires combining with schema from Spark driver
-    *
-    * CAUTION: implementation should be simple and close to DataSet API in Apache Spark, all type-level operations
-    * should go into [[com.tribbloids.spookystuff.frameless.TypedRow]]
-    *
-    * @param data
-    *   internal representation
-    * @param lineageID
-    *   only used in [[com.tribbloids.spookystuff.dsl.PathPlanning]], multiple [[WithLineage]] with identical
-    *   [[lineageID]] are assumed to be scrapped from the same graph traversal path, and are preserved or removed in
-    *   [[com.tribbloids.spookystuff.dsl.PathPlanning]] as a unit
-    * @param isOutOfRange
-    *   only used in [[com.tribbloids.spookystuff.execution.ExploreRunner]], out of range rows are cleaned at the end of
-    *   all [[com.tribbloids.spookystuff.execution.ExplorePlan]] minibatches
-    */
-  @SerialVersionUID(6534469387269426194L)
-  case class WithLineage[D](
-      data: D,
-      lineageID: Option[UUID] = None,
-      isOutOfRange: Boolean = false
-  ) {
+    implicit def unbox[D <: Serializable](v: WithScope[D]): D = v.data
 
-    //  {
-    //    assert(data.isInstanceOf[Serializable]) // fail early  TODO: this should be moved into Debugging mode
-    //  }
+    def empty[D](data: D): WithScope[D] = WithScope(data, Nil)
 
-    def withEmptyScope: WithScope[D] = WithScope(this)
-
-    def idRefresh: WithLineage[D] = this.copy(lineageID = Some(UUID.randomUUID()))
+    lazy val blank: WithScope[Unit] = empty(())
   }
 
   case class WithScope[D](
       data: D,
-      scopeUIDs: Seq[DocUID] = Nil,
+      scopeUIDs: Seq[DocUID],
       // a list of DocUIDs that can be found in associated Rollout, DocUID has very small serialized form
       ordinal: Int = 0
   ) {
@@ -87,16 +60,50 @@ object Data {
     }
   }
 
-  object WithScope {
+  object Exploring {}
 
-    implicit def unbox[D <: Serializable](v: WithScope[D]): D = v.data
+  /**
+    * contains all schematic data accumulated over graph traversal path, but contains no schema, ad-hoc local access
+    * requires combining with schema from Spark driver
+    *
+    * CAUTION: implementation should be simple and close to DataSet API in Apache Spark, all type-level operations
+    * should go into [[com.tribbloids.spookystuff.frameless.TypedRow]]
+    *
+    * @param data
+    *   internal representation
+    * @param lineageID
+    *   only used in [[com.tribbloids.spookystuff.dsl.PathPlanning]], multiple [[Exploring]] with identical
+    *   [[lineageID]] are assumed to be scrapped from the same graph traversal path, and are preserved or removed in
+    *   [[com.tribbloids.spookystuff.dsl.PathPlanning]] as a unit
+    * @param isOutOfRange
+    *   only used in [[com.tribbloids.spookystuff.execution.ExploreRunner]], out of range rows are cleaned at the end of
+    *   all [[com.tribbloids.spookystuff.execution.ExplorePlan]] minibatches
+    */
+  @SerialVersionUID(6534469387269426194L)
+  case class Exploring[D](
+      data: D,
+      lineageID: Option[UUID] = None,
+      isOutOfRange: Boolean = false,
+      depthOpt: Option[Int] = None,
+      ordinal: Vector[Int] = Vector.empty
+  ) {
 
-    lazy val blank: WithScope[Unit] = WithLineage(()).withEmptyScope
+    //  {
+    //    assert(data.isInstanceOf[Serializable]) // fail early  TODO: this should be moved into Debugging mode
+    //  }
+
+    def idRefresh: Exploring[D] = this.copy(lineageID = Some(UUID.randomUUID()))
+
+    def depth_++ : Exploring[D] = this.copy(depthOpt = Some(depthOpt.map(_ + 1).getOrElse(0)))
+
+    lazy val sortEv: (Option[Int], Vector[Int]) = (depthOpt, ordinal)
   }
 
   case class Forking[D, K](
       data: D,
-      forkKey: K
+      // the following are temporary columns used in forking, can be committed into D on demand
+      // they will be missing if it is a outer fork that failed to produce any result
+      key: Option[K],
+      ordinal: Option[Int] // will be appended into Exploring.ordinal by default
   ) {}
-
 }

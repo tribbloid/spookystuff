@@ -3,7 +3,7 @@ package com.tribbloids.spookystuff.execution
 import com.tribbloids.spookystuff.dsl.{GenPartitioner, GenPartitionerLike}
 import com.tribbloids.spookystuff.row.{BeaconRDD, LocalityGroup}
 
-trait InjectBeaconRDDPlan extends ExecutionPlan {
+trait InjectBeaconRDDPlan[O] extends ExecutionPlan[O] {
 
   def genPartitioner: GenPartitioner
 
@@ -11,7 +11,7 @@ trait InjectBeaconRDDPlan extends ExecutionPlan {
     genPartitioner.getInstance[LocalityGroup](outputSchema)
   }
 
-  abstract override lazy val beaconRDDOpt: Option[BeaconRDD[LocalityGroup]] = {
+  final override lazy val beaconRDDOpt: Option[BeaconRDD[LocalityGroup]] = {
     inheritedBeaconRDDOpt.orElse {
       this.firstChildOpt.flatMap { child =>
         val beaconRDDOpt = gpImpl.createBeaconRDD(child.squashedRDD)

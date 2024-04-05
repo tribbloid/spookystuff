@@ -183,7 +183,7 @@ case class Trace(
     result.map(v => v: Trace).toList
   }
 
-  def rewriteLocally[D](schema: SpookySchema[D]): TraceSet = {
+  def rewriteLocally(schema: SpookySchema): TraceSet = {
 
     TraceSet.of(RewriteRule.Rules(localRewriteRules(schema)).rewriteAll(Seq(this)): _*)
   }

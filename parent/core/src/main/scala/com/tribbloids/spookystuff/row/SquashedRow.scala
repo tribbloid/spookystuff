@@ -3,9 +3,12 @@ package com.tribbloids.spookystuff.row
 import ai.acyclic.prover.commons.function.Impl
 import ai.acyclic.prover.commons.function.Impl.Fn
 import com.tribbloids.spookystuff.SpookyContext
-import com.tribbloids.spookystuff.actions.Trace
+import com.tribbloids.spookystuff.actions.{Trace, TraceSet}
 import com.tribbloids.spookystuff.commons.serialization.NOTSerializable
 import com.tribbloids.spookystuff.doc.Observation
+import com.tribbloids.spookystuff.execution.DeltaPlan
+
+import scala.language.implicitConversions
 
 object SquashedRow {
 
@@ -26,18 +29,16 @@ object SquashedRow {
 
   case class WithSchema[D](
       self: SquashedRow[D],
-      schema: SpookySchema[D]
+      schema: SpookySchema
   ) {
 
-    @transient lazy val withCtx: self._WithCtx = self.withCtx(schema.spooky)
+    @transient lazy val withCtx: self._WithCtx = self.withCtx(schema.ctx)
 
     /**
       * operation is applied per unSquashed row, each row may yield multiple runnable traces
       *
       * this function will never remove a single unSquashed row, in worst case, each row yield an empty trace
       *
-      * @param traces
-      *   material for interpolation
       * @return
       *   a mapping from runnable trace to data
       */
@@ -61,6 +62,11 @@ object SquashedRow {
 //
 //      result
 //    }
+  }
+
+  object WithSchema {
+
+    implicit def unbox[D](v: WithSchema[D]): v.self._WithCtx = v.withCtx
   }
 }
 
@@ -110,10 +116,9 @@ case class SquashedRow[D](
 //    result
 //  }
 
-  def flatMap[DD](
+  def flatMapData[DD](
       fn: Data.WithScope[D] => Seq[Data.WithScope[DD]]
   ): SquashedRow[DD] = {
-    // TODO: merge into explodeData after typed field is implemented
 
     val newDataRows = dataSeq.flatMap { row =>
       val newRows = fn(row)
@@ -134,15 +139,12 @@ case class SquashedRow[D](
 //    )
 //  }
 
-  def withLineageIDs[DD](
-      implicit
-      ev: D <:< Data.WithLineage[DD]
-  ): SquashedRow[D] = {
+  def exploring: SquashedRow[Data.Exploring[D]] = {
     this.copy(
       dataSeq = {
         dataSeq.map { d =>
           d.copy(
-            data = ev(d.data).idRefresh
+            data = Data.Exploring(d.data).idRefresh
           )
         }
       }
@@ -151,7 +153,7 @@ case class SquashedRow[D](
 
   case class _WithCtx(spooky: SpookyContext) extends NOTSerializable {
 
-    lazy val resetScope: SquashedRow[D] = {
+    lazy val withDefaultScope: SquashedRow[D] = {
 
       lazy val uids = group.withCtx(spooky).trajectory.map(_.uid)
 
@@ -172,67 +174,39 @@ case class SquashedRow[D](
           lookup(uid)
         }
 
-        FetchedRow(r1, inScope, r1.ordinal)
+        FetchedRow(r1.data, inScope, r1.ordinal)
       }
     }
 
-    /**
-      * the size of dataRows may increase according to the following rules:
-      *
-      * each dataRow yield {exs.size} x {afterDelta.size} dataRows.
-      * @param filterEmptyKeep1Datum
-      *   if true, output DataRows with empty KV extraction will be replaced by the original source
-      */
-//    private def extractImpl(
-//        exs: Seq[Resolved[Any]]
-//        // TODO: this is useless
-//    ): SquashedRow = {
-//
-//      val fetchedRows = this.unSquash
-//
-//      // each element contains a different page group, CAUTION: not all of them are used: page group that yield no new datum will be removed, if all groups yield no new datum at least 1 row is preserved
-//      val old_new = {
-//
-//        val result = fetchedRows.map { fetchedRow =>
-//          val dataRow = fetchedRow.dataRowWithScope
-//          val KVOpts: Seq[(Field, Option[Any])] = exs.flatMap { expr =>
-//            val resolving = expr.field.conflictResolving
-//            val k = expr.field
-//            val vOpt = expr.lift.apply(fetchedRow)
-//            resolving match {
-//              case Field.Replace => Some(k -> vOpt)
-//              case _             => vOpt.map(v => k -> Some(v))
-//            }
-//          }
-//          dataRow -> KVOpts
-//        }
-//
-//        result
-//      }
-//
-//      val newDataRows = old_new.map { tuple =>
-//        val K_VOrRemoves = tuple._2
-//        val dataRow = tuple._1
-//        val newKVs = K_VOrRemoves.collect {
-//          case (field, Some(v)) => field -> v
-//        }
-//        val removeKs = K_VOrRemoves.collect {
-//          case (field, None) => field
-//        }
-//        val updated = dataRow ++ newKVs -- removeKs
-//
-//        updated
-//        dataRow.copy(updated)
-//
-//      }
-//
-//      SquashedRow.this.copy(dataRows = newDataRows)
-//    }
+    def applyDelta[O](
+        fn: DeltaPlan.Fn[D, O]
+    ): SquashedRow[O] = {
 
-//    def extract(ex: Resolved[Any]*): SquashedRow = extractImpl(ex)
+      val newDataRows: Seq[Data.WithScope[O]] = unSquash.flatMap { row: FetchedRow[D] =>
+        val newRows = fn(row)
+        newRows
+      }
+
+      SquashedRow.this.copy(dataSeq = newDataRows)
+    }
+
+    def fetch(fn: FetchedRow[D] => TraceSet): Seq[(Trace, D)] = {
+
+      val result = unSquash.flatMap { row: FetchedRow[D] =>
+        val traces = fn(row)
+
+        val result = traces.map { trace =>
+          trace -> row.data
+        }
+
+        result
+      }
+
+      result
+    }
   }
 
-  @transient lazy val withSchema: Fn[SpookySchema[D], WithSchema[D]] = Impl { v =>
+  @transient lazy val withSchema: Fn[SpookySchema, WithSchema[D]] = Impl { v =>
     WithSchema(this, v)
   }
 }

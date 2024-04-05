@@ -38,7 +38,7 @@ abstract class ActionLike extends Product with Serializable with Verbose {
     * invoked on executors, immediately after definition *IMPORTANT!* may be called several times, before or after
     * GenPartitioner.
     */
-  def localRewriteRules[D](schema: SpookySchema[D]): Seq[RewriteRule[Trace]] = Nil
+  def localRewriteRules[D](schema: SpookySchema): Seq[RewriteRule[Trace]] = Nil
 
   def injectFrom(same: ActionLike): Unit = {}
   // TODO: remove, or change to immutable pattern to avoid one Trace being used twice with different names

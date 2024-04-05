@@ -19,7 +19,7 @@ case class FetchedRow[D](
     ordinal: Int = 0
 ) {
 
-  @transient lazy val dataWithScope: Data.WithScope[D] = Data.WithScope(data, observations.map(_.uid))
+  @transient lazy val dataWithScope: Data.WithScope[D] = Data.WithScope(data, observations.map(_.uid), ordinal)
 
   def squash: SquashedRow[D] = {
     SquashedRow

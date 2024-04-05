@@ -15,7 +15,7 @@ import org.apache.hadoop.conf.Configuration
 import org.apache.spark._
 import org.apache.spark.broadcast.Broadcast
 import org.apache.spark.rdd.RDD
-import org.apache.spark.sql.{Dataset, SQLContext}
+import org.apache.spark.sql.{Dataset, SQLContext, SparkSession}
 
 import scala.language.implicitConversions
 import scala.reflect.ClassTag
@@ -50,7 +50,7 @@ object SpookyContext {
 }
 
 case class SpookyContext(
-    @transient sqlContext: SQLContext // can't be used on executors, TODO: change to SparkSession
+    @transient sparkSession: SparkSession // can't be used on executors, TODO: change to SparkSession
 ) extends ShippingMarks {
 
   // can be shipped to executors to determine behaviours of actions
@@ -107,6 +107,8 @@ case class SpookyContext(
 
     this
   }
+
+  def sqlContext: SQLContext = sparkSession.sqlContext
 
   def sparkContext: SparkContext = this.sqlContext.sparkContext
 
