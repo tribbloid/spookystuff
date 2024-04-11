@@ -1,6 +1,7 @@
 package com.tribbloids.spookystuff.frameless
 
 import ai.acyclic.prover.commons.function.Hom
+import com.tribbloids.spookystuff.frameless.Tuple.Empty
 import com.tribbloids.spookystuff.frameless.TypedRow.ElementAPI
 import shapeless.Poly2
 import shapeless.ops.record.{Keys, MergeWith}
@@ -43,10 +44,14 @@ object TypedRowInternal {
     new TypedRow[L](cells.to(Vector))
   }
 
+  def ofElement[K <: XStr, V](
+      v: Col_->>[K, V]
+  ): TypedRow[Col_->>[K, V] *: Empty] = ofTuple(v *: Tuple.empty)
+
   protected trait ofData_Imp0 extends Hom.Poly {
 
     implicit def fromV[V]: V =>> TypedRow[Col_->>["value", V] *: Tuple.Empty] = at[V] { v =>
-      ofTuple(Col_->>["value"](v) *: Tuple.empty)
+      ofTuple((col["value"] ->> v) *: Tuple.empty)
     }
   }
 

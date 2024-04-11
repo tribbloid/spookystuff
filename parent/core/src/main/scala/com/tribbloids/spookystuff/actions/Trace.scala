@@ -81,7 +81,7 @@ object Trace {
 
   object Rollout extends Capabilities {
 
-    trait Cached extends Cap
+    trait Cached extends Capability
 
     implicit class CachedRolloutView(v: Rollout with Cached) {
 

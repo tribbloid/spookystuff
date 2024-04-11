@@ -1,15 +1,20 @@
 package com.tribbloids.spookystuff
 
+import shapeless.{labelled, HNil}
 import shapeless.labelled.{field, FieldType}
 import shapeless.tag.@@
 
 package object frameless {
 
-  // TODO: definition here will be obsolete in shapeless 2.4
-  //  upgrade blocked by frameless
-
   type XInt = Int with Singleton
   type XStr = String with Singleton
+
+  type ->>[K, V] = FieldType[K, V]
+
+  def ->>[K]: labelled.FieldBuilder[K] = field[K]
+
+  // TODO: the following definition for Col will be obsolete in shapeless 2.4
+  //  upgrade blocked by frameless
 
   type Col[T <: XStr] = Symbol @@ T
 
@@ -18,15 +23,15 @@ package object frameless {
     Symbol(v).asInstanceOf[Col[T]]
   }
 
-  type ->>[K, V] = FieldType[K, V]
+  type Col_->>[K <: XStr, V] = Col[K] ->> V
 
-  def ->>[K] = field[K]
+  class _ColValueConstructor[K <: XStr]() {
 
-  type Col_->>[T <: XStr, V] = Col[T] ->> V
-
-  def Col_->>[T <: XStr](v: Any): T Col_->> v.type = {
-    v.asInstanceOf[T Col_->> v.type]
+    def ->>[V](v: V): K Col_->> v.type = {
+      v.asInstanceOf[K Col_->> v.type]
+    }
   }
+  def col[K <: XStr] = new _ColValueConstructor[K]()
 
   type Tuple = shapeless.HList
   object Tuple {

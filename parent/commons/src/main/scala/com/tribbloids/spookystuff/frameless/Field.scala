@@ -2,22 +2,41 @@ package com.tribbloids.spookystuff.frameless
 
 import ai.acyclic.prover.commons.function.Hom
 import ai.acyclic.prover.commons.util.Capabilities
+import com.tribbloids.spookystuff.frameless.Tuple.Empty
 import shapeless.ops.record.MapValues
+
+import scala.language.implicitConversions
 
 object Field extends Capabilities {
   // ... is a compile-time-only construct
 
-  trait Name[N <: XStr] extends Cap
+  class Name[K <: XStr]() extends Capability
 
-  case class NameMixin[N <: XStr]() extends MixinFn[Name[N]]
+  object Name {
 
-  def Name[N <: XStr]: NameMixin[N] = NameMixin[N]()
+    def apply[K <: XStr]: Name[K] = new Name[K]()
 
-  trait CanSort extends Cap
+    def apply[K <: XStr](name: K) = new Name[name.type]()
 
-  object CanSort extends MixinFn[CanSort] {
+    case class AsTypedRowView[K <: XStr, V](self: V ^: Name[K])
+        extends TypedRow.ElementView[Col_->>[K, V] *: Tuple.Empty] {
+
+      override def asTypeRow: TypedRow[Col_->>[K, V] *: Empty] = {
+
+        TypedRowInternal.ofElement(col[K] ->> self.asInstanceOf[V])
+      }
+    }
+
+    implicit def asTypedRowView[K <: XStr, V](self: V ^: Name[K]): AsTypedRowView[K, V] = AsTypedRowView(self)
+  }
+
+  object CanSort extends Capability {
 
     import shapeless.record._
+
+    def apply[V](v: V) = {
+      v ^: CanSort
+    }
 
     def apply[L <: Tuple](typedRow: TypedRow[L])(
         implicit
@@ -31,8 +50,8 @@ object Field extends Capabilities {
 
     object Enable extends Hom.Poly {
 
-      implicit def only[T]: T =>> (T ^^ CanSort) = at[T] { v =>
-        v.asInstanceOf[T ^^ CanSort]
+      implicit def only[T]: T =>> (T ^: CanSort.type) = at[T] { v =>
+        v.asInstanceOf[T ^: CanSort.type]
       }
     }
   }
@@ -40,16 +59,16 @@ object Field extends Capabilities {
   /**
     * define whether to evict old values that has identical field name in previous table
     */
-  sealed abstract class ConflictResolving extends Cap
+  sealed abstract class ConflictResolving extends Capability
   // TODO: it is useless right now, precedence of fields in merging are totally determined by whether to use ++< or >++
   //  may be enabled later for fine-grained control
 
   // Fail fast
-  trait Error extends ConflictResolving
+  object Error extends ConflictResolving
 
   // Always evict old value
-  trait Replace extends ConflictResolving
+  object Replace extends ConflictResolving
 
   // Only evict old value if the new value is not NULL.
-  trait ReplaceIfNotNull extends ConflictResolving
+  object ReplaceIfNotNull extends ConflictResolving
 }

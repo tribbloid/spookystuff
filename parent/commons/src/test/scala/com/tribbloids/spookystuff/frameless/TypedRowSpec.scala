@@ -84,7 +84,23 @@ class TypedRowSpec extends BaseSpec {
       assert(merged._internal.keys.runtimeList == List('x, 'y, 'z))
       assert(merged._internal.repr.runtimeList == List(1, "ab", 1.1))
     }
+
+    describe("with selection") {
+
+      it("right") {
+
+        val t1 = ^(x = 1, y = "ab")
+        val t2 = ^(y = 1.0, z = 1.1)
+
+        val merged = t1 ++ t2.y
+
+        assert(merged._internal.keys.runtimeList == List('x, 'y))
+        assert(merged._internal.repr.runtimeList == List(1, 1.0))
+      }
+    }
   }
+
+  describe("cartesian product") {}
 
   //  it("removeAll") {
   //    // TODO implementations of records.Updater/Update/UpdateAll are all defective due to macro
@@ -110,7 +126,7 @@ class TypedRowSpec extends BaseSpec {
   //
   //  }
 
-  describe("columns") {
+  describe("_fields") {
 
     it("value") {
 
@@ -150,7 +166,6 @@ class TypedRowSpec extends BaseSpec {
     }
 
     //    it("remove") {}
-
   }
 
   describe("in Dataset") {

@@ -1,5 +1,6 @@
 package com.tribbloids.spookystuff.frameless
 
+import ai.acyclic.prover.commons.function.api.FnLike.^:
 import com.tribbloids.spookystuff.frameless.TypedRowInternal.ElementWiseMethods
 import frameless.TypedEncoder
 import shapeless.RecordArgs
@@ -39,9 +40,11 @@ final class TypedRow[T <: Tuple](
   def selectDynamic(key: XStr)(
       implicit
       selector: Selector[T, Col[key.type]]
-  ): selector.Out with Field.Name[key.type] = {
+  ) = {
 
-    _fields.selectDynamic(key).value.asInstanceOf[selector.Out with Field.Name[key.type]]
+    val value: selector.Out = _fields.selectDynamic(key).value
+
+    (value: selector.Out) ^: Field.Name[key.type]
   }
 
   @transient override lazy val toString: String = cells.mkString("[", ",", "]")

@@ -23,7 +23,7 @@ object TypedRowOrdering {
 
     object By extends By_Imp0 {
 
-      implicit def accept[T <: _ ^^ CanSort]: T =>> T = at[T] { v: T =>
+      implicit def accept[T <: _ ^: CanSort.type]: T =>> T = at[T] { v: T =>
         v
       }
     }
