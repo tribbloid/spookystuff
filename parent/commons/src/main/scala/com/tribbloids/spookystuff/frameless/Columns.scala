@@ -14,7 +14,7 @@ object Columns extends SingletonProductArgs {
 
   object Singleton2Col extends Hom.Poly {
 
-    implicit def caseSymbol[T <: String with Singleton]: T =>> Col[T] =
+    implicit def caseSymbol[T <: XStr]: T =>> Col[T] =
       at[T] { s =>
         Col(s)
       }

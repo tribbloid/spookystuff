@@ -6,7 +6,16 @@ import com.tribbloids.spookystuff.row.{Data, FetchedRow, LocalityGroup}
 
 object Explore {
 
-  type Out[I, O] = (ForkPlan.Out[I], Seq[O])
+  /**
+    * [[ChainPlan.Out]] deliberately contains [[Data.WithScope]], but the scope will not be commited into the visited
+    * set. it is only there to make appending [[ChainPlan]] easier
+ *
+    * @tparam I
+    *   input
+    * @tparam O
+    *   output
+    */
+  type Out[I, O] = (ForkPlan.Out[I], ChainPlan.Out[O])
 
   type Fn[I, O] = FetchedRow[Data.Exploring[I]] => Out[I, O]
 

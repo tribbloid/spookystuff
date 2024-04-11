@@ -168,7 +168,9 @@ case class ExploreRunner[I, O](
         {
           // commit out into visited
           val inRange: Vector[Data.Exploring[O]] = _outs.toVector.flatMap { out =>
-            val result = elem.copy(data = out)
+            val data = out.data
+
+            val result = elem.copy(data = data)
 
             val depth = result.depthOpt.getOrElse(Int.MaxValue)
 

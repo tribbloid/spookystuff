@@ -165,14 +165,14 @@ case class Doc(
     }
   }
 
-  @transient lazy val converted: Observation = {
+  @transient lazy val normalised: Observation = {
     rootOpt match {
       case Some(_) =>
         this
       case None =>
         try {
           this.copy()(
-            content = this.content.converted
+            content = this.content.normalised
           )
         } catch {
           case e: Throwable =>
@@ -182,7 +182,7 @@ case class Doc(
   }
 
   override type RootType = Unstructured
-  def root: Unstructured = converted match {
+  def root: Unstructured = normalised match {
     case d: Doc => d.rootOpt.getOrElse(Unrecognisable)
     case _      => Unrecognisable
   }

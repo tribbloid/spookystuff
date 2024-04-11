@@ -7,9 +7,15 @@ import shapeless.ops.record.MapValues
 object Field extends Capabilities {
   // ... is a compile-time-only construct
 
+  trait Name[N <: XStr] extends Cap
+
+  case class NameMixin[N <: XStr]() extends MixinFn[Name[N]]
+
+  def Name[N <: XStr]: NameMixin[N] = NameMixin[N]()
+
   trait CanSort extends Cap
 
-  object CanSort extends Factory[CanSort] {
+  object CanSort extends MixinFn[CanSort] {
 
     import shapeless.record._
 
@@ -21,10 +27,9 @@ object Field extends Capabilities {
       val mapped = typedRow._internal.repr.mapValues(Enable)(ev)
 
       TypedRowInternal.ofTuple(mapped)
-
     }
 
-    object Enable extends Hom.Poly with Factory[CanSort] {
+    object Enable extends Hom.Poly {
 
       implicit def only[T]: T =>> (T ^^ CanSort) = at[T] { v =>
         v.asInstanceOf[T ^^ CanSort]

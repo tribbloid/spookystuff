@@ -47,10 +47,10 @@ sealed trait Content extends SpookyContext.CanRunWith with Serializable {
     fileExtensions.headOption
   }
 
-  @transient lazy val converted: Converted = {
+  @transient lazy val normalised: Normalised = {
 
     Content.this match {
-      case v: Converted =>
+      case v: Normalised =>
         v
       case v: Original =>
         val handler = new ToHTMLContentHandler()
@@ -66,7 +66,7 @@ sealed trait Content extends SpookyContext.CanRunWith with Serializable {
             parser.parse(stream, handler, metadata, context)
             val html = handler.toString
 
-            Converted(
+            Normalised(
               new InMemoryBlob(html.getBytes(v.preferredTranscode)),
               ContentTypeView(
                 ContentType.TEXT_HTML.withCharset(v.preferredTranscode)
@@ -218,7 +218,7 @@ object Content {
       )
   }
 
-  case class Converted(
+  case class Normalised(
       blob: Blob,
       contentType: ContentTypeView
   ) extends Content {
@@ -227,7 +227,7 @@ object Content {
 
     override def defaultFileExtension: Option[String] = {
       fileExtensions.headOption.map { v =>
-        s"converted.$v"
+        s"normalised.$v"
       }
     }
   }

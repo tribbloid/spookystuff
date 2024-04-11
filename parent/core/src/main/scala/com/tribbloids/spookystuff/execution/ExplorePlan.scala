@@ -48,7 +48,7 @@ case class ExplorePlan[I, O](
     // TODO: test if proceeding to next miniBatch is necessary
     checkpointInterval: Int // set to Int.MaxValue to disable checkpointing,
 )(
-    deltaFn: Explore.Fn[I, O]
+    val fn: Explore.Fn[I, O]
 ) extends UnaryPlan[I, O](child)
     with InjectBeaconRDDPlan[I]
     with Explore.Common[I, O] {
@@ -97,7 +97,7 @@ case class ExplorePlan[I, O](
         val stateRDD_+ : RDD[(LocalityGroup, State[I, O])] = stateRDD.mapPartitions { itr =>
           val runner = ExploreRunner(itr, pathPlanningImpl, sameBy)
           val state_+ = runner
-            .Run(deltaFn)
+            .Run(fn)
             .recursively(
               miniBatchSize
             )
@@ -184,4 +184,23 @@ case class ExplorePlan[I, O](
 
     gpImpl.reduceByKey(stateRDD, globalReducer, beaconRDDOpt)
   }
+
+  //    this match {
+  //      case plan: ExplorePlan[_, _] if !this.isCached =>
+  //        object _More extends Explore.Fn[D, O] {
+  //
+  //          override def apply(row: FetchedRow[Data.Exploring[D]]) = {
+  //
+  //            val (forked, flat) = plan.fn(row)
+  //
+  //            flat.map(withScope => ???)
+  //            ???
+  //          }
+  //        }
+  //
+  //        plan.copy()(_More)
+  //      case _ =>
+  //        FlatPlan(this, fn)
+  //    }
+//  }
 }

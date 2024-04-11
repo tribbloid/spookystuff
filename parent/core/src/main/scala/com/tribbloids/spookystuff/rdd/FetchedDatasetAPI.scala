@@ -8,8 +8,8 @@ import org.apache.spark.storage.StorageLevel
 /**
   * Created by peng on 2/12/15.
   */
-trait FetchedDatasetAPI {
-  self: FetchedDataset =>
+trait FetchedDatasetAPI[D] {
+  self: FetchedDataset[D] =>
 
   //  def filter(f: SquashedPageRow => Boolean): PageRowRDD = selfRDD.filter(f)
   //
@@ -18,6 +18,8 @@ trait FetchedDatasetAPI {
   //  def distinct(numPartitions: Int)(implicit ord: Ordering[SquashedPageRow] = null): PageRowRDD =
   //    selfRDD.distinct(numPartitions)(ord)
 
+  // TODO: most of the following impl can be reduced to RDDPlan or LogicalPlan
+
   protected def _coalesce(
       numPartitions: RDD[_] => Int = { v =>
         v.partitions.length
@@ -25,8 +27,8 @@ trait FetchedDatasetAPI {
       shuffle: Boolean = false
   )(
       implicit
-      ord: Ordering[SquashedRow] = null
-  ): FetchedDataset = this.copy(
+      ord: Ordering[SquashedRow[D]] = null
+  ): FetchedDataset[D] = this.copy(
     CoalescePlan(plan, numPartitions, shuffle, ord)
   )
 
@@ -35,8 +37,8 @@ trait FetchedDatasetAPI {
       shuffle: Boolean = false
   )(
       implicit
-      ord: Ordering[SquashedRow] = null
-  ): FetchedDataset = {
+      ord: Ordering[SquashedRow[D]] = null
+  ): FetchedDataset[D] = {
 
     _coalesce(
       { _ =>
@@ -50,8 +52,8 @@ trait FetchedDatasetAPI {
       numPartitions: Int
   )(
       implicit
-      ord: Ordering[SquashedRow] = null
-  ): FetchedDataset = {
+      ord: Ordering[SquashedRow[D]] = null
+  ): FetchedDataset[D] = {
 
     coalesce(numPartitions, shuffle = true)(ord)
   }
@@ -61,11 +63,11 @@ trait FetchedDatasetAPI {
   //             seed: Long = Utils.random.nextLong()): PageRowRDD =
   //    selfRDD.sample(withReplacement, fraction, seed)
 
-  def union(other: FetchedDataset*): FetchedDataset = this.copy(
+  def union(other: FetchedDataset[D]*): FetchedDataset[D] = this.copy(
     UnionPlan(Seq(plan) ++ other.map(_.plan))
   )
 
-  def ++(other: FetchedDataset): FetchedDataset = this.union(other)
+  def ++(other: FetchedDataset[D]): FetchedDataset[D] = this.union(other)
 
   //  def sortBy[K](
   //                 f: (PageRow) => K,

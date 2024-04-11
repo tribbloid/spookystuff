@@ -37,8 +37,10 @@ abstract class RecordEncoder[F, G <: Tuple, H <: Tuple](
 
 object RecordEncoder {
 
-  final private val _GET_VALUE = "_valueAtIndex"
-  final private val _FROM_INTERNAL_ROW = "_fromInternalRow"
+  final private val _VALUE_AT_INDEX = "valueAtIndex"
+  final private val _FROM_INTERNAL_ROW = "fromInternalRow"
+
+  lazy val catalystAdapterLit: Literal = Literal.fromObject(TypedRowCatalystAdapter)
 
   case class ForTypedRow[G <: Tuple, H <: Tuple](
   )(
@@ -54,10 +56,10 @@ object RecordEncoder {
       val valueExprs = fields.value.value.zipWithIndex.map {
         case (field, i) =>
           val fieldPath = Invoke(
-            path,
-            _GET_VALUE,
+            catalystAdapterLit,
+            _VALUE_AT_INDEX,
             field.encoder.jvmRepr,
-            Seq(Literal.create(i, IntegerType))
+            Seq(path, Literal.create(i, IntegerType))
           )
           field.encoder.toCatalyst(fieldPath)
       }
@@ -74,12 +76,12 @@ object RecordEncoder {
       val newArgs = stage1.fromCatalystToCells(path)
       val aggregated = CreateStruct(newArgs)
 
-      val partial = TypedRowInternal.WithCatalystTypes(newArgs.map(_.dataType))
+      val partial = TypedRowCatalystAdapter.WithDataTypes(newArgs.map(_.dataType))
 
       val newExpr = Invoke(
         Literal.fromObject(partial),
         _FROM_INTERNAL_ROW,
-        TypedRowInternal.catalystType,
+        TypedRowCatalystAdapter.dataType,
         Seq(aggregated)
       )
 

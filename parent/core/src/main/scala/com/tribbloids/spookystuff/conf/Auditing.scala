@@ -16,7 +16,7 @@ object Auditing extends Enumeration {
   }
 
   object Converted extends Auditing {
-    override def apply(v1: Observation): Seq[Doc] = v1.docForAuditing.flatMap(_.converted.docForAuditing).toSeq
+    override def apply(v1: Observation): Seq[Doc] = v1.docForAuditing.flatMap(_.normalised.docForAuditing).toSeq
   }
 
   object Both extends Auditing {

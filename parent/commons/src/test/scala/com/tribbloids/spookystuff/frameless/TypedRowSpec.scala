@@ -7,6 +7,7 @@ import frameless.{TypedDataset, TypedEncoder}
 import org.apache.spark.sql.SparkSession
 import shapeless.HList
 import shapeless.record.Record
+import shapeless.test.illTyped
 
 class TypedRowSpec extends BaseSpec {
 
@@ -45,20 +46,6 @@ class TypedRowSpec extends BaseSpec {
 
   describe("merge") {
 
-    it("mayCauseDuplicatedNames") {
-
-      val t1 = TypedRow(x = 1, y = "ab")
-      val t2 = TypedRow(y = 1.0, z = 1.1)
-      val merged = t1 ++ t2
-
-      assert(merged._internal.keys.runtimeList == List('x, 'y, 'y, 'z))
-      assert(merged._internal.repr.runtimeList == List(1, "ab", 1.0, 1.1))
-
-      assert(t1.x == 1)
-      assert(merged.x == 1)
-      assert(merged.y == "ab") // favours the first operand
-    }
-
     it("right") {
 
       val t1 = TypedRow(x = 1, y = "ab")
@@ -81,6 +68,20 @@ class TypedRowSpec extends BaseSpec {
       assert(merged._internal.repr.runtimeList == List(1, "ab", 1.1))
 
       assert(merged.y == "ab") // favours the first operand
+    }
+
+    it("with duplicated keys") {
+
+      val t1 = TypedRow(x = 1, y = "ab")
+      val t2 = TypedRow(y = 1.0, z = 1.1)
+
+      illTyped("t1 ++ t2")
+
+      val t3 = TypedRow(z = 1.1)
+      val merged = t1 ++ t3
+
+      assert(merged._internal.keys.runtimeList == List('x, 'y, 'z))
+      assert(merged._internal.repr.runtimeList == List(1, "ab", 1.1))
     }
   }
 
@@ -179,11 +180,11 @@ class TypedRowSpec extends BaseSpec {
       assert(row.z == 1.1)
     }
 
-    it(" ... with duplicated names") {
+    it(" ... with duplicated names") { // TODO: this should be an ill-posed problem
 
       val tx = TypedRow(x = 1, y = "ab")
       val ty = TypedRow(y = 1.0, z = 1.1)
-      val t1 = tx ++ ty
+      val t1 = TypedRowInternal.ofTuple(tx._internal.repr ++ ty._internal.repr)
 
       val rdd = session.sparkContext.parallelize(Seq(t1))
       val ds = TypedDataset.create(rdd)

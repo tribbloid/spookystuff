@@ -1,6 +1,6 @@
 package com.tribbloids.spookystuff.execution
 
-import com.tribbloids.spookystuff.row.{SpookySchema, SquashedRDD, SquashedRow}
+import com.tribbloids.spookystuff.row.{SquashedRDD, SquashedRow}
 import org.apache.spark.rdd.RDD
 
 case class CoalescePlan[D](
@@ -9,12 +9,6 @@ case class CoalescePlan[D](
     shuffle: Boolean = false,
     ord: Ordering[SquashedRow[D]] = null
 ) extends UnaryPlan[D, D](child) {
-
-//  override def execute(schema: SpookySchema[D]): SquashedRDD[D] = {
-//    val childRDD = child.squashedRDD
-//    val n = numPartitions(childRDD)
-//    childRDD.coalesce(n, shuffle)(ord)
-//  }
 
   override protected def execute: SquashedRDD[D] = {
 

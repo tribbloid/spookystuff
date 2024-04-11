@@ -1,7 +1,8 @@
 package com.tribbloids.spookystuff.frameless
 
+import com.tribbloids.spookystuff.frameless.TypedRowInternal.Merge
 import frameless.TypedEncoder
-import shapeless.{Poly2, RecordArgs}
+import shapeless.RecordArgs
 
 import scala.collection.immutable.ArraySeq
 import scala.language.dynamics
@@ -17,15 +18,16 @@ import scala.reflect.ClassTag
   * @tparam L
   *   Record type
   */
-class TypedRow[L <: Tuple](
+final class TypedRow[L <: Tuple](
     cells: ArraySeq[Any]
 ) extends Dynamic {
+  // TODO: should be "NamedTuple"
+
   // TODO: how to easily reconstruct vertices/edges for graphX/graphframe?
   //  since graphframe table always demand id/src/tgt columns, should the default
   //  representation be SemiRow? that contains both structured and newType part?
 
   import shapeless.ops.record._
-  import shapeless.record._
 
   /**
     * Allows dynamic-style access to fields of the record whose keys are Symbols. See
@@ -33,7 +35,7 @@ class TypedRow[L <: Tuple](
     *
     * CAUTION: this takes all the slots for nullary fields, none the following functions will be nullary
     */
-  def selectDynamic(key: String with Singleton)(
+  def selectDynamic(key: XStr)(
       implicit
       selector: Selector[L, Col[key.type]]
   ): selector.Out = {
@@ -42,9 +44,6 @@ class TypedRow[L <: Tuple](
   }
 
   @transient override lazy val toString: String = cells.mkString("[", ",", "]")
-
-  // DO NOT RENAME! used by reflection-based Catalyst Encoder
-  def _valueAtIndex(i: Int): Any = cells.apply(i)
 
   sealed class FieldView[K, V](
       val key: K
@@ -83,11 +82,13 @@ class TypedRow[L <: Tuple](
 
       def apply[VV](value: VV)(
           implicit
-          ev0: MergeWith[L, (K ->> VV) *: Tuple.Empty, _merge.keepRight.fn.type]
-      ): TypedRow[ev0.Out] = {
+          ev: Merge.keepRight.Theorem[L, (K ->> VV) *: Tuple.Empty]
+      ): ev.Out = {
 
         val neo: TypedRow[(K ->> VV) *: Tuple.Empty] = TypedRowInternal.ofTuple(->>[K](value) *: Tuple.Empty)
-        val result = _merge.keepRight(neo)(ev0)
+
+        val result = ev.apply(TypedRow.this -> neo)
+
         result
       }
     }
@@ -97,25 +98,25 @@ class TypedRow[L <: Tuple](
       * To be used in [[org.apache.spark.sql.Dataset]].flatMap
       */
 
-    def explode[VV, R](
-        fn: VV => R
-    )(
-        implicit
-        ev0: V <:< Seq[VV],
-        ev1: MergeWith[L, (K ->> R) *: Tuple.Empty, _merge.keepRight.fn.type]
-    ): Seq[TypedRow[ev1.Out]] = {
+//    def explode[R](
+//        fn: V => Seq[R]
+//    )(
+//        implicit
+//        ev1: Merge.keepRight.Theorem[L, (K ->> R) *: Tuple.Empty]
+//    ): Seq[ev1.Out] = {
+//
+//      val results = valueWithField.map { v: V =>
+//        val r = fn(v)
+//        set(r)(ev1)
+//      }
+//      results
+//    }
 
-      val results = valueWithField.map { v: VV =>
-        val r = fn(v)
-        set(r)(ev1)
-      }
-      results
-    }
   }
 
   object _fields extends Dynamic {
 
-    def selectDynamic(key: String with Singleton)(
+    def selectDynamic(key: XStr)(
         implicit
         selector: Selector[L, Col[key.type]]
     ) = new FieldView[Col[key.type], selector.Out](Col(key))(selector)
@@ -123,72 +124,14 @@ class TypedRow[L <: Tuple](
 
   @transient lazy val _internal: TypedRowInternal[L] = {
 
-    val repr = cells
-      .foldRight[Tuple](Tuple.Empty) { (s, x) =>
-        s *: x
-      }
-      .asInstanceOf[L]
-
-    TypedRowInternal(repr)
+    TypedRowInternal(cells)
   }
 
-  object _merge {
+  def ++< = TypedRowInternal.Merge.keepRight.Curried(this)
 
-    trait MergeWithFn {
+  def >++ = TypedRowInternal.Merge.keepLeft.Curried(this)
 
-      val fn: Poly2
-
-      def apply[L2 <: Tuple](that: TypedRow[L2])(
-          implicit
-          ev0: MergeWith[L, L2, fn.type]
-      ): TypedRow[ev0.Out] = {
-
-        val result = _internal.repr.mergeWith(that._internal.repr)(fn)(ev0)
-        TypedRowInternal.ofTuple(result)
-      }
-    }
-
-    // in Scala 3, all these objects can be both API and lemma
-    // but it will take some time before Spark upgrade to it
-    @deprecated
-    object mayCauseDuplicates {
-
-      def apply[L2 <: Tuple](that: TypedRow[L2])(
-          implicit
-          ev: Merger[L, L2]
-      ): TypedRow[ev.Out] = {
-
-        TypedRowInternal.ofTuple(ev(_internal.repr, that._internal.repr))
-      }
-    }
-
-    object keepRight extends MergeWithFn {
-
-      object fn extends Poly2 {
-
-        implicit def only[T, U]: Case.Aux[T, U, U] = at[T, U] { (_, r) =>
-          r
-        }
-      }
-    }
-
-    object keepLeft extends MergeWithFn {
-
-      object fn extends Poly2 {
-
-        implicit def only[T, U]: Case.Aux[T, U, T] = at[T, U] { (l, _) =>
-          l
-        }
-      }
-    }
-  }
-
-  @deprecated
-  def ++ : _merge.mayCauseDuplicates.type = _merge.mayCauseDuplicates
-
-  def ++< : _merge.keepRight.type = _merge.keepRight
-
-  def >++ : _merge.keepLeft.type = _merge.keepLeft
+  def ++ = TypedRowInternal.Merge.rigorous.Curried(this)
 
   object update extends RecordArgs {
 

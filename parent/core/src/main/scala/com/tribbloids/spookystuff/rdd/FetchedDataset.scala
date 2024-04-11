@@ -1,11 +1,13 @@
 package com.tribbloids.spookystuff.rdd
 
+import ai.acyclic.prover.commons.function.Hom.:=>
 import com.tribbloids.spookystuff.actions._
 import com.tribbloids.spookystuff.commons.refl.CatalystTypeOps
 import com.tribbloids.spookystuff.conf.SpookyConf
 import com.tribbloids.spookystuff.doc.Doc
 import com.tribbloids.spookystuff.dsl._
 import com.tribbloids.spookystuff.execution._
+import com.tribbloids.spookystuff.frameless.{Tuple, TypedRow, TypedRowInternal}
 import com.tribbloids.spookystuff.row._
 import com.tribbloids.spookystuff.utils.SpookyViews
 import com.tribbloids.spookystuff.{Const, SpookyContext}
@@ -31,7 +33,7 @@ object FetchedDataset extends FetchedDatasetImp0 {
   */
 case class FetchedDataset[D](
     plan: ExecutionPlan[D]
-) extends FetchedDatasetAPI
+) extends FetchedDatasetAPI[D]
     with CatalystTypeOps.ImplicitMixin {
 
   import SpookyViews._
@@ -79,6 +81,8 @@ case class FetchedDataset[D](
 //  trait Cached {}
 
   trait DataView {
+    // this is the only component that can be realistically cached in-memory.
+    // all others are too big and already cached in DFS
 
     def dataRDD: RDD[D]
 
@@ -114,53 +118,101 @@ case class FetchedDataset[D](
     }
   }
 
-  def dataRDDSorted(
-      implicit
-      ev: Ordering[D]
-  ): RDD[D] = { // DO NOT DELETE!
+  def chain[O](fn: ChainPlan.Fn[D, O]): FetchedDataset[O] = {
 
-    val dataRDD = this.map(_.data)
-    plan.scratchRDDPersist(dataRDD)
-
-    val sorted = dataRDD.sortBy(identity, ascending = true, 1)
-    sorted.setName("sort")
-
-    sorted.foreachPartition { _ => } // force execution TODO: remove, won't force
-    plan.scratchRDDs.unpersist(dataRDD)
-
-    sorted
+    this.copy(
+      plan.chain_optimised(fn)
+    )
   }
+
+//  def dataRDDSorted(
+//      implicit
+//      ev: Ordering[D]
+//  ): RDD[D] = { // DO NOT DELETE!
+//
+//    val dataRDD = this.map(_.data)
+//    plan.scratchRDDPersist(dataRDD)
+//
+//    val sorted = dataRDD.sortBy(identity, ascending = true, 1)
+//    sorted.setName("sort")
+//
+//    sorted.foreachPartition { _ => } // force execution TODO: remove, won't force
+//    plan.scratchRDDs.unpersist(dataRDD)
+//
+//    sorted
+//  }
 
   // IMPORTANT: DO NOT discard type parameter! otherwise arguments' type will be coerced into Any!
-  def extract[T](exs: Extractor[T]*): FetchedDataset = {
-    DeltaPlan.optimised(plan, Extract(exs))
-  }
+//  def select[O](fn: FetchedRow[D] => O): FetchedDataset[O] = { // TODO: add alias
+//
+//    object _Fn extends NarrowPlan.Select[D, O] {
+//
+//      override def apply(v1: FetchedRow[D]): Seq[O] = {
+//        Seq(fn(v1))
+//      }
+//    }
+//
+//    this.copy(
+//      NarrowPlan.selectOptimized(plan, _Fn)
+//    )
+//  }
 
-  def apply[T](exs: Extractor[T]*): FetchedDataset = {
-    DeltaPlan.optimised(plan, Extract(exs))
-  }
+  // use append the result to the end of TypedRow, need encoder support
+  // TODO: should be "withColumns"
+//  def extract[
+//      IT <: Tuple,
+//      O,
+//      OT <: Tuple,
+//      UT <: Tuple
+//  ](fn: FetchedRow[D] => O)(
+//      implicit
+//      toRow1: TypedRowInternal.ofData.=>>[D, TypedRow[IT]],
+//      toRow2: TypedRowInternal.ofData.=>>[O, TypedRow[OT]]
+//      // TODO: ++< should be a Poly2 or Hom.Poly, otherwise implicit type declaration will be a nightmare
+//  ): FetchedDataset[UT] = {
+//
+//    object _Fn extends NarrowPlan.Select[D, UT] {
+//
+//      override def apply(v1: FetchedRow[D]): Seq[UT] = {
+//        val out = fn(v1)
+//
+//        val old = toRow1(v1.data)
+//        val neo = toRow2(out)
+//
+//        Seq(old ++< neo)
+//      }
+//    }
+//
+//    this.copy(
+//      NarrowPlan.selectOptimized(plan, _Fn)
+//    )
+//  }
 
-  def explodeObservations(
-      fn: Lineage.WithScope => Seq[Lineage.WithScope]
-  ): FetchedDataset = {
-    DeltaPlan.optimised(plan, ExplodeScope(fn))
-  }
+//  def apply[T](exs: Extractor[T]*): FetchedDataset = {
+//    DeltaPlan.optimised(plan, Extract(exs))
+//  }
 
-  def transientRemoved: FetchedDataset = this.remove(fields.filter(_.isTransient): _*)
+//  def explodeObservations(
+//      fn: Lineage.WithScope => Seq[Lineage.WithScope]
+//  ): FetchedDataset = {
+//    NarrowPlan.selectOptimized(plan, ExplodeScope(fn))
+//  }
+
+//  def transientRemoved: FetchedDataset = this.remove(fields.filter(_.isTransient): _*)
 
   /**
     * this is an action that will be triggered immediately
     */
-  def savePages_!(
-      path: Col[String],
-      extension: Col[String] = null,
-      page: Extractor[Doc] = S,
-      overwrite: Boolean = false
-  ): this.type = {
-    val saved = savePages(path, extension, page, overwrite)
-    saved.rdd.forceExecute()
-    this
-  }
+//  def savePages_!(
+//      path: Col[String],
+//      extension: Col[String] = null,
+//      page: Extractor[Doc] = S,
+//      overwrite: Boolean = false
+//  ): this.type = {
+//    val saved = savePages(path, extension, page, overwrite)
+//    saved.rdd.forceExecute()
+//    this
+//  }
 
   /**
     * save each page to a designated directory support many file systems including but not limited to HDFS, S3 and local
@@ -184,7 +236,7 @@ case class FetchedDataset[D](
       .map(_.ex.typed[String])
       .getOrElse(_pageEx.defaultFileExtension)
 
-    DeltaPlan.optimised(
+    ChainPlan.selectOptimized(
       plan,
       SaveContent(path.ex.typed[String], _extensionEx, _pageEx, overwrite)
     )
@@ -206,9 +258,10 @@ case class FetchedDataset[D](
         ff -> this.extract(ex)
     }
 
-    DeltaPlan.optimised(extracted.plan, ExplodeData(on, ordinalField, sampler, forkType))
+    ChainPlan.selectOptimized(extracted.plan, ExplodeData(on, ordinalField, sampler, forkType))
   }
 
+  // TODO: need to define an API shared between fork and explore for specifying ForkPlan.Fn
   def fork(
       on: Extractor[Any], // name is discarded
       forkType: ForkType = ForkType.default,
@@ -222,25 +275,18 @@ case class FetchedDataset[D](
     result
   }
 
-  protected def getCooldown(v: Option[Duration]): Trace = {
-    val _delay: Trace = v.map { dd =>
-      Delay(dd)
-    }.toList
-    _delay
-  }
-
-  protected def _defaultWget(
-      cooldown: Option[Duration] = None,
-      filter: DocFilter = Const.defaultDocumentFilter,
-      on: Col[String] = Get(Const.defaultForkField)
-  ): Trace = {
-
-    val _delay: Trace = getCooldown(cooldown)
-
-    val result = Wget(on, filter) +> _delay
-
-    Trace(result)
-  }
+//  protected def _defaultWget(
+//      cooldown: Option[Duration] = None,
+//      filter: DocFilter = Const.defaultDocumentFilter,
+//      on: Col[String] = Get(Const.defaultForkField)
+//  ): Trace = {
+//
+//    val _delay: Trace = getCooldown(cooldown)
+//
+//    val result = Wget(on, filter) +> _delay
+//
+//    Trace(result)
+//  }
 
   // Always left
   def fetch(
@@ -253,51 +299,51 @@ case class FetchedDataset[D](
   }
 
   // shorthand of fetch
-  def wget(
-      on: Col[String],
-      cooldown: Option[Duration] = None,
-      keyBy: Trace => Any = identity,
-      filter: DocFilter = Const.defaultDocumentFilter,
-      failSafe: Int = -1,
-      genPartitioner: GenPartitioner = spooky.conf.localityPartitioner
-  ): FetchedDataset = {
+//  def wget(
+//      on: Col[String],
+//      cooldown: Option[Duration] = None,
+//      keyBy: Trace => Any = identity,
+//      filter: DocFilter = Const.defaultDocumentFilter,
+//      failSafe: Int = -1,
+//      genPartitioner: GenPartitioner = spooky.conf.localityPartitioner
+//  ): FetchedDataset = {
+//
+//    var trace: Trace = _defaultWget(cooldown, filter, on)
+//
+//    if (failSafe > 0) trace = Trace.of(ClusterRetry(trace, failSafe))
+//
+//    this.fetch(
+//      trace.asTraceSet,
+//      keyBy,
+//      genPartitioner = genPartitioner
+//    )
+//  }
 
-    var trace: Trace = _defaultWget(cooldown, filter, on)
-
-    if (failSafe > 0) trace = Trace.of(ClusterRetry(trace, failSafe))
-
-    this.fetch(
-      trace.asTraceSet,
-      keyBy,
-      genPartitioner = genPartitioner
-    )
-  }
-
-  def wgetFork(
-      on: Extractor[Any],
-      forkType: ForkType = ForkType.default,
-      ordinalField: Field = null, // left & idempotent parameters are missing as they are always set to true
-      sampler: Sampler[Any] = spooky.conf.forkSampler,
-      cooldown: Option[Duration] = None,
-      keyBy: Trace => Any = identity,
-      filter: DocFilter = Const.defaultDocumentFilter,
-      failSafe: Int = -1,
-      genPartitioner: GenPartitioner = spooky.conf.localityPartitioner
-  ): FetchedDataset = {
-
-    var trace: Trace = _defaultWget(cooldown, filter)
-    if (failSafe > 0) {
-      trace = ClusterRetry(trace, failSafe).trace
-    }
-
-    this
-      .fork(on, forkType, ordinalField, sampler)
-      .fetch(
-        trace.asTraceSet,
-        keyBy,
-        genPartitioner = genPartitioner
-      )
-  }
+//  def wgetFork(
+//      on: Extractor[Any],
+//      forkType: ForkType = ForkType.default,
+//      ordinalField: Field = null, // left & idempotent parameters are missing as they are always set to true
+//      sampler: Sampler[Any] = spooky.conf.forkSampler,
+//      cooldown: Option[Duration] = None,
+//      keyBy: Trace => Any = identity,
+//      filter: DocFilter = Const.defaultDocumentFilter,
+//      failSafe: Int = -1,
+//      genPartitioner: GenPartitioner = spooky.conf.localityPartitioner
+//  ): FetchedDataset = {
+//
+//    var trace: Trace = _defaultWget(cooldown, filter)
+//    if (failSafe > 0) {
+//      trace = ClusterRetry(trace, failSafe).trace
+//    }
+//
+//    this
+//      .fork(on, forkType, ordinalField, sampler)
+//      .fetch(
+//        trace.asTraceSet,
+//        keyBy,
+//        genPartitioner = genPartitioner
+//      )
+//  }
 
   // TODO: how to unify this with join?
   def explore(
@@ -334,36 +380,36 @@ case class FetchedDataset[D](
     )
   }
 
-  def wgetExplore(
-      on: Extractor[Any],
-      forkType: ForkType = ForkType.default,
-      ordinalField: Field = null,
-      sampler: Sampler[Any] = spooky.conf.forkSampler,
-      filter: DocFilter = Const.defaultDocumentFilter,
-      failSafe: Int = -1,
-      cooldown: Option[Duration] = None,
-      keyBy: Trace => Any = identity,
-      genPartitioner: GenPartitioner = spooky.conf.localityPartitioner,
-      depthField: Field = null,
-      range: Range = spooky.conf.exploreRange,
-      pathPlanning: PathPlanning = spooky.conf.explorePathPlanning,
-      miniBatch: Int = 500,
-      checkpointInterval: Int = spooky.conf.exploreCheckpointInterval // set to Int.MaxValue to disable checkpointing,
-
-  ): FetchedDataset = {
-
-    var trace = _defaultWget(cooldown, filter)
-    if (failSafe > 0) trace = Trace.of(ClusterRetry(trace, failSafe))
-
-    explore(on, forkType, ordinalField, sampler)(
-      trace.asTraceSet,
-      keyBy,
-      genPartitioner,
-      depthField,
-      range,
-      pathPlanning,
-      miniBatch,
-      checkpointInterval
-    )
-  }
+//  def wgetExplore(
+//      on: Extractor[Any],
+//      forkType: ForkType = ForkType.default,
+//      ordinalField: Field = null,
+//      sampler: Sampler[Any] = spooky.conf.forkSampler,
+//      filter: DocFilter = Const.defaultDocumentFilter,
+//      failSafe: Int = -1,
+//      cooldown: Option[Duration] = None,
+//      keyBy: Trace => Any = identity,
+//      genPartitioner: GenPartitioner = spooky.conf.localityPartitioner,
+//      depthField: Field = null,
+//      range: Range = spooky.conf.exploreRange,
+//      pathPlanning: PathPlanning = spooky.conf.explorePathPlanning,
+//      miniBatch: Int = 500,
+//      checkpointInterval: Int = spooky.conf.exploreCheckpointInterval // set to Int.MaxValue to disable checkpointing,
+//
+//  ): FetchedDataset = {
+//
+//    var trace = _defaultWget(cooldown, filter)
+//    if (failSafe > 0) trace = Trace.of(ClusterRetry(trace, failSafe))
+//
+//    explore(on, forkType, ordinalField, sampler)(
+//      trace.asTraceSet,
+//      keyBy,
+//      genPartitioner,
+//      depthField,
+//      range,
+//      pathPlanning,
+//      miniBatch,
+//      checkpointInterval
+//    )
+//  }
 }

@@ -8,9 +8,12 @@ package object frameless {
   // TODO: definition here will be obsolete in shapeless 2.4
   //  upgrade blocked by frameless
 
-  type Col[T <: String with Singleton] = Symbol @@ T
+  type XInt = Int with Singleton
+  type XStr = String with Singleton
 
-  def Col[T <: String with Singleton](v: T): Col[T] = {
+  type Col[T <: XStr] = Symbol @@ T
+
+  def Col[T <: XStr](v: T): Col[T] = {
 
     Symbol(v).asInstanceOf[Col[T]]
   }
@@ -19,9 +22,9 @@ package object frameless {
 
   def ->>[K] = field[K]
 
-  type Col_->>[T <: String with Singleton, V] = Col[T] ->> V
+  type Col_->>[T <: XStr, V] = Col[T] ->> V
 
-  def Col_->>[T <: String with Singleton](v: Any): T Col_->> v.type = {
+  def Col_->>[T <: XStr](v: Any): T Col_->> v.type = {
     v.asInstanceOf[T Col_->> v.type]
   }
 
@@ -37,4 +40,5 @@ package object frameless {
 
     def *:[H](h: H): H *: T = h :: self
   }
+
 }

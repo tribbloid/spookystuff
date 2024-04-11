@@ -11,7 +11,7 @@ object ExecutionPlan {}
 
 //right now it vaguely resembles SparkPlan in catalyst
 //TODO: may subclass SparkPlan in the future to generate DataFrame directly, but not so fast
-abstract class ExecutionPlan[O](
+abstract class ExecutionPlan[D](
     val children: Seq[ExecutionPlan[_]],
     val ec: SpookyExecutionContext
 ) extends TreeView.Immutable[ExecutionPlan[_]]
@@ -47,9 +47,9 @@ abstract class ExecutionPlan[O](
 
   lazy val beaconRDDOpt: Option[BeaconRDD[LocalityGroup]] = inheritedBeaconRDDOpt
 
-  protected def execute: SquashedRDD[O]
+  protected def execute: SquashedRDD[D]
 
-  final def fetch: SquashedRDD[O] = {
+  final def fetch: SquashedRDD[D] = {
 
     this.execute
       .map { row =>
@@ -58,14 +58,15 @@ abstract class ExecutionPlan[O](
       }
   }
 
-  @volatile var storageLevel: StorageLevel = StorageLevel.NONE
-  @volatile var _cachedRDD: SquashedRDD[O] = _
-  def cachedRDDOpt: Option[SquashedRDD[O]] = Option(_cachedRDD)
+  @volatile var storageLevel: StorageLevel = StorageLevel.NONE // TODO: this should be in FetchedDataset
+
+  @volatile var _cachedRDD: SquashedRDD[D] = _
+  def cachedRDDOpt: Option[SquashedRDD[D]] = Option(_cachedRDD)
 
   def isCached: Boolean = cachedRDDOpt.nonEmpty
 
   // TODO: cachedRDD is redundant? just make it lazy val!
-  final def squashedRDD: SquashedRDD[O] = {
+  final def squashedRDD: SquashedRDD[D] = {
     ec.tryDeployPlugin()
     // any RDD access will cause all plugins to be deployed
 
@@ -89,8 +90,32 @@ abstract class ExecutionPlan[O](
     squashedRDD.map(_.withSchema(outputSchema))
   }
 
-  @transient final lazy val fetchedRDD: RDD[FetchedRow[O]] =
+  @transient final lazy val fetchedRDD: RDD[FetchedRow[D]] =
     SquashedRDDWithSchema.flatMap(row => row.withCtx.unSquash)
+
+  def chain_optimised[O](
+      fn: ChainPlan.Fn[D, O]
+  ): UnaryPlan[D, O] = {
+
+    ChainPlan(this, fn)
+//    this match { // TODO: enable this optimisation later
+//      case plan: ExplorePlan[_, _] if !this.isCached =>
+//        object _More extends Explore.Fn[D, O] {
+//
+//          override def apply(row: FetchedRow[Data.Exploring[D]]) = {
+//
+//            val (forked, flat) = plan.fn(row)
+//
+//            flat.map(withScope => ???)
+//            ???
+//          }
+//        }
+//
+//        plan.copy()(_More)
+//      case _ =>
+//        FlatPlan(this, fn)
+//    }
+  }
 
   // -------------------------------------
 

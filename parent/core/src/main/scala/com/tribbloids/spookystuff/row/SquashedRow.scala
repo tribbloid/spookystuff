@@ -6,7 +6,7 @@ import com.tribbloids.spookystuff.SpookyContext
 import com.tribbloids.spookystuff.actions.{Trace, TraceSet}
 import com.tribbloids.spookystuff.commons.serialization.NOTSerializable
 import com.tribbloids.spookystuff.doc.Observation
-import com.tribbloids.spookystuff.execution.DeltaPlan
+import com.tribbloids.spookystuff.execution.ChainPlan
 
 import scala.language.implicitConversions
 
@@ -179,7 +179,7 @@ case class SquashedRow[D](
     }
 
     def applyDelta[O](
-        fn: DeltaPlan.Fn[D, O]
+        fn: ChainPlan.Fn[D, O]
     ): SquashedRow[O] = {
 
       val newDataRows: Seq[Data.WithScope[O]] = unSquash.flatMap { row: FetchedRow[D] =>

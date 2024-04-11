@@ -6,7 +6,7 @@ dependencies {
     api(project(":prover-commons:spark")) // TODO: incldue meta?
     testFixturesApi(testFixtures(project(":prover-commons:spark")))
 
-    api("io.github.classgraph:classgraph:4.8.168")
+    api("io.github.classgraph:classgraph:4.8.170")
 
     api("com.lihaoyi:pprint_${vs.scala.binaryV}:0.8.1")
 

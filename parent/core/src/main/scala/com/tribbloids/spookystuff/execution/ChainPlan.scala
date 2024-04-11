@@ -3,30 +3,18 @@ package com.tribbloids.spookystuff.execution
 import com.tribbloids.spookystuff.commons.refl.CatalystTypeOps
 import com.tribbloids.spookystuff.row._
 
-object DeltaPlan extends CatalystTypeOps.ImplicitMixin {
+object ChainPlan extends CatalystTypeOps.ImplicitMixin {
 
   type Out[O] = Seq[Data.WithScope[O]]
   type Fn[I, O] = FetchedRow[I] => Out[O]
 
-  def optimised[I, O](
-      child: ExecutionPlan[I],
-      fn: Fn[I, O]
-  ): UnaryPlan[I, O] = {
+  type Select[I, O] = FetchedRow[I] => Seq[O]
 
-    //    child match {
-    //      case plan: ExplorePlan[I, O] if !plan.isCached =>
-    //        plan.copy(deltas = plan.deltas :+ toDelta)
-    //      case _ =>
-    //        DeltaPlan(child, toDelta)
-    //    }
-    // TODO: enable optimisation later
-    DeltaPlan(child, fn)
-  }
 }
 
-case class DeltaPlan[I, O](
+case class ChainPlan[I, O]( // narrow means narrow transformation in Apache Spark
     override val child: ExecutionPlan[I],
-    fn: DeltaPlan.Fn[I, O]
+    fn: ChainPlan.Fn[I, O]
 ) extends UnaryPlan[I, O](child) {
 
   final override def execute: SquashedRDD[O] = {
@@ -42,7 +30,6 @@ case class DeltaPlan[I, O](
       squashed.copy(
         dataSeq = results
       )
-
     }
     result
   }

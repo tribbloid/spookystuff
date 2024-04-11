@@ -18,6 +18,7 @@ object Data {
     lazy val blank: WithScope[Unit] = empty(())
   }
 
+  // TODO: can this be a dependent type since scopeUIDs has to be tied to a Rollout?
   case class WithScope[D](
       data: D,
       scopeUIDs: Seq[DocUID],
