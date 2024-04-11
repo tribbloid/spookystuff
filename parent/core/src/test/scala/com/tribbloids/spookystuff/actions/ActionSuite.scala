@@ -3,7 +3,7 @@ package com.tribbloids.spookystuff.actions
 import com.tribbloids.spookystuff.doc.Observation
 import com.tribbloids.spookystuff.dsl._
 import com.tribbloids.spookystuff.extractors.impl.Lit
-import com.tribbloids.spookystuff.row.{Lineage, FetchedRow, Field}
+import com.tribbloids.spookystuff.row.{FetchedRow, Field, Lineage}
 import com.tribbloids.spookystuff.agent.Agent
 import com.tribbloids.spookystuff.testutils.SpookyBaseSpec
 import com.tribbloids.spookystuff.commons.{CommonUtils, Timeout}

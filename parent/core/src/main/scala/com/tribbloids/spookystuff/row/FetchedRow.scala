@@ -1,12 +1,9 @@
 package com.tribbloids.spookystuff.row
 
-import ai.acyclic.prover.commons.function.HomSystem
-import ai.acyclic.prover.commons.function.api.FnLike
 import com.tribbloids.spookystuff.doc.Observation.{Failure, Success}
 import com.tribbloids.spookystuff.doc._
 import com.tribbloids.spookystuff.execution.ChainPlan
-import com.tribbloids.spookystuff.execution.ChainPlan.Out
-import com.tribbloids.spookystuff.frameless.TypedRowInternal.Merge
+import com.tribbloids.spookystuff.frameless.TypedRowInternal.ElementWiseMethods
 import com.tribbloids.spookystuff.frameless.{Tuple, TypedRow, TypedRowInternal}
 
 import scala.language.implicitConversions
@@ -19,17 +16,19 @@ object FetchedRow {
     * providing the following APIs:
     *
     * (functional)
-    *   - flatMap(FetchedRow[D] => Seq[ WithScope[D] ])
-    *   - explodeData(D => Seq[O])
-    *   - mapData(D => O)
+    *   - flatMapWithScope(FetchedRow[D] => Seq[ WithScope[D] ])
+    *   - flatMap/select(D => Seq[O]) (heavy use of >< to compose fields)
+    *     - TypedRowFunctions.explode() can be used on a field
+    *   - map(D => O)
     *   - explodeScope
     *
     * (schematic, requires TypedRow, can coerce D into one if necessary)
-    *   - explode(#_fields => #FieldView[ Seq[O] ])
-    *   - select(#_fields => #FieldView[O])
-    *   - withColumns = select(old + new)
+    *   - withColumns/extract = select(old >< result), cast to TypedRow if necessary
     *
     * wide operations (fetch/fork/explore) will not be part of this API
+    *
+    * TODO: Question: will this be carried smoothly to fork (select from [[Data.Forking]]) & explore (select from
+    * [[Data.Exploring]])? I believe so, and it should be easy
     */
 
   case class SeqView[D](self: Seq[FetchedRow[D]]) {
@@ -72,7 +71,7 @@ object FetchedRow {
         implicit
         toRow1: TypedRowInternal.ofData.=>>[D, TypedRow[IT]],
         toRow2: TypedRowInternal.ofData.=>>[O, TypedRow[OT]],
-        merge: Merge.keepRight.Theorem[IT, OT]
+        merge: ElementWiseMethods.preferRight.Theorem[IT, OT]
     ): ChainPlan.Out[merge.Out] = {
 
       val _fn = fn.andThen { outs =>

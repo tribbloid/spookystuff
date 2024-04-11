@@ -1,11 +1,10 @@
 package com.tribbloids.spookystuff.frameless
 
-import com.tribbloids.spookystuff.frameless.TypedRowInternal.Merge
+import com.tribbloids.spookystuff.frameless.TypedRowInternal.ElementWiseMethods
 import frameless.TypedEncoder
 import shapeless.RecordArgs
 
-import scala.collection.immutable.ArraySeq
-import scala.language.dynamics
+import scala.language.{dynamics, implicitConversions}
 import scala.reflect.ClassTag
 
 /**
@@ -15,12 +14,14 @@ import scala.reflect.ClassTag
   *
   * @param cells
   *   data
-  * @tparam L
+  * @tparam T
   *   Record type
   */
-final class TypedRow[L <: Tuple](
-    cells: ArraySeq[Any]
-) extends Dynamic {
+final class TypedRow[T <: Tuple](
+    cells: Vector[Any]
+) extends Dynamic
+    with TypedRow.LeftElementAPI[T] {
+
   // TODO: should be "NamedTuple"
 
   // TODO: how to easily reconstruct vertices/edges for graphX/graphframe?
@@ -37,18 +38,19 @@ final class TypedRow[L <: Tuple](
     */
   def selectDynamic(key: XStr)(
       implicit
-      selector: Selector[L, Col[key.type]]
-  ): selector.Out = {
+      selector: Selector[T, Col[key.type]]
+  ): selector.Out with Field.Name[key.type] = {
 
-    _fields.selectDynamic(key).value
+    _fields.selectDynamic(key).value.asInstanceOf[selector.Out with Field.Name[key.type]]
   }
 
   @transient override lazy val toString: String = cells.mkString("[", ",", "]")
 
+  // TODO: remove, don't use, Field.Name mixin is good enough!
   sealed class FieldView[K, V](
       val key: K
   )(
-      val selector: Selector.Aux[L, K, V]
+      val selector: Selector.Aux[T, K, V]
   ) {
 
     lazy val valueWithField: V = selector(_internal.repr)
@@ -58,7 +60,7 @@ final class TypedRow[L <: Tuple](
     }
 
     lazy val asTypedRow: TypedRow[(K ->> V) *: Tuple.Empty] = {
-      TypedRowInternal.ofTuple(->>[K](valueWithField) *: Tuple.Empty)
+      TypedRowInternal.ofTuple(->>[K](valueWithField) *: Tuple.empty)
     }
 
     //    lazy val value: V = selector(asRepr)
@@ -82,16 +84,17 @@ final class TypedRow[L <: Tuple](
 
       def apply[VV](value: VV)(
           implicit
-          ev: Merge.keepRight.Theorem[L, (K ->> VV) *: Tuple.Empty]
+          ev: ElementWiseMethods.preferRight.Theorem[T, (K ->> VV) *: Tuple.Empty]
       ): ev.Out = {
 
-        val neo: TypedRow[(K ->> VV) *: Tuple.Empty] = TypedRowInternal.ofTuple(->>[K](value) *: Tuple.Empty)
+        val neo: TypedRow[(K ->> VV) *: Tuple.Empty] = TypedRowInternal.ofTuple(->>[K](value) *: Tuple.empty)
 
         val result = ev.apply(TypedRow.this -> neo)
 
         result
       }
     }
+
     def := : set.type = set
 
     /**
@@ -118,30 +121,25 @@ final class TypedRow[L <: Tuple](
 
     def selectDynamic(key: XStr)(
         implicit
-        selector: Selector[L, Col[key.type]]
+        selector: Selector[T, Col[key.type]]
     ) = new FieldView[Col[key.type], selector.Out](Col(key))(selector)
   }
 
-  @transient lazy val _internal: TypedRowInternal[L] = {
+  @transient lazy val _internal: TypedRowInternal[T] = {
 
     TypedRowInternal(cells)
   }
 
-  def ++< = TypedRowInternal.Merge.keepRight.Curried(this)
-
-  def >++ = TypedRowInternal.Merge.keepLeft.Curried(this)
-
-  def ++ = TypedRowInternal.Merge.rigorous.Curried(this)
-
-  object update extends RecordArgs {
-
-    // TODO: call ++<
-  }
 }
 
-object TypedRow extends TypedRowOrdering.Default.Giver with RecordArgs {
+object TypedRow extends TypedRowOrdering.Default.Giver {
 
-  def applyRecord[L <: Tuple](list: L): TypedRow[L] = TypedRowInternal.ofTuple(list)
+  lazy val empty: TypedRow[Tuple.Empty] = TypedRowInternal.ofTuple(Tuple.empty)
+
+  object ^ extends RecordArgs {
+
+    def applyRecord[L <: Tuple](list: L): TypedRow[L] = TypedRowInternal.ofTuple(list)
+  }
 
   implicit def _getEncoder[G <: Tuple](
       implicit
@@ -149,4 +147,92 @@ object TypedRow extends TypedRowOrdering.Default.Giver with RecordArgs {
       classTag: ClassTag[TypedRow[G]]
   ): TypedEncoder[TypedRow[G]] = RecordEncoder.ForTypedRow[G, G]()
 
+  sealed trait SeqAPI[T <: Tuple] {}
+
+  object SeqAPI {
+
+    def unbox[T <: Tuple](v: SeqAPI[T]): Seq[TypedRow[T]] = v match {
+      case v: SeqView[T]  => v.asTypeRowSeq
+      case v: TypedRow[T] => Seq(v)
+    }
+  }
+
+  trait SeqView[T <: Tuple] extends SeqAPI[T] {
+    // can be used as operand in Cartesian product, like Seq[TypedRow[T]]
+
+    def asTypeRowSeq: Seq[TypedRow[T]]
+  }
+
+  sealed trait LeftSeqAPI[T <: Tuple] extends SeqAPI[T] {
+    // Cartesian product (><) method can be called directly on it
+    // plz avoid introducing too much protected/public member as it corrupts TypedRow selector
+
+    private val self: Seq[TypedRow[T]] = SeqAPI.unbox(this)
+
+    @transient lazy val ><< : ElementWiseMethods.preferRight.CartesianProductMethod[T] =
+      TypedRowInternal.ElementWiseMethods.preferRight.CartesianProductMethod(self)
+
+    @transient lazy val >>< : ElementWiseMethods.preferLeft.CartesianProductMethod[T] =
+      TypedRowInternal.ElementWiseMethods.preferLeft.CartesianProductMethod(self)
+
+    @transient lazy val >!< : ElementWiseMethods.requireNoConflict.CartesianProductMethod[T] =
+      TypedRowInternal.ElementWiseMethods.requireNoConflict.CartesianProductMethod(self)
+
+    def >< : ElementWiseMethods.preferRight.CartesianProductMethod[T] = ><< // default
+  }
+
+  case class LeftSeqView[T <: Tuple](
+      asTypeRowSeq: Seq[TypedRow[T]]
+  ) extends LeftSeqAPI[T]
+      with SeqView[T] {
+
+    // cartesian product can be directly called on Seq
+  }
+
+  implicit def leftSeqView[T <: Tuple](self: Seq[TypedRow[T]]): LeftSeqView[T] = LeftSeqView(self)
+
+  sealed trait ElementAPI[T <: Tuple] extends SeqAPI[T] {}
+
+  object ElementAPI {
+
+    def unbox[T <: Tuple](v: ElementAPI[T]): TypedRow[T] = v match {
+      case v: ElementView[T] => v.asTypeRow
+      case v: TypedRow[T]    => v
+    }
+  }
+
+  trait ElementView[T <: Tuple] extends ElementAPI[T] with SeqView[T] {
+    // can also be used as an operand in merge, like Seq[TypedRow[T]]
+
+    def asTypeRow: TypedRow[T]
+
+    final def asTypeRowSeq: Seq[TypedRow[T]] = Seq(asTypeRow)
+  }
+
+  sealed trait LeftElementAPI[T <: Tuple] extends ElementAPI[T] with LeftSeqAPI[T] {
+    // merge (++) method can be called directly on it
+    // plz avoid introducing too much protected/public member as it corrupts TypedRow selector
+
+    private val self: TypedRow[T] = ElementAPI.unbox(this)
+
+    @transient lazy val +<+ : ElementWiseMethods.preferRight.MergeMethod[T] =
+      TypedRowInternal.ElementWiseMethods.preferRight.MergeMethod(self)
+
+    @transient lazy val +>+ : ElementWiseMethods.preferLeft.MergeMethod[T] =
+      TypedRowInternal.ElementWiseMethods.preferLeft.MergeMethod(self)
+
+    @transient lazy val +!+ : ElementWiseMethods.requireNoConflict.MergeMethod[T] =
+      TypedRowInternal.ElementWiseMethods.requireNoConflict.MergeMethod(self)
+
+    def ++ : ElementWiseMethods.preferRight.MergeMethod[T] = +<+ // default
+
+    object update extends RecordArgs {
+
+      // TODO: call ++<
+    }
+  }
+
+//  trait LeftElementView[T <: Tuple] extends LeftElementAPI[T] with ElementView[T] with LeftSeqView[T] {} // TOOD: remove, useless
+
+  object functions extends TypedRowFunctions
 }

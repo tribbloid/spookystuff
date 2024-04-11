@@ -3,8 +3,6 @@ package com.tribbloids.spookystuff.frameless
 import org.apache.spark.sql.catalyst.InternalRow
 import org.apache.spark.sql.types.{DataType, ObjectType}
 
-import scala.collection.immutable.ArraySeq
-
 case object TypedRowCatalystAdapter {
 
   // DO NOT RENAME! used by reflection-based Catalyst Encoder
@@ -19,8 +17,8 @@ case object TypedRowCatalystAdapter {
     def fromInternalRow(row: InternalRow): TypedRow[Tuple] = {
       val data = row.toSeq(schema)
 
-      val seq = data.to(ArraySeq)
-      new TypedRow[Tuple](seq)
+      val vec = data.to(Vector)
+      new TypedRow[Tuple](vec)
     }
   }
 

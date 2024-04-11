@@ -8,6 +8,7 @@ import org.apache.spark.sql.SparkSession
 import shapeless.HList
 import shapeless.record.Record
 import shapeless.test.illTyped
+import TypedRow.^
 
 class TypedRowSpec extends BaseSpec {
 
@@ -25,7 +26,7 @@ class TypedRowSpec extends BaseSpec {
 
     it("ofNamedArgs") {
 
-      val t1 = TypedRow(x = 1, y = "ab", z = 1.1)
+      val t1 = ^(x = 1, y = "ab", z = 1.1)
 
       val gd = HList(1, "ab", 1.1)
       assert(t1._internal.repr == gd)
@@ -48,9 +49,9 @@ class TypedRowSpec extends BaseSpec {
 
     it("right") {
 
-      val t1 = TypedRow(x = 1, y = "ab")
-      val t2 = TypedRow(y = 1.0, z = 1.1)
-      val merged = t1 ++< t2
+      val t1 = ^(x = 1, y = "ab")
+      val t2 = ^(y = 1.0, z = 1.1)
+      val merged = t1 +<+ t2
 
       assert(merged._internal.keys.runtimeList == List('x, 'y, 'z))
       assert(merged._internal.repr.runtimeList == List(1, 1.0, 1.1))
@@ -60,9 +61,9 @@ class TypedRowSpec extends BaseSpec {
 
     it("left") {
 
-      val t1 = TypedRow(x = 1, y = "ab")
-      val t2 = TypedRow(y = 1.0, z = 1.1)
-      val merged = t1 >++ t2
+      val t1 = ^(x = 1, y = "ab")
+      val t2 = ^(y = 1.0, z = 1.1)
+      val merged = t1 +>+ t2
 
       assert(merged._internal.keys.runtimeList == List('x, 'y, 'z))
       assert(merged._internal.repr.runtimeList == List(1, "ab", 1.1))
@@ -72,13 +73,13 @@ class TypedRowSpec extends BaseSpec {
 
     it("with duplicated keys") {
 
-      val t1 = TypedRow(x = 1, y = "ab")
-      val t2 = TypedRow(y = 1.0, z = 1.1)
+      val t1 = ^(x = 1, y = "ab")
+      val t2 = ^(y = 1.0, z = 1.1)
 
-      illTyped("t1 ++ t2")
+      illTyped("t1 +!+ t2")
 
-      val t3 = TypedRow(z = 1.1)
-      val merged = t1 ++ t3
+      val t3 = ^(z = 1.1)
+      val merged = t1 +!+ t3
 
       assert(merged._internal.keys.runtimeList == List('x, 'y, 'z))
       assert(merged._internal.repr.runtimeList == List(1, "ab", 1.1))
@@ -113,7 +114,7 @@ class TypedRowSpec extends BaseSpec {
 
     it("value") {
 
-      val t1 = TypedRow(x = 1, y = "ab")
+      val t1 = ^(x = 1, y = "ab")
       val col = t1._fields.y
 
       assert(col.value == "ab")
@@ -121,11 +122,11 @@ class TypedRowSpec extends BaseSpec {
 
     it("asTypedRow") {
 
-      val t1 = TypedRow(x = 1, y = "ab")
+      val t1 = ^(x = 1, y = "ab")
       val col = t1._fields.y
 
       val colAsRow = col.asTypedRow
-      val colAsRowGT = TypedRow(y = "ab")
+      val colAsRowGT = ^(y = "ab")
 
       implicitly[colAsRow._internal.Repr =:= colAsRowGT._internal.Repr]
 
@@ -133,11 +134,11 @@ class TypedRowSpec extends BaseSpec {
 
     it("update") {
 
-      val t1 = TypedRow(x = 1, y = "ab")
+      val t1 = ^(x = 1, y = "ab")
       val col = t1._fields.y
 
       val t2 = col := 1.0
-      val t2GT = t1 ++< TypedRow(y = 1.0)
+      val t2GT = t1 +<+ ^(y = 1.0)
 
       implicitly[t2._internal.Repr =:= t2GT._internal.Repr]
 
@@ -156,7 +157,7 @@ class TypedRowSpec extends BaseSpec {
 
     it("named columns") {
 
-      val t1 = TypedRow(x = 1, y = "ab", z = 1.1)
+      val t1 = ^(x = 1, y = "ab", z = 1.1)
 
       val rdd = session.sparkContext.parallelize(Seq(t1))
       val ds = TypedDataset.create(rdd)
@@ -182,8 +183,8 @@ class TypedRowSpec extends BaseSpec {
 
     it(" ... with duplicated names") { // TODO: this should be an ill-posed problem
 
-      val tx = TypedRow(x = 1, y = "ab")
-      val ty = TypedRow(y = 1.0, z = 1.1)
+      val tx = ^(x = 1, y = "ab")
+      val ty = ^(y = 1.0, z = 1.1)
       val t1 = TypedRowInternal.ofTuple(tx._internal.repr ++ ty._internal.repr)
 
       val rdd = session.sparkContext.parallelize(Seq(t1))

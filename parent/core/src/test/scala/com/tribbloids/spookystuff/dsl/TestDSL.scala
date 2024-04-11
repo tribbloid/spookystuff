@@ -4,7 +4,7 @@ import com.tribbloids.spookystuff.actions.Wget
 import com.tribbloids.spookystuff.doc.Observation
 import com.tribbloids.spookystuff.extractors.Alias
 import com.tribbloids.spookystuff.rdd.FetchedDataset
-import com.tribbloids.spookystuff.row.{Lineage, FetchedRow, Field, SquashedRow}
+import com.tribbloids.spookystuff.row.{FetchedRow, Field, Lineage, SquashedRow}
 import com.tribbloids.spookystuff.testutils.{FileDocsFixture, SpookyBaseSpec}
 
 /**

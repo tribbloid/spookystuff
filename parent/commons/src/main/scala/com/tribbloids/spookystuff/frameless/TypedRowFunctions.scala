@@ -1,10 +1,8 @@
 package com.tribbloids.spookystuff.frameless
 
-object TypedRowOps {
+trait TypedRowFunctions {
 
   /**
     * mimicking [[org.apache.spark.sql.functions]] ()
-   *
-   *
     */
 }

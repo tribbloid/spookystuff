@@ -1,18 +1,17 @@
 package com.tribbloids.spookystuff.frameless
 
 import ai.acyclic.prover.commons.function.Hom
+import com.tribbloids.spookystuff.frameless.TypedRow.ElementAPI
 import shapeless.Poly2
 import shapeless.ops.record.{Keys, MergeWith}
 
-import scala.collection.immutable.ArraySeq
-
 case class TypedRowInternal[L <: Tuple](
-    cells: ArraySeq[Any]
+    cells: Vector[Any]
 ) {
 
   @transient lazy val repr: L = {
     cells
-      .foldRight[Tuple](Tuple.Empty) { (s, x) =>
+      .foldRight[Tuple](Tuple.empty) { (s, x) =>
         s *: x
       }
       .asInstanceOf[L]
@@ -41,13 +40,13 @@ object TypedRowInternal {
 
     val cells = record.runtimeList
 
-    new TypedRow[L](cells.to(ArraySeq))
+    new TypedRow[L](cells.to(Vector))
   }
 
   protected trait ofData_Imp0 extends Hom.Poly {
 
     implicit def fromV[V]: V =>> TypedRow[Col_->>["value", V] *: Tuple.Empty] = at[V] { v =>
-      ofTuple(Col_->>["value"](v) *: Tuple.Empty)
+      ofTuple(Col_->>["value"](v) *: Tuple.empty)
     }
   }
 
@@ -58,36 +57,78 @@ object TypedRowInternal {
     }
   }
 
-  trait Merge extends Hom.Poly {
+  trait ElementWiseMethods extends Hom.Poly {
 
     import shapeless.record._
 
-    val fn: Poly2
+    val combineElements: Poly2
 
     type Theorem[L <: Tuple, R <: Tuple] = At[(TypedRow[L], TypedRow[R])]
 
     implicit def only[L <: Tuple, R <: Tuple](
         implicit
-        lemma: MergeWith[L, R, fn.type]
+        lemma: MergeWith[L, R, combineElements.type]
     ): (TypedRow[L], TypedRow[R]) =>> TypedRow[lemma.Out] = at[(TypedRow[L], TypedRow[R])] { tuple =>
       val (left, right) = tuple
-      val result = left._internal.repr.mergeWith(right._internal.repr)(fn)(lemma)
+      val result = left._internal.repr.mergeWith(right._internal.repr)(combineElements)(lemma)
       TypedRowInternal.ofTuple(result)
     }
 
-    case class Curried[L <: Tuple](left: TypedRow[L]) {
+    case class MergeMethod[L <: Tuple](left: TypedRow[L]) {
 
-      def apply[R <: Tuple](right: TypedRow[R])(
+      def apply[R <: Tuple](right: ElementAPI[R])(
           implicit
           ev: Theorem[L, R]
       ): ev.Out = {
 
-        ev.apply(left -> right)
+        val _right = ElementAPI.unbox(right)
+        ev.apply(left -> _right)
+      }
+
+    }
+
+    case class CartesianProductMethod[L <: Tuple](left: Seq[TypedRow[L]]) {
+
+      def apply[R <: Tuple](right: Seq[ElementAPI[R]])(
+          implicit
+          theorem: Theorem[L, R]
+      ): Seq[theorem.Out] = {
+        // cartesian product, size of output is the product of the sizes of 2 inputs
+
+        for (
+          ll <- left;
+          method = MergeMethod(ll);
+          rr <- right
+        ) yield {
+
+          method(rr)
+
+//          MergeMethod(ll)(rr)
+//          theorem(ll -> rr)
+        }
+      }
+
+//      def apply[R <: Tuple](right: Seq[TypedRow.ElementView[R]])(
+//          implicit
+//          theorem: Theorem[L, R]
+//      ): Seq[theorem.Out] = {
+//        // cartesian product, size of output is the product of the sizes of 2 inputs
+//
+//        apply(right.map(_.asTypeRow))
+//      }
+
+      def apply[R <: Tuple](right: TypedRow.SeqView[R])(
+          implicit
+          theorem: Theorem[L, R]
+      ): Seq[theorem.Out] = {
+        // cartesian product, size of output is the product of the sizes of 2 inputs
+
+        apply(right.asTypeRowSeq)
       }
     }
   }
 
-  object Merge {
+  object ElementWiseMethods {
 
     // in Scala 3, all these objects can be both API and lemma
     // but it will take some time before Spark upgrade to it
@@ -103,9 +144,9 @@ object TypedRowInternal {
 //      }
 //    }
 
-    object keepRight extends Merge {
+    object preferRight extends ElementWiseMethods {
 
-      object fn extends Poly2 {
+      object combineElements extends Poly2 {
 
         implicit def only[T, U]: Case.Aux[T, U, U] = at[T, U] { (_, r) =>
           r
@@ -113,9 +154,9 @@ object TypedRowInternal {
       }
     }
 
-    object keepLeft extends Merge {
+    object preferLeft extends ElementWiseMethods {
 
-      object fn extends Poly2 {
+      object combineElements extends Poly2 {
 
         implicit def only[T, U]: Case.Aux[T, U, T] = at[T, U] { (l, _) =>
           l
@@ -123,9 +164,9 @@ object TypedRowInternal {
       }
     }
 
-    object rigorous extends Merge {
+    object requireNoConflict extends ElementWiseMethods {
 
-      object fn extends Poly2 {
+      object combineElements extends Poly2 {
         // not allowed, compilation error
       }
     }

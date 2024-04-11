@@ -9,7 +9,7 @@ object Explore {
   /**
     * [[ChainPlan.Out]] deliberately contains [[Data.WithScope]], but the scope will not be commited into the visited
     * set. it is only there to make appending [[ChainPlan]] easier
- *
+    *
     * @tparam I
     *   input
     * @tparam O

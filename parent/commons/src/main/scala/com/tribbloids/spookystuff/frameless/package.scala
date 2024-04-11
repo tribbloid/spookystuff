@@ -32,7 +32,7 @@ package object frameless {
   object Tuple {
 
     type Empty = shapeless.HNil
-    val Empty = shapeless.HNil
+    val empty: Empty = shapeless.HNil
   }
   type *:[+X, +Y <: Tuple] = shapeless.::[X, Y]
 
