@@ -1,6 +1,5 @@
 package com.tribbloids.spookystuff.frameless
 
-import ai.acyclic.prover.commons.function.api.FnLike.^:
 import com.tribbloids.spookystuff.frameless.TypedRowInternal.ElementWiseMethods
 import frameless.TypedEncoder
 import shapeless.RecordArgs
@@ -13,13 +12,13 @@ import scala.reflect.ClassTag
   *
   * do not use shapeless instances for data storage/shipping
   *
-  * @param cells
+  * @param runtimeVector
   *   data
   * @tparam T
   *   Record type
   */
 final class TypedRow[T <: Tuple](
-    cells: Vector[Any]
+    runtimeVector: Vector[Any]
 ) extends Dynamic
     with TypedRow.LeftElementAPI[T] {
 
@@ -44,10 +43,11 @@ final class TypedRow[T <: Tuple](
 
     val value: selector.Out = _fields.selectDynamic(key).value
 
-    (value: selector.Out) ^: Field.Name[key.type]
+    Field.Named.apply[key.type](value: selector.Out)
+
   }
 
-  @transient override lazy val toString: String = cells.mkString("[", ",", "]")
+  @transient override lazy val toString: String = runtimeVector.mkString("[", ",", "]")
 
   // TODO: remove, don't use, Field.Name mixin is good enough!
   sealed class FieldView[K, V](
@@ -130,7 +130,7 @@ final class TypedRow[T <: Tuple](
 
   @transient lazy val _internal: TypedRowInternal[T] = {
 
-    TypedRowInternal(cells)
+    TypedRowInternal(runtimeVector)
   }
 
 }
@@ -231,11 +231,18 @@ object TypedRow extends TypedRowOrdering.Default.Giver {
 
     object update extends RecordArgs {
 
-      // TODO: call ++<
+      def applyRecord[R <: Tuple](list: R)(
+          implicit
+          lemma: TypedRowInternal.ElementWiseMethods.preferRight.Theorem[T, R]
+      ) = {
+
+        val neo = TypedRowInternal.ofTuple(list)
+        +<+(neo)
+      }
     }
   }
 
 //  trait LeftElementView[T <: Tuple] extends LeftElementAPI[T] with ElementView[T] with LeftSeqView[T] {} // TOOD: remove, useless
 
-  object functions extends TypedRowFunctions
+  @transient lazy val functions: TypedRowFunctions.type = TypedRowFunctions
 }

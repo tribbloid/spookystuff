@@ -2,16 +2,23 @@ package com.tribbloids.spookystuff.frameless
 
 import ai.acyclic.prover.commons.function.Hom
 import com.tribbloids.spookystuff.frameless.Tuple.Empty
-import com.tribbloids.spookystuff.frameless.TypedRow.ElementAPI
 import shapeless.Poly2
 import shapeless.ops.record.{Keys, MergeWith}
 
 case class TypedRowInternal[L <: Tuple](
-    cells: Vector[Any]
+    runtimeVector: Vector[Any]
 ) {
 
+  @transient def head[H](
+      implicit
+      ev: L <:< (H *: _)
+  ): H = {
+
+    runtimeVector.head.asInstanceOf[H]
+  }
+
   @transient lazy val repr: L = {
-    cells
+    runtimeVector
       .foldRight[Tuple](Tuple.empty) { (s, x) =>
         s *: x
       }
@@ -45,13 +52,13 @@ object TypedRowInternal {
   }
 
   def ofElement[K <: XStr, V](
-      v: Col_->>[K, V]
-  ): TypedRow[Col_->>[K, V] *: Empty] = ofTuple(v *: Tuple.empty)
+      v: K := V
+  ): TypedRow[(K := V) *: Empty] = ofTuple(v *: Tuple.empty)
 
   protected trait ofData_Imp0 extends Hom.Poly {
 
-    implicit def fromV[V]: V =>> TypedRow[Col_->>["value", V] *: Tuple.Empty] = at[V] { v =>
-      ofTuple((col["value"] ->> v) *: Tuple.empty)
+    implicit def fromV[V]: V =>> TypedRow[("value" := V) *: Tuple.Empty] = at[V] { v =>
+      ofTuple((named["value"] := v) *: Tuple.empty)
     }
   }
 
@@ -81,23 +88,35 @@ object TypedRowInternal {
 
     case class MergeMethod[L <: Tuple](left: TypedRow[L]) {
 
-      def apply[R <: Tuple](right: ElementAPI[R])(
+      def apply[R <: Tuple](right: TypedRow.ElementAPI[R])(
           implicit
-          ev: Theorem[L, R]
-      ): ev.Out = {
+          lemma: Theorem[L, R]
+      ): lemma.Out = {
 
-        val _right = ElementAPI.unbox(right)
-        ev.apply(left -> _right)
+        val _right = TypedRow.ElementAPI.unbox(right)
+        lemma.apply(left -> _right)
       }
 
     }
 
-    case class CartesianProductMethod[L <: Tuple](left: Seq[TypedRow[L]]) {
+    /**
+      * the following method can only be applied to 2 cases:
+      *
+      *   - single object that can be coerced into [[TypedRow.SeqAPI]] (higher precedence)
+      *   - Seq of [[TypedRow.ElementAPI]]
+      *
+      * Seq of objects that can be coerced into [[TypedRow.ElementAPI]] cannot be used as input directly.
+      *
+      * This is a deliberate design that prevents lists of [[Field.Named]] from participating in cartesian product
+      * directly, consider use [[TypedRowFunctions]].explode to explicitly convert it into Seq of [[TypedRow]] instead
+      */
 
-      def apply[R <: Tuple](right: Seq[ElementAPI[R]])(
+    abstract class CartesianProductMethod_Lvl0[L <: Tuple](left: Seq[TypedRow[L]]) {
+
+      def apply[R <: Tuple](right: Seq[TypedRow.ElementAPI[R]])(
           implicit
-          theorem: Theorem[L, R]
-      ): Seq[theorem.Out] = {
+          lemma: Theorem[L, R]
+      ): Seq[lemma.Out] = {
         // cartesian product, size of output is the product of the sizes of 2 inputs
 
         for (
@@ -108,27 +127,23 @@ object TypedRowInternal {
 
           method(rr)
 
-//          MergeMethod(ll)(rr)
-//          theorem(ll -> rr)
+          //          MergeMethod(ll)(rr)
+          //          theorem(ll -> rr)
         }
       }
+    }
 
-//      def apply[R <: Tuple](right: Seq[TypedRow.ElementView[R]])(
-//          implicit
-//          theorem: Theorem[L, R]
-//      ): Seq[theorem.Out] = {
-//        // cartesian product, size of output is the product of the sizes of 2 inputs
-//
-//        apply(right.map(_.asTypeRow))
-//      }
+    case class CartesianProductMethod[L <: Tuple](left: Seq[TypedRow[L]]) extends CartesianProductMethod_Lvl0[L](left) {
 
-      def apply[R <: Tuple](right: TypedRow.SeqView[R])(
+      def apply[R <: Tuple](right: TypedRow.SeqAPI[R])(
           implicit
-          theorem: Theorem[L, R]
-      ): Seq[theorem.Out] = {
+          lemma: Theorem[L, R]
+      ): Seq[lemma.Out] = {
         // cartesian product, size of output is the product of the sizes of 2 inputs
 
-        apply(right.asTypeRowSeq)
+        val seq = TypedRow.SeqAPI.unbox(right)
+
+        apply(seq)
       }
     }
   }

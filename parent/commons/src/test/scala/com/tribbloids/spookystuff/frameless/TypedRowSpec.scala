@@ -45,13 +45,17 @@ class TypedRowSpec extends BaseSpec {
 //    }
   }
 
+  val xy = ^(x = 1, y = "ab")
+  val yz = ^(y = 1.0, z = 1.1)
+  val z1 = ^(z = 1.1)
+
+  val z2 = ^(z = Seq(1.2, 1.3))
+
   describe("merge") {
 
     it("right") {
 
-      val t1 = ^(x = 1, y = "ab")
-      val t2 = ^(y = 1.0, z = 1.1)
-      val merged = t1 +<+ t2
+      val merged = xy +<+ yz
 
       assert(merged._internal.keys.runtimeList == List('x, 'y, 'z))
       assert(merged._internal.repr.runtimeList == List(1, 1.0, 1.1))
@@ -61,9 +65,7 @@ class TypedRowSpec extends BaseSpec {
 
     it("left") {
 
-      val t1 = ^(x = 1, y = "ab")
-      val t2 = ^(y = 1.0, z = 1.1)
-      val merged = t1 +>+ t2
+      val merged = xy +>+ yz
 
       assert(merged._internal.keys.runtimeList == List('x, 'y, 'z))
       assert(merged._internal.repr.runtimeList == List(1, "ab", 1.1))
@@ -73,13 +75,9 @@ class TypedRowSpec extends BaseSpec {
 
     it("with duplicated keys") {
 
-      val t1 = ^(x = 1, y = "ab")
-      val t2 = ^(y = 1.0, z = 1.1)
+      illTyped("xy +!+ yz")
 
-      illTyped("t1 +!+ t2")
-
-      val t3 = ^(z = 1.1)
-      val merged = t1 +!+ t3
+      val merged = xy +!+ z1
 
       assert(merged._internal.keys.runtimeList == List('x, 'y, 'z))
       assert(merged._internal.repr.runtimeList == List(1, "ab", 1.1))
@@ -89,10 +87,7 @@ class TypedRowSpec extends BaseSpec {
 
       it("right") {
 
-        val t1 = ^(x = 1, y = "ab")
-        val t2 = ^(y = 1.0, z = 1.1)
-
-        val merged = t1 ++ t2.y
+        val merged = xy ++ yz.y
 
         assert(merged._internal.keys.runtimeList == List('x, 'y))
         assert(merged._internal.repr.runtimeList == List(1, 1.0))
@@ -100,7 +95,124 @@ class TypedRowSpec extends BaseSpec {
     }
   }
 
-  describe("cartesian product") {}
+  val xys = Seq(xy, xy.update(y = "cd"))
+  val yzs = Seq(yz, yz.update(y = 1.2))
+  val z1s = Seq(z1, z1.update(z = 1.2))
+
+  describe("cartesian product") {
+
+    it("right") {
+
+      val merged = xys ><< yzs
+
+      merged
+        .map(_._internal.runtimeVector)
+        .mkString("\n")
+        .shouldBe(
+          """
+            |Vector(1, 1.0, 1.1)
+            |Vector(1, 1.2, 1.1)
+            |Vector(1, 1.0, 1.1)
+            |Vector(1, 1.2, 1.1)
+            |""".stripMargin
+        )
+
+    }
+
+    it("left") {
+
+      val merged = xys >>< yzs
+
+      merged
+        .map(_._internal.runtimeVector)
+        .mkString("\n")
+        .shouldBe(
+          """
+            |Vector(1, ab, 1.1)
+            |Vector(1, ab, 1.1)
+            |Vector(1, cd, 1.1)
+            |Vector(1, cd, 1.1)
+            |""".stripMargin
+        )
+    }
+
+    it("with duplicated keys") {
+
+      illTyped("xy >!< yz")
+
+      val merged = xys >!< z1s
+
+      merged
+        .map(_._internal.runtimeVector)
+        .mkString("\n")
+        .shouldBe(
+          """
+            |Vector(1, ab, 1.1)
+            |Vector(1, ab, 1.2)
+            |Vector(1, cd, 1.1)
+            |Vector(1, cd, 1.2)
+            |""".stripMargin
+        )
+    }
+
+    describe("with selection") {
+
+      it("right") {
+
+        val selected = z2.z
+        // yzs.map(_.y) won't work, deliberately
+
+        val merged = xys >< selected
+
+        merged
+          .map(_._internal.runtimeVector)
+          .mkString("\n")
+          .shouldBe(
+            """
+              |Vector(1, ab, List(1.2, 1.3))
+              |Vector(1, cd, List(1.2, 1.3))
+              |""".stripMargin
+          )
+      }
+
+      import TypedRow.functions._
+
+      it(" ... exploded") {
+
+        val exploded = {
+
+          explode(
+            z2.z
+          )
+
+          // which resolves to:
+          //        val view = {
+          //          Field.Named.asTypedRowView(
+          //            z2.z
+          //          )
+          //        }
+          //
+          //        explode(
+          //          view
+          //        )
+        }
+
+        val merged = xys >< exploded
+
+        merged
+          .map(_._internal.runtimeVector)
+          .mkString("\n")
+          .shouldBe(
+            """
+              |Vector(1, ab, 1.2)
+              |Vector(1, ab, 1.3)
+              |Vector(1, cd, 1.2)
+              |Vector(1, cd, 1.3)
+              |""".stripMargin
+          )
+      }
+    }
+  }
 
   //  it("removeAll") {
   //    // TODO implementations of records.Updater/Update/UpdateAll are all defective due to macro

@@ -10,24 +10,34 @@ import scala.language.implicitConversions
 object Field extends Capabilities {
   // ... is a compile-time-only construct
 
-  class Name[K <: XStr]() extends Capability
+  trait Named[K <: XStr, V] extends Capability {
+    self: V =>
+  }
+  // TODO: can this be merged into K := V ? to maintain shapeless compatibility?
 
-  object Name {
+  object Named {
 
-    def apply[K <: XStr]: Name[K] = new Name[K]()
+    class Annotator[K <: XStr] {
 
-    def apply[K <: XStr](name: K) = new Name[name.type]()
-
-    case class AsTypedRowView[K <: XStr, V](self: V ^: Name[K])
-        extends TypedRow.ElementView[Col_->>[K, V] *: Tuple.Empty] {
-
-      override def asTypeRow: TypedRow[Col_->>[K, V] *: Empty] = {
-
-        TypedRowInternal.ofElement(col[K] ->> self.asInstanceOf[V])
+      def apply[V](v: V): V ^: Named[K, V] = {
+        v.asInstanceOf[V ^: Named[K, V]]
       }
     }
 
-    implicit def asTypedRowView[K <: XStr, V](self: V ^: Name[K]): AsTypedRowView[K, V] = AsTypedRowView(self)
+    def apply[K <: XStr] = new Annotator[K]
+
+    def apply[K <: XStr](name: K) = new Annotator[name.type]
+
+    case class AsTypedRowView[K <: XStr, V](self: V ^: Named[K, V]) extends TypedRow.ElementView[T1[K := V]] {
+
+      override def asTypeRow: TypedRow[(K := V) *: Empty] = {
+
+        TypedRowInternal.ofElement(named[K] := self.asInstanceOf[V])
+      }
+    }
+
+    implicit def asTypedRowView[K <: XStr, V](self: V ^: Named[K, V]): AsTypedRowView[K, V] =
+      AsTypedRowView[K, V](self)
   }
 
   object CanSort extends Capability {

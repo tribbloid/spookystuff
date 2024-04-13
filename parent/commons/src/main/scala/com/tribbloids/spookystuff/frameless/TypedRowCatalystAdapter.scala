@@ -8,7 +8,7 @@ case object TypedRowCatalystAdapter {
   // DO NOT RENAME! used by reflection-based Catalyst Encoder
   def valueAtIndex[T <: Tuple](tt: TypedRow[T], i: Int): Any = {
 
-    tt._internal.cells.apply(i)
+    tt._internal.runtimeVector.apply(i)
   }
 
   case class WithDataTypes(schema: Seq[DataType]) {

@@ -23,23 +23,26 @@ package object frameless {
     Symbol(v).asInstanceOf[Col[T]]
   }
 
-  type Col_->>[K <: XStr, V] = Col[K] ->> V
+  type :=[K <: XStr, V] = Col[K] ->> V
 
-  class _ColValueConstructor[K <: XStr]() {
+  class NamedValueConstructor[K <: XStr]() {
 
-    def ->>[V](v: V): K Col_->> v.type = {
-      v.asInstanceOf[K Col_->> v.type]
+    def :=[V](v: V): K := v.type = {
+      v.asInstanceOf[K := v.type]
     }
   }
-  def col[K <: XStr] = new _ColValueConstructor[K]()
+  def named[K <: XStr] = new NamedValueConstructor[K]()
 
   type Tuple = shapeless.HList
   object Tuple {
 
     type Empty = shapeless.HNil
     val empty: Empty = shapeless.HNil
+
   }
   type *:[+X, +Y <: Tuple] = shapeless.::[X, Y]
+
+  type T1[T] = T *: Tuple.Empty
 
   implicit class TupleOps[T <: Tuple](self: T) {
 
