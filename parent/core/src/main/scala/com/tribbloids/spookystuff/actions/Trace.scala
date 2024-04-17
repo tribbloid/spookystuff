@@ -30,13 +30,13 @@ object Trace {
     import Rollout._
 
     /**
-      * deliberately NON-transient to be included in serialized from
-      *
-      * but can be manually discarded by calling [[unCache]] to make serialization even faster
-      *
-      * assuming that most [[Observation]]s will be auto-saved into DFS, their serialized form can exclude contents and
-      * thus be very small, making such manual discarding an optimisation with diminishing return
-      */
+     * deliberately NON-transient to be included in serialized from
+     *
+     * but can be manually discarded by calling [[unCache]] to make serialization even faster
+     *
+     * assuming that most [[Observation]]s will be auto-saved into DFS, their serialized form can exclude contents and
+     * thus be very small, making such manual discarding an optimisation with diminishing return
+     */
     @volatile private var _cached: Seq[Observation] = _
 
     def cachedOpt: Option[Seq[Observation]] = Option(_cached)
@@ -95,10 +95,10 @@ object Trace {
 }
 
 case class Trace(
-    self: Internal = Nil
-    // TODO: this should be gone, delegating to Same.By.Wrapper
-) extends Actions
-    with HasTrace { // remember trace is not a block! its the super container that cannot be wrapped
+                  self: Internal = Nil
+                  // TODO: this should be gone, delegating to Same.By.Wrapper
+                ) extends Actions
+  with HasTrace { // remember trace is not a block! its the super container that cannot be wrapped
 
   import Trace._
 

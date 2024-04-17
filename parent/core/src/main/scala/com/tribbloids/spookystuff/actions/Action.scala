@@ -9,7 +9,6 @@ import com.tribbloids.spookystuff.{ActionException, SpookyContext}
 import org.apache.spark.sql.types.SQLUserDefinedType
 import org.slf4j.LoggerFactory
 
-class ActionUDT extends ScalaUDT[Action]
 
 /**
   * These are the same actions a human would do to get to the data page, their order of execution is identical to that
@@ -138,31 +137,3 @@ trait Action extends ActionLike with HasTrace {
   }
 }
 
-trait Named extends Action {
-
-  var nameOpt: Option[String] = None
-  def name: String = nameOpt.getOrElse(this.toString)
-
-  def as(name: Symbol): this.type = {
-    assert(name != null)
-
-    this.nameOpt = Some(name.name)
-    this
-  }
-
-  final def ~(name: Symbol): this.type = as(name)
-
-  override def injectFrom(same: ActionLike): Unit = {
-    super.injectFrom(same)
-    this.nameOpt = same.asInstanceOf[Named].nameOpt
-  }
-}
-
-trait Driverless extends Action {}
-
-trait ActionPlaceholder extends Action {
-
-  override protected def doExe(agent: Agent): Seq[Observation] = {
-    throw new UnsupportedOperationException(s"${this.getClass.getSimpleName} is a placeholder")
-  }
-}

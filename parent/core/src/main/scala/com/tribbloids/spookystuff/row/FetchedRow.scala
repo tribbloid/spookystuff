@@ -35,6 +35,13 @@ object FetchedRow {
     * [[Data.Exploring]])? I believe so, and it should be easy
     */
 
+  // TODO: question: should these be part of FetchedDataset?
+  //  - do we need a tracer interface (like in dual-number autograd in jax) to enable define-by-run?
+  //  - if so, the paradigm for FetchedRow[T] & FetchedRow[NamedTuple] could be different!
+  //  - in define-by-run, the tracer is just a thin wrapper of a function argument,
+  //  it only records operation performed on it if the function explicitly ask for it, otherwise it degrades to its value (can still trace if it is used tho)
+  //  - can we afford this luxury? how many functions can be defined to ask for it? can we weaken the arg types of functions without extra work?
+
   case class SeqView[D](self: Seq[FetchedRow[D]]) {
 
     // the following functions are also available for a single FetchedRow, treated as Seq(v)

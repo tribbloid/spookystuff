@@ -7,15 +7,27 @@ object __DefineByRun {
     *
     * Once finished, the project will have the following capabilities:
     *
+    * Stage 0:
+    *
+    *   - [[com.tribbloids.spookystuff.actions.Action]].interpolate will be gone, all their constructors only accept
+    *     argument(s) with simple type
+    *   - [[com.tribbloids.spookystuff.rdd.FetchedDataset]].fetch now takes a function, which can be either applied to a
+    *     row with a real agent (in action), or applied to a row with a tracer (fake agent in dry-run-planning), the
+    *     tracer can only record agent actions & return data placeholder (which are also tracer themselves), but return
+    *     no real data
+    *
+    * Stage 1:
+    *
     *   - define-by-run API defined in [[com.tribbloids.spookystuff.rdd.FetchedDataset]].apply that supersedes both
-    *     fetch & extract.
+    *     fetch & extract
     *   - extract will be gone, fetch now becomes an alias of apply
     *   - define-by-run API takes a function [[com.tribbloids.spookystuff.row.AgentState]] =>
     *     [[com.tribbloids.spookystuff.row.Lineage]] as its only argument
     *   - [[com.tribbloids.spookystuff.row.AgentState]] can read from state of
     *     [[com.tribbloids.spookystuff.agent.DriverLike]]s directly, there is no need for Snapshot/Screenshot
-    *   - [[com.tribbloids.spookystuff.actions.Action]].interpolate will be gone, all their constructors only accept
-    *     argument(s) with simple type
+    *
+    * Stage 2:
+    *
     *   - (optional) [[ExecutionPlan]] API can be merged into [[com.tribbloids.spookystuff.rdd.FetchedDataset]]
     *   - native soft/multi-pass execution mode: [[ExecutionPlan]]s can read from a Dataset, which represents result of
     *     a previous execution that partially succeeded: Each [[com.tribbloids.spookystuff.agent.Agent]] & extraction

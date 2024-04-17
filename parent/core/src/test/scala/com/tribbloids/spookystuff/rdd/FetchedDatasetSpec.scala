@@ -1,7 +1,8 @@
 package com.tribbloids.spookystuff.rdd
 
 import ai.acyclic.prover.commons.spark.Envs
-import com.tribbloids.spookystuff.actions.*
+import com.tribbloids.spookystuff.actions
+import com.tribbloids.spookystuff.actions.Wget
 import com.tribbloids.spookystuff.metrics.Acc
 import com.tribbloids.spookystuff.testutils.{FileDocsFixture, SpookyBaseSpec}
 
@@ -214,9 +215,7 @@ class FetchedDatasetSpec extends SpookyBaseSpec with FileDocsFixture {
     assert(ds.spooky.spookyMetrics.pagesFetched.value == 1)
     ds.spooky.spookyMetrics.resetAll()
 
-    ds.wget(
-      JSON_URL
-    ).count()
+    ds.fetch(_ => Wget (JSON_URL)).count()
 
     assert(ds.spooky.spookyMetrics.pagesFetched.value == 1)
   }
