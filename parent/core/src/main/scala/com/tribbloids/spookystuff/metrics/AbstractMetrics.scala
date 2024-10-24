@@ -1,8 +1,8 @@
 package com.tribbloids.spookystuff.metrics
 
-import com.tribbloids.spookystuff.relay.TreeIR
 import com.tribbloids.spookystuff.commons.CommonUtils
 import com.tribbloids.spookystuff.commons.refl.ReflectionUtils
+import com.tribbloids.spookystuff.relay.TreeIR
 import org.apache.spark.util.AccumulatorV2
 
 import scala.collection.mutable
@@ -18,7 +18,7 @@ abstract class AbstractMetrics extends MetricLike {
 
   @transient final lazy val symbol2children: List[(String, Any)] = _symbol2children
 
-  override def samenessDelegatedTo: (String, List[(String, Any)]) = displayName -> symbol2children
+  override def samenessKey: (String, List[(String, Any)]) = displayName -> symbol2children
 
   /**
     * slow, should not be used too often

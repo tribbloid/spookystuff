@@ -5,7 +5,6 @@ import com.tribbloids.spookystuff.conf.Core
 import com.tribbloids.spookystuff.doc.Doc
 import com.tribbloids.spookystuff.doc.Observation.DocUID
 import com.tribbloids.spookystuff.testutils.{FileDocsFixture, SpookyBaseSpec}
-import com.tribbloids.spookystuff.web.actions.{Snapshot, Visit}
 
 import scala.concurrent.duration._
 
@@ -44,7 +43,7 @@ class InMemoryDocCacheSpec extends SpookyBaseSpec with FileDocsFixture {
 
     {
       val docs = Seq(doc, doc2)
-      docs.map(_.head.samenessDelegatedTo.toString).shouldBeIdentical()
+      docs.map(_.head.samenessKey.toString).shouldBeIdentical()
       docs.map(_.head.content.contentStr).shouldBeIdentical()
       docs.map(_.head.code.toString).shouldBeIdentical()
     }
@@ -68,7 +67,7 @@ class InMemoryDocCacheSpec extends SpookyBaseSpec with FileDocsFixture {
 
     {
       val docs = Seq(doc, doc2)
-      docs.map(_.head.samenessDelegatedTo.toString).shouldBeIdentical()
+      docs.map(_.head.samenessKey.toString).shouldBeIdentical()
       docs.map(_.head.content.contentStr).shouldBeIdentical()
       docs.map(_.head.code.toString).shouldBeIdentical()
     }
@@ -87,7 +86,7 @@ class InMemoryDocCacheSpec extends SpookyBaseSpec with FileDocsFixture {
 
     {
       val docs = Seq(doc, doc4)
-      docs.map(_.head.samenessDelegatedTo.toString).shouldBeIdentical()
+      docs.map(_.head.samenessKey.toString).shouldBeIdentical()
       docs.map(_.head.content.contentStr).shouldBeIdentical()
       docs.map(_.head.code.toString).shouldBeIdentical()
     }
@@ -108,7 +107,7 @@ class InMemoryDocCacheSpec extends SpookyBaseSpec with FileDocsFixture {
 
     {
       val docs = Seq(doc, doc2)
-      docs.map(_.head.samenessDelegatedTo.toString).shouldBeIdentical()
+      docs.map(_.head.samenessKey.toString).shouldBeIdentical()
       docs.map(_.head.content.contentStr).shouldBeIdentical()
       docs.map(_.head.code.toString).shouldBeIdentical()
     }
@@ -125,7 +124,7 @@ class InMemoryDocCacheSpec extends SpookyBaseSpec with FileDocsFixture {
 
     {
       val docs = Seq(doc, doc4)
-      docs.map(_.head.samenessDelegatedTo.toString).shouldBeIdentical()
+      docs.map(_.head.samenessKey.toString).shouldBeIdentical()
       docs.map(_.head.content.contentStr).shouldBeIdentical()
       docs.map(_.head.code.toString).shouldBeIdentical()
     }

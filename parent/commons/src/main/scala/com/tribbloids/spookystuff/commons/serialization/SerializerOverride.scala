@@ -2,8 +2,8 @@ package com.tribbloids.spookystuff.commons.serialization
 
 import ai.acyclic.prover.commons.same.EqualBy
 import org.apache.hadoop.io.Writable
-import org.apache.spark.serializer.SerializerInstance
 import org.apache.spark.SerializableWritable
+import org.apache.spark.serializer.SerializerInstance
 
 import java.io
 import java.nio.ByteBuffer
@@ -68,5 +68,5 @@ case class SerializerOverride[T: ClassTag](
     }
   }
 
-  override def samenessDelegatedTo: Any = value
+  override def samenessKey: Any = value
 }

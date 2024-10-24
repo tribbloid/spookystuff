@@ -1,6 +1,7 @@
 package com.tribbloids.spookystuff.frameless
 
-import ai.acyclic.prover.commons.function.Hom
+import ai.acyclic.prover.commons.cap.Capability.<>
+import ai.acyclic.prover.commons.function.hom.Hom
 import shapeless.ops.hlist.Mapper
 
 class TypedRowOrdering {
@@ -16,14 +17,14 @@ object TypedRowOrdering {
 
     trait By_Imp0 extends Hom.Poly {
 
-      implicit def ignore[T]: T =>> Unit = at[T] { _: T =>
+      implicit def ignore[T]: T Target Unit = at[T] { _: T =>
         ()
       }
     }
 
     object By extends By_Imp0 {
 
-      implicit def accept[T <: _ ^: CanSort.type]: T =>> T = at[T] { v: T =>
+      implicit def accept[T <: _ <> CanSort.type]: T Target T = at[T] { v: T =>
         v
       }
     }
@@ -36,7 +37,7 @@ object TypedRowOrdering {
           MO <: Tuple
       ]()(
           implicit
-          mapper: Mapper.Aux[By.asShapeless.type, R, MO]
+          mapper: Mapper.Aux[By.asShapelessPoly1.type, R, MO]
       ) {
 
         lazy val fn: TypedRow[R] => MO = { row: TypedRow[R] =>
@@ -66,7 +67,7 @@ object TypedRowOrdering {
           MO <: Tuple
       ](
           implicit
-          mapper: Mapper.Aux[By.asShapeless.type, R, MO],
+          mapper: Mapper.Aux[By.asShapelessPoly1.type, R, MO],
           delegate: TupleOrdering.Native.Impl[MO]
       ): Impl[R] = at[R].Factory().get
     }

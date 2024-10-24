@@ -1,11 +1,9 @@
 package com.tribbloids.spookystuff.execution
 
 import ai.acyclic.prover.commons.debug.print_@
-import ai.acyclic.prover.commons.function.Impl
 import com.tribbloids.spookystuff.actions.{Trace, Wget}
-import com.tribbloids.spookystuff.extractors.impl.Lit
 import com.tribbloids.spookystuff.testutils.{FileDocsFixture, SpookyBaseSpec}
-import com.tribbloids.spookystuff.{dsl, QueryException}
+import com.tribbloids.spookystuff.{QueryException, dsl}
 import org.apache.spark.HashPartitioner
 
 /**
@@ -240,7 +238,7 @@ class ExplorePlanSpec extends SpookyBaseSpec with FileDocsFixture {
       val rows = ds.squashedRDD.collect()
 
       rows.foreach { row =>
-        assert(row.group.samenessDelegatedTo === ExplorePlanSpec.CustomKeyBy(row.group))
+        assert(row.group.samenessKey === ExplorePlanSpec.CustomKeyBy(row.group))
       }
     }
   }

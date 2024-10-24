@@ -39,7 +39,7 @@ subprojects {
 
         testRuntimeOnly("org.apache.spark:spark-yarn_${vs.scala.binaryV}:${sparkV}")
 
-        testImplementation("com.lihaoyi:fastparse_${vs.scala.binaryV}:3.0.2")
+        testImplementation("com.lihaoyi:fastparse_${vs.scala.binaryV}:3.1.1")
 
         testImplementation("com.vladsch.flexmark:flexmark:0.64.8")
 

@@ -1,8 +1,9 @@
 package com.tribbloids.spookystuff.frameless
 
+import ai.acyclic.prover.commons.cap.Capability.<>
 import ai.acyclic.prover.commons.testlib.BaseSpec
+import com.tribbloids.spookystuff.frameless.TypedRow.^
 import shapeless.test.illTyped
-import TypedRow.^
 
 class TypedRowOrderingSpec extends BaseSpec {
 
@@ -15,7 +16,7 @@ class TypedRowOrderingSpec extends BaseSpec {
       val r1 = ^(a = CanSort(1), b = CanSort("ab"))
 
       assert(r1.a == 1)
-      r1.a: Int ^: CanSort.type
+      r1.a: Int <> CanSort.type
     }
 
     it("for all fields") {
@@ -23,10 +24,10 @@ class TypedRowOrderingSpec extends BaseSpec {
       val r1 = CanSort(^(a = 1, b = "ab"))
 
       assert(r1.a == 1)
-      r1.a: Int ^: CanSort.type
+      r1.a: Int <> CanSort.type
 
       val r2 = ^(c = 1.1) ++ r1
-      r2.a: Int ^: CanSort.type
+      r2.a: Int <> CanSort.type
       r2.c: Double
 
       illTyped(

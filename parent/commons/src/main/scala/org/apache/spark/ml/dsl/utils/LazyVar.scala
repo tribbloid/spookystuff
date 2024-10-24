@@ -1,6 +1,7 @@
 package org.apache.spark.ml.dsl.utils
 
 import ai.acyclic.prover.commons.same.EqualBy
+
 import scala.language.implicitConversions
 
 //TODO: merge into NullSafe
@@ -39,7 +40,7 @@ class LazyVar[T](
 
   def isCached: Boolean = cached.asOption.nonEmpty
 
-  override def samenessDelegatedTo: Any = value
+  override def samenessKey: Any = value
 
   override def toString: String = value.toString
 }

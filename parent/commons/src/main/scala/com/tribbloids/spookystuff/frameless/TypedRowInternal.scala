@@ -1,6 +1,6 @@
 package com.tribbloids.spookystuff.frameless
 
-import ai.acyclic.prover.commons.function.Hom
+import ai.acyclic.prover.commons.function.hom.Hom
 import com.tribbloids.spookystuff.frameless.Tuple.Empty
 import shapeless.Poly2
 import shapeless.ops.record.{Keys, MergeWith}
@@ -57,14 +57,14 @@ object TypedRowInternal {
 
   protected trait ofData_Imp0 extends Hom.Poly {
 
-    implicit def fromV[V]: V =>> TypedRow[("value" := V) *: Tuple.Empty] = at[V] { v =>
+    implicit def fromV[V]: V Target TypedRow[("value" := V) *: Tuple.Empty] = at[V] { v =>
       ofTuple((named["value"] := v) *: Tuple.empty)
     }
   }
 
   object ofData extends ofData_Imp0 {
 
-    implicit def id[L <: Tuple]: TypedRow[L] =>> TypedRow[L] = at[TypedRow[L]] {
+    implicit def id[L <: Tuple]: TypedRow[L] Target TypedRow[L] = at[TypedRow[L]] {
       identity[TypedRow[L]] _
     }
   }
@@ -75,12 +75,12 @@ object TypedRowInternal {
 
     val combineElements: Poly2
 
-    type Theorem[L <: Tuple, R <: Tuple] = At[(TypedRow[L], TypedRow[R])]
+    type LemmaAtRows[L <: Tuple, R <: Tuple] = LemmaAt[(TypedRow[L], TypedRow[R])]
 
     implicit def only[L <: Tuple, R <: Tuple](
         implicit
         lemma: MergeWith[L, R, combineElements.type]
-    ): (TypedRow[L], TypedRow[R]) =>> TypedRow[lemma.Out] = at[(TypedRow[L], TypedRow[R])] { tuple =>
+    ): (TypedRow[L], TypedRow[R]) Target TypedRow[lemma.Out] = at[(TypedRow[L], TypedRow[R])] { tuple =>
       val (left, right) = tuple
       val result = left._internal.repr.mergeWith(right._internal.repr)(combineElements)(lemma)
       TypedRowInternal.ofTuple(result)
@@ -90,13 +90,13 @@ object TypedRowInternal {
 
       def apply[R <: Tuple](right: TypedRow.ElementAPI[R])(
           implicit
-          lemma: Theorem[L, R]
+          lemma: LemmaAtRows[L, R]
       ): lemma.Out = {
 
         val _right = TypedRow.ElementAPI.unbox(right)
-        lemma.apply(left -> _right)
+        val result: lemma.Out = lemma.apply(left -> _right)
+        result
       }
-
     }
 
     /**
@@ -115,21 +115,26 @@ object TypedRowInternal {
 
       def apply[R <: Tuple](right: Seq[TypedRow.ElementAPI[R]])(
           implicit
-          lemma: Theorem[L, R]
+          lemma: LemmaAtRows[L, R]
       ): Seq[lemma.Out] = {
         // cartesian product, size of output is the product of the sizes of 2 inputs
 
-        for (
-          ll <- left;
-          method = MergeMethod(ll);
-          rr <- right
-        ) yield {
-
-          method(rr)
-
-          //          MergeMethod(ll)(rr)
-          //          theorem(ll -> rr)
+        right.map { v =>
+          v
         }
+
+        val result: Seq[lemma.Out] =
+          for (
+            ll <- left;
+            rr: TypedRow.ElementAPI[R] <- right
+          ) yield {
+            val method: MergeMethod[L] = MergeMethod(ll)
+
+            val result: lemma.Out = method(rr)
+            result
+          }
+
+        result
       }
     }
 
@@ -137,7 +142,7 @@ object TypedRowInternal {
 
       def apply[R <: Tuple](right: TypedRow.SeqAPI[R])(
           implicit
-          lemma: Theorem[L, R]
+          lemma: LemmaAtRows[L, R]
       ): Seq[lemma.Out] = {
         // cartesian product, size of output is the product of the sizes of 2 inputs
 

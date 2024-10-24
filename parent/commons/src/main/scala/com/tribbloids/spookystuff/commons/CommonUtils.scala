@@ -1,12 +1,11 @@
 package com.tribbloids.spookystuff.commons
 
-import ai.acyclic.prover.commons.debug.Debug.CallStackRef
+import ai.acyclic.prover.commons.debug.CallStackRef
 import ai.acyclic.prover.commons.util.Retry
 import com.tribbloids.spookystuff.commons.AwaitWithHeartbeat.Heartbeat
-
-import java.io.{File, PrintWriter, StringWriter}
 import org.slf4j.LoggerFactory
 
+import java.io.{File, PrintWriter, StringWriter}
 import scala.collection.immutable.ListMap
 import scala.concurrent.TimeoutException
 import scala.reflect.ClassTag
@@ -57,7 +56,7 @@ object CommonUtils {
   protected def _callerShowStr: String = {
     val result = CallStackRef
       .below(
-        condition = _.isDefinedAtClasses(classOf[CommonUtils.type])
+        condition = _.isUnder(classes = Seq(classOf[CommonUtils.type]))
       )
       .showStr
     result

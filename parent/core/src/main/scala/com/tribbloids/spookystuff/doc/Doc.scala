@@ -3,11 +3,11 @@ package com.tribbloids.spookystuff.doc
 import ai.acyclic.prover.commons.same.EqualBy
 import com.tribbloids.spookystuff._
 import com.tribbloids.spookystuff.caching.DocCacheLevel
+import com.tribbloids.spookystuff.commons.CommonUtils
+import com.tribbloids.spookystuff.commons.serialization.NOTSerializable
 import com.tribbloids.spookystuff.doc.Content.InMemoryBlob
 import com.tribbloids.spookystuff.doc.Observation.DocUID
 import com.tribbloids.spookystuff.doc.Unstructured.Unrecognisable
-import com.tribbloids.spookystuff.commons.CommonUtils
-import com.tribbloids.spookystuff.commons.serialization.NOTSerializable
 import com.tribbloids.spookystuff.io.ResourceMetadata
 import org.apache.commons.csv.CSVFormat
 import org.apache.hadoop.shaded.org.apache.http.StatusLine
@@ -48,7 +48,7 @@ case class Doc(
 
   import Doc._
 
-  @transient lazy val samenessDelegatedTo: Any = (uid, uri, metadata, timeMillis, httpStatus.toString)
+  @transient lazy val samenessKey: Any = (uid, uri, metadata, timeMillis, httpStatus.toString)
 
   override def updated(
       uid: DocUID = this.uid,

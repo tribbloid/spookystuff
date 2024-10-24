@@ -1,12 +1,12 @@
 package com.tribbloids.spookystuff.graph
 
+import ai.acyclic.prover.commons.collection.MultiMaps
+import com.tribbloids.spookystuff.commons.Types
 import com.tribbloids.spookystuff.graph.Element.{Edge, NodeTriplet}
 import com.tribbloids.spookystuff.graph.IDAlgebra.Rotator
-import com.tribbloids.spookystuff.commons.Types
 
 import scala.collection.mutable
 import scala.reflect.ClassTag
-import ai.acyclic.prover.commons.collection.MultiMaps
 
 //optimised for speed rather than memory usage
 //NOT thread safe!
@@ -99,7 +99,7 @@ object LocalGraph {
         node_+ : Types.Reduce[NodeData]
     ): GG = {
 
-      val existingIDs = nodes.map(_.samenessDelegatedTo).toSet
+      val existingIDs = nodes.map(_.samenessKey).toSet
 
       val missingIDs: Seq[D#ID] = edges
         .flatMap { v =>
@@ -116,15 +116,15 @@ object LocalGraph {
         case nn: _NodeTriplet =>
           nn
         case nn: _Node =>
-          val inbound = mutable.LinkedHashSet(edges.filter(_.to == nn.samenessDelegatedTo).map(_.from): _*)
-          val outbound = mutable.LinkedHashSet(edges.filter(_.from == nn.samenessDelegatedTo).map(_.to): _*)
+          val inbound = mutable.LinkedHashSet(edges.filter(_.to == nn.samenessKey).map(_.from): _*)
+          val outbound = mutable.LinkedHashSet(edges.filter(_.from == nn.samenessKey).map(_.to): _*)
           val result = new _NodeTriplet(nn, inbound, outbound)
           result
       }
 
       val nodeMap: MultiMaps.Mutable[ID, _NodeTriplet] = MultiMaps.Mutable.empty
       for (nn <- linkedNodes) {
-        nodeMap.put1(nn.samenessDelegatedTo, nn)
+        nodeMap.put1(nn.samenessKey, nn)
       }
 
       val reducedNodeMap: mutable.Map[ID, _NodeTriplet] = {
@@ -155,11 +155,11 @@ object LocalGraph {
     ): _NodeTriplet = {
 
       require(
-        v1.samenessDelegatedTo == v2.samenessDelegatedTo,
-        s"ID mismatch, ${v1.samenessDelegatedTo} ~= ${v2.samenessDelegatedTo}"
+        v1.samenessKey == v2.samenessKey,
+        s"ID mismatch, ${v1.samenessKey} ~= ${v2.samenessKey}"
       )
 
-      val node = algebra.createNode(node_+(v1.data, v2.data), Some(v1.samenessDelegatedTo))
+      val node = algebra.createNode(node_+(v1.data, v2.data), Some(v1.samenessKey))
 
       val inbound = v1.inbound ++ v2.inbound
       val outbound = v1.outbound ++ v2.outbound

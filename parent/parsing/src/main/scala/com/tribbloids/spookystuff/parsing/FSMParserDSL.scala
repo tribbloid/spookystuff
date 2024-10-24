@@ -1,8 +1,8 @@
 package com.tribbloids.spookystuff.parsing
 
+import com.tribbloids.spookystuff.commons.RangeMagnet
 import com.tribbloids.spookystuff.graph.Module
 import com.tribbloids.spookystuff.parsing.FSMParserGraph.Layout._
-import com.tribbloids.spookystuff.commons.RangeMagnet
 
 import scala.language.implicitConversions
 
@@ -28,7 +28,7 @@ object FSMParserDSL extends DSL {
 
     lazy val root: Operand[_Node] = {
 
-      val node: algebra._Node = algebra.createNode(FState.ROOT, Some(entry.self.samenessDelegatedTo))
+      val node: algebra._Node = algebra.createNode(FState.ROOT, Some(entry.self.samenessKey))
       create(node)
     }
 
@@ -68,8 +68,8 @@ object FSMParserDSL extends DSL {
       val e2 = another.entryNode
 
       val collapseEntryNodes = proto.core.replicate() {
-        case e2.`samenessDelegatedTo` => e1.samenessDelegatedTo
-        case v @ _                    => v
+        case e2.`samenessKey` => e1.samenessKey
+        case v @ _            => v
       }
 
       new Operand(collapseEntryNodes, e1)

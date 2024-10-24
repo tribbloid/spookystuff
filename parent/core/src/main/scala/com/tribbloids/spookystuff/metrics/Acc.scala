@@ -14,7 +14,7 @@ import scala.language.implicitConversions
   */
 trait Acc[T <: AccumulatorV2[_, _]] extends MetricLike {
 
-  override def samenessDelegatedTo: (String, Any) = displayName -> _self.value
+  override def samenessKey: (String, Any) = displayName -> _self.value
 
   def sparkContext: SparkContext = SparkSession.active.sparkContext
 

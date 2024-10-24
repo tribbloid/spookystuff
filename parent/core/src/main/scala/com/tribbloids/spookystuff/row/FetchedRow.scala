@@ -69,9 +69,9 @@ object FetchedRow {
         fn: FetchedRow[D] => Seq[O]
     )(
         implicit
-        toRow1: TypedRowInternal.ofData.=>>[D, TypedRow[IT]],
-        toRow2: TypedRowInternal.ofData.=>>[O, TypedRow[OT]],
-        merge: ElementWiseMethods.preferRight.Theorem[IT, OT]
+        toRow1: TypedRowInternal.ofData.Target[D, TypedRow[IT]],
+        toRow2: TypedRowInternal.ofData.Target[O, TypedRow[OT]],
+        merge: ElementWiseMethods.preferRight.Lemma[IT, OT]
     ): ChainPlan.Out[merge.Out] = {
 
       val _fn = fn.andThen { outs =>

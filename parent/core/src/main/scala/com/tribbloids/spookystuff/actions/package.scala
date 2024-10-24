@@ -1,6 +1,6 @@
 package com.tribbloids.spookystuff
 
-import ai.acyclic.prover.commons.function.Impl
+import ai.acyclic.prover.commons.function.hom.Hom
 import com.tribbloids.spookystuff.agent.Agent
 import com.tribbloids.spookystuff.doc.Doc
 
@@ -9,7 +9,7 @@ import com.tribbloids.spookystuff.doc.Doc
   */
 package object actions {
 
-  type DocFilter = Impl.Fn[(Doc, Agent), Doc] // TODO: merge with Selector[Doc]
+  type DocFilter = Hom.Impl.Circuit[(Doc, Agent), Doc] // TODO: merge with Selector[Doc]
 
-  type DocCondition = Impl.Fn[(Doc, Agent), Boolean] // TODO: merge with Selector[Doc]
+  type DocCondition = Hom.Impl.Circuit[(Doc, Agent), Boolean] // TODO: merge with Selector[Doc]
 }

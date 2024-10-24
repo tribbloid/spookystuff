@@ -1,13 +1,13 @@
 package com.tribbloids.spookystuff.frameless
 
-import ai.acyclic.prover.commons.function.Hom
-import ai.acyclic.prover.commons.util.Capabilities
+import ai.acyclic.prover.commons.cap.Capability.{<>, Universe}
+import ai.acyclic.prover.commons.function.hom.Hom
 import com.tribbloids.spookystuff.frameless.Tuple.Empty
 import shapeless.ops.record.MapValues
 
 import scala.language.implicitConversions
 
-object Field extends Capabilities {
+object Field extends Universe {
   // ... is a compile-time-only construct
 
   trait Named[K <: XStr, V] extends Capability {
@@ -17,18 +17,18 @@ object Field extends Capabilities {
 
   object Named {
 
-    class Annotator[K <: XStr] {
+    class AnnotatorByApply[K <: XStr] {
 
-      def apply[V](v: V): V ^: Named[K, V] = {
-        v.asInstanceOf[V ^: Named[K, V]]
+      def apply[V](v: V): V <> Named[K, V] = {
+        v.asInstanceOf[V <> Named[K, V]]
       }
     }
 
-    def apply[K <: XStr] = new Annotator[K]
+    def apply[K <: XStr] = new AnnotatorByApply[K]
 
-    def apply[K <: XStr](name: K) = new Annotator[name.type]
+    def apply[K <: XStr](name: K) = new AnnotatorByApply[name.type]
 
-    case class AsTypedRowView[K <: XStr, V](self: V ^: Named[K, V]) extends TypedRow.ElementView[T1[K := V]] {
+    case class AsTypedRowView[K <: XStr, V](self: V <> Named[K, V]) extends TypedRow.ElementView[T1[K := V]] {
 
       override def asTypeRow: TypedRow[(K := V) *: Empty] = {
 
@@ -36,7 +36,7 @@ object Field extends Capabilities {
       }
     }
 
-    implicit def asTypedRowView[K <: XStr, V](self: V ^: Named[K, V]): AsTypedRowView[K, V] =
+    implicit def asTypedRowView[K <: XStr, V](self: V <> Named[K, V]): AsTypedRowView[K, V] =
       AsTypedRowView[K, V](self)
   }
 
@@ -45,12 +45,12 @@ object Field extends Capabilities {
     import shapeless.record._
 
     def apply[V](v: V) = {
-      v ^: CanSort
+      v <>: CanSort
     }
 
     def apply[L <: Tuple](typedRow: TypedRow[L])(
         implicit
-        ev: MapValues[Enable.asShapeless.type, L]
+        ev: MapValues[Enable.asShapelessPoly1.type, L]
     ): TypedRow[ev.Out] = {
 
       val mapped = typedRow._internal.repr.mapValues(Enable)(ev)
@@ -60,8 +60,8 @@ object Field extends Capabilities {
 
     object Enable extends Hom.Poly {
 
-      implicit def only[T]: T =>> (T ^: CanSort.type) = at[T] { v =>
-        v.asInstanceOf[T ^: CanSort.type]
+      implicit def only[T]: T Target (T <> CanSort.type) = at[T] { v =>
+        v.asInstanceOf[T <> CanSort.type]
       }
     }
   }

@@ -1,12 +1,12 @@
 package com.tribbloids.spookystuff.commons
 
-import ai.acyclic.prover.commons.debug.Debug.CallStackRef
+import ai.acyclic.prover.commons.debug.CallStackRef
 import com.tribbloids.spookystuff.commons.AwaitWithHeartbeat.Heartbeat
 import org.slf4j.LoggerFactory
 
 import java.util.concurrent.{ExecutorService, Executors}
-import scala.concurrent.duration._
 import scala.concurrent._
+import scala.concurrent.duration._
 
 object AwaitWithHeartbeat {
 
@@ -65,7 +65,10 @@ case class AwaitWithHeartbeat(
   protected lazy val _callerShowStr: String = {
     val result = CallStackRef
       .below(
-        condition = _.isDefinedAtClasses(classOf[CommonUtils.type], classOf[AwaitWithHeartbeat])
+        condition = { v =>
+          v.isStaticClassInit
+          v.isUnder(classes = Seq(classOf[CommonUtils.type], classOf[AwaitWithHeartbeat]))
+        }
       )
       .showStr
     result

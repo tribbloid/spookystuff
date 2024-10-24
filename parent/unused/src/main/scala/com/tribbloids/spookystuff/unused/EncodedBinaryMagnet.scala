@@ -16,7 +16,7 @@ abstract class EncodedBinaryMagnet[T <: EncodedBinaryMagnet[T]] extends Product 
 
   def asBytesOrEmpty: Array[Byte] = Option(asBytes).getOrElse(Array.empty)
 
-  @transient lazy val samenessDelegatedTo: List[Byte] = asBytesOrEmpty.toList
+  @transient lazy val samenessKey: List[Byte] = asBytesOrEmpty.toList
 
   def strEncoding: String
 

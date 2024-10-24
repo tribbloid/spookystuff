@@ -1,5 +1,6 @@
 package com.tribbloids.spookystuff.frameless
 
+import ai.acyclic.prover.commons.cap.Capability.<>
 import com.tribbloids.spookystuff.frameless.TypedRowInternal.ElementWiseMethods
 import frameless.TypedEncoder
 import shapeless.RecordArgs
@@ -22,7 +23,7 @@ final class TypedRow[T <: Tuple](
 ) extends Dynamic
     with TypedRow.LeftElementAPI[T] {
 
-  // TODO: should be "NamedTuple"
+  // TODO: should be "NamedTuple"/"Record"
 
   // TODO: how to easily reconstruct vertices/edges for graphX/graphframe?
   //  since graphframe table always demand id/src/tgt columns, should the default
@@ -39,7 +40,7 @@ final class TypedRow[T <: Tuple](
   def selectDynamic(key: XStr)(
       implicit
       selector: Selector[T, Col[key.type]]
-  ) = {
+  ): selector.Out <> Field.Named[key.type, selector.Out] = {
 
     val value: selector.Out = _fields.selectDynamic(key).value
 
@@ -87,14 +88,14 @@ final class TypedRow[T <: Tuple](
 
       def apply[VV](value: VV)(
           implicit
-          ev: ElementWiseMethods.preferRight.Theorem[T, (K ->> VV) *: Tuple.Empty]
+          ev: ElementWiseMethods.preferRight.LemmaAtRows[T, (K ->> VV) *: Tuple.Empty]
       ): ev.Out = {
 
         val neo: TypedRow[(K ->> VV) *: Tuple.Empty] = TypedRowInternal.ofTuple(->>[K](value) *: Tuple.empty)
 
         val result = ev.apply(TypedRow.this -> neo)
 
-        result
+        result.asInstanceOf[ev.Out]
       }
     }
 
@@ -139,6 +140,7 @@ object TypedRow extends TypedRowOrdering.Default.Giver {
 
   lazy val empty: TypedRow[Tuple.Empty] = TypedRowInternal.ofTuple(Tuple.empty)
 
+  // TODO: should be %, as in record4s
   object ^ extends RecordArgs {
 
     def applyRecord[L <: Tuple](list: L): TypedRow[L] = TypedRowInternal.ofTuple(list)
@@ -233,11 +235,12 @@ object TypedRow extends TypedRowOrdering.Default.Giver {
 
       def applyRecord[R <: Tuple](list: R)(
           implicit
-          lemma: TypedRowInternal.ElementWiseMethods.preferRight.Theorem[T, R]
-      ) = {
+          lemma: TypedRowInternal.ElementWiseMethods.preferRight.LemmaAtRows[T, R]
+      ): lemma.Out = {
 
-        val neo = TypedRowInternal.ofTuple(list)
-        +<+(neo)
+        val neo: TypedRow[R] = TypedRowInternal.ofTuple(list)
+        val result: lemma.Out = +<+(neo)
+        result
       }
     }
   }

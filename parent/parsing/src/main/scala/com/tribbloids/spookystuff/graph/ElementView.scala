@@ -26,7 +26,7 @@ trait ElementView[D <: Domain] extends Algebra.Aliases[D] with EqualBy {
   def inbound: Seq[ElementView[D]]
   def outbound: Seq[ElementView[D]]
 
-  final override def samenessDelegatedTo: _Element = element
+  final override def samenessKey: _Element = element
 
   lazy val (prefixes, positioning): (Seq[String], Seq[Int]) = {
     element match {

@@ -95,7 +95,7 @@ trait Layout[D <: Domain] extends Algebra.Aliases[D] {
       val latentHeads = heads.seq
 
       val latentIDs = (latentTails.map(_.to) ++ latentHeads.map(_.from)).distinct
-        .filterNot(_ == algebra.DANGLING.samenessDelegatedTo)
+        .filterNot(_ == algebra.DANGLING.samenessKey)
 
       val existingIDs = _graph.getLinkedNodes(latentIDs).keys.toList
 
@@ -279,7 +279,7 @@ trait Layout[D <: Domain] extends Algebra.Aliases[D] {
       }
 
       def fromNode(nn: _NodeLike): NodeView = {
-        val existingOpt = fromNodeID(nn.samenessDelegatedTo)
+        val existingOpt = fromNodeID(nn.samenessKey)
         existingOpt match {
           case Some(existing) =>
             assert(

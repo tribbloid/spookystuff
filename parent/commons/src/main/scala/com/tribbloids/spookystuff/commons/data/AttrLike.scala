@@ -27,7 +27,7 @@ trait AttrLike[T] extends Serializable with EqualBy {
   final def get: Option[T] = tryGet.toOption
   final def value: T = tryGet.get
 
-  override def samenessDelegatedTo: Any = this.allNames -> get
+  override def samenessKey: Any = this.allNames -> get
 }
 
 object AttrLike {

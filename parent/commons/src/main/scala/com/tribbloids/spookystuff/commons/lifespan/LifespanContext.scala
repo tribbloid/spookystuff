@@ -27,7 +27,7 @@ case class LifespanContext(
   val blockManagerID: Option[BlockManagerId] = _sparkEnvOpt.map(_.blockManager.blockManagerId)
   val executorID: Option[String] = _sparkEnvOpt.map(_.executorId)
 
-  override val samenessDelegatedTo: (Option[Long], Long) = taskAttemptID -> threadID
+  override val samenessKey: (Option[Long], Long) = taskAttemptID -> threadID
 
   val threadStr: String = {
     "Thread-" + thread.getId + s"[${thread.getName}]" + {

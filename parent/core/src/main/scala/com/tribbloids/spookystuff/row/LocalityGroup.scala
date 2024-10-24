@@ -41,7 +41,7 @@ case class LocalityGroup(
 ) extends EqualBy
     with SpookyContext.CanRunWith {
 
-  @transient lazy val samenessDelegatedTo: Any = samenessOvrd.getOrElse(trace)
+  @transient lazy val samenessKey: Any = samenessOvrd.getOrElse(trace)
 
   def unCache: LocalityGroup = this.copy()(rollout.unCache)
 

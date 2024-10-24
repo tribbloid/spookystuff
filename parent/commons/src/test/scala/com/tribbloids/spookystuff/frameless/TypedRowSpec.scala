@@ -1,14 +1,14 @@
 package com.tribbloids.spookystuff.frameless
 
+import ai.acyclic.prover.commons.spark.TestHelper
 import ai.acyclic.prover.commons.testlib.BaseSpec
 import ai.acyclic.prover.commons.util.Summoner
-import com.tribbloids.spookystuff.testutils.TestHelper
+import com.tribbloids.spookystuff.frameless.TypedRow.^
 import frameless.{TypedDataset, TypedEncoder}
 import org.apache.spark.sql.SparkSession
 import shapeless.HList
 import shapeless.record.Record
 import shapeless.test.illTyped
-import TypedRow.^
 
 class TypedRowSpec extends BaseSpec {
 
@@ -95,6 +95,31 @@ class TypedRowSpec extends BaseSpec {
     }
   }
 
+  describe("update") {
+
+    it("right") {
+
+      val updated = xy.update(y = "cd")
+      assert(updated.x == 1)
+      assert(updated.y == "cd")
+
+    }
+
+    it("left") {
+
+      val updated = xy.update(x = 2)
+
+    }
+
+//    it("with duplicated keys") {
+//
+//      illTyped("xy.update(x = 1.2)")
+//
+//      val updated = xy.update(y = "cd")
+//
+//    }
+  }
+
   val xys = Seq(xy, xy.update(y = "cd"))
   val yzs = Seq(yz, yz.update(y = 1.2))
   val z1s = Seq(z1, z1.update(z = 1.2))
@@ -116,7 +141,6 @@ class TypedRowSpec extends BaseSpec {
             |Vector(1, 1.2, 1.1)
             |""".stripMargin
         )
-
     }
 
     it("left") {

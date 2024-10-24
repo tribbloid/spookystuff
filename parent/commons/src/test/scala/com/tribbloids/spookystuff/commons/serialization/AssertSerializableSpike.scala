@@ -1,6 +1,6 @@
 package com.tribbloids.spookystuff.commons.serialization
 
-import ai.acyclic.prover.commons.function.Impl
+import ai.acyclic.prover.commons.function.hom.Hom
 import ai.acyclic.prover.commons.util.Caching
 import com.tribbloids.spookystuff.testutils.BaseSpec
 
@@ -102,7 +102,7 @@ class AssertSerializableSpike extends BaseSpec {
       3
     }
 
-    val inner2: Impl.Fn[String, Int] = Impl { _ =>
+    val inner2: Hom.Impl.Circuit[String, Int] = Hom.Circuit { _ =>
       3
     }
 

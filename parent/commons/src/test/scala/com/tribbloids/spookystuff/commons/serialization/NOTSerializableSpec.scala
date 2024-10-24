@@ -1,9 +1,10 @@
 package com.tribbloids.spookystuff.commons.serialization
 
-import java.io.NotSerializableException
-
-import com.tribbloids.spookystuff.testutils.{BaseSpec, TestHelper}
+import ai.acyclic.prover.commons.spark.TestHelper
+import com.tribbloids.spookystuff.testutils.BaseSpec
 import org.apache.spark.SparkException
+
+import java.io.NotSerializableException
 
 object NOTSerializableSpec {
 

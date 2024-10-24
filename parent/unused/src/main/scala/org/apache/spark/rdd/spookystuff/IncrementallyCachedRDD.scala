@@ -2,20 +2,20 @@ package org.apache.spark.rdd.spookystuff
 
 import ai.acyclic.prover.commons.same.EqualBy
 import ai.acyclic.prover.commons.spark.SparkContextView
-import ai.acyclic.prover.commons.util.{Caching, Retry}
 import ai.acyclic.prover.commons.util.Caching.ConcurrentMap
-import com.tribbloids.spookystuff.unused.ExternalAppendOnlyArray
-import com.tribbloids.spookystuff.utils.accumulator.MapAccumulator
+import ai.acyclic.prover.commons.util.{Caching, Retry}
 import com.tribbloids.spookystuff.commons.lifespan.Cleanable.Lifespan
 import com.tribbloids.spookystuff.commons.lifespan.{Cleanable, LocalCleanable}
+import com.tribbloids.spookystuff.unused.ExternalAppendOnlyArray
+import com.tribbloids.spookystuff.utils.accumulator.MapAccumulator
 import org.apache.spark
 import org.apache.spark.broadcast.Broadcast
 import org.apache.spark.internal.Logging
-import org.apache.spark.sql._SQLHelper
 import org.apache.spark.ml.dsl.utils.LazyVar
 import org.apache.spark.rdd.RDD
 import org.apache.spark.scheduler.TaskLocation
 import org.apache.spark.serializer.Serializer
+import org.apache.spark.sql._SQLHelper
 import org.apache.spark.storage.StorageLevel
 import org.apache.spark.util.AccumulatorV2
 import org.apache.spark.{OneToOneDependency, Partition, SparkEnv, TaskContext}
@@ -78,7 +78,7 @@ case class IncrementallyCachedRDD[T: ClassTag](
 
       lazy val semaphore: Semaphore = new Semaphore(1) // cannot be shared by >1 threads
 
-      override protected lazy val samenessDelegatedTo: Any = taskCtx.taskAttemptId()
+      override protected lazy val samenessKey: Any = taskCtx.taskAttemptId()
 
       lazy val uncleanTask: UncleanTaskContext = UncleanTaskContext(taskCtx)
 

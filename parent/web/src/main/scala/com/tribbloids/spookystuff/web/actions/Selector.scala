@@ -61,5 +61,5 @@ case class Selector(factory: String => By, pattern: String) extends EqualBy {
 
   override def toString: String = by.toString
 
-  override lazy val samenessDelegatedTo: By = by
+  override lazy val samenessKey: By = by
 }
