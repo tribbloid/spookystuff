@@ -1,6 +1,6 @@
-package com.tribbloids.spookystuff.execution
+package com.tribbloids.spookystuff.linq
 
-object __TypedRow {
+object __RecordDesign {
 
   /**
     * This rewrite could introduce the following capabilities, and drastically simplify extractor impl (by eliminating

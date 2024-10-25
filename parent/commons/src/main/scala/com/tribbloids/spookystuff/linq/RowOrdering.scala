@@ -1,19 +1,21 @@
-package com.tribbloids.spookystuff.frameless
+package com.tribbloids.spookystuff.linq
 
 import ai.acyclic.prover.commons.cap.Capability.<>
 import ai.acyclic.prover.commons.function.hom.Hom
+import com.tribbloids.spookystuff.linq.Linq.Row
+import com.tribbloids.spookystuff.linq.internal.TupleOrdering
 import shapeless.ops.hlist.Mapper
 
-class TypedRowOrdering {
+class RowOrdering {
 
-  trait Impl[T <: Tuple] extends Ordering[TypedRow[T]]
+  trait Impl[T <: Tuple] extends Ordering[Row[T]]
 }
 
-object TypedRowOrdering {
+object RowOrdering {
 
   import Field._
 
-  object Default extends TypedRowOrdering {
+  object Default extends RowOrdering {
 
     trait By_Imp0 extends Hom.Poly {
 
@@ -40,7 +42,7 @@ object TypedRowOrdering {
           mapper: Mapper.Aux[By.asShapelessPoly1.type, R, MO]
       ) {
 
-        lazy val fn: TypedRow[R] => MO = { row: TypedRow[R] =>
+        lazy val fn: Row[R] => MO = { row: Row[R] =>
           val mapped = mapper.apply(row._internal.repr)
 
           mapped
@@ -52,7 +54,7 @@ object TypedRowOrdering {
         ): Impl[R] = {
 
           new Impl[R] {
-            override def compare(x: TypedRow[R], y: TypedRow[R]): Int = {
+            override def compare(x: Row[R], y: Row[R]): Int = {
               delegate.compare(fn(x), fn(y))
             }
           }

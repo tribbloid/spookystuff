@@ -1,4 +1,6 @@
-package com.tribbloids.spookystuff.frameless
+package com.tribbloids.spookystuff.linq.internal
+
+import com.tribbloids.spookystuff.linq.{*:, Tuple}
 
 trait TupleOrdering {
 

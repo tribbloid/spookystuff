@@ -3,8 +3,8 @@ package com.tribbloids.spookystuff.row
 import com.tribbloids.spookystuff.doc.Observation.{Failure, Success}
 import com.tribbloids.spookystuff.doc._
 import com.tribbloids.spookystuff.execution.ChainPlan
-import com.tribbloids.spookystuff.frameless.TypedRowInternal.ElementWiseMethods
-import com.tribbloids.spookystuff.frameless.{Tuple, TypedRow, TypedRowInternal}
+import com.tribbloids.spookystuff.linq.Tuple
+import com.tribbloids.spookystuff.linq.internal.RowInternal
 
 import scala.language.implicitConversions
 
@@ -69,8 +69,8 @@ object FetchedRow {
         fn: FetchedRow[D] => Seq[O]
     )(
         implicit
-        toRow1: TypedRowInternal.ofData.Target[D, TypedRow[IT]],
-        toRow2: TypedRowInternal.ofData.Target[O, TypedRow[OT]],
+        toRow1: RowInternal.ofData.Target[D, CompiledRow[IT]],
+        toRow2: RowInternal.ofData.Target[O, CompiledRow[OT]],
         merge: ElementWiseMethods.preferRight.Lemma[IT, OT]
     ): ChainPlan.Out[merge.Out] = {
 

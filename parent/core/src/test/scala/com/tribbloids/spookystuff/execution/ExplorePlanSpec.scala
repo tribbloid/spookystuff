@@ -3,7 +3,7 @@ package com.tribbloids.spookystuff.execution
 import ai.acyclic.prover.commons.debug.print_@
 import com.tribbloids.spookystuff.actions.{Trace, Wget}
 import com.tribbloids.spookystuff.testutils.{FileDocsFixture, SpookyBaseSpec}
-import com.tribbloids.spookystuff.{QueryException, dsl}
+import com.tribbloids.spookystuff.{dsl, QueryException}
 import org.apache.spark.HashPartitioner
 
 /**

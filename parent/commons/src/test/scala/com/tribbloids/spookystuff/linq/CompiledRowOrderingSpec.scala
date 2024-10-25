@@ -1,13 +1,14 @@
-package com.tribbloids.spookystuff.frameless
+package com.tribbloids.spookystuff.linq
 
 import ai.acyclic.prover.commons.cap.Capability.<>
 import ai.acyclic.prover.commons.testlib.BaseSpec
-import com.tribbloids.spookystuff.frameless.TypedRow.^
+import com.tribbloids.spookystuff.linq.Linq.Row
+import com.tribbloids.spookystuff.linq.LinqBase.^
 import shapeless.test.illTyped
 
-class TypedRowOrderingSpec extends BaseSpec {
+class CompiledRowOrderingSpec extends BaseSpec {
 
-  import com.tribbloids.spookystuff.frameless.Field._
+  import com.tribbloids.spookystuff.linq.Field._
 
   describe("enabling") {
 
@@ -40,11 +41,11 @@ class TypedRowOrderingSpec extends BaseSpec {
 
     val r1 = CanSort(^(a = 1, b = "ab"))
 
-    val ordering = implicitly[Ordering[TypedRow[r1._internal.Repr]]]
+    val ordering = implicitly[Ordering[Row[r1._internal.Repr]]]
   }
 
   it("Default") {
-    val ordering = TypedRowOrdering.Default
+    val ordering = RowOrdering.Default
 
     val r1 = ^(a = 1)
 

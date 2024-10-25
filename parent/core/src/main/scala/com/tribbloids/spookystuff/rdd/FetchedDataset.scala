@@ -1,23 +1,19 @@
 package com.tribbloids.spookystuff.rdd
 
-import ai.acyclic.prover.commons.function.Hom.:=>
+import com.tribbloids.spookystuff.SpookyContext
 import com.tribbloids.spookystuff.actions._
 import com.tribbloids.spookystuff.commons.refl.CatalystTypeOps
 import com.tribbloids.spookystuff.conf.SpookyConf
 import com.tribbloids.spookystuff.doc.Doc
 import com.tribbloids.spookystuff.dsl._
 import com.tribbloids.spookystuff.execution._
-import com.tribbloids.spookystuff.frameless.{Tuple, TypedRow, TypedRowInternal}
 import com.tribbloids.spookystuff.row._
-import com.tribbloids.spookystuff.utils.SpookyViews
-import com.tribbloids.spookystuff.{Const, SpookyContext}
 import frameless.{TypedDataset, TypedEncoder}
 import org.apache.spark.SparkContext
 import org.apache.spark.rdd.RDD
 import org.apache.spark.sql.DataFrame
 import org.apache.spark.storage.StorageLevel
 
-import scala.concurrent.duration.Duration
 import scala.language.implicitConversions
 
 object FetchedDataset extends FetchedDatasetImp0 {
@@ -35,8 +31,6 @@ case class FetchedDataset[D](
     plan: ExecutionPlan[D]
 ) extends FetchedDatasetAPI[D]
     with CatalystTypeOps.ImplicitMixin {
-
-  import SpookyViews._
 
   implicit def fromExecutionPlan(plan: ExecutionPlan[D]): FetchedDataset[D] = FetchedDataset(plan)
 

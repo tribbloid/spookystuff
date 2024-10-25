@@ -1,12 +1,14 @@
-package com.tribbloids.spookystuff.frameless
+package com.tribbloids.spookystuff.linq.catalyst
 
+import com.tribbloids.spookystuff.linq.Linq.Row
+import com.tribbloids.spookystuff.linq.Tuple
 import org.apache.spark.sql.catalyst.InternalRow
 import org.apache.spark.sql.types.{DataType, ObjectType}
 
-case object TypedRowCatalystAdapter {
+case object RowAdapter {
 
   // DO NOT RENAME! used by reflection-based Catalyst Encoder
-  def valueAtIndex[T <: Tuple](tt: TypedRow[T], i: Int): Any = {
+  def valueAtIndex[T <: Tuple](tt: Row[T], i: Int): Any = {
 
     tt._internal.runtimeVector.apply(i)
   }
@@ -14,13 +16,13 @@ case object TypedRowCatalystAdapter {
   case class WithDataTypes(schema: Seq[DataType]) {
 
     // DO NOT RENAME! used by reflection-based Catalyst Encoder
-    def fromInternalRow(row: InternalRow): TypedRow[Tuple] = {
+    def fromInternalRow(row: InternalRow): Row[Tuple] = {
       val data = row.toSeq(schema)
 
       val vec = data.to(Vector)
-      new TypedRow[Tuple](vec)
+      new Row[Tuple](vec)
     }
   }
 
-  lazy val dataType: ObjectType = ObjectType(classOf[TypedRow[_]])
+  lazy val dataType: ObjectType = ObjectType(classOf[Row[_]])
 }

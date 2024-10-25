@@ -1,25 +1,28 @@
-package com.tribbloids.spookystuff.frameless
+package com.tribbloids.spookystuff.linq
 
 import ai.acyclic.prover.commons.spark.TestHelper
 import ai.acyclic.prover.commons.testlib.BaseSpec
 import ai.acyclic.prover.commons.util.Summoner
-import com.tribbloids.spookystuff.frameless.TypedRow.^
+import com.tribbloids.spookystuff.linq.Linq.Row
+import com.tribbloids.spookystuff.linq.LinqBase.^
+import com.tribbloids.spookystuff.linq.RowFunctions.explode
+import com.tribbloids.spookystuff.linq.internal.RowInternal
 import frameless.{TypedDataset, TypedEncoder}
 import org.apache.spark.sql.SparkSession
 import shapeless.HList
 import shapeless.record.Record
 import shapeless.test.illTyped
 
-class TypedRowSpec extends BaseSpec {
+class CompiledRowSpec extends BaseSpec {
 
   implicit def session: SparkSession = TestHelper.TestSparkSession
 
   it("Encoder") {
 
-    implicitly[TypedRowSpec.RR <:< HList]
+    implicitly[CompiledRowSpec.RR <:< HList]
 
-    implicitly[TypedEncoder[TypedRow[TypedRowSpec.RR]]]
-    Summoner.summon[TypedEncoder[TypedRow[TypedRowSpec.RR]]]
+    implicitly[TypedEncoder[Row[CompiledRowSpec.RR]]]
+    Summoner.summon[TypedEncoder[Row[CompiledRowSpec.RR]]]
   }
 
   describe("construction") {
@@ -199,8 +202,6 @@ class TypedRowSpec extends BaseSpec {
           )
       }
 
-      import TypedRow.functions._
-
       it(" ... exploded") {
 
         val exploded = {
@@ -272,12 +273,12 @@ class TypedRowSpec extends BaseSpec {
       assert(col.value == "ab")
     }
 
-    it("asTypedRow") {
+    it("as typed Row") {
 
       val t1 = ^(x = 1, y = "ab")
       val col = t1._fields.y
 
-      val colAsRow = col.asTypedRow
+      val colAsRow = col.asRow
       val colAsRowGT = ^(y = "ab")
 
       implicitly[colAsRow._internal.Repr =:= colAsRowGT._internal.Repr]
@@ -336,7 +337,7 @@ class TypedRowSpec extends BaseSpec {
 
       val tx = ^(x = 1, y = "ab")
       val ty = ^(y = 1.0, z = 1.1)
-      val t1 = TypedRowInternal.ofTuple(tx._internal.repr ++ ty._internal.repr)
+      val t1 = RowInternal.ofTuple(tx._internal.repr ++ ty._internal.repr)
 
       val rdd = session.sparkContext.parallelize(Seq(t1))
       val ds = TypedDataset.create(rdd)
@@ -355,7 +356,7 @@ class TypedRowSpec extends BaseSpec {
 
 }
 
-object TypedRowSpec {
+object CompiledRowSpec {
 
   val RR = Record.`'x -> Int, 'y -> String`
   type RR = RR.T

@@ -1,4 +1,4 @@
-package com.tribbloids.spookystuff.frameless
+package com.tribbloids.spookystuff.linq
 
 object __FramelessDesign {
 

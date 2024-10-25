@@ -68,7 +68,7 @@ object Data {
     * requires combining with schema from Spark driver
     *
     * CAUTION: implementation should be simple and close to DataSet API in Apache Spark, all type-level operations
-    * should go into [[com.tribbloids.spookystuff.frameless.TypedRow]]
+    * should go into [[com.tribbloids.spookystuff.linq.LinqBase]]
     *
     * @param data
     *   internal representation

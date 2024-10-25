@@ -1,5 +1,7 @@
-package com.tribbloids.spookystuff.frameless
+package com.tribbloids.spookystuff.linq.catalyst
 
+import com.tribbloids.spookystuff.linq.Linq.Row
+import com.tribbloids.spookystuff.linq.Tuple
 import frameless.TypedEncoder
 import org.apache.spark.sql.FramelessInternals
 import org.apache.spark.sql.catalyst.expressions._
@@ -8,9 +10,9 @@ import org.apache.spark.sql.types._
 
 import scala.reflect.ClassTag
 
-abstract class RecordEncoder[F, G <: Tuple, H <: Tuple](
+abstract class RowEncoder[F, G <: Tuple, H <: Tuple](
     implicit
-    stage1: RecordEncoderStage1[G, H],
+    stage1: RowEncoderStage1[G, H],
     classTag: ClassTag[F]
 ) extends TypedEncoder[F] {
 
@@ -35,19 +37,19 @@ abstract class RecordEncoder[F, G <: Tuple, H <: Tuple](
 
 }
 
-object RecordEncoder {
+object RowEncoder {
 
   final private val _VALUE_AT_INDEX = "valueAtIndex"
   final private val _FROM_INTERNAL_ROW = "fromInternalRow"
 
-  lazy val catalystAdapterLit: Literal = Literal.fromObject(TypedRowCatalystAdapter)
+  lazy val catalystAdapterLit: Literal = Literal.fromObject(RowAdapter)
 
-  case class ForTypedRow[G <: Tuple, H <: Tuple](
+  case class ^[G <: Tuple, H <: Tuple](
   )(
       implicit
-      stage1: RecordEncoderStage1[G, H],
-      classTag: ClassTag[TypedRow[G]]
-  ) extends RecordEncoder[TypedRow[G], G, H] {
+      stage1: RowEncoderStage1[G, H],
+      classTag: ClassTag[Row[G]]
+  ) extends RowEncoder[Row[G], G, H] {
 
     import stage1._
 
@@ -76,12 +78,12 @@ object RecordEncoder {
       val newArgs = stage1.fromCatalystToCells(path)
       val aggregated = CreateStruct(newArgs)
 
-      val partial = TypedRowCatalystAdapter.WithDataTypes(newArgs.map(_.dataType))
+      val partial = RowAdapter.WithDataTypes(newArgs.map(_.dataType))
 
       val newExpr = Invoke(
         Literal.fromObject(partial),
         _FROM_INTERNAL_ROW,
-        TypedRowCatalystAdapter.dataType,
+        RowAdapter.dataType,
         Seq(aggregated)
       )
 
