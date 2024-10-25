@@ -3,8 +3,6 @@ package com.tribbloids.spookystuff.row
 import com.tribbloids.spookystuff.doc.Observation.{Failure, Success}
 import com.tribbloids.spookystuff.doc._
 import com.tribbloids.spookystuff.execution.ChainPlan
-import com.tribbloids.spookystuff.linq.Tuple
-import com.tribbloids.spookystuff.linq.internal.RowInternal
 
 import scala.language.implicitConversions
 

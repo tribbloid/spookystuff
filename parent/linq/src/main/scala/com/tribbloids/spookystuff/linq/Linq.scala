@@ -5,7 +5,7 @@ import com.tribbloids.spookystuff.linq.LinqBase.{BatchView, CellLike, RowLike}
 import com.tribbloids.spookystuff.linq.Tuple.Empty
 import com.tribbloids.spookystuff.linq.internal.{ElementWisePoly, RowInternal}
 import shapeless.labelled
-import shapeless.labelled.{FieldType, field}
+import shapeless.labelled.{field, FieldType}
 import shapeless.tag.@@
 
 object Linq {

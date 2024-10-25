@@ -6,7 +6,7 @@ import com.tribbloids.spookystuff.linq.Linq.Row
 import com.tribbloids.spookystuff.linq.LinqBase.^
 import shapeless.test.illTyped
 
-class CompiledRowOrderingSpec extends BaseSpec {
+class RowOrderingSpec extends BaseSpec {
 
   import com.tribbloids.spookystuff.linq.Field._
 

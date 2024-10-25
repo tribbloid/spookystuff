@@ -13,16 +13,16 @@ import shapeless.HList
 import shapeless.record.Record
 import shapeless.test.illTyped
 
-class CompiledRowSpec extends BaseSpec {
+class LinqRowSpec extends BaseSpec {
 
   implicit def session: SparkSession = TestHelper.TestSparkSession
 
   it("Encoder") {
 
-    implicitly[CompiledRowSpec.RR <:< HList]
+    implicitly[LinqRowSpec.RR <:< HList]
 
-    implicitly[TypedEncoder[Row[CompiledRowSpec.RR]]]
-    Summoner.summon[TypedEncoder[Row[CompiledRowSpec.RR]]]
+    implicitly[TypedEncoder[Row[LinqRowSpec.RR]]]
+    Summoner.summon[TypedEncoder[Row[LinqRowSpec.RR]]]
   }
 
   describe("construction") {
@@ -356,7 +356,7 @@ class CompiledRowSpec extends BaseSpec {
 
 }
 
-object CompiledRowSpec {
+object LinqRowSpec {
 
   val RR = Record.`'x -> Int, 'y -> String`
   type RR = RR.T

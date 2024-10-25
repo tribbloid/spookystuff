@@ -1,4 +1,3 @@
-
 val noAssembly: String? by settings
 val noBenchmark: String? by settings
 val noUnused: String? by settings
@@ -35,6 +34,7 @@ include(
 
     // uses unstable & experimental scala features, should be modified very slowly & carefully
     ":parent:commons",
+    ":parent:linq",
     ":parent:parsing",
     ":parent:core",
     ":parent:web",
