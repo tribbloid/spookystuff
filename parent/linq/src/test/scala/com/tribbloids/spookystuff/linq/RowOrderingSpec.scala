@@ -1,6 +1,5 @@
 package com.tribbloids.spookystuff.linq
 
-import ai.acyclic.prover.commons.cap.Capability.<>
 import ai.acyclic.prover.commons.testlib.BaseSpec
 import com.tribbloids.spookystuff.linq.Linq.Row
 import com.tribbloids.spookystuff.linq.LinqBase.^

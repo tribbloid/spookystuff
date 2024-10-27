@@ -36,34 +36,34 @@ include(
     ":parent:commons",
     ":parent:linq",
     ":parent:parsing",
-    ":parent:core",
-    ":parent:web",
-    ":parent:integration",
-    ":parent:showcase",
+//    ":parent:core",
+//    ":parent:web",
+//    ":parent:integration",
+//    ":parent:showcase",
 )
 
-if (!isEnabled(noAssembly)) {
-    include(
-        ":parent:assembly",
-    )
-}
-
-
-if (!isEnabled(noBenchmark)) {
-    include(
-        ":parent:benchmark"
-    )
-}
-
-if (!isEnabled(noUnused)) {
-    include(
-        ":parent:unused"
-    )
-}
-
-if (!isEnabled(noUav)) {
-    include(
-        ":parent:uav"
-    )
-}
-
+//if (!isEnabled(noAssembly)) {
+//    include(
+//        ":parent:assembly",
+//    )
+//}
+//
+//
+//if (!isEnabled(noBenchmark)) {
+//    include(
+//        ":parent:benchmark"
+//    )
+//}
+//
+//if (!isEnabled(noUnused)) {
+//    include(
+//        ":parent:unused"
+//    )
+//}
+//
+//if (!isEnabled(noUav)) {
+//    include(
+//        ":parent:uav"
+//    )
+//}
+//

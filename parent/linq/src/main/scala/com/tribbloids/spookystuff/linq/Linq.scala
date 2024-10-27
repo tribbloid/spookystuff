@@ -1,11 +1,10 @@
 package com.tribbloids.spookystuff.linq
 
-import ai.acyclic.prover.commons.cap.Capability.<>
 import com.tribbloids.spookystuff.linq.LinqBase.{BatchView, CellLike, RowLike}
 import com.tribbloids.spookystuff.linq.Tuple.Empty
 import com.tribbloids.spookystuff.linq.internal.{ElementWisePoly, RowInternal}
 import shapeless.labelled
-import shapeless.labelled.{field, FieldType}
+import shapeless.labelled.{FieldType, field}
 import shapeless.tag.@@
 
 object Linq {
@@ -39,6 +38,7 @@ object Linq {
     //  since graphframe table always demand id/src/tgt columns, should the default
     //  representation be SemiRow? that contains both structured and newType part?
 
+    import Field.<>
     import shapeless.ops.record._
 
     /**
@@ -54,7 +54,7 @@ object Linq {
 
       val value: selector.Out = _fields.selectDynamic(key).value
 
-      Field.Named.apply[key.type](value: selector.Out)
+      Field.Named[key.type].apply[selector.Out](value: selector.Out)
 
     }
 

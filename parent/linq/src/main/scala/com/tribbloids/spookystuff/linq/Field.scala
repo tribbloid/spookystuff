@@ -1,6 +1,7 @@
 package com.tribbloids.spookystuff.linq
 
-import ai.acyclic.prover.commons.cap.Capability.{<>, Universe}
+import ai.acyclic.prover.commons.cap.Capability
+import ai.acyclic.prover.commons.cap.Capability.Universe
 import ai.acyclic.prover.commons.function.hom.Hom
 import com.tribbloids.spookystuff.linq.Linq.{Cell, Row}
 import com.tribbloids.spookystuff.linq.internal.RowInternal
