@@ -1,6 +1,6 @@
 package com.tribbloids.spookystuff.extractors
 
-import ai.acyclic.prover.commons.debug.Debug.CallStackRef
+import ai.acyclic.prover.commons.debug.CallStackRef
 
 import java.util.UUID
 import scala.collection.concurrent.TrieMap

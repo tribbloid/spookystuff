@@ -1,25 +1,25 @@
 package com.tribbloids.spookystuff.conf
 
-import ai.acyclic.prover.commons.function.Impl
+import ai.acyclic.prover.commons.function.hom.Hom.:=>
 import com.tribbloids.spookystuff.doc.{Doc, Observation}
 
-trait Auditing extends Impl.Fn[Observation, Seq[Doc]] {}
+trait Auditing extends :=>[Observation, Seq[Doc]] {}
 
 object Auditing extends Enumeration {
 
-  object Disabled extends Auditing {
+  case object Disabled extends Auditing {
     override def apply(v1: Observation): Seq[Doc] = Seq.empty
   }
 
-  object Original extends Auditing {
+  case object Original extends Auditing {
     override def apply(v1: Observation): Seq[Doc] = v1.docForAuditing.toSeq
   }
 
-  object Converted extends Auditing {
+  case object Converted extends Auditing {
     override def apply(v1: Observation): Seq[Doc] = v1.docForAuditing.flatMap(_.normalised.docForAuditing).toSeq
   }
 
-  object Both extends Auditing {
+  case object Both extends Auditing {
     override def apply(v1: Observation): Seq[Doc] = {
 
       (Original(v1) ++ Converted(v1)).distinct

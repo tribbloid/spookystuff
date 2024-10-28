@@ -1,6 +1,6 @@
 package com.tribbloids.spookystuff
 
-import ai.acyclic.prover.commons.function.{HomSystem, Impl}
+import ai.acyclic.prover.commons.function.hom.Hom.:=>
 import ai.acyclic.prover.commons.spark.SparkContextView
 import com.tribbloids.spookystuff.agent.Agent
 import com.tribbloids.spookystuff.commons.TreeThrowable
@@ -44,8 +44,8 @@ object SpookyContext {
     def _WithCtx: SpookyContext => _WithCtx
 
     // cached results will be dropped for being NOTSerializable
-    @transient final lazy val withCtx: HomSystem.FnImpl.Cached[SpookyContext, _WithCtx] =
-      Impl(_WithCtx).cachedBy()
+    @transient final lazy val withCtx: SpookyContext :=> _WithCtx =
+      :=>(_WithCtx).cached()
   }
 }
 
@@ -62,7 +62,7 @@ case class SpookyContext(
 
     type Out[T <: PluginSystem] = T#Plugin
 
-    override def init: Dependent = new Dependent {
+    override def init: Impl = new Impl {
 
       def apply[T <: PluginSystem](arg: T): arg.Plugin = {
         requireNotShipped()
@@ -96,7 +96,7 @@ case class SpookyContext(
 
   }
 
-  def getPlugin[T <: PluginSystem](v: T): v.Plugin = Plugins.apply(v: v.type)
+  def getPlugin[T <: PluginSystem](v: T): v.Plugin = Plugins.cached.apply(v: v.type)
   def setPlugin(vs: PluginSystem#Plugin*): this.type = {
     // no deployement
     requireNotShipped()

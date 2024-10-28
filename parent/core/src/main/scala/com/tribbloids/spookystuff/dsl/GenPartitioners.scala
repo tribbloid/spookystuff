@@ -1,6 +1,6 @@
 package com.tribbloids.spookystuff.dsl
 
-import ai.acyclic.prover.commons.function.Hom.:=>
+import ai.acyclic.prover.commons.function.hom.Hom.:=>
 import com.tribbloids.spookystuff.dsl.GenPartitionerLike.Instance
 import com.tribbloids.spookystuff.execution.SpookyExecutionContext
 import com.tribbloids.spookystuff.row.{BeaconRDD, SpookySchema}

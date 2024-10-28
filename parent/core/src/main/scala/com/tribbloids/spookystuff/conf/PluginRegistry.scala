@@ -1,7 +1,6 @@
 package com.tribbloids.spookystuff.conf
 
-import ai.acyclic.prover.commons.function.HomSystem.MorphismOps
-import ai.acyclic.prover.commons.function.Impl
+import ai.acyclic.prover.commons.function.hom.Hom
 import ai.acyclic.prover.commons.same.Same
 import ai.acyclic.prover.commons.util.Caching
 import com.tribbloids.spookystuff.commons.TreeThrowable
@@ -29,14 +28,18 @@ trait PluginRegistry {
   ) extends Serializable {
 
     type Out[_ <: P]
-    trait Dependent extends Impl.Dependent[P, Out]
+    trait Impl extends Hom.Impl.Dependent[P, Out]
 
-    protected def init: Dependent
+    protected def init: Impl
 
-    final lazy val cached =
-      new MorphismOps[P, Dependent](init).cachedBy(
-        Same.ByEquality.Lookup(Caching.ConcurrentMap())
-      )
+    final lazy val cached: Hom.Mono.Cached[P, Impl] = {
+
+      Hom
+        .MonoOps(init)
+        .cached(
+          Same.Native.Lookup(Caching.ConcurrentMap())
+        )
+    }
 
     {
       cached
@@ -58,7 +61,7 @@ trait PluginRegistry {
       TreeThrowable.&&&(trials)
     }
 
-    implicit def asMorphism(v: this.type): cached.type = v.cached
+    implicit def asMono(v: this.type): cached.type = v.cached
   }
 }
 

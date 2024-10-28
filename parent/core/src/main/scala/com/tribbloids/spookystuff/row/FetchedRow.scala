@@ -59,47 +59,42 @@ object FetchedRow {
       }
     }
 
-    def withColumns[
-        IT <: Tuple,
-        O,
-        OT <: Tuple
-    ](
-        fn: FetchedRow[D] => Seq[O]
-    )(
-        implicit
-        toRow1: RowInternal.ofData.Target[D, CompiledRow[IT]],
-        toRow2: RowInternal.ofData.Target[O, CompiledRow[OT]],
-        merge: ElementWiseMethods.preferRight.Lemma[IT, OT]
-    ): ChainPlan.Out[merge.Out] = {
-
-      val _fn = fn.andThen { outs =>
-        outs.map { out =>
-          val row1 = toRow1(self.head.data)
-          val row2 = toRow2(out)
-          merge(row1, row2)
-        }
-      }
-
-      select(_fn)
-    }
-
-    def explode[O](
-        fn: FetchedRow[D] => Seq[O]
-    ): ChainPlan.Out[O] = {
-
-      ???
-    }
-
+    // TODO: move to sql module
+//    def withColumns[
+//        IT <: Tuple,
+//        O,
+//        OT <: Tuple
+//    ](
+//        fn: FetchedRow[D] :=> Seq[O]
+//    )(
+//        implicit
+//        toRow1: RowInternal.ofData.Lemma[D, Row[IT]],
+//        toRow2: RowInternal.ofData.Lemma[O, Row[OT]],
+//        merge: ElementWisePoly.preferRight.LemmaAtRows[IT, OT]
+//    ): ChainPlan.Out[merge.Out] = {
+//
+//      val _fn = fn.andThen { outs =>
+//        outs.map { out =>
+//          val row1 = toRow1(self.head.data)
+//          val row2 = toRow2(out)
+//          merge(row1 -> row2)
+//        }
+//      }
+//
+//      select(_fn)
+//    }
+//
+//    def explode[O](
+//        fn: FetchedRow[D] => Seq[O]
+//    ): ChainPlan.Out[O] = {
+//
+//      ???
+//    }
+//
   }
 
   implicit def toSeqView[D](self: Seq[FetchedRow[D]]): SeqView[D] = SeqView(self)
 
-  private def __sanity() {
-
-    val seq = Seq(FetchedRow.blank, FetchedRow.blank)
-
-    seq.dummy() // so it is possible
-  }
 }
 
 /**

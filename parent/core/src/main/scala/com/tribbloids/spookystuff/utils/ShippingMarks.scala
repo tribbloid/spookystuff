@@ -1,6 +1,6 @@
 package com.tribbloids.spookystuff.utils
 
-import ai.acyclic.prover.commons.debug.Debug.CallStackRef
+import ai.acyclic.prover.commons.debug.CallStackRef
 
 trait ShippingMarks extends Serializable {
 
@@ -25,7 +25,7 @@ trait ShippingMarks extends Serializable {
     * can only be used on driver
     */
   def requireNotShipped(): Unit = {
-    def methodName = CallStackRef.below().fnName
+    def methodName = CallStackRef.below().head.getMethodName
 
     require(
       notShipped, {

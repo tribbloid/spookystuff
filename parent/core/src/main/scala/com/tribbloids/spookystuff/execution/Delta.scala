@@ -1,7 +1,6 @@
 package com.tribbloids.spookystuff.execution
 
-import ai.acyclic.prover.commons.function.Impl
-import ai.acyclic.prover.commons.function.Impl.:=>
+import ai.acyclic.prover.commons.function.hom.Hom.:=>
 import com.tribbloids.spookystuff.doc.Doc
 import com.tribbloids.spookystuff.row._
 
@@ -45,7 +44,7 @@ object Delta {
       fn: FetchedRow[I] :=> Seq[O]
   ) extends Delta[I, O] {
 
-    override def repr(schema: SpookySchema): SquashedRow[I] :=> SquashedRow[O] = Impl { squashedRow =>
+    override def repr(schema: SpookySchema): SquashedRow[I] :=> SquashedRow[O] = :=> { squashedRow =>
       val rows = squashedRow.withCtx(schema.ctx).unSquash
 
       val nextData = rows.flatMap { row =>
@@ -125,7 +124,7 @@ object Delta {
       // TODO: should be from FetchedRow
   ) extends Delta[I, I] {
 
-    override def repr(schema: SpookySchema): SquashedRow[I] :=> SquashedRow[I] = Impl { v =>
+    override def repr(schema: SpookySchema): SquashedRow[I] :=> SquashedRow[I] = :=> { v =>
       v.flatMapData(scopeFn)
     }
   }
@@ -137,7 +136,7 @@ object Delta {
 
     override def repr(schema: SpookySchema): SquashedRow[I] :=> SquashedRow[I] = {
 
-      Impl { v =>
+      :=> { v =>
         val withCtx = v.withCtx(schema.ctx)
 
         withCtx.unSquash

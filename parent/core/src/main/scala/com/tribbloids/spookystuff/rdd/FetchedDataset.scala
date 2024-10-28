@@ -4,7 +4,6 @@ import com.tribbloids.spookystuff.SpookyContext
 import com.tribbloids.spookystuff.actions._
 import com.tribbloids.spookystuff.commons.refl.CatalystTypeOps
 import com.tribbloids.spookystuff.conf.SpookyConf
-import com.tribbloids.spookystuff.doc.Doc
 import com.tribbloids.spookystuff.dsl._
 import com.tribbloids.spookystuff.execution._
 import com.tribbloids.spookystuff.row._
@@ -217,57 +216,57 @@ case class FetchedDataset[D](
     *   name
     */
   // always use the same path pattern for filtered pages, if you want pages to be saved with different path, use multiple saveContent with different names
-  def savePages(
-      path: Col[String],
-      extension: Col[String] = null, // set to
-      page: Col[Doc] = S,
-      overwrite: Boolean = false
-  ): FetchedDataset = {
-
-    val _pageEx: Extractor[Doc] = page.ex.typed[Doc]
-
-    val _extensionEx: Extractor[String] = Option(extension)
-      .map(_.ex.typed[String])
-      .getOrElse(_pageEx.defaultFileExtension)
-
-    ChainPlan.selectOptimized(
-      plan,
-      SaveContent(path.ex.typed[String], _extensionEx, _pageEx, overwrite)
-    )
-  }
-
-  def explode(
-      ex: Extractor[Any],
-      forkType: ForkType = ForkType.default,
-      ordinalField: Field = null,
-      sampler: Sampler[Any] = spooky.conf.flattenSampler
-  ): FetchedDataset = {
-
-    val (on, extracted) = ex match {
-      case Get(ff) =>
-        ff -> this
-      case _ =>
-        val effectiveEx = ex.withForkFieldIfMissing
-        val ff = effectiveEx.field
-        ff -> this.extract(ex)
-    }
-
-    ChainPlan.selectOptimized(extracted.plan, ExplodeData(on, ordinalField, sampler, forkType))
-  }
-
-  // TODO: need to define an API shared between fork and explore for specifying ForkPlan.Fn
-  def fork(
-      on: Extractor[Any], // name is discarded
-      forkType: ForkType = ForkType.default,
-      ordinalField: Field = null, // left & idempotent parameters are missing as they are always set to true
-      sampler: Sampler[Any] = spooky.conf.forkSampler
-  ): FetchedDataset = {
-
-    val result = this
-      .explode(on.withForkFieldIfMissing, forkType, ordinalField, sampler)
-
-    result
-  }
+//  def savePages(
+//      path: Col[String],
+//      extension: Col[String] = null, // set to
+//      page: Col[Doc] = S,
+//      overwrite: Boolean = false
+//  ): FetchedDataset = {
+//
+//    val _pageEx: Extractor[Doc] = page.ex.typed[Doc]
+//
+//    val _extensionEx: Extractor[String] = Option(extension)
+//      .map(_.ex.typed[String])
+//      .getOrElse(_pageEx.defaultFileExtension)
+//
+//    ChainPlan.selectOptimized(
+//      plan,
+//      SaveContent(path.ex.typed[String], _extensionEx, _pageEx, overwrite)
+//    )
+//  }
+//
+//  def explode(
+//      ex: Extractor[Any],
+//      forkType: ForkType = ForkType.default,
+//      ordinalField: Field = null,
+//      sampler: Sampler[Any] = spooky.conf.flattenSampler
+//  ): FetchedDataset = {
+//
+//    val (on, extracted) = ex match {
+//      case Get(ff) =>
+//        ff -> this
+//      case _ =>
+//        val effectiveEx = ex.withForkFieldIfMissing
+//        val ff = effectiveEx.field
+//        ff -> this.extract(ex)
+//    }
+//
+//    ChainPlan.selectOptimized(extracted.plan, ExplodeData(on, ordinalField, sampler, forkType))
+//  }
+//
+//  // TODO: need to define an API shared between fork and explore for specifying ForkPlan.Fn
+//  def fork(
+//      on: Extractor[Any], // name is discarded
+//      forkType: ForkType = ForkType.default,
+//      ordinalField: Field = null, // left & idempotent parameters are missing as they are always set to true
+//      sampler: Sampler[Any] = spooky.conf.forkSampler
+//  ): FetchedDataset = {
+//
+//    val result = this
+//      .explode(on.withForkFieldIfMissing, forkType, ordinalField, sampler)
+//
+//    result
+//  }
 
 //  protected def _defaultWget(
 //      cooldown: Option[Duration] = None,

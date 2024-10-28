@@ -2,10 +2,10 @@ package com.tribbloids.spookystuff.agent
 
 import com.tribbloids.spookystuff.SpookyContext
 import com.tribbloids.spookystuff.actions.Action
-import com.tribbloids.spookystuff.conf.{Core, PluginRegistry, PluginSystem}
 import com.tribbloids.spookystuff.commons.TreeThrowable
 import com.tribbloids.spookystuff.commons.lifespan.Cleanable.Lifespan
 import com.tribbloids.spookystuff.commons.lifespan.LocalCleanable
+import com.tribbloids.spookystuff.conf.{Core, PluginRegistry, PluginSystem}
 import com.tribbloids.spookystuff.io.Progress
 import com.tribbloids.spookystuff.utils.SpookyUtils
 import org.apache.spark.TaskContext
@@ -45,7 +45,7 @@ class Agent(
 
     override type Out[V <: Sys] = V#Driver
 
-    override def init: Dependent = new Dependent {
+    override def init: Impl = new Impl {
 
       override def apply[V <: Sys](v: V): Out[V] = {
         val plugin: V#Plugin = spooky.Plugins.apply(v)

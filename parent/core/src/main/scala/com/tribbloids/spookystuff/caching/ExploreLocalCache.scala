@@ -1,8 +1,6 @@
 package com.tribbloids.spookystuff.caching
 
-import ai.acyclic.prover.commons.function
-import ai.acyclic.prover.commons.function.Impl
-import ai.acyclic.prover.commons.function.Impl.Fn
+import ai.acyclic.prover.commons.function.hom.Hom.:=>
 import ai.acyclic.prover.commons.same.Same
 import ai.acyclic.prover.commons.util.Caching
 import ai.acyclic.prover.commons.util.Caching.{ConcurrentMap, ConcurrentSet}
@@ -35,11 +33,11 @@ object ExploreLocalCache {
     }
   }
 
-  val getExecution_untyped: function.HomSystem.FnImpl.Cached[ExeID, Execution[_, _]] = {
-    val raw: Fn[ExeID, Execution[_, _]] = Impl { _: ExeID =>
+  val getExecution_untyped: :=>.CachedLazy[ExeID, Execution[Nothing, Nothing]] = {
+    val raw = :=> { _: ExeID =>
       Execution()
     }
-    raw.cachedBy(Same.ByEquality.Lookup(Caching.Soft.build()))
+    raw.cached(Same.Native.Lookup(Caching.Soft.build()))
   }
 
   def getExecution[I, O](v: ExeID): Execution[I, O] = {

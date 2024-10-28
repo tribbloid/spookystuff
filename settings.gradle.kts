@@ -36,7 +36,7 @@ include(
     ":parent:commons",
     ":parent:linq",
     ":parent:parsing",
-//    ":parent:core",
+    ":parent:core",
 //    ":parent:web",
 //    ":parent:integration",
 //    ":parent:showcase",

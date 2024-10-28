@@ -7,6 +7,8 @@ dependencies {
     api(project(":parent:commons"))
     testFixturesApi(testFixtures(project(":parent:commons")))
 
+    api(project(":parent:linq"))
+
     testFixturesApi("org.jprocesses:jProcesses:1.6.5")
 
 //    testapi( "com.tribbloids.spookystuff:spookystuff-mldsl:${project.version}"

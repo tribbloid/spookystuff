@@ -1,7 +1,6 @@
 package com.tribbloids.spookystuff.row
 
-import ai.acyclic.prover.commons.function.Impl
-import ai.acyclic.prover.commons.function.Impl.Fn
+import ai.acyclic.prover.commons.function.hom.Hom.:=>
 import com.tribbloids.spookystuff.SpookyContext
 import com.tribbloids.spookystuff.actions.{Trace, TraceSet}
 import com.tribbloids.spookystuff.commons.serialization.NOTSerializable
@@ -206,7 +205,7 @@ case class SquashedRow[D](
     }
   }
 
-  @transient lazy val withSchema: Fn[SpookySchema, WithSchema[D]] = Impl { v =>
+  @transient lazy val withSchema: :=>[SpookySchema, WithSchema[D]] = :=> { v =>
     WithSchema(this, v)
   }
 }

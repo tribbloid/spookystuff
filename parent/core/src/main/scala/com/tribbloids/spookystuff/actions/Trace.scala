@@ -1,13 +1,13 @@
 package com.tribbloids.spookystuff.actions
 
-import ai.acyclic.prover.commons.util.Capabilities
+import ai.acyclic.prover.commons.cap.Capability
 import com.tribbloids.spookystuff.SpookyContext
 import com.tribbloids.spookystuff.actions.Trace.Internal
-import com.tribbloids.spookystuff.caching.{DFSDocCache, InMemoryDocCache}
-import com.tribbloids.spookystuff.doc.Observation
-import com.tribbloids.spookystuff.row.{FetchedRow, SpookySchema}
 import com.tribbloids.spookystuff.agent.Agent
+import com.tribbloids.spookystuff.caching.{DFSDocCache, InMemoryDocCache}
 import com.tribbloids.spookystuff.commons.serialization.NOTSerializable
+import com.tribbloids.spookystuff.doc.Observation
+import com.tribbloids.spookystuff.row.SpookySchema
 
 import scala.collection.mutable.ArrayBuffer
 import scala.language.implicitConversions
@@ -79,7 +79,7 @@ object Trace {
     }
   }
 
-  object Rollout extends Capabilities {
+  object Rollout {
 
     trait Cached extends Capability
 
