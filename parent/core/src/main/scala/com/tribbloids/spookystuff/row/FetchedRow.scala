@@ -1,9 +1,15 @@
 package com.tribbloids.spookystuff.row
 
-import com.tribbloids.spookystuff.doc.Observation.{Failure, Success}
+import ai.acyclic.prover.commons.util.Magnet.OptionMagnet
+import com.tribbloids.spookystuff.SpookyContext
+import com.tribbloids.spookystuff.commons.serialization.NOTSerializable
+import com.tribbloids.spookystuff.doc.Observation.{DocUID, Failure, Success}
 import com.tribbloids.spookystuff.doc._
-import com.tribbloids.spookystuff.execution.ChainPlan
+import com.tribbloids.spookystuff.execution.FlatMapPlan
+import com.tribbloids.spookystuff.row.Data.WithScope
 
+import scala.collection.mutable
+import scala.collection.mutable.ArrayBuffer
 import scala.language.implicitConversions
 
 object FetchedRow {
@@ -32,7 +38,7 @@ object FetchedRow {
   case class SeqView[D](self: Seq[FetchedRow[D]]) {
 
     // the following functions are also available for a single FetchedRow, treated as Seq(v)
-    def dummy(): Any = ???
+//    def dummy(): Any = ???
 
     def withNormalisedDocs: Seq[FetchedRow[D]] = {
 
@@ -48,7 +54,7 @@ object FetchedRow {
 
     def select[O](
         fn: FetchedRow[D] => Seq[O]
-    ): ChainPlan.Out[O] = {
+    ): FlatMapPlan.Batch[O] = {
 
       self.flatMap { row =>
         fn(row).map { dd =>
@@ -94,21 +100,20 @@ object FetchedRow {
   }
 
   implicit def toSeqView[D](self: Seq[FetchedRow[D]]): SeqView[D] = SeqView(self)
-
 }
 
 /**
-  * abstracted data structure where expression can be resolved. not the main data structure in execution plan,
-  * SquashedPageRow is
+  * abstracted data structure where expression can be resolved. not the main data structure in execution plan, Not
+  * serializable, has to be created from [[SquashedRow]] on the fly
   */
 case class FetchedRow[D](
     data: D,
-    // TODO: scope here is only to simplify SquashedRow.extract, all references in it are already lost
     observations: Seq[Observation] = Seq.empty,
-    ordinal: Int = 0
-) {
+    ordinalIndex: Int = 0,
+    private val ctx: OptionMagnet[SpookyContext] = None
+) extends NOTSerializable {
 
-  @transient lazy val dataWithScope: Data.WithScope[D] = Data.WithScope(data, observations.map(_.uid), ordinal)
+  @transient lazy val dataWithScope: Data.WithScope[D] = Data.WithScope(data, observations.map(_.uid), ordinalIndex)
 
   def squash: SquashedRow[D] = {
     SquashedRow
@@ -139,14 +144,80 @@ case class FetchedRow[D](
     else docs.headOption
   }
 
-  def getDoc(keyStr: String): Option[Doc] = {
+  object rescope {
 
-    //    if (keyStr == Const.onlyPageWildcard) return getOnlyPage
+    // make sure no pages with identical name can appear in the same group.
+    lazy val byDistinctNames: Seq[WithScope[D]] = {
+      val outerBuffer: ArrayBuffer[Seq[DocUID]] = ArrayBuffer()
 
-    val pages = this.docs.filter(_.name == keyStr)
+      object innerBuffer {
+        val refs: mutable.ArrayBuffer[DocUID] = ArrayBuffer()
+        val names: mutable.HashSet[String] = mutable.HashSet[String]()
 
-    if (pages.size > 1) throw new UnsupportedOperationException("Ambiguous key referring to multiple pages")
-    else pages.headOption
+        def add(uid: DocUID): Unit = {
+          refs += uid
+          names += uid.name
+        }
+
+        def clear(): Unit = {
+          refs.clear()
+          names.clear()
+        }
+      }
+
+      dataWithScope.scopeUIDs.foreach { uid =>
+        if (innerBuffer.names.contains(uid.name)) {
+          outerBuffer += innerBuffer.refs.toList
+          innerBuffer.clear()
+        }
+        innerBuffer.add(uid)
+      }
+      outerBuffer += innerBuffer.refs.toList // always left, have at least 1 member
+
+      outerBuffer.zipWithIndex.map {
+        case (v, i) =>
+          dataWithScope.copy(scopeUIDs = v, ordinal = i)
+      }.toSeq
+    }
+  }
+
+  def docs(name: String): DocSelection = {
+
+    lazy val pages: Seq[Doc] = docs.filter(_.name == name)
+    DocSelection(pages)
+  }
+
+  object DocSelection {
+
+    implicit def asOption(v: DocSelection): Option[Doc] = v.only.map(_.docs.head)
+  }
+
+  case class DocSelection(docs: Seq[Doc]) {
+
+    lazy val head: Option[DocSelection] = docs.headOption.map { doc =>
+      DocSelection(Seq(doc))
+    }
+
+    lazy val only: Option[DocSelection] = {
+
+      if (docs.size > 1) throw new UnsupportedOperationException("Ambiguous key referring to multiple pages")
+      else head
+    }
+
+    def saveContent(
+        path: String,
+        extension: Option[String], // set to
+        overwrite: Boolean = false
+    ): Unit = {
+
+      docs.zipWithIndex.foreach {
+
+        case (doc, _) =>
+          val saveParts = Seq(path) ++ extension
+
+          doc.save(ctx.get, overwrite)(saveParts)
+      }
+    }
   }
 
 //  def getUnstructured(field: Field): Option[Unstructured] = {

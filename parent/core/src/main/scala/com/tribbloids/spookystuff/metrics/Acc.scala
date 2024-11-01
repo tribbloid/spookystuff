@@ -1,8 +1,8 @@
 package com.tribbloids.spookystuff.metrics
 
+import ai.acyclic.prover.commons.util.Magnet.OptionMagnet
 import com.tribbloids.spookystuff.utils.accumulator.MapAccumulator
 import org.apache.spark.SparkContext
-import org.apache.spark.ml.dsl.utils.??
 import org.apache.spark.sql.SparkSession
 import org.apache.spark.sql.execution.streaming.EventTimeStatsAccum
 import org.apache.spark.util.{AccumulatorV2, DoubleAccumulator, LongAccumulator}
@@ -144,11 +144,11 @@ object Acc {
     }
   }
 
-  def create[IN, T <: AccumulatorV2[_, _]](value: IN, displayNameOvrd: String ?? _ = None)(
+  def create[IN, T <: AccumulatorV2[_, _]](value: IN, displayNameOvrd: OptionMagnet[String] = None)(
       implicit
       canBuild: CanInit[IN, T]
   ): Acc[T] = {
-    FromV0(value, displayNameOvrd.asOption)
+    FromV0(value, displayNameOvrd)
   }
 
   implicit def fromV0[IN, T <: AccumulatorV2[_, _]](value: IN)(

@@ -1,9 +1,9 @@
 package com.tribbloids.spookystuff.commons.data
 
+import ai.acyclic.prover.commons.util.Magnet.OptionMagnet
+import com.tribbloids.spookystuff.commons.{CommonUtils, TreeThrowable}
 import com.tribbloids.spookystuff.relay.RootTagged
 import com.tribbloids.spookystuff.relay.xml.Xml
-import com.tribbloids.spookystuff.commons.{CommonUtils, TreeThrowable}
-import org.apache.spark.ml.dsl.utils.??
 
 import java.util.Properties
 import scala.collection.mutable
@@ -136,8 +136,8 @@ trait EAVLike extends HasEagerInnerObjects with RootTagged with Serializable {
       // should only be used in setters
       val aliases: List[String] = Nil,
       nullable: Boolean = false,
-      default: T ?? _ = None,
-      nameOverride: String ?? _ = None
+      default: OptionMagnet[T] = None,
+      nameOverride: OptionMagnet[String] = None
   )(
       implicit
       ev: T <:< Any

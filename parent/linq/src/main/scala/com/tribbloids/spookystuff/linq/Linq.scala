@@ -3,9 +3,6 @@ package com.tribbloids.spookystuff.linq
 import com.tribbloids.spookystuff.linq.LinqBase.{BatchView, CellLike, RowLike}
 import com.tribbloids.spookystuff.linq.Tuple.Empty
 import com.tribbloids.spookystuff.linq.internal.{ElementWisePoly, RowInternal}
-import shapeless.labelled
-import shapeless.labelled.{field, FieldType}
-import shapeless.tag.@@
 
 object Linq {
 
@@ -15,7 +12,7 @@ object Linq {
 
     override def asRow: Row[(K := V) *: Empty] = {
 
-      RowInternal.ofElement(named[K] := self.asInstanceOf[V])
+      RowInternal.ofShapelessTagged(named[K] := self.asInstanceOf[V])
     }
   }
 
@@ -49,12 +46,12 @@ object Linq {
       */
     def selectDynamic(key: XStr)(
         implicit
-        selector: Selector[T, Col[key.type]]
+        selector: Selector[T, ColumnTag[key.type]]
     ): selector.Out <> Field.Named[key.type, selector.Out] = {
 
       val value: selector.Out = _fields.selectDynamic(key).value
 
-      Field.Named[key.type].apply[selector.Out](value: selector.Out)
+      Field.Named[key.type].apply(value: selector.Out)
 
     }
 
@@ -135,8 +132,8 @@ object Linq {
 
       def selectDynamic(key: XStr)(
           implicit
-          selector: Selector[T, Col[key.type]]
-      ) = new FieldView[Col[key.type], selector.Out](Col(key))(selector)
+          selector: Selector[T, ColumnTag[key.type]]
+      ) = new FieldView[ColumnTag[key.type], selector.Out](ColumnTag(key))(selector)
     }
 
     @transient lazy val _internal: RowInternal[T] = {
@@ -155,22 +152,6 @@ object Linq {
   }
 
   // --------------------------------------------------------------------------------------------------------------------
-
-  type ->>[K, V] = FieldType[K, V]
-
-  def ->>[K]: labelled.FieldBuilder[K] = field[K]
-
-  // TODO: the following definition for Col will be obsolete in shapeless 2.4
-  //  upgrade blocked by frameless
-
-  type Col[T <: XStr] = Symbol @@ T
-
-  def Col[T <: XStr](v: T): Col[T] = {
-
-    Symbol(v).asInstanceOf[Col[T]]
-  }
-
-  type :=[K <: XStr, V] = Col[K] ->> V
 
   class NamedValueConstructor[K <: XStr]() {
 

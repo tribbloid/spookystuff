@@ -1,10 +1,10 @@
 package com.tribbloids.spookystuff.lifespan
 
-import com.tribbloids.spookystuff.testutils.SpookyBaseSpec
 import com.tribbloids.spookystuff.commons.CommonUtils
 import com.tribbloids.spookystuff.commons.lifespan.Cleanable.Lifespan
 import com.tribbloids.spookystuff.commons.lifespan.{Cleanable, LeafType, LocalCleanable}
 import com.tribbloids.spookystuff.commons.serialization.AssertSerializable
+import com.tribbloids.spookystuff.testutils.SpookyBaseSpec
 import org.apache.spark.{HashPartitioner, SparkException, TaskContext}
 
 import java.util.concurrent.atomic.AtomicInteger
@@ -17,7 +17,7 @@ import scala.util.Random
 class CleanableSuite extends SpookyBaseSpec {
 
   import com.tribbloids.spookystuff.lifespan.CleanableSuite._
-  import com.tribbloids.spookystuff.utils.SpookyViews._
+  import com.tribbloids.spookystuff.utils.RDDImplicits._
 
   override def beforeEach(): Unit = {
     super.beforeEach()

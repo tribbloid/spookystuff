@@ -1,15 +1,13 @@
 package com.tribbloids.spookystuff.utils
 
 import ai.acyclic.prover.commons.spark.LocalJobSnapshot
+import org.apache.spark.SparkContext
+import org.apache.spark.rdd.RDD
+import org.apache.spark.sql.{_SQLHelper, Dataset, SparkSession}
+import org.slf4j.LoggerFactory
 
 import java.io.EOFException
 import java.util.concurrent.ArrayBlockingQueue
-import org.apache.spark.SparkContext
-import org.apache.spark.sql._SQLHelper
-import org.apache.spark.rdd.RDD
-import org.apache.spark.sql.{Dataset, SparkSession}
-import org.slf4j.LoggerFactory
-
 import scala.concurrent.{ExecutionContext, Future}
 import scala.util.{Failure, Success, Try}
 
@@ -24,7 +22,7 @@ case class PreemptiveLocalOps(capacity: Int)(
 ) {
 
   import PreemptiveLocalOps._
-  import SpookyViews._
+  import RDDImplicits._
 
   trait Impl[T] {
 

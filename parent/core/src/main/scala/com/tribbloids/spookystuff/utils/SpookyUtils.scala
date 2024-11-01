@@ -2,21 +2,20 @@ package com.tribbloids.spookystuff.utils
 
 import com.tribbloids.spookystuff.commons.{CommonUtils, UnsafeReflections}
 import com.tribbloids.spookystuff.io.LocalResolver
-
-import java.io.File
-import java.net._
-import java.nio.file._
 import org.apache.commons.io.IOUtils
 import org.apache.spark.rdd.RDD
 import org.slf4j.LoggerFactory
 
+import java.io.File
+import java.net._
+import java.nio.file._
 import scala.collection.mutable
 import scala.language.implicitConversions
 import scala.reflect.ClassTag
 
 object SpookyUtils {
 
-  import SpookyViews._
+  import RDDImplicits._
 
   //  def retryWithDeadline[T](n: Int, t: Duration)(fn: => T): T = retry(n){withDeadline(t){fn}}
 

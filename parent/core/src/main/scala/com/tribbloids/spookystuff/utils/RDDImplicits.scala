@@ -1,6 +1,6 @@
 package com.tribbloids.spookystuff.utils
 
-import ai.acyclic.prover.commons.spark.{RDDView, SparkContextView}
+import ai.acyclic.prover.commons.spark.SparkContextView
 import org.apache.spark.SparkContext
 import org.apache.spark.rdd.RDD
 
@@ -12,7 +12,9 @@ import scala.reflect.ClassTag
 /**
   * Created by peng on 11/7/14. implicit conversions in this package are used for development only
   */
-object SpookyViews extends SpookyViews_Imp0 with RDDView.Implicits {
+object RDDImplicits extends RDDImplicits
+
+trait RDDImplicits extends SpookyViews_Imp0 with ai.acyclic.prover.commons.spark.RDDImplicits {
 
   implicit def sparkContextView(self: SparkContext): SparkContextView = SparkContextView(self)
 

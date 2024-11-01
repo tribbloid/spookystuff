@@ -1,6 +1,5 @@
 package com.tribbloids.spookystuff.dsl
 
-import ai.acyclic.prover.commons.function.Impl
 import com.tribbloids.spookystuff.testutils.SpookyBaseSpec
 import org.apache.spark.HashPartitioner
 import org.apache.spark.rdd.RDD
@@ -12,7 +11,7 @@ import scala.util.Random
   */
 class GenPartitionerSuite extends SpookyBaseSpec {
 
-  import com.tribbloids.spookystuff.utils.SpookyViews._
+  import com.tribbloids.spookystuff.utils.RDDImplicits._
 
   it("DocCacheAware can co-partition 2 RDDs") {
     val numPartitions = Random.nextInt(80) + 9

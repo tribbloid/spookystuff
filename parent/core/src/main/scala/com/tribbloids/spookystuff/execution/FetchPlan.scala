@@ -1,25 +1,50 @@
 package com.tribbloids.spookystuff.execution
 
 import com.tribbloids.spookystuff.actions._
-import com.tribbloids.spookystuff.dsl.GenPartitioner
+import com.tribbloids.spookystuff.dsl.{GenPartitioner, OneToMany}
 import com.tribbloids.spookystuff.row._
 import org.apache.spark.rdd.RDD
 
 import scala.reflect.ClassTag
 
-object ForkPlan {
+object FetchPlan {
 
-  type Out[O] = Seq[(TraceSet, O)]
+  type Batch[O] = Seq[(TraceSet, O)]
 
-  type Fn[I, O] = FetchedRow[I] => Out[O]
+  type Fn[I, O] = FetchedRow[I] => Batch[O]
+
+  object TraceOnly {
+
+    type _Fn[I] = FetchedRow[I] => Seq[TraceSet]
+
+    def normalise[I](
+        fn: _Fn[I],
+        forkType: OneToMany = OneToMany.default
+    ): Fn[I, I] = { row =>
+      val traces = fn(row)
+
+      val mayBeEmpty = traces.map { trace =>
+        trace -> row.data
+      }
+
+      val result = forkType match {
+        case OneToMany.Outer if mayBeEmpty.isEmpty => Seq(TraceSet.of(Trace.NoOp) -> row.data)
+        case _                                     => mayBeEmpty
+      }
+      result
+    }
+  }
 }
 
 /**
-  * Created by peng on 27/03/16.
+  * Created by peng on 27/03/16
+  *
+  * TODO: the only difference between this and [[FlatMapPlan]] is the groupByKey step for sharing locality group, this
+  * is too complex. the 2 classes should be merged
   */
-case class ForkPlan[I, O: ClassTag](
+case class FetchPlan[I, O: ClassTag](
     override val child: ExecutionPlan[I],
-    fn: ForkPlan.Fn[I, O],
+    fn: FetchPlan.Fn[I, O],
     sameBy: Trace => Any,
     genPartitioner: GenPartitioner
 ) extends UnaryPlan[I, O](child)
@@ -41,7 +66,7 @@ case class ForkPlan[I, O: ClassTag](
         }
       }
 
-    val grouped = gpImpl.groupByKey(forkedRDD, beaconRDDOpt)
+    val grouped: RDD[(LocalityGroup, Iterable[O])] = gpImpl.groupByKey(forkedRDD, beaconRDDOpt)
 
     grouped
       .map { tuple =>

@@ -19,7 +19,7 @@ trait GenPartitionerLike[L, -U >: L] {
 
 object GenPartitionerLike {
 
-  import com.tribbloids.spookystuff.utils.SpookyViews._
+  import com.tribbloids.spookystuff.utils.RDDImplicits._
 
   trait Instance[K] extends Serializable {
     implicit def ctg: ClassTag[K]

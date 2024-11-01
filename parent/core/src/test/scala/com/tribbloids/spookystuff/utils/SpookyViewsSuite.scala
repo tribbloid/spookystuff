@@ -2,12 +2,12 @@ package com.tribbloids.spookystuff.utils
 
 import ai.acyclic.prover.commons.spark.locality.PartitionIdPassthrough
 import com.tribbloids.spookystuff.TestBeans._
-import com.tribbloids.spookystuff.metrics.Acc
-import com.tribbloids.spookystuff.testutils.{SpookyBaseSpec, TestHelper}
 import com.tribbloids.spookystuff.commons.lifespan.LifespanContext
+import com.tribbloids.spookystuff.metrics.Acc
+import com.tribbloids.spookystuff.testutils.SpookyBaseSpec
 import org.apache.spark.SparkException
-import org.apache.spark.sql._SQLHelper
 import org.apache.spark.rdd.RDD
+import org.apache.spark.sql._SQLHelper
 
 import scala.util.Random
 
@@ -34,7 +34,7 @@ import scala.util.Random
   */
 class SpookyViewsSuite extends SpookyBaseSpec {
 
-  import SpookyViews._
+  import RDDImplicits._
 
   it("multiPassFlatMap should yield same result as flatMap") {
 

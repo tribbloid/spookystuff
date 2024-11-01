@@ -1,5 +1,6 @@
 package com.tribbloids.spookystuff.testutils
 
+import ai.acyclic.prover.commons.spark.TestHelper
 import com.tribbloids.spookystuff.CommonConst
 import com.tribbloids.spookystuff.commons.classpath.ClasspathResolver
 import com.tribbloids.spookystuff.commons.lifespan.Cleanable

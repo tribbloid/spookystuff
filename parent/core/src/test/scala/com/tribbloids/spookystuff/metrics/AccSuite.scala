@@ -1,6 +1,6 @@
 package com.tribbloids.spookystuff.metrics
 
-import com.tribbloids.spookystuff.testutils.SparkEnvSpec
+import ai.acyclic.prover.commons.spark.SparkEnvSpec
 import org.apache.spark.util.LongAccumulator
 import org.scalatest.BeforeAndAfterEach
 

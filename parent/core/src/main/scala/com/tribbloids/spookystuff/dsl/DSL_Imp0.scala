@@ -1,7 +1,5 @@
 package com.tribbloids.spookystuff.dsl
 
-import scala.language.implicitConversions
-
 trait DSL_Imp0 extends DSL_Imp1 {
 
 //  implicit class StrContextOps(val strC: StringContext) extends Serializable {

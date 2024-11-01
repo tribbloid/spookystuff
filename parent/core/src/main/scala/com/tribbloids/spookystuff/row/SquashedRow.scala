@@ -2,10 +2,10 @@ package com.tribbloids.spookystuff.row
 
 import ai.acyclic.prover.commons.function.hom.Hom.:=>
 import com.tribbloids.spookystuff.SpookyContext
-import com.tribbloids.spookystuff.actions.{Trace, TraceSet}
+import com.tribbloids.spookystuff.actions.Trace
 import com.tribbloids.spookystuff.commons.serialization.NOTSerializable
 import com.tribbloids.spookystuff.doc.Observation
-import com.tribbloids.spookystuff.execution.ChainPlan
+import com.tribbloids.spookystuff.execution.{FetchPlan, FlatMapPlan}
 
 import scala.language.implicitConversions
 
@@ -150,11 +150,11 @@ case class SquashedRow[D](
     )
   }
 
-  case class _WithCtx(spooky: SpookyContext) extends NOTSerializable {
+  case class _WithCtx(ctx: SpookyContext) extends NOTSerializable {
 
     lazy val withDefaultScope: SquashedRow[D] = {
 
-      lazy val uids = group.withCtx(spooky).trajectory.map(_.uid)
+      lazy val uids = group.withCtx(ctx).trajectory.map(_.uid)
 
       val newDataRows = dataSeq.map { row =>
         row.copy(scopeUIDs = uids)
@@ -165,7 +165,7 @@ case class SquashedRow[D](
 
     lazy val unSquash: Seq[FetchedRow[D]] = {
 
-      lazy val lookup = group.withCtx(spooky).lookup
+      lazy val lookup = group.withCtx(ctx).lookup
 
       dataSeq.map { r1 =>
         val scopeUID = r1.scopeUIDs
@@ -173,12 +173,12 @@ case class SquashedRow[D](
           lookup(uid)
         }
 
-        FetchedRow(r1.data, inScope, r1.ordinal)
+        FetchedRow(r1.data, inScope, r1.ordinal, ctx = ctx)
       }
     }
 
-    def applyDelta[O](
-        fn: ChainPlan.Fn[D, O]
+    def flatMap[O](
+        fn: FlatMapPlan.Fn[D, O]
     ): SquashedRow[O] = {
 
       val newDataRows: Seq[Data.WithScope[O]] = unSquash.flatMap { row: FetchedRow[D] =>
@@ -189,16 +189,12 @@ case class SquashedRow[D](
       SquashedRow.this.copy(dataSeq = newDataRows)
     }
 
-    def fetch(fn: FetchedRow[D] => TraceSet): Seq[(Trace, D)] = {
+    def fetch[O](fn: FetchPlan.Fn[D, O]): FetchPlan.Batch[O] = {
 
       val result = unSquash.flatMap { row: FetchedRow[D] =>
         val traces = fn(row)
 
-        val result = traces.map { trace =>
-          trace -> row.data
-        }
-
-        result
+        traces
       }
 
       result

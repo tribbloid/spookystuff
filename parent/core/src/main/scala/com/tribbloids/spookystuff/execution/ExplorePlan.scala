@@ -12,6 +12,19 @@ import java.util.UUID
 
 object ExplorePlan {
 
+  /**
+    * [[FlatMapPlan.Batch]] deliberately contains [[Data.WithScope]], but the scope will not be commited into the
+    * visited set. it is only there to make appending [[FlatMapPlan]] easier
+    *
+    * @tparam I
+    *   input
+    * @tparam O
+    *   output
+    */
+  type Batches[I, O] = (FetchPlan.Batch[I], FlatMapPlan.Batch[O])
+
+  type Fn[I, O] = FetchedRow[Data.Exploring[I]] => Batches[I, O]
+
   type ExeID = UUID
   def nextExeID(): ExeID = UUID.randomUUID()
 
@@ -39,18 +52,17 @@ object ExplorePlan {
 
 case class ExplorePlan[I, O](
     override val child: ExecutionPlan[I],
-    sameBy: Trace => Any,
+    fn: ExplorePlan.Fn[I, O],
+    sameBy: Trace => Any = identity,
     genPartitioner: GenPartitioner,
     params: Params,
     pathPlanning: PathPlanning,
-    miniBatchSize: Int,
+    balancingInterval: Int,
     // TODO: enable more flexible stopping condition
-    // TODO: test if proceeding to next miniBatch is necessary
+    // TODO: test if proceeding to next epoch is necessary
     checkpointInterval: Int // set to Int.MaxValue to disable checkpointing,
-)(
-    val fn: Explore.Fn[I, O]
 ) extends UnaryPlan[I, O](child)
-    with InjectBeaconRDDPlan[I]
+    with InjectBeaconRDDPlan[O]
     with Explore.Common[I, O] {
 
   object Init extends Serializable {
@@ -84,7 +96,7 @@ case class ExplorePlan[I, O](
 
     val openSetAcc = spooky.sparkContext.longAccumulator
 
-    var miniBatchI = 1
+    var epochI = 1
     var stop: Boolean = false
 
     val finalStateRDD: RDD[(LocalityGroup, State[I, O])] = {
@@ -99,14 +111,14 @@ case class ExplorePlan[I, O](
           val state_+ = runner
             .Run(fn)
             .recursively(
-              miniBatchSize
+              balancingInterval
             )
           openSetAcc add runner.open.size.toLong
           state_+
         }
 
         scratchRDDPersist(stateRDD_+)
-        if (checkpointInterval > 0 && miniBatchI % checkpointInterval == 0) {
+        if (checkpointInterval > 0 && epochI % checkpointInterval == 0) {
           stateRDD_+.checkpoint()
         }
 
@@ -117,7 +129,7 @@ case class ExplorePlan[I, O](
         LoggerFactory
           .getLogger(this.getClass)
           .info(
-            s"MiniBatch $miniBatchI: $nRows total, $openSetSize pending"
+            s"Epoch $epochI: $nRows total, $openSetSize pending"
           )
 
         scratchRDDs.unpersist(stateRDD)
@@ -126,11 +138,11 @@ case class ExplorePlan[I, O](
 
           stateRDD = stateRDD_+
         } else {
-          val next: RDD[(LocalityGroup, State[I, O])] = reduceBetweenMiniBatch(stateRDD_+)
+          val next: RDD[(LocalityGroup, State[I, O])] = reduceBetweenEpochs(stateRDD_+)
 
           stateRDD = next
 
-          miniBatchI += 1
+          epochI += 1
         }
 
       } while (!stop)
@@ -166,7 +178,7 @@ case class ExplorePlan[I, O](
 
   }
 
-  def reduceBetweenMiniBatch(
+  def reduceBetweenEpochs(
       stateRDD: RDD[(LocalityGroup, State[I, O])]
   ): RDD[(LocalityGroup, State[I, O])] = {
 

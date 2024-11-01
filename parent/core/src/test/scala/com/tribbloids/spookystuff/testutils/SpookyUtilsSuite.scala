@@ -1,11 +1,10 @@
 package com.tribbloids.spookystuff.testutils
 
 import com.tribbloids.spookystuff.commons.{AwaitWithHeartbeat, CommonUtils}
-import com.tribbloids.spookystuff.utils.{SpookyUtils, SpookyViews}
+import com.tribbloids.spookystuff.utils.SpookyUtils
 import org.apache.spark.TaskContext
 import org.apache.spark.rdd.RDD
 
-import scala.collection.immutable.Seq
 import scala.collection.mutable.ArrayBuffer
 import scala.concurrent.TimeoutException
 import scala.util.Random
@@ -14,8 +13,6 @@ import scala.util.Random
   * Created by peng on 11/1/14.
   */
 class SpookyUtilsSuite extends BaseSpec {
-
-  import SpookyViews._
 
   import scala.concurrent.duration._
 

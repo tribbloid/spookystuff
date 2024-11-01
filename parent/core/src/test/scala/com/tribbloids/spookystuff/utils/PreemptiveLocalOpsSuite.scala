@@ -1,12 +1,12 @@
 package com.tribbloids.spookystuff.utils
 
 import com.tribbloids.spookystuff.commons.CommonUtils
-import com.tribbloids.spookystuff.testutils.{BaseSpec, TestHelper}
+import com.tribbloids.spookystuff.testutils.BaseSpec
 import org.apache.spark.SparkContext
 
 class PreemptiveLocalOpsSuite extends BaseSpec {
 
-  import SpookyViews._
+  import RDDImplicits._
 
   val sc: SparkContext = TestHelper.TestSC
 

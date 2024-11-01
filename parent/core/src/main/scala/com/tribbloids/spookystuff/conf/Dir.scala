@@ -1,8 +1,8 @@
 package com.tribbloids.spookystuff.conf
 
 import com.tribbloids.spookystuff.SpookyContext
-import com.tribbloids.spookystuff.metrics.AbstractMetrics
 import com.tribbloids.spookystuff.commons.ConfUtils
+import com.tribbloids.spookystuff.metrics.AbstractMetrics
 import org.apache.spark.SparkConf
 
 object Dir extends PluginSystem {
@@ -19,7 +19,7 @@ object Dir extends PluginSystem {
       errorScreenshotLocal: String = null // System.getProperty("spooky.dirs.errorscreenshot.local")
   ) extends ConfLike {
 
-    import com.tribbloids.spookystuff.utils.SpookyViews._
+    import com.tribbloids.spookystuff.utils.RDDImplicits._
 
     override def importFrom(sparkConf: SparkConf): Conf = {
 

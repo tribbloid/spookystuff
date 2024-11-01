@@ -61,7 +61,7 @@ case class SpookyConf(
     //
     explorePathPlanning: PathPlanning = PathPlanners_Simple.BreadthFirst,
     exploreRange: Range = 0 until Int.MaxValue,
-    exploreEpochSize: Int = 50,
+    exploreBalancingInterval: Int = 50,
     exploreCheckpointInterval: Int = 50, // disabled if <=0
 
     // if encounter too many out of memory error, change to MEMORY_AND_DISK_SER

@@ -30,23 +30,23 @@ object LocalityGroup {
   *
   * @param trace
   *   static shared trace
-  * @param samenessOvrd
+  * @param keyByOvrd
   *   custom function that affects sameness
   */
 case class LocalityGroup(
     trace: Trace,
-    samenessOvrd: Option[Any] = None // used by custom keyBy arg in fetch and explore.
+    keyByOvrd: Option[Any] = None // used by custom keyBy arg in fetch and explore.
 )(
     val rollout: Rollout = Rollout(trace)
 ) extends EqualBy
     with SpookyContext.CanRunWith {
 
-  @transient lazy val samenessKey: Any = samenessOvrd.getOrElse(trace)
+  @transient lazy val samenessKey: Any = keyByOvrd.getOrElse(trace)
 
   def unCache: LocalityGroup = this.copy()(rollout.unCache)
 
   def sameBy[T](fn: Trace => T): LocalityGroup =
-    this.copy(samenessOvrd = Option(fn(this.trace)))(this.rollout)
+    this.copy(keyByOvrd = Option(fn(this.trace)))(this.rollout)
 
   case class _WithCtx(spooky: SpookyContext) extends NOTSerializable {
 

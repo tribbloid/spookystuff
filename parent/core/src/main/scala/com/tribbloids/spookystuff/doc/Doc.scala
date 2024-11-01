@@ -194,7 +194,7 @@ case class Doc(
       overwrite: Boolean = false
   ) {
 
-    def apply(
+    def to(
         pathParts: Seq[String]
     ): Content = {
 
@@ -206,6 +206,8 @@ case class Doc(
       Doc.this.content = saved
       saved
     }
+
+    def apply(pathParts: Seq[String]): Content = to(pathParts)
 
     def auditing(): Content = {
       apply(spooky.dirConf.auditing :: spooky.conf.auditingFileStructure(Doc.this) :: Nil)

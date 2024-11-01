@@ -1,6 +1,6 @@
 package com.tribbloids.spookystuff.linq
 
-import com.tribbloids.spookystuff.linq.Linq.{:=, named, Row}
+import com.tribbloids.spookystuff.linq.Linq.{named, Row}
 import com.tribbloids.spookystuff.linq.LinqBase.Entry
 import com.tribbloids.spookystuff.linq.internal.RowInternal
 
@@ -19,7 +19,7 @@ object RowFunctions {
     seq.map { v =>
       val kv: K := V = named[K] := v
 
-      RowInternal.ofElement(kv)
+      RowInternal.ofShapelessTagged(kv)
     }
   }
 }

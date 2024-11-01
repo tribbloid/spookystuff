@@ -1,7 +1,7 @@
 package com.tribbloids.spookystuff.linq.internal
 
 import ai.acyclic.prover.commons.function.hom.Hom
-import com.tribbloids.spookystuff.linq.Linq.{:=, named, Row}
+import com.tribbloids.spookystuff.linq.Linq.{named, Row}
 import com.tribbloids.spookystuff.linq.Tuple.Empty
 import com.tribbloids.spookystuff.linq._
 import shapeless.ops.record.Keys
@@ -52,7 +52,7 @@ object RowInternal {
     new Row[L](cells.to(Vector))
   }
 
-  def ofElement[K <: XStr, V](
+  def ofShapelessTagged[K <: XStr, V](
       v: K := V
   ): Row[(K := V) *: Empty] = ofTuple(v *: Tuple.empty)
 

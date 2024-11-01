@@ -40,21 +40,21 @@ object Delta {
 //    }
 //  }
 
-  case class FlatMap[I, O](
-      fn: FetchedRow[I] :=> Seq[O]
-  ) extends Delta[I, O] {
-
-    override def repr(schema: SpookySchema): SquashedRow[I] :=> SquashedRow[O] = :=> { squashedRow =>
-      val rows = squashedRow.withCtx(schema.ctx).unSquash
-
-      val nextData = rows.flatMap { row =>
-        fn(row).map { nextData =>
-          row.copy(data = nextData).dataWithScope
-        }
-      }
-      squashedRow.copy(dataSeq = nextData)
-    }
-  }
+//  case class FlatMap[I, O](
+//      fn: FetchedRow[I] :=> Seq[O]
+//  ) extends Delta[I, O] {
+//
+//    override def repr(schema: SpookySchema): SquashedRow[I] :=> SquashedRow[O] = :=> { squashedRow =>
+//      val rows = squashedRow.withCtx(schema.ctx).unSquash
+//
+//      val nextData = rows.flatMap { row =>
+//        fn(row).map { nextData =>
+//          row.copy(data = nextData).dataWithScope
+//        }
+//      }
+//      squashedRow.copy(dataSeq = nextData)
+//    }
+//  }
 
 //
 //  /**
@@ -118,16 +118,6 @@ object Delta {
 //      result
 //    }
 //  }
-
-  case class ExplodeScope[I](
-      scopeFn: Data.WithScope[I] => Seq[Data.WithScope[I]]
-      // TODO: should be from FetchedRow
-  ) extends Delta[I, I] {
-
-    override def repr(schema: SpookySchema): SquashedRow[I] :=> SquashedRow[I] = :=> { v =>
-      v.flatMapData(scopeFn)
-    }
-  }
 
   case class SaveContent[I](
       getDocs: FetchedRow[I] => Map[String, Doc],

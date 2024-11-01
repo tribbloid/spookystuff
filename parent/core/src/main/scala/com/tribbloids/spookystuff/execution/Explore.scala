@@ -6,19 +6,6 @@ import com.tribbloids.spookystuff.row.{Data, FetchedRow, LocalityGroup}
 
 object Explore {
 
-  /**
-    * [[ChainPlan.Out]] deliberately contains [[Data.WithScope]], but the scope will not be commited into the visited
-    * set. it is only there to make appending [[ChainPlan]] easier
-    *
-    * @tparam I
-    *   input
-    * @tparam O
-    *   output
-    */
-  type Out[I, O] = (ForkPlan.Out[I], ChainPlan.Out[O])
-
-  type Fn[I, O] = FetchedRow[Data.Exploring[I]] => Out[I, O]
-
   trait ReducerLike[I] {
 
     type Elem = Data.Exploring[I]
@@ -37,7 +24,7 @@ object Explore {
     type OpenReducer = Explore.ReducerK[I]
     type VisitedReducer = Explore.ReducerK[O]
 
-    type Fn = Explore.Fn[I, O]
+    type Fn = ExplorePlan.Fn[I, O]
 
     // applied first, will be committed into visited
     // output should not tamper other fields of Data.Exploring[D]

@@ -1,17 +1,16 @@
 package com.tribbloids.spookystuff.testutils
 
-import ai.acyclic.prover.commons.spark.Envs
+import ai.acyclic.prover.commons.spark.{Envs, TestHelper}
 import ai.acyclic.prover.commons.util.Retry
 import com.tribbloids.spookystuff.SpookyContext
-import com.tribbloids.spookystuff.conf._
-import com.tribbloids.spookystuff.doc.{Doc, Unstructured}
-import com.tribbloids.spookystuff.execution.SpookyExecutionContext
-import com.tribbloids.spookystuff.extractors.{Alias, GenExtractor, GenResolved}
-import com.tribbloids.spookystuff.row.{SpookySchema, SquashedRow, TypedField}
 import com.tribbloids.spookystuff.agent.DriverLike
 import com.tribbloids.spookystuff.commons.lifespan.Cleanable
 import com.tribbloids.spookystuff.commons.lifespan.Cleanable.Lifespan
 import com.tribbloids.spookystuff.commons.{CommonUtils, TreeThrowable}
+import com.tribbloids.spookystuff.conf._
+import com.tribbloids.spookystuff.doc.{Doc, Unstructured}
+import com.tribbloids.spookystuff.execution.SpookyExecutionContext
+import com.tribbloids.spookystuff.row.{SpookySchema, SquashedRow}
 import org.jutils.jprocesses.JProcesses
 import org.jutils.jprocesses.model.ProcessInfo
 import org.scalatest.{BeforeAndAfterEach, Outcome, Retries}
@@ -92,21 +91,12 @@ object SpookyBaseSpec {
 abstract class SpookyBaseSpec extends SpookyEnvSpec with RemoteDocsFixture with BeforeAndAfterEach with Retries {
 
   lazy val defaultEC: SpookyExecutionContext = SpookyExecutionContext(spooky)
-  lazy val defaultSchema: SpookySchema[Unit] = SpookySchema(defaultEC)
+  lazy val defaultSchema: SpookySchema = SpookySchema(defaultEC)
 
   def emptySchema: SpookySchema = SpookySchema(SpookyExecutionContext(spooky))
 
-  implicit def rowWithCtx(row: SquashedRow): row._WithCtx = row.withCtx(spooky)
+  implicit def rowWithCtx(row: SquashedRow[_]): row._WithCtx = row.withCtx(spooky)
 
-  implicit def extractor2Resolved[T, R](extractor: Alias[T, R]): GenResolved[T, R] = GenResolved(
-    extractor.resolve(emptySchema),
-    TypedField(
-      extractor.field,
-      extractor.resolveType(emptySchema)
-    )
-  )
-  implicit def extractor2Function[T, R](extractor: GenExtractor[T, R]): PartialFunction[T, R] =
-    extractor.resolve(emptySchema)
   implicit def doc2Root(doc: Doc): Unstructured = doc.root
 
   override def withFixture(test: NoArgTest): Outcome = {
@@ -116,7 +106,7 @@ abstract class SpookyBaseSpec extends SpookyEnvSpec with RemoteDocsFixture with 
       super.withFixture(test)
   }
 
-  import com.tribbloids.spookystuff.utils.SpookyViews._
+  import com.tribbloids.spookystuff.utils.RDDImplicits._
 
   def _externalProcessNames: Seq[String] = Seq("phantomjs", s"${PythonDriverFactory.python3} -iu")
   val exitingPIDs: Set[String] = SpookyBaseSpec.getProcesses.map(_.getPid).toSet

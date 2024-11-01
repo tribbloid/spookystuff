@@ -6,7 +6,6 @@ import com.tribbloids.spookystuff.caching.DocCacheLevel
 import com.tribbloids.spookystuff.doc.Observation.DocUID
 import com.tribbloids.spookystuff.doc._
 import com.tribbloids.spookystuff.io.CompoundResolver.OmniResolver
-import com.tribbloids.spookystuff.row.{FetchedRow, SpookySchema}
 import org.apache.commons.io.IOUtils
 import org.apache.hadoop.shaded.org.apache.http.client.methods.HttpGet
 

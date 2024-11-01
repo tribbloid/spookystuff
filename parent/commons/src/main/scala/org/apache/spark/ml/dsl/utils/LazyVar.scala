@@ -1,6 +1,7 @@
 package org.apache.spark.ml.dsl.utils
 
 import ai.acyclic.prover.commons.same.EqualBy
+import ai.acyclic.prover.commons.util.Magnet.OptionMagnet
 
 import scala.language.implicitConversions
 
@@ -17,9 +18,9 @@ class LazyVar[T](
 ) extends Serializable
     with EqualBy {
 
-  @volatile protected var cached: T ?? _ = null.asInstanceOf[T]
+  @volatile protected var cached: OptionMagnet[T] = null.asInstanceOf[T]
 
-  def peek: Option[T] = cached.asOption
+  def peek: Option[T] = cached
 
   def value: T = peek.getOrElse {
     this.synchronized {
@@ -38,7 +39,7 @@ class LazyVar[T](
     cached = v
   }
 
-  def isCached: Boolean = cached.asOption.nonEmpty
+  def isCached: Boolean = cached.nonEmpty
 
   override def samenessKey: Any = value
 

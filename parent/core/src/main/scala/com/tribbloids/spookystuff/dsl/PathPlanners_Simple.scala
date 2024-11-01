@@ -13,6 +13,9 @@ object PathPlanners_Simple {
 
   case object BreadthFirst extends PathPlanning {
 
+    override def _Impl[I, O](params: Params, schema: SpookySchema): _Impl[I, O] = {
+      new _Impl(params, schema) // why is it necessary?
+    }
     case class _Impl[I, O](
         override val params: Params,
         schema: SpookySchema

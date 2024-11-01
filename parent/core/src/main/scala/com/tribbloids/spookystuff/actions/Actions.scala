@@ -1,7 +1,5 @@
 package com.tribbloids.spookystuff.actions
 
-import com.tribbloids.spookystuff.row.{FetchedRow, SpookySchema}
-
 trait Actions extends ActionLike {
 
   final override def outputNames: Set[String] = {

@@ -1,7 +1,7 @@
 package com.tribbloids.spookystuff.io
 
-import ai.acyclic.prover.commons.spark.Envs
-import com.tribbloids.spookystuff.testutils.{FileDocsFixture, SparkEnvSpec}
+import ai.acyclic.prover.commons.spark.{Envs, SparkEnvSpec}
+import com.tribbloids.spookystuff.testutils.FileDocsFixture
 import com.tribbloids.spookystuff.commons.serialization.AssertSerializable
 import com.tribbloids.spookystuff.io.AbstractURIResolverSuite.SequentialCheck
 import org.apache.commons.io.IOUtils

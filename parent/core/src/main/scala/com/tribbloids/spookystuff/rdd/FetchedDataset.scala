@@ -1,12 +1,13 @@
 package com.tribbloids.spookystuff.rdd
 
-import com.tribbloids.spookystuff.SpookyContext
 import com.tribbloids.spookystuff.actions._
 import com.tribbloids.spookystuff.commons.refl.CatalystTypeOps
 import com.tribbloids.spookystuff.conf.SpookyConf
 import com.tribbloids.spookystuff.dsl._
+import com.tribbloids.spookystuff.execution.ExplorePlan.Params
 import com.tribbloids.spookystuff.execution._
 import com.tribbloids.spookystuff.row._
+import com.tribbloids.spookystuff.SpookyContext
 import frameless.{TypedDataset, TypedEncoder}
 import org.apache.spark.SparkContext
 import org.apache.spark.rdd.RDD
@@ -14,6 +15,7 @@ import org.apache.spark.sql.DataFrame
 import org.apache.spark.storage.StorageLevel
 
 import scala.language.implicitConversions
+import scala.reflect.ClassTag
 
 object FetchedDataset extends FetchedDatasetImp0 {
 
@@ -91,6 +93,7 @@ case class FetchedDataset[D](
       ds
     }
 
+    // move to extension, DF support is interfering with Scala 3
     def toDF(
         implicit
         ev1: TypedEncoder[D]
@@ -111,12 +114,33 @@ case class FetchedDataset[D](
     }
   }
 
-  def chain[O](fn: ChainPlan.Fn[D, O]): FetchedDataset[O] = {
+  object flatMap {
 
-    this.copy(
-      plan.chain_optimised(fn)
-    )
+    def apply[O](fn: FlatMapPlan.FlatMap._Fn[D, O]): FetchedDataset[O] = {
+
+      FetchedDataset(
+        FlatMapPlan(
+          FetchedDataset.this,
+          FlatMapPlan.FlatMap.normalise(fn)
+        )
+      )
+    }
   }
+  def selectMany: flatMap.type = flatMap
+
+  object map {
+
+    def apply[O](fn: FlatMapPlan.Map._Fn[D, O]): FetchedDataset[O] = {
+
+      FetchedDataset(
+        FlatMapPlan(
+          FetchedDataset.this,
+          FlatMapPlan.Map.normalise(fn)
+        )
+      )
+    }
+  }
+  def select: map.type = map
 
 //  def dataRDDSorted(
 //      implicit
@@ -195,6 +219,8 @@ case class FetchedDataset[D](
 
   /**
     * this is an action that will be triggered immediately
+    *
+    * TODO: remove, superceded by "run" function that returns a lifetime object, e.g. `Resource` in cats & kyo
     */
 //  def savePages_!(
 //      path: Col[String],
@@ -216,25 +242,27 @@ case class FetchedDataset[D](
     *   name
     */
   // always use the same path pattern for filtered pages, if you want pages to be saved with different path, use multiple saveContent with different names
-//  def savePages(
-//      path: Col[String],
-//      extension: Col[String] = null, // set to
-//      page: Col[Doc] = S,
+// TODO: gone, use map(_.saveContent)
+  //  def savePages(
+//      path: FetchedRow[D] => String,
+//      extension: FetchedRow[D] => Option[String], // set to
+//      page: FetchedRow[D] => Doc,
 //      overwrite: Boolean = false
-//  ): FetchedDataset = {
+//  ): FetchedDataset[D] = {
 //
-//    val _pageEx: Extractor[Doc] = page.ex.typed[Doc]
+//    val fn: FlatMapPlan.Map._Fn[D, D] = { row: FetchedRow[D] =>
+//      val pathStr = path(row)
+//      val extStr = extension(row)
+//      val doc = page(row)
 //
-//    val _extensionEx: Extractor[String] = Option(extension)
-//      .map(_.ex.typed[String])
-//      .getOrElse(_pageEx.defaultFileExtension)
+//      row.dataWithScope
+//    }
 //
-//    ChainPlan.selectOptimized(
-//      plan,
-//      SaveContent(path.ex.typed[String], _extensionEx, _pageEx, overwrite)
+//    this.map(
+//      fn
 //    )
 //  }
-//
+
 //  def explode(
 //      ex: Extractor[Any],
 //      forkType: ForkType = ForkType.default,
@@ -282,13 +310,15 @@ case class FetchedDataset[D](
 //  }
 
   // Always left
-  def fetch(
-      traces: HasTraceSet,
+  def fetch[O: ClassTag](fn: FetchPlan.Fn[D, O])(
+      implicit
       keyBy: Trace => Any = identity,
       genPartitioner: GenPartitioner = spooky.conf.localityPartitioner
-  ): FetchedDataset = {
+  ): FetchedDataset[O] = {
 
-    FetchPlan(plan, traces, keyBy, genPartitioner)
+    FetchedDataset(
+      FetchPlan(plan, fn, keyBy, genPartitioner)
+    )
   }
 
   // shorthand of fetch
@@ -339,70 +369,37 @@ case class FetchedDataset[D](
 //  }
 
   // TODO: how to unify this with join?
-  def explore(
-      on: Extractor[Any],
-      forkType: ForkType = ForkType.default,
-      ordinalField: Field = null,
-      sampler: Sampler[Any] = spooky.conf.forkSampler
+  def explore[O](
+      on: ExplorePlan.Fn[D, O]
   )(
-      traces: HasTraceSet,
+      oneToMany: OneToMany = OneToMany.default,
       keyBy: Trace => Any = identity,
+      //
       genPartitioner: GenPartitioner = spooky.conf.localityPartitioner,
-      depthField: Field = null, // TODO: Some of them has to be moved upwards
       range: Range = spooky.conf.exploreRange,
       pathPlanning: PathPlanning = spooky.conf.explorePathPlanning,
-      epochSize: Int = spooky.conf.exploreEpochSize,
-      checkpointInterval: Int = spooky.conf.exploreCheckpointInterval // set to Int.MaxValue to disable checkpointing,
-  ): FetchedDataset = {
+      //
+      balancingInterval: Int = spooky.conf.exploreBalancingInterval,
+      checkpointInterval: Int = spooky.conf.exploreCheckpointInterval, // set to Int.MaxValue to disable checkpointing,
+      //
+      //      ordinalField: Field = null,
+      sampler: Sampler[Any] = spooky.conf.forkSampler
+      //      depthField: Field = null, // TODO: Some of them has to be moved upwards
+  ): FetchedDataset[O] = {
 
-    val params = Params(depthField, ordinalField, range)
-
-    ExplorePlan(
+    val params = Params(range)
+    val out: ExplorePlan[D, O] = ExplorePlan(
       plan,
-      on.withForkFieldIfMissing,
-      sampler,
-      forkType,
-      traces.asTraceSet.rewriteGlobally(plan.outputSchema),
+      on,
       keyBy,
       genPartitioner,
       params,
       pathPlanning,
-      epochSize,
-      checkpointInterval,
-      Nil
+      balancingInterval,
+      checkpointInterval
+    )
+    FetchedDataset[O](
+      out: ExecutionPlan[O]
     )
   }
-
-//  def wgetExplore(
-//      on: Extractor[Any],
-//      forkType: ForkType = ForkType.default,
-//      ordinalField: Field = null,
-//      sampler: Sampler[Any] = spooky.conf.forkSampler,
-//      filter: DocFilter = Const.defaultDocumentFilter,
-//      failSafe: Int = -1,
-//      cooldown: Option[Duration] = None,
-//      keyBy: Trace => Any = identity,
-//      genPartitioner: GenPartitioner = spooky.conf.localityPartitioner,
-//      depthField: Field = null,
-//      range: Range = spooky.conf.exploreRange,
-//      pathPlanning: PathPlanning = spooky.conf.explorePathPlanning,
-//      miniBatch: Int = 500,
-//      checkpointInterval: Int = spooky.conf.exploreCheckpointInterval // set to Int.MaxValue to disable checkpointing,
-//
-//  ): FetchedDataset = {
-//
-//    var trace = _defaultWget(cooldown, filter)
-//    if (failSafe > 0) trace = Trace.of(ClusterRetry(trace, failSafe))
-//
-//    explore(on, forkType, ordinalField, sampler)(
-//      trace.asTraceSet,
-//      keyBy,
-//      genPartitioner,
-//      depthField,
-//      range,
-//      pathPlanning,
-//      miniBatch,
-//      checkpointInterval
-//    )
-//  }
 }
