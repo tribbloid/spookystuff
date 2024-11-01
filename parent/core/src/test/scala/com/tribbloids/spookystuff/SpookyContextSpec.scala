@@ -3,6 +3,7 @@ package com.tribbloids.spookystuff
 import com.tribbloids.spookystuff.actions._
 import com.tribbloids.spookystuff.commons.serialization.AssertWeaklySerializable
 import com.tribbloids.spookystuff.conf.{Core, Dir, SpookyConf}
+import com.tribbloids.spookystuff.rdd.FetchedDataset
 import com.tribbloids.spookystuff.testutils.{FileDocsFixture, SpookyBaseSpec}
 
 class SpookyContextSpec extends SpookyBaseSpec with FileDocsFixture {
@@ -82,9 +83,7 @@ class SpookyContextSpec extends SpookyBaseSpec with FileDocsFixture {
       d1.fetchedRDD.count()
 
       val d2 = spooky
-        .fetch(
-          Wget(HTML_URL)
-        )
+        .fetch(_ => Wget(HTML_URL))
       d2.fetchedRDD.count()
 
       val seq = Seq(d1, d2)
@@ -110,15 +109,11 @@ class SpookyContextSpec extends SpookyBaseSpec with FileDocsFixture {
       spooky(Core).confUpdate(_.copy(shareMetrics = true))
 
       val rdd1 = spooky
-        .fetch(
-          Wget(HTML_URL)
-        )
+        .fetch(_ => Wget(HTML_URL))
       rdd1.count()
 
       val rdd2 = spooky
-        .fetch(
-          Wget(HTML_URL)
-        )
+        .fetch(_ => Wget(HTML_URL))
       rdd2.count()
 
       rdd1.spooky.spookyMetrics.toTreeIR.treeView.treeString shouldBe
@@ -126,45 +121,20 @@ class SpookyContextSpec extends SpookyBaseSpec with FileDocsFixture {
     }
   }
 
-  it("can create PageRow from String") {
+  describe("create from") {
 
-    val spooky = this.spooky
-    val rdd = spooky.create(Seq("a", "b"))
+    it("Seq") {
 
-    val data = rdd.squashedRDD.collect().flatMap(_.dataSeq).map(_.data).toList
-    assert(data == List(Map(Field("_") -> "a"), Map(Field("_") -> "b")))
-  }
+      val rdd: FetchedDataset[String] = spooky.create(Seq("a", "b"))
 
-  it("can create PageRow from map[String, String]") {
-
-    val spooky = this.spooky
-    val rdd = spooky.create(Seq(Map("1" -> "a"), Map("2" -> "b")))
-
-    val data = rdd.squashedRDD.collect().flatMap(_.dataSeq).map(_.data).toList
-    assert(data == List(Map(Field("1") -> "a"), Map(Field("2") -> "b")))
-  }
-
-  it("can create PageRow from map[Symbol, String]") {
-
-    val spooky = this.spooky
-    val rdd = spooky.create(Seq(Map('a1 -> "a"), Map('a2 -> "b")))
-
-    val data = rdd.squashedRDD.collect().flatMap(_.dataSeq).map(_.data).toList
-    assert(data == List(Map(Field("a1") -> "a"), Map(Field("a2") -> "b")))
-  }
-
-  it("can create PageRow from map[Int, String]") {
-
-    val spooky = this.spooky
-    val rdd = spooky.create(Seq(Map(1 -> "a"), Map(2 -> "b")))
-
-    val data = rdd.squashedRDD.collect().flatMap(_.dataSeq).map(_.data).toList
-    assert(data == List(Map(Field("1") -> "a"), Map(Field("2") -> "b")))
+      val data = rdd.squashedRDD.collect().flatMap(_.batch).map(_.data).toList
+      assert(data == List("a", "b"))
+    }
   }
 
   it("default SpookyContext should have default dir configs") {
 
-    val context = new SpookyContext(this.sql)
+    val context = SpookyContext(this.sql)
 
     val dirs = context.dirConf
     val json = dirs.prettyJSON

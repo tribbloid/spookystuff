@@ -17,9 +17,9 @@ class GenPartitionerSuite extends SpookyBaseSpec {
     val numPartitions = Random.nextInt(80) + 9
 
     val gp = GenPartitioners
-      .DocCacheAware(Impl { _ =>
+      .DocCacheAware { _: Any =>
         new HashPartitioner(numPartitions)
-      })
+      }
       .getInstance[Int](defaultSchema)
     val beaconOpt = gp.createBeaconRDD(sc.emptyRDD[Int])
     //    val beacon = sc.makeRDD(1 to 1000, 1000).map(v => v -> v*v)

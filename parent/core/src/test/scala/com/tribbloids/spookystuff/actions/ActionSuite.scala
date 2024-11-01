@@ -1,12 +1,11 @@
 package com.tribbloids.spookystuff.actions
 
+import com.tribbloids.spookystuff.agent.Agent
+import com.tribbloids.spookystuff.commons.{CommonUtils, Timeout}
 import com.tribbloids.spookystuff.doc.Observation
 import com.tribbloids.spookystuff.dsl._
-import com.tribbloids.spookystuff.extractors.impl.Lit
-import com.tribbloids.spookystuff.row.{FetchedRow, Field, Lineage}
-import com.tribbloids.spookystuff.agent.Agent
+import com.tribbloids.spookystuff.row.FetchedRow
 import com.tribbloids.spookystuff.testutils.SpookyBaseSpec
-import com.tribbloids.spookystuff.commons.{CommonUtils, Timeout}
 import com.tribbloids.spookystuff.{ActionException, Const}
 
 import scala.collection.immutable.ListMap
@@ -15,36 +14,9 @@ import scala.util.Random
 
 class ActionSuite extends SpookyBaseSpec {
 
-  import duration._
   import ActionSuite._
 
-  it("interpolate should not change timeout") {
-    import scala.concurrent.duration._
-
-    val randomTimeout = Timeout(Random.nextInt().seconds)
-    val action = Wget(x"${'A}").in(randomTimeout)
-
-    val rewritten = action
-      .interpolate(FetchedRow(Lineage(data = ListMap(Field("A") -> "http://www.dummy.com")), Seq()), emptySchema)
-      .get
-
-    assert(rewritten === Wget(Lit.erased("http://www.dummy.com")))
-    assert(rewritten.timeout(null) === randomTimeout)
-    assert(FilePaths.Hierarchical.apply(rewritten :: Nil) contains "/www.dummy.com")
-  }
-
-  it("interpolate should not change name") {
-
-    val action = Wget(x"${'A}").as('dummy_name)
-
-    val rewritten = action
-      .interpolate(FetchedRow(Lineage(data = ListMap(Field("A") -> "http://www.dummy.com")), Seq()), emptySchema)
-      .get
-
-    assert(rewritten === Wget(Lit.erased("http://www.dummy.com")))
-    assert(rewritten.name === "dummy_name")
-    assert(FilePaths.Hierarchical.apply(rewritten :: Nil) contains "/www.dummy.com")
-  }
+  import duration._
 
   describe("Wget") {
     val action = Wget("http://dummy.com")

@@ -154,7 +154,7 @@ case class ExploreRunner[I, O](
 
       val selectedRow: SquashedRow[Elem] = selectNext()
 
-      if (selectedRow.dataSeq.isEmpty) return
+      if (selectedRow.batch.isEmpty) return
 
       outer.fetchingInProgressOpt = Some(selectedRow.group)
 

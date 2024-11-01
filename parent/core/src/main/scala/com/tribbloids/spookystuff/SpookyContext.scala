@@ -27,9 +27,18 @@ object SpookyContext {
       sqlContext: SQLContext,
       conf: PluginSystem#ConfLike*
   ): SpookyContext = {
-    val result = SpookyContext(sqlContext)
-    result.setConf(conf: _*)
-    result
+    val neo = SpookyContext(sqlContext.sparkSession)
+    neo.setConf(conf: _*)
+    neo
+  }
+
+  def apply(
+      sparkSession: SparkSession,
+      conf: PluginSystem#ConfLike*
+  ): SpookyContext = {
+    val neo = SpookyContext(sparkSession)
+    neo.setConf(conf: _*)
+    neo
   }
 
   implicit def asCoreAccessor(spookyContext: SpookyContext): spookyContext.Accessor[Core.type] = spookyContext(Core)
@@ -49,7 +58,7 @@ object SpookyContext {
   }
 }
 
-case class SpookyContext(
+case class SpookyContext private (
     @transient sparkSession: SparkSession // can't be used on executors, TODO: change to SparkSession
 ) extends ShippingMarks {
 
@@ -176,22 +185,41 @@ case class SpookyContext(
     }
   }
 
-  def create[T](rdd: RDD[T]): FetchedDataset[T] = this.dsl.fromRDD(rdd)
-  def create[T](ds: Dataset[T]): FetchedDataset[T] = this.dsl.fromDataset(ds)
+  def create[T](rdd: RDD[T]): FetchedDataset[T] = fromRDD(rdd)
+  def create[T](ds: Dataset[T]): FetchedDataset[T] = fromDataset(ds)
 
   // TODO: create Dataset directly
   def create[T: ClassTag](
-      seq: IterableOnce[T]
+      batch: IterableOnce[T]
   ): FetchedDataset[T] = {
 
-    this.dsl.fromRDD(this.sqlContext.sparkContext.parallelize(seq.toSeq))
+    fromRDD(this.sqlContext.sparkContext.parallelize(batch.iterator.to(Seq)))
   }
   def create[T: ClassTag](
-      seq: IterableOnce[T],
+      batch: IterableOnce[T],
       numSlices: Int
   ): FetchedDataset[T] = {
 
-    this.dsl.fromRDD(this.sqlContext.sparkContext.parallelize(seq.toSeq, numSlices))
+    fromRDD(this.sqlContext.sparkContext.parallelize(batch.iterator.to(Seq), numSlices))
+  }
+
+  // every input or noInput will generate a new metrics
+  def fromRDD[T](rdd: RDD[T]): FetchedDataset[T] = {
+
+    //      val ttg = implicitly[TypeTag[T]]
+
+    val self = rdd.map { data =>
+      FetchedRow(data).squash
+    }
+    new FetchedDataset(
+      self,
+      spooky = forkForNewRDD
+    )
+  }
+
+  def fromDataset[D](ds: Dataset[D]): FetchedDataset[D] = {
+
+    fromRDD(ds.rdd)
   }
 
   def withSession[T](fn: Agent => T): T = {
@@ -211,25 +239,5 @@ case class SpookyContext(
     this.create(_rdd)
   }
 
-  object dsl extends Serializable {
-
-    implicit def fromDataset[D](ds: Dataset[D]): FetchedDataset[D] = {
-
-      fromRDD(ds.rdd)
-    }
-
-    // every input or noInput will generate a new metrics
-    implicit def fromRDD[T](rdd: RDD[T]): FetchedDataset[T] = {
-
-//      val ttg = implicitly[TypeTag[T]]
-
-      val self = rdd.map { data =>
-        FetchedRow(data).squash
-      }
-      new FetchedDataset(
-        self,
-        spooky = forkForNewRDD
-      )
-    }
-  }
+  object dsl extends Serializable {}
 }

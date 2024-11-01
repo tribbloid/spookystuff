@@ -11,7 +11,7 @@ import com.tribbloids.spookystuff.SpookyContext
 import frameless.{TypedDataset, TypedEncoder}
 import org.apache.spark.SparkContext
 import org.apache.spark.rdd.RDD
-import org.apache.spark.sql.DataFrame
+import org.apache.spark.sql.{DataFrame, Dataset}
 import org.apache.spark.storage.StorageLevel
 
 import scala.language.implicitConversions
@@ -20,6 +20,7 @@ import scala.reflect.ClassTag
 object FetchedDataset extends FetchedDatasetImp0 {
 
   implicit def asRDD[D](self: FetchedDataset[D]): RDD[FetchedRow[D]] = self.rdd
+
 }
 
 /**
@@ -33,7 +34,7 @@ case class FetchedDataset[D](
 ) extends FetchedDatasetAPI[D]
     with CatalystTypeOps.ImplicitMixin {
 
-  implicit def fromExecutionPlan(plan: ExecutionPlan[D]): FetchedDataset[D] = FetchedDataset(plan)
+//  implicit def fromExecutionPlan(plan: ExecutionPlan[D]): FetchedDataset[D] = FetchedDataset(plan)
 
   def this(
       sourceRDD: SquashedRDD[D],
@@ -310,14 +311,15 @@ case class FetchedDataset[D](
 //  }
 
   // Always left
-  def fetch[O: ClassTag](fn: FetchPlan.Fn[D, O])(
+  def fetch(fn: FetchPlan.TraceOnly._Fn[D])(
       implicit
       keyBy: Trace => Any = identity,
-      genPartitioner: GenPartitioner = spooky.conf.localityPartitioner
-  ): FetchedDataset[O] = {
+      genPartitioner: GenPartitioner = spooky.conf.localityPartitioner,
+      ctg: ClassTag[D]
+  ): FetchedDataset[D] = {
 
     FetchedDataset(
-      FetchPlan(plan, fn, keyBy, genPartitioner)
+      FetchPlan(plan, FetchPlan.TraceOnly.normalise(fn), keyBy, genPartitioner)
     )
   }
 

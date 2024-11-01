@@ -15,7 +15,7 @@ object FetchPlan {
 
   object TraceOnly {
 
-    type _Fn[I] = FetchedRow[I] => Seq[HasTraceSet]
+    type _Fn[I] = FetchedRow[I] => HasTraceSet
 
     def normalise[I](
         fn: _Fn[I],
@@ -23,12 +23,12 @@ object FetchPlan {
     ): Fn[I, I] = { row =>
       val traces = fn(row)
 
-      val mayBeEmpty = traces.map { trace =>
+      val mayBeEmpty: Seq[(Trace, I)] = traces.asTraceSet.toSeq.map { trace =>
         trace -> row.data
       }
 
-      val result = forkType match {
-        case OneToMany.Outer if mayBeEmpty.isEmpty => Seq(TraceSet.of(Trace.NoOp) -> row.data)
+      val result: Seq[(Trace, I)] = forkType match {
+        case OneToMany.Outer if mayBeEmpty.isEmpty => Seq((Trace.NoOp: Trace) -> row.data)
         case _                                     => mayBeEmpty
       }
       result

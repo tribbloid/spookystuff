@@ -1,17 +1,18 @@
 package com.tribbloids.spookystuff.testutils
 
 import ai.acyclic.prover.commons.spark.{SparkEnvSpec, TestHelper}
+import ai.acyclic.prover.commons.util.Magnet.OptionMagnet
 import com.tribbloids.spookystuff.SpookyContext
 import com.tribbloids.spookystuff.conf._
 
-trait SpookyEnvSpec extends SparkEnvSpec {
+trait SpookyEnvSpec extends BaseSpec with SparkEnvSpec {
 
-  var _ctxOverride: SpookyContext = _
+  def _ctxOverride: OptionMagnet[SpookyContext] = None
 
   lazy val defaultCtx: SpookyContext = SpookyEnvSpec.defaultCtx
 
   final def spooky: SpookyContext = {
-    Option(_ctxOverride)
+    _ctxOverride.revoke
       .getOrElse {
         val result: SpookyContext = defaultCtx
         result

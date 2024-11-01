@@ -71,7 +71,7 @@ object SquashedRow {
 
 case class SquashedRow[D](
     agentState: AgentState,
-    dataSeq: Seq[Data.WithScope[D]]
+    batch: Seq[Data.WithScope[D]]
 ) extends SpookyContext.CanRunWith {
   // can only support 1 agent
   // will trigger a fork if not all agent actions were captured by the LocalityGroup
@@ -119,12 +119,12 @@ case class SquashedRow[D](
       fn: Data.WithScope[D] => Seq[Data.WithScope[DD]]
   ): SquashedRow[DD] = {
 
-    val newDataRows = dataSeq.flatMap { row =>
+    val newDataRows = batch.flatMap { row =>
       val newRows = fn(row)
       newRows
     }
 
-    this.copy(dataSeq = newDataRows)
+    this.copy(batch = newDataRows)
   }
 
 //  def remove(fields: Field*): SquashedRow = {
@@ -140,8 +140,8 @@ case class SquashedRow[D](
 
   def exploring: SquashedRow[Data.Exploring[D]] = {
     this.copy(
-      dataSeq = {
-        dataSeq.map { d =>
+      batch = {
+        batch.map { d =>
           d.copy(
             data = Data.Exploring(d.data).idRefresh
           )
@@ -156,18 +156,18 @@ case class SquashedRow[D](
 
       lazy val uids = group.withCtx(ctx).trajectory.map(_.uid)
 
-      val newDataRows = dataSeq.map { row =>
+      val newDataRows = batch.map { row =>
         row.copy(scopeUIDs = uids)
       }
 
-      SquashedRow.this.copy(dataSeq = newDataRows)
+      SquashedRow.this.copy(batch = newDataRows)
     }
 
     lazy val unSquash: Seq[FetchedRow[D]] = {
 
       lazy val lookup = group.withCtx(ctx).lookup
 
-      dataSeq.map { r1 =>
+      batch.map { r1 =>
         val scopeUID = r1.scopeUIDs
         val inScope = scopeUID.map { uid =>
           lookup(uid)
@@ -186,7 +186,7 @@ case class SquashedRow[D](
         newRows
       }
 
-      SquashedRow.this.copy(dataSeq = newDataRows)
+      SquashedRow.this.copy(batch = newDataRows)
     }
 
     def fetch[O](fn: FetchPlan.Fn[D, O]): FetchPlan.Batch[O] = {

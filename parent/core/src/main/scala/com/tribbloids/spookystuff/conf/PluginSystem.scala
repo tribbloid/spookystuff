@@ -10,6 +10,33 @@ import com.tribbloids.spookystuff.relay.MessageAPI
 
 import scala.util.Try
 
+object PluginSystem {
+
+  lazy val emptySparkConf: SparkConf = new SparkConf(false)
+
+  trait HasDriver extends PluginSystem {
+
+    type Driver <: DriverLike
+
+    trait PluginLike extends super.PluginLike {
+
+      def driverFactory: DriverFactory[Driver]
+
+      def driverFactoryOpt: Option[DriverFactory[Driver]] = Option(driverFactory)
+
+      override def tryDeploy(): Try[Unit] = {
+        super.tryDeploy().flatMap { _ =>
+          Try {
+            driverFactoryOpt.foreach(_.deployGlobally(spooky))
+          }
+        }
+      }
+    }
+
+    override type Plugin <: PluginLike
+  }
+}
+
 trait PluginSystem extends Serializable {
 
   {
@@ -18,14 +45,14 @@ trait PluginSystem extends Serializable {
 
   type Conf <: ConfLike
 
-  trait HasOuter {
+  trait Dependent {
     def pluginSystem: PluginSystem.this.type = PluginSystem.this
   }
 
   /**
     * all subclasses have to define default() in their respective companion object.
     */
-  trait ConfLike extends MessageAPI with HasOuter {
+  trait ConfLike extends MessageAPI with Dependent {
 
     def importFrom(sparkConf: SparkConf): Conf // read from Spark options & env vars
   }
@@ -34,7 +61,7 @@ trait PluginSystem extends Serializable {
 
   type Plugin <: PluginLike
 
-  trait PluginLike extends Cleanable with HasOuter {
+  trait PluginLike extends Cleanable with Dependent {
 
     val spooky: SpookyContext
 
@@ -87,31 +114,4 @@ trait PluginSystem extends Serializable {
   }
 
   lazy val enableOnce: Unit = PluginRegistry.enable(this)
-}
-
-object PluginSystem {
-
-  lazy val emptySparkConf: SparkConf = new SparkConf(false)
-
-  trait HasDriver extends PluginSystem {
-
-    type Driver <: DriverLike
-
-    trait PluginLike extends super.PluginLike {
-
-      def driverFactory: DriverFactory[Driver]
-
-      def driverFactoryOpt: Option[DriverFactory[Driver]] = Option(driverFactory)
-
-      override def tryDeploy(): Try[Unit] = {
-        super.tryDeploy().flatMap { _ =>
-          Try {
-            driverFactoryOpt.foreach(_.deployGlobally(spooky))
-          }
-        }
-      }
-    }
-
-    override type Plugin <: PluginLike
-  }
 }

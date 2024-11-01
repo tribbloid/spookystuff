@@ -143,30 +143,6 @@ class WgetSpec extends SpookyBaseSpec {
   //    ).fetch(spooky)
   //  }
 
-  it("wget.interpolate should not overwrite each other") {
-    val wget = Wget(
-      'A
-    ) waybackTo 'B.typed[Timestamp]
-
-    val rows = 1 to 5 map { i =>
-      WgetSpec.Sample("http://dummy.com" + i, new Timestamp(i * 100000))
-    }
-    require(rows.map(_.B.getTime).distinct.size == rows.size)
-
-    val df = sql.createDataFrame(sc.parallelize(rows))
-    val set: FetchedDataset = spooky.create(df)
-
-    require(set.toObjectRDD('B).collect().toSeq.map(_.asInstanceOf[Timestamp].getTime).distinct.size == rows.size)
-    val fetchedRows = set.fetchedRDD.collect()
-
-    val interpolated = fetchedRows.map { fr =>
-      wget.interpolate(fr, set.schema).get
-    }
-
-    assert(interpolated.distinct.length == rows.size)
-    assert(interpolated.map(_.wayback).distinct.length == rows.size)
-  }
-
 //  val classes = Seq(
 //    classOf[Wget],
 //    classOf[Visit],

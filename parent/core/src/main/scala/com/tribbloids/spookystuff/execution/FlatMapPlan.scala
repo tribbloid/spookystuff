@@ -75,7 +75,7 @@ case class FlatMapPlan[I, O]( // narrow means narrow transformation in Apache Sp
       }
 
       squashed.copy(
-        dataSeq = results
+        batch = results
       )
     }
     result

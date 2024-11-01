@@ -1,6 +1,5 @@
 package com.tribbloids.spookystuff.actions
 
-import com.tribbloids.spookystuff.extractors.impl.Lit
 import com.tribbloids.spookystuff.agent.Agent
 import com.tribbloids.spookystuff.testutils.SpookyBaseSpec
 
@@ -50,6 +49,6 @@ class BlockSpec extends SpookyBaseSpec {
         +> Delay(20.seconds) +> Wget("ftp://www.dummy2.co").waybackToTimeMillis(waybackDate.getTime - 100000)
     )
 
-    assert(loop.wayback == Lit[Long](waybackDate.getTime - 100000))
+    assert(loop.wayback.contains(waybackDate.getTime - 100000))
   }
 }
