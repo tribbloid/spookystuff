@@ -3,7 +3,6 @@ package com.tribbloids.spookystuff
 import com.tribbloids.spookystuff.actions._
 import com.tribbloids.spookystuff.commons.serialization.AssertWeaklySerializable
 import com.tribbloids.spookystuff.conf.{Core, Dir, SpookyConf}
-import com.tribbloids.spookystuff.row.Field
 import com.tribbloids.spookystuff.testutils.{FileDocsFixture, SpookyBaseSpec}
 
 class SpookyContextSpec extends SpookyBaseSpec with FileDocsFixture {
@@ -79,9 +78,7 @@ class SpookyContextSpec extends SpookyBaseSpec with FileDocsFixture {
       spooky(Core).confUpdate(_.copy(shareMetrics = false))
 
       val d1 = spooky
-        .fetch(
-          Wget(HTML_URL)
-        )
+        .fetch(_ => Wget(HTML_URL))
       d1.fetchedRDD.count()
 
       val d2 = spooky

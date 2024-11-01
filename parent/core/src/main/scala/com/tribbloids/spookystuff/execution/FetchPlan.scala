@@ -9,13 +9,13 @@ import scala.reflect.ClassTag
 
 object FetchPlan {
 
-  type Batch[O] = Seq[(TraceSet, O)]
+  type Batch[O] = Seq[(HasTraceSet, O)]
 
   type Fn[I, O] = FetchedRow[I] => Batch[O]
 
   object TraceOnly {
 
-    type _Fn[I] = FetchedRow[I] => Seq[TraceSet]
+    type _Fn[I] = FetchedRow[I] => Seq[HasTraceSet]
 
     def normalise[I](
         fn: _Fn[I],
@@ -60,7 +60,7 @@ case class FetchPlan[I, O: ClassTag](
 
         seq.flatMap {
           case (ks, v) =>
-            ks.map { trace =>
+            ks.asTraceSet.map { trace =>
               LocalityGroup(trace)().sameBy(sameBy) -> v
             }
         }

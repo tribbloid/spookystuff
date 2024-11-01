@@ -191,7 +191,7 @@ case class ExploreRunner[I, O](
           val fetched: Seq[(Trace, Elem)] = _forkedTuples.flatMap {
             case (traceSet, next) =>
               val nextElem: Elem = elem.depth_++.copy(next)
-              traceSet.map { trace =>
+              traceSet.asTraceSet.map { trace =>
                 trace -> nextElem
               }
           }
