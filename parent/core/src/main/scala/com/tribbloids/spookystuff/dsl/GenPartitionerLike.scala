@@ -1,7 +1,7 @@
 package com.tribbloids.spookystuff.dsl
 
 import com.tribbloids.spookystuff.dsl.GenPartitionerLike.Instance
-import com.tribbloids.spookystuff.execution.SpookyExecutionContext
+import com.tribbloids.spookystuff.execution.ExecutionContext
 import com.tribbloids.spookystuff.row.{BeaconRDD, SpookySchema}
 import com.tribbloids.spookystuff.utils.locality.LocalityRDDView
 import org.apache.spark.rdd.RDD
@@ -70,7 +70,7 @@ object GenPartitionerLike {
       val ctg: ClassTag[K]
   ) extends Instance[K] {
 
-    def ec: SpookyExecutionContext
+    def ec: ExecutionContext
 
     def reduceByKey[V: ClassTag](
         rdd: RDD[(K, V)],

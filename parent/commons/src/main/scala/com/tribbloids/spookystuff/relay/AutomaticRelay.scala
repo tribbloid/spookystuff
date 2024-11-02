@@ -24,7 +24,7 @@ abstract class AutomaticRelay[T <: Product: Manifest] extends Relay[T] {
             v.body match {
               case vs: Seq[_] =>
                 val list = vs.toList
-                  .map { v: Any =>
+                  .map { (v: Any) =>
                     val rr = RelayRegistry.Default.lookupOrDefault(v)
                     rr.toMessage_>>(v).asInstanceOf[TreeIR[Any]]
                     // TODO: Cast may fail, IR should be an extendable interface

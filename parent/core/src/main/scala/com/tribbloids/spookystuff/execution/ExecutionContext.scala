@@ -7,11 +7,7 @@ import org.slf4j.LoggerFactory
 
 import scala.util.Try
 
-/**
-  * Created by peng on 10/07/17.
-  */
-//TODO: merge into DataRowSchema?
-case class SpookyExecutionContext(
+case class ExecutionContext(
     spooky: SpookyContext,
     @transient scratchRDDs: ScratchRDDs = ScratchRDDs()
 ) {
@@ -31,7 +27,7 @@ case class SpookyExecutionContext(
     Try(deployPluginsOnce)
   }
 
-  def :++(b: SpookyExecutionContext): SpookyExecutionContext = {
+  def :++(b: ExecutionContext): ExecutionContext = {
     //    assert(this.spooky == b.spooky,
     //      "cannot merge execution plans due to diverging SpookyContext")
 

@@ -18,7 +18,7 @@ object PluginSystem {
 
     type Driver <: DriverLike
 
-    trait PluginLike extends super.PluginLike {
+    trait _PluginLike extends super.PluginLike {
 
       def driverFactory: DriverFactory[Driver]
 
@@ -33,7 +33,7 @@ object PluginSystem {
       }
     }
 
-    override type Plugin <: PluginLike
+    override type Plugin <: _PluginLike
   }
 }
 

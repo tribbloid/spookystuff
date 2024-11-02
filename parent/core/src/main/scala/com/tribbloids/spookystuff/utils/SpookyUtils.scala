@@ -139,7 +139,7 @@ object SpookyUtils {
   def resilientCopy(src: Path, dst: Path, options: Array[CopyOption]): Unit = {
     CommonUtils.retry(5, 1000) {
 
-      val pathsStr = src + " => " + dst
+      val pathsStr = src.toString + " => " + dst
 
       if (Files.isDirectory(src)) {
         try {

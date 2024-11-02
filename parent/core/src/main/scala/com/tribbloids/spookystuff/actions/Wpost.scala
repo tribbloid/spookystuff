@@ -23,7 +23,7 @@ object Wpost {
   ): WpostImpl = WpostImpl(uri, filter)(entity)
 
   @SerialVersionUID(2416628905154681500L)
-  case class WpostImpl private[actions] (
+  case class WpostImpl(
       uri: String,
       override val filter: DocFilter
   )(
@@ -52,8 +52,8 @@ object Wpost {
         () => hadoopConf,
         timeout,
         proxy,
-        { uri: URI =>
-          val headers = agent.spooky.conf.httpHeadersFactory()
+        { (uri: URI) =>
+          val headers = agent.spooky.conf.httpHeadersFactory.function0.apply()
 
           val post = new HttpPost(uri)
           for (pair <- headers) {

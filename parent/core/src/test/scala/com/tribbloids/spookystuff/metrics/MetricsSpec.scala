@@ -1,7 +1,8 @@
 package com.tribbloids.spookystuff.metrics
 
+import ai.acyclic.prover.commons.spark.TestHelper
 import com.tribbloids.spookystuff.metrics.MetricsSpec.{DummyMetrics, DummyTreeMetrics}
-import com.tribbloids.spookystuff.testutils.{BaseSpec, TestHelper}
+import com.tribbloids.spookystuff.testutils.BaseSpec
 import com.tribbloids.spookystuff.relay.io.Encoder
 import org.apache.spark.sql.execution.streaming.EventTimeStatsAccum
 import org.apache.spark.util.{DoubleAccumulator, LongAccumulator}

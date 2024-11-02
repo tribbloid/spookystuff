@@ -5,7 +5,7 @@ import com.tribbloids.spookystuff.io.lock.{Lock, LockExpired}
 import org.apache.commons.io.IOUtils
 
 import java.io._
-import java.util.concurrent.TimeUnit
+import scala.concurrent.duration.DurationInt
 import scala.util.Random
 
 /*
@@ -200,8 +200,8 @@ object URIResolver {
     )
 
     val lockExpired: LockExpired = LockExpired(
-      unlockAfter = 30 -> TimeUnit.SECONDS,
-      deleteAfter = 1 -> TimeUnit.HOURS
+      unlockAfter = 30.seconds,
+      deleteAfter = 1.hours
     )
   }
 

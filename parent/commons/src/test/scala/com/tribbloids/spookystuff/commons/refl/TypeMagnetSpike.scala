@@ -42,7 +42,7 @@ class TypeMagnetSpike extends BaseSpec {
   // this will definitely break
   ignore("can reflect lambda") {
 
-    val ll = { v: String =>
+    val ll = { (v: String) =>
       v.toInt
     }
 
@@ -75,7 +75,7 @@ class TypeMagnetSpike extends BaseSpec {
 
   it("can get TypeTag") {
 
-    val ll = { v: String =>
+    val ll = { (v: String) =>
       v.toInt
     }
 

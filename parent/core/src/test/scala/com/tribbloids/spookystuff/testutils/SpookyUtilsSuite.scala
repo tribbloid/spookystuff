@@ -63,7 +63,7 @@ class SpookyUtilsSuite extends BaseSpec {
         TestHelper.intercept[TimeoutException] {
           CommonUtils.withTimeout(10.seconds, 1.second)(
             Thread.sleep(20000),
-            AwaitWithHeartbeat.Heartbeat.WrapWithInfo { i: Int =>
+            AwaitWithHeartbeat.Heartbeat.WrapWithInfo { (i: Int) =>
               log += i
               true
             }
@@ -77,7 +77,7 @@ class SpookyUtilsSuite extends BaseSpec {
       val (_, time2) = CommonUtils.timed {
         CommonUtils.withTimeout(10.seconds, 1.second)(
           Thread.sleep(5000),
-          AwaitWithHeartbeat.Heartbeat.WrapWithInfo { i: Int =>
+          AwaitWithHeartbeat.Heartbeat.WrapWithInfo { (i: Int) =>
             log += i
             true
           }

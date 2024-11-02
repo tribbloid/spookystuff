@@ -13,7 +13,7 @@ import scala.reflect.ClassTag
 //
 //TODO: this may leverage an existing java/scala graph library
 //TODO: also need SparkGraphImpl, use GraphX or GraphFrame depending on their maturity
-case class LocalGraph[D <: Domain] private (
+case class LocalGraph[D <: Domain](
     nodeMap: mutable.Map[D#ID, NodeTriplet[D]],
     edgeMap: MultiMaps.Mutable[(D#ID, D#ID), Edge[D]]
 )(

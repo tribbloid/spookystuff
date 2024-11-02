@@ -15,12 +15,12 @@ import scala.language.implicitConversions
   *   - strip
   *   - escape: go to same state with skip +1 P_*("$").escape
   */
-object FSMParserDSL extends DSL {
+object FSMParserDSL extends _DSL {
 
   class Operand[+M <: _Module](
       val core: Core[M],
       val entryNode: algebra._Node = algebra.createNode(FState.Ordinary)
-  ) extends OperandLike[M] {
+  ) extends _OperandLike[M] {
 
     lazy val entry: Operand[_Node] = {
       create(entryNode)
@@ -136,14 +136,14 @@ object FSMParserDSL extends DSL {
     }
 
     def ^^[T2](fn: RuleIO[T] => Option[T2]): Parser[T2] = map { v =>
-      v.andThen { io: RuleIO[T] =>
+      v.andThen { (io: RuleIO[T]) =>
         val o2 = RuleOutcome.O[T2](fn(io), io.nextPhaseVec)
         o2
       }
     }
 
     def %(fn: RuleIO[T] => PhaseVec): Parser[T] = map { v =>
-      v.andThen { io: RuleIO[T] =>
+      v.andThen { (io: RuleIO[T]) =>
         val o2 = RuleOutcome.O[T](io.`export`, fn(io))
         o2
       }

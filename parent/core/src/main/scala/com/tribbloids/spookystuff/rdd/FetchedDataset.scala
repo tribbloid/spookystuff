@@ -11,7 +11,7 @@ import com.tribbloids.spookystuff.SpookyContext
 import frameless.{TypedDataset, TypedEncoder}
 import org.apache.spark.SparkContext
 import org.apache.spark.rdd.RDD
-import org.apache.spark.sql.{DataFrame, Dataset}
+import org.apache.spark.sql.DataFrame
 import org.apache.spark.storage.StorageLevel
 
 import scala.language.implicitConversions
@@ -44,7 +44,7 @@ case class FetchedDataset[D](
 
     this(
       RDDPlan(
-        SpookySchema(SpookyExecutionContext(spooky)),
+        SpookySchema(ExecutionContext(spooky)),
         sourceRDD,
         beaconRDDOpt
       )

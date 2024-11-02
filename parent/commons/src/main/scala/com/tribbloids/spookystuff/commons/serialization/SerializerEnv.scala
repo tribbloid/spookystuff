@@ -30,7 +30,7 @@ object SerializerEnv {
     @transient lazy val allSerializers: List[Serializer] = List(javaSerializer, kryoSerializer)
   }
 
-  lazy val apply: Hom.Circuit.CachedLazy[SparkConf, Ops] = :=> { v: SparkConf =>
+  lazy val apply: Hom.Circuit.CachedLazy[SparkConf, Ops] = :=> { (v: SparkConf) =>
     Ops(v)
   }
     .cached(Same.ByMemory.Lookup())

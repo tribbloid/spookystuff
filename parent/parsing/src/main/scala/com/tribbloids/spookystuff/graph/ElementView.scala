@@ -10,7 +10,7 @@ object ElementView {
 
   implicit def ordering[D <: Domain]: Ordering[ElementView[D]] = {
 
-    Ordering.by { v: ElementView[D] =>
+    Ordering.by { (v: ElementView[D]) =>
       v.orderedBy
     } // (Ordering.Tuple3[Iterable[Int], Iterable[String], String])
   }

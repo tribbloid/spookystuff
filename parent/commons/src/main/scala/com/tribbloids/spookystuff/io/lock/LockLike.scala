@@ -27,9 +27,9 @@ trait LockLike extends NOTSerializable {
 
     lazy val dir: String = exe.absolutePathStr + LOCK
 
-    lazy val locked: String = CommonUtils.\\\(dir, id + LOCKED)
+    lazy val locked: String = CommonUtils.\\\(dir, id.toString + LOCKED)
 
-    lazy val old: String = CommonUtils.\\\(dir, id + OLD)
+    lazy val old: String = CommonUtils.\\\(dir, id.toString + OLD)
   }
 
   case object Moved {

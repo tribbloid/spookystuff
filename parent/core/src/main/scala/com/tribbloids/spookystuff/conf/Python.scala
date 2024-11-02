@@ -29,7 +29,7 @@ object Python extends PluginSystem.HasDriver {
       spooky: SpookyContext,
       @transient effectiveConf: Python.Conf,
       override val metrics: Metrics = Metrics()
-  ) extends PluginLike {
+  ) extends _PluginLike {
 
     override def driverFactory: DriverFactory[PythonDriver] = getConf.pythonDriverFactory
 

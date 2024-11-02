@@ -65,7 +65,7 @@ object StaticGraph {
 
       val uu: GG = union(base._1, top._1, node_+)
       val toBeRemoved: Seq[Edge[D]] = base._2.seq ++ top._2.seq
-      toBeRemoved.foreach { v: Edge[D] =>
+      toBeRemoved.foreach { (v: Edge[D]) =>
         uu.evict_!(v)
       }
 

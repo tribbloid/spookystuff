@@ -59,10 +59,10 @@ object PathPlanners_Simple {
         new ReducerProto[O]
       }
 
-      override val ordering: RowOrdering = Ordering.by { tuple: (LocalityGroup, Vector[Elem]) =>
+      override val ordering: RowOrdering = Ordering.by { (tuple: (LocalityGroup, Vector[Elem])) =>
         val inProgress: mutable.Set[LocalityGroup] = ExploreLocalCache
           .getOnGoingRunners(params.executionID)
-          .flatMap { v: ExploreRunner[I, O] =>
+          .flatMap { (v: ExploreRunner[I, O]) =>
             v.fetchingInProgressOpt
           }
 

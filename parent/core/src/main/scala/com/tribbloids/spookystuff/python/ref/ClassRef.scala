@@ -8,7 +8,7 @@ trait ClassRef extends PyRef {
 
   override def imports: Seq[String] = super.imports ++ Seq(s"import $packageName")
 
-  override lazy val referenceOpt = Some(varNamePrefix + SpookyUtils.randomSuffix)
+  override lazy val referenceOpt: Some[String] = Some(varNamePrefix + SpookyUtils.randomSuffix)
 }
 
 trait StaticRef extends ClassRef {

@@ -58,7 +58,7 @@ object SpookyContext {
   }
 }
 
-case class SpookyContext private (
+case class SpookyContext(
     @transient sparkSession: SparkSession // can't be used on executors, TODO: change to SparkSession
 ) extends ShippingMarks {
 

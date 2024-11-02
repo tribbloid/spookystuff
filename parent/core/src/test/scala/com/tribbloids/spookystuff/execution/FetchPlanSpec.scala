@@ -11,7 +11,7 @@ import org.apache.spark.HashPartitioner
 /**
   * Created by peng on 02/04/16.
   */
-class TestForkAndFetchPlan extends SpookyBaseSpec with FileDocsFixture {
+class FetchPlanSpec extends SpookyBaseSpec with FileDocsFixture {
 
   import dsl._
 

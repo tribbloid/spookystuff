@@ -111,30 +111,30 @@ class TypeMagnetSuite extends BaseSpec with PairwiseConversionMixin {
       PairwiseCase(
         _typeTag,
         _class,
-        { r: TypeTag[_] =>
+        { (r: TypeTag[_]) =>
           TypeMagnet.FromTypeTag(r).asClass
         },
-        { r: Class[_] =>
+        { (r: Class[_]) =>
           TypeMagnet.FromClass(r).asTypeTag
         }
       ),
       PairwiseCase(
         _typeTag,
         _class.map[ClassTag[_]](v => ClassTag(v)),
-        { r: TypeTag[_] =>
+        { (r: TypeTag[_]) =>
           TypeMagnet.FromTypeTag(r).asClassTag
         },
-        { r: ClassTag[_] =>
+        { (r: ClassTag[_]) =>
           TypeMagnet.FromClassTag(r).asTypeTag
         }
       ),
       PairwiseCase(
         _typeTag,
         _catalystType,
-        { r: TypeTag[_] =>
+        { (r: TypeTag[_]) =>
           ToCatalyst(TypeMagnet.FromTypeTag(r)).asCatalystType
         },
-        { r: DataType =>
+        { (r: DataType) =>
           CatalystTypeOps(r).magnet[Any].asTypeTag
         }
       )

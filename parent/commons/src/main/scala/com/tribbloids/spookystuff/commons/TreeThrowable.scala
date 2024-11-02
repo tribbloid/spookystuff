@@ -12,10 +12,10 @@ object TreeThrowable {
     override def children: Seq[TreeNodeView] = {
       val result = self match {
         case v: TreeThrowable =>
-          v.causes.map(TreeNodeView)
+          v.causes.map(TreeNodeView.apply)
         case _ =>
           val eOpt = Option(self).flatMap(v => Option(v.getCause))
-          eOpt.map(TreeNodeView).toSeq
+          eOpt.map(TreeNodeView.apply).toSeq
       }
       result.sortBy(_.simpleString(0))
     }

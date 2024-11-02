@@ -15,6 +15,7 @@ case class LocalResolver(
   @transient lazy val metadataParser: ResourceMetadata.ReflectionParser[File] =
     ResourceMetadata.ReflectionParser[File]()
 
+  object _Execution extends (String => _Execution) {}
   case class _Execution(pathStr: String) extends Execution {
 
     import Resource._
@@ -33,6 +34,7 @@ case class LocalResolver(
 
     override lazy val absolutePathStr: String = absolutePath.toString
 
+    object _Resource extends (WriteMode => _Resource)
     case class _Resource(mode: WriteMode) extends Resource {
 
       override protected def _outer: URIExecution = _Execution.this

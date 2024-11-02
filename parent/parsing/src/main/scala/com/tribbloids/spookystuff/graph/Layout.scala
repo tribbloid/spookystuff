@@ -347,7 +347,7 @@ trait Layout[D <: Domain] extends Algebra.Aliases[D] {
 
       def getNodeViews(ids: Seq[ID]): Seq[NodeView] = {
         ids
-          .filter(_ != algebra.idAlgebra.DANGLING)
+          .filter(_ != this.algebra.idAlgebra.DANGLING)
           .flatMap { id =>
             Views.fromNodeID(id)
           }

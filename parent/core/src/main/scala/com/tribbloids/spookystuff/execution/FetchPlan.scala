@@ -53,7 +53,7 @@ case class FetchPlan[I, O: ClassTag](
   override def execute: SquashedRDD[O] = {
 
     val forkedRDD: RDD[(LocalityGroup, O)] = child.squashedRDD
-      .flatMap { v: SquashedRow[I] =>
+      .flatMap { (v: SquashedRow[I]) =>
         val rows = v.withCtx(child.spooky).unSquash
 
         val seq = rows.flatMap(fn)

@@ -1,12 +1,10 @@
 package com.tribbloids.spookystuff.rdd
 
 import ai.acyclic.prover.commons.spark.Envs
-import com.tribbloids.spookystuff.actions._
-import com.tribbloids.spookystuff.extractors.impl.Lit
+import com.tribbloids.spookystuff.actions.*
 import com.tribbloids.spookystuff.metrics.Acc
-import com.tribbloids.spookystuff.testutils.{FileDocsFixture, SpookyBaseSpec}
 import com.tribbloids.spookystuff.testutils.beans.Composite
-import com.tribbloids.spookystuff.dsl
+import com.tribbloids.spookystuff.testutils.{FileDocsFixture, SpookyBaseSpec}
 
 import java.io.File
 
@@ -14,8 +12,6 @@ import java.io.File
   * Created by peng on 5/10/15.
   */
 class FetchedDatasetSpec extends SpookyBaseSpec with FileDocsFixture {
-
-  import dsl._
 
   it(s".map should not run preceding transformation multiple times") {
     val acc = Acc.create(0)

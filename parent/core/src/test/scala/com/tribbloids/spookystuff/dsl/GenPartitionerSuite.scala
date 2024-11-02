@@ -17,7 +17,7 @@ class GenPartitionerSuite extends SpookyBaseSpec {
     val numPartitions = Random.nextInt(80) + 9
 
     val gp = GenPartitioners
-      .DocCacheAware { _: Any =>
+      .DocCacheAware { (_: Any) =>
         new HashPartitioner(numPartitions)
       }
       .getInstance[Int](defaultSchema)

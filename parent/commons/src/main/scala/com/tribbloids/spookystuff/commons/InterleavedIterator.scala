@@ -13,5 +13,5 @@ class InterleavedIterator[T](iterators: List[Iterator[T]]) extends Iterator[Seq[
     mapped.head
   }
 
-  def next: List[T] = iterators.map(_.next)
+  def next(): List[T] = iterators.map(_.next)
 }

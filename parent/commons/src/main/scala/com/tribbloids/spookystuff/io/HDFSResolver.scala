@@ -55,6 +55,7 @@ case class HDFSResolver(
     }
   }
 
+  object _Execution extends (String => _Execution) {}
   case class _Execution(pathStr: String) extends Execution {
 
     val path: Path = new Path(pathStr)
@@ -73,6 +74,7 @@ case class HDFSResolver(
       withNewAuthority.toString
     }
 
+    object _Resource extends (WriteMode => _Resource)
     case class _Resource(mode: WriteMode) extends Resource {
 
       override protected def _outer: URIExecution = _Execution.this

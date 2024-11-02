@@ -7,13 +7,13 @@ import com.tribbloids.spookystuff.testutils.SpookyBaseSpec
 /**
   * Created by peng on 14/06/16.
   */
-class SchemaContextSpec extends SpookyBaseSpec {
+class SpookySchemaSpec extends SpookyBaseSpec {
 
   import com.tribbloids.spookystuff.dsl._
 
   it("Resolver should not scramble sequence of fields") {
 
-    val schema0 = SpookySchema(SpookyExecutionContext(spooky))
+    val schema0 = SpookySchema(ExecutionContext(spooky))
     val resolver0 = schema0.newResolver
     resolver0
       .include(

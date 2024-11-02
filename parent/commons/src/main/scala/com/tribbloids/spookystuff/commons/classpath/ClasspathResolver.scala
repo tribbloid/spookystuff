@@ -51,8 +51,7 @@ case class ClasspathResolver(
     }
   }
 
-//  object _Execution extends (String => _Execution) {}
-
+  object _Execution extends (String => _Execution) {}
   case class _Execution(
       pathStr: String
   ) extends Execution {
@@ -72,6 +71,7 @@ case class ClasspathResolver(
 
     override def absolutePathStr: String = pathStr
 
+    object _Resource extends (WriteMode => _Resource)
     case class _Resource(mode: WriteMode) extends Resource with Scanning {
 
       override protected def _outer: URIExecution = _Execution.this
@@ -146,7 +146,7 @@ case class ClasspathResolver(
 
     def treeCopyTo(targetRootExe: URIResolver#Execution, mode: WriteMode): Unit = doIO() { i =>
       val offspring = i.offspring
-      offspring.foreach { v: ClasspathResolver#Execution =>
+      offspring.foreach { (v: ClasspathResolver#Execution) =>
         val dst = CommonUtils.\\\(targetRootExe.absolutePathStr, v.absolutePathStr)
 
         v.copyTo(targetRootExe.outer.execute(dst), mode)
@@ -216,24 +216,23 @@ case class ClasspathResolver(
       object Conflicts {
 
         lazy val raw: Map[String, List[String]] = {
-          val seen =
-            try {
+          val seen = {
 
-              val resources = scanResult.getAllResources.asScala
+            val resources = scanResult.getAllResources.asScala
 
-              val result = resources
-                .groupBy { resource =>
-                  resource.getPath
-                }
-                .map {
-                  case (k, vs) =>
-                    k -> vs.map { v =>
-                      val filePath = v.getClasspathElementURI.toString
-                      pathFormatting(filePath)
-                    }
-                }
-              result
-            }
+            val result = resources
+              .groupBy { resource =>
+                resource.getPath
+              }
+              .map {
+                case (k, vs) =>
+                  k -> vs.map { v =>
+                    val filePath = v.getClasspathElementURI.toString
+                    pathFormatting(filePath)
+                  }
+              }
+            result
+          }
 
           val result = seen.flatMap {
             case (k, v) =>

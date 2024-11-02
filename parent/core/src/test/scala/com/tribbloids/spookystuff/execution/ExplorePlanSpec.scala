@@ -16,18 +16,16 @@ class ExplorePlanSpec extends SpookyBaseSpec with FileDocsFixture {
   ignore("toString") { // de-prioritised
 
     val base = spooky
-      .fetch(
-        Wget("dummy")
-      )
+      .fetch(_ => Wget("dummy"))
 
     val explored = base
       .explore(S"div.sidebar-nav a", ordinalField = 'index)(
         Wget('A.href),
         depthField = 'depth
       )
-      .extract(
-        'A.text ~ 'category,
-        S"h1".text ~ 'header
+      .select(row => row
+//        'A.text ~ 'category,
+//        S"h1".text ~ 'header
       )
 
     print_@(explored.plan.toString)

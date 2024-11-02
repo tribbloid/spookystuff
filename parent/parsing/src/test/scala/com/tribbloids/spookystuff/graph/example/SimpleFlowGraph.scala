@@ -35,9 +35,9 @@ object SimpleFlowGraph extends Algebra[SimpleFlowGraph] {
     override lazy val defaultFormat: Visualisation.Format[SimpleFlowGraph] = Formats.ShowOption
   }
 
-  object DSL extends Layout.DSL {
+  object DSL extends Layout._DSL {
 
-    case class Operand[+M <: _Module](core: Layout.Core[M]) extends OperandLike[M] {}
+    case class Operand[+M <: _Module](core: Layout.Core[M]) extends _OperandLike[M] {}
 
     override def create[M <: _Module](core: Layout.Core[M]): Operand[M] = Operand(core)
   }

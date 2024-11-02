@@ -1,4 +1,3 @@
-
 val vs = versions()
 
 val sparkV = vs.spark.v
@@ -17,6 +16,12 @@ subprojects {
 
             scalaCompileOptions.additionalParameters.addAll(
                 listOf(
+
+//                    "-Xsource:3-cross",
+                    "-Xsource:3",
+                    // quickfix should be disabled ASAP after migration
+                    "-quickfix",
+                    "-quickfix:cat=scala3-migration",
 
                     "-Wconf:cat=deprecation:ws"
                 )
@@ -75,7 +80,7 @@ subprojects {
 
                 val p = this@subprojects
 
-                if (p.hasProperty("notLocal") ) {
+                if (p.hasProperty("notLocal")) {
                     excludeTags("com.tribbloids.spookystuff.testutils.LocalOnly")
                 }
             }

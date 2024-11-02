@@ -18,14 +18,14 @@ object RowOrdering {
 
     trait By_Imp0 extends Hom.Poly {
 
-      implicit def ignore[T]: T Target Unit = at[T] { _: T =>
+      implicit def ignore[T]: T Target Unit = this.at[T] { (_: T) =>
         ()
       }
     }
 
     object By extends By_Imp0 {
 
-      implicit def accept[T <: _ <> CanSort.type]: T Target T = at[T] { v: T =>
+      implicit def accept[T <: _ <> CanSort.type]: T Target T = this.at[T] { (v: T) =>
         v
       }
     }
@@ -41,7 +41,7 @@ object RowOrdering {
           mapper: Mapper.Aux[By.asShapelessPoly1.type, R, MO]
       ) {
 
-        lazy val fn: Row[R] => MO = { row: Row[R] =>
+        lazy val fn: Row[R] => MO = { (row: Row[R]) =>
           val mapped = mapper.apply(row._internal.repr)
 
           mapped

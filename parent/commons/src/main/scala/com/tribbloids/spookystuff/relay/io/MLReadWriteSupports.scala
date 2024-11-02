@@ -21,7 +21,9 @@ object MLReadWriteSupports {
 
   implicit class MsgWritable[Obj: Relay](v: Obj) extends MLWritable {
 
-    override def write = {
+    override def write: com.tribbloids.spookystuff.relay.io.MLReadWriteSupports.Writer[_1.relay.IR_>>] forSome {
+      val _1: com.tribbloids.spookystuff.relay.io.MLReadWriteSupports.ReadWrite[Obj]
+    } = {
 
       implicitly[Relay[Obj]].toMLWriter(v)
     }

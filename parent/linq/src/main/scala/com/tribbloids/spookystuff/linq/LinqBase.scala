@@ -6,7 +6,6 @@ import com.tribbloids.spookystuff.linq.internal.{ElementWisePoly, RowInternal}
 import frameless.TypedEncoder
 import shapeless.RecordArgs
 
-import scala.language.{dynamics, implicitConversions}
 import scala.reflect.ClassTag
 
 object LinqBase extends RowOrdering.Default.Giver {

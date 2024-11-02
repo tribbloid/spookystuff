@@ -13,7 +13,7 @@ object ExecutionPlan {}
 //TODO: may subclass SparkPlan in the future to generate DataFrame directly, but not so fast
 abstract class ExecutionPlan[O](
     val children: Seq[ExecutionPlan[_]],
-    val ec: SpookyExecutionContext
+    val ec: ExecutionContext
 ) extends TreeView.Immutable[ExecutionPlan[_]]
     with Serializable
     with Cleanable {

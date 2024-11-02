@@ -31,7 +31,13 @@ trait EAVSystem {
   }
 
   type ^ <: EAV
-  val ^ : collection.Map[String, Any] => ^
+
+  /**
+    * TODO: use [[ai.acyclic.prover.commons.function.Mk]] after Scala upgrade
+    * @return
+    *   constructor of ^
+    */
+  def ^ : AnyRef { def apply(v: collection.Map[String, Any]): ^ }
 
   lazy val empty: `^` = From.tuple()
 
@@ -72,7 +78,7 @@ trait EAVSystem {
     }
   }
 
-  case object From extends From[Any](^) {
+  case object From extends From[Any](v => ^(v)) {
     // TODO: cleanup, useless
     case class FromAny()
         extends From[Any](
@@ -198,6 +204,7 @@ object EAVSystem {
   object NoAttr extends EAVSystem {
 
     case class ^(internal: collection.Map[String, Any]) extends EAV {}
+
   }
   type NoAttr = NoAttr.^
 

@@ -1,22 +1,18 @@
 package com.tribbloids.spookystuff.actions
 
 import com.tribbloids.spookystuff.agent.Agent
-import com.tribbloids.spookystuff.commons.{CommonUtils, Timeout}
+import com.tribbloids.spookystuff.commons.CommonUtils
 import com.tribbloids.spookystuff.doc.Observation
-import com.tribbloids.spookystuff.dsl._
-import com.tribbloids.spookystuff.row.FetchedRow
 import com.tribbloids.spookystuff.testutils.SpookyBaseSpec
 import com.tribbloids.spookystuff.{ActionException, Const}
 
-import scala.collection.immutable.ListMap
 import scala.concurrent.{duration, TimeoutException}
-import scala.util.Random
 
 class ActionSuite extends SpookyBaseSpec {
 
-  import ActionSuite._
+  import ActionSuite.*
 
-  import duration._
+  import duration.*
 
   describe("Wget") {
     val action = Wget("http://dummy.com")

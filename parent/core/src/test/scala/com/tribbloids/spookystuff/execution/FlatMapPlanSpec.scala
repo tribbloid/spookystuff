@@ -6,7 +6,7 @@ import com.tribbloids.spookystuff.testutils.SpookyBaseSpec
 /**
   * Created by peng on 02/04/16.
   */
-class TestExtractPlan extends SpookyBaseSpec {
+class FlatMapPlanSpec extends SpookyBaseSpec {
 
   import dsl._
 

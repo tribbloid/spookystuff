@@ -181,7 +181,7 @@ case class SquashedRow[D](
         fn: FlatMapPlan.Fn[D, O]
     ): SquashedRow[O] = {
 
-      val newDataRows: Seq[Data.WithScope[O]] = unSquash.flatMap { row: FetchedRow[D] =>
+      val newDataRows: Seq[Data.WithScope[O]] = unSquash.flatMap { (row: FetchedRow[D]) =>
         val newRows = fn(row)
         newRows
       }
@@ -191,7 +191,7 @@ case class SquashedRow[D](
 
     def fetch[O](fn: FetchPlan.Fn[D, O]): FetchPlan.Batch[O] = {
 
-      val result = unSquash.flatMap { row: FetchedRow[D] =>
+      val result = unSquash.flatMap { (row: FetchedRow[D]) =>
         val traces = fn(row)
 
         traces

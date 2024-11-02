@@ -34,7 +34,7 @@ case class Wget(
       timeout,
       proxy,
       { uri =>
-        val headers = agent.spooky.conf.httpHeadersFactory()
+        val headers = agent.spooky.conf.httpHeadersFactory.function0()
 
         val request = new HttpGet(uri)
         for (pair <- headers) {

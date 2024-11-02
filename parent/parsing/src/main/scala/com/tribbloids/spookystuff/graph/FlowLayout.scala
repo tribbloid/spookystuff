@@ -10,11 +10,11 @@ trait FlowLayout[D <: Domain] extends Layout[D] {
 
   lazy val facets: Set[Facet] = Set(FromLeft, FromRight)
 
-  trait DSL extends super.DSL {
+  trait _DSL extends super.DSL {
 
     implicit private def core2Operand[M <: _Module](v: Core[M]): Operand[M] = create(v)
 
-    trait OperandLike[+M <: _Module] extends super.OperandLike[M] {
+    trait _OperandLike[+M <: _Module] extends super.OperandLike[M] {
 
       lazy val RightOps: Core[M]#Ops = core.Ops(FromLeft, FromRight)
       lazy val LeftOps: Core[M]#Ops = core.Ops(FromRight, FromLeft)
@@ -31,39 +31,39 @@ trait FlowLayout[D <: Domain] extends Layout[D] {
 
       // left > right
 
-      def compose_>(right: OperandLike[_]): Operand[GG] = RightOps.compose(right.core)
+      def compose_>(right: _OperandLike[_]): Operand[GG] = RightOps.compose(right.core)
 
-      final def :>>(right: OperandLike[_]): Operand[GG] = compose_>(right)
+      final def :>>(right: _OperandLike[_]): Operand[GG] = compose_>(right)
 
 //      final def >(right: OperandLike[_]) = merge_>(right)
 
       // TODO: fast-forward handling: if right is reused for many times,
       // ensure that only the part that doesn't overlap with this got duplicated (conditional duplicate)
-      def mapHead_>(right: OperandLike[_]): Operand[_Module] = RightOps.mapHead(right.core)
+      def mapHead_>(right: _OperandLike[_]): Operand[_Module] = RightOps.mapHead(right.core)
 
-      final def :=>>(right: OperandLike[_]): Operand[_Module] = mapHead_>(right)
+      final def :=>>(right: _OperandLike[_]): Operand[_Module] = mapHead_>(right)
 
       // this is really kind of ambiguous
-      def append_>(right: OperandLike[_]): Operand[_Module] = RightOps.append(right.core)
+      def append_>(right: _OperandLike[_]): Operand[_Module] = RightOps.append(right.core)
 
-      final def :->(right: OperandLike[_]): Operand[_Module] = append_>(right)
+      final def :->(right: _OperandLike[_]): Operand[_Module] = append_>(right)
 
       // left < right
       // TODO: follow :>> & <<: convention
 
-      def compose_<(left: OperandLike[_]): Operand[GG] = LeftOps.compose(left.core)
+      def compose_<(left: _OperandLike[_]): Operand[GG] = LeftOps.compose(left.core)
 
-      final def <<:(left: OperandLike[_]): Operand[GG] = compose_<(left)
+      final def <<:(left: _OperandLike[_]): Operand[GG] = compose_<(left)
 
 //      final def <(prev: OperandLike[_]) = prev.merge_<(this)
 
-      def mapHead_<(left: OperandLike[_]): Operand[_Module] = LeftOps.mapHead(left.core)
+      def mapHead_<(left: _OperandLike[_]): Operand[_Module] = LeftOps.mapHead(left.core)
 
-      final def <<=:(left: OperandLike[_]): Operand[_Module] = mapHead_<(left)
+      final def <<=:(left: _OperandLike[_]): Operand[_Module] = mapHead_<(left)
 
-      def append_<(left: OperandLike[_]): Operand[_Module] = LeftOps.append(left.core)
+      def append_<(left: _OperandLike[_]): Operand[_Module] = LeftOps.append(left.core)
 
-      final def <-:(left: OperandLike[_]): Operand[_Module] = append_<(left)
+      final def <-:(left: _OperandLike[_]): Operand[_Module] = append_<(left)
     }
   }
 }

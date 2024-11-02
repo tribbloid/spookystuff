@@ -171,10 +171,10 @@ object Visualisation {
   case class Format[D <: Domain](
       showNode: Element.NodeLike[D] => String = CommonUtils.toStrNullSafe _,
       showEdge: Element.Edge[D] => String = CommonUtils.toStrNullSafe _,
-      nodeShortName: Element.NodeLike[D] => String = { v: Element.NodeLike[D] =>
+      nodeShortName: Element.NodeLike[D] => String = { (v: Element.NodeLike[D]) =>
         v.idStr
       },
-      edgeShortName: Element.Edge[D] => String = { v: Element.Edge[D] =>
+      edgeShortName: Element.Edge[D] => String = { (v: Element.Edge[D]) =>
         v.idStr
       },
       showPrefix: Boolean = true,

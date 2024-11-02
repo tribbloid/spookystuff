@@ -22,7 +22,7 @@ object ActionLike extends AutomaticRelay[ActionLike] {
   ) extends TreeView.Immutable[TreeNodeView] {
 
     override def children: Seq[TreeNodeView] = actionLike.children.map {
-      TreeNodeView
+      TreeNodeView.apply
     }
   }
 }

@@ -92,7 +92,7 @@ object ClusterRetry {
 
   // TODO: this retry mechanism use Spark scheduler to re-run the partition and is very inefficient
   //  Re-implement using multi-pass!
-  final case class ClusterRetryImpl private (
+  final case class ClusterRetryImpl(
       override val children: Trace
   )(
       retries: Int,
@@ -225,7 +225,7 @@ case class OAuthV2(self: Wget) extends Block(self) with Driverless {
 
   def rewrite(agent: Agent): Wget = {
 
-    val keys = agent.spooky.conf.oAuthKeysFactory.apply()
+    val keys = agent.spooky.conf.oAuthKeysFactory.function0()
     if (keys == null) {
       throw new QueryException("need to set SpookyConf.oAuthKeys first")
     }

@@ -98,7 +98,7 @@ class AssertSerializableSpike extends BaseSpec {
 
   object Outer extends NOTSerializable {
 
-    val inner1: String => Int = { _: String =>
+    val inner1: String => Int = { (_: String) =>
       3
     }
 

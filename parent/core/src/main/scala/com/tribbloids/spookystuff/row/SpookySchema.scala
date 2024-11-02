@@ -5,7 +5,7 @@ import com.tribbloids.spookystuff.execution._
 
 //this is a special StructType that carries more metadata
 //TODO: override sqlType, serialize & deserialize to compress into InternalRow
-case class SpookySchema(ec: SpookyExecutionContext)
+case class SpookySchema(ec: ExecutionContext)
 //                       (
 //    implicit
 //    val ordering: Ordering[D] // should be only useful & summoned in explore()

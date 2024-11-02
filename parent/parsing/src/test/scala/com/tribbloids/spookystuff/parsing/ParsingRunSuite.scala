@@ -210,8 +210,7 @@ class ParsingRunSuite extends BaseSpec {
       }
 
       val p: Operand[FSMParserGraph.Layout.GG] = (entry :~> moreOrLess :& moreOrLess) :~>
-        out :& entry :~>
-        EOS_* :~> FINISH
+        out :& entry :~> EOS_* :~> FINISH
 
       p.visualise()
         .ASCIIArt

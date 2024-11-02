@@ -86,7 +86,7 @@ object TreeIR {
   case class _TreeView(self: TreeIR[_]) extends TreeView.Immutable[_TreeView] {
     override lazy val nodeName: String = self.getClass.getSimpleName
 
-    override lazy val children: Seq[_TreeView] = self.children.map(_TreeView)
+    override lazy val children: Seq[_TreeView] = self.children.map(_TreeView.apply)
 
     override def stringArgs: Iterator[Any] =
       if (children.isEmpty) self.productIterator

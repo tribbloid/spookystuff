@@ -34,7 +34,7 @@ object ExploreLocalCache {
   }
 
   val getExecution_untyped: :=>.CachedLazy[ExeID, Execution[Nothing, Nothing]] = {
-    val raw = :=> { _: ExeID =>
+    val raw = :=> { (_: ExeID) =>
       Execution()
     }
     raw.cached(Same.Native.Lookup(Caching.Soft.build()))

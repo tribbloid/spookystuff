@@ -207,7 +207,7 @@ case class ExploreRunner[I, O](
               v.nonEmpty
           }.toList
 
-          filtered.foreach { newOpen: (LocalityGroup, Seq[Elem]) =>
+          filtered.foreach { (newOpen: (LocalityGroup, Seq[Elem])) =>
             val trace_+ = newOpen._1
             Commit(trace_+).intoOpen(newOpen._2.toVector)
           }

@@ -2,7 +2,7 @@ package com.tribbloids.spookystuff.dsl
 
 import ai.acyclic.prover.commons.function.hom.Hom.:=>
 import com.tribbloids.spookystuff.dsl.GenPartitionerLike.Instance
-import com.tribbloids.spookystuff.execution.SpookyExecutionContext
+import com.tribbloids.spookystuff.execution.ExecutionContext
 import com.tribbloids.spookystuff.row.{BeaconRDD, SpookySchema}
 import org.apache.spark.Partitioner
 import org.apache.spark.rdd.RDD
@@ -81,7 +81,7 @@ object GenPartitioners {
     }
 
     case class Inst[K](
-        ec: SpookyExecutionContext
+        ec: ExecutionContext
     )(
         implicit
         val ctg: ClassTag[K]

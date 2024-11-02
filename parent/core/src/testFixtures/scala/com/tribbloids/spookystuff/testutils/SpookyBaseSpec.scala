@@ -9,7 +9,7 @@ import com.tribbloids.spookystuff.commons.lifespan.Cleanable.Lifespan
 import com.tribbloids.spookystuff.commons.{CommonUtils, TreeThrowable}
 import com.tribbloids.spookystuff.conf._
 import com.tribbloids.spookystuff.doc.{Doc, Unstructured}
-import com.tribbloids.spookystuff.execution.SpookyExecutionContext
+import com.tribbloids.spookystuff.execution.ExecutionContext
 import com.tribbloids.spookystuff.row.{SpookySchema, SquashedRow}
 import org.jutils.jprocesses.JProcesses
 import org.jutils.jprocesses.model.ProcessInfo
@@ -90,10 +90,10 @@ object SpookyBaseSpec {
 
 abstract class SpookyBaseSpec extends SpookyEnvSpec with RemoteDocsFixture with BeforeAndAfterEach with Retries {
 
-  lazy val defaultEC: SpookyExecutionContext = SpookyExecutionContext(spooky)
+  lazy val defaultEC: ExecutionContext = ExecutionContext(spooky)
   lazy val defaultSchema: SpookySchema = SpookySchema(defaultEC)
 
-  def emptySchema: SpookySchema = SpookySchema(SpookyExecutionContext(spooky))
+  def emptySchema: SpookySchema = SpookySchema(ExecutionContext(spooky))
 
   implicit def rowWithCtx(row: SquashedRow[_]): row._WithCtx = row.withCtx(spooky)
 
@@ -114,7 +114,7 @@ abstract class SpookyBaseSpec extends SpookyEnvSpec with RemoteDocsFixture with 
     val _processNames = this._externalProcessNames
     val exitingPIDs = this.exitingPIDs
     _processNames.map { name =>
-      { process: ProcessInfo =>
+      { (process: ProcessInfo) =>
         val c1 = process.getName == name
         val c2 = !exitingPIDs.contains(process.getPid)
         c1 && c2
