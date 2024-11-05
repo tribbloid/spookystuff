@@ -3,8 +3,8 @@ package com.tribbloids.spookystuff.row
 import ai.acyclic.prover.commons.util.Magnet.OptionMagnet
 import com.tribbloids.spookystuff.SpookyContext
 import com.tribbloids.spookystuff.commons.serialization.NOTSerializable
+import com.tribbloids.spookystuff.doc.*
 import com.tribbloids.spookystuff.doc.Observation.{DocUID, Failure, Success}
-import com.tribbloids.spookystuff.doc._
 import com.tribbloids.spookystuff.execution.FlatMapPlan
 import com.tribbloids.spookystuff.row.Data.WithScope
 
@@ -131,19 +131,6 @@ case class FetchedRow[D](
     case v: Failure => v
   }
 
-  @transient lazy val docs: Seq[Doc] = observations.collect {
-    case v: Doc => v
-  }
-
-  @transient lazy val onlyDoc: Option[Doc] = {
-
-    if (docs.size > 1)
-      throw new UnsupportedOperationException(
-        "Ambiguous key referring to multiple pages"
-      )
-    else docs.headOption
-  }
-
   object rescope {
 
     // make sure no pages with identical name can appear in the same group.
@@ -181,26 +168,40 @@ case class FetchedRow[D](
     }
   }
 
-  def docs(name: String): DocSelection = {
-
-    lazy val pages: Seq[Doc] = docs.filter(_.name == name)
-    DocSelection(pages)
+  def docs: DocSelection = {
+    new DocSelection(observations.collect {
+      case v: Doc => v
+    })
   }
 
   object DocSelection {
 
-    implicit def asOption(v: DocSelection): Option[Doc] = v.only.map(_.docs.head)
+    implicit def asDoc(v: DocSelection.Only): Doc = v.value
+
+    implicit def asBatch(v: DocSelection): Seq[Doc] = v.values
+
+    class Only(val value: Doc) extends DocSelection(Seq(value)) {}
   }
 
-  case class DocSelection(docs: Seq[Doc]) {
+  class DocSelection(val values: Seq[Doc]) {
 
-    lazy val head: Option[DocSelection] = docs.headOption.map { doc =>
-      DocSelection(Seq(doc))
+    def get(name: String): DocSelection = {
+
+      lazy val pages: Seq[Doc] = values.filter(_.name == name)
+      new DocSelection(pages)
     }
 
-    lazy val only: Option[DocSelection] = {
+    def apply(name: String): DocSelection = get(name)
 
-      if (docs.size > 1) throw new UnsupportedOperationException("Ambiguous key referring to multiple pages")
+    lazy val headOption: Option[DocSelection.Only] = values.headOption.map { doc =>
+      new DocSelection.Only(doc)
+    }
+
+    def head: DocSelection.Only = headOption.getOrElse(throw new UnsupportedOperationException("No doc found"))
+
+    lazy val only: DocSelection.Only = {
+
+      if (values.size > 1) throw new UnsupportedOperationException("Ambiguous key referring to multiple docs")
       else head
     }
 
@@ -210,7 +211,7 @@ case class FetchedRow[D](
         overwrite: Boolean = false
     ): Unit = {
 
-      docs.zipWithIndex.foreach {
+      values.zipWithIndex.foreach {
 
         case (doc, _) =>
           val saveParts = Seq(path) ++ extension

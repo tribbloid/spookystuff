@@ -23,7 +23,7 @@ object Cleanable {
     lazy val active: MapOfActive = ConcurrentMap()
   }
 
-  case class Select[T <: Cleanable: ClassTag](
+  case class BatchSelection[T <: Cleanable: ClassTag](
       batchIDs: Seq[BatchID],
       condition: T => Boolean = (_: T) => true
   ) {
@@ -39,12 +39,12 @@ object Cleanable {
       }
       .filter(condition)
 
-    def filter(condition: Cleanable => Boolean = _ => true): Select[T] = {
+    def filter(condition: Cleanable => Boolean = _ => true): BatchSelection[T] = {
 
       this.copy(condition = condition)
     }
 
-    def typed[R <: T: ClassTag]: Select[R] = {
+    def typed[R <: T: ClassTag]: BatchSelection[R] = {
       this.copy[R]()
     }
 
@@ -71,7 +71,7 @@ object Cleanable {
 
 //  def batchOf(id: BatchID): Selection[Cleanable] = Selection(Seq(id))
 
-  def All: Select[Cleanable] = Select[Cleanable](uncleaned.keys.toSeq)
+  def All: BatchSelection[Cleanable] = BatchSelection[Cleanable](uncleaned.keys.toSeq)
 
   case class Select1Batch(id: BatchID) {
 
@@ -88,7 +88,7 @@ object Cleanable {
     }
   }
 
-  implicit def selectBatchAsSelect(v: Select1Batch): Select[Cleanable] = Select(Seq(v.id))
+  implicit def selectBatchAsSelect(v: Select1Batch): BatchSelection[Cleanable] = BatchSelection(Seq(v.id))
 }
 
 /**

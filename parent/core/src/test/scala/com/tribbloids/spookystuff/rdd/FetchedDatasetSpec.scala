@@ -3,10 +3,10 @@ package com.tribbloids.spookystuff.rdd
 import ai.acyclic.prover.commons.spark.Envs
 import com.tribbloids.spookystuff.actions.*
 import com.tribbloids.spookystuff.metrics.Acc
-import com.tribbloids.spookystuff.testutils.beans.Composite
 import com.tribbloids.spookystuff.testutils.{FileDocsFixture, SpookyBaseSpec}
 
 import java.io.File
+import scala.reflect.ClassTag
 
 /**
   * Created by peng on 5/10/15.
@@ -17,12 +17,10 @@ class FetchedDatasetSpec extends SpookyBaseSpec with FileDocsFixture {
     val acc = Acc.create(0)
 
     val set = spooky
-      .fetch(
-        Wget(HTML_URL)
-      )
-      .map { v =>
+      .fetch(_ => Wget(HTML_URL))
+      .map { row =>
         acc += 1
-        v
+        row.data
       }
     assert(acc.value == 0)
 
@@ -37,15 +35,16 @@ class FetchedDatasetSpec extends SpookyBaseSpec with FileDocsFixture {
     val acc = Acc.create(0)
 
     val set = spooky
-      .fetch(
-        Wget(HTML_URL)
-      )
-      .extract(
-        S.andFlatMap { page =>
-          acc += 1
-          page.saved.headOption
-        } ~ 'path
-      )
+      .fetch(_ => Wget(HTML_URL))
+      .select { row =>
+        acc += 1
+        ()
+
+        //            S.andFlatMap { page =>
+        //              acc += 1
+        //              page.saved.headOption
+        //            } ~ 'path
+      }
     assert(acc.value == 0)
 
     val rdd = set.squashedRDD
@@ -58,162 +57,157 @@ class FetchedDatasetSpec extends SpookyBaseSpec with FileDocsFixture {
   // if not adding up to 1, this is the debugging method:
   // 1. add breakpoint on accumulator, execute to it >1 times and dump a memory snapshot
   // 2. compare stacktrace of executor thread on both snapshots
-  for (sort <- Seq(false, true)) {
-    it(s"toDF($sort) should not run preceding transformation multiple times") {
-      val acc = Acc.create(0)
+  for (case (sort, comment) <- Seq(false -> "unsorted", true -> "sorted")) {
 
-      val set = spooky
-        .fetch(
-          Wget(HTML_URL)
-        )
-        .extract(
-          S.andFlatMap { page =>
-            acc += 1
-            page.saved.headOption
-          } ~ 'path
-        )
-      assert(acc.value == 0)
+    def getData[D: ClassTag: Ordering](ds: FetchedDataset[D]): FetchedDataset.DataView[D] = {
 
-      val df = set.toDF(sort)
-      //      assert(acc.value == 0)
-
-      df.count()
-      assert(acc.value == 1)
+      if (sort) ds.data.sorted()
+      else ds.data
     }
 
-    it(s"toJSON($sort) should not run preceding transformation multiple times") {
-      val acc = Acc.create(0)
+    describe("should not run preceding transformation multiple times") {
 
-      val set = spooky
-        .fetch(
-          Wget(HTML_URL)
-        )
-        .extract(
-          S.andFlatMap { page =>
+      it(s"toRDD($comment)") {
+        val acc = Acc.create(0)
+
+        val ds = spooky
+          .fetch(_ => Wget(HTML_URL))
+          .selectMany { row =>
             acc += 1
-            page.saved.headOption
-          } ~ 'path
-        )
-      assert(acc.value == 0)
+            row.docs.flatMap(_.saved.headOption)
+          }
+        assert(acc.value == 0)
 
-      val json = set.toJSON(sort)
-      //      assert(acc.value == 0)
+        val rdd = getData(ds).toRDD
+        //      assert(acc.value == 0)
 
-      json.count()
-      assert(acc.value == 1)
+        rdd.count()
+        assert(acc.value == 1)
+      }
+
+      it(s"toDF($comment)") {
+        val acc = Acc.create(0)
+
+        val ds = spooky
+          .fetch(_ => Wget(HTML_URL))
+          .selectMany { row =>
+            acc += 1
+            row.docs.flatMap(_.saved.headOption)
+
+          }
+        assert(acc.value == 0)
+
+        val df = getData(ds).toDF
+
+        df.count()
+        assert(acc.value == 1)
+      }
+
+      it(s"toJSON($comment)") {
+        val acc = Acc.create(0)
+
+        val ds = spooky
+          .fetch(_ => Wget(HTML_URL))
+          .selectMany { row =>
+            acc += 1
+            row.docs.flatMap(_.saved.headOption)
+          }
+
+        assert(acc.value == 0)
+
+        val json = getData(ds).toJSON
+        //      assert(acc.value == 0)
+
+        json.count()
+        assert(acc.value == 1)
+      }
     }
 
-    it(s"toMapRDD($sort) should not run preceding transformation multiple times") {
-      val acc = Acc.create(0)
-
-      val set = spooky
-        .fetch(
-          Wget(HTML_URL)
-        )
-        .extract(
-          S.andFlatMap { page =>
-            acc += 1
-            page.saved.headOption
-          } ~ 'path
-        )
-      assert(acc.value == 0)
-
-      val rdd = set.toMapRDD(sort)
-      //      assert(acc.value == 0)
-
-      rdd.count()
-      assert(acc.value == 1)
-    }
   }
 
-  describe("toDF can") {
-
-    it("handle simple types") {
-
-      val set = spooky
-        .fetch(
-          Wget(HTML_URL)
-        )
-        .extract(
-          S.uri ~ 'uri,
-          S.children("h1").size ~ 'size,
-          S.timestamp ~ 'timestamp,
-          S.andFlatMap { page =>
-            page.saved.headOption
-          } ~ 'saved
-        )
-      val df = set.toDF()
-
-      df.schema.treeString.shouldBe(
-        """
-          |root
-          | |-- uri: string (nullable = true)
-          | |-- size: integer (nullable = true)
-          | |-- timestamp: timestamp (nullable = true)
-          | |-- saved: string (nullable = true)
-      """.stripMargin
-      )
-
-      df.show(false)
-    }
-
-    it("handle composite types") {
-      val set = spooky
-        .extract(
-          Lit(0 -> "str") ~ 'tuple,
-          Lit(Composite()) ~ 'composite
-        )
-
-      val df = set.toDF()
-
-      df.schema.treeString.shouldBe(
-        """
-          |root
-          | |-- tuple: struct (nullable = true)
-          | |    |-- _1: integer (nullable = false)
-          | |    |-- _2: string (nullable = true)
-          | |-- composite: struct (nullable = true)
-          | |    |-- n: integer (nullable = false)
-          | |    |-- str: string (nullable = true)
-      """.stripMargin
-      )
-
-      df.show(false)
-    }
-
-    it("yield a DataFrame excluding Fields with .isSelected = false") {
-
-      val set = spooky
-        .fetch(
-          Wget(HTML_URL)
-        )
-        .extract(
-          S.uri ~ 'uri.*,
-          S.children("h1").size ~ 'size.*,
-          S.timestamp ~ 'timestamp,
-          S.andFlatMap { page =>
-            page.saved.headOption
-          } ~ 'saved
-        )
-      val df = set.toDF()
-
-      df.schema.treeString.shouldBe(
-        """
-          |root
-          | |-- timestamp: timestamp (nullable = true)
-          | |-- saved: string (nullable = true)
-      """.stripMargin
-      )
-
-      df.show(false)
-    }
-  }
+//  // TODO: move to a new module
+//  describe("toDF can") {
+//
+//    it("handle simple types") {
+//
+//      val set = spooky
+//        .fetch(_ => Wget(HTML_URL))
+//        .selectMany(
+//          S.uri ~ 'uri,
+//          S.children("h1").size ~ 'size,
+//          S.timestamp ~ 'timestamp,
+//          S.andFlatMap { page =>
+//            page.saved.headOption
+//          } ~ 'saved
+//        )
+//      val df = set.toDF()
+//
+//      df.schema.treeString.shouldBe(
+//        """
+//          |root
+//          | |-- uri: string (nullable = true)
+//          | |-- size: integer (nullable = true)
+//          | |-- timestamp: timestamp (nullable = true)
+//          | |-- saved: string (nullable = true)
+//      """.stripMargin
+//      )
+//
+//      df.show(false)
+//    }
+//
+//    it("handle composite types") {
+//      val set = spooky
+//        .selectMany(
+//          Lit(0 -> "str") ~ 'tuple,
+//          Lit(Composite()) ~ 'composite
+//        )
+//
+//      val df = set.toDF()
+//
+//      df.schema.treeString.shouldBe(
+//        """
+//          |root
+//          | |-- tuple: struct (nullable = true)
+//          | |    |-- _1: integer (nullable = false)
+//          | |    |-- _2: string (nullable = true)
+//          | |-- composite: struct (nullable = true)
+//          | |    |-- n: integer (nullable = false)
+//          | |    |-- str: string (nullable = true)
+//      """.stripMargin
+//      )
+//
+//      df.show(false)
+//    }
+//
+//    it("yield a DataFrame excluding Fields with .isSelected = false") {
+//
+//      val set = spooky
+//        .fetch(_ => Wget(HTML_URL))
+//        .selectMany(
+//          S.uri ~ 'uri.*,
+//          S.children("h1").size ~ 'size.*,
+//          S.timestamp ~ 'timestamp,
+//          S.andFlatMap { page =>
+//            page.saved.headOption
+//          } ~ 'saved
+//        )
+//      val df = set.toDF()
+//
+//      df.schema.treeString.shouldBe(
+//        """
+//          |root
+//          | |-- timestamp: timestamp (nullable = true)
+//          | |-- saved: string (nullable = true)
+//      """.stripMargin
+//      )
+//
+//      df.show(false)
+//    }
+//  }
 
   it("fetch plan can be persisted") {
     val ds = spooky
-      .fetch(
-        Wget(HTML_URL)
-      )
+      .fetch(_ => Wget(HTML_URL))
       .persist()
     ds.count()
 
@@ -227,12 +221,12 @@ class FetchedDatasetSpec extends SpookyBaseSpec with FileDocsFixture {
     assert(ds.spooky.spookyMetrics.pagesFetched.value == 1)
   }
 
-  it("extract plan can be persisted") {
+  it("selectMany plan can be persisted") {
     val ds = spooky
       .wget(
         HTML_URL
       )
-      .extract(Lit("Wikipedia") ~ 'name)
+      .selectMany(Lit("Wikipedia") ~ 'name)
       .persist()
     ds.count()
 
@@ -299,9 +293,7 @@ class FetchedDatasetSpec extends SpookyBaseSpec with FileDocsFixture {
     it("lazily") {
 
       spooky
-        .fetch(
-          Wget(HTML_URL)
-        )
+        .fetch(_ => Wget(HTML_URL))
         .savePages(s"file://${Envs.USER_DIR}/temp/dummy", overwrite = true)
         .collect()
 
@@ -311,9 +303,7 @@ class FetchedDatasetSpec extends SpookyBaseSpec with FileDocsFixture {
     it("... on persisted RDD") {
 
       val vv = spooky
-        .fetch(
-          Wget(HTML_URL)
-        )
+        .fetch(_ => Wget(HTML_URL))
         .persist()
 
       vv.collect()
@@ -328,9 +318,7 @@ class FetchedDatasetSpec extends SpookyBaseSpec with FileDocsFixture {
     it("eagerly") {
 
       spooky
-        .fetch(
-          Wget(HTML_URL)
-        )
+        .fetch(_ => Wget(HTML_URL))
         .savePages_!(s"file://${Envs.USER_DIR}/temp/dummy", overwrite = true)
 
       assert(dummyFileExists())

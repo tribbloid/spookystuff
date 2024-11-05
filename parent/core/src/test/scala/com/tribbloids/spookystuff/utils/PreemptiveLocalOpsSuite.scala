@@ -1,12 +1,13 @@
 package com.tribbloids.spookystuff.utils
 
+import ai.acyclic.prover.commons.spark.TestHelper
 import com.tribbloids.spookystuff.commons.CommonUtils
 import com.tribbloids.spookystuff.testutils.BaseSpec
 import org.apache.spark.SparkContext
 
 class PreemptiveLocalOpsSuite extends BaseSpec {
 
-  import RDDImplicits._
+  import RDDImplicits.*
 
   val sc: SparkContext = TestHelper.TestSC
 

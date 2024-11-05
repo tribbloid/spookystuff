@@ -1,12 +1,11 @@
 package com.tribbloids.spookystuff.actions
 
-import java.sql.Timestamp
 import com.tribbloids.spookystuff.actions.Delay.RandomDelay
 import com.tribbloids.spookystuff.doc.Doc
-import com.tribbloids.spookystuff.rdd.FetchedDataset
 import com.tribbloids.spookystuff.testutils.{LocalOnly, SpookyBaseSpec}
 import org.scalatest.Tag
 
+import java.sql.Timestamp
 import scala.concurrent.duration
 
 object WgetSpec {
@@ -16,7 +15,7 @@ object WgetSpec {
 
 class WgetSpec extends SpookyBaseSpec {
 
-  import com.tribbloids.spookystuff.dsl._
+  import com.tribbloids.spookystuff.dsl.*
 
   def wget(uri: String): Action = Wget(uri)
 
@@ -124,7 +123,7 @@ class WgetSpec extends SpookyBaseSpec {
   it("output of wget should not include session's backtrace") {
     spooky.confUpdate(_.copy(webProxy = WebProxyFactories.NoProxy))
 
-    import duration._
+    import duration.*
 
     val results = (
       RandomDelay(1.seconds, 2.seconds) +> wget(HTML_URL)

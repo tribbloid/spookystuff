@@ -1,9 +1,11 @@
 package com.tribbloids.spookystuff.utils
 
+import ai.acyclic.prover.commons.spark.TestHelper
 import com.tribbloids.spookystuff.commons.CommonUtils
-import com.tribbloids.spookystuff.testutils.{SpookyBaseSpec, TestHelper}
 import com.tribbloids.spookystuff.commons.collection.BufferedShuffleIteratorV1
+import com.tribbloids.spookystuff.testutils.SpookyBaseSpec
 import org.apache.spark.ml.dsl.utils.ClassOpsMixin
+import org.apache.spark.ml.dsl.utils.ClassOpsMixin.toClassOps
 import org.apache.spark.rdd.RDD
 import org.apache.spark.rdd.spookystuff.NarrowDispersedRDD
 import org.apache.spark.storage.StorageLevel
@@ -52,7 +54,7 @@ class RDDDisperseSuite extends SpookyBaseSpec {
 //    }
 //  }
 
-  import Fixtures._
+  import Fixtures.*
 
   def assertWellFormed(rdd: RDD[Int]): Unit = {
 
@@ -290,7 +292,7 @@ class RDDDisperseSuite extends SpookyBaseSpec {
   }
 
   {
-    import StorageLevel._
+    import StorageLevel.*
 
     Seq(MEMORY_ONLY, MEMORY_ONLY_SER_2, MEMORY_AND_DISK).flatMap { level =>
       Seq(

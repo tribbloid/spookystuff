@@ -1,6 +1,9 @@
 package com.tribbloids.spookystuff.testutils
 
+import ai.acyclic.prover.commons.spark.RDDImplicits._rddImplicits
+import ai.acyclic.prover.commons.spark.TestHelper
 import com.tribbloids.spookystuff.commons.{AwaitWithHeartbeat, CommonUtils}
+import com.tribbloids.spookystuff.utils.RDDImplicits.sparkContextView
 import com.tribbloids.spookystuff.utils.SpookyUtils
 import org.apache.spark.TaskContext
 import org.apache.spark.rdd.RDD
@@ -14,7 +17,7 @@ import scala.util.Random
   */
 class SpookyUtilsSuite extends BaseSpec {
 
-  import scala.concurrent.duration._
+  import scala.concurrent.duration.*
 
   it("canonizeUrn should clean ?:$&#") {
     val url = SpookyUtils.canonizeUrn("http://abc.com?re#k2$si")
@@ -137,8 +140,8 @@ class SpookyUtilsSuite extends BaseSpec {
 
     val src = TestHelper.TestSC.parallelize(1 to 100).persist()
 
-    val shuffled1 = src.shufflePartitions
-    val shuffled2 = src.shufflePartitions
+    val shuffled1 = src.shufflePartitions()
+    val shuffled2 = src.shufflePartitions()
 
     val identical = shuffled1
       .zipPartitions(shuffled2) { (i1, i2) =>

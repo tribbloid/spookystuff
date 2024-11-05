@@ -1,8 +1,8 @@
 package com.tribbloids.spookystuff.actions
 
-import com.tribbloids.spookystuff.doc._
-import com.tribbloids.spookystuff.dsl.DocFilterImpl
 import com.tribbloids.spookystuff.agent.Agent
+import com.tribbloids.spookystuff.doc.*
+import com.tribbloids.spookystuff.dsl.DocFilterImpl
 
 /**
   * Export a page from the browser or http client the page an be anything including HTML/XML file, image, PDF file or
@@ -13,7 +13,7 @@ abstract class Export extends Named {
 
   def filter: DocFilter = DocFilterImpl.Bypass
 
-  final override def outputNames: Set[CSSQuery] = Set(this.name)
+  final override def outputNames: Set[String] = Set(this.name)
 
   final override def skeleton: Option[Export.this.type] = None // have not impact to driver
 

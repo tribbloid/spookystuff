@@ -2,25 +2,22 @@ package com.tribbloids.spookystuff.row
 
 import com.tribbloids.spookystuff.actions.Wget
 import com.tribbloids.spookystuff.testutils.{FileDocsFixture, SpookyBaseSpec}
-import com.tribbloids.spookystuff.dsl
 
 /**
   * Created by peng on 12/3/14.
   */
 class FetchedRowSuite extends SpookyBaseSpec with FileDocsFixture {
 
-  import dsl._
-
   it("get page") {
     val pages = Wget(HTML_URL).fetch(spooky)
-    val row = FetchedRow(observations = pages)
+    val row = FetchedRow(data = (), observations = pages)
 
-    val page1 = row.onlyDoc
+    val page1 = row.docs.only
     assert(page1.get === pages.head)
 
     println(Wget(HTML_URL).toString)
     val defaultName = Wget(HTML_URL).toString
-    val page2 = row.getDoc(defaultName)
+    val page2 = row.docs.get(defaultName).only
     assert(page2.get === pages.head)
   }
 

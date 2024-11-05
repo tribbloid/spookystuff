@@ -6,7 +6,7 @@ import com.tribbloids.spookystuff.row._
 
 object FlatMapPlan extends CatalystTypeOps.ImplicitMixin {
 
-  type Repr[O] = Data.WithScope[O]
+  type Out[O] = Data.WithScope[O]
   type Batch[O] = Seq[Data.WithScope[O]]
 
   type Fn[I, O] = FetchedRow[I] => Batch[O]
@@ -33,8 +33,8 @@ object FlatMapPlan extends CatalystTypeOps.ImplicitMixin {
 
   object Map {
 
-    type RMag[O] = PreferRightMagnet[O, Repr[O]]
-    type _Fn[I, O] = FetchedRow[I] => PreferRightMagnet[O, Repr[O]]
+    type RMag[O] = PreferRightMagnet[O, Out[O]]
+    type _Fn[I, O] = FetchedRow[I] => PreferRightMagnet[O, Out[O]]
 
     def normalise[I, O](fn: _Fn[I, O]): FlatMapPlan.this.Fn[I, O] = { row =>
       val result = fn(row).revoke match {

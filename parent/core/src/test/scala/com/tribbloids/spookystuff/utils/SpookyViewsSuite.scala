@@ -1,7 +1,8 @@
 package com.tribbloids.spookystuff.utils
 
+import ai.acyclic.prover.commons.spark.TestHelper
 import ai.acyclic.prover.commons.spark.locality.PartitionIdPassthrough
-import com.tribbloids.spookystuff.TestBeans._
+import com.tribbloids.spookystuff.TestBeans.*
 import com.tribbloids.spookystuff.commons.lifespan.LifespanContext
 import com.tribbloids.spookystuff.metrics.Acc
 import com.tribbloids.spookystuff.testutils.SpookyBaseSpec
