@@ -7,9 +7,9 @@ import com.tribbloids.spookystuff.caching.ExploreLocalCache
 import com.tribbloids.spookystuff.commons.serialization.NOTSerializable
 import com.tribbloids.spookystuff.dsl.PathPlanning
 import com.tribbloids.spookystuff.execution.ExplorePlan.{ExeID, State}
-import com.tribbloids.spookystuff.row._
+import com.tribbloids.spookystuff.row.*
 
-import scala.collection.{mutable, MapView}
+import scala.collection.{MapView, mutable}
 
 object ExploreRunner {}
 
@@ -23,17 +23,17 @@ case class ExploreRunner[I, O](
 ) extends Explore.Common[I, O]
     with NOTSerializable {
 
-  import pathPlanningImpl.params._
+  import pathPlanningImpl.params.*
 
   def exeID: ExeID = pathPlanningImpl.params.executionID
 
   lazy val spooky: SpookyContext = pathPlanningImpl.schema.ctx
 
   // TODO: add fast sorted implementation
-  val open: ConcurrentMap[LocalityGroup, Vector[Elem]] =
+  val open: ConcurrentMap[LocalityGroup, Vector[Exploring]] =
     ConcurrentMap()
 
-  val visited: ConcurrentMap[LocalityGroup, Outs] = ConcurrentMap()
+  val visited: ConcurrentMap[LocalityGroup, _Batch] = ConcurrentMap()
 
   lazy val row0Partition: Iterator[SquashedRow[I]] = {
     partition.flatMap {
@@ -51,7 +51,7 @@ case class ExploreRunner[I, O](
         }
 
         state.row0.map { v =>
-          v.copy(agentState = v.agentState.copy(group = _group))
+          v.copy(localityGroup = _group)
         }
     }
   }
@@ -65,19 +65,19 @@ case class ExploreRunner[I, O](
   ) {
 
     def intoOpen(
-        value: Vector[Elem],
+        value: Vector[Exploring],
         reducer: OpenReducer = pathPlanningImpl.openReducer
-    ): mutable.Map[LocalityGroup, Vector[Elem]] = {
-      val oldVs: Vector[Elem] = open.getOrElse(group, Vector.empty)
+    ): mutable.Map[LocalityGroup, Vector[Exploring]] = {
+      val oldVs: Vector[Exploring] = open.getOrElse(group, Vector.empty)
       val newVs = reducer(value, oldVs)
       open += group -> newVs
     }
 
     def intoVisited(
-        value: Vector[Out],
+        value: Vector[_Exploring],
         reducer: VisitedReducer = pathPlanningImpl.visitedReducer
-    ): mutable.Map[LocalityGroup, Vector[Out]] = {
-      val oldVs: Vector[Out] = visited.getOrElse(group, Vector.empty)
+    ): mutable.Map[LocalityGroup, Vector[_Exploring]] = {
+      val oldVs: Vector[_Exploring] = visited.getOrElse(group, Vector.empty)
       val newVs = reducer(value, oldVs)
       visited += group -> newVs
     }
@@ -90,13 +90,13 @@ case class ExploreRunner[I, O](
     // TODO relax synchronized check to accelerate?
     def commit1(
         key: (LocalityGroup, ExeID),
-        value: Outs
+        value: _Batch
     ): Unit = {
 
       val exe = ExploreLocalCache.getExecution[I, O](key._2)
 
       exe.visited.synchronized {
-        val oldVs: Option[Outs] = exe.visited.get(key._1)
+        val oldVs: Option[_Batch] = exe.visited.get(key._1)
         val newVs = (Seq(value) ++ oldVs).reduce(reducer)
         exe.visited.put(key._1, newVs)
       }
@@ -112,23 +112,21 @@ case class ExploreRunner[I, O](
     }
   }
 
-  private def selectNext(): SquashedRow[Elem] = {
+  private def selectNext(): SquashedRow[Exploring] = {
 
-    val selectedRow: SquashedRow[Elem] = {
-      val row0Opt: Option[SquashedRow[Elem]] = row0Partition
+    val selectedRow: SquashedRow[Exploring] = {
+      val row0Opt: Option[SquashedRow[Exploring]] = row0Partition
         .nextOption()
         .map { row =>
           row.exploring
         }
 
-      val row: SquashedRow[Elem] = row0Opt
+      val row: SquashedRow[Exploring] = row0Opt
         .getOrElse {
 
-          val selected: (LocalityGroup, Elems) = pathPlanningImpl.selectNextOpen(open)
-          val withLineage: SquashedRow[Elem] =
-            SquashedRow(AgentState(selected._1), selected._2.map(v => Data.WithScope.empty(v)))
-              .withCtx(spooky)
-              .withDefaultScope
+          val selected: (LocalityGroup, Batch) = pathPlanningImpl.selectNextOpen(open)
+          val withLineage: SquashedRow[Exploring] =
+            SquashedRow(selected._1, selected._2.map(v => Data.WithScope.default(v)))
 
           //          val transformed = delta.fn(withDepth)
           withLineage
@@ -145,32 +143,32 @@ case class ExploreRunner[I, O](
   }
 
   case class Run(
-      fn: Fn
+      fn: _Fn
   ) {
 
     private def outer = ExploreRunner.this
 
     def once(): Unit = {
 
-      val selectedRow: SquashedRow[Elem] = selectNext()
+      val selectedRow: SquashedRow[Exploring] = selectNext()
 
       if (selectedRow.batch.isEmpty) return
 
-      outer.fetchingInProgressOpt = Some(selectedRow.group)
+      outer.fetchingInProgressOpt = Some(selectedRow.localityGroup)
 
-      val unSquashedRows: Seq[FetchedRow[Elem]] = selectedRow.withCtx(spooky).unSquash
+      val unSquashedRows: Seq[FetchedRow[Exploring]] = selectedRow.withCtx(spooky).unSquash
 
-      val next = unSquashedRows.map { in =>
-        val elem: Elem = in.data
+      val _ = unSquashedRows.map { in =>
+        val elem: Exploring = in.data
 
-        val (_forkedTuples, _outs) = fn(in)
+        val (_induction, _outs) = fn(in)
 
         {
           // commit out into visited
           val inRange: Vector[Data.Exploring[O]] = _outs.toVector.flatMap { out =>
-            val data = out.data
+//            val data = out.data
 
-            val result = elem.copy(data = data)
+            val result = elem.copy(payload = out)
 
             val depth = result.depthOpt.getOrElse(Int.MaxValue)
 
@@ -183,31 +181,31 @@ case class ExploreRunner[I, O](
             } else None
           }
 
-          Commit(selectedRow.group).intoVisited(inRange)
+          Commit(selectedRow.localityGroup).intoVisited(inRange)
         }
 
         {
           // recursively generate new openSet
-          val fetched: Seq[(Trace, Elem)] = _forkedTuples.flatMap {
-            case (traceSet, next) =>
-              val nextElem: Elem = elem.depth_++.copy(next)
-              traceSet.asTraceSet.map { trace =>
+          val fetched: Seq[(Trace, Exploring)] = _induction.flatMap {
+            case (nexTtraceSet, nextData) =>
+              val nextElem: Exploring = elem.depth_++.copy(nextData)
+              nexTtraceSet.asTraceSet.map { trace =>
                 trace -> nextElem
               }
           }
 
-          val grouped: MapView[LocalityGroup, Seq[Elem]] = fetched
+          val grouped: MapView[LocalityGroup, Seq[Exploring]] = fetched
             .groupBy(v => LocalityGroup(v._1)().sameBy(sameBy))
             .view
             .mapValues(_.map(_._2))
 
           // this will be used to filter dataRows yield by the next fork, it will not affect current transformation
-          val filtered: List[(LocalityGroup, Seq[Elem])] = grouped.filter {
+          val filtered: List[(LocalityGroup, Seq[Exploring])] = grouped.filter {
             case (_, v) =>
               v.nonEmpty
           }.toList
 
-          filtered.foreach { (newOpen: (LocalityGroup, Seq[Elem])) =>
+          filtered.foreach { (newOpen: (LocalityGroup, Seq[Exploring])) =>
             val trace_+ = newOpen._1
             Commit(trace_+).intoOpen(newOpen._2.toVector)
           }

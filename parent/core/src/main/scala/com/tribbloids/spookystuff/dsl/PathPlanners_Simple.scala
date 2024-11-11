@@ -3,13 +3,13 @@ package com.tribbloids.spookystuff.dsl
 import com.tribbloids.spookystuff.caching.ExploreLocalCache
 import com.tribbloids.spookystuff.execution.ExplorePlan.Params
 import com.tribbloids.spookystuff.execution.{Explore, ExploreRunner}
-import com.tribbloids.spookystuff.row._
+import com.tribbloids.spookystuff.row.*
 
 import scala.collection.mutable
 
 object PathPlanners_Simple {
 
-  import PathPlanning._
+  import PathPlanning.*
 
   case object BreadthFirst extends PathPlanning {
 
@@ -21,10 +21,10 @@ object PathPlanners_Simple {
         schema: SpookySchema
     ) extends Impl.CanPruneSelected[I, O] {
 
-      import scala.Ordering.Implicits._
+      import scala.Ordering.Implicits.*
 
       class ReducerProto[T] extends Explore.ReducerK[T] {
-        override def reduce(v1: Elems, v2: Elems): Elems = {
+        override def reduce(v1: Batch, v2: Batch): Batch = {
 
           val map = {
             (v1 ++ v2).groupBy { v =>
@@ -40,7 +40,7 @@ object PathPlanners_Simple {
 
             val result = candidates
               .minBy { vs =>
-                val sortEv = vs.map(_.sortEv).min
+                val sortEv = vs.map(_.orderBy).min
                 // TODO: this may need validation, not sure if consistent with old impl
                 sortEv
               }
@@ -59,7 +59,7 @@ object PathPlanners_Simple {
         new ReducerProto[O]
       }
 
-      override val ordering: RowOrdering = Ordering.by { (tuple: (LocalityGroup, Vector[Elem])) =>
+      override val ordering: RowOrdering = Ordering.by { (tuple: (LocalityGroup, Vector[Exploring])) =>
         val inProgress: mutable.Set[LocalityGroup] = ExploreLocalCache
           .getOnGoingRunners(params.executionID)
           .flatMap { (v: ExploreRunner[I, O]) =>
@@ -67,22 +67,22 @@ object PathPlanners_Simple {
           }
 
         val result = if (inProgress contains tuple._1) {
-          (Int.MaxValue, None, Vector.empty)
+          (Int.MaxValue, (None, Vector.empty))
           // if in progress by any local executor, do not select, wait for another executor to finish it first
         } else {
           val dataRows = tuple._2
-          val firstDataRow: Elem = dataRows.head
+          val firstDataRow: Exploring = dataRows.head
 
-          (0, firstDataRow.depthOpt, firstDataRow.ordinal)
+          (0, firstDataRow.orderBy)
         }
 
         result
       }
 
       override protected def pruneSelectedNonEmpty(
-          open: Elems,
-          visited: Outs
-      ): Vector[Elem] = {
+          open: Batch,
+          visited: _Batch
+      ): Vector[Exploring] = {
 
         val visitedDepth = visited.head.depthOpt
         open.filter { row =>

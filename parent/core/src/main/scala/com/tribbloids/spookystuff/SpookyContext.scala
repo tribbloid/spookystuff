@@ -5,14 +5,14 @@ import ai.acyclic.prover.commons.spark.SparkContextView
 import com.tribbloids.spookystuff.agent.Agent
 import com.tribbloids.spookystuff.commons.TreeThrowable
 import com.tribbloids.spookystuff.commons.serialization.{NOTSerializable, SerializerOverride}
-import com.tribbloids.spookystuff.conf._
+import com.tribbloids.spookystuff.conf.*
 import com.tribbloids.spookystuff.io.HDFSResolver
 import com.tribbloids.spookystuff.metrics.SpookyMetrics
 import com.tribbloids.spookystuff.rdd.FetchedDataset
-import com.tribbloids.spookystuff.row._
+import com.tribbloids.spookystuff.row.*
 import com.tribbloids.spookystuff.utils.ShippingMarks
 import org.apache.hadoop.conf.Configuration
-import org.apache.spark._
+import org.apache.spark.*
 import org.apache.spark.broadcast.Broadcast
 import org.apache.spark.rdd.RDD
 import org.apache.spark.sql.{Dataset, SQLContext, SparkSession}
@@ -28,7 +28,7 @@ object SpookyContext {
       conf: PluginSystem#ConfLike*
   ): SpookyContext = {
     val neo = SpookyContext(sqlContext.sparkSession)
-    neo.setConf(conf: _*)
+    neo.setConf(conf*)
     neo
   }
 
@@ -37,7 +37,7 @@ object SpookyContext {
       conf: PluginSystem#ConfLike*
   ): SpookyContext = {
     val neo = SpookyContext(sparkSession)
-    neo.setConf(conf: _*)
+    neo.setConf(conf*)
     neo
   }
 
@@ -133,7 +133,7 @@ case class SpookyContext(
       neo
     }
 
-    setPlugin(plugins: _*)
+    setPlugin(plugins*)
   }
 
   case class Accessor[T <: PluginSystem](v: T) extends NOTSerializable {
@@ -172,7 +172,7 @@ case class SpookyContext(
   final override def clone: SpookyContext = { // TODO: clean
     val result = SpookyContext(sqlContext)
     val plugins = Plugins.registered.map(plugin => plugin.clone)
-    result.setPlugin(plugins: _*)
+    result.setPlugin(plugins*)
 
     result
   }
@@ -209,7 +209,7 @@ case class SpookyContext(
     //      val ttg = implicitly[TypeTag[T]]
 
     val self = rdd.map { data =>
-      FetchedRow(data).squash
+      FetchedRow.Proto(data).asSquashed
     }
     new FetchedDataset(
       self,

@@ -3,7 +3,7 @@ package com.tribbloids.spookystuff.execution
 import com.tribbloids.spookystuff.dsl.{GenPartitioner, GenPartitionerLike}
 import com.tribbloids.spookystuff.row.{BeaconRDD, LocalityGroup}
 
-trait InjectBeaconRDDPlan[O] extends ExecutionPlan[O] {
+trait CanInjectBeaconRDD[O] extends ExecutionPlan[O] {
 
   def genPartitioner: GenPartitioner
 

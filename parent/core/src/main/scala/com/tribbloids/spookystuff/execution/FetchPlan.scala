@@ -1,15 +1,18 @@
 package com.tribbloids.spookystuff.execution
 
-import com.tribbloids.spookystuff.actions._
+import com.tribbloids.spookystuff.actions.*
 import com.tribbloids.spookystuff.dsl.{GenPartitioner, OneToMany}
-import com.tribbloids.spookystuff.row._
+import com.tribbloids.spookystuff.execution.ExecutionPlan.CanChain
+import com.tribbloids.spookystuff.row.*
 import org.apache.spark.rdd.RDD
-
-import scala.reflect.ClassTag
 
 object FetchPlan {
 
-  type Batch[O] = Seq[(HasTraceSet, O)]
+  type Yield[O] = (HasTraceSet, Data.WithScope[O])
+  // TODO: HasTraceSet will be gone, Agent can be manipulated directly
+  // this will make it definitionally close to FlatMapPlan, the only difference is the shuffling
+
+  type Batch[O] = Seq[Yield[O]]
 
   type Fn[I, O] = FetchedRow[I] => Batch[O]
 
@@ -23,14 +26,15 @@ object FetchPlan {
     ): Fn[I, I] = { row =>
       val traces = fn(row)
 
-      val mayBeEmpty: Seq[(Trace, I)] = traces.asTraceSet.toSeq.map { trace =>
-        trace -> row.data
+      val mayBeEmpty = traces.asTraceSet.toSeq.map { trace =>
+        trace -> row.payload
       }
 
-      val result: Seq[(Trace, I)] = forkType match {
-        case OneToMany.Outer if mayBeEmpty.isEmpty => Seq((Trace.NoOp: Trace) -> row.data)
+      val result: Seq[(Trace, Data.WithScope[I])] = forkType match {
+        case OneToMany.Outer if mayBeEmpty.isEmpty => Seq((Trace.NoOp: Trace) -> row.payload)
         case _                                     => mayBeEmpty
       }
+
       result
     }
   }
@@ -39,20 +43,21 @@ object FetchPlan {
 /**
   * Created by peng on 27/03/16
   *
-  * TODO: the only difference between this and [[FlatMapPlan]] is the groupByKey step for sharing locality group, this
-  * is too complex. the 2 classes should be merged
+  * TODO: the only difference between this and [[ChainPlan]] is the groupByKey step for sharing locality group, this is
+  * too complex. the 2 classes should be merged
   */
-case class FetchPlan[I, O: ClassTag](
+case class FetchPlan[I, O](
     override val child: ExecutionPlan[I],
     fn: FetchPlan.Fn[I, O],
     sameBy: Trace => Any,
     genPartitioner: GenPartitioner
 ) extends UnaryPlan[I, O](child)
-    with InjectBeaconRDDPlan[O] {
+    with CanInjectBeaconRDD[O]
+    with CanChain[O] {
 
   override def execute: SquashedRDD[O] = {
 
-    val forkedRDD: RDD[(LocalityGroup, O)] = child.squashedRDD
+    val forkedRDD: RDD[(LocalityGroup, Data.WithScope[O])] = child.squashedRDD
       .flatMap { (v: SquashedRow[I]) =>
         val rows = v.withCtx(child.spooky).unSquash
 
@@ -66,20 +71,38 @@ case class FetchPlan[I, O: ClassTag](
         }
       }
 
-    val grouped: RDD[(LocalityGroup, Iterable[O])] = gpImpl.groupByKey(forkedRDD, beaconRDDOpt)
+    val grouped: RDD[(LocalityGroup, Iterable[Data.WithScope[O]])] = gpImpl.groupByKey(forkedRDD, beaconRDDOpt)
 
     grouped
       .map { tuple =>
         SquashedRow(
-          AgentState(tuple._1),
-          tuple._2.map { v =>
-            Data.WithScope.empty(v)
-          }.toVector
+          tuple._1,
+          tuple._2.toVector
         )
-          .withCtx(spooky)
-          .withDefaultScope
 
         // actual fetch can only be triggered by extract or savePages
       }
+  }
+
+  override def chain[O2](fn: ChainPlan.Fn[O, O2]): FetchPlan[I, O2] = {
+
+    val newFn: FetchPlan.Fn[I, O2] = { row =>
+      val out1 = this.fn(row)
+
+      val out2 = out1.flatMap {
+        case (trace, data) =>
+          val row2 = FetchedRow(row.agentState, data)
+
+          fn(row2).map { v =>
+            trace -> v
+          }
+      }
+
+      out2
+    }
+
+    this.copy(
+      fn = newFn
+    )
   }
 }

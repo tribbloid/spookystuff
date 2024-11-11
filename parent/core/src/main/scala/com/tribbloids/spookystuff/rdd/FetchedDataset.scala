@@ -86,6 +86,7 @@ case class FetchedDataset[D](
     plan: ExecutionPlan[D]
 ) extends FetchedDatasetAPI[D]
     with CatalystTypeOps.ImplicitMixin {
+  // TODO: should be "ExecutionPlanView"
 
 //  implicit def fromExecutionPlan(plan: ExecutionPlan[D]): FetchedDataset[D] = FetchedDataset(plan)
 
@@ -139,12 +140,12 @@ case class FetchedDataset[D](
 
   object flatMap {
 
-    def apply[O](fn: FlatMapPlan.FlatMap._Fn[D, O]): FetchedDataset[O] = {
+    def apply[O](fn: ChainPlan.FlatMap._Fn[D, O]): FetchedDataset[O] = {
 
       FetchedDataset(
-        FlatMapPlan(
+        ChainPlan(
           FetchedDataset.this,
-          FlatMapPlan.FlatMap.normalise(fn)
+          ChainPlan.FlatMap.normalise(fn)
         )
       )
     }
@@ -153,12 +154,12 @@ case class FetchedDataset[D](
 
   object map {
 
-    def apply[O](fn: FlatMapPlan.Map._Fn[D, O]): FetchedDataset[O] = {
+    def apply[O](fn: ChainPlan.Map._Fn[D, O]): FetchedDataset[O] = {
 
       FetchedDataset(
-        FlatMapPlan(
+        ChainPlan(
           FetchedDataset.this,
-          FlatMapPlan.Map.normalise(fn)
+          ChainPlan.Map.normalise(fn)
         )
       )
     }
@@ -225,7 +226,7 @@ case class FetchedDataset[D](
       range: Range = spooky.conf.exploreRange,
       pathPlanning: PathPlanning = spooky.conf.explorePathPlanning,
       //
-      balancingInterval: Int = spooky.conf.exploreBalancingInterval,
+      epochInterval: Int = spooky.conf.exploreEpochInterval,
       checkpointInterval: Int = spooky.conf.exploreCheckpointInterval, // set to Int.MaxValue to disable checkpointing,
       //
       //      ordinalField: Field = null,
@@ -241,7 +242,7 @@ case class FetchedDataset[D](
       genPartitioner,
       params,
       pathPlanning,
-      balancingInterval,
+      epochInterval,
       checkpointInterval
     )
     FetchedDataset[O](

@@ -1,7 +1,6 @@
 package com.tribbloids.spookystuff.rdd
 
 import ai.acyclic.prover.commons.spark.Envs
-import com.tribbloids.spookystuff.actions
 import com.tribbloids.spookystuff.actions.Wget
 import com.tribbloids.spookystuff.metrics.Acc
 import com.tribbloids.spookystuff.testutils.{FileDocsFixture, SpookyBaseSpec}
@@ -215,55 +214,51 @@ class FetchedDatasetSpec extends SpookyBaseSpec with FileDocsFixture {
     assert(ds.spooky.spookyMetrics.pagesFetched.value == 1)
     ds.spooky.spookyMetrics.resetAll()
 
-    ds.fetch(_ => Wget (JSON_URL)).count()
+    ds.fetch(_ => Wget(JSON_URL)).count()
 
     assert(ds.spooky.spookyMetrics.pagesFetched.value == 1)
   }
 
   it("selectMany plan can be persisted") {
     val ds = spooky
-      .wget(
-        HTML_URL
-      )
-      .selectMany(Lit("Wikipedia") ~ 'name)
+      .fetch(_ => Wget(HTML_URL))
+      .select(_ => "Wikipedia")
       .persist()
     ds.count()
 
     assert(ds.spooky.spookyMetrics.pagesFetched.value == 1)
     ds.spooky.spookyMetrics.resetAll()
 
-    ds.wget(
-      JSON_URL
-    ).count()
+    ds.fetch(_ => Wget(JSON_URL))
+      .count()
 
     assert(ds.spooky.spookyMetrics.pagesFetched.value == 1)
   }
 
-  it("flatten plan can be persisted") {
-    val ds = spooky
-      .wget(
-        HTML_URL
-      )
-      .explode(
-        Lit(Array("a" -> 1, "b" -> 2)) ~ 'Array
-      )
-      .persist()
-    ds.count()
-
-    assert(ds.spooky.spookyMetrics.pagesFetched.value == 1)
-    ds.spooky.spookyMetrics.resetAll()
-
-    ds.wget(
-      JSON_URL
-    ).count()
-
-    assert(ds.spooky.spookyMetrics.pagesFetched.value == 1)
-  }
+  // TODO: move to new submodule
+//  it("flatten plan can be persisted") {
+//    val ds = spooky
+//      .fetch(_ => Wget(HTML_URL))
+//      .explode(
+//        Lit(Array("a" -> 1, "b" -> 2)) ~ 'Array
+//      )
+//      .persist()
+//    ds.count()
+//
+//    assert(ds.spooky.spookyMetrics.pagesFetched.value == 1)
+//    ds.spooky.spookyMetrics.resetAll()
+//
+//    ds.wget(
+//      JSON_URL
+//    ).count()
+//
+//    assert(ds.spooky.spookyMetrics.pagesFetched.value == 1)
+//  }
 
   it("explore plan can be persisted") {
     val first = spooky
-      .wget {
-        DEEP_DIR_URL
+      .fetch { _ =>
+        Wget(DEEP_DIR_URL)
       }
     val ds = first
       .explore(S"root directory".attr("path"))(
@@ -274,9 +269,7 @@ class FetchedDatasetSpec extends SpookyBaseSpec with FileDocsFixture {
 
     ds.spooky.spookyMetrics.resetAll()
 
-    ds.wget(
-      JSON_URL
-    ).count()
+    ds.fetch(_ => Wget(JSON_URL)).count()
 
     assert(ds.spooky.spookyMetrics.pagesFetched.value == 1)
   }
@@ -293,7 +286,10 @@ class FetchedDatasetSpec extends SpookyBaseSpec with FileDocsFixture {
 
       spooky
         .fetch(_ => Wget(HTML_URL))
-        .savePages(s"file://${Envs.USER_DIR}/temp/dummy", overwrite = true)
+        .select { row =>
+          row.save
+        }
+//        .savePages(s"file://${Envs.USER_DIR}/temp/dummy", overwrite = true)
         .collect()
 
       assert(dummyFileExists())

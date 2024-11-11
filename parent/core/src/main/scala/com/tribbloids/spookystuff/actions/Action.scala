@@ -1,14 +1,12 @@
 package com.tribbloids.spookystuff.actions
 
 import com.tribbloids.spookystuff.actions.Trace.DryRun
-import com.tribbloids.spookystuff.doc.{Doc, Observation}
 import com.tribbloids.spookystuff.agent.Agent
 import com.tribbloids.spookystuff.commons.CommonUtils
-import com.tribbloids.spookystuff.commons.refl.ScalaUDT
+import com.tribbloids.spookystuff.doc.{Doc, Observation}
 import com.tribbloids.spookystuff.{ActionException, SpookyContext}
 import org.apache.spark.sql.types.SQLUserDefinedType
 import org.slf4j.LoggerFactory
-
 
 /**
   * These are the same actions a human would do to get to the data page, their order of execution is identical to that
@@ -136,4 +134,3 @@ trait Action extends ActionLike with HasTrace {
     this.timeElapsed = same.asInstanceOf[Action].timeElapsed
   }
 }
-

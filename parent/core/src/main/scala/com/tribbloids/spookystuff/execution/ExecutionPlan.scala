@@ -1,21 +1,26 @@
 package com.tribbloids.spookystuff.execution
 
 import com.tribbloids.spookystuff.SpookyContext
-import com.tribbloids.spookystuff.commons.TreeView
 import com.tribbloids.spookystuff.commons.lifespan.Cleanable
-import com.tribbloids.spookystuff.row._
+import com.tribbloids.spookystuff.row.*
 import org.apache.spark.rdd.RDD
 import org.apache.spark.storage.StorageLevel
 
-object ExecutionPlan {}
+object ExecutionPlan {
+
+  trait CanChain[O] {
+    self: ExecutionPlan[O] =>
+
+    def chain[O2](fn: ChainPlan.Fn[O, O2]): ExecutionPlan[O2]
+  }
+}
 
 //right now it vaguely resembles SparkPlan in catalyst
 //TODO: may subclass SparkPlan in the future to generate DataFrame directly, but not so fast
 abstract class ExecutionPlan[O](
     val children: Seq[ExecutionPlan[_]],
     val ec: ExecutionContext
-) extends TreeView.Immutable[ExecutionPlan[_]]
-    with Serializable
+) extends Serializable
     with Cleanable {
 
   def this(
@@ -53,7 +58,7 @@ abstract class ExecutionPlan[O](
 
     this.execute
       .map { row =>
-        row.group.withCtx(spooky).trajectory // always fetch before rendering an RDD
+        row.localityGroup.withCtx(spooky).trajectory // always fetch before rendering an RDD
         row
       }
   }
@@ -64,6 +69,8 @@ abstract class ExecutionPlan[O](
   def cachedRDDOpt: Option[SquashedRDD[O]] = Option(_cachedRDD)
 
   def isCached: Boolean = cachedRDDOpt.nonEmpty
+
+  def normalise: ExecutionPlan[O] = this
 
   // TODO: cachedRDD is redundant? just make it lazy val!
   final def squashedRDD: SquashedRDD[O] = {

@@ -1,16 +1,16 @@
 package com.tribbloids.spookystuff.conf
 
 import ai.acyclic.prover.commons.function.hom.Hom.:=>
-import com.tribbloids.spookystuff.dsl._
-import com.tribbloids.spookystuff.row.Sampler
-import com.tribbloids.spookystuff.agent._
+import com.tribbloids.spookystuff.agent.*
 import com.tribbloids.spookystuff.commons.Timeout
+import com.tribbloids.spookystuff.dsl.*
+import com.tribbloids.spookystuff.row.Sampler
 import org.apache.spark.SparkConf
 import org.apache.spark.storage.StorageLevel
 
 import java.util.Date
+import scala.concurrent.duration.*
 import scala.concurrent.duration.Duration.Infinite
-import scala.concurrent.duration._
 
 object SpookyConf {
 
@@ -61,7 +61,7 @@ case class SpookyConf(
     //
     explorePathPlanning: PathPlanning = PathPlanners_Simple.BreadthFirst,
     exploreRange: Range = 0 until Int.MaxValue,
-    exploreBalancingInterval: Int = 50,
+    exploreEpochInterval: Int = 50,
     exploreCheckpointInterval: Int = 50, // disabled if <=0
 
     // if encounter too many out of memory error, change to MEMORY_AND_DISK_SER

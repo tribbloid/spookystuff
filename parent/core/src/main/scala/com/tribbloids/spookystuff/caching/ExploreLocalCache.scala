@@ -20,14 +20,14 @@ object ExploreLocalCache {
         ConcurrentMap[LocalityGroup, Vector[Data.Exploring[O]]]() // no eviction
   ) extends Explore.Common[I, O] {
 
-    def getVisitedData(key: LocalityGroup): Set[Outs] = {
+    def getVisitedData(key: LocalityGroup): Set[_Batch] = {
 
-      val ongoingVisited: ConcurrentSet[Outs] = ongoing
+      val ongoingVisited: ConcurrentSet[_Batch] = ongoing
         .flatMap { v =>
           v.visited.get(key)
         }
 
-      val committedVisited: Option[Outs] = visited.get(key)
+      val committedVisited: Option[_Batch] = visited.get(key)
 
       ongoingVisited.toSet ++ committedVisited
     }

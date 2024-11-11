@@ -2,10 +2,9 @@ package com.tribbloids.spookystuff.row
 
 import ai.acyclic.prover.commons.function.hom.Hom.:=>
 import com.tribbloids.spookystuff.SpookyContext
-import com.tribbloids.spookystuff.actions.Trace
 import com.tribbloids.spookystuff.commons.serialization.NOTSerializable
 import com.tribbloids.spookystuff.doc.Observation
-import com.tribbloids.spookystuff.execution.{FetchPlan, FlatMapPlan}
+import com.tribbloids.spookystuff.execution.{ChainPlan, FetchPlan}
 
 import scala.language.implicitConversions
 
@@ -14,7 +13,7 @@ object SquashedRow {
   def ofData[D](dataWithScope: Data.WithScope[D]*): SquashedRow[D] = {
 
     SquashedRow(
-      AgentState.ofTrace(Trace.NoOp),
+      LocalityGroup.NoOp,
       dataWithScope
     )
   }
@@ -70,23 +69,21 @@ object SquashedRow {
 }
 
 case class SquashedRow[D](
-    agentState: AgentState,
+    localityGroup: LocalityGroup,
     batch: Seq[Data.WithScope[D]]
 ) extends SpookyContext.CanRunWith {
   // can only support 1 agent
   // will trigger a fork if not all agent actions were captured by the LocalityGroup
 
-  import SquashedRow._
-
-  def group: LocalityGroup = agentState.group
+  import SquashedRow.*
 
   def cache(v: Seq[Observation]): this.type = {
-    agentState.rollout.cache(v)
+    localityGroup.rollout.cache(v)
     this
   }
 
   def uncache: this.type = {
-    agentState.rollout.unCache
+    localityGroup.rollout.unCache
     this
   }
 
@@ -143,7 +140,7 @@ case class SquashedRow[D](
       batch = {
         batch.map { d =>
           d.copy(
-            data = Data.Exploring(d.data).idRefresh
+            data = Data.Exploring(d).idRefresh
           )
         }
       }
@@ -152,33 +149,17 @@ case class SquashedRow[D](
 
   case class _WithCtx(ctx: SpookyContext) extends NOTSerializable {
 
-    lazy val withDefaultScope: SquashedRow[D] = {
-
-      lazy val uids = group.withCtx(ctx).trajectory.map(_.uid)
-
-      val newDataRows = batch.map { row =>
-        row.copy(scopeUIDs = uids)
-      }
-
-      SquashedRow.this.copy(batch = newDataRows)
-    }
-
     lazy val unSquash: Seq[FetchedRow[D]] = {
 
-      lazy val lookup = group.withCtx(ctx).lookup
+      val agent = localityGroup.mkAgent(ctx)
 
       batch.map { r1 =>
-        val scopeUID = r1.scopeUIDs
-        val inScope = scopeUID.map { uid =>
-          lookup(uid)
-        }
-
-        FetchedRow(r1.data, inScope, r1.ordinal, ctx = ctx)
+        FetchedRow(agent, r1)
       }
     }
 
     def flatMap[O](
-        fn: FlatMapPlan.Fn[D, O]
+        fn: ChainPlan.Fn[D, O]
     ): SquashedRow[O] = {
 
       val newDataRows: Seq[Data.WithScope[O]] = unSquash.flatMap { (row: FetchedRow[D]) =>

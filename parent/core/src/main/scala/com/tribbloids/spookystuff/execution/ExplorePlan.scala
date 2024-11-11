@@ -3,8 +3,9 @@ package com.tribbloids.spookystuff.execution
 import com.tribbloids.spookystuff.actions.Trace
 import com.tribbloids.spookystuff.caching.ExploreLocalCache
 import com.tribbloids.spookystuff.dsl.{GenPartitioner, PathPlanning}
-import com.tribbloids.spookystuff.execution.ExplorePlan.{Params, State}
-import com.tribbloids.spookystuff.row._
+import com.tribbloids.spookystuff.execution.ExecutionPlan.CanChain
+import com.tribbloids.spookystuff.execution.ExplorePlan.Params
+import com.tribbloids.spookystuff.row.*
 import org.apache.spark.rdd.RDD
 import org.slf4j.LoggerFactory
 
@@ -13,15 +14,15 @@ import java.util.UUID
 object ExplorePlan {
 
   /**
-    * [[FlatMapPlan.Batch]] deliberately contains [[Data.WithScope]], but the scope will not be commited into the
-    * visited set. it is only there to make appending [[FlatMapPlan]] easier
+    * [[ChainPlan.Batch]] deliberately contains [[Data.WithScope]], but the scope will not be commited into the visited
+    * set. it is only there to make appending [[ChainPlan]] easier
     *
     * @tparam I
     *   input
     * @tparam O
     *   output
     */
-  type Batches[I, O] = (FetchPlan.Batch[I], FlatMapPlan.Batch[O])
+  type Batches[I, O] = (FetchPlan.Batch[I], ChainPlan.Batch[O])
 
   type Fn[I, O] = FetchedRow[Data.Exploring[I]] => Batches[I, O]
 
@@ -50,6 +51,7 @@ object ExplorePlan {
   )
 }
 
+// TODO: impl is too complex, can it be rewritten as a simple loop of FetchPlan, with shuffling enabled intermittenly?
 case class ExplorePlan[I, O](
     override val child: ExecutionPlan[I],
     fn: ExplorePlan.Fn[I, O],
@@ -57,12 +59,13 @@ case class ExplorePlan[I, O](
     genPartitioner: GenPartitioner,
     params: Params,
     pathPlanning: PathPlanning,
-    balancingInterval: Int,
+    epochInterval: Int,
     // TODO: enable more flexible stopping condition
     // TODO: test if proceeding to next epoch is necessary
     checkpointInterval: Int // set to Int.MaxValue to disable checkpointing,
 ) extends UnaryPlan[I, O](child)
-    with InjectBeaconRDDPlan[O]
+    with CanInjectBeaconRDD[O]
+    with CanChain[O]
     with Explore.Common[I, O] {
 
   object Init extends Serializable {
@@ -74,7 +77,8 @@ case class ExplorePlan[I, O](
 
   }
 
-  import Init._
+  import ExplorePlan.*
+  import Init.*
 
   val pathPlanningImpl: PathPlanning.Impl[I, O] =
     pathPlanning._Impl[I, O](_effectiveParams, this.outputSchema)
@@ -88,7 +92,7 @@ case class ExplorePlan[I, O](
       .map { row0 =>
         val _row0s: SquashedRow[I] = row0
 
-        _row0s.agentState.group -> State[I, O](
+        _row0s.localityGroup -> State[I, O](
           row0 = Some(_row0s),
           visited = None
         )
@@ -111,7 +115,7 @@ case class ExplorePlan[I, O](
           val state_+ = runner
             .Run(fn)
             .recursively(
-              balancingInterval
+              epochInterval
             )
           openSetAcc add runner.open.size.toLong
           state_+
@@ -163,11 +167,9 @@ case class ExplorePlan[I, O](
             row.isOutOfRange
           }
 
-          val inRange = inRangeExploring.map(v => Data.WithScope.empty(v.data))
+          val inRange = inRangeExploring.map(v => Data.WithScope.default(v.data))
 
-          val result = SquashedRow[O](AgentState(v._1), inRange)
-            .withCtx(spooky)
-            .withDefaultScope
+          val result = SquashedRow[O](v._1, inRange)
 
           result
         }
@@ -183,11 +185,11 @@ case class ExplorePlan[I, O](
   ): RDD[(LocalityGroup, State[I, O])] = {
 
     val globalReducer: (State[I, O], State[I, O]) => State[I, O] = { (v1, v2) =>
-      val open: Option[Elems] = (v1.open ++ v2.open).toSeq
+      val open: Option[Batch] = (v1.open ++ v2.open).toSeq
         .reduceOption(pathPlanningImpl.openReducer_global)
         .map(_.toVector)
 
-      val visited: Option[Outs] = (v1.visited ++ v2.visited).toSeq
+      val visited: Option[_Batch] = (v1.visited ++ v2.visited).toSeq
         .reduceOption(pathPlanningImpl.visitedReducer_global)
         .map(_.toVector)
 
@@ -197,22 +199,24 @@ case class ExplorePlan[I, O](
     gpImpl.reduceByKey(stateRDD, globalReducer, beaconRDDOpt)
   }
 
-  //    this match {
-  //      case plan: ExplorePlan[_, _] if !this.isCached =>
-  //        object _More extends Explore.Fn[D, O] {
-  //
-  //          override def apply(row: FetchedRow[Data.Exploring[D]]) = {
-  //
-  //            val (forked, flat) = plan.fn(row)
-  //
-  //            flat.map(withScope => ???)
-  //            ???
-  //          }
-  //        }
-  //
-  //        plan.copy()(_More)
-  //      case _ =>
-  //        FlatPlan(this, fn)
-  //    }
-//  }
+  override def chain[O2](fn: ChainPlan.Fn[O, O2]): ExplorePlan[I, O2] = {
+
+    val newFn: Fn[I, O2] = { row =>
+      val out1: (FetchPlan.Batch[I], ChainPlan.Batch[O]) = this.fn(row)
+
+      val out2: ChainPlan.Batch[O2] = out1._2.flatMap { data =>
+        val row2 = FetchedRow(row.agentState, data)
+
+        val result = fn(row2)
+
+        result
+      }
+
+      out1._1 -> out2
+    }
+
+    this.copy(
+      fn = newFn
+    )
+  }
 }

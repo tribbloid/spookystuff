@@ -5,24 +5,49 @@ import com.tribbloids.spookystuff.doc.Observation.DocUID
 import java.util.UUID
 import scala.language.implicitConversions
 
+trait Data[D] {
+
+  def data: D
+}
+
 object Data {
+
+//  case class Raw[D](
+//      data: D
+//  ) extends Data[D]
+//
+//  case class Flatten[D]( TODO: should I use this?
+//      data: D,
+  //      // temporary columns used in inner/outer join, can be committed into D on demand
+  //      // they will be missing if it is a outer fork that failed to produce any result
+//      key: Option[D],
+//      ordinalIndex: Int = 0
+//  ) extends Data[D]
+
+  case class SourceScope(
+      observations: Seq[DocUID] = Nil,
+      ordinalIndex: Int = 0
+
+      // a list of DocUIDs that can be found in associated Rollout, DocUID has small serialized form
+  ) {}
 
   object WithScope {
 
     implicit def unbox[D <: Serializable](v: WithScope[D]): D = v.data
 
-    def empty[D](data: D): WithScope[D] = WithScope(data, Nil)
+    def unscoped[D](data: D): WithScope[D] = WithScope(data, Some(SourceScope(Nil)))
 
-    lazy val blank: WithScope[Unit] = empty(())
+    def default[D](data: D): WithScope[D] = WithScope(data, None)
+
+    lazy val ofUnit: WithScope[Unit] = default(())
   }
 
   // TODO: can this be a dependent type since scopeUIDs has to be tied to a Rollout?
   case class WithScope[D](
       data: D,
-      scopeUIDs: Seq[DocUID],
-      // a list of DocUIDs that can be found in associated Rollout, DocUID has very small serialized form
-      ordinal: Int = 0
-  ) {}
+      sourceScope: Option[SourceScope] = None
+      // if missing, always refers to all snapshoted observations in the trajectory
+  ) extends Data[D] {}
 
   object Exploring {}
 
@@ -45,13 +70,15 @@ object Data {
     */
   @SerialVersionUID(6534469387269426194L)
   case class Exploring[D](
-      data: D,
+      payload: WithScope[D],
       lineageID: Option[UUID] = None,
       isOutOfRange: Boolean = false,
       depthOpt: Option[Int] = None,
-      ordinal: Vector[Int] = Vector.empty
-  ) {
+      path: Vector[SourceScope] = Vector.empty
+      // contain every used sourceScope in exploration history
+  ) extends Data[D] {
 
+    override def data: D = payload.data
     //  {
     //    assert(data.isInstanceOf[Serializable]) // fail early  TODO: this should be moved into Debugging mode
     //  }
@@ -60,14 +87,6 @@ object Data {
 
     def depth_++ : Exploring[D] = this.copy(depthOpt = Some(depthOpt.map(_ + 1).getOrElse(0)))
 
-    lazy val sortEv: (Option[Int], Vector[Int]) = (depthOpt, ordinal)
+    lazy val orderBy: (Option[Int], Vector[Int]) = (depthOpt, path.map(_.ordinalIndex))
   }
-
-  case class Forking[D, K](
-      data: D,
-      // the following are temporary columns used in forking, can be committed into D on demand
-      // they will be missing if it is a outer fork that failed to produce any result
-      key: Option[K],
-      ordinal: Option[Int] // will be appended into Exploring.ordinal by default
-  ) {}
 }

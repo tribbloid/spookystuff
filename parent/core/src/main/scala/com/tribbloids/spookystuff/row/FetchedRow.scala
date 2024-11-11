@@ -1,20 +1,17 @@
 package com.tribbloids.spookystuff.row
 
-import ai.acyclic.prover.commons.util.Magnet.OptionMagnet
 import com.tribbloids.spookystuff.SpookyContext
 import com.tribbloids.spookystuff.commons.serialization.NOTSerializable
 import com.tribbloids.spookystuff.doc.*
 import com.tribbloids.spookystuff.doc.Observation.{DocUID, Failure, Success}
-import com.tribbloids.spookystuff.execution.FlatMapPlan
-import com.tribbloids.spookystuff.row.Data.WithScope
+import com.tribbloids.spookystuff.execution.ChainPlan
+import com.tribbloids.spookystuff.row.Data.{SourceScope, WithScope}
 
 import scala.collection.mutable
 import scala.collection.mutable.ArrayBuffer
 import scala.language.implicitConversions
 
 object FetchedRow {
-
-  lazy val blank: FetchedRow[Unit] = FetchedRow(())
 
   /**
     * providing the following APIs:
@@ -47,25 +44,25 @@ object FetchedRow {
     // the following functions are also available for a single FetchedRow, treated as Seq(v)
 //    def dummy(): Any = ???
 
-    def withNormalisedDocs: Seq[FetchedRow[D]] = {
-
-      self.map(v =>
-        v.copy(
-          observations = v.observations.map {
-            case v: Doc => v.normalised
-            case v      => v
-          }
-        )
-      )
-    }
+//    def withNormalisedDocs: Seq[FetchedRow[D]] = { TODO: gone, normalised doc now selected from row
+//
+//      self.map(v =>
+//        v.copy(
+//          observations = v.observations.map {
+//            case v: Doc => v.normalised
+//            case v      => v
+//          }
+//        )
+//      )
+//    }
 
     def select[O](
         fn: FetchedRow[D] => Seq[O]
-    ): FlatMapPlan.Batch[O] = {
+    ): ChainPlan.Batch[O] = {
 
       self.flatMap { row =>
         fn(row).map { dd =>
-          row.dataWithScope.copy(
+          row.payload.copy(
             data = dd
           )
         }
@@ -107,6 +104,31 @@ object FetchedRow {
   }
 
   implicit def toSeqView[D](self: Seq[FetchedRow[D]]): SeqView[D] = SeqView(self)
+
+  case class Proto[D](
+      data: D,
+      observations: Seq[Observation] = Nil
+  ) {
+
+    lazy val payload: WithScope[D] = Data.WithScope(data)
+
+    def asSquashed: SquashedRow[D] = {
+      SquashedRow
+        .ofData(
+          payload
+        )
+        .cache(observations)
+    }
+
+    def asFetched(ctx: SpookyContext): FetchedRow[D] = {
+      FetchedRow(
+        agentState = AgentState.Fake(observations, ctx),
+        payload = payload
+      )
+    }
+  }
+
+  lazy val blank: Proto[Unit] = Proto(Data.WithScope(()), Nil)
 }
 
 /**
@@ -114,20 +136,28 @@ object FetchedRow {
   * serializable, has to be created from [[SquashedRow]] on the fly
   */
 case class FetchedRow[D](
-    data: D,
-    observations: Seq[Observation] = Seq.empty,
-    ordinalIndex: Int = 0,
-    private val ctx: OptionMagnet[SpookyContext] = None
+    agentState: AgentState,
+    payload: Data.WithScope[D]
 ) extends NOTSerializable {
 
-  @transient lazy val dataWithScope: Data.WithScope[D] = Data.WithScope(data, observations.map(_.uid), ordinalIndex)
+  def data: D = payload.data
 
-  def squash: SquashedRow[D] = {
-    SquashedRow
-      .ofData(
-        dataWithScope
-      )
-      .cache(observations)
+  def scope: Option[SourceScope] = payload.sourceScope
+
+  lazy val effectiveScope: SourceScope = {
+
+    val result = scope match {
+      case Some(scope) => scope
+      case None =>
+        val uids = agentState.trajectory.map(_.uid)
+        SourceScope(uids)
+    }
+
+    result
+  }
+
+  lazy val observations: Seq[Observation] = effectiveScope.observations.map { uid =>
+    agentState.lookup(uid)
   }
 
   @transient lazy val succeeded: Seq[Success] = observations.collect {
@@ -159,7 +189,7 @@ case class FetchedRow[D](
         }
       }
 
-      dataWithScope.scopeUIDs.foreach { uid =>
+      effectiveScope.observations.foreach { uid =>
         if (innerBuffer.names.contains(uid.name)) {
           outerBuffer += innerBuffer.refs.toList
           innerBuffer.clear()
@@ -170,7 +200,7 @@ case class FetchedRow[D](
 
       outerBuffer.zipWithIndex.map {
         case (v, i) =>
-          dataWithScope.copy(scopeUIDs = v, ordinal = i)
+          payload.copy(sourceScope = Some(SourceScope(v, i)))
       }.toSeq
     }
   }
@@ -223,7 +253,7 @@ case class FetchedRow[D](
         case (doc, _) =>
           val saveParts = Seq(path) ++ extension
 
-          doc.save(ctx.get, overwrite)(saveParts)
+          doc.save(agentState.ctx, overwrite)(saveParts)
       }
     }
   }

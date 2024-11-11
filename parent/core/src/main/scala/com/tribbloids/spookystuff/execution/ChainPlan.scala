@@ -2,11 +2,12 @@ package com.tribbloids.spookystuff.execution
 
 import ai.acyclic.prover.commons.util.Magnet.PreferRightMagnet
 import com.tribbloids.spookystuff.commons.refl.CatalystTypeOps
-import com.tribbloids.spookystuff.row._
+import com.tribbloids.spookystuff.execution.ExecutionPlan.CanChain
+import com.tribbloids.spookystuff.row.*
 
-object FlatMapPlan extends CatalystTypeOps.ImplicitMixin {
+object ChainPlan extends CatalystTypeOps.ImplicitMixin {
 
-  type Out[O] = Data.WithScope[O]
+  type Yield[O] = Data.WithScope[O]
   type Batch[O] = Seq[Data.WithScope[O]]
 
   type Fn[I, O] = FetchedRow[I] => Batch[O]
@@ -16,13 +17,13 @@ object FlatMapPlan extends CatalystTypeOps.ImplicitMixin {
     type RMag[O] = PreferRightMagnet[Seq[O], Batch[O]]
     type _Fn[I, O] = FetchedRow[I] => RMag[O]
 
-    def normalise[I, O](fn: _Fn[I, O]): FlatMapPlan.this.Fn[I, O] = { row =>
+    def normalise[I, O](fn: _Fn[I, O]): ChainPlan.this.Fn[I, O] = { row =>
       val mag = fn(row).revoke
 
       val result: Batch[O] = mag match {
         case Left(vs: Seq[O]) =>
           vs.map { v =>
-            row.dataWithScope.copy(data = v)
+            row.payload.copy(data = v)
           }
         case Right(vs: Batch[O]) =>
           vs
@@ -33,13 +34,13 @@ object FlatMapPlan extends CatalystTypeOps.ImplicitMixin {
 
   object Map {
 
-    type RMag[O] = PreferRightMagnet[O, Out[O]]
-    type _Fn[I, O] = FetchedRow[I] => PreferRightMagnet[O, Out[O]]
+    type RMag[O] = PreferRightMagnet[O, Yield[O]]
+    type _Fn[I, O] = FetchedRow[I] => PreferRightMagnet[O, Yield[O]]
 
-    def normalise[I, O](fn: _Fn[I, O]): FlatMapPlan.this.Fn[I, O] = { row =>
+    def normalise[I, O](fn: _Fn[I, O]): ChainPlan.this.Fn[I, O] = { row =>
       val result = fn(row).revoke match {
         case Left(v) =>
-          row.dataWithScope.copy(data = v)
+          row.payload.copy(data = v)
         case Right(v) =>
           v
       }
@@ -59,9 +60,9 @@ object FlatMapPlan extends CatalystTypeOps.ImplicitMixin {
 
 }
 
-case class FlatMapPlan[I, O]( // narrow means narrow transformation in Apache Spark
+case class ChainPlan[I, O]( // narrow means narrow transformation in Apache Spark
     override val child: ExecutionPlan[I],
-    fn: FlatMapPlan.Fn[I, O]
+    fn: ChainPlan.Fn[I, O]
 ) extends UnaryPlan[I, O](child) {
 
   final override def execute: SquashedRDD[O] = {
@@ -81,26 +82,22 @@ case class FlatMapPlan[I, O]( // narrow means narrow transformation in Apache Sp
     result
   }
 
-  def optimse(
-  ): UnaryPlan[I, O] = {
+  override def normalise: ExecutionPlan[O] = {
+    // if uncached, should be executed through others (FetchPlan & ExplorePlan)
 
-    this
-    //    this match { // TODO: enable this optimisation later
-    //      case plan: ExplorePlan[_, _] if !this.isCached =>
-    //        object _More extends Explore.Fn[D, O] {
-    //
-    //          override def apply(row: FetchedRow[Data.Exploring[D]]) = {
-    //
-    //            val (forked, flat) = plan.fn(row)
-    //
-    //            flat.map(withScope => ???)
-    //            ???
-    //          }
-    //        }
-    //
-    //        plan.copy()(_More)
-    //      case _ =>
-    //        FlatPlan(this, fn)
-    //    }
+    if (!this.isCached) {
+
+      val _child = child.normalise
+
+      _child match {
+        case plan: CanChain[I] =>
+          plan.chain(fn)
+        case _ =>
+          this
+      }
+    } else {
+      this
+    }
+
   }
 }
