@@ -21,8 +21,8 @@ case class PreemptiveLocalOps(capacity: Int)(
     exeCtx: ExecutionContext = PartitionExecution.exeCtx
 ) {
 
-  import PreemptiveLocalOps._
-  import RDDImplicits._
+  import PreemptiveLocalOps.*
+  import RDDImplicits.*
 
   trait Impl[T] {
 

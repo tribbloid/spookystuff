@@ -18,13 +18,13 @@ object ExecutionPlan {
 //right now it vaguely resembles SparkPlan in catalyst
 //TODO: may subclass SparkPlan in the future to generate DataFrame directly, but not so fast
 abstract class ExecutionPlan[O](
-    val children: Seq[ExecutionPlan[_]],
+    val children: Seq[ExecutionPlan[?]],
     val ec: ExecutionContext
 ) extends Serializable
     with Cleanable {
 
   def this(
-      children: Seq[ExecutionPlan[_]]
+      children: Seq[ExecutionPlan[?]]
   ) = this(
     children,
     children.map(_.ec).reduce(_ :++ _)
@@ -43,7 +43,7 @@ abstract class ExecutionPlan[O](
     outputSchema
   }
 
-  def firstChildOpt: Option[ExecutionPlan[_]] = children.headOption
+  def firstChildOpt: Option[ExecutionPlan[?]] = children.headOption
 
   // beconRDD is always empty, with fixed partitioning, cogroup with it to maximize Local Cache hitting chance
   // by default, inherit from the first child

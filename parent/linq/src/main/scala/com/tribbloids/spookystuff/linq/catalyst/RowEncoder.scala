@@ -4,9 +4,9 @@ import com.tribbloids.spookystuff.linq.Linq.Row
 import com.tribbloids.spookystuff.linq.Tuple
 import frameless.TypedEncoder
 import org.apache.spark.sql.FramelessInternals
-import org.apache.spark.sql.catalyst.expressions._
+import org.apache.spark.sql.catalyst.expressions.*
 import org.apache.spark.sql.catalyst.expressions.objects.Invoke
-import org.apache.spark.sql.types._
+import org.apache.spark.sql.types.*
 
 import scala.reflect.ClassTag
 
@@ -16,7 +16,7 @@ abstract class RowEncoder[F, G <: Tuple, H <: Tuple](
     classTag: ClassTag[F]
 ) extends TypedEncoder[F] {
 
-  import stage1._
+  import stage1.*
 
   def nullable: Boolean = false
 
@@ -51,7 +51,7 @@ object RowEncoder {
       classTag: ClassTag[Row[G]]
   ) extends RowEncoder[Row[G], G, H] {
 
-    import stage1._
+    import stage1.*
 
     def toCatalyst(path: Expression): Expression = {
 

@@ -4,7 +4,6 @@ import ai.acyclic.prover.commons.function.hom.Hom.:=>
 import com.tribbloids.spookystuff.agent.*
 import com.tribbloids.spookystuff.commons.Timeout
 import com.tribbloids.spookystuff.dsl.*
-import com.tribbloids.spookystuff.row.Sampler
 import org.apache.spark.SparkConf
 import org.apache.spark.storage.StorageLevel
 
@@ -56,8 +55,9 @@ case class SpookyConf(
     //
     localityPartitioner: GenPartitioner = GenPartitioners.Wide(),
     //
-    flattenSampler: Sampler[Any] = identity,
-    forkSampler: Sampler[Any] = identity, // join takes remote actions and cost much more than flatten.
+    flattenSampler: Sampler = Sampler.Identity,
+    forkSampler: Sampler = Sampler.Identity, // join takes remote actions and cost much more than flatten.
+    exploreSampler: Sampler = Sampler.Identity, // join takes remote actions and cost much more than flatten.
     //
     explorePathPlanning: PathPlanning = PathPlanners_Simple.BreadthFirst,
     exploreRange: Range = 0 until Int.MaxValue,
@@ -90,13 +90,12 @@ case class SpookyConf(
 
   def previewMode: SpookyConf = {
 
-    val sampler: Samplers.FirstN = Samplers.FirstN(1)
+    val sampler: Sampler.FirstN = Sampler.FirstN(1)
 
     this.copy(
       flattenSampler = sampler,
       forkSampler = sampler,
       exploreRange = 0 to 2
     )
-
   }
 }

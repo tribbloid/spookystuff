@@ -1,7 +1,7 @@
 package com.tribbloids.spookystuff
 
 import ai.acyclic.prover.commons.function.hom.Hom.:=>
-import com.tribbloids.spookystuff.actions._
+import com.tribbloids.spookystuff.actions.*
 import com.tribbloids.spookystuff.agent.WebProxySetting
 import com.tribbloids.spookystuff.doc.Doc
 import com.tribbloids.spookystuff.row.LocalityGroup

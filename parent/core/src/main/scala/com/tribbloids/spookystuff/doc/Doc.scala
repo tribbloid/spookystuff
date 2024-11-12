@@ -1,7 +1,7 @@
 package com.tribbloids.spookystuff.doc
 
 import ai.acyclic.prover.commons.same.EqualBy
-import com.tribbloids.spookystuff._
+import com.tribbloids.spookystuff.*
 import com.tribbloids.spookystuff.caching.DocCacheLevel
 import com.tribbloids.spookystuff.commons.CommonUtils
 import com.tribbloids.spookystuff.commons.serialization.NOTSerializable
@@ -46,7 +46,7 @@ case class Doc(
 ) extends Observation.Success
     with EqualBy {
 
-  import Doc._
+  import Doc.*
 
   @transient lazy val samenessKey: Any = (uid, uri, metadata, timeMillis, httpStatus.toString)
 
@@ -58,7 +58,7 @@ case class Doc(
   def withMetadata(tuples: (String, Any)*): Doc = {
 
     this.copy(
-      metadata = this.metadata ++: ResourceMetadata.From.tuple(tuples: _*)
+      metadata = this.metadata ++: ResourceMetadata.From.tuple(tuples *)
     )(content)
   }
 
@@ -142,7 +142,7 @@ case class Doc(
   @transient lazy val rootOpt: Option[Unstructured] = {
 
     val content = this.content
-    import content._
+    import content.*
 
     if (mimeType.contains("html") || mimeType.contains("xml") || mimeType.contains("directory")) {
       Some(HtmlElement(contentStr, uri)) // not serialize, parsing is faster
@@ -198,7 +198,7 @@ case class Doc(
         pathParts: Seq[String]
     ): Content = {
 
-      val path = CommonUtils.\\\(pathParts: _*)
+      val path = CommonUtils.\\\(pathParts *)
 
       def wCtx = content.withCtx(spooky)
 

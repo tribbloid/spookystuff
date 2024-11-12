@@ -13,7 +13,7 @@ package object row {
 
   type BeaconRDD[K] = RDD[(K, Unit)]
 
-  type Sampler[T] = Iterable[(T, Int)] => Iterable[(T, Int)] // with index
+//  type Sampler[T] = Iterable[(T, Int)] => Iterable[(T, Int)] // with index
 
   // f(open, visited) => open
 //  type RowEliminator = (Iterable[DataRow], Iterable[DataRow]) => Iterable[DataRow]

@@ -1,12 +1,11 @@
 package org.apache.spark.rdd.spookystuff
 
-import java.io.Serializable
-import java.util.concurrent.atomic.AtomicInteger
-import org.apache.spark._
-import org.apache.spark.rdd.RDD
-import NarrowDispersedRDD._
 import com.tribbloids.spookystuff.commons.serialization.NOTSerializable
+import org.apache.spark.*
+import org.apache.spark.rdd.RDD
+import org.apache.spark.rdd.spookystuff.NarrowDispersedRDD.*
 
+import java.util.concurrent.atomic.AtomicInteger
 import scala.reflect.ClassTag
 import scala.util.Random
 
@@ -31,7 +30,7 @@ object NarrowDispersedRDD {
 
     @transient lazy val to: Seq[Int] = _to.sorted
 
-    @transient lazy val narrowIndexLookup: Map[Int, Int] = Map(to.zipWithIndex: _*)
+    @transient lazy val narrowIndexLookup: Map[Int, Int] = Map(to.zipWithIndex*)
 
     @transient lazy val maxNarrowIndex: Int = narrowIndexLookup.values.max
   }
@@ -109,7 +108,7 @@ object NarrowDispersedRDD {
 
   case class PartitionImpl(
       override val index: Int,
-      @transient prev: RDD[_],
+      @transient prev: RDD[?],
       pseudoRandom: PseudoRandom,
       mappings: Seq[NarrowMapping],
       preferredLocationOvrd: Option[String] = None
@@ -149,7 +148,7 @@ class NarrowDispersedRDD[T: ClassTag](
       Nil // useless, already have overridden getDependencies
     ) {
 
-  import NarrowDispersedRDD._
+  import NarrowDispersedRDD.*
 
   val seed: Long = Random.nextLong()
 

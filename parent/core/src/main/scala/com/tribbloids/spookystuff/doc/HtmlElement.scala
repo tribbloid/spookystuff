@@ -11,7 +11,7 @@ object HtmlElement {
 
   def breadcrumb(e: Element): Seq[String] = {
 
-    import scala.jdk.CollectionConverters._
+    import scala.jdk.CollectionConverters.*
 
     e.parents().asScala.toSeq.map(_.tagName()).reverse :+ e.tagName()
   }
@@ -27,7 +27,7 @@ class HtmlElement private (
     override val uri: String
 ) extends Unstructured {
 
-  import scala.jdk.CollectionConverters._
+  import scala.jdk.CollectionConverters.*
 
   // constructor for HtmlElement returned by .children()
   private def this(_parsed: Element) = this(
@@ -131,7 +131,7 @@ class HtmlElement private (
   override def allAttr: Option[Map[String, String]] = {
     val result = Map(parsed.attributes.asScala.toSeq.map { attr =>
       attr.getKey -> attr.getValue
-    }: _*)
+    } *)
     Some(result)
   }
 

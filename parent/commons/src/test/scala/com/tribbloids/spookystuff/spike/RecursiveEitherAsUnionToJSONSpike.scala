@@ -2,7 +2,7 @@ package com.tribbloids.spookystuff.spike
 
 import com.tribbloids.spookystuff.relay.Relay
 import com.tribbloids.spookystuff.relay.io.Encoder
-import com.tribbloids.spookystuff.spike.RecursiveEitherAsUnionToJSONSpike._
+import com.tribbloids.spookystuff.spike.RecursiveEitherAsUnionToJSONSpike.*
 import com.tribbloids.spookystuff.testutils.BaseSpec
 import org.slf4j.LoggerFactory
 

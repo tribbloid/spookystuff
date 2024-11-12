@@ -1,7 +1,7 @@
 package com.tribbloids.spookystuff.parsing
 
 import java.util.UUID
-import com.tribbloids.spookystuff.graph._
+import com.tribbloids.spookystuff.graph.*
 import com.tribbloids.spookystuff.parsing
 import org.scalameta.ascii.layout.prefs.LayoutPrefsImpl
 

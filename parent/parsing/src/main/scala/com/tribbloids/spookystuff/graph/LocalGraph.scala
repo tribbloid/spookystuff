@@ -75,12 +75,12 @@ case class LocalGraph[D <: Domain](
   override def getLinkedNodes(ids: Seq[ID]): Map[ID, _NodeTriplet] =
     Map(ids.flatMap { id =>
       nodeMap.get(id).map(id -> _)
-    }: _*)
+    } *)
 
   override def getEdges(ids: Seq[(ID, ID)]): MultiMaps.Immutable[(ID, ID), _Edge] =
     Map(ids.flatMap { pair =>
       edgeMap.get(pair).map(pair -> _)
-    }: _*)
+    } *)
 }
 
 object LocalGraph {
@@ -116,8 +116,8 @@ object LocalGraph {
         case nn: _NodeTriplet =>
           nn
         case nn: _Node =>
-          val inbound = mutable.LinkedHashSet(edges.filter(_.to == nn.samenessKey).map(_.from): _*)
-          val outbound = mutable.LinkedHashSet(edges.filter(_.from == nn.samenessKey).map(_.to): _*)
+          val inbound = mutable.LinkedHashSet(edges.filter(_.to == nn.samenessKey).map(_.from) *)
+          val outbound = mutable.LinkedHashSet(edges.filter(_.from == nn.samenessKey).map(_.to) *)
           val result = new _NodeTriplet(nn, inbound, outbound)
           result
       }
@@ -134,7 +134,7 @@ object LocalGraph {
             linkedNode_+(v1, v2, node_+)
           }
         }
-        mutable.Map(result.toSeq: _*)
+        mutable.Map(result.toSeq *)
       }
 
       val edgeMap: MultiMaps.Mutable[(ID, ID), _Edge] = MultiMaps.Mutable.empty

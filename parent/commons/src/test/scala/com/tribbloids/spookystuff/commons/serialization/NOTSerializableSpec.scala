@@ -27,7 +27,7 @@ object NOTSerializableSpec {
 
 class NOTSerializableSpec extends BaseSpec {
 
-  import NOTSerializableSpec._
+  import NOTSerializableSpec.*
 
   it("base class is serializable") {
     val thing = Thing("abc")

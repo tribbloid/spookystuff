@@ -29,7 +29,7 @@ import scala.xml.{Elem, NodeSeq, XML}
 abstract class Relay[Proto] {
   // TODO: should be `BiRelay`
 
-  import Relay._
+  import Relay.*
 
   type IR_>> <: IR
   type IR_<< <: IR
@@ -146,7 +146,7 @@ object Relay {
   implicit def fallbackRelay[T: Manifest]: Relay[T] = new ToSelf[T]()
 
   // TODO: if chain summoning is stable, should only define `asDecoder`
-  implicit def toFallbackDecoderView[R <: Relay[_]](relay: R)(
+  implicit def toFallbackDecoderView[R <: Relay[?]](relay: R)(
       implicit
       <:< : TreeIR.Leaf[relay.IR_<< #Body] <:< relay.IR_<<,
       typeInfo: Manifest[relay.IR_<< #Body]

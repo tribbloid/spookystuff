@@ -16,7 +16,7 @@ case class ClasspathResolver(
     classLoaderOverride: Option[ClassLoader] = None
 ) extends URIResolver {
 
-  import scala.jdk.CollectionConverters._
+  import scala.jdk.CollectionConverters.*
 
   @transient lazy val metadataParser: ResourceMetadata.ReflectionParser[io.github.classgraph.Resource] =
     ResourceMetadata.ReflectionParser[io.github.classgraph.Resource]()

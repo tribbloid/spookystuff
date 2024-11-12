@@ -16,8 +16,8 @@ import scala.util.Random
   */
 class CleanableSuite extends SpookyBaseSpec {
 
-  import com.tribbloids.spookystuff.lifespan.CleanableSuite._
-  import com.tribbloids.spookystuff.utils.RDDImplicits._
+  import com.tribbloids.spookystuff.lifespan.CleanableSuite.*
+  import com.tribbloids.spookystuff.utils.RDDImplicits.*
 
   override def beforeEach(): Unit = {
     super.beforeEach()
@@ -107,7 +107,7 @@ class CleanableSuite extends SpookyBaseSpec {
   }
 
   it("Lifespan.batchIDs should be updated after being shipped to a new thread created by a different executor") {
-    import scala.concurrent.duration._
+    import scala.concurrent.duration.*
 
     val rdd = sc.uuidSeed().mapOncePerCore { _ =>
       val lifespan = Lifespan.Task()

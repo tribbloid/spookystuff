@@ -1,9 +1,9 @@
 package com.tribbloids.spookystuff.linq.internal
 
 import ai.acyclic.prover.commons.function.hom.Hom
-import com.tribbloids.spookystuff.linq.Linq.{named, Row}
+import com.tribbloids.spookystuff.linq.*
+import com.tribbloids.spookystuff.linq.Linq.{Row, named}
 import com.tribbloids.spookystuff.linq.Tuple.Empty
-import com.tribbloids.spookystuff.linq._
 import shapeless.ops.record.Keys
 
 case class RowInternal[L <: Tuple](
@@ -12,7 +12,7 @@ case class RowInternal[L <: Tuple](
 
   @transient def head[H](
       implicit
-      ev: L <:< (H *: _)
+      ev: L <:< (H *: ?)
   ): H = {
 
     runtimeVector.head.asInstanceOf[H]
@@ -26,7 +26,7 @@ case class RowInternal[L <: Tuple](
       .asInstanceOf[L]
   }
 
-  import shapeless.record._
+  import shapeless.record.*
 
   type Repr = L
 

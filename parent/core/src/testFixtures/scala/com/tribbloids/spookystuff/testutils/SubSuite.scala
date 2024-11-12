@@ -6,7 +6,7 @@ import java.util.concurrent.atomic.AtomicInteger
 
 trait SubSuite extends Suite {
 
-  private lazy val _class: Class[_ <: SubSuite] = this.getClass
+  private lazy val _class: Class[? <: SubSuite] = this.getClass
 
   private lazy val _idParts: List[String] = {
     List(_class.getName)

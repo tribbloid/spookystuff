@@ -11,7 +11,7 @@ case class MapAccumulator[K, V](
     updater: (V, V) => V = MapAccumulator.Updater.Replace[V]()
 ) extends AccumulatorV2[(K, V), MapAccumulator.MapViz[K, V]] {
 
-  import MapAccumulator._
+  import MapAccumulator.*
 
   override def value: MapViz[K, V] = MapViz(map)
 

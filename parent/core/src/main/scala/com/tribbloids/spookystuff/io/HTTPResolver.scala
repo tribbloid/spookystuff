@@ -2,7 +2,7 @@ package com.tribbloids.spookystuff.io
 
 import ai.acyclic.prover.commons.util.Retry
 import com.tribbloids.spookystuff.agent.WebProxySetting
-import com.tribbloids.spookystuff.utils.http._
+import com.tribbloids.spookystuff.utils.http.*
 import org.apache.hadoop.shaded.org.apache.http.client.HttpClient
 import org.apache.hadoop.shaded.org.apache.http.client.config.RequestConfig
 import org.apache.hadoop.shaded.org.apache.http.client.methods.{HttpGet, HttpRequestBase, HttpUriRequest}
@@ -14,7 +14,7 @@ import org.apache.hadoop.shaded.org.apache.http.impl.conn.PoolingHttpClientConne
 import org.apache.hadoop.shaded.org.apache.http.{HttpEntity, HttpHost, HttpResponse}
 import org.apache.spark.ml.dsl.utils.LazyVar
 
-import java.io._
+import java.io.*
 import java.net.{InetSocketAddress, URI}
 import javax.net.ssl.SSLContext
 
@@ -165,7 +165,7 @@ case class HTTPResolver(
         val mapped = _readResponse.getAllHeaders.map { header =>
           header.getName -> header.getValue
         }.toSeq
-        ResourceMetadata.From.tuple(mapped: _*)
+        ResourceMetadata.From.tuple(mapped *)
       }
 
       override def cleanImpl(): Unit = {

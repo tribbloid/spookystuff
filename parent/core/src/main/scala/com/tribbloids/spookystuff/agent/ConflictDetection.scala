@@ -10,7 +10,7 @@ import scala.util.Try
   */
 trait ConflictDetection extends Cleanable {
 
-  def _resourceIDs: Map[String, Set[_]]
+  def _resourceIDs: Map[String, Set[?]]
   def _resourceQualifier: String = this.getClass.getCanonicalName
 
   final def resourceIDs: Map[String, Set[Any]] = _resourceIDs.map { tuple =>
@@ -39,7 +39,7 @@ object ConflictDetection {
           val v = m1.getOrElse(k, Nil) ++ m2.getOrElse(k, Nil)
           k -> v
         }
-        Map(kvs: _*)
+        Map(kvs*)
       }
       .getOrElse(Map.empty)
 

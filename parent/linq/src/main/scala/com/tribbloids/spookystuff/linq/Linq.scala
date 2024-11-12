@@ -36,7 +36,7 @@ object Linq {
     //  representation be SemiRow? that contains both structured and newType part?
 
     import Field.<>
-    import shapeless.ops.record._
+    import shapeless.ops.record.*
 
     /**
       * Allows dynamic-style access to fields of the record whose keys are Symbols. See

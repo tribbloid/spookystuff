@@ -1,14 +1,15 @@
 package com.tribbloids.spookystuff.execution
 
+import ai.acyclic.prover.commons.util.Magnet.PreferRightMagnet
 import com.tribbloids.spookystuff.actions.*
-import com.tribbloids.spookystuff.dsl.{GenPartitioner, OneToMany}
+import com.tribbloids.spookystuff.dsl.{GenPartitioner, Sampler}
 import com.tribbloids.spookystuff.execution.ExecutionPlan.CanChain
 import com.tribbloids.spookystuff.row.*
 import org.apache.spark.rdd.RDD
 
 object FetchPlan {
 
-  type Yield[O] = (HasTraceSet, Data.WithScope[O])
+  type Yield[O] = (Trace, Data.WithScope[O])
   // TODO: HasTraceSet will be gone, Agent can be manipulated directly
   // this will make it definitionally close to FlatMapPlan, the only difference is the shuffling
 
@@ -16,26 +17,36 @@ object FetchPlan {
 
   type Fn[I, O] = FetchedRow[I] => Batch[O]
 
-  object TraceOnly {
+  object Invar {
 
-    type _Fn[I] = FetchedRow[I] => HasTraceSet
+    type ResultMag[I] = PreferRightMagnet[HasTraceSet, (HasTraceSet, I)]
+    type _Fn[I] = FetchedRow[I] => ResultMag[I]
 
     def normalise[I](
         fn: _Fn[I],
-        forkType: OneToMany = OneToMany.default
+        sampler: Sampler = Sampler.Identity
     ): Fn[I, I] = { row =>
-      val traces = fn(row)
+      val mag = fn(row)
 
-      val mayBeEmpty = traces.asTraceSet.toSeq.map { trace =>
-        trace -> row.payload
+      val normalised: (HasTraceSet, Data.WithScope[I]) = mag.revoke match {
+        case Left(traces) =>
+          traces -> row.payload
+        case Right(v) =>
+          v._1 -> row.payload.copy(data = v._2)
       }
 
-      val result: Seq[(Trace, Data.WithScope[I])] = forkType match {
-        case OneToMany.Outer if mayBeEmpty.isEmpty => Seq((Trace.NoOp: Trace) -> row.payload)
-        case _                                     => mayBeEmpty
+      val flat: Seq[Yield[I]] = normalised._1.asTraceSet.map { trace =>
+        trace -> normalised._2
+      }.toSeq
+
+      val sampled = sampler.apply[Yield[I]](flat).map { (opt: Option[Yield[I]]) =>
+        opt.getOrElse {
+          val default: Yield[I] = Trace.NoOp.trace -> normalised._2
+          default
+        }
       }
 
-      result
+      sampled
     }
   }
 }
@@ -63,11 +74,9 @@ case class FetchPlan[I, O](
 
         val seq = rows.flatMap(fn)
 
-        seq.flatMap {
-          case (ks, v) =>
-            ks.asTraceSet.map { trace =>
-              LocalityGroup(trace)().sameBy(sameBy) -> v
-            }
+        seq.map {
+          case (trace, v) =>
+            LocalityGroup(trace)().sameBy(sameBy) -> v
         }
       }
 
@@ -89,12 +98,12 @@ case class FetchPlan[I, O](
     val newFn: FetchPlan.Fn[I, O2] = { row =>
       val out1 = this.fn(row)
 
-      val out2 = out1.flatMap {
-        case (trace, data) =>
+      val out2: Seq[(Trace, Data.WithScope[O2])] = out1.flatMap {
+        case (traces, data) =>
           val row2 = FetchedRow(row.agentState, data)
 
           fn(row2).map { v =>
-            trace -> v
+            traces -> v
           }
       }
 

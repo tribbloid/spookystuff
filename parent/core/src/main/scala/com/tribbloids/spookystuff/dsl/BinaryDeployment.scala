@@ -19,7 +19,7 @@ trait BinaryDeployment extends Serializable {
 
   final lazy val localFileName = CommonUtils.uri2fileName(localPath)
 
-  import BinaryDeployment._
+  import BinaryDeployment.*
 
   def verifyLocalPath: String = BinaryDeployment.verifyExe(localPath).get
 

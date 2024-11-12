@@ -1,6 +1,6 @@
 package com.tribbloids.spookystuff.actions
 
-import com.tribbloids.spookystuff._
+import com.tribbloids.spookystuff.*
 import com.tribbloids.spookystuff.actions.Wayback.WaybackLike
 import com.tribbloids.spookystuff.agent.Agent
 import com.tribbloids.spookystuff.caching.DocCacheLevel

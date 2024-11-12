@@ -3,7 +3,7 @@ package com.tribbloids.spookystuff.relay.xml
 import ai.acyclic.prover.commons.util.Caching
 import com.tribbloids.spookystuff.relay.MessageAPI
 import com.tribbloids.spookystuff.commons.Verbose
-import org.json4s._
+import org.json4s.*
 import org.json4s.reflect.TypeInfo
 
 object XMLWeakDeserializer {
@@ -64,7 +64,7 @@ object XMLWeakDeserializer {
 
 abstract class XMLWeakDeserializer[T: Manifest] extends Serializer[T] {
 
-  import XMLWeakDeserializer._
+  import XMLWeakDeserializer.*
 
   // cannot serialize
   override def serialize(
@@ -82,7 +82,7 @@ abstract class XMLWeakDeserializer[T: Manifest] extends Serializer[T] {
     SerDeMetadata(
       Some(this.getClass.getName),
       formats.primitives.toSeq.map(_.toString),
-      Map(formats.fieldSerializers.map(v => v._1.getName -> v._2.toString): _*),
+      Map(formats.fieldSerializers.map(v => v._1.getName -> v._2.toString) *),
       formats.customSerializers.map(_.toString)
     )
   )

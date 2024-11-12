@@ -3,7 +3,7 @@ package com.tribbloids.spookystuff.doc
 import org.json4s.jackson.JsonMethods
 import org.json4s.{JArray, JField, JValue}
 
-import org.json4s._
+import org.json4s.*
 
 object JsonElement {
 
@@ -99,7 +99,7 @@ class JsonElement private (
     val filtered = field._2.filterField { field =>
       field._1.startsWith("@")
     }
-    val result = Map(filtered.map(v => v._1.stripPrefix("@") -> JsonMethods.compact(v._2)): _*)
+    val result = Map(filtered.map(v => v._1.stripPrefix("@") -> JsonMethods.compact(v._2)) *)
     Some(result)
   }
 

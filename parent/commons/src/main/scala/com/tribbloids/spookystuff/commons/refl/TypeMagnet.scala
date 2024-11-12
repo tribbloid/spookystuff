@@ -16,7 +16,7 @@ import scala.reflect.ClassTag
 //TODO: should have a codec
 trait TypeMagnet[T] extends Serializable {
 
-  import TypeMagnet.universe._
+  import TypeMagnet.universe.*
 
   override def toString: String = asType.toString
 
@@ -79,7 +79,7 @@ trait TypeMagnet[T] extends Serializable {
 
 object TypeMagnet extends FromClassTagMixin {
 
-  import universe._
+  import universe.*
 
   def localTypeOf[T: TypeTag]: `Type` = {
     val tag = implicitly[TypeTag[T]]
@@ -123,7 +123,7 @@ object TypeMagnet extends FromClassTagMixin {
       ev: TypeMagnet[T]
   ): TypeMagnet[T] = ev
 
-  def getRuntimeType(v: Any): TypeMagnet[_] = {
+  def getRuntimeType(v: Any): TypeMagnet[?] = {
     Unerase
       .get(v)
       .map(v => FromTypeTag(v))

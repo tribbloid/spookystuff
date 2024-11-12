@@ -31,7 +31,7 @@ trait Layout[D <: Domain] extends Algebra.Aliases[D] {
                 tails.copy(
                   tails.seq.map(_.copy(qualifier = Seq(facet))(algebra))
                 )
-            }: _*
+            }*
           )
 
           val heads = v.asHeads
@@ -47,7 +47,7 @@ trait Layout[D <: Domain] extends Algebra.Aliases[D] {
           val tailsMap = Map(
             facetsSorted.map { facet =>
               facet -> tails
-            }: _*
+            }*
           )
 
           val heads = v.asHeads
@@ -143,7 +143,7 @@ trait Layout[D <: Domain] extends Algebra.Aliases[D] {
         baseFacet: Facet
     ) {
 
-      def union(peer: Core[_]): Core[GG] = {
+      def union(peer: Core[?]): Core[GG] = {
         val result = defaultGraphBuilder.union(_graph: GG, peer._graph: GG)
 
         val tails = {
@@ -152,7 +152,7 @@ trait Layout[D <: Domain] extends Algebra.Aliases[D] {
             facets.map { facet =>
               val tails = baseM.tails(facet) ++ peer.tails(facet)
               facet -> tails
-            }: _*
+            }*
           )
         }
 
@@ -163,7 +163,7 @@ trait Layout[D <: Domain] extends Algebra.Aliases[D] {
 
       //      def checkConnectivity(top: DSLView, topTails: _Tails): DSLView = {}
 
-      def _mergeImpl(top: Core[_], topTails: _Tails): Core[GG] = {
+      def _mergeImpl(top: Core[?], topTails: _Tails): Core[GG] = {
 
         val (newGraph, conversion) = defaultGraphBuilder.serial(
           baseM._graph -> baseM.from,
@@ -183,12 +183,12 @@ trait Layout[D <: Domain] extends Algebra.Aliases[D] {
         )
       }
 
-      def compose(top: Core[_]): Core[GG] = {
+      def compose(top: Core[?]): Core[GG] = {
 
         _mergeImpl(top, top.tails(topFacet))
       }
 
-      def mapHead(top: Core[_]): Core[_Module] = {
+      def mapHead(top: Core[?]): Core[_Module] = {
 
         val topTails: Seq[Element.Edge[D]] = top.tails(baseFacet).seq
         val rotatorFactory = idAlgebra.rotatorFactory()
@@ -201,7 +201,7 @@ trait Layout[D <: Domain] extends Algebra.Aliases[D] {
       }
 
       // this is really kind of ambiguous, remove it?
-      def append(top: Core[_]): Core[_Module] = {
+      def append(top: Core[?]): Core[_Module] = {
 
         val intakes = top.tails
         assert(intakes.size <= 1, "non-linear right operand, please use merge, rebase or union instead")

@@ -35,7 +35,7 @@ object Field extends Universe {
 
   object CanSort extends Capability {
 
-    import shapeless.record._
+    import shapeless.record.*
     def apply[V](v: V): V <> CanSort.type = {
       v <>: CanSort
     }

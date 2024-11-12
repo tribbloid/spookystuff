@@ -4,7 +4,7 @@ import com.tribbloids.spookystuff.Const
 import com.tribbloids.spookystuff.agent.Agent
 import com.tribbloids.spookystuff.caching.DocCacheLevel
 import com.tribbloids.spookystuff.doc.Observation.DocUID
-import com.tribbloids.spookystuff.doc._
+import com.tribbloids.spookystuff.doc.*
 import com.tribbloids.spookystuff.io.CompoundResolver.OmniResolver
 import org.apache.commons.io.IOUtils
 import org.apache.hadoop.shaded.org.apache.http.client.methods.HttpGet

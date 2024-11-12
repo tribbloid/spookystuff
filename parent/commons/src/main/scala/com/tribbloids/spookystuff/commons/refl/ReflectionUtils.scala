@@ -6,10 +6,10 @@ package com.tribbloids.spookystuff.commons.refl
   */
 object ReflectionUtils {
 
-  import org.apache.spark.sql.catalyst.ScalaReflection.universe._
+  import org.apache.spark.sql.catalyst.ScalaReflection.universe.*
 
   // TODO: move most of them to ScalaType
-  def getCaseAccessorSymbols(tt: TypeMagnet[_]): List[MethodSymbol] = {
+  def getCaseAccessorSymbols(tt: TypeMagnet[?]): List[MethodSymbol] = {
     val accessors = tt.asType.members.toList.reverse
       .flatMap(filterCaseAccessors)
     accessors
@@ -26,13 +26,13 @@ object ReflectionUtils {
     }
   }
 
-  def getCaseAccessorFields(tt: TypeMagnet[_]): List[(String, Type)] = {
+  def getCaseAccessorFields(tt: TypeMagnet[?]): List[(String, Type)] = {
     getCaseAccessorSymbols(tt).map { ss =>
       ss.name.decodedName.toString -> ss.typeSignature
     }
   }
 
-  def getConstructorParameters(tt: TypeMagnet[_]): Seq[(String, Type)] = {
+  def getConstructorParameters(tt: TypeMagnet[?]): Seq[(String, Type)] = {
     val formalTypeArgs = tt.asType.typeSymbol.asClass.typeParams
     val TypeRef(_, _, actualTypeArgs) = tt.asType
     val constructorSymbol = tt.asType.member(termNames.CONSTRUCTOR)

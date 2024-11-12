@@ -19,13 +19,13 @@ trait GenPartitionerLike[L, -U >: L] {
 
 object GenPartitionerLike {
 
-  import com.tribbloids.spookystuff.utils.RDDImplicits._
+  import com.tribbloids.spookystuff.utils.RDDImplicits.*
 
   trait Instance[K] extends Serializable {
     implicit def ctg: ClassTag[K]
 
     final def createBeaconRDD(
-        ref: RDD[_]
+        ref: RDD[?]
     ): Option[BeaconRDD[K]] = {
 
       val result: Option[BeaconRDD[K]] = _createBeaconRDD(ref)
@@ -36,7 +36,7 @@ object GenPartitionerLike {
     }
 
     def _createBeaconRDD(
-        ref: RDD[_]
+        ref: RDD[?]
     ): Option[BeaconRDD[K]] = None
 
     // TODO: comparing to old implementation, does this create too much object overhead?

@@ -5,8 +5,8 @@ import com.tribbloids.spookystuff.commons.AwaitWithHeartbeat.Heartbeat
 import org.slf4j.LoggerFactory
 
 import java.util.concurrent.{ExecutorService, Executors}
-import scala.concurrent._
-import scala.concurrent.duration._
+import scala.concurrent.*
+import scala.concurrent.duration.*
 
 object AwaitWithHeartbeat {
 

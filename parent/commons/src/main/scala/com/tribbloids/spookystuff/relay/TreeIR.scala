@@ -9,7 +9,7 @@ import scala.language.implicitConversions
 
 trait TreeIR[LEAF] extends IR with Product {
 
-  import TreeIR._
+  import TreeIR.*
 
   def children: Seq[TreeIR[LEAF]]
 
@@ -71,7 +71,7 @@ trait TreeIR[LEAF] extends IR with Product {
 
   object explode {
 
-    import ExplodeRules._
+    import ExplodeRules.*
 
     def explodeStringMap(): TreeIR[Any] =
       DepthFirstTransform.down(stringMap orElse preserve).execute
@@ -83,7 +83,7 @@ trait TreeIR[LEAF] extends IR with Product {
 
 object TreeIR {
 
-  case class _TreeView(self: TreeIR[_]) extends TreeView.Immutable[_TreeView] {
+  case class _TreeView(self: TreeIR[?]) extends TreeView.Immutable[_TreeView] {
     override lazy val nodeName: String = self.getClass.getSimpleName
 
     override lazy val children: Seq[_TreeView] = self.children.map(_TreeView.apply)
@@ -111,7 +111,7 @@ object TreeIR {
 
   trait Trunk[LEAF] extends TreeIR[LEAF] {
 
-    def repr: ListMap[_, TreeIR[LEAF]]
+    def repr: ListMap[?, TreeIR[LEAF]]
 
     override lazy val pathToValueMap: ListMap[Seq[String], LEAF] = {
       repr.flatMap {
@@ -134,7 +134,7 @@ object TreeIR {
     type Body = List[Any]
     override def body: List[Any] = children.map(_.body).toList
 
-    override def repr: ListMap[Int, TreeIR[LEAF]] = ListMap(children.zipWithIndex.map(_.swap): _*)
+    override def repr: ListMap[Int, TreeIR[LEAF]] = ListMap(children.zipWithIndex.map(_.swap)*)
 
     override def upcast[_LEAF >: LEAF]: ListTree[_LEAF] = copy(
       children = children.map(_.upcast[_LEAF])
@@ -179,7 +179,7 @@ object TreeIR {
       Leaf(v, rootTagOvrd)
     }
 
-    def list[V](vs: TreeIR[_ <: V]*): ListTree[V] = {
+    def list[V](vs: TreeIR[? <: V]*): ListTree[V] = {
       val _kvs = vs.map { v =>
         v.upcast[V]
       }
@@ -187,13 +187,13 @@ object TreeIR {
       ListTree(_kvs.toList, rootTagOvrd)
     }
 
-    def map[K, V](kvs: (K, TreeIR[_ <: V])*): MapTree[K, V] = {
+    def map[K, V](kvs: (K, TreeIR[? <: V])*): MapTree[K, V] = {
       val _kvs = kvs.map {
         case (k, v) =>
           k -> v.upcast[V]
       }
 
-      MapTree(ListMap(_kvs: _*), rootTagOvrd)
+      MapTree(ListMap(_kvs*), rootTagOvrd)
     }
 
   }
@@ -211,7 +211,7 @@ object TreeIR {
           k -> EmptyBuilder.leaf(v)
       }
       Builder(tagOvrd).map(
-        seqToLeaf: _*
+        seqToLeaf*
       )
     }
 

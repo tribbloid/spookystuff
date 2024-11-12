@@ -1,6 +1,6 @@
 package com.tribbloids.spookystuff
 
-import com.tribbloids.spookystuff.actions._
+import com.tribbloids.spookystuff.actions.*
 import com.tribbloids.spookystuff.commons.serialization.AssertWeaklySerializable
 import com.tribbloids.spookystuff.conf.{Core, Dir, SpookyConf}
 import com.tribbloids.spookystuff.rdd.FetchedDataset
@@ -140,7 +140,7 @@ class SpookyContextSpec extends SpookyBaseSpec with FileDocsFixture {
     val json = dirs.prettyJSON
     println(json)
 
-    import dirs._
+    import dirs.*
     assert(
       !Seq(
         root,
@@ -165,7 +165,7 @@ class SpookyContextSpec extends SpookyBaseSpec with FileDocsFixture {
     val json = dirs.prettyJSON
     println(json)
 
-    import dirs._
+    import dirs.*
     assert(
       !Seq(
         root,
@@ -190,7 +190,7 @@ class SpookyContextSpec extends SpookyBaseSpec with FileDocsFixture {
     val json = dirs.prettyJSON
     println(json)
 
-    import dirs._
+    import dirs.*
     assert(
       !Seq(
         root,

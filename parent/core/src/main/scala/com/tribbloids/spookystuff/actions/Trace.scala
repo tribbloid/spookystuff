@@ -27,24 +27,24 @@ object Trace {
     // unlike trace, it is always executed by the agent from scratch
     // thus, execution result can be cached, as replaying it will most likely have the same result (if the trace is deterministic)
 
-    import Rollout._
+    import Rollout.*
 
     /**
-     * deliberately NON-transient to be included in serialized from
-     *
-     * but can be manually discarded by calling [[unCache]] to make serialization even faster
-     *
-     * assuming that most [[Observation]]s will be auto-saved into DFS, their serialized form can exclude contents and
-     * thus be very small, making such manual discarding an optimisation with diminishing return
-     */
+      * deliberately NON-transient to be included in serialized from
+      *
+      * but can be manually discarded by calling [[unCache]] to make serialization even faster
+      *
+      * assuming that most [[Observation]]s will be auto-saved into DFS, their serialized form can exclude contents and
+      * thus be very small, making such manual discarding an optimisation with diminishing return
+      */
     @volatile private var _cached: Seq[Observation] = _
 
     def cachedOpt: Option[Seq[Observation]] = Option(_cached)
 
-    def enableCached: Rollout with Cached = this.asInstanceOf[Rollout with Cached]
+    def enableCached: Rollout & Cached = this.asInstanceOf[Rollout & Cached]
     def disableCached: Rollout = this.asInstanceOf[Rollout]
 
-    def cache(vs: Seq[Observation]): Rollout with Cached = {
+    def cache(vs: Seq[Observation]): Rollout & Cached = {
       this._cached = vs
       this.enableCached
     }
@@ -62,7 +62,7 @@ object Trace {
         result
       }
 
-      lazy val cached: Rollout with Cached = {
+      lazy val cached: Rollout & Cached = {
 
         Trace.this.synchronized {
 
@@ -83,24 +83,23 @@ object Trace {
 
     trait Cached extends Capability
 
-    implicit class CachedRolloutView(v: Rollout with Cached) {
+    implicit class CachedRolloutView(v: Rollout & Cached) {
 
       def trajectory: Seq[Observation] = v.cachedOpt.get
       // TODO: returned type will become a class
     }
   }
 
-  lazy val NoOp: Rollout with Rollout.Cached = Rollout(Trace()).cache(Nil)
-
+  lazy val NoOp: Rollout & Rollout.Cached = Rollout(Trace()).cache(Nil)
 }
 
 case class Trace(
-                  self: Internal = Nil
-                  // TODO: this should be gone, delegating to Same.By.Wrapper
-                ) extends Actions
-  with HasTrace { // remember trace is not a block! its the super container that cannot be wrapped
+    self: Internal = Nil
+    // TODO: this should be gone, delegating to Same.By.Wrapper
+) extends Actions
+    with HasTrace { // remember trace is not a block! its the super container that cannot be wrapped
 
-  import Trace._
+  import Trace.*
 
   override def trace: Trace = this
   override def children: Trace = trace
@@ -185,7 +184,7 @@ case class Trace(
 
   def rewriteLocally(schema: SpookySchema): TraceSet = {
 
-    TraceSet.of(RewriteRule.Rules(localRewriteRules(schema)).rewriteAll(Seq(this)): _*)
+    TraceSet.of(RewriteRule.Rules(localRewriteRules(schema)).rewriteAll(Seq(this))*)
   }
 
   // the minimal equivalent action that can be put into backtrace

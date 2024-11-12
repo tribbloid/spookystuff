@@ -99,7 +99,7 @@ object Cleanable {
   */
 trait Cleanable extends AutoCloseable {
 
-  import Cleanable._
+  import Cleanable.*
 
   /**
     * taskOrThreadOnCreation is incorrect in withDeadline or threads not created by Spark Override this to correct such

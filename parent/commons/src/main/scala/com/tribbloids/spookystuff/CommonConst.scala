@@ -4,7 +4,7 @@ import ai.acyclic.prover.commons.spark.Envs
 
 object CommonConst {
 
-  import scala.concurrent.duration._
+  import scala.concurrent.duration.*
 
   val driverClosingTimeout: FiniteDuration = 5.seconds
   val driverClosingRetries: Int = 5

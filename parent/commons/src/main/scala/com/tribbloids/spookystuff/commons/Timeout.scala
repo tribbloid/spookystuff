@@ -1,6 +1,6 @@
 package com.tribbloids.spookystuff.commons
 
-import scala.concurrent.duration._
+import scala.concurrent.duration.*
 import scala.language.implicitConversions
 
 case class Timeout(

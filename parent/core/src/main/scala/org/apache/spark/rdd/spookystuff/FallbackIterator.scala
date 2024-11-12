@@ -11,12 +11,12 @@ import org.slf4j.LoggerFactory
   */
 trait FallbackIterator[T] extends FastForwardingIterator[T] with ConsumedIterator {
 
-  import FallbackIterator._
+  import FallbackIterator.*
 
-  def getPrimary: Iterator[T] with ConsumedIterator
-  def getBackup: Iterator[T] with ConsumedIterator
+  def getPrimary: Iterator[T] & ConsumedIterator
+  def getBackup: Iterator[T] & ConsumedIterator
 
-  @transient @volatile final protected var _primary: Iterator[T] with ConsumedIterator = {
+  @transient @volatile final protected var _primary: Iterator[T] & ConsumedIterator = {
     try {
       getPrimary
     } catch {
@@ -33,7 +33,7 @@ trait FallbackIterator[T] extends FastForwardingIterator[T] with ConsumedIterato
 
   @volatile var useBackup: Boolean = false
 
-  @transient final protected lazy val _backup: Iterator[T] with ConsumedIterator = {
+  @transient final protected lazy val _backup: Iterator[T] & ConsumedIterator = {
 
     val raw = getBackup
 

@@ -62,7 +62,7 @@ case class UncleanTaskContext(
 
   override private[spark] def taskMemoryManager() = self.taskMemoryManager()
 
-  override private[spark] def registerAccumulator(a: AccumulatorV2[_, _]): Unit = self.registerAccumulator(a)
+  override private[spark] def registerAccumulator(a: AccumulatorV2[?, ?]): Unit = self.registerAccumulator(a)
 
   override private[spark] def setFetchFailed(fetchFailed: FetchFailedException): Unit = self.fetchFailed
 

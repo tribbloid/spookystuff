@@ -203,7 +203,7 @@ case class FetchedDataset[D](
 //  }
 
   // Always left
-  def fetch(fn: FetchPlan.TraceOnly._Fn[D])(
+  def fetch(fn: FetchPlan.Invar._Fn[D])(
       implicit
       keyBy: Trace => Any = identity,
       genPartitioner: GenPartitioner = spooky.conf.localityPartitioner,
@@ -211,15 +211,15 @@ case class FetchedDataset[D](
   ): FetchedDataset[D] = {
 
     FetchedDataset(
-      FetchPlan(plan, FetchPlan.TraceOnly.normalise(fn), keyBy, genPartitioner)
+      FetchPlan(plan, FetchPlan.Invar.normalise(fn), keyBy, genPartitioner)
     )
   }
 
   // TODO: how to unify this with join?
   def explore[O](
-      on: ExplorePlan.Fn[D, O]
+      fn: ExplorePlan.Fn[D, O]
   )(
-      oneToMany: OneToMany = OneToMany.default,
+      sampler: Sampler = spooky.conf.exploreSampler,
       keyBy: Trace => Any = identity,
       //
       genPartitioner: GenPartitioner = spooky.conf.localityPartitioner,
@@ -227,17 +227,16 @@ case class FetchedDataset[D](
       pathPlanning: PathPlanning = spooky.conf.explorePathPlanning,
       //
       epochInterval: Int = spooky.conf.exploreEpochInterval,
-      checkpointInterval: Int = spooky.conf.exploreCheckpointInterval, // set to Int.MaxValue to disable checkpointing,
+      checkpointInterval: Int = spooky.conf.exploreCheckpointInterval // set to Int.MaxValue to disable checkpointing,
       //
       //      ordinalField: Field = null,
-      sampler: Sampler[Any] = spooky.conf.forkSampler
       //      depthField: Field = null, // TODO: Some of them has to be moved upwards
   ): FetchedDataset[O] = {
 
     val params = Params(range)
     val out: ExplorePlan[D, O] = ExplorePlan(
       plan,
-      on,
+      fn,
       keyBy,
       genPartitioner,
       params,

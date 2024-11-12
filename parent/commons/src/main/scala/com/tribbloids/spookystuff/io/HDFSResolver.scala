@@ -2,7 +2,7 @@ package com.tribbloids.spookystuff.io
 
 import ai.acyclic.prover.commons.util.Retry
 import org.apache.hadoop.conf.Configuration
-import org.apache.hadoop.fs._
+import org.apache.hadoop.fs.*
 import org.apache.hadoop.fs.permission.FsPermission
 import org.apache.hadoop.security.UserGroupInformation
 
@@ -22,7 +22,7 @@ case class HDFSResolver(
     override val retry: Retry = URIResolver.default.retry
 ) extends URIResolver {
 
-  import Resource._
+  import Resource.*
 
   def _hadoopConf: Configuration = {
     hadoopConfFactory()
@@ -132,7 +132,7 @@ case class HDFSResolver(
       }
 
       override protected def _newOStream: OutputStream = {
-        import CreateFlag._
+        import CreateFlag.*
 
         mkParent(path)
 

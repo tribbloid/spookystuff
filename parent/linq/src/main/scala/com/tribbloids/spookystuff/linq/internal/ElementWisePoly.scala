@@ -9,7 +9,7 @@ import shapeless.ops.record.MergeWith
 
 trait ElementWisePoly extends Hom.Poly {
 
-  import shapeless.record._
+  import shapeless.record.*
 
   val combineElements: Poly2
 

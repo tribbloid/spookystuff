@@ -106,11 +106,11 @@ trait EAVLike extends HasEagerInnerObjects with RootTagged with Serializable {
 
   @transient object Attr {
 
-    lazy val declared: ArrayBuffer[Attr[_]] = ArrayBuffer.empty
+    lazy val declared: ArrayBuffer[Attr[?]] = ArrayBuffer.empty
 
-    lazy val nameToAttrMap: mutable.Map[String, Attr[_]] = mutable.Map.empty
+    lazy val nameToAttrMap: mutable.Map[String, Attr[?]] = mutable.Map.empty
 
-    def +=(v: Attr[_]): Unit = {
+    def +=(v: Attr[?]): Unit = {
       declared += v
       v.allNames.foreach { name =>
         nameToAttrMap.updateWith(name) {

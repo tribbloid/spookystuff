@@ -90,6 +90,6 @@ object Lock {
 
   case class InMemoryLock() {}
 
-  lazy val inMemoryLocks: Caching.ConcurrentCache[(Class[_], String), InMemoryLock] =
-    Caching.ConcurrentCache[(Class[_], String), InMemoryLock]()
+  lazy val inMemoryLocks: Caching.ConcurrentCache[(Class[?], String), InMemoryLock] =
+    Caching.ConcurrentCache[(Class[?], String), InMemoryLock]()
 }

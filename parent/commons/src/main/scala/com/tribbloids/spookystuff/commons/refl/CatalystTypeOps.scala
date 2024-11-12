@@ -1,6 +1,6 @@
 package com.tribbloids.spookystuff.commons.refl
 
-import org.apache.spark.sql.types._
+import org.apache.spark.sql.types.*
 
 import java.sql.{Date, Timestamp}
 import scala.collection.Map
@@ -8,7 +8,7 @@ import scala.language.implicitConversions
 
 case class CatalystTypeOps(dataType: DataType) {
 
-  import TypeMagnet.universe._
+  import TypeMagnet.universe.*
 
   // CatalystType => ScalaType
   // used in ReflectionMixin to determine the exact function to:
@@ -16,7 +16,7 @@ case class CatalystTypeOps(dataType: DataType) {
   // 2. use the obtained TypeTag to get the specific function implementation and applies to the canonic Scala Type data.
   // 3. get the output TypeTag of the function, use it to generate the output DataType of the new Extraction.
   // TODO: should rely on spark impls including Literal, ScalaReflection & CatalystTypeConverters
-  def getTypeTagOpt: Option[TypeTag[_]] = {
+  def getTypeTagOpt: Option[TypeTag[?]] = {
 
     dataType match {
       case NullType =>
@@ -63,7 +63,7 @@ case class CatalystTypeOps(dataType: DataType) {
     }
   }
 
-  def typeTag_wild: TypeTag[_] = {
+  def typeTag_wild: TypeTag[?] = {
     getTypeTagOpt.getOrElse {
       throw new UnsupportedOperationException(
         s"cannot convert Catalyst type $dataType to Scala type: TypeTag=${getTypeTagOpt}"
@@ -166,20 +166,20 @@ case class CatalystTypeOps(dataType: DataType) {
 
 object CatalystTypeOps {
 
-  import TypeMagnet.universe._
+  import TypeMagnet.universe.*
 
   trait ImplicitMixin {
 
     implicit def convert(v: DataType): CatalystTypeOps = CatalystTypeOps(v)
   }
 
-  lazy val atomicExamples: Seq[(Any, TypeTag[_])] = {
+  lazy val atomicExamples: Seq[(Any, TypeTag[?])] = {
 
     implicit def pairFor[T: TypeTag](v: T): (T, TypeTag[T]) = {
       v -> TypeUtils.summon[T](v)
     }
 
-    val result = Seq[(Any, TypeTag[_])](
+    val result = Seq[(Any, TypeTag[?])](
       Array(0: Byte),
       false: Boolean,
       new Date(0),
@@ -195,12 +195,12 @@ object CatalystTypeOps {
     result
   }
 
-  lazy val atomicTypePairs: Seq[(DataType, TypeTag[_])] = atomicExamples.map { v =>
+  lazy val atomicTypePairs: Seq[(DataType, TypeTag[?])] = atomicExamples.map { v =>
     ToCatalyst(TypeMagnet.FromTypeTag(v._2)).tryReify.get -> v._2
   }
 
-  lazy val atomicTypeMap: Map[DataType, TypeTag[_]] = {
-    Map(atomicTypePairs: _*)
+  lazy val atomicTypeMap: Map[DataType, TypeTag[?]] = {
+    Map(atomicTypePairs*)
   }
 
 }

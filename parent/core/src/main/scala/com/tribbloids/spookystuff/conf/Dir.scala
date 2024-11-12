@@ -19,7 +19,7 @@ object Dir extends PluginSystem {
       errorScreenshotLocal: String = null // System.getProperty("spooky.dirs.errorscreenshot.local")
   ) extends ConfLike {
 
-    import com.tribbloids.spookystuff.utils.RDDImplicits._
+    import com.tribbloids.spookystuff.utils.RDDImplicits.*
 
     override def importFrom(sparkConf: SparkConf): Conf = {
 

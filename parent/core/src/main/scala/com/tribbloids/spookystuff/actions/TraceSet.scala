@@ -9,7 +9,7 @@ object TraceSet {
   def of(ts: Trace*): TraceSet = TraceSet(ts.toSet)
 
   trait NonEmptyCap { self: TraceSet => }
-  type NonEmpty = TraceSet with NonEmptyCap
+  type NonEmpty = TraceSet & NonEmptyCap
 }
 
 /**
@@ -18,7 +18,7 @@ object TraceSet {
   *   no duplicated Trace
   */
 case class TraceSet(self: Set[Trace]) extends HasTraceSet {
-  import TraceSet._
+  import TraceSet.*
   override def asTraceSet: TraceSet = this
   // many-to-one
   def +>(another: Action): TraceSet = TraceSet(self.map(trace => trace :+ another))

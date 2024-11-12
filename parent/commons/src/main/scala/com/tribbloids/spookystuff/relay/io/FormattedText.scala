@@ -1,7 +1,7 @@
 package com.tribbloids.spookystuff.relay.io
 
-import com.tribbloids.spookystuff.relay.{IR, TreeIR}
 import com.tribbloids.spookystuff.commons.DSLUtils
+import com.tribbloids.spookystuff.relay.{IR, TreeIR}
 import pprint.PPrinter
 
 import scala.language.implicitConversions
@@ -19,11 +19,11 @@ trait FormattedText {
 
   def printer: PPrinter
 
-  def zipRows[_IR <: IR](ir: TreeIR[_], childrenRows: Seq[String]): String
+  def zipRows[_IR <: IR](ir: TreeIR[?], childrenRows: Seq[String]): String
 
   case class TreeWriter[_IR <: IR](ir: _IR) {
 
-    val _ir: _IR with TreeIR[_] = ir match {
+    val _ir: _IR & TreeIR[?] = ir match {
       case v: _IR with TreeIR[_] =>
         v
       case _ =>
@@ -89,7 +89,7 @@ object FormattedText {
       )
     }
 
-    override def zipRows[_IR <: IR](ir: TreeIR[_], childrenRows: Seq[String]): String = {
+    override def zipRows[_IR <: IR](ir: TreeIR[?], childrenRows: Seq[String]): String = {
 
       val enclosed = childrenRows.mkString(open, separator, close)
       s"${ir.rootTag}$enclosed"
@@ -109,7 +109,7 @@ object FormattedText {
       )
     }
 
-    override def zipRows[_IR <: IR](ir: TreeIR[_], childrenRows: Seq[String]): String = {
+    override def zipRows[_IR <: IR](ir: TreeIR[?], childrenRows: Seq[String]): String = {
 
       val indented = DSLUtils.indent(
         childrenRows.mkString(System.lineSeparator()),

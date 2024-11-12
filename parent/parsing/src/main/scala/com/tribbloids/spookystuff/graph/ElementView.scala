@@ -18,7 +18,7 @@ object ElementView {
 
 trait ElementView[D <: Domain] extends Algebra.Aliases[D] with EqualBy {
 
-  val core: Layout[D]#Core[_]
+  val core: Layout[D]#Core[?]
   final override def algebra: Algebra[D] = core.algebra
 
   def element: _Element

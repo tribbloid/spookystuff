@@ -1,17 +1,16 @@
 package com.tribbloids.spookystuff.commons.refl
 
 import com.tribbloids.spookystuff.commons.PairwiseConversionMixin
-
-import java.sql.Timestamp
-import com.tribbloids.spookystuff.testutils.BaseSpec
-import PairwiseConversionMixin.Repr
+import com.tribbloids.spookystuff.commons.PairwiseConversionMixin.Repr
 import com.tribbloids.spookystuff.commons.refl.TypeMagnetSuite.TypeTagRepr
 import com.tribbloids.spookystuff.commons.serialization.AssertSerializable
-import com.tribbloids.spookystuff.relay.TestBeans._
+import com.tribbloids.spookystuff.relay.TestBeans.*
+import com.tribbloids.spookystuff.testutils.BaseSpec
 import org.apache.spark.sql.catalyst.ScalaReflection
 import org.apache.spark.sql.catalyst.ScalaReflection.universe
-import org.apache.spark.sql.types._
+import org.apache.spark.sql.types.*
 
+import java.sql.Timestamp
 import scala.language.implicitConversions
 import scala.reflect.ClassTag
 
@@ -20,13 +19,13 @@ import scala.reflect.ClassTag
   */
 object TypeMagnetSuite {
 
-  import ScalaReflection.universe._
+  import ScalaReflection.universe.*
 
-  class TypeTagRepr(delegate: Repr[TypeTag[_]]) extends Repr[TypeTag[_]](delegate.opt, delegate.level) {
+  class TypeTagRepr(delegate: Repr[TypeTag[?]]) extends Repr[TypeTag[?]](delegate.opt, delegate.level) {
 
     override lazy val valueStr: String = s"${opt.map(_.tpe).getOrElse("∅")}"
 
-    override def forallEquals(v2: universe.TypeTag[_]): Boolean = {
+    override def forallEquals(v2: universe.TypeTag[?]): Boolean = {
 
       this.opt match {
         case Some(v1) =>
@@ -39,7 +38,7 @@ object TypeMagnetSuite {
 
   trait TypeTagRepr_Level1 {
 
-    implicit def fromDelegate_level1(v: Repr[TypeTag[_]]): TypeTagRepr = new TypeTagRepr(v)
+    implicit def fromDelegate_level1(v: Repr[TypeTag[?]]): TypeTagRepr = new TypeTagRepr(v)
   }
 
   object TypeTagRepr extends TypeTagRepr_Level1 {
@@ -51,15 +50,15 @@ object TypeMagnetSuite {
 
 class TypeMagnetSuite extends BaseSpec with PairwiseConversionMixin {
 
-  import ScalaReflection.universe._
+  import ScalaReflection.universe.*
 
   class Facet(
       val _catalystType: Repr[DataType] = Repr(None, -1),
-      val _typeTag: TypeTagRepr = Repr[TypeTag[_]](None, -1),
-      val _classTag: Repr[ClassTag[_]] = Repr(None, -1)
+      val _typeTag: TypeTagRepr = Repr[TypeTag[?]](None, -1),
+      val _classTag: Repr[ClassTag[?]] = Repr(None, -1)
   ) extends PairwiseCases {
 
-    lazy val _class: Repr[Class[_]] = _classTag.map(_.runtimeClass)
+    lazy val _class: Repr[Class[?]] = _classTag.map(_.runtimeClass)
 
     describe(s"From ${_typeTag}") {
 
@@ -102,7 +101,7 @@ class TypeMagnetSuite extends BaseSpec with PairwiseConversionMixin {
       }
     }
 
-    lazy val cases: Seq[PairwiseCase[_, _]] = Seq[PairwiseCase[_, _]](
+    lazy val cases: Seq[PairwiseCase[?, ?]] = Seq[PairwiseCase[?, ?]](
 //      PairwiseCase(_typeTag, Repr[Mirror](None, 0), { r: TypeTag[_] =>
 //        ScalaType.fromTypeTag(r).mirror
 //      }, { _: Any =>
@@ -111,27 +110,27 @@ class TypeMagnetSuite extends BaseSpec with PairwiseConversionMixin {
       PairwiseCase(
         _typeTag,
         _class,
-        { (r: TypeTag[_]) =>
+        { (r: TypeTag[?]) =>
           TypeMagnet.FromTypeTag(r).asClass
         },
-        { (r: Class[_]) =>
+        { (r: Class[?]) =>
           TypeMagnet.FromClass(r).asTypeTag
         }
       ),
       PairwiseCase(
         _typeTag,
-        _class.map[ClassTag[_]](v => ClassTag(v)),
-        { (r: TypeTag[_]) =>
+        _class.map[ClassTag[?]](v => ClassTag(v)),
+        { (r: TypeTag[?]) =>
           TypeMagnet.FromTypeTag(r).asClassTag
         },
-        { (r: ClassTag[_]) =>
+        { (r: ClassTag[?]) =>
           TypeMagnet.FromClassTag(r).asTypeTag
         }
       ),
       PairwiseCase(
         _typeTag,
         _catalystType,
-        { (r: TypeTag[_]) =>
+        { (r: TypeTag[?]) =>
           ToCatalyst(TypeMagnet.FromTypeTag(r)).asCatalystType
         },
         { (r: DataType) =>
@@ -189,7 +188,7 @@ class TypeMagnetSuite extends BaseSpec with PairwiseConversionMixin {
         ),
         Repr(
           Some(
-            ClassTag(classOf[(_, _)])
+            ClassTag(classOf[(?, ?)])
           ),
           1
         )
@@ -200,7 +199,7 @@ class TypeMagnetSuite extends BaseSpec with PairwiseConversionMixin {
         delegate._catalystType.map { v =>
           ArrayType(v, containsNull = containsNull)
         },
-        delegate._typeTag.map[TypeTag[_]] {
+        delegate._typeTag.map[TypeTag[?]] {
           case vv: TypeTag[c] =>
             implicit val _vv = vv
             val result = implicitly[TypeTag[Array[c]]]
@@ -221,7 +220,7 @@ class TypeMagnetSuite extends BaseSpec with PairwiseConversionMixin {
           .map { v =>
             ArrayType(v, containsNull = containsNull)
           },
-        delegate._typeTag.map[TypeTag[_]] {
+        delegate._typeTag.map[TypeTag[?]] {
           case vv: TypeTag[c] =>
             implicit val _vv = vv
             implicitly[TypeTag[Seq[c]]]
@@ -229,7 +228,7 @@ class TypeMagnetSuite extends BaseSpec with PairwiseConversionMixin {
         delegate._class
           .copy(level = 2)
           .map { _ =>
-            ClassTag(classOf[Seq[_]])
+            ClassTag(classOf[Seq[?]])
           }
       )
 

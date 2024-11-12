@@ -11,7 +11,7 @@ import scala.reflect.ClassTag
 @Ignore
 class TypeMagnetSpike extends BaseSpec {
 
-  import ScalaReflection.universe._
+  import ScalaReflection.universe.*
 
   /**
     * please keep this test to quickly identify any potential problems caused by changes in scala reflection API in the

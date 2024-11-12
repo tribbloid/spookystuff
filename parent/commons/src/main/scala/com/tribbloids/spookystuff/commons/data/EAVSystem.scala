@@ -16,7 +16,7 @@ trait EAVSystem {
 
     final override def system: EAVSystem = EAVSystem.this
 
-    @transient lazy val canonical: ^ = ^(Map(KVs.defined: _*))
+    @transient lazy val canonical: ^ = ^(Map(KVs.defined *))
   }
 
   object EAV extends HasEncoder[^] {
@@ -47,10 +47,10 @@ trait EAVSystem {
 
     final def iterableInternal(kvs: Iterable[(String, V)]): ^ = {
 
-      constructor(ListMap[String, V](kvs.toSeq: _*))
+      constructor(ListMap[String, V](kvs.toSeq *))
     }
 
-    final def iterable(kvs: Iterable[Tuple2[_, V]]): ^ = {
+    final def iterable(kvs: Iterable[Tuple2[?, V]]): ^ = {
       val _kvs = kvs.map {
         case (k: `^` #Attr[_], v) =>
           k.name -> v
@@ -63,18 +63,18 @@ trait EAVSystem {
       iterableInternal(_kvs)
     }
 
-    final def tuple(kvs: Tuple2[_, V]*): ^ = {
+    final def tuple(kvs: Tuple2[?, V]*): ^ = {
       iterable(kvs)
     }
 
-    final def apply(kvs: Magnets.AttrValueMag[_ <: V]*): ^ = {
+    final def apply(kvs: Magnets.AttrValueMag[? <: V]*): ^ = {
       val _kvs = kvs.flatMap { m =>
         m.vOpt.map { v =>
           m.k -> v
         }
       }
 
-      tuple(_kvs: _*)
+      tuple(_kvs *)
     }
   }
 
@@ -111,7 +111,7 @@ trait EAVSystem {
                 kk -> TreeIR.leaf[Any](vv)
             }
 
-            TreeIR.Builder(Some(ll.rootTag)).map(subNodes: _*)
+            TreeIR.Builder(Some(ll.rootTag)).map(subNodes *)
           case others @ _ =>
             others
         }
@@ -152,7 +152,7 @@ trait EAVSystem {
       tcc: ClassTag[TT]
   ) {
 
-    @transient lazy val clazz: Class[_] = tcc.runtimeClass
+    @transient lazy val clazz: Class[?] = tcc.runtimeClass
 
     @transient lazy val validGetters: Array[(String, Method)] = {
 

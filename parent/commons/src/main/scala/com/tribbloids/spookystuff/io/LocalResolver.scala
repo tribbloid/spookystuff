@@ -4,7 +4,7 @@ import ai.acyclic.prover.commons.util.Retry
 import org.apache.commons.io.FileUtils
 
 import java.io.{File, InputStream, OutputStream}
-import java.nio.file._
+import java.nio.file.*
 import java.nio.file.attribute.PosixFilePermission
 
 case class LocalResolver(
@@ -18,11 +18,11 @@ case class LocalResolver(
   object _Execution extends (String => _Execution) {}
   case class _Execution(pathStr: String) extends Execution {
 
-    import Resource._
+    import Resource.*
 
     val path: Path = Paths.get(pathStr)
 
-    import scala.jdk.CollectionConverters._
+    import scala.jdk.CollectionConverters.*
 
     // CAUTION: resolving is different on each driver or executors
     val absolutePath: Path = path.toAbsolutePath

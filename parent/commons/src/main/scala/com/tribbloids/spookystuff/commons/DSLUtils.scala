@@ -29,7 +29,7 @@ object DSLUtils {
     text.split('\n').filter(_.nonEmpty).map(str + _).mkString("\n")
   }
 
-  def isSerializable(v: Class[_]): Boolean = {
+  def isSerializable(v: Class[?]): Boolean = {
 
     classOf[java.io.Serializable].isAssignableFrom(v) ||
     v.isPrimitive ||

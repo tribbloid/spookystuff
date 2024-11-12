@@ -1,8 +1,8 @@
 package com.tribbloids.spookystuff.relay.xml
 
-import org.json4s.Extraction._
-import org.json4s._
-import org.json4s.reflect.{TypeInfo, _}
+import org.json4s.*
+import org.json4s.Extraction.*
+import org.json4s.reflect.{TypeInfo, *}
 
 import java.util
 
@@ -10,10 +10,10 @@ import java.util
 // <tag>abc</tag> => tag: ["abc"]
 object ElementToArrayDeserializer extends XMLWeakDeserializer[Any] {
 
-  val listClass: Class[List[_]] = classOf[List[_]]
-  val seqClass: Class[Seq[_]] = classOf[Seq[_]]
-  val setClass: Class[Set[_]] = classOf[Set[_]]
-  val arrayListClass: Class[util.ArrayList[_]] = classOf[java.util.ArrayList[_]]
+  val listClass: Class[List[?]] = classOf[List[?]]
+  val seqClass: Class[Seq[?]] = classOf[Seq[?]]
+  val setClass: Class[Set[?]] = classOf[Set[?]]
+  val arrayListClass: Class[util.ArrayList[?]] = classOf[java.util.ArrayList[?]]
 
   override def _deserialize(
       implicit
@@ -27,7 +27,7 @@ object ElementToArrayDeserializer extends XMLWeakDeserializer[Any] {
       extractInner(ti, jv, format).toSet
 
     case (ti @ TypeInfo(this.arrayListClass, _), jv) if !jv.isInstanceOf[JArray] =>
-      import scala.jdk.CollectionConverters._
+      import scala.jdk.CollectionConverters.*
 
       new java.util.ArrayList[Any](extractInner(ti, jv, format).toList.asJava)
 
@@ -36,8 +36,8 @@ object ElementToArrayDeserializer extends XMLWeakDeserializer[Any] {
       mkTypedArray(a, firstTypeArg(ti))
   }
 
-  def mkTypedArray(a: Array[_], typeArg: ScalaType): AnyRef = {
-    import java.lang.reflect.Array.{newInstance => newArray}
+  def mkTypedArray(a: Array[?], typeArg: ScalaType): AnyRef = {
+    import java.lang.reflect.Array.newInstance as newArray
 
     a.foldLeft((newArray(typeArg.erasure, a.length), 0)) { (tuple, e) =>
       {

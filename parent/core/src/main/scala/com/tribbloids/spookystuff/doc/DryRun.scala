@@ -5,21 +5,22 @@ import com.tribbloids.spookystuff.caching.DocCacheLevel
 import com.tribbloids.spookystuff.doc.Observation.DocUID
 import com.tribbloids.spookystuff.io.ResourceMetadata
 
-//Merely a placeholder if a conditional block is not applicable
-case class NoDoc(
+//produced in dryrun, only for shuffling to distribute locality group
+case class DryRun(
     backtrace: Trace,
-    override val timeMillis: Long = System.currentTimeMillis(),
-    override val cacheLevel: DocCacheLevel.Value = DocCacheLevel.All,
-    override val metadata: ResourceMetadata = ResourceMetadata.empty
+    override val timeMillis: Long = System.currentTimeMillis()
 ) extends Serializable
     with Observation.Success {
+
+  override def cacheLevel: DocCacheLevel.Value = DocCacheLevel.NoCache
+  override def metadata: ResourceMetadata = ResourceMetadata.empty
 
   @transient override lazy val uid: DocUID = DocUID(backtrace, null)()
 
   override def updated(
       uid: DocUID = this.uid,
       cacheLevel: DocCacheLevel.Value = this.cacheLevel
-  ): NoDoc.this.type = this.copy(backtrace = uid.backtrace, cacheLevel = cacheLevel).asInstanceOf[this.type]
+  ): DryRun.this.type = this.copy(backtrace = uid.backtrace).asInstanceOf[this.type]
 
   override type RootType = Unit
   override def root: Unit = {}

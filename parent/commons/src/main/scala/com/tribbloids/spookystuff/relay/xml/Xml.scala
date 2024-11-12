@@ -1,6 +1,6 @@
 package com.tribbloids.spookystuff.relay.xml
 
-import org.json4s._
+import org.json4s.*
 
 /**
   * Functions to convert between JSON and XML.
@@ -8,7 +8,7 @@ import org.json4s._
 //TODO: need testing
 object Xml {
 
-  import scala.xml._
+  import scala.xml.*
 
   /**
     * Convert given XML to JSON. <p> Following rules are used in conversion. <ul> <li>XML leaf element is converted to
@@ -180,7 +180,7 @@ object Xml {
   }
 
   class XmlNode(name: String, children: Seq[Node], attributes: MetaData)
-      extends Elem(null, name, attributes, TopScope, false, children: _*)
+      extends Elem(null, name, attributes, TopScope, false, children *)
 
   class XmlElem(name: String, value: String) extends Elem(null, name, xml.Null, TopScope, false, Text(value))
 }

@@ -12,7 +12,7 @@ import scala.ref.{PhantomReference, ReferenceQueue, WeakReference}
 @Ignore
 class GCCleaningSpike extends AnyFunSpec {
 
-  import GCCleaningSpike._
+  import GCCleaningSpike.*
 
   describe("System.gc() can dispose unreachable object") {
 
@@ -83,7 +83,7 @@ object GCCleaningSpike {
     }
 
     case class _3() extends AutoCloseable {
-      import _3._
+      import _3.*
 
       _cleaner.register(
         this,
@@ -104,7 +104,7 @@ object GCCleaningSpike {
     }
 
     case class _4() {
-      import _4._
+      import _4.*
 
       val ref = new PhantomReference(this, queue)
 
@@ -126,7 +126,7 @@ object GCCleaningSpike {
     }
 
     case class _5() {
-      import _5._
+      import _5.*
 
       val ref = new WeakReference(this, queue)
 

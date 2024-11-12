@@ -18,9 +18,9 @@ import java.util.UUID
 
 sealed trait Content extends SpookyContext.CanRunWith with Serializable {
 
-  import Content._
+  import Content.*
 
-  import scala.jdk.CollectionConverters._
+  import scala.jdk.CollectionConverters.*
 
   def blob: Blob
   def withBlob(blob: Blob): Content

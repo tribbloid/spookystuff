@@ -6,7 +6,7 @@ import scala.reflect.ClassTag
 
 case class LocalityRDDView[K: ClassTag, V: ClassTag](
     rdd1: RDD[(K, V)],
-    persistFn: RDD[_] => Unit = _.persist(),
+    persistFn: RDD[?] => Unit = _.persist(),
     isOrdinal: Boolean = true // TODO: remove, useless
 ) extends LocalityImpl[K, V] {
 

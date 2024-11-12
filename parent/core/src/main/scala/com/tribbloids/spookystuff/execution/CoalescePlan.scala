@@ -5,7 +5,7 @@ import org.apache.spark.rdd.RDD
 
 case class CoalescePlan[D](
     override val child: ExecutionPlan[D],
-    numPartitions: RDD[_] => Int,
+    numPartitions: RDD[?] => Int,
     shuffle: Boolean = false,
     ord: Ordering[SquashedRow[D]] = null
 ) extends UnaryPlan[D, D](child) {

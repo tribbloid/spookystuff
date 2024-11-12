@@ -2,8 +2,8 @@ package com.tribbloids.spookystuff
 
 import com.esotericsoftware.kryo.Kryo
 import com.tribbloids.spookystuff.conf.{Dir, SpookyConf}
-import com.tribbloids.spookystuff.doc._
-import com.tribbloids.spookystuff.dsl._
+import com.tribbloids.spookystuff.doc.*
+import com.tribbloids.spookystuff.dsl.*
 import com.tribbloids.spookystuff.metrics.SpookyMetrics
 import com.tribbloids.spookystuff.row.FetchedRow
 import org.apache.spark.serializer.KryoRegistrator
@@ -18,14 +18,14 @@ import scala.concurrent.duration.FiniteDuration
 class SpookyKryoRegistrator extends KryoRegistrator {
 
   override def registerClasses(kryo: Kryo): Unit = {
-    val array: Array[Class[_]] = Array(
+    val array: Array[Class[?]] = Array(
       // used by PageRow
-      classOf[TypeTag[_]],
-      classOf[FetchedRow[_]],
-      classOf[ListMap[_, _]],
+      classOf[TypeTag[?]],
+      classOf[FetchedRow[?]],
+      classOf[ListMap[?, ?]],
       classOf[UUID],
-      classOf[Elements[_]],
-      classOf[Siblings[_]],
+      classOf[Elements[?]],
+      classOf[Siblings[?]],
       classOf[HtmlElement],
       classOf[JsonElement],
       classOf[Doc],

@@ -1,7 +1,7 @@
 package com.tribbloids.spookystuff.relay.io
 
 import com.tribbloids.spookystuff.commons.serialization.SerializerEnv
-import org.json4s._
+import org.json4s.*
 import org.slf4j.LoggerFactory
 
 import java.nio.ByteBuffer

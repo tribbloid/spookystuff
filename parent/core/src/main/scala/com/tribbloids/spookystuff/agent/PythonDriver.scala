@@ -110,7 +110,7 @@ class PythonDriver(
   val registeredImports: mutable.Set[String] = mutable.Set.empty
   val pendingImports: ArrayBuffer[String] = ArrayBuffer.empty
 
-  import PythonDriver._
+  import PythonDriver.*
 
   def historyCodeOpt: Option[String] = {
     if (this.historyLines.isEmpty) None

@@ -1,15 +1,15 @@
 package com.tribbloids.spookystuff.commons.refl
 
-import scala.reflect.runtime.universe
 import scala.collection.concurrent.TrieMap
 import scala.language.implicitConversions
+import scala.reflect.runtime.universe
 
 case class Unerase[T](self: T)(
     implicit
     ev: universe.TypeTag[T]
 ) {
 
-  import Unerase._
+  import Unerase.*
 
   cache += {
 
@@ -20,7 +20,7 @@ case class Unerase[T](self: T)(
 
 object Unerase {
 
-  lazy val cache: TrieMap[Int, universe.TypeTag[_]] = TrieMap.empty[Int, universe.TypeTag[_]]
+  lazy val cache: TrieMap[Int, universe.TypeTag[?]] = TrieMap.empty[Int, universe.TypeTag[?]]
 
   def get[T](v: T): Option[universe.TypeTag[T]] = {
     val inMemoryId = System.identityHashCode(v)

@@ -3,7 +3,7 @@ package com.tribbloids.spookystuff.relay.io
 import com.tribbloids.spookystuff.relay.{IR, Relay}
 import org.apache.spark.ml._MLHelper
 import org.apache.spark.ml.param.{ParamMap, Params}
-import org.apache.spark.ml.util._
+import org.apache.spark.ml.util.*
 import org.json4s.JObject
 
 /**

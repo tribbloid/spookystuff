@@ -24,5 +24,5 @@ case object RowAdapter {
     }
   }
 
-  lazy val dataType: ObjectType = ObjectType(classOf[Row[_]])
+  lazy val dataType: ObjectType = ObjectType(classOf[Row[?]])
 }

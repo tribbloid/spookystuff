@@ -36,7 +36,7 @@ object Observation {
 @SQLUserDefinedType(udt = classOf[FetchedUDT])
 sealed trait Observation extends Serializable {
 
-  import Observation._
+  import Observation.*
 
   def uid: DocUID
   def updated(

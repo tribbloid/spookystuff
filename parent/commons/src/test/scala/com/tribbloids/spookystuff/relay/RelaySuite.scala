@@ -1,6 +1,6 @@
 package com.tribbloids.spookystuff.relay
 
-import com.tribbloids.spookystuff.relay.TestBeans._
+import com.tribbloids.spookystuff.relay.TestBeans.*
 import com.tribbloids.spookystuff.relay.io.Encoder
 import com.tribbloids.spookystuff.testutils.BaseSpec
 import org.json4s.MappingException

@@ -9,7 +9,7 @@ import java.util.UUID
 
 trait LockLike extends NOTSerializable {
 
-  import LockLike._
+  import LockLike.*
 
   lazy val id: UUID = UUID.randomUUID()
 

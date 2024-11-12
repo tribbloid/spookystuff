@@ -13,7 +13,7 @@ import scala.util.{Failure, Random, Success, Try}
 
 object CommonUtils {
 
-  import scala.concurrent.duration._
+  import scala.concurrent.duration.*
 
   lazy val scalaVersion: String = scala.util.Properties.versionNumberString
   lazy val scalaBinaryVersion: String = scalaVersion.split('.').slice(0, 2).mkString(".")
@@ -32,7 +32,7 @@ object CommonUtils {
     else part + suffix
   }
 
-  def /:/(parts: String*): String = qualifiedName("/")(parts: _*)
+  def /:/(parts: String*): String = qualifiedName("/")(parts *)
   def :/(part: String): String = addSuffix("/", part)
 
   def \\\(parts: String*): String = {
@@ -41,7 +41,7 @@ object CommonUtils {
         _.replace('/', File.separatorChar)
       )
     }
-    qualifiedName(File.separator)(_parts: _*)
+    qualifiedName(File.separator)(_parts *)
   }
   def :\(part: String): String = {
     val _part = part.replace('/', File.separatorChar)
@@ -150,7 +150,7 @@ object CommonUtils {
     val proto2 = proto.map {
       case (k, v) => k -> v.head._2
     }
-    ListMap(proto2: _*)
+    ListMap(proto2 *)
   }
 
   // copied from org.apache.spark.util.Utils

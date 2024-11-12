@@ -8,7 +8,11 @@ plugins {
 }
 
 subprojects {
+    
+    dependencies {
 
+        scalaCompilerPlugins("org.typelevel:kind-projector_${vs.scala.v}:0.13.3")
+    }
 
     tasks {
 
@@ -20,8 +24,10 @@ subprojects {
 //                    "-Xsource:3-cross",
                     "-Xsource:3",
                     // quickfix should be disabled ASAP after migration
-                    "-quickfix",
-                    "-quickfix:cat=scala3-migration",
+                    "-quickfix:any",
+//                    "-quickfix:cat=scala3-migration",
+
+                    "-P:kind-projector:underscore-placeholders",
 
                     "-Wconf:cat=deprecation:ws"
                 )

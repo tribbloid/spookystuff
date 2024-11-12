@@ -25,7 +25,7 @@ object Magnets {
   object AttrMag {
 
     implicit def fromStr(v: String): AttrMag = AttrMag(Seq(v))
-    implicit def fromAttr(v: AttrLike[_]): AttrMag = AttrMag(v.allNames)
+    implicit def fromAttr(v: AttrLike[?]): AttrMag = AttrMag(v.allNames)
 
     implicit def fromItr[Src](kss: Iterable[Src])(
         implicit

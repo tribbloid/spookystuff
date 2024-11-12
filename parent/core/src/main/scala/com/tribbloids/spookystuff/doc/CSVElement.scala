@@ -17,7 +17,7 @@ object CSVElement {
       csvFormat: CSVFormat
   ) extends Unstructured {
 
-    import scala.jdk.CollectionConverters._
+    import scala.jdk.CollectionConverters.*
 
     val parsed: CSVParser = CSVParser.parse(_text, csvFormat)
     val parsedList: List[CSVRecord] = parsed.asScala.toList

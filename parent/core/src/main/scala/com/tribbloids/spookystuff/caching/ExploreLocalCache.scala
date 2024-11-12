@@ -16,18 +16,18 @@ object ExploreLocalCache {
 
   case class Execution[I, O](
       ongoing: ConcurrentSet[ExploreRunner[I, O]] = ConcurrentSet[ExploreRunner[I, O]](), // no eviction
-      visited: ConcurrentMap[LocalityGroup, Vector[Data.Exploring[O]]] =
-        ConcurrentMap[LocalityGroup, Vector[Data.Exploring[O]]]() // no eviction
+      visited: ConcurrentMap[LocalityGroup, Explore.ReducerTypes[O]#Batch] =
+        ConcurrentMap[LocalityGroup, Explore.ReducerTypes[O]#Batch]() // no eviction
   ) extends Explore.Common[I, O] {
 
-    def getVisitedData(key: LocalityGroup): Set[_Batch] = {
+    def getVisitedData(key: LocalityGroup): Set[Visited.Batch] = {
 
-      val ongoingVisited: ConcurrentSet[_Batch] = ongoing
+      val ongoingVisited: ConcurrentSet[Visited.Batch] = ongoing
         .flatMap { v =>
           v.visited.get(key)
         }
 
-      val committedVisited: Option[_Batch] = visited.get(key)
+      val committedVisited: Option[Visited.Batch] = visited.get(key)
 
       ongoingVisited.toSet ++ committedVisited
     }

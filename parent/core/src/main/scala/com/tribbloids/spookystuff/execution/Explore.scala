@@ -5,23 +5,28 @@ import com.tribbloids.spookystuff.row.{Data, LocalityGroup}
 
 object Explore {
 
-  trait ReducerLike[I] {
+  type PayloadK[T] = Data.WithScope[Data.Exploring[T]]
+  type BatchK[T] = Vector[PayloadK[T]]
 
-    type Exploring = Data.Exploring[I]
-    type Batch = Vector[Exploring]
+  trait ReducerTypes[T] {
 
-    type RowOrdering = Ordering[(LocalityGroup, Vector[Exploring])]
+    type Exploring = Data.Exploring[T]
 
-//    type FetchFn = FetchedRow[I] => TraceSet
+    type Payload = Data.WithScope[Exploring] // in open & visited cache, don't participate in ordering or reduce
+    type Batch = Vector[Payload]
+
+    type RowOrdering = Ordering[(LocalityGroup, Vector[Payload])]
+    // TODO: should be able to use AgentState
+    //  in fact, should use SquashedRow directly
+
+    type Reducer = Explore.ReducerK[T]
   }
 
-  trait Common[I, O] extends ReducerLike[I] {
+  trait Common[I, O] {
 
-    type _Exploring = Data.Exploring[O]
-    type _Batch = Vector[_Exploring]
+    object Open extends ReducerTypes[I]
 
-    type OpenReducer = Explore.ReducerK[I]
-    type VisitedReducer = Explore.ReducerK[O]
+    object Visited extends ReducerTypes[O]
 
     type _Fn = ExplorePlan.Fn[I, O]
 
@@ -33,16 +38,16 @@ object Explore {
   }
 
   // TODO: how to simplify?
-  trait ReducerK[D] extends ReducerLike[D] with Reduce[Vector[Data.Exploring[D]]] with Serializable {
+  trait ReducerK[T] extends ReducerTypes[T] with Reduce[BatchK[T]] with Serializable {
 
     def reduce(
-        v1: Batch,
-        v2: Batch
-    ): Batch
+        v1: this.Batch,
+        v2: this.Batch
+    ): this.Batch
 
     final override def apply(
-        old: Batch,
-        neo: Batch
-    ): Batch = reduce(old, neo)
+        old: this.Batch,
+        neo: this.Batch
+    ): this.Batch = reduce(old, neo)
   }
 }

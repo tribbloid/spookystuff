@@ -8,7 +8,7 @@ import scala.reflect.ClassTag
 abstract class FromClassMixin {
 
   val universe: scala.reflect.runtime.universe.type = scala.reflect.runtime.universe
-  import universe._
+  import universe.*
 
   protected class FromClassTag[T](val _classTag: ClassTag[T]) extends TypeMagnet[T] {
 
@@ -31,7 +31,7 @@ abstract class FromClassMixin {
       tpe
     }
 
-    def getClassSymbol(_class: Class[_]): ClassSymbol = {
+    def getClassSymbol(_class: Class[?]): ClassSymbol = {
 
       try {
         mirror.classSymbol(_class)
@@ -60,7 +60,7 @@ abstract class FromClassMixin {
 
     protected def createNew[T](v: I[T]): TypeMagnet[T]
 
-    private lazy val cache = Caching.ConcurrentCache[I[_], TypeMagnet[_]]()
+    private lazy val cache = Caching.ConcurrentCache[I[?], TypeMagnet[?]]()
 
     final def apply[T](
         implicit

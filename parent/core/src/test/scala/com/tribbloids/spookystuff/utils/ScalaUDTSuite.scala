@@ -12,7 +12,7 @@ import org.apache.spark.sql.types.DataType
   */
 class ScalaUDTSuite extends SpookyBaseSpec with BaseSpec with CatalystTypeOps.ImplicitMixin {
 
-  import org.apache.spark.sql.catalyst.ScalaReflection.universe._
+  import org.apache.spark.sql.catalyst.ScalaReflection.universe.*
 
   def getAndTestReifiedType[T: TypeTag]: DataType = {
     val unreified = UnreifiedObjectType.summon[T]

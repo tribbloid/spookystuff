@@ -1,6 +1,6 @@
 package com.tribbloids.spookystuff.doc
 
-import com.tribbloids.spookystuff.actions._
+import com.tribbloids.spookystuff.actions.*
 import com.tribbloids.spookystuff.commons.serialization.AssertSerializable
 import com.tribbloids.spookystuff.testutils.{FileDocsFixture, SpookyBaseSpec}
 

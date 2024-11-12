@@ -26,6 +26,45 @@ object ExplorePlan {
 
   type Fn[I, O] = FetchedRow[Data.Exploring[I]] => Batches[I, O]
 
+//  object Invar {
+//
+//    val proto: FetchPlan.Invar.type = FetchPlan.Invar
+//
+//    type ResultMag[I] = proto.ResultMag[I]
+//    type _Fn[I] = FetchedRow[Data.Exploring[I]] => ResultMag[I]
+//
+//    def normalise[I](
+//        fn: _Fn[I],
+//        sampler: Sampler = Sampler.Identity
+//    ): Fn[I, I] = { row =>
+//      val mag = fn(row)
+//
+//      val normalised: (HasTraceSet, Data.WithScope[Data.Exploring[I]]) = mag.revoke match {
+//        case Left(traces) =>
+//          traces -> row.payload
+//        case Right(v) =>
+//          v._1 -> row.payload.copy(
+//            data = row.payload.copy(
+//              v._2
+//            )
+//          )
+//      }
+//
+//      val flat: Seq[(Trace, Data.WithScope[Data.Exploring[I]])] = normalised._1.asTraceSet.map { trace =>
+//        trace -> normalised._2
+//      }.toSeq
+//
+//      val sampled = sampler.apply[Yield[I]](flat).map { (opt: Option[Yield[I]]) =>
+//        opt.getOrElse {
+//          val default: Yield[I] = Trace.NoOp.trace -> normalised._2
+//          default
+//        }
+//      }
+//
+//      sampled
+//    }
+//  }
+
   type ExeID = UUID
   def nextExeID(): ExeID = UUID.randomUUID()
 
@@ -46,8 +85,8 @@ object ExplorePlan {
   // use Array to minimize serialization footage
   case class State[I, O](
       row0: Option[SquashedRow[I]] = None, // always be executed first
-      open: Option[Vector[Data.Exploring[I]]] = None, // a.k.a. pending row
-      visited: Option[Vector[Data.Exploring[O]]] = None
+      open: Option[Explore.BatchK[I]] = None, // a.k.a. pending row
+      visited: Option[Explore.BatchK[O]] = None
   )
 }
 
@@ -74,7 +113,6 @@ case class ExplorePlan[I, O](
 
       params // TODO:: remove
     }
-
   }
 
   import ExplorePlan.*
@@ -167,7 +205,7 @@ case class ExplorePlan[I, O](
             row.isOutOfRange
           }
 
-          val inRange = inRangeExploring.map(v => Data.WithScope.default(v.data))
+          val inRange = inRangeExploring.map(v => v.copy(data = v.data.data))
 
           val result = SquashedRow[O](v._1, inRange)
 
@@ -185,11 +223,11 @@ case class ExplorePlan[I, O](
   ): RDD[(LocalityGroup, State[I, O])] = {
 
     val globalReducer: (State[I, O], State[I, O]) => State[I, O] = { (v1, v2) =>
-      val open: Option[Batch] = (v1.open ++ v2.open).toSeq
+      val open: Option[Open.Batch] = (v1.open ++ v2.open).toSeq
         .reduceOption(pathPlanningImpl.openReducer_global)
         .map(_.toVector)
 
-      val visited: Option[_Batch] = (v1.visited ++ v2.visited).toSeq
+      val visited: Option[Visited.Batch] = (v1.visited ++ v2.visited).toSeq
         .reduceOption(pathPlanningImpl.visitedReducer_global)
         .map(_.toVector)
 

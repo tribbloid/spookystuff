@@ -7,15 +7,15 @@ import org.apache.spark.rdd.RDD
 import org.slf4j.LoggerFactory
 
 import java.io.File
-import java.net._
-import java.nio.file._
+import java.net.*
+import java.nio.file.*
 import scala.collection.mutable
 import scala.language.implicitConversions
 import scala.reflect.ClassTag
 
 object SpookyUtils {
 
-  import RDDImplicits._
+  import RDDImplicits.*
 
   //  def retryWithDeadline[T](n: Int, t: Duration)(fn: => T): T = retry(n){withDeadline(t){fn}}
 
@@ -69,7 +69,7 @@ object SpookyUtils {
   // TODO: move to class & try @Specialized?
   def asArray[T <: Any: ClassTag](obj: Any): Array[T] = {
 
-    val canon: Array[_] = obj match {
+    val canon: Array[?] = obj match {
       case v: IterableOnce[Any] => v.toArray
       case v: Array[_]          => v
       case _                    => Array[Any](obj)
@@ -143,7 +143,7 @@ object SpookyUtils {
 
       if (Files.isDirectory(src)) {
         try {
-          Files.copy(src, dst, options: _*)
+          Files.copy(src, dst, options*)
           // TODO: how to flush dst?
         } catch {
           case _: DirectoryNotEmptyException =>
@@ -157,7 +157,7 @@ object SpookyUtils {
         Files.copy(
           src,
           dst,
-          options: _*
+          options*
         ) // this will either 1. copy file if src is a file. 2. create empty dir if src is a dir.
         // TODO: how to flush dst?
 

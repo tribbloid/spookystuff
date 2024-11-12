@@ -1,8 +1,8 @@
 package com.tribbloids.spookystuff.relay.xml
 
-import org.json4s.Extraction._
+import org.json4s.Extraction.*
 import org.json4s.JsonAST.JString
-import org.json4s._
+import org.json4s.*
 import org.json4s.reflect.TypeInfo
 
 // <tag/> => tag: {}

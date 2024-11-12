@@ -95,7 +95,7 @@ abstract class SpookyBaseSpec extends SpookyEnvSpec with RemoteDocsFixture with 
 
   def emptySchema: SpookySchema = SpookySchema(ExecutionContext(spooky))
 
-  implicit def rowWithCtx(row: SquashedRow[_]): row._WithCtx = row.withCtx(spooky)
+  implicit def rowWithCtx(row: SquashedRow[?]): row._WithCtx = row.withCtx(spooky)
 
   implicit def doc2Root(doc: Doc): Unstructured = doc.root
 

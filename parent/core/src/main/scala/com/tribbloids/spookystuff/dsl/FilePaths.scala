@@ -1,11 +1,11 @@
 package com.tribbloids.spookystuff.dsl
 
-import java.io.File
-import java.util.UUID
-
 import com.tribbloids.spookystuff.actions.Trace
 import com.tribbloids.spookystuff.doc.Doc
 import com.tribbloids.spookystuff.utils.SpookyUtils
+
+import java.io.File
+import java.util.UUID
 
 object FilePaths {
   // TODO: should be "TracePath"
@@ -41,8 +41,8 @@ object FilePaths {
         val last = actionStrs.last
         val omitted = File.separator + (trace.length - 4) + "more" + File.separator
 
-        SpookyUtils.\\\(oneTwoThree: _*) + omitted + last
-      } else SpookyUtils.\\\(actionStrs: _*)
+        SpookyUtils.\\\(oneTwoThree*) + omitted + last
+      } else SpookyUtils.\\\(actionStrs*)
 
       val hash = "" + trace.hashCode
 
@@ -51,13 +51,13 @@ object FilePaths {
   }
 
   // only from Page
-  case class UUIDName(encoder: ByTrace[_ <: Any]) extends ByDoc[String] {
+  case class UUIDName(encoder: ByTrace[? <: Any]) extends ByDoc[String] {
 
     override def apply(page: Doc): String =
       SpookyUtils.\\\(encoder(page.uid.backtrace).toString, UUID.randomUUID().toString)
   }
 
-  case class TimeStampName(encoder: ByTrace[_ <: Any]) extends ByDoc[String] {
+  case class TimeStampName(encoder: ByTrace[? <: Any]) extends ByDoc[String] {
     override def apply(page: Doc): String =
       SpookyUtils.\\\(encoder(page.uid.backtrace).toString, SpookyUtils.canonizeFileName(page.timeMillis.toString))
   }

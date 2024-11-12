@@ -3,7 +3,7 @@ package com.tribbloids.spookystuff.graph.example
 import java.util.UUID
 
 import com.tribbloids.spookystuff.graph
-import com.tribbloids.spookystuff.graph._
+import com.tribbloids.spookystuff.graph.*
 
 trait SimpleFlowGraph extends Domain {
 

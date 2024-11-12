@@ -8,6 +8,7 @@ import scala.language.implicitConversions
 trait Data[D] {
 
   def data: D
+//  def sourceScope: Option[SourceScope]
 }
 
 object Data {
@@ -70,7 +71,7 @@ object Data {
     */
   @SerialVersionUID(6534469387269426194L)
   case class Exploring[D](
-      payload: WithScope[D],
+      data: D,
       lineageID: Option[UUID] = None,
       isOutOfRange: Boolean = false,
       depthOpt: Option[Int] = None,
@@ -78,7 +79,6 @@ object Data {
       // contain every used sourceScope in exploration history
   ) extends Data[D] {
 
-    override def data: D = payload.data
     //  {
     //    assert(data.isInstanceOf[Serializable]) // fail early  TODO: this should be moved into Debugging mode
     //  }

@@ -11,7 +11,7 @@ import scala.util.{Failure, Success, Try}
 trait RelayRegistry {
 
   // failed lookup won't be reattempted as it is still too slow.
-  val registry: mutable.Map[TypeMagnet[_], Try[Relay[_]]] = mutable.Map.empty
+  val registry: mutable.Map[TypeMagnet[?], Try[Relay[?]]] = mutable.Map.empty
 
   /**
     * this is a bunch of makeshift rules that allow type class pattern to be used in runtime
@@ -29,17 +29,17 @@ trait RelayRegistry {
     * @return
     */
   def tryLookupFor[T](v: T): Try[Relay[T]] = {
-    val result: Try[Relay[_]] = v match {
+    val result: Try[Relay[?]] = v match {
       case v: Relay[_]#API =>
         Success(v.outer)
       case _ =>
         val clazz = v.getClass
-        val tt: TypeMagnet[_] = clazz
+        val tt: TypeMagnet[?] = clazz
 
         registry.getOrElseUpdate(
           tt, {
             val companions = tt.utils.baseCompanionObjects
-            val rrOpt = companions.find(_.isInstanceOf[Relay[_]])
+            val rrOpt = companions.find(_.isInstanceOf[Relay[?]])
             rrOpt match {
               case Some(rr: Relay[_]) =>
                 Success(rr)

@@ -29,7 +29,7 @@ trait RDDImplicits extends SpookyViews_Imp0 with ai.acyclic.prover.commons.spark
         {
           val values = str.split(splitter)
 
-          ListMap(headers.zip(values): _*)
+          ListMap(headers.zip(values) *)
         }
       }
     }
@@ -39,7 +39,7 @@ trait RDDImplicits extends SpookyViews_Imp0 with ai.acyclic.prover.commons.spark
 
   implicit class PairRDDView[K: ClassTag, V: ClassTag](val self: RDD[(K, V)]) {
 
-    import RDD._
+    import RDD.*
     // get 3 RDDs that shares key partitioning: leftExclusive, intersection, rightExclusive
     // all 3 can be zipped directly as if joined by key, this has many applications like getting union, intersection and subtraction
     //    def logicalCombinationsByKey[S](

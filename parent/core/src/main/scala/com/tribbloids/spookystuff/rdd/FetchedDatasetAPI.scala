@@ -21,7 +21,7 @@ trait FetchedDatasetAPI[D] {
   // TODO: most of the following impl can be reduced to RDDPlan or LogicalPlan
 
   protected def _coalesce(
-      numPartitions: RDD[_] => Int = { v =>
+      numPartitions: RDD[?] => Int = { v =>
         v.partitions.length
       },
       shuffle: Boolean = false

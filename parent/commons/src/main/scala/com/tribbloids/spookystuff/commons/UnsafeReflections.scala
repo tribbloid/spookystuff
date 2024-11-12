@@ -24,7 +24,7 @@ object UnsafeReflections {
   }
 
   def setAncestorField(obj: AnyRef, level: Int, fieldName: String, fieldValue: AnyRef): Unit = {
-    val ancestor = Iterator.iterate[Class[_]](obj.getClass)(_.getSuperclass).drop(level).next()
+    val ancestor = Iterator.iterate[Class[?]](obj.getClass)(_.getSuperclass).drop(level).next()
     val field = ancestor.getDeclaredField(fieldName)
     field.setAccessible(true)
     field.set(obj, fieldValue)
@@ -35,22 +35,22 @@ object UnsafeReflections {
   }
 
   def getAncestorField[T](clazz: Object, level: Int, fieldName: String): T = {
-    val ancestor = Iterator.iterate[Class[_]](clazz.getClass)(_.getSuperclass).drop(level).next()
+    val ancestor = Iterator.iterate[Class[?]](clazz.getClass)(_.getSuperclass).drop(level).next()
     val field = ancestor.getDeclaredField(fieldName)
     field.setAccessible(true)
     field.get(clazz).asInstanceOf[T]
   }
 
-  def invokeStatic(clazz: Class[_], methodName: String, args: (Class[_], AnyRef)*): AnyRef = {
-    invoke(clazz, null, methodName, args: _*)
+  def invokeStatic(clazz: Class[?], methodName: String, args: (Class[?], AnyRef)*): AnyRef = {
+    invoke(clazz, null, methodName, args*)
   }
 
-  def invoke(clazz: Class[_], obj: AnyRef, methodName: String, args: (Class[_], AnyRef)*): AnyRef = {
+  def invoke(clazz: Class[?], obj: AnyRef, methodName: String, args: (Class[?], AnyRef)*): AnyRef = {
 
     val (types, values) = args.unzip
-    val method = clazz.getDeclaredMethod(methodName, types: _*)
+    val method = clazz.getDeclaredMethod(methodName, types*)
     method.setAccessible(true)
-    method.invoke(obj, values: _*)
+    method.invoke(obj, values*)
   }
 
   // SystemClassloader is useless on workers.

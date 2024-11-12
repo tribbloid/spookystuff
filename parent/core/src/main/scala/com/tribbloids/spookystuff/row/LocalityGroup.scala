@@ -38,6 +38,7 @@ case class LocalityGroup(
     val rollout: Rollout = Rollout(trace)
 ) extends EqualBy
     with SpookyContext.CanRunWith {
+  // TODO: should the name be "SIMDGroup/SPMDGroup"
 
   @transient lazy val samenessKey: Any = keyByOvrd.getOrElse(trace)
 

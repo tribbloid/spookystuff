@@ -2,7 +2,7 @@ package com.tribbloids.spookystuff.parsing
 
 import com.tribbloids.spookystuff.commons.RangeMagnet
 import com.tribbloids.spookystuff.graph.Module
-import com.tribbloids.spookystuff.parsing.FSMParserGraph.Layout._
+import com.tribbloids.spookystuff.parsing.FSMParserGraph.Layout.*
 
 import scala.language.implicitConversions
 
@@ -32,7 +32,7 @@ object FSMParserDSL extends _DSL {
       create(node)
     }
 
-    def :~>(top: Operand[_]): Operand[GG] = {
+    def :~>(top: Operand[?]): Operand[GG] = {
 
       val base = this
 
@@ -45,7 +45,7 @@ object FSMParserDSL extends _DSL {
       new Operand(core, base.entry.self)
     }
 
-    def <~:(top: Operand[_]): Operand[GG] = {
+    def <~:(top: Operand[?]): Operand[GG] = {
 
       val base = this
 
@@ -60,7 +60,7 @@ object FSMParserDSL extends _DSL {
       new Operand(core, base.entry.self)
     }
 
-    override def union(another: Operand[_]): Operand[GG] = {
+    override def union(another: Operand[?]): Operand[GG] = {
       // reuse this.entryNode
 
       val proto = super.union(another)

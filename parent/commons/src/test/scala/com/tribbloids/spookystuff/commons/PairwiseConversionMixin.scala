@@ -8,7 +8,7 @@ import scala.reflect.ClassTag
 
 trait PairwiseConversionMixin extends BaseSpec {
 
-  import PairwiseConversionMixin._
+  import PairwiseConversionMixin.*
 
   val registryKeys: ArrayBuffer[String] = ArrayBuffer.empty[String]
   val registry: MultiMaps.Mutable[String, () => Unit] =
@@ -16,7 +16,7 @@ trait PairwiseConversionMixin extends BaseSpec {
 
   trait PairwiseCases extends Serializable {
 
-    def cases: Seq[PairwiseCase[_, _]]
+    def cases: Seq[PairwiseCase[?, ?]]
 
     def registerAll(): Unit = {
 
@@ -74,10 +74,10 @@ trait PairwiseConversionMixin extends BaseSpec {
       }
     }
 
-    override lazy val cases: Seq[PairwiseCase[_, _]] = Seq(this)
+    override lazy val cases: Seq[PairwiseCase[?, ?]] = Seq(this)
 
     lazy val inverse: PairwiseCase[T2, T1] = PairwiseCase(to, from, backward, forward)
-    lazy val bidirCases: Seq[PairwiseCase[_, _]] = Seq(this, this.inverse)
+    lazy val bidirCases: Seq[PairwiseCase[?, ?]] = Seq(this, this.inverse)
   }
 
   def runAll(cases: PairwiseCases*): Unit = {
@@ -99,7 +99,7 @@ trait PairwiseConversionMixin extends BaseSpec {
 object PairwiseConversionMixin {
 
   case class Repr[T: ClassTag](
-      opt: Option[_ <: T],
+      opt: Option[? <: T],
       level: Int = 10
       // repr -> level, < 0 means disabled
       // can only convert to Repr with lower level

@@ -1,7 +1,7 @@
 package com.tribbloids.spookystuff.utils
 
 import com.tribbloids.spookystuff.commons.CommonViews
-import com.tribbloids.spookystuff.row.Sampler
+import com.tribbloids.spookystuff.dsl.Sampler
 
 import scala.collection.immutable.ListMap
 import scala.collection.{Factory, Map}
@@ -42,22 +42,22 @@ abstract class SpookyViews_Imp0 extends CommonViews {
       case _ => None
     }
 
-    def explode1Key(
-        key: K,
-        sampler: Sampler[Any]
-    ): Seq[(Map[K, Any], Int)] = {
-
-      val valueOption: Option[V] = self.get(key)
-
-      val values: Iterable[(Any, Int)] =
-        valueOption.iterator.to(Iterable).flatMap(SpookyUtils.asIterable[Any]).zipWithIndex
-      val sampled = sampler(values)
-
-      val cleaned = self - key
-      val result = sampled.toSeq.map(tuple => (cleaned + (key -> tuple._1)) -> tuple._2)
-
-      result
-    }
+//    def explode1Key(
+//        key: K,
+//        sampler: Sampler
+//    ): Seq[(Map[K, Any], Int)] = {
+//
+//      val valueOption: Option[V] = self.get(key)
+//
+//      val values: Iterable[(Any, Int)] =
+//        valueOption.iterator.to(Iterable).flatMap(SpookyUtils.asIterable[Any]).zipWithIndex
+//      val sampled = sampler(values)
+//
+//      val cleaned = self - key
+//      val result = sampled.toSeq.map(tuple => (cleaned + (key -> tuple._1)) -> tuple._2)
+//
+//      result
+//    }
 
     def canonizeKeysToColumnNames: scala.collection.Map[String, V] = self.map(tuple => {
       val keyName: String = tuple._1 match {
@@ -71,7 +71,7 @@ abstract class SpookyViews_Imp0 extends CommonViews {
 
     def sortBy[B: Ordering](fn: ((K, V)) => B): ListMap[K, V] = {
       val tuples = self.toList.sortBy(fn)
-      ListMap(tuples: _*)
+      ListMap(tuples*)
     }
   }
 }

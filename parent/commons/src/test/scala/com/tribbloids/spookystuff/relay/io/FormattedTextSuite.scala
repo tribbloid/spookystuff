@@ -1,7 +1,7 @@
 package com.tribbloids.spookystuff.relay.io
 
 import com.tribbloids.spookystuff.testutils.BaseSpec
-import com.tribbloids.spookystuff.relay.TestBeans._
+import com.tribbloids.spookystuff.relay.TestBeans.*
 
 class FormattedTextSuite extends BaseSpec {
 

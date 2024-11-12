@@ -5,7 +5,7 @@ import org.apache.spark.sql.catalyst.ScalaReflection
 
 class UnreifiedObjectTypeSuite extends BaseSpec {
 
-  import ScalaReflection.universe._
+  import ScalaReflection.universe.*
 
   it("toString") {
 

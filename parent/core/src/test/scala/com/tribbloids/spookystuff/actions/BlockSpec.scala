@@ -7,7 +7,7 @@ import java.util.Date
 
 class BlockSpec extends SpookyBaseSpec {
 
-  import scala.concurrent.duration._
+  import scala.concurrent.duration.*
 
   it("loop without export won't need driver") {
 
@@ -25,7 +25,7 @@ class BlockSpec extends SpookyBaseSpec {
   }
 
   it("try without export won't need driver") {
-    import scala.concurrent.duration._
+    import scala.concurrent.duration.*
 
     val tryy = ClusterRetry(
       Delay(10.seconds) +> Wget("ftp://www.dummy.org")

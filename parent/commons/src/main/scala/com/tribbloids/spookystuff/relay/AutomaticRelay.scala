@@ -14,7 +14,7 @@ abstract class AutomaticRelay[T <: Product: Manifest] extends Relay[T] {
 
   override def toMessage_>>(v: T): IR_>> = {
     val prefix = v.productPrefix
-    val kvs = Map(ReflectionUtils.getCaseAccessorMap(v): _*)
+    val kvs = Map(ReflectionUtils.getCaseAccessorMap(v)*)
 
     val relayedKVs: Map[String, TreeIR[Any]] = kvs.map {
       case (k, v) =>
@@ -29,14 +29,14 @@ abstract class AutomaticRelay[T <: Product: Manifest] extends Relay[T] {
                     rr.toMessage_>>(v).asInstanceOf[TreeIR[Any]]
                     // TODO: Cast may fail, IR should be an extendable interface
                   }
-                TreeIR.list(list: _*)
+                TreeIR.list(list*)
               case m: Map[_, _] =>
                 val list = m.toList.map {
                   case (k: Any, v: Any) =>
                     val rr = RelayRegistry.Default.lookupOrDefault(v)
-                    k -> rr.toMessage_>>(v).asInstanceOf[TreeIR[_]]
+                    k -> rr.toMessage_>>(v).asInstanceOf[TreeIR[?]]
                 }
-                TreeIR.map(list: _*)
+                TreeIR.map(list*)
               case v: Any =>
                 val rr = RelayRegistry.Default.lookupOrDefault(v)
                 rr.toMessage_>>(v).asInstanceOf[TreeIR[Any]]
@@ -48,7 +48,7 @@ abstract class AutomaticRelay[T <: Product: Manifest] extends Relay[T] {
         k -> newV
     }
 
-    val relayed = TreeIR.Builder(Some(prefix)).map(relayedKVs.toSeq: _*).schematic
+    val relayed = TreeIR.Builder(Some(prefix)).map(relayedKVs.toSeq*).schematic
 
     relayed
   }

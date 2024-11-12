@@ -21,7 +21,7 @@ object MinimalCleanerSpike {
 
 class MinimalCleanerSpike extends AnyFunSpec {
 
-  import MinimalCleanerSpike._
+  import MinimalCleanerSpike.*
 
   it("..") {
 

@@ -1,9 +1,9 @@
 package com.tribbloids.spookystuff.utils.locality
 
 import com.tribbloids.spookystuff.utils.BroadcastWrapper
-import org.apache.spark.{Partitioner, TaskContext}
 import org.apache.spark.rdd.RDD
 import org.apache.spark.util.collection.AppendOnlyMap
+import org.apache.spark.{Partitioner, TaskContext}
 
 import scala.collection.mutable
 import scala.collection.mutable.ArrayBuffer
@@ -27,10 +27,10 @@ object IndexingLocalityImpl {
 
 case class IndexingLocalityImpl[K: ClassTag, V: ClassTag](
     override val rdd1: RDD[(K, V)],
-    persistFn: RDD[_] => Unit = _.persist()
+    persistFn: RDD[?] => Unit = _.persist()
 ) extends LocalityImpl.Ordinality[K, V] {
 
-  import IndexingLocalityImpl._
+  import IndexingLocalityImpl.*
 
   val numPartitions1: Int = rdd1.partitions.length
 

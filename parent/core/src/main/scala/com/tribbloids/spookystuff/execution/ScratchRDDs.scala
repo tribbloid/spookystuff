@@ -1,7 +1,7 @@
 package com.tribbloids.spookystuff.execution
 
-import com.tribbloids.spookystuff.utils.ShippingMarks
 import com.tribbloids.spookystuff.commons.lifespan.LocalCleanable
+import com.tribbloids.spookystuff.utils.ShippingMarks
 import org.apache.spark.SparkContext
 import org.apache.spark.broadcast.Broadcast
 import org.apache.spark.rdd.RDD
@@ -120,16 +120,16 @@ object ScratchRDDs {
 }
 
 case class ScratchRDDs(
-    tempTables: ArrayBuffer[(String, Dataset[_])] = ArrayBuffer(),
-    tempRDDs: ArrayBuffer[RDD[_]] = ArrayBuffer(),
-    tempDSs: ArrayBuffer[Dataset[_]] = ArrayBuffer(),
-    tempBroadcasts: ArrayBuffer[Broadcast[_]] = ArrayBuffer(),
+    tempTables: ArrayBuffer[(String, Dataset[?])] = ArrayBuffer(),
+    tempRDDs: ArrayBuffer[RDD[?]] = ArrayBuffer(),
+    tempDSs: ArrayBuffer[Dataset[?]] = ArrayBuffer(),
+    tempBroadcasts: ArrayBuffer[Broadcast[?]] = ArrayBuffer(),
     defaultStorageLevel: StorageLevel = StorageLevel.MEMORY_AND_DISK
 ) extends LocalCleanable
     with ShippingMarks {
 
   def registerTempView(
-      ds: Dataset[_]
+      ds: Dataset[?]
   ): String = {
 
     val existing = tempTables.find(_._2 == ds)
@@ -154,7 +154,7 @@ case class ScratchRDDs(
   }
 
   def persistDS(
-      ds: Dataset[_],
+      ds: Dataset[?],
       storageLevel: StorageLevel = defaultStorageLevel
   ): Unit = {
 
@@ -174,7 +174,7 @@ case class ScratchRDDs(
   }
 
   def unpersistDS(
-      ds: Dataset[_],
+      ds: Dataset[?],
       blocking: Boolean = false
   ): Unit = {
 
@@ -183,7 +183,7 @@ case class ScratchRDDs(
   }
 
   def unpersist(
-      rdd: RDD[_],
+      rdd: RDD[?],
       blocking: Boolean = false
   ): Unit = {
 

@@ -10,10 +10,10 @@ object SerializerEnv {
 
   case class Ops(conf: SparkConf) {
 
-    import org.apache.spark.sql.catalyst.ScalaReflection.universe._
+    import org.apache.spark.sql.catalyst.ScalaReflection.universe.*
 
     @transient lazy val _conf: SparkConf = conf
-      .registerKryoClasses(Array(classOf[TypeTag[_]]))
+      .registerKryoClasses(Array(classOf[TypeTag[?]]))
 
     @transient lazy val javaSerializer: JavaSerializer = new JavaSerializer(_conf)
     @transient lazy val javaOverride: () => Some[SerializerInstance] = { // TODO: use singleton?

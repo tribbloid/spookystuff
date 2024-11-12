@@ -14,10 +14,12 @@ object ChainPlan extends CatalystTypeOps.ImplicitMixin {
 
   object FlatMap {
 
-    type RMag[O] = PreferRightMagnet[Seq[O], Batch[O]]
-    type _Fn[I, O] = FetchedRow[I] => RMag[O]
+    type ResultMag[O] = PreferRightMagnet[Seq[O], Batch[O]]
+    type _Fn[I, O] = FetchedRow[I] => ResultMag[O]
 
-    def normalise[I, O](fn: _Fn[I, O]): ChainPlan.this.Fn[I, O] = { row =>
+    def normalise[I, O](
+        fn: _Fn[I, O]
+    ): ChainPlan.this.Fn[I, O] = { row =>
       val mag = fn(row).revoke
 
       val result: Batch[O] = mag match {
@@ -34,8 +36,8 @@ object ChainPlan extends CatalystTypeOps.ImplicitMixin {
 
   object Map {
 
-    type RMag[O] = PreferRightMagnet[O, Yield[O]]
-    type _Fn[I, O] = FetchedRow[I] => PreferRightMagnet[O, Yield[O]]
+    type ResultMag[O] = PreferRightMagnet[O, Yield[O]]
+    type _Fn[I, O] = FetchedRow[I] => ResultMag[O]
 
     def normalise[I, O](fn: _Fn[I, O]): ChainPlan.this.Fn[I, O] = { row =>
       val result = fn(row).revoke match {

@@ -4,7 +4,7 @@ import java.nio.ByteBuffer
 
 import org.apache.spark.SparkConf
 import org.apache.spark.serializer.JavaSerializer
-import org.apache.spark.sql.types._
+import org.apache.spark.sql.types.*
 
 /**
   * A Scala TypeTag-based UDT, by default it doesn't compress object ideally it should compress object into InternalRow.

@@ -43,8 +43,8 @@ class XMLWeakDeserializerSuite extends BaseSpec {
 
   implicit val formats: Formats = XMLFormats.defaultFormats
 
-  import XMLWeakDeserializerSuite._
-  import org.json4s.Extraction._
+  import XMLWeakDeserializerSuite.*
+  import org.json4s.Extraction.*
 
   it("sanity test") {
 

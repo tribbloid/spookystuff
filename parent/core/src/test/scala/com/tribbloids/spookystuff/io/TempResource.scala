@@ -10,7 +10,7 @@ case class TempResource(
     pathStr: String
 ) extends LocalCleanable {
 
-  import TempResource._
+  import TempResource.*
 
   lazy val execution: resolver.Execution = resolver.execute(pathStr)
   def absolutePathStr: String = execution.absolutePathStr

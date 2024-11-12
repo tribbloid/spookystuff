@@ -4,7 +4,7 @@ import com.tribbloids.spookystuff.testutils.BaseSpec
 
 class TreeIRSuite extends BaseSpec {
 
-  import TreeIRSuite._
+  import TreeIRSuite.*
 
   describe("from/to JSON") {
 

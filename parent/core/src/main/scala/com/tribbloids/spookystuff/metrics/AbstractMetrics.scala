@@ -48,7 +48,7 @@ abstract class AbstractMetrics extends MetricLike {
   }
 
   case class View[T](
-      fn: Acc[_ <: AccumulatorV2[_, _]] => Option[T],
+      fn: Acc[? <: AccumulatorV2[?, ?]] => Option[T],
       useDisplayName: Boolean = true
   ) {
 
@@ -68,11 +68,11 @@ abstract class AbstractMetrics extends MetricLike {
         case _ =>
           None
       }
-      TreeIR.Builder(Some(AbstractMetrics.this.productPrefix)).map(cache.toSeq: _*)
+      TreeIR.Builder(Some(AbstractMetrics.this.productPrefix)).map(cache.toSeq*)
     }
 
     def toMap: Map[String, T] = toTreeIR.pathToValueMap.map {
-      case (k, v) => CommonUtils./:/(k: _*) -> v
+      case (k, v) => CommonUtils./:/(k*) -> v
     }
   }
 

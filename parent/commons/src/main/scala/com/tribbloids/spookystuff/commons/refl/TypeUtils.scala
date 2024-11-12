@@ -2,13 +2,13 @@ package com.tribbloids.spookystuff.commons.refl
 
 import org.apache.spark.SparkException
 import org.apache.spark.sql.catalyst.ScalaReflection
-import org.apache.spark.sql.types._
+import org.apache.spark.sql.types.*
 
 import scala.util.Failure
 
 object TypeUtils {
 
-  import ScalaReflection.universe._
+  import ScalaReflection.universe.*
 
   // If reflection is used to find function based on DataType, it may encounter typecast error due to type inconsistency
   // (several Scala type corresponds to Catalyst DataType), in which case this should be used to pre-process the data to ensure
@@ -126,7 +126,7 @@ object TypeUtils {
 
   case class NaiveTypeCreator(tpe: Type) extends reflect.api.TypeCreator {
 
-    def apply[U <: reflect.api.Universe with Singleton](m: reflect.api.Mirror[U]): U#Type = {
+    def apply[U <: reflect.api.Universe & Singleton](m: reflect.api.Mirror[U]): U#Type = {
       //          assert(m eq mirror, s"TypeTag[$tpe] defined in $mirror cannot be migrated to $m.")
       tpe.asInstanceOf[U#Type]
     }

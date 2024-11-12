@@ -7,7 +7,7 @@ import shapeless.test.illTyped
 
 class RowOrderingSpec extends BaseSpec {
 
-  import com.tribbloids.spookystuff.linq.Field._
+  import com.tribbloids.spookystuff.linq.Field.*
 
   describe("enabling") {
 

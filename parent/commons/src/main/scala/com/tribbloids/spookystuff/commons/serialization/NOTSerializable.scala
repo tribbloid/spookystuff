@@ -9,7 +9,7 @@ import java.io.NotSerializableException
   */
 trait NOTSerializable extends BeforeAndAfterShipping {
 
-  import NOTSerializable._
+  import NOTSerializable.*
 
   {
     trigger

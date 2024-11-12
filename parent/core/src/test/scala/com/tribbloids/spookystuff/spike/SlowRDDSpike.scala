@@ -14,7 +14,7 @@ class SlowRDDSpike extends BaseSpec {
   lazy val sc: SparkContext = spark.sparkContext
   lazy val sqlContext: SQLContext = spark.sqlContext
 
-  import sqlContext.implicits._
+  import sqlContext.implicits.*
 
   describe("is repartitioning non-blocking?") {
 

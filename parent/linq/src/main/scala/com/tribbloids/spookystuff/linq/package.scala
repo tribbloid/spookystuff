@@ -1,13 +1,13 @@
 package com.tribbloids.spookystuff
 
 import shapeless.labelled
-import shapeless.labelled.{field, FieldType}
+import shapeless.labelled.{FieldType, field}
 import shapeless.tag.@@
 
 package object linq {
 
-  type XInt = Int with Singleton
-  type XStr = String with Singleton
+  type XInt = Int & Singleton
+  type XStr = String & Singleton
 
   type Tuple = shapeless.HList
   object Tuple {

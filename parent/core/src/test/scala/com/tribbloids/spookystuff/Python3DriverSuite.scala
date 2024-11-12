@@ -51,7 +51,7 @@ object Python3DriverSuite {
 class Python3DriverSuite extends SpookyBaseSpec {
 
   import scala.concurrent.ExecutionContext.Implicits.global
-  import scala.concurrent.duration._
+  import scala.concurrent.duration.*
 
   override def afterAll(): Unit = {
 
@@ -60,7 +60,7 @@ class Python3DriverSuite extends SpookyBaseSpec {
   }
 
   lazy val runner: Runner = Python3DriverSuite.Runner3
-  import runner._
+  import runner.*
 
   it("sendAndGetResult should work in single thread") {
     onePlusX(1 to 100)
@@ -69,7 +69,7 @@ class Python3DriverSuite extends SpookyBaseSpec {
   it("sendAndGetResult should work in multiple threads") {
 
     val runner: Runner = this.runner
-    import runner._
+    import runner.*
 
     val rdd = sc.parallelize(1 to 100)
     assert(rdd.partitions.length > 1)

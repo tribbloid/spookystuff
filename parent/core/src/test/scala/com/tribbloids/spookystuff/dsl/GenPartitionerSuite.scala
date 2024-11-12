@@ -11,7 +11,7 @@ import scala.util.Random
   */
 class GenPartitionerSuite extends SpookyBaseSpec {
 
-  import com.tribbloids.spookystuff.utils.RDDImplicits._
+  import com.tribbloids.spookystuff.utils.RDDImplicits.*
 
   it("DocCacheAware can co-partition 2 RDDs") {
     val numPartitions = Random.nextInt(80) + 9

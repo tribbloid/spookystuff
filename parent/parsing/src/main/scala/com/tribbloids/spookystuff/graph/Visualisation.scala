@@ -71,7 +71,7 @@ case class Visualisation[D <: Domain](
     def compileASCII(
         endWith: Seq[Element[D]]
     ): Graph[ElementView[D]#WFormat] = {
-      import scala.jdk.CollectionConverters._
+      import scala.jdk.CollectionConverters.*
 
       //      val buffer = mutable.LinkedHashSet.empty[ElementView[D]#WFormat]
       val buffer = {
@@ -101,7 +101,7 @@ case class Visualisation[D <: Domain](
 
       val bufferList = buffer.toList
 
-      val bufferSet = ListMap(bufferList.map(v => v -> {}): _*).keySet
+      val bufferSet = ListMap(bufferList.map(v => v -> {}) *).keySet
 
       {
         // TODO: don't remove! set ordering varies depending on scala versions

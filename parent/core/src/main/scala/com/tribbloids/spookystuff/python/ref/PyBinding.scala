@@ -22,7 +22,7 @@ class PyBinding(
 ) extends Dynamic
     with LocalCleanable {
 
-  import ref._
+  import ref.*
 
   {
     assertNotCleaned("cannot create binding")

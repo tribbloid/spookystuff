@@ -1,12 +1,12 @@
 package com.tribbloids.spookystuff.conf
 
 import com.tribbloids.spookystuff.SpookyContext
-import com.tribbloids.spookystuff.metrics.AbstractMetrics
 import com.tribbloids.spookystuff.agent.DriverLike
-import com.tribbloids.spookystuff.utils.BroadcastWrapper
 import com.tribbloids.spookystuff.commons.lifespan.Cleanable
-import org.apache.spark.SparkConf
+import com.tribbloids.spookystuff.metrics.AbstractMetrics
 import com.tribbloids.spookystuff.relay.MessageAPI
+import com.tribbloids.spookystuff.utils.BroadcastWrapper
+import org.apache.spark.SparkConf
 
 import scala.util.Try
 
@@ -45,14 +45,14 @@ trait PluginSystem extends Serializable {
 
   type Conf <: ConfLike
 
-  trait Dependent {
+  trait Inner {
     def pluginSystem: PluginSystem.this.type = PluginSystem.this
   }
 
   /**
     * all subclasses have to define default() in their respective companion object.
     */
-  trait ConfLike extends MessageAPI with Dependent {
+  trait ConfLike extends MessageAPI with Inner {
 
     def importFrom(sparkConf: SparkConf): Conf // read from Spark options & env vars
   }
@@ -61,7 +61,7 @@ trait PluginSystem extends Serializable {
 
   type Plugin <: PluginLike
 
-  trait PluginLike extends Cleanable with Dependent {
+  trait PluginLike extends Cleanable with Inner {
 
     val spooky: SpookyContext
 

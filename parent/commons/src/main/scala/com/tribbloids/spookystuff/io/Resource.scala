@@ -12,7 +12,7 @@ abstract class Resource extends LocalCleanable {
 
   def mode: WriteMode
 
-  import Resource._
+  import Resource.*
 
   protected def _newIStream: InputStream
   protected def newIStream: InputStream = {

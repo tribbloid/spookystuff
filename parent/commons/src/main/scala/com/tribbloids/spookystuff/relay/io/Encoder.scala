@@ -3,7 +3,7 @@ package com.tribbloids.spookystuff.relay.io
 import com.tribbloids.spookystuff.relay.xml.{XMLFormats, Xml}
 import com.tribbloids.spookystuff.relay.{IR, Relay, TreeIR}
 import org.json4s.JsonAST.JObject
-import org.json4s.jackson.JsonMethods._
+import org.json4s.jackson.JsonMethods.*
 import org.json4s.{Extraction, Formats, JValue}
 
 import scala.xml.NodeSeq

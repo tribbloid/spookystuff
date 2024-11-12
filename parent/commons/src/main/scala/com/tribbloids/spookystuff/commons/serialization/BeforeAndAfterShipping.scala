@@ -13,7 +13,7 @@ trait BeforeAndAfterShipping extends Serializable {
     _trigger
   }
 
-  import BeforeAndAfterShipping._
+  import BeforeAndAfterShipping.*
 
   def beforeDeparture(): Unit = {}
 

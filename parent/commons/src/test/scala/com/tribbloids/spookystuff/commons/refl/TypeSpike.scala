@@ -7,18 +7,18 @@ import scala.collection.immutable
 
 class TypeSpike extends BaseSpec {
 
-  import ScalaReflection.universe._
+  import ScalaReflection.universe.*
 
   it("Map type equality") {
-    val ttg1 = typeTag[Map[_, _]]
-    val ttg2 = typeTag[immutable.Map[_, _]]
+    val ttg1 = typeTag[Map[?, ?]]
+    val ttg2 = typeTag[immutable.Map[?, ?]]
 
     assert(ttg1.tpe =:= ttg2.tpe)
   }
 
   it("List type equality") {
-    val ttg1 = typeTag[List[_]]
-    val ttg2 = typeTag[immutable.List[_]]
+    val ttg1 = typeTag[List[?]]
+    val ttg2 = typeTag[immutable.List[?]]
 
     assert(ttg1.tpe =:= ttg2.tpe)
   }

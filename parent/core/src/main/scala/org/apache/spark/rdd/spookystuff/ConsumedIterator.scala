@@ -1,11 +1,10 @@
 package org.apache.spark.rdd.spookystuff
 
 import java.util.concurrent.atomic.AtomicInteger
-
 import scala.language.implicitConversions
 
 trait ConsumedIterator {
-  self: Iterator[_] =>
+  self: Iterator[?] =>
 
   /**
     * pointer to the next value

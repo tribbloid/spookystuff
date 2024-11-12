@@ -12,7 +12,7 @@ import scala.language.implicitConversions
 /**
   * a simple wrapper of Spark AccumulatorV2 that automatically register itself & derive name from productPrefix
   */
-trait Acc[T <: AccumulatorV2[_, _]] extends MetricLike {
+trait Acc[T <: AccumulatorV2[?, ?]] extends MetricLike {
 
   override def samenessKey: (String, Any) = displayName -> _self.value
 
@@ -37,22 +37,22 @@ trait Acc[T <: AccumulatorV2[_, _]] extends MetricLike {
 
 object Acc {
 
-  implicit def unbox[T <: AccumulatorV2[_, _]](acc: Acc[T]): T = acc.self
+  implicit def unbox[T <: AccumulatorV2[?, ?]](acc: Acc[T]): T = acc.self
 
-  implicit def boxKV[T <: AccumulatorV2[_, _]](v: (String, T)): Acc[T] = {
+  implicit def boxKV[T <: AccumulatorV2[?, ?]](v: (String, T)): Acc[T] = {
     Simple(
       v._2,
       Some(v._1)
     )
   }
 
-  case class Simple[T <: AccumulatorV2[_, _]](
+  case class Simple[T <: AccumulatorV2[?, ?]](
       override val _self: T,
       override val displayNameOvrd: Option[String] = None,
       @transient override val sparkContext: SparkContext = SparkSession.active.sparkContext
   ) extends Acc[T]
 
-  case class FromV0[V0, T <: AccumulatorV2[_, _]](
+  case class FromV0[V0, T <: AccumulatorV2[?, ?]](
       v0: V0,
       override val displayNameOvrd: Option[String] = None,
       @transient override val sparkContext: SparkContext = SparkSession.active.sparkContext
@@ -64,14 +64,14 @@ object Acc {
     override def _self: T = canBuild.initialise(v0)
   }
 
-  trait CanBuild[T <: AccumulatorV2[_, _]] extends Serializable {
+  trait CanBuild[T <: AccumulatorV2[?, ?]] extends Serializable {
 
     def build: T
   }
 
   object CanBuild extends CanBuild_Level0
 
-  trait CanInit[V0, T <: AccumulatorV2[_, _]] extends CanBuild[T] {
+  trait CanInit[V0, T <: AccumulatorV2[?, ?]] extends CanBuild[T] {
 
     def add(self: T, v: V0): Unit
 
@@ -144,21 +144,21 @@ object Acc {
     }
   }
 
-  def create[IN, T <: AccumulatorV2[_, _]](value: IN, displayNameOvrd: OptionMagnet[String] = None)(
+  def create[IN, T <: AccumulatorV2[?, ?]](value: IN, displayNameOvrd: OptionMagnet[String] = None)(
       implicit
       canBuild: CanInit[IN, T]
   ): Acc[T] = {
     FromV0(value, displayNameOvrd)
   }
 
-  implicit def fromV0[IN, T <: AccumulatorV2[_, _]](value: IN)(
+  implicit def fromV0[IN, T <: AccumulatorV2[?, ?]](value: IN)(
       implicit
       canBuild: CanInit[IN, T]
   ): Acc[T] = {
     create(value)
   }
 
-  implicit def fromKV0[IN, T <: AccumulatorV2[_, _]](kv: (String, IN))(
+  implicit def fromKV0[IN, T <: AccumulatorV2[?, ?]](kv: (String, IN))(
       implicit
       canBuild: CanInit[IN, T]
   ): Acc[T] = {

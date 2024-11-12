@@ -7,7 +7,7 @@ import java.util.concurrent.atomic.AtomicInteger
 
 class BeforeAndAfterShippingSpec extends BaseSpec with BeforeAndAfterEach {
 
-  import BeforeAndAfterShippingSpec._
+  import BeforeAndAfterShippingSpec.*
 
   override def beforeEach(): Unit = {
     beforeCounter.set(0)

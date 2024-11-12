@@ -19,52 +19,52 @@ object PathPlanning {
     val params: Params
     val schema: SpookySchema
 
-    def openReducer: OpenReducer
+    def openReducer: Open.Reducer
 
-    def openReducer_global: OpenReducer = openReducer
+    def openReducer_global: Open.Reducer = openReducer
 
     def selectNextOpen(
-        open: ConcurrentMap[LocalityGroup, Vector[Exploring]]
-    ): (LocalityGroup, Vector[Exploring])
+        open: ConcurrentMap[LocalityGroup, Vector[Open.Payload]]
+    ): (LocalityGroup, Vector[Open.Payload])
 
-    def visitedReducer: VisitedReducer // precede eliminator
+    def visitedReducer: Visited.Reducer // precede eliminator
 
-    def visitedReducer_global: VisitedReducer = visitedReducer
+    def visitedReducer_global: Visited.Reducer = visitedReducer
   }
 
   object Impl {
 
     trait CanPruneSelected[I, O] extends Impl[I, O] {
 
-      val ordering: RowOrdering // TODO: over-defined, only need to implement min selection
+      val ordering: Open.RowOrdering // TODO: over-defined, only need to implement min selection
 
       final def pruneSelected(
-          open: Batch,
-          inCacheVisited: _Batch
-      ): Vector[Exploring] = {
+          open: Open.Batch,
+          inCacheVisited: Visited.Batch
+      ): Vector[Open.Payload] = {
         if (open.isEmpty || inCacheVisited.isEmpty) open
         else pruneSelectedNonEmpty(open, inCacheVisited)
       }
 
       protected def pruneSelectedNonEmpty(
-          open: Batch,
-          inCacheVisited: _Batch
-      ): Vector[Exploring]
+          open: Open.Batch,
+          inCacheVisited: Visited.Batch
+      ): Vector[Open.Payload]
 
       final override def selectNextOpen(
-          open: ConcurrentMap[LocalityGroup, Vector[Exploring]]
-      ): (LocalityGroup, Vector[Exploring]) = {
+          open: ConcurrentMap[LocalityGroup, Vector[Open.Payload]]
+      ): (LocalityGroup, Vector[Open.Payload]) = {
         // may return pair with empty DataRows
 
         // TODO: Should I use pre-sorted collection like SortedMap? Or is it over-engineering?
-        val bestOpen: (LocalityGroup, Vector[Exploring]) = open.min(ordering)
+        val bestOpen: (LocalityGroup, Vector[Open.Payload]) = open.min(ordering)
         val bestOpenGroup = bestOpen._1
 
         open -= bestOpenGroup
 
         val allVisitedOpt = {
 
-          val cached: Set[_Batch] = ExploreLocalCache
+          val cached: Set[Visited.Batch] = ExploreLocalCache
             .getExecution[I, O](params.executionID)
             .getVisitedData(bestOpenGroup)
 

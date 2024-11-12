@@ -35,7 +35,7 @@ import scala.util.Random
   */
 class SpookyViewsSuite extends SpookyBaseSpec {
 
-  import RDDImplicits._
+  import RDDImplicits.*
 
   it("multiPassFlatMap should yield same result as flatMap") {
 

@@ -1,7 +1,7 @@
 package com.tribbloids.spookystuff.relay.xml
 
 import org.json4s.JsonAST.JString
-import org.json4s._
+import org.json4s.*
 import org.json4s.reflect.TypeInfo
 
 // <tag>12</tag> => tag: 12

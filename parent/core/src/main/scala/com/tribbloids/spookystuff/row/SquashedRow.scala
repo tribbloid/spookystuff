@@ -139,9 +139,10 @@ case class SquashedRow[D](
     this.copy(
       batch = {
         batch.map { d =>
-          d.copy(
-            data = Data.Exploring(d).idRefresh
+          val result = d.copy(
+            data = Data.Exploring(d.data).idRefresh
           )
+          result
         }
       }
     )

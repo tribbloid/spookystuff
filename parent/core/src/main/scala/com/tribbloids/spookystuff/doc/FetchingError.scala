@@ -1,6 +1,6 @@
 package com.tribbloids.spookystuff.doc
 
-import com.tribbloids.spookystuff._
+import com.tribbloids.spookystuff.*
 import com.tribbloids.spookystuff.caching.DocCacheLevel
 import com.tribbloids.spookystuff.doc.Observation.DocUID
 import com.tribbloids.spookystuff.io.ResourceMetadata

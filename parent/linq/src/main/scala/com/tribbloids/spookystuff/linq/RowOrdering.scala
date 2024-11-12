@@ -12,7 +12,7 @@ class RowOrdering {
 
 object RowOrdering {
 
-  import Field._
+  import Field.*
 
   object Default extends RowOrdering {
 
@@ -25,7 +25,7 @@ object RowOrdering {
 
     object By extends By_Imp0 {
 
-      implicit def accept[T <: _ <> CanSort.type]: T Target T = this.at[T] { (v: T) =>
+      implicit def accept[T <: ? <> CanSort.type]: T Target T = this.at[T] { (v: T) =>
         v
       }
     }

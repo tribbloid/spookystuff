@@ -6,8 +6,8 @@ import com.tribbloids.spookystuff.relay.Relay
 
 class EAVLikeSuite extends BaseSpec {
 
-  import EAVLikeSuite._
-  import EAVSystem.NoAttr._
+  import EAVLikeSuite.*
+  import EAVSystem.NoAttr.*
 
   val wellformed: ^ = EAVSystem.NoAttr.From(
     "int" -> 1,

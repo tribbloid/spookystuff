@@ -4,7 +4,7 @@ import ai.acyclic.prover.commons.util.Retry
 import com.tribbloids.spookystuff.io.lock.{Lock, LockExpired}
 import org.apache.commons.io.IOUtils
 
-import java.io._
+import java.io.*
 import scala.concurrent.duration.DurationInt
 import scala.util.Random
 

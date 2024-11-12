@@ -50,16 +50,16 @@ object PathPlanners_Simple {
         }
       }
 
-      override val openReducer: OpenReducer = {
+      override val openReducer: Open.Reducer = {
         new ReducerProto[I]
       }
 
-      override val visitedReducer: VisitedReducer = {
+      override val visitedReducer: Visited.Reducer = {
 
         new ReducerProto[O]
       }
 
-      override val ordering: RowOrdering = Ordering.by { (tuple: (LocalityGroup, Vector[Exploring])) =>
+      override val ordering: Open.RowOrdering = Ordering.by { (tuple: (LocalityGroup, Vector[Open.Payload])) =>
         val inProgress: mutable.Set[LocalityGroup] = ExploreLocalCache
           .getOnGoingRunners(params.executionID)
           .flatMap { (v: ExploreRunner[I, O]) =>
@@ -71,7 +71,7 @@ object PathPlanners_Simple {
           // if in progress by any local executor, do not select, wait for another executor to finish it first
         } else {
           val dataRows = tuple._2
-          val firstDataRow: Exploring = dataRows.head
+          val firstDataRow = dataRows.head
 
           (0, firstDataRow.orderBy)
         }
@@ -80,9 +80,9 @@ object PathPlanners_Simple {
       }
 
       override protected def pruneSelectedNonEmpty(
-          open: Batch,
-          visited: _Batch
-      ): Vector[Exploring] = {
+          open: Open.Batch,
+          visited: Visited.Batch
+      ): Vector[Open.Payload] = {
 
         val visitedDepth = visited.head.depthOpt
         open.filter { row =>
