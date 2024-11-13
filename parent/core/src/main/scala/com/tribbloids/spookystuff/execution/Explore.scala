@@ -5,18 +5,18 @@ import com.tribbloids.spookystuff.row.{Data, LocalityGroup}
 
 object Explore {
 
-  type PayloadK[T] = Data.WithScope[Data.Exploring[T]]
+  type PayloadK[T] = Data.Scoped[Data.Exploring[T]]
   type BatchK[T] = Vector[PayloadK[T]]
 
   trait ReducerTypes[T] {
 
     type Exploring = Data.Exploring[T]
 
-    type Payload = Data.WithScope[Exploring] // in open & visited cache, don't participate in ordering or reduce
+    type Payload = Data.Scoped[Exploring] // in open & visited cache, don't participate in ordering or reduce
     type Batch = Vector[Payload]
 
     type RowOrdering = Ordering[(LocalityGroup, Vector[Payload])]
-    // TODO: should be able to use AgentState
+    // TODO:
     //  in fact, should use SquashedRow directly
 
     type Reducer = Explore.ReducerK[T]

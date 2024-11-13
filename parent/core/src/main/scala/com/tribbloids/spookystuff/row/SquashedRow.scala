@@ -10,7 +10,7 @@ import scala.language.implicitConversions
 
 object SquashedRow {
 
-  def ofData[D](dataWithScope: Data.WithScope[D]*): SquashedRow[D] = {
+  def ofData[D](dataWithScope: Data.Scoped[D]*): SquashedRow[D] = {
 
     SquashedRow(
       LocalityGroup.NoOp,
@@ -70,7 +70,7 @@ object SquashedRow {
 
 case class SquashedRow[D](
     localityGroup: LocalityGroup,
-    batch: Seq[Data.WithScope[D]]
+    batch: Seq[Data.Scoped[D]]
 ) extends SpookyContext.CanRunWith {
   // can only support 1 agent
   // will trigger a fork if not all agent actions were captured by the LocalityGroup
@@ -113,7 +113,7 @@ case class SquashedRow[D](
 //  }
 
   def flatMapData[DD](
-      fn: Data.WithScope[D] => Seq[Data.WithScope[DD]]
+      fn: Data.Scoped[D] => Seq[Data.Scoped[DD]]
   ): SquashedRow[DD] = {
 
     val newDataRows = batch.flatMap { row =>
@@ -163,7 +163,7 @@ case class SquashedRow[D](
         fn: ChainPlan.Fn[D, O]
     ): SquashedRow[O] = {
 
-      val newDataRows: Seq[Data.WithScope[O]] = unSquash.flatMap { (row: FetchedRow[D]) =>
+      val newDataRows: Seq[Data.Scoped[O]] = unSquash.flatMap { (row: FetchedRow[D]) =>
         val newRows = fn(row)
         newRows
       }

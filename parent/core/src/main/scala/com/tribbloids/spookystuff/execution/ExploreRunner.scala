@@ -126,7 +126,7 @@ case class ExploreRunner[I, O](
 
           val selected: (LocalityGroup, Open.Batch) = pathPlanningImpl.selectNextOpen(open)
           val withLineage: SquashedRow[Open.Exploring] =
-            SquashedRow(selected._1, selected._2.map(v => Data.WithScope.default(v)))
+            SquashedRow(selected._1, selected._2.map(v => Data.Scoped.default(v)))
 
           //          val transformed = delta.fn(withDepth)
           withLineage

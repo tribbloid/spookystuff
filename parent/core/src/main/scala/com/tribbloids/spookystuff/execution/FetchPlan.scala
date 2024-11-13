@@ -9,7 +9,7 @@ import org.apache.spark.rdd.RDD
 
 object FetchPlan {
 
-  type Yield[O] = (Trace, Data.WithScope[O])
+  type Yield[O] = (Trace, Data.Scoped[O])
   // TODO: HasTraceSet will be gone, Agent can be manipulated directly
   // this will make it definitionally close to FlatMapPlan, the only difference is the shuffling
 
@@ -28,7 +28,7 @@ object FetchPlan {
     ): Fn[I, I] = { row =>
       val mag = fn(row)
 
-      val normalised: (HasTraceSet, Data.WithScope[I]) = mag.revoke match {
+      val normalised: (HasTraceSet, Data.Scoped[I]) = mag.revoke match {
         case Left(traces) =>
           traces -> row.payload
         case Right(v) =>
@@ -68,7 +68,7 @@ case class FetchPlan[I, O](
 
   override def execute: SquashedRDD[O] = {
 
-    val forkedRDD: RDD[(LocalityGroup, Data.WithScope[O])] = child.squashedRDD
+    val forkedRDD: RDD[(LocalityGroup, Data.Scoped[O])] = child.squashedRDD
       .flatMap { (v: SquashedRow[I]) =>
         val rows = v.withCtx(child.spooky).unSquash
 
@@ -80,7 +80,7 @@ case class FetchPlan[I, O](
         }
       }
 
-    val grouped: RDD[(LocalityGroup, Iterable[Data.WithScope[O]])] = gpImpl.groupByKey(forkedRDD, beaconRDDOpt)
+    val grouped: RDD[(LocalityGroup, Iterable[Data.Scoped[O]])] = gpImpl.groupByKey(forkedRDD, beaconRDDOpt)
 
     grouped
       .map { tuple =>
@@ -98,7 +98,7 @@ case class FetchPlan[I, O](
     val newFn: FetchPlan.Fn[I, O2] = { row =>
       val out1 = this.fn(row)
 
-      val out2: Seq[(Trace, Data.WithScope[O2])] = out1.flatMap {
+      val out2: Seq[(Trace, Data.Scoped[O2])] = out1.flatMap {
         case (traces, data) =>
           val row2 = FetchedRow(row.agentState, data)
 

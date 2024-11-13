@@ -23,11 +23,10 @@ object AgentState {
     lazy val trajectory: Seq[Observation] = rollout.withCtx(ctx).trajectory
   }
 
-  case class Fake(
-      trajectory: Seq[Observation],
-      ctx: SpookyContext
-  ) extends AgentState {}
-
+//  case class Mock(
+//      trajectory: Seq[Observation],
+//      ctx: SpookyContext
+//  ) extends AgentState {}
 }
 
 /**

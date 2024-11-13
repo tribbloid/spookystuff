@@ -5,7 +5,7 @@ import com.tribbloids.spookystuff.commons.serialization.NOTSerializable
 import com.tribbloids.spookystuff.doc.*
 import com.tribbloids.spookystuff.doc.Observation.{DocUID, Failure, Success}
 import com.tribbloids.spookystuff.execution.ChainPlan
-import com.tribbloids.spookystuff.row.Data.{SourceScope, WithScope}
+import com.tribbloids.spookystuff.row.Data.{Scope, Scoped}
 
 import scala.collection.mutable
 import scala.collection.mutable.ArrayBuffer
@@ -110,7 +110,7 @@ object FetchedRow {
       observations: Seq[Observation] = Nil
   ) {
 
-    lazy val payload: WithScope[D] = Data.WithScope(data)
+    lazy val payload: Scoped[D] = Data.Scoped(data)
 
     def asSquashed: SquashedRow[D] = {
       SquashedRow
@@ -122,13 +122,13 @@ object FetchedRow {
 
     def asFetched(ctx: SpookyContext): FetchedRow[D] = {
       FetchedRow(
-        agentState = AgentState.Fake(observations, ctx),
+        agentState = AgentState.Real(LocalityGroup.NoOp.cached(observations), ctx),
         payload = payload
       )
     }
   }
 
-  lazy val blank: Proto[Unit] = Proto(Data.WithScope(()), Nil)
+  lazy val blank: Proto[Unit] = Proto(Data.Scoped(()), Nil)
 }
 
 /**
@@ -137,26 +137,26 @@ object FetchedRow {
   */
 case class FetchedRow[D](
     agentState: AgentState,
-    payload: Data.WithScope[D]
+    payload: Data.Scoped[D]
 ) extends NOTSerializable {
 
   def data: D = payload.data
 
-  def scope: Option[SourceScope] = payload.sourceScope
+  def scope: Option[Scope] = payload.scope
 
-  lazy val effectiveScope: SourceScope = {
+  lazy val effectiveScope: Scope = {
 
     val result = scope match {
       case Some(scope) => scope
       case None =>
         val uids = agentState.trajectory.map(_.uid)
-        SourceScope(uids)
+        Scope(uids)
     }
 
     result
   }
 
-  lazy val observations: Seq[Observation] = effectiveScope.observations.map { uid =>
+  lazy val observations: Seq[Observation] = effectiveScope.observationUIDs.map { uid =>
     agentState.lookup(uid)
   }
 
@@ -171,7 +171,7 @@ case class FetchedRow[D](
   object rescope {
 
     // make sure no pages with identical name can appear in the same group.
-    lazy val byDistinctNames: Seq[WithScope[D]] = {
+    lazy val byDistinctNames: Seq[Data.Scoped[D]] = {
       val outerBuffer: ArrayBuffer[Seq[DocUID]] = ArrayBuffer()
 
       object innerBuffer {
@@ -189,7 +189,7 @@ case class FetchedRow[D](
         }
       }
 
-      effectiveScope.observations.foreach { uid =>
+      effectiveScope.observationUIDs.foreach { uid =>
         if (innerBuffer.names.contains(uid.name)) {
           outerBuffer += innerBuffer.refs.toList
           innerBuffer.clear()
@@ -200,7 +200,7 @@ case class FetchedRow[D](
 
       outerBuffer.zipWithIndex.map {
         case (v, i) =>
-          payload.copy(sourceScope = Some(SourceScope(v, i)))
+          payload.copy(scope = Some(Scope(v, i)))
       }.toSeq
     }
   }

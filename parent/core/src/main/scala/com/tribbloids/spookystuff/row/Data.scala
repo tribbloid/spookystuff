@@ -13,6 +13,8 @@ trait Data[D] {
 
 object Data {
 
+  implicit def unbox[D](v: Data[D]): D = v.data
+
 //  case class Raw[D](
 //      data: D
 //  ) extends Data[D]
@@ -25,28 +27,26 @@ object Data {
 //      ordinalIndex: Int = 0
 //  ) extends Data[D]
 
-  case class SourceScope(
-      observations: Seq[DocUID] = Nil,
+  case class Scope(
+      observationUIDs: Seq[DocUID] = Nil,
       ordinalIndex: Int = 0
 
       // a list of DocUIDs that can be found in associated Rollout, DocUID has small serialized form
   ) {}
 
-  object WithScope {
+  object Scoped {
 
-    implicit def unbox[D <: Serializable](v: WithScope[D]): D = v.data
+    def unscoped[D](data: D): Scoped[D] = Scoped(data, Some(Scope(Nil)))
 
-    def unscoped[D](data: D): WithScope[D] = WithScope(data, Some(SourceScope(Nil)))
+    def default[D](data: D): Scoped[D] = Scoped(data, None)
 
-    def default[D](data: D): WithScope[D] = WithScope(data, None)
-
-    lazy val ofUnit: WithScope[Unit] = default(())
+    lazy val ofUnit: Scoped[Unit] = default(())
   }
 
   // TODO: can this be a dependent type since scopeUIDs has to be tied to a Rollout?
-  case class WithScope[D](
+  case class Scoped[D](
       data: D,
-      sourceScope: Option[SourceScope] = None
+      scope: Option[Scope] = None
       // if missing, always refers to all snapshoted observations in the trajectory
   ) extends Data[D] {}
 
@@ -75,7 +75,7 @@ object Data {
       lineageID: Option[UUID] = None,
       isOutOfRange: Boolean = false,
       depthOpt: Option[Int] = None,
-      path: Vector[SourceScope] = Vector.empty
+      path: Vector[Scope] = Vector.empty
       // contain every used sourceScope in exploration history
   ) extends Data[D] {
 

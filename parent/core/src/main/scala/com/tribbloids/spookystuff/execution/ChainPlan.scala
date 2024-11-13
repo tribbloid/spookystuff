@@ -7,8 +7,8 @@ import com.tribbloids.spookystuff.row.*
 
 object ChainPlan extends CatalystTypeOps.ImplicitMixin {
 
-  type Yield[O] = Data.WithScope[O]
-  type Batch[O] = Seq[Data.WithScope[O]]
+  type Yield[O] = Data.Scoped[O]
+  type Batch[O] = Seq[Data.Scoped[O]]
 
   type Fn[I, O] = FetchedRow[I] => Batch[O]
 

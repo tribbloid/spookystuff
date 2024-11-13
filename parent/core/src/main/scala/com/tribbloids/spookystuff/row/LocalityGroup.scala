@@ -5,6 +5,7 @@ import ai.acyclic.prover.commons.same.EqualBy
 import com.tribbloids.spookystuff.SpookyContext
 import com.tribbloids.spookystuff.actions.Trace
 import com.tribbloids.spookystuff.actions.Trace.Rollout
+import com.tribbloids.spookystuff.doc.Observation
 
 import scala.language.implicitConversions
 
@@ -41,6 +42,10 @@ case class LocalityGroup(
   // TODO: should the name be "SIMDGroup/SPMDGroup"
 
   @transient lazy val samenessKey: Any = keyByOvrd.getOrElse(trace)
+
+  def cached(vs: Seq[Observation]): LocalityGroup = {
+    this.copy()(rollout.cache(vs))
+  }
 
   def unCache: LocalityGroup = this.copy()(rollout.unCache)
 

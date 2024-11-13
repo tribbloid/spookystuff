@@ -1,8 +1,8 @@
 package com.tribbloids.spookystuff.execution
 
-import com.tribbloids.spookystuff.actions.Trace
+import com.tribbloids.spookystuff.actions.{HasTraceSet, Trace}
 import com.tribbloids.spookystuff.caching.ExploreLocalCache
-import com.tribbloids.spookystuff.dsl.{GenPartitioner, PathPlanning}
+import com.tribbloids.spookystuff.dsl.{GenPartitioner, PathPlanning, Sampler}
 import com.tribbloids.spookystuff.execution.ExecutionPlan.CanChain
 import com.tribbloids.spookystuff.execution.ExplorePlan.Params
 import com.tribbloids.spookystuff.row.*
@@ -14,7 +14,7 @@ import java.util.UUID
 object ExplorePlan {
 
   /**
-    * [[ChainPlan.Batch]] deliberately contains [[Data.WithScope]], but the scope will not be commited into the visited
+    * [[ChainPlan.Batch]] deliberately contains [[Data.Scoped]], but the scope will not be commited into the visited
     * set. it is only there to make appending [[ChainPlan]] easier
     *
     * @tparam I
@@ -26,44 +26,50 @@ object ExplorePlan {
 
   type Fn[I, O] = FetchedRow[Data.Exploring[I]] => Batches[I, O]
 
-//  object Invar {
-//
-//    val proto: FetchPlan.Invar.type = FetchPlan.Invar
-//
-//    type ResultMag[I] = proto.ResultMag[I]
-//    type _Fn[I] = FetchedRow[Data.Exploring[I]] => ResultMag[I]
-//
+  object Invar {
+
+    val proto: FetchPlan.Invar.type = FetchPlan.Invar
+
+    type ResultMag[I] = proto.ResultMag[I]
+    type _Fn[I] = FetchedRow[Data.Exploring[I]] => ResultMag[I]
+
+    type Target[I] = Fn[I, Data.Exploring[I]]
+
 //    def normalise[I](
 //        fn: _Fn[I],
 //        sampler: Sampler = Sampler.Identity
-//    ): Fn[I, I] = { row =>
-//      val mag = fn(row)
+//    ): Fn[I, I] = {
+//      val fetchFn: FetchPlan.Fn[Any, Any] = FetchPlan.Invar.normalise(fn)
 //
-//      val normalised: (HasTraceSet, Data.WithScope[Data.Exploring[I]]) = mag.revoke match {
-//        case Left(traces) =>
-//          traces -> row.payload
-//        case Right(v) =>
-//          v._1 -> row.payload.copy(
-//            data = row.payload.copy(
-//              v._2
+//      { row =>
+//        val mag = fn(row)
+//
+//        val normalised: (HasTraceSet, Data.WithScope[Data.Exploring[I]]) = mag.revoke match {
+//          case Left(traces) =>
+//            traces -> row.payload
+//          case Right(v) =>
+//            v._1 -> row.payload.copy(
+//              data = row.payload.copy(
+//                v._2
+//              )
 //            )
-//          )
-//      }
-//
-//      val flat: Seq[(Trace, Data.WithScope[Data.Exploring[I]])] = normalised._1.asTraceSet.map { trace =>
-//        trace -> normalised._2
-//      }.toSeq
-//
-//      val sampled = sampler.apply[Yield[I]](flat).map { (opt: Option[Yield[I]]) =>
-//        opt.getOrElse {
-//          val default: Yield[I] = Trace.NoOp.trace -> normalised._2
-//          default
 //        }
-//      }
 //
-//      sampled
+//        val flat: Seq[(Trace, Data.WithScope[Data.Exploring[I]])] = normalised._1.asTraceSet.map { trace =>
+//          trace -> normalised._2
+//        }.toSeq
+//
+//        val sampled = sampler.apply[Yield[I]](flat).map { (opt: Option[Yield[I]]) =>
+//          opt.getOrElse {
+//            val default: Yield[I] = Trace.NoOp.trace -> normalised._2
+//            default
+//          }
+//        }
+//
+//        sampled
+//      }
 //    }
-//  }
+  }
 
   type ExeID = UUID
   def nextExeID(): ExeID = UUID.randomUUID()
