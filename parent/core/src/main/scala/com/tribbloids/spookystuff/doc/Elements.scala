@@ -1,48 +1,40 @@
 package com.tribbloids.spookystuff.doc
 
+import ai.acyclic.prover.commons.Delegating
+
 /**
   * Created by peng on 18/07/15.
   */
 object Elements {
 
-//  def newBuilder[T <: Unstructured]: mutable.Builder[T, Elements[T]] = new mutable.Builder[T, Elements[T]] {
-//
-//    val buffer = new mutable.ArrayBuffer[T]()
-//
-//    override def +=(elem: T): this.type = {
-//      buffer += elem
-//      this
-//    }
-//
-//    override def result(): Elements[T] = new Elements(buffer.toList)
-//
-//    override def clear(): Unit = buffer.clear()
-//  }
+  case class ^[+T <: Unstructured](override val unbox: Seq[T]) extends Elements[T] {}
 
-  object empty extends Elements[Nothing](Nil)
+  def apply[T <: Unstructured](unbox: Seq[T]): ^[T] = ^(unbox)
+
+  object empty extends ^[Nothing](Nil)
+
 }
+trait Elements[+T <: Unstructured] extends Unstructured with Delegating[Seq[T]] {
 
-case class Elements[+T <: Unstructured](override val delegate: List[T]) extends Unstructured with DelegateSeq[T] {
+  def uris: Seq[String] = unbox.map(_.uri)
 
-  def uris: Seq[String] = delegate.map(_.uri)
+  def codes: Seq[String] = unbox.flatMap(_.code)
 
-  def codes: Seq[String] = delegate.flatMap(_.code)
+  def formattedCodes: Seq[String] = unbox.flatMap(_.formattedCode)
 
-  def formattedCodes: Seq[String] = delegate.flatMap(_.formattedCode)
+  def allAttrs: Seq[Map[String, String]] = unbox.flatMap(_.allAttr)
 
-  def allAttrs: Seq[Map[String, String]] = delegate.flatMap(_.allAttr)
+  def attrs(attr: String, noEmpty: Boolean = true): Seq[String] = unbox.flatMap(_.attr(attr, noEmpty))
 
-  def attrs(attr: String, noEmpty: Boolean = true): Seq[String] = delegate.flatMap(_.attr(attr, noEmpty))
+  def hrefs: Seq[String] = unbox.flatMap(_.href)
 
-  def hrefs: List[String] = delegate.flatMap(_.href)
+  def srcs: Seq[String] = unbox.flatMap(_.src)
 
-  def srcs: List[String] = delegate.flatMap(_.src)
+  def texts: Seq[String] = unbox.flatMap(_.text)
 
-  def texts: Seq[String] = delegate.flatMap(_.text)
+  def ownTexts: Seq[String] = unbox.flatMap(_.ownText)
 
-  def ownTexts: Seq[String] = delegate.flatMap(_.ownText)
-
-  def boilerPipes: Seq[String] = delegate.flatMap(_.boilerPipe)
+  def boilerPipes: Seq[String] = unbox.flatMap(_.boilerPipe)
 
   override def uri: String = uris.headOption.orNull
 
@@ -52,17 +44,17 @@ case class Elements[+T <: Unstructured](override val delegate: List[T]) extends 
 
   override def formattedCode: Option[String] = formattedCodes.headOption
 
-  override def findAll(selector: String): Elements[Unstructured] = new Elements(delegate.flatMap(_.findAll(selector)))
+  override def findAll(selector: DocQuery): Elements[Unstructured] = Elements(unbox.flatMap(_.findAll(selector)))
 
-  override def findAllWithSiblings(selector: String, range: Range): Elements[Siblings[Unstructured]] =
-    new Elements(delegate.flatMap(_.findAllWithSiblings(selector, range)))
+  override def findAllWithSiblings(selector: DocQuery, range: Range): Elements[Siblings[Unstructured]] =
+    Elements(unbox.flatMap(_.findAllWithSiblings(selector, range)))
 
-  override def children(selector: CSSQuery): Elements[Unstructured] = new Elements(
-    delegate.flatMap(_.children(selector))
+  override def children(selector: DocQuery): Elements[Unstructured] = Elements(
+    unbox.flatMap(_.children(selector))
   )
 
-  override def childrenWithSiblings(selector: CSSQuery, range: Range): Elements[Siblings[Unstructured]] =
-    new Elements(delegate.flatMap(_.childrenWithSiblings(selector, range)))
+  override def childrenWithSiblings(selector: DocQuery, range: Range): Elements[Siblings[Unstructured]] =
+    Elements(unbox.flatMap(_.childrenWithSiblings(selector, range)))
 
   override def ownText: Option[String] = ownTexts.headOption
 
@@ -76,5 +68,5 @@ case class Elements[+T <: Unstructured](override val delegate: List[T]) extends 
 
   override def src: Option[String] = srcs.headOption
 
-  override def breadcrumb: Option[Seq[String]] = delegate.head.breadcrumb
+  override def breadcrumb: Option[Seq[String]] = unbox.head.breadcrumb
 }

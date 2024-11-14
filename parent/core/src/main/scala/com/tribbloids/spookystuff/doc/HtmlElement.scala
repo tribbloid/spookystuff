@@ -61,18 +61,18 @@ class HtmlElement private (
     }
   }
 
-  override def findAll(selector: String): Elements[HtmlElement] =
-    new Elements(
+  override def findAll(selector: DocQuery): Elements[HtmlElement] =
+    Elements(
       parsed
-        .select(selector)
+        .select(selector.toString)
         .asScala
         .map(new HtmlElement(_))
         .toList
     )
 
-  override def findAllWithSiblings(selector: String, range: Range): Elements[Siblings[HtmlElement]] = {
+  override def findAllWithSiblings(selector: DocQuery, range: Range): Elements[Siblings[HtmlElement]] = {
 
-    val found = parsed.select(selector).asScala.toSeq
+    val found = parsed.select(selector.toString).asScala.toSeq
     expand(found, range)
   }
 
@@ -96,23 +96,23 @@ class HtmlElement private (
 
       new Siblings(selected.map(new HtmlElement(_)).toList)
     }
-    new Elements(colls.toList)
+    Elements(colls.toList)
   }
 
-  override def children(selector: CSSQuery): Elements[HtmlElement] = {
+  override def children(selector: DocQuery): Elements[HtmlElement] = {
 
     val found: Seq[Element] = parsed
-      .select(selector)
+      .select(selector.toString)
       .asScala
       .toSeq
       .filter(elem => parsed.children().contains(elem)) // TODO: switch to more efficient NodeFilter
-    new Elements(found.map(new HtmlElement(_)).toList)
+    Elements(found.map(new HtmlElement(_)).toList)
   }
 
-  override def childrenWithSiblings(selector: CSSQuery, range: Range): Elements[Siblings[Unstructured]] = {
+  override def childrenWithSiblings(selector: DocQuery, range: Range): Elements[Siblings[Unstructured]] = {
 
     val found: Seq[Element] = parsed
-      .select(selector)
+      .select(selector.toString)
       .asScala
       .toSeq
       .filter(elem => parsed.children().contains(elem)) // TODO: ditto
@@ -131,7 +131,7 @@ class HtmlElement private (
   override def allAttr: Option[Map[String, String]] = {
     val result = Map(parsed.attributes.asScala.toSeq.map { attr =>
       attr.getKey -> attr.getValue
-    } *)
+    }*)
     Some(result)
   }
 

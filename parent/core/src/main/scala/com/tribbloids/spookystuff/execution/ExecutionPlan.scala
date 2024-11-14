@@ -6,12 +6,14 @@ import com.tribbloids.spookystuff.row.*
 import org.apache.spark.rdd.RDD
 import org.apache.spark.storage.StorageLevel
 
+import scala.reflect.ClassTag
+
 object ExecutionPlan {
 
   trait CanChain[O] {
     self: ExecutionPlan[O] =>
 
-    def chain[O2](fn: ChainPlan.Fn[O, O2]): ExecutionPlan[O2]
+    def chain[O2: ClassTag](fn: ChainPlan.Fn[O, O2]): ExecutionPlan[O2]
   }
 }
 

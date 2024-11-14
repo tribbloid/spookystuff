@@ -7,9 +7,11 @@ import com.tribbloids.spookystuff.execution.ExecutionPlan.CanChain
 import com.tribbloids.spookystuff.row.*
 import org.apache.spark.rdd.RDD
 
+import scala.reflect.ClassTag
+
 object FetchPlan {
 
-  type Yield[O] = (Trace, Data.Scoped[O])
+  type Yield[O] = (Trace, O)
   // TODO: HasTraceSet will be gone, Agent can be manipulated directly
   // this will make it definitionally close to FlatMapPlan, the only difference is the shuffling
 
@@ -17,36 +19,59 @@ object FetchPlan {
 
   type Fn[I, O] = FetchedRow[I] => Batch[O]
 
-  object Invar {
+  object ToTraceSet {
 
-    type ResultMag[I] = PreferRightMagnet[HasTraceSet, (HasTraceSet, I)]
-    type _Fn[I] = FetchedRow[I] => ResultMag[I]
+    type _Fn[I, O] = FetchedRow[I] => (HasTraceSet, O)
 
-    def normalise[I](
-        fn: _Fn[I],
+    def normalise[I, O](
+        fn: _Fn[I, O],
         sampler: Sampler = Sampler.Identity
-    ): Fn[I, I] = { row =>
-      val mag = fn(row)
+    ): Fn[I, O] = { row =>
+      val normalised = fn(row)
 
-      val normalised: (HasTraceSet, Data.Scoped[I]) = mag.revoke match {
-        case Left(traces) =>
-          traces -> row.payload
-        case Right(v) =>
-          v._1 -> row.payload.copy(data = v._2)
-      }
-
-      val flat: Seq[Yield[I]] = normalised._1.asTraceSet.map { trace =>
+      val flat: Seq[Yield[O]] = normalised._1.asTraceSet.map { trace =>
         trace -> normalised._2
       }.toSeq
 
-      val sampled = sampler.apply[Yield[I]](flat).map { (opt: Option[Yield[I]]) =>
+      val sampled = sampler.apply(flat).map { opt =>
         opt.getOrElse {
-          val default: Yield[I] = Trace.NoOp.trace -> normalised._2
+          val default = Trace.NoOp.asTrace -> normalised._2
           default
         }
       }
 
       sampled
+    }
+  }
+
+  object Invar {
+
+    type ResultMag[I] = PreferRightMagnet[HasTraceSet, (HasTraceSet, I)]
+
+    type _Fn[I] = FetchedRow[I] => ResultMag[I]
+
+    def normalise[I](
+        fn: _Fn[I],
+        sampler: Sampler = Sampler.Identity
+    ): Fn[I, I] = {
+
+      val result = ToTraceSet.normalise[I, I](
+        { row =>
+          val mag = fn(row)
+
+          val normalised: (HasTraceSet, I) = mag.revoke match {
+            case Left(traces) =>
+              traces -> row.data
+            case Right(v) =>
+              v._1 -> v._2
+          }
+
+          normalised
+        },
+        sampler
+      )
+
+      result
     }
   }
 }
@@ -57,7 +82,7 @@ object FetchPlan {
   * TODO: the only difference between this and [[ChainPlan]] is the groupByKey step for sharing locality group, this is
   * too complex. the 2 classes should be merged
   */
-case class FetchPlan[I, O](
+case class FetchPlan[I, O: ClassTag](
     override val child: ExecutionPlan[I],
     fn: FetchPlan.Fn[I, O],
     sameBy: Trace => Any,
@@ -68,7 +93,7 @@ case class FetchPlan[I, O](
 
   override def execute: SquashedRDD[O] = {
 
-    val forkedRDD: RDD[(LocalityGroup, Data.Scoped[O])] = child.squashedRDD
+    val sketched: RDD[(LocalityGroup, O)] = child.squashedRDD
       .flatMap { (v: SquashedRow[I]) =>
         val rows = v.withCtx(child.spooky).unSquash
 
@@ -80,7 +105,7 @@ case class FetchPlan[I, O](
         }
       }
 
-    val grouped: RDD[(LocalityGroup, Iterable[Data.Scoped[O]])] = gpImpl.groupByKey(forkedRDD, beaconRDDOpt)
+    val grouped: RDD[(LocalityGroup, Iterable[O])] = gpImpl.groupByKey(sketched, beaconRDDOpt)
 
     grouped
       .map { tuple =>
@@ -93,12 +118,12 @@ case class FetchPlan[I, O](
       }
   }
 
-  override def chain[O2](fn: ChainPlan.Fn[O, O2]): FetchPlan[I, O2] = {
+  override def chain[O2: ClassTag](fn: ChainPlan.Fn[O, O2]): FetchPlan[I, O2] = {
 
     val newFn: FetchPlan.Fn[I, O2] = { row =>
       val out1 = this.fn(row)
 
-      val out2: Seq[(Trace, Data.Scoped[O2])] = out1.flatMap {
+      val out2: Seq[(Trace, O2)] = out1.flatMap {
         case (traces, data) =>
           val row2 = FetchedRow(row.agentState, data)
 

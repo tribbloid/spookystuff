@@ -8,13 +8,15 @@ case class PlainElement(
     override val uri: String
 ) extends Unstructured {
 
-  override def findAll(selector: CSSQuery): Elements[Unstructured] = Elements.empty
+  override def findAll(selector: DocQuery): Elements[Unstructured] = Elements.empty
 
-  override def findAllWithSiblings(selector: CSSQuery, range: Range): Elements[Siblings[Unstructured]] = Elements.empty
+  override def findAllWithSiblings(selector: DocQuery, range: Range): Elements[Siblings[Unstructured]] =
+    Elements.empty
 
-  override def children(selector: CSSQuery): Elements[Unstructured] = Elements.empty
+  override def children(selector: DocQuery): Elements[Unstructured] = Elements.empty
 
-  override def childrenWithSiblings(selector: CSSQuery, range: Range): Elements[Siblings[Unstructured]] = Elements.empty
+  override def childrenWithSiblings(selector: DocQuery, range: Range): Elements[Siblings[Unstructured]] =
+    Elements.empty
 
   override def code: Option[String] = Some(v)
 

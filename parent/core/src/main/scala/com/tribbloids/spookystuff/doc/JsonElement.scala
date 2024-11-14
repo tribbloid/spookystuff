@@ -39,17 +39,17 @@ class JsonElement private (
 
   override def hashCode(): Int = (this.field, this.uri).hashCode()
 
-  override def findAll(selector: CSSQuery): Elements[JsonElement] = {
+  override def findAll(selector: DocQuery): Elements[JsonElement] = {
 
-    val selected = field._2 \\ selector
+    val selected = field._2 \\ selector.toString
 
-    jValueToElements(selector, selected)
+    jValueToElements(selector.toString, selected)
   }
 
   // TODO: how to implement?
-  override def findAllWithSiblings(selector: CSSQuery, range: Range): Elements[Siblings[JsonElement]] = {
-    val found = this.findAll(selector).delegate
-    new Elements(found.map(unstructured => new Siblings(List(unstructured))))
+  override def findAllWithSiblings(selector: DocQuery, range: Range): Elements[Siblings[JsonElement]] = {
+    val found = this.findAll(selector).unbox
+    Elements(found.map(unstructured => new Siblings(List(unstructured))))
   }
 
   private def jValueToElements(defaultFieldName: String, selected: JValue): Elements[JsonElement] = {
@@ -59,9 +59,9 @@ class JsonElement private (
           val jsonElements = obj.obj.map { field =>
             new JsonElement(field, this.uri)
           }
-          new Elements(jsonElements)
+          Elements(jsonElements)
         } else { // otherwise its a single object from the beginning
-          new Elements(
+          Elements(
             List(new JsonElement(defaultFieldName -> selected, this.uri))
           )
         }
@@ -71,24 +71,24 @@ class JsonElement private (
           new JsonElement(defaultFieldName -> field, this.uri)
         }
         new Siblings(res)
-      case JNothing => new Elements(Nil)
-      case JNull    => new Elements(Nil)
+      case JNothing => Elements(Nil)
+      case JNull    => Elements(Nil)
       case _ =>
-        new Elements(
+        Elements(
           List(new JsonElement(defaultFieldName -> selected, this.uri))
         )
     }
   }
 
-  override def children(selector: CSSQuery): Elements[Unstructured] = {
-    val selected = field._2 \ selector
+  override def children(selector: DocQuery): Elements[Unstructured] = {
+    val selected = field._2 \ selector.toString
 
-    jValueToElements(selector, selected)
+    jValueToElements(selector.toString, selected)
   }
 
-  override def childrenWithSiblings(selector: CSSQuery, range: Range): Elements[Siblings[Unstructured]] = {
-    val found = this.children(selector).delegate
-    new Elements(found.map(unstructured => new Siblings(List(unstructured))))
+  override def childrenWithSiblings(selector: DocQuery, range: Range): Elements[Siblings[Unstructured]] = {
+    val found = this.children(selector).unbox
+    Elements(found.map(unstructured => new Siblings(List(unstructured))))
   }
 
   override def code: Option[String] = Some(JsonMethods.compact(field._2))
@@ -99,7 +99,7 @@ class JsonElement private (
     val filtered = field._2.filterField { field =>
       field._1.startsWith("@")
     }
-    val result = Map(filtered.map(v => v._1.stripPrefix("@") -> JsonMethods.compact(v._2)) *)
+    val result = Map(filtered.map(v => v._1.stripPrefix("@") -> JsonMethods.compact(v._2))*)
     Some(result)
   }
 

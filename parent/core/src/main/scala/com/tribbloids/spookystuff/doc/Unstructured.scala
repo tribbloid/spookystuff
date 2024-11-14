@@ -6,11 +6,11 @@ object Unstructured {
 
   object Unrecognisable extends Unstructured {
     override def uri: String = ""
-    override def findAll(selector: CSSQuery): Elements[Unstructured] = Elements.empty
-    override def findAllWithSiblings(selector: CSSQuery, range: Range): Elements[Siblings[Unstructured]] =
+    override def findAll(selector: DocQuery): Elements[Unstructured] = Elements.empty
+    override def findAllWithSiblings(selector: DocQuery, range: Range): Elements[Siblings[Unstructured]] =
       Elements.empty
-    override def children(selector: CSSQuery): Elements[Unstructured] = Elements.empty
-    override def childrenWithSiblings(selector: CSSQuery, range: Range): Elements[Siblings[Unstructured]] =
+    override def children(selector: DocQuery): Elements[Unstructured] = Elements.empty
+    override def childrenWithSiblings(selector: DocQuery, range: Range): Elements[Siblings[Unstructured]] =
       Elements.empty
     override def code: Option[String] = None
     override def formattedCode: Option[String] = None
@@ -27,37 +27,36 @@ object Unstructured {
 
 @SQLUserDefinedType(udt = classOf[UnstructuredUDT])
 trait Unstructured extends Serializable {
+  // TODO: name should be "Selection"
 
   def uri: String
 
-  def findAll(selector: CSSQuery): Elements[Unstructured]
+  def findAll(selector: DocQuery): Elements[Unstructured]
 
-  final def \\(selector: CSSQuery): Elements[Unstructured] = findAll(selector)
+  final def \(selector: DocQuery): Elements[Unstructured] = findAll(selector)
 
-  final def findFirst(selector: CSSQuery): Option[Unstructured] =
+  final def findFirst(selector: DocQuery): Option[Unstructured] =
     findAll(selector).headOption
 
   def findAllWithSiblings(
-      selector: CSSQuery,
+      selector: DocQuery,
       range: Range
   ): Elements[Siblings[Unstructured]]
 
-  final def findFirstWithSiblings(selector: CSSQuery, range: Range): Option[Siblings[Unstructured]] =
+  final def findFirstWithSiblings(selector: DocQuery, range: Range): Option[Siblings[Unstructured]] =
     findAllWithSiblings(selector, range).headOption
 
-  def children(selector: CSSQuery): Elements[Unstructured]
+  def children(selector: DocQuery): Elements[Unstructured]
 
-  final def \(selector: CSSQuery): Elements[Unstructured] = findAll(selector)
-
-  final def child(selector: CSSQuery): Option[Unstructured] =
+  final def child(selector: DocQuery): Option[Unstructured] =
     children(selector).headOption
 
   def childrenWithSiblings(
-      selector: CSSQuery,
+      selector: DocQuery,
       range: Range
   ): Elements[Siblings[Unstructured]]
 
-  final def childWithSiblings(selector: CSSQuery, range: Range): Option[Siblings[Unstructured]] =
+  final def childWithSiblings(selector: DocQuery, range: Range): Option[Siblings[Unstructured]] =
     findAllWithSiblings(selector, range).headOption
 
   def code: Option[String]
@@ -76,9 +75,7 @@ trait Unstructured extends Serializable {
 
   def attr(attr: String, noEmpty: Boolean = true): Option[String]
 
-  // TODO: resolve by "@_href" dynamic function
   def href: Option[String]
 
-  // TODO: resolve by "@_src" dynamic function
   def src: Option[String]
 }

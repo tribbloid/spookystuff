@@ -62,7 +62,7 @@ class PyBinding(
       //        val jsonOpt = driver.evalExpr(s"$ref.__dict__")
       val jsonOpt = driver.evalExpr(s"json.dumps($ref.__dict__)")
       jsonOpt.map { json =>
-        val jValue = parse(StringInput(json))
+        val jValue = parse(json)
         Encoder.forValue(jValue)
       }
     }

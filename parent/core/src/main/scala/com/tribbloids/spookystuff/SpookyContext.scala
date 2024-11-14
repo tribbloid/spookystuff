@@ -2,13 +2,14 @@ package com.tribbloids.spookystuff
 
 import ai.acyclic.prover.commons.function.hom.Hom.:=>
 import ai.acyclic.prover.commons.spark.SparkContextView
+import com.tribbloids.spookystuff.actions.{HasTrace, Trace}
 import com.tribbloids.spookystuff.agent.Agent
 import com.tribbloids.spookystuff.commons.TreeThrowable
 import com.tribbloids.spookystuff.commons.serialization.{NOTSerializable, SerializerOverride}
 import com.tribbloids.spookystuff.conf.*
 import com.tribbloids.spookystuff.io.HDFSResolver
 import com.tribbloids.spookystuff.metrics.SpookyMetrics
-import com.tribbloids.spookystuff.rdd.FetchedDataset
+import com.tribbloids.spookystuff.rdd.SpookyDataset
 import com.tribbloids.spookystuff.row.*
 import com.tribbloids.spookystuff.utils.ShippingMarks
 import org.apache.hadoop.conf.Configuration
@@ -43,7 +44,7 @@ object SpookyContext {
 
   implicit def asCoreAccessor(spookyContext: SpookyContext): spookyContext.Accessor[Core.type] = spookyContext(Core)
 
-  implicit def asBlankFetchedDS(spooky: SpookyContext): FetchedDataset[Unit] = spooky.createBlank
+  implicit def asBlankFetchedDS(spooky: SpookyContext): SpookyDataset[Unit] = spooky.createBlank
 
   implicit def asSparkContextView(spooky: SpookyContext): SparkContextView = SparkContextView(spooky.sparkContext)
 
@@ -185,39 +186,39 @@ case class SpookyContext(
     }
   }
 
-  def create[T](rdd: RDD[T]): FetchedDataset[T] = fromRDD(rdd)
-  def create[T](ds: Dataset[T]): FetchedDataset[T] = fromDataset(ds)
+  def create[T](rdd: RDD[T]): SpookyDataset[T] = fromRDD(rdd)
+  def create[T](ds: Dataset[T]): SpookyDataset[T] = fromDataset(ds)
 
   // TODO: create Dataset directly
   def create[T: ClassTag](
       batch: IterableOnce[T]
-  ): FetchedDataset[T] = {
+  ): SpookyDataset[T] = {
 
     fromRDD(this.sqlContext.sparkContext.parallelize(batch.iterator.to(Seq)))
   }
   def create[T: ClassTag](
       batch: IterableOnce[T],
       numSlices: Int
-  ): FetchedDataset[T] = {
+  ): SpookyDataset[T] = {
 
     fromRDD(this.sqlContext.sparkContext.parallelize(batch.iterator.to(Seq), numSlices))
   }
 
   // every input or noInput will generate a new metrics
-  def fromRDD[T](rdd: RDD[T]): FetchedDataset[T] = {
+  def fromRDD[T](rdd: RDD[T]): SpookyDataset[T] = {
 
     //      val ttg = implicitly[TypeTag[T]]
 
     val self = rdd.map { data =>
-      FetchedRow.Proto(data).asSquashed
+      Row(data).asSquashed
     }
-    new FetchedDataset(
+    SpookyDataset.ofRDD(
       self,
       spooky = forkForNewRDD
     )
   }
 
-  def fromDataset[D](ds: Dataset[D]): FetchedDataset[D] = {
+  def fromDataset[D](ds: Dataset[D]): SpookyDataset[D] = {
 
     fromRDD(ds.rdd)
   }
@@ -233,7 +234,7 @@ case class SpookyContext(
     }
   }
 
-  def createBlank: FetchedDataset[Unit] = {
+  def createBlank: SpookyDataset[Unit] = {
 
     lazy val _rdd: RDD[Unit] = sparkContext.parallelize(Seq(()))
     this.create(_rdd)

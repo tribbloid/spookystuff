@@ -31,8 +31,8 @@ trait BaseSpec extends ai.acyclic.prover.commons.testlib.BaseSpec {
   @transient implicit class _JsonStrView(str: String) {
 
     def jsonShouldBe(gd: String): Unit = {
-      val selfJ = JsonMethods.parse(StringInput(str))
-      val gdJ = JsonMethods.parse(StringInput(gd))
+      val selfJ = JsonMethods.parse(str)
+      val gdJ = JsonMethods.parse(gd)
 
       assertValidDataInJson(selfJ, gdJ)
     }

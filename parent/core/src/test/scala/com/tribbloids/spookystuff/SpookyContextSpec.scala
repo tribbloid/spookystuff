@@ -3,7 +3,7 @@ package com.tribbloids.spookystuff
 import com.tribbloids.spookystuff.actions.*
 import com.tribbloids.spookystuff.commons.serialization.AssertWeaklySerializable
 import com.tribbloids.spookystuff.conf.{Core, Dir, SpookyConf}
-import com.tribbloids.spookystuff.rdd.FetchedDataset
+import com.tribbloids.spookystuff.rdd.SpookyDataset
 import com.tribbloids.spookystuff.testutils.{FileDocsFixture, SpookyBaseSpec}
 
 class SpookyContextSpec extends SpookyBaseSpec with FileDocsFixture {
@@ -125,9 +125,9 @@ class SpookyContextSpec extends SpookyBaseSpec with FileDocsFixture {
 
     it("Seq") {
 
-      val rdd: FetchedDataset[String] = spooky.create(Seq("a", "b"))
+      val rdd: SpookyDataset[String] = spooky.create(Seq("a", "b"))
 
-      val data = rdd.squashedRDD.collect().flatMap(_.batch).map(_.data).toList
+      val data = rdd.squashedRDD.collect().flatMap(_.batch).toList
       assert(data == List("a", "b"))
     }
   }

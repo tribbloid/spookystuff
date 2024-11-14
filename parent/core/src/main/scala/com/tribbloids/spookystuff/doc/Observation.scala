@@ -54,10 +54,10 @@ sealed trait Observation extends Serializable {
   lazy val time: Time = new Time(timeMillis)
   lazy val timestamp: Timestamp = new Timestamp(timeMillis)
 
-  def laterThan(v2: Observation): Boolean = this.timeMillis > v2.timeMillis
+  final def isLaterThan(v2: Observation): Boolean = this.timeMillis > v2.timeMillis
 
-  def laterOf(v2: Observation): Observation =
-    if (laterThan(v2)) this
+  final def laterOf(v2: Observation): Observation =
+    if (isLaterThan(v2)) this
     else v2
 
   type RootType

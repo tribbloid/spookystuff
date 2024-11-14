@@ -28,7 +28,7 @@ object Data {
 //  ) extends Data[D]
 
   case class Scope(
-      observationUIDs: Seq[DocUID] = Nil,
+      observationUIDs: Seq[DocUID],
       ordinalIndex: Int = 0
 
       // a list of DocUIDs that can be found in associated Rollout, DocUID has small serialized form
@@ -36,17 +36,16 @@ object Data {
 
   object Scoped {
 
-    def unscoped[D](data: D): Scoped[D] = Scoped(data, Some(Scope(Nil)))
+    def unscoped[D](data: D): Scoped[D] = Scoped(data, Scope(Nil))
 
-    def default[D](data: D): Scoped[D] = Scoped(data, None)
+//    def default[D](data: D): Scoped[D] = Scoped(data, None)
 
-    lazy val ofUnit: Scoped[Unit] = default(())
   }
 
   // TODO: can this be a dependent type since scopeUIDs has to be tied to a Rollout?
   case class Scoped[D](
       data: D,
-      scope: Option[Scope] = None
+      scope: Scope
       // if missing, always refers to all snapshoted observations in the trajectory
   ) extends Data[D] {}
 

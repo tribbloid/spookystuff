@@ -27,37 +27,37 @@ object CSVElement {
 
     override def breadcrumb: Option[Seq[String]] = ???
 
-    override def children(selector: CSSQuery): Elements[Unstructured] = {
+    override def children(selector: DocQuery): Elements[Unstructured] = {
       if (!this.headers.contains(selector)) Elements.empty
       else {
         val data = parsedList.map { record =>
-          val datum = record.get(selector)
+          val datum = record.get(selector.toString)
 
-          new Cell(uri, datum, selector)
+          new Cell(uri, datum, selector.toString)
         }
-        new Elements(
+        Elements(
           data
         )
       }
     }
 
-    override def childrenWithSiblings(selector: CSSQuery, range: Range): Elements[Siblings[Unstructured]] = {
+    override def childrenWithSiblings(selector: DocQuery, range: Range): Elements[Siblings[Unstructured]] = {
       if (!this.headers.contains(selector)) Elements.empty
       else {
         val data = parsedList.map { record =>
-          val index = headers.indexOf(selector)
+          val index = headers.indexOf(selector.toString)
           val siblingHeaders = headers.slice(index + range.min, index + range.max)
           val delimiter = csvFormat.getDelimiter.toString
           new Siblings(
             siblingHeaders.map { h =>
               val datum = record.get(h)
-              new Cell(uri, datum, selector)
+              new Cell(uri, datum, selector.toString)
             },
             delimiter,
             delimiter
           )
         }
-        new Elements(
+        Elements(
           data
         )
       }
@@ -71,9 +71,9 @@ object CSVElement {
 
     override def boilerPipe: Option[String] = text
 
-    override def findAll(selector: CSSQuery): Elements[Unstructured] = children(selector)
+    override def findAll(selector: DocQuery): Elements[Unstructured] = children(selector)
 
-    override def findAllWithSiblings(selector: CSSQuery, range: Range): Elements[Siblings[Unstructured]] =
+    override def findAllWithSiblings(selector: DocQuery, range: Range): Elements[Siblings[Unstructured]] =
       childrenWithSiblings(selector, range)
 
     override def href: Option[String] = ownText
@@ -91,13 +91,13 @@ object CSVElement {
       val header: String
   ) extends Unstructured {
 
-    override def findAll(selector: CSSQuery): Elements[Unstructured] = Elements.empty
+    override def findAll(selector: DocQuery): Elements[Unstructured] = Elements.empty
 
     override def text: Option[String] = ownText
 
     override def breadcrumb: Option[Seq[String]] = ???
 
-    override def children(selector: CSSQuery): Elements[Unstructured] = Elements.empty
+    override def children(selector: DocQuery): Elements[Unstructured] = Elements.empty
 
     override def ownText: Option[String] = Some(_ownText)
 
@@ -107,14 +107,14 @@ object CSVElement {
 
     override def boilerPipe: Option[String] = ownText
 
-    override def findAllWithSiblings(selector: CSSQuery, range: Range): Elements[Siblings[Unstructured]] =
+    override def findAllWithSiblings(selector: DocQuery, range: Range): Elements[Siblings[Unstructured]] =
       Elements.empty
 
     override def href: Option[String] = ownText
 
     override def code: Option[String] = ownText
 
-    override def childrenWithSiblings(selector: CSSQuery, range: Range): Elements[Siblings[Unstructured]] =
+    override def childrenWithSiblings(selector: DocQuery, range: Range): Elements[Siblings[Unstructured]] =
       Elements.empty
 
     override def allAttr: Option[Map[String, String]] = Some(Map())

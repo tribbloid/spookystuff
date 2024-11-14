@@ -8,8 +8,8 @@ import org.apache.spark.storage.StorageLevel
 /**
   * Created by peng on 2/12/15.
   */
-trait FetchedDatasetAPI[D] {
-  self: FetchedDataset[D] =>
+trait DatasetAPI[D] {
+  self: SpookyDataset[D] =>
 
   //  def filter(f: SquashedPageRow => Boolean): PageRowRDD = selfRDD.filter(f)
   //
@@ -28,7 +28,7 @@ trait FetchedDatasetAPI[D] {
   )(
       implicit
       ord: Ordering[SquashedRow[D]] = null
-  ): FetchedDataset[D] = this.copy(
+  ): SpookyDataset[D] = this.copy(
     CoalescePlan(plan, numPartitions, shuffle, ord)
   )
 
@@ -38,7 +38,7 @@ trait FetchedDatasetAPI[D] {
   )(
       implicit
       ord: Ordering[SquashedRow[D]] = null
-  ): FetchedDataset[D] = {
+  ): SpookyDataset[D] = {
 
     _coalesce(
       { _ =>
@@ -53,7 +53,7 @@ trait FetchedDatasetAPI[D] {
   )(
       implicit
       ord: Ordering[SquashedRow[D]] = null
-  ): FetchedDataset[D] = {
+  ): SpookyDataset[D] = {
 
     coalesce(numPartitions, shuffle = true)(ord)
   }
@@ -63,11 +63,11 @@ trait FetchedDatasetAPI[D] {
   //             seed: Long = Utils.random.nextLong()): PageRowRDD =
   //    selfRDD.sample(withReplacement, fraction, seed)
 
-  def union(other: FetchedDataset[D]*): FetchedDataset[D] = this.copy(
+  def union(other: SpookyDataset[D]*): SpookyDataset[D] = this.copy(
     UnionPlan(Seq(plan) ++ other.map(_.plan))
   )
 
-  def ++(other: FetchedDataset[D]): FetchedDataset[D] = this.union(other)
+  def ++(other: SpookyDataset[D]): SpookyDataset[D] = this.union(other)
 
   //  def sortBy[K](
   //                 f: (PageRow) => K,

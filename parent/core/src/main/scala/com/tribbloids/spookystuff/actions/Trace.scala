@@ -2,7 +2,7 @@ package com.tribbloids.spookystuff.actions
 
 import ai.acyclic.prover.commons.cap.Capability
 import com.tribbloids.spookystuff.SpookyContext
-import com.tribbloids.spookystuff.actions.Trace.Internal
+import com.tribbloids.spookystuff.actions.Trace.Repr
 import com.tribbloids.spookystuff.agent.Agent
 import com.tribbloids.spookystuff.caching.{DFSDocCache, InMemoryDocCache}
 import com.tribbloids.spookystuff.commons.serialization.NOTSerializable
@@ -14,16 +14,16 @@ import scala.language.implicitConversions
 
 object Trace {
 
-  private type Internal = List[Action]
+  private type Repr = List[Action]
 
-  implicit def unbox(v: Trace): Internal = v.self
-  implicit def box(v: Internal): Trace = Trace(v)
+  implicit def unbox(v: Trace): Repr = v.self
+  implicit def box(v: Repr): Trace = Trace(v)
 
   type DryRun = List[Trace]
 
   def of(vs: Action*): Trace = Trace(vs.toList)
 
-  case class Rollout(trace: Trace) extends HasTrace with SpookyContext.CanRunWith {
+  case class Rollout(asTrace: Trace) extends HasTrace with SpookyContext.CanRunWith {
     // unlike trace, it is always executed by the agent from scratch
     // thus, execution result can be cached, as replaying it will most likely have the same result (if the trace is deterministic)
 
@@ -32,7 +32,7 @@ object Trace {
     /**
       * deliberately NON-transient to be included in serialized from
       *
-      * but can be manually discarded by calling [[unCache]] to make serialization even faster
+      * but can be manually discarded by calling [[uncache]] to make serialization even faster
       *
       * assuming that most [[Observation]]s will be auto-saved into DFS, their serialized form can exclude contents and
       * thus be very small, making such manual discarding an optimisation with diminishing return
@@ -49,7 +49,7 @@ object Trace {
       this.enableCached
     }
 
-    def unCache: Rollout = {
+    def uncache: Rollout = {
       this._cached = null
       this.disableCached
     }
@@ -57,7 +57,7 @@ object Trace {
     case class _WithCtx(spooky: SpookyContext) extends NOTSerializable {
 
       def play(): Seq[Observation] = {
-        val result = trace.fetch(spooky)
+        val result = asTrace.fetch(spooky)
         Rollout.this._cached = result
         result
       }
@@ -94,15 +94,15 @@ object Trace {
 }
 
 case class Trace(
-    self: Internal = Nil
+    self: Repr = Nil
     // TODO: this should be gone, delegating to Same.By.Wrapper
 ) extends Actions
     with HasTrace { // remember trace is not a block! its the super container that cannot be wrapped
 
   import Trace.*
 
-  override def trace: Trace = this
-  override def children: Trace = trace
+  override def asTrace: Trace = this
+  override def children: Trace = asTrace
 
   override def toString: String = children.mkString("{ ", " -> ", " }")
 
@@ -166,12 +166,12 @@ case class Trace(
   }
 
   override lazy val dryRun: DryRun = {
-    val result: ArrayBuffer[Internal] = ArrayBuffer()
+    val result: ArrayBuffer[Repr] = ArrayBuffer()
 
     for (i <- children.indices) {
       val child = children(i)
       if (child.hasOutput) {
-        val backtrace: Internal = child match {
+        val backtrace: Repr = child match {
           case _: Driverless => child :: Nil
           case _             => children.slice(0, i).flatMap(_.skeleton) :+ child
         }

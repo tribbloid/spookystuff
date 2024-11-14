@@ -30,7 +30,7 @@ case class ExploreRunner[I, O](
   lazy val spooky: SpookyContext = pathPlanningImpl.schema.ctx
 
   // TODO: add fast sorted implementation
-  val open: ConcurrentMap[LocalityGroup, Vector[Open.Payload]] =
+  val open: ConcurrentMap[LocalityGroup, Vector[Open.Exploring]] =
     ConcurrentMap()
 
   val visited: ConcurrentMap[LocalityGroup, Visited.Batch] = ConcurrentMap()
@@ -65,19 +65,19 @@ case class ExploreRunner[I, O](
   ) {
 
     def intoOpen(
-        value: Vector[Open.Payload],
+        value: Vector[Open.Exploring],
         reducer: Open.Reducer = pathPlanningImpl.openReducer
     ): Unit = {
-      val oldVs: Vector[Open.Payload] = open.getOrElse(group, Vector.empty)
+      val oldVs: Vector[Open.Exploring] = open.getOrElse(group, Vector.empty)
       val newVs = reducer(value, oldVs)
       open += group -> newVs
     }
 
     def intoVisited(
-        value: Vector[Visited.Payload],
+        value: Vector[Visited.Exploring],
         reducer: Visited.Reducer = pathPlanningImpl.visitedReducer
     ): Unit = {
-      val oldVs: Vector[Visited.Payload] = visited.getOrElse(group, Vector.empty)
+      val oldVs: Vector[Visited.Exploring] = visited.getOrElse(group, Vector.empty)
       val newVs = reducer(value, oldVs)
       visited += group -> newVs
     }
@@ -126,7 +126,7 @@ case class ExploreRunner[I, O](
 
           val selected: (LocalityGroup, Open.Batch) = pathPlanningImpl.selectNextOpen(open)
           val withLineage: SquashedRow[Open.Exploring] =
-            SquashedRow(selected._1, selected._2.map(v => Data.Scoped.default(v)))
+            SquashedRow(selected._1, selected._2)
 
           //          val transformed = delta.fn(withDepth)
           withLineage
@@ -159,14 +159,14 @@ case class ExploreRunner[I, O](
       val unSquashedRows: Seq[FetchedRow[Open.Exploring]] = selectedRow.withCtx(spooky).unSquash
 
       val _ = unSquashedRows.map { input =>
-        val openExploring: Open.Payload = input.payload
+        val openExploring: Open.Exploring = input.data
 
         val (_induction, _outs) = fn(input)
 
         {
           // commit out into visited
           val inRange: Explore.BatchK[O] = _outs.toVector.flatMap { out =>
-            val result = openExploring.data.copy(data = out.data)
+            val result = openExploring.copy(data = out)
 
             val depth = result.depthOpt.getOrElse(Int.MaxValue)
 
@@ -188,28 +188,28 @@ case class ExploreRunner[I, O](
 
         {
           // recursively generate new openSet
-          val fetched: Seq[(Trace, Open.Payload)] = _induction.flatMap {
+          val fetched: Seq[(Trace, Open.Exploring)] = _induction.flatMap {
             case (nexTtraceSet, nextData) =>
-              val nextElem: Open.Exploring = openExploring.data.depth_++.copy(nextData.data)
+              val nextElem: Open.Exploring = openExploring.depth_++.copy(nextData)
 
-              val nextPayload: Open.Payload = openExploring.copy(data = nextElem)
+              val nextPayload: Open.Exploring = openExploring.copy(data = nextElem)
               nexTtraceSet.asTraceSet.map { trace =>
                 trace -> nextPayload
               }
           }
 
-          val grouped: MapView[LocalityGroup, Seq[Open.Payload]] = fetched
+          val grouped: MapView[LocalityGroup, Seq[Open.Exploring]] = fetched
             .groupBy(v => LocalityGroup(v._1)().sameBy(sameBy))
             .view
             .mapValues(_.map(_._2))
 
           // this will be used to filter dataRows yield by the next fork, it will not affect current transformation
-          val filtered: List[(LocalityGroup, Seq[Open.Payload])] = grouped.filter {
+          val filtered: List[(LocalityGroup, Seq[Open.Exploring])] = grouped.filter {
             case (_, v) =>
               v.nonEmpty
           }.toList
 
-          filtered.foreach { (newOpen: (LocalityGroup, Seq[Open.Payload])) =>
+          filtered.foreach { (newOpen: (LocalityGroup, Seq[Open.Exploring])) =>
             val trace_+ = newOpen._1
             Commit(trace_+).intoOpen(newOpen._2.toVector)
           }

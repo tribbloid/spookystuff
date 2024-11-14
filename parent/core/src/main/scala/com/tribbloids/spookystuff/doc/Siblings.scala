@@ -29,10 +29,10 @@ object Siblings {
 }
 
 class Siblings[+T <: Unstructured](
-    override val delegate: List[T],
+    override val unbox: List[T],
     val delimiter: String = " ",
     val formattedDelimiter: String = "\n"
-) extends Elements[T](delegate) {
+) extends Elements[T] {
 
   override def text: Option[String] =
     if (texts.isEmpty) None

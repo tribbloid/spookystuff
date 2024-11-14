@@ -2,6 +2,7 @@ package com.tribbloids.spookystuff.rdd
 
 import ai.acyclic.prover.commons.spark.Envs
 import com.tribbloids.spookystuff.actions.Wget
+import com.tribbloids.spookystuff.doc.{Elements, Unstructured}
 import com.tribbloids.spookystuff.metrics.Acc
 import com.tribbloids.spookystuff.testutils.{FileDocsFixture, SpookyBaseSpec}
 
@@ -11,7 +12,7 @@ import scala.reflect.ClassTag
 /**
   * Created by peng on 5/10/15.
   */
-class FetchedDatasetSpec extends SpookyBaseSpec with FileDocsFixture {
+class SpookyDatasetSpec extends SpookyBaseSpec with FileDocsFixture {
 
   it(s".map should not run preceding transformation multiple times") {
     val acc = Acc.create(0)
@@ -59,7 +60,7 @@ class FetchedDatasetSpec extends SpookyBaseSpec with FileDocsFixture {
   // 2. compare stacktrace of executor thread on both snapshots
   for (case (sort, comment) <- Seq(false -> "unsorted", true -> "sorted")) {
 
-    def getData[D: ClassTag: Ordering](ds: FetchedDataset[D]): FetchedDataset.DataView[D] = {
+    def getData[D: ClassTag: Ordering](ds: SpookyDataset[D]): SpookyDataset.DataView[D] = {
 
       if (sort) ds.data.sorted()
       else ds.data
@@ -256,14 +257,17 @@ class FetchedDatasetSpec extends SpookyBaseSpec with FileDocsFixture {
 //  }
 
   it("explore plan can be persisted") {
-    val first = spooky
+    val first: SpookyDataset[Unit] = spooky
       .fetch { _ =>
         Wget(DEEP_DIR_URL)
       }
     val ds = first
-      .explore(S"root directory".attr("path"))(
-        Wget('A)
-      )
+      .inductively()
+      .fetch { row =>
+        val path: String = row.docs.\("root directory").attr("path").get
+
+        Wget(path)
+      }
       .persist()
     ds.count()
 
@@ -287,9 +291,8 @@ class FetchedDatasetSpec extends SpookyBaseSpec with FileDocsFixture {
       spooky
         .fetch(_ => Wget(HTML_URL))
         .select { row =>
-          row.save
+          row.docs.save(s"file://${Envs.USER_DIR}/temp/dummy", overwrite = true)
         }
-//        .savePages(s"file://${Envs.USER_DIR}/temp/dummy", overwrite = true)
         .collect()
 
       assert(dummyFileExists())
@@ -303,8 +306,9 @@ class FetchedDatasetSpec extends SpookyBaseSpec with FileDocsFixture {
 
       vv.collect()
 
-      vv.savePages(s"file://${Envs.USER_DIR}/temp/dummy", overwrite = true)
-        .collect()
+      vv.select { row =>
+        row.docs.save(s"file://${Envs.USER_DIR}/temp/dummy", overwrite = true)
+      }.collect()
 
       assert(dummyFileExists())
 
@@ -314,7 +318,10 @@ class FetchedDatasetSpec extends SpookyBaseSpec with FileDocsFixture {
 
       spooky
         .fetch(_ => Wget(HTML_URL))
-        .savePages_!(s"file://${Envs.USER_DIR}/temp/dummy", overwrite = true)
+        .select { row =>
+          row.docs.save(s"file://${Envs.USER_DIR}/temp/dummy", overwrite = true)
+        }
+        .execute()
 
       assert(dummyFileExists())
     }

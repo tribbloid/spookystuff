@@ -29,10 +29,10 @@ object XMLWeakDeserializer {
     override def getMessage: String = detailedStr
   }
 
-  class ParsingException(
+  case class ParsingException(
       override val shortStr: String,
-      cause: Exception,
-      val metadata: ExceptionMetadata
+      override val cause: Exception,
+      metadata: ExceptionMetadata
   ) extends MappingException(shortStr, cause)
       with ExceptionLike {
 
@@ -82,7 +82,7 @@ abstract class XMLWeakDeserializer[T: Manifest] extends Serializer[T] {
     SerDeMetadata(
       Some(this.getClass.getName),
       formats.primitives.toSeq.map(_.toString),
-      Map(formats.fieldSerializers.map(v => v._1.getName -> v._2.toString) *),
+      Map(formats.fieldSerializers.map(v => v._1.getName -> v._2.toString)*),
       formats.customSerializers.map(_.toString)
     )
   )

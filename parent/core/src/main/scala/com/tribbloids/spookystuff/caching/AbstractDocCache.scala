@@ -46,7 +46,7 @@ trait AbstractDocCache {
 
   def put(k: HasTrace, v: Seq[Observation], spooky: SpookyContext): this.type = {
 
-    if (cacheable(v)) putImpl(k.trace, v, spooky)
+    if (cacheable(v)) putImpl(k.asTrace, v, spooky)
     else this
   }
   def putImpl(k: Trace, v: Seq[Observation], spooky: SpookyContext): this.type

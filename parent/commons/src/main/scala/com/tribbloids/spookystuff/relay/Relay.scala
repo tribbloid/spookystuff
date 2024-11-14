@@ -96,7 +96,7 @@ abstract class Relay[Proto] {
       fromJField(rootTag -> jv)
     }
 
-    final def fromJSON(json: String): Proto = fromJValue(JsonMethods.parse(StringInput(json)))
+    final def fromJSON(json: String): Proto = fromJValue(JsonMethods.parse(json))
 
     final def fromXMLNode(ns: NodeSeq): Proto = {
       val jv: JValue = Xml.toJson(ns)

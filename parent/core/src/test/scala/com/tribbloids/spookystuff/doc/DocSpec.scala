@@ -39,10 +39,8 @@ class DocSpec extends SpookyBaseSpec {
       assert(page.mimeType == "application/json")
       assert(page.charsetOpt.map(_.name().toLowerCase).get == "utf-8")
       assert(page.\("html_url").texts == "https://github.com/tribbloid" :: Nil)
-      assert(page.\\("html_url").texts == "https://github.com/tribbloid" :: Nil)
 
       assert(page.\("notexist").isEmpty)
-      assert(page.\\("notexist").isEmpty)
 
       val raw = page.blob.raw
       page.save(spooky, overwrite = true).auditing()

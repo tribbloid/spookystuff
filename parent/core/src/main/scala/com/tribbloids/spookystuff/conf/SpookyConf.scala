@@ -36,18 +36,18 @@ case class SpookyConf(
     remote: Boolean = true, // if disabled won't use remote client at all
     //
     auditing: Auditing = Auditing.Both,
-    auditingFileStructure: ByDoc[String] = FilePaths.UUIDName(FilePaths.Hierarchical),
+    auditingFilePaths: ByDoc[String] = FilePaths.UUIDName(FilePaths.Hierarchical),
     //
     cacheWrite: Boolean = true,
     cacheRead: Boolean = true, // TODO: this enable both in-memory and DFS cache, should allow more refined control
 
     cachedDocsLifeSpan: Duration = 7.day,
     IgnoreCachedDocsBefore: Option[Date] = None,
-    cacheFileStructure: ByTrace[String] = FilePaths.Hierarchical,
+    cacheFilePaths: ByTrace[String] = FilePaths.Hierarchical,
     //
     errorDump: Boolean = true,
     errorScreenshot: Boolean = true,
-    errorDumpFileStructure: ByDoc[String] = FilePaths.UUIDName(FilePaths.Hierarchical),
+    errorDumpFilePaths: ByDoc[String] = FilePaths.UUIDName(FilePaths.Hierarchical),
     //
     remoteResourceTimeout: Timeout = Timeout(60.seconds),
     DFSTimeout: Timeout = Timeout(40.seconds),

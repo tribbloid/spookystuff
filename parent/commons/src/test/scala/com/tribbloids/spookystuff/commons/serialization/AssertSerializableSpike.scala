@@ -3,10 +3,12 @@ package com.tribbloids.spookystuff.commons.serialization
 import ai.acyclic.prover.commons.function.hom.Hom
 import ai.acyclic.prover.commons.util.Caching
 import com.tribbloids.spookystuff.testutils.BaseSpec
+import com.twitter.chill.ClosureCleaner
 
 import scala.util.Try
 
 class AssertSerializableSpike extends BaseSpec {
+  import AssertSerializableSpike._
 
   describe("should be WeaklySerializable - ") {
 
@@ -27,19 +29,24 @@ class AssertSerializableSpike extends BaseSpec {
       //      .collect() //TODO: this failed, why?
     }
 
-    describe("inner closure of an object that is not serializable") {
+    describe("by ClosureCleaner") {
 
-      it("vanilla function") {
+      it("0") {
+
+        AssertWeaklySerializable(Outer.inner0)
+      }
+
+      it("1") {
 
         AssertWeaklySerializable(Outer.inner1)
       }
 
-      it("Fn by single method interface") {
+      it("2") {
 
         AssertWeaklySerializable(Outer.inner2)
       }
 
-      it("Fn by conversion") {
+      it("3") {
 
         AssertWeaklySerializable(Outer.inner3)
       }
@@ -96,18 +103,28 @@ class AssertSerializableSpike extends BaseSpec {
     }
   }
 
+}
+
+case object AssertSerializableSpike {
+
+  trait Fn[-I, +O] extends (I => O) {}
+
   object Outer extends NOTSerializable {
 
-    val inner1: String => Int = { (_: String) =>
+    // everything here should be extracted safely by Spark Closure cleaner
+
+    val inner0: String => Int = { (_: String) =>
       3
+    }
+
+    val inner1: Fn[String, Int] = new Fn[String, Int] {
+      override def apply(v1: String): Int = 3
     }
 
     val inner2: Hom.Impl.Circuit[String, Int] = Hom.Circuit { _ =>
       3
     }
 
-    val inner3: String => Int = inner1
+    val inner3: String => Int = inner0
   }
 }
-
-object AssertSerializableSpike {}

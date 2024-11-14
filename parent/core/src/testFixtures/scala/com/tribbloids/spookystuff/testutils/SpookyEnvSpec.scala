@@ -7,16 +7,8 @@ import com.tribbloids.spookystuff.conf._
 
 trait SpookyEnvSpec extends BaseSpec with SparkEnvSpec {
 
-  def _ctxOverride: OptionMagnet[SpookyContext] = None
-
-  lazy val defaultCtx: SpookyContext = SpookyEnvSpec.defaultCtx
-
-  final def spooky: SpookyContext = {
-    _ctxOverride.revoke
-      .getOrElse {
-        val result: SpookyContext = defaultCtx
-        result
-      }
+  @transient final lazy val spooky: SpookyContext = {
+    SpookyEnvSpec.defaultCtx
   }
 
   def spookyConf: SpookyConf = spooky(Core).conf

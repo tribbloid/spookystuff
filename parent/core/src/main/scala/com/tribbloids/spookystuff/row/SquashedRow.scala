@@ -10,11 +10,11 @@ import scala.language.implicitConversions
 
 object SquashedRow {
 
-  def ofData[D](dataWithScope: Data.Scoped[D]*): SquashedRow[D] = {
+  def ofData[D](data: D*): SquashedRow[D] = {
 
     SquashedRow(
       LocalityGroup.NoOp,
-      dataWithScope
+      data
     )
   }
 
@@ -70,7 +70,7 @@ object SquashedRow {
 
 case class SquashedRow[D](
     localityGroup: LocalityGroup,
-    batch: Seq[Data.Scoped[D]]
+    batch: Seq[D]
 ) extends SpookyContext.CanRunWith {
   // can only support 1 agent
   // will trigger a fork if not all agent actions were captured by the LocalityGroup
@@ -83,7 +83,7 @@ case class SquashedRow[D](
   }
 
   def uncache: this.type = {
-    localityGroup.rollout.unCache
+    localityGroup.rollout.uncache
     this
   }
 
@@ -112,17 +112,17 @@ case class SquashedRow[D](
 //    result
 //  }
 
-  def flatMapData[DD](
-      fn: Data.Scoped[D] => Seq[Data.Scoped[DD]]
-  ): SquashedRow[DD] = {
-
-    val newDataRows = batch.flatMap { row =>
-      val newRows = fn(row)
-      newRows
-    }
-
-    this.copy(batch = newDataRows)
-  }
+//  def flatMapData[DD](
+//      fn: Data.Scoped[D] => Seq[Data.Scoped[DD]]
+//  ): SquashedRow[DD] = {
+//
+//    val newDataRows = batch.flatMap { row =>
+//      val newRows = fn(row)
+//      newRows
+//    }
+//
+//    this.copy(batch = newDataRows)
+//  }
 
 //  def remove(fields: Field*): SquashedRow = {
 //
@@ -139,9 +139,7 @@ case class SquashedRow[D](
     this.copy(
       batch = {
         batch.map { d =>
-          val result = d.copy(
-            data = Data.Exploring(d.data).idRefresh
-          )
+          val result = Data.Exploring(d).idRefresh
           result
         }
       }
@@ -159,28 +157,28 @@ case class SquashedRow[D](
       }
     }
 
-    def flatMap[O](
-        fn: ChainPlan.Fn[D, O]
-    ): SquashedRow[O] = {
+//    def flatMap[O](
+//        fn: ChainPlan.Fn[D, O]
+//    ): SquashedRow[O] = {
+//
+//      val newDataRows: Seq[Data.Scoped[O]] = unSquash.flatMap { (row: FetchedRow[D]) =>
+//        val newRows = fn(row)
+//        newRows
+//      }
+//
+//      SquashedRow.this.copy(batch = newDataRows)
+//    }
 
-      val newDataRows: Seq[Data.Scoped[O]] = unSquash.flatMap { (row: FetchedRow[D]) =>
-        val newRows = fn(row)
-        newRows
-      }
-
-      SquashedRow.this.copy(batch = newDataRows)
-    }
-
-    def fetch[O](fn: FetchPlan.Fn[D, O]): FetchPlan.Batch[O] = {
-
-      val result = unSquash.flatMap { (row: FetchedRow[D]) =>
-        val traces = fn(row)
-
-        traces
-      }
-
-      result
-    }
+//    def fetch[O](fn: FetchPlan.Fn[D, O]): FetchPlan.Batch[O] = {
+//
+//      val result = unSquash.flatMap { (row: FetchedRow[D]) =>
+//        val traces = fn(row)
+//
+//        traces
+//      }
+//
+//      result
+//    }
   }
 
   @transient lazy val withSchema: :=>[SpookySchema, WithSchema[D]] = :=> { v =>

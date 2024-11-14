@@ -20,7 +20,7 @@ import org.slf4j.LoggerFactory
 trait Action extends ActionLike with HasTrace {
 
   override def children: Trace = Nil
-  @transient override lazy val trace: Trace = List(this)
+  @transient override lazy val asTrace: Trace = List(this)
 
   var timeElapsed: Long = -1 // only set once
 

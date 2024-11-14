@@ -1,15 +1,16 @@
 package com.tribbloids.spookystuff.row
 
-import com.tribbloids.spookystuff.SpookyContext
 import com.tribbloids.spookystuff.commons.serialization.NOTSerializable
 import com.tribbloids.spookystuff.doc.*
 import com.tribbloids.spookystuff.doc.Observation.{DocUID, Failure, Success}
 import com.tribbloids.spookystuff.execution.ChainPlan
-import com.tribbloids.spookystuff.row.Data.{Scope, Scoped}
+import com.tribbloids.spookystuff.rdd.SpookyDataset
+import com.tribbloids.spookystuff.row.Data.Scope
 
 import scala.collection.mutable
 import scala.collection.mutable.ArrayBuffer
 import scala.language.implicitConversions
+import scala.reflect.ClassTag
 
 object FetchedRow {
 
@@ -39,7 +40,7 @@ object FetchedRow {
   //  it only records operation performed on it if the function explicitly ask for it, otherwise it degrades to its value (can still trace if it is used tho)
   //  - can we afford this luxury? how many functions can be defined to ask for it? can we weaken the arg types of functions without extra work?
 
-  case class SeqView[D](self: Seq[FetchedRow[D]]) {
+  implicit class SeqView[D](self: Seq[FetchedRow[D]]) {
 
     // the following functions are also available for a single FetchedRow, treated as Seq(v)
 //    def dummy(): Any = ???
@@ -56,18 +57,48 @@ object FetchedRow {
 //      )
 //    }
 
-    def select[O](
-        fn: FetchedRow[D] => Seq[O]
-    ): ChainPlan.Batch[O] = {
+    // TODO: fold into a SpookyDataset backed by a local/non-distributed data structure
+    object flatMap {
 
-      self.flatMap { row =>
-        fn(row).map { dd =>
-          row.payload.copy(
-            data = dd
-          )
+      def apply[O: ClassTag](
+          fn: ChainPlan.FlatMap._Fn[D, O]
+      ): Seq[FetchedRow[O]] = {
+
+        self.flatMap { v =>
+          val newData = ChainPlan.FlatMap.normalise(fn).apply(v)
+
+          newData.map { datum =>
+            FetchedRow(v.agentState, datum)
+          }
         }
       }
     }
+    def selectMany: flatMap.type = flatMap
+
+    object map {
+
+      def apply[O: ClassTag](fn: ChainPlan.Map._Fn[D, O]): Seq[FetchedRow[O]] = {
+
+        self.flatMap { v =>
+          val newData = ChainPlan.Map.normalise(fn).apply(v)
+
+          newData.map { datum =>
+            FetchedRow(v.agentState, datum)
+          }
+
+        }
+      }
+    }
+    def select: map.type = map
+
+//    def select[O](
+//        fn: FetchedRow[D] => Seq[O]
+//    ): ChainPlan.Batch[O] = {
+//
+//      self.flatMap { row =>
+//        fn(row)
+//      }
+//    }
 
     // TODO: move to sql module
 //    def withColumns[
@@ -103,32 +134,11 @@ object FetchedRow {
 //
   }
 
-  implicit def toSeqView[D](self: Seq[FetchedRow[D]]): SeqView[D] = SeqView(self)
+//  implicit def toSeqView[D](self: Seq[FetchedRow[D]]): SeqView[D] = SeqView(self)
 
-  case class Proto[D](
-      data: D,
-      observations: Seq[Observation] = Nil
-  ) {
-
-    lazy val payload: Scoped[D] = Data.Scoped(data)
-
-    def asSquashed: SquashedRow[D] = {
-      SquashedRow
-        .ofData(
-          payload
-        )
-        .cache(observations)
-    }
-
-    def asFetched(ctx: SpookyContext): FetchedRow[D] = {
-      FetchedRow(
-        agentState = AgentState.Real(LocalityGroup.NoOp.cached(observations), ctx),
-        payload = payload
-      )
-    }
-  }
-
-  lazy val blank: Proto[Unit] = Proto(Data.Scoped(()), Nil)
+//  lazy val blank: Proto[Unit] = Proto((), Nil)
+//
+//  lazy val blank: FetchedRow[Unit](AgentState)
 }
 
 /**
@@ -137,35 +147,19 @@ object FetchedRow {
   */
 case class FetchedRow[D](
     agentState: AgentState,
-    payload: Data.Scoped[D]
+    data: D
 ) extends NOTSerializable {
-
-  def data: D = payload.data
-
-  def scope: Option[Scope] = payload.scope
 
   lazy val effectiveScope: Scope = {
 
-    val result = scope match {
-      case Some(scope) => scope
-      case None =>
+    val result = data match {
+      case v: Data.Scoped[_] => v.scope
+      case _ =>
         val uids = agentState.trajectory.map(_.uid)
         Scope(uids)
     }
 
     result
-  }
-
-  lazy val observations: Seq[Observation] = effectiveScope.observationUIDs.map { uid =>
-    agentState.lookup(uid)
-  }
-
-  @transient lazy val succeeded: Seq[Success] = observations.collect {
-    case v: Success => v
-  }
-
-  @transient lazy val failed: Seq[Failure] = observations.collect {
-    case v: Failure => v
   }
 
   object rescope {
@@ -200,60 +194,111 @@ case class FetchedRow[D](
 
       outerBuffer.zipWithIndex.map {
         case (v, i) =>
-          payload.copy(scope = Some(Scope(v, i)))
+          Data.Scoped(data = data, scope = Scope(v, i))
       }.toSeq
     }
   }
 
-  def docs: DocSelection = {
-    new DocSelection(observations.collect {
+//  def docs: ObservationsView = {
+//    new ObservationsView(observations.collect {
+//      case v: Doc => v
+//    })
+//  }
+
+  lazy val observations: ObservationsView[Observation] = {
+
+    val seq = effectiveScope.observationUIDs.map { uid =>
+      agentState.lookup(uid)
+    }
+
+    new ObservationsView(seq)
+  }
+
+  lazy val docs: ObservationsView[Doc] = observations.docs
+  lazy val succeeded: ObservationsView[Success] = observations.succeeded
+  lazy val failed: ObservationsView[Failure] = observations.failed
+
+  object ObservationsView {
+
+    implicit def asBatch[T <: Observation](v: ObservationsView[T]): Seq[T] = v.self
+
+    class Single[T <: Observation](val value: T) extends ObservationsView(Seq(value)) {}
+
+    implicit def asDoc[T <: Observation](v: ObservationsView.Single[T]): T = v.value
+
+    implicit class DocExtensions(
+        self: ObservationsView[Doc]
+    ) extends Elements[Unstructured] {
+
+      override def unbox: Seq[Unstructured] = {
+
+        val seq = self.docs.flatMap { doc =>
+          doc.rootOpt
+        }
+        Elements(seq)
+      }
+
+      val normalised: Seq[Observation] = self.collect { doc =>
+        doc.normalised
+      }
+
+      def save(
+          path: String,
+          extension: Option[String] = None,
+          overwrite: Boolean = false
+      ): Unit = {
+
+        self.zipWithIndex.foreach {
+
+          case (doc, _) =>
+            val saveParts = Seq(path) ++ extension
+
+            doc.save(agentState.ctx, overwrite).as(saveParts)
+        }
+      }
+    }
+
+  }
+
+  class ObservationsView[T <: Observation](val self: Seq[T]) extends NOTSerializable {
+
+    def collect[R <: Observation](fn: PartialFunction[T, R]): ObservationsView[R] =
+      new ObservationsView[R](self.collect(fn))
+
+    @transient lazy val succeeded: ObservationsView[Success] = collect {
+      case v: Success => v
+    }
+
+    @transient lazy val failed: ObservationsView[Failure] = collect {
+      case v: Failure => v
+    }
+
+    @transient lazy val docs: ObservationsView[Doc] = collect {
       case v: Doc => v
-    })
-  }
-
-  object DocSelection {
-
-    implicit def asDoc(v: DocSelection.Only): Doc = v.value
-
-    implicit def asBatch(v: DocSelection): Seq[Doc] = v.values
-
-    class Only(val value: Doc) extends DocSelection(Seq(value)) {}
-  }
-
-  class DocSelection(val values: Seq[Doc]) {
-
-    def get(name: String): DocSelection = {
-
-      lazy val pages: Seq[Doc] = values.filter(_.name == name)
-      new DocSelection(pages)
     }
 
-    def apply(name: String): DocSelection = get(name)
-
-    lazy val headOption: Option[DocSelection.Only] = values.headOption.map { doc =>
-      new DocSelection.Only(doc)
+    def ofName(name: String): ObservationsView[T] = collect {
+      case v if v.name == name => v
     }
 
-    def head: DocSelection.Only = headOption.getOrElse(throw new UnsupportedOperationException("No doc found"))
+    def apply(name: String): ObservationsView[T] = ofName(name)
 
-    lazy val only: DocSelection.Only = {
+    lazy val headOption: Option[ObservationsView.Single[T]] = self.headOption.map { doc =>
+      new ObservationsView.Single(doc)
+    }
 
-      if (values.size > 1) throw new UnsupportedOperationException("Ambiguous key referring to multiple docs")
+    def head: ObservationsView.Single[T] = headOption
+      .getOrElse(throw new UnsupportedOperationException("No doc found"))
+
+    lazy val only: ObservationsView.Single[T] = {
+
+      if (self.size > 1) throw new UnsupportedOperationException("Ambiguous key referring to multiple docs")
       else head
     }
 
-    def saveContent(
-        path: String,
-        extension: Option[String], // set to
-        overwrite: Boolean = false
-    ): Unit = {
-
-      values.zipWithIndex.foreach {
-
-        case (doc, _) =>
-          val saveParts = Seq(path) ++ extension
-
-          doc.save(agentState.ctx, overwrite)(saveParts)
+    def forAuditing: ObservationsView[Doc] = collect {
+      Function.unlift { v =>
+        v.docForAuditing
       }
     }
   }

@@ -7,7 +7,7 @@ import com.tribbloids.spookystuff.conf.SpookyConf
 import com.tribbloids.spookystuff.dsl.*
 import com.tribbloids.spookystuff.execution.*
 import com.tribbloids.spookystuff.execution.ExplorePlan.Params
-import com.tribbloids.spookystuff.rdd.FetchedDataset.DataView
+import com.tribbloids.spookystuff.rdd.SpookyDataset.DataView
 import com.tribbloids.spookystuff.row.*
 import frameless.{TypedDataset, TypedEncoder}
 import org.apache.spark.SparkContext
@@ -18,9 +18,9 @@ import org.apache.spark.storage.StorageLevel
 import scala.language.implicitConversions
 import scala.reflect.ClassTag
 
-object FetchedDataset extends FetchedDatasetImp0 {
+object SpookyDataset extends SpookyDataset_Imp0 {
 
-  implicit def asRDD[D](self: FetchedDataset[D]): RDD[FetchedRow[D]] = self.rdd
+  implicit def asRDD[D](self: SpookyDataset[D]): RDD[FetchedRow[D]] = self.rdd
 
   class DataView[D: ClassTag](
       val spark: SparkSession,
@@ -62,17 +62,25 @@ object FetchedDataset extends FetchedDatasetImp0 {
     // move to extension, DF support is interfering with Scala 3
     def toDF: DataFrame = toDataset.toDF()
 
-    //    def toMapRDD(
-    //        implicit
-    //        ev1: TypedEncoder[D]
-    //    ): RDD[Map[String, Any]] = {
-    //      toDataset. TODO: translate with schema
-    //    }
-
     def toJSON: Dataset[String] = {
       toDataset.toJSON
     }
 
+  }
+
+  def ofRDD[D](
+      rdd: SquashedRDD[D],
+      spooky: SpookyContext,
+      beaconRDDOpt: Option[BeaconRDD[LocalityGroup]] = None
+  ): SpookyDataset[D] = {
+
+    SpookyDataset(
+      RDDPlan(
+        SpookySchema(ExecutionContext(spooky)),
+        rdd,
+        beaconRDDOpt
+      )
+    )
   }
 }
 
@@ -82,28 +90,11 @@ object FetchedDataset extends FetchedDatasetImp0 {
   * names set to their {function name}.{variable names} CAUTION: naming convention: all function ended with _! will be
   * executed immediately, others will yield a logical plan that can be optimized & lazily executed
   */
-case class FetchedDataset[D](
+case class SpookyDataset[D](
     plan: ExecutionPlan[D]
-) extends FetchedDatasetAPI[D]
+) extends DatasetAPI[D]
     with CatalystTypeOps.ImplicitMixin {
   // TODO: should be "ExecutionPlanView"
-
-//  implicit def fromExecutionPlan(plan: ExecutionPlan[D]): FetchedDataset[D] = FetchedDataset(plan)
-
-  def this(
-      sourceRDD: SquashedRDD[D],
-      spooky: SpookyContext,
-      beaconRDDOpt: Option[BeaconRDD[LocalityGroup]] = None
-  ) = {
-
-    this(
-      RDDPlan(
-        SpookySchema(ExecutionContext(spooky)),
-        sourceRDD,
-        beaconRDDOpt
-      )
-    )
-  }
 
   // TODO: use reflection for more clear API
   def setConf(f: SpookyConf => Unit): this.type = {
@@ -138,13 +129,20 @@ case class FetchedDataset[D](
 //    */
 //  trait Cached {}
 
+  def execute(): this.type = {
+    rdd.foreach(_ => ())
+    this
+  }
+
   object flatMap {
 
-    def apply[O](fn: ChainPlan.FlatMap._Fn[D, O]): FetchedDataset[O] = {
+    def apply[O: ClassTag](
+        fn: ChainPlan.FlatMap._Fn[D, O]
+    ): SpookyDataset[O] = {
 
-      FetchedDataset(
+      SpookyDataset(
         ChainPlan(
-          FetchedDataset.this,
+          SpookyDataset.this,
           ChainPlan.FlatMap.normalise(fn)
         )
       )
@@ -154,11 +152,11 @@ case class FetchedDataset[D](
 
   object map {
 
-    def apply[O](fn: ChainPlan.Map._Fn[D, O]): FetchedDataset[O] = {
+    def apply[O: ClassTag](fn: ChainPlan.Map._Fn[D, O]): SpookyDataset[O] = {
 
-      FetchedDataset(
+      SpookyDataset(
         ChainPlan(
-          FetchedDataset.this,
+          SpookyDataset.this,
           ChainPlan.Map.normalise(fn)
         )
       )
@@ -208,21 +206,14 @@ case class FetchedDataset[D](
       keyBy: Trace => Any = identity,
       genPartitioner: GenPartitioner = spooky.conf.localityPartitioner,
       ctg: ClassTag[D]
-  ): FetchedDataset[D] = {
+  ): SpookyDataset[D] = {
 
-    FetchedDataset(
+    SpookyDataset(
       FetchPlan(plan, FetchPlan.Invar.normalise(fn), keyBy, genPartitioner)
     )
   }
 
-  // TODO: how to unify this with join?
-  def explore[O](
-      fn: ExplorePlan.Fn[D, O]
-  )(
-      sampler: Sampler = spooky.conf.exploreSampler,
-      keyBy: Trace => Any = identity,
-      //
-      genPartitioner: GenPartitioner = spooky.conf.localityPartitioner,
+  case class inductively(
       range: Range = spooky.conf.exploreRange,
       pathPlanning: PathPlanning = spooky.conf.explorePathPlanning,
       //
@@ -231,21 +222,70 @@ case class FetchedDataset[D](
       //
       //      ordinalField: Field = null,
       //      depthField: Field = null, // TODO: Some of them has to be moved upwards
-  ): FetchedDataset[O] = {
+  )(
+      implicit
+      ctg: ClassTag[D]
+  ) {
 
-    val params = Params(range)
-    val out: ExplorePlan[D, O] = ExplorePlan(
-      plan,
-      fn,
-      keyBy,
-      genPartitioner,
-      params,
-      pathPlanning,
-      epochInterval,
-      checkpointInterval
-    )
-    FetchedDataset[O](
-      out: ExecutionPlan[O]
-    )
+    def fetch(fn: ExplorePlan.Invar._Fn[D])(
+        implicit
+        keyBy: Trace => Any = identity,
+        genPartitioner: GenPartitioner = spooky.conf.localityPartitioner
+    ): SpookyDataset[Data.Exploring[D]] = {
+      val actualFn = ExplorePlan.Invar.normalise(fn)
+
+      val params = Params(range)
+      val out: ExplorePlan[D, Data.Exploring[D]] = ExplorePlan(
+        plan,
+        actualFn,
+        keyBy,
+        genPartitioner,
+        params,
+        pathPlanning,
+        epochInterval,
+        checkpointInterval
+      )
+      SpookyDataset(
+        out
+      )
+    }
+
+//    object flatMap {}
+// TODO: unnecessary, normalisation took over
+//    object map {}
   }
+
+  // TODO: how to unify this with join?
+//  def explore[O](
+//      fn: ExplorePlan.Fn[D, O]
+//  )(
+//      sampler: Sampler = spooky.conf.exploreSampler,
+//      keyBy: Trace => Any = identity,
+//      //
+//      genPartitioner: GenPartitioner = spooky.conf.localityPartitioner,
+//      range: Range = spooky.conf.exploreRange,
+//      pathPlanning: PathPlanning = spooky.conf.explorePathPlanning,
+//      //
+//      epochInterval: Int = spooky.conf.exploreEpochInterval,
+//      checkpointInterval: Int = spooky.conf.exploreCheckpointInterval // set to Int.MaxValue to disable checkpointing,
+//      //
+//      //      ordinalField: Field = null,
+//      //      depthField: Field = null, // TODO: Some of them has to be moved upwards
+//  ): FetchedDataset[O] = {
+//
+//    val params = Params(range)
+//    val out: ExplorePlan[D, O] = ExplorePlan(
+//      plan,
+//      fn,
+//      keyBy,
+//      genPartitioner,
+//      params,
+//      pathPlanning,
+//      epochInterval,
+//      checkpointInterval
+//    )
+//    FetchedDataset[O](
+//      out: ExecutionPlan[O]
+//    )
+//  }
 }

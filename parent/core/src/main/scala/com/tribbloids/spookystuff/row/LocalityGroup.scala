@@ -43,11 +43,15 @@ case class LocalityGroup(
 
   @transient lazy val samenessKey: Any = keyByOvrd.getOrElse(trace)
 
-  def cached(vs: Seq[Observation]): LocalityGroup = {
-    this.copy()(rollout.cache(vs))
-  }
-
-  def unCache: LocalityGroup = this.copy()(rollout.unCache)
+//  def cache(vs: Seq[Observation]): this.type = {
+//    rollout.cache(vs)
+//    this
+//  }
+//
+//  def uncache: this.type = {
+//    rollout.uncache
+//    this
+//  }
 
   def sameBy[T](fn: Trace => T): LocalityGroup =
     this.copy(keyByOvrd = Option(fn(this.trace)))(this.rollout)

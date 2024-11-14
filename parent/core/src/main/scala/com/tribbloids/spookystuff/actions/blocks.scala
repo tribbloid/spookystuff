@@ -15,6 +15,7 @@ object Block {
 
   val maxLoop: Int = Int.MaxValue
 }
+// TODO: too long, should have its own package
 
 /**
   * Only for complex workflow control, each defines a nested/non-linear subroutine that may or may not be executed once
@@ -206,7 +207,7 @@ final case class Loop(
 
     try {
       for (_ <- 0 until limit) {
-        for (action <- children.trace) {
+        for (action <- children.asTrace) {
           pages ++= action.exe(agent)
         }
       }

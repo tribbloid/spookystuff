@@ -119,27 +119,27 @@ object Delta {
 //    }
 //  }
 
-  case class SaveContent[I](
-      getDocs: FetchedRow[I] => Map[String, Doc],
-      overwrite: Boolean
-  ) extends Delta[I, I] {
-
-    override def repr(schema: SpookySchema): SquashedRow[I] :=> SquashedRow[I] = {
-
-      :=> { v =>
-        val withCtx = v.withCtx(schema.ctx)
-
-        withCtx.unSquash
-          .foreach { fetchedRow =>
-            val docs = getDocs(fetchedRow)
-
-            docs.foreach {
-              case (k, doc) =>
-                doc.save(schema.ctx, overwrite)(Seq(k))
-            }
-          }
-        v
-      }
-    }
-  }
+//  case class SaveContent[I](
+//      getDocs: FetchedRow[I] => Map[String, Doc],
+//      overwrite: Boolean
+//  ) extends Delta[I, I] {
+//
+//    override def repr(schema: SpookySchema): SquashedRow[I] :=> SquashedRow[I] = {
+//
+//      :=> { v =>
+//        val withCtx = v.withCtx(schema.ctx)
+//
+//        withCtx.unSquash
+//          .foreach { fetchedRow =>
+//            val docs = getDocs(fetchedRow)
+//
+//            docs.foreach {
+//              case (k, doc) =>
+//                doc.save(schema.ctx, overwrite).as(Seq(k))
+//            }
+//          }
+//        v
+//      }
+//    }
+//  }
 }

@@ -10,6 +10,7 @@ import org.apache.spark.rdd.RDD
 import org.slf4j.LoggerFactory
 
 import java.util.UUID
+import scala.reflect.ClassTag
 
 object ExplorePlan {
 
@@ -28,47 +29,42 @@ object ExplorePlan {
 
   object Invar {
 
-    val proto: FetchPlan.Invar.type = FetchPlan.Invar
-
     type ResultMag[I] = proto.ResultMag[I]
     type _Fn[I] = FetchedRow[Data.Exploring[I]] => ResultMag[I]
 
-    type Target[I] = Fn[I, Data.Exploring[I]]
+    val proto: FetchPlan.Invar.type = FetchPlan.Invar
 
-//    def normalise[I](
-//        fn: _Fn[I],
-//        sampler: Sampler = Sampler.Identity
-//    ): Fn[I, I] = {
-//      val fetchFn: FetchPlan.Fn[Any, Any] = FetchPlan.Invar.normalise(fn)
-//
-//      { row =>
-//        val mag = fn(row)
-//
-//        val normalised: (HasTraceSet, Data.WithScope[Data.Exploring[I]]) = mag.revoke match {
-//          case Left(traces) =>
-//            traces -> row.payload
-//          case Right(v) =>
-//            v._1 -> row.payload.copy(
-//              data = row.payload.copy(
-//                v._2
-//              )
-//            )
-//        }
-//
-//        val flat: Seq[(Trace, Data.WithScope[Data.Exploring[I]])] = normalised._1.asTraceSet.map { trace =>
-//          trace -> normalised._2
-//        }.toSeq
-//
-//        val sampled = sampler.apply[Yield[I]](flat).map { (opt: Option[Yield[I]]) =>
-//          opt.getOrElse {
-//            val default: Yield[I] = Trace.NoOp.trace -> normalised._2
-//            default
-//          }
-//        }
-//
-//        sampled
-//      }
-//    }
+    def normalise[I](
+        fn: _Fn[I],
+        sampler: Sampler = Sampler.Identity
+    ): Fn[I, Data.Exploring[I]] = {
+
+      val inductive: FetchPlan.Fn[Data.Exploring[I], I] = FetchPlan.ToTraceSet.normalise[Data.Exploring[I], I](
+        { row =>
+          val mag: ResultMag[I] = fn(row)
+
+          val normalised: (HasTraceSet, I) = mag.revoke match {
+            case Left(traces) =>
+              traces -> row.data
+            case Right(v) =>
+              v._1 -> v._2
+          }
+
+          normalised
+        },
+        sampler
+      )
+
+      val result: Fn[I, Data.Exploring[I]] = { row =>
+        val first = inductive(row)
+        val second: ChainPlan.Batch[Data.Exploring[I]] = Seq(row.data)
+
+        first -> second
+      }
+
+      result
+
+    }
   }
 
   type ExeID = UUID
@@ -211,7 +207,7 @@ case class ExplorePlan[I, O](
             row.isOutOfRange
           }
 
-          val inRange = inRangeExploring.map(v => v.copy(data = v.data.data))
+          val inRange = inRangeExploring.map(v => v.data)
 
           val result = SquashedRow[O](v._1, inRange)
 
@@ -243,7 +239,7 @@ case class ExplorePlan[I, O](
     gpImpl.reduceByKey(stateRDD, globalReducer, beaconRDDOpt)
   }
 
-  override def chain[O2](fn: ChainPlan.Fn[O, O2]): ExplorePlan[I, O2] = {
+  override def chain[O2: ClassTag](fn: ChainPlan.Fn[O, O2]): ExplorePlan[I, O2] = {
 
     val newFn: Fn[I, O2] = { row =>
       val out1: (FetchPlan.Batch[I], ChainPlan.Batch[O]) = this.fn(row)

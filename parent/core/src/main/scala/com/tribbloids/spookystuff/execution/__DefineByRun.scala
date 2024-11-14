@@ -11,15 +11,15 @@ object __DefineByRun {
     *
     *   - [[com.tribbloids.spookystuff.actions.Action]].interpolate will be gone, all their constructors only accept
     *     argument(s) with simple type
-    *   - [[com.tribbloids.spookystuff.rdd.FetchedDataset]].fetch now takes a function, which can be either applied to a
+    *   - [[com.tribbloids.spookystuff.rdd.SpookyDataset]].fetch now takes a function, which can be either applied to a
     *     row with a real agent (in action), or applied to a row with a tracer (fake agent in dry-run-planning), the
     *     tracer can only record agent actions & return data placeholder (which are also tracer themselves), but return
     *     no real data
     *
     * Stage 1:
     *
-    *   - define-by-run API defined in [[com.tribbloids.spookystuff.rdd.FetchedDataset]].apply that supersedes both
-    *     fetch & extract
+    *   - define-by-run API defined in [[com.tribbloids.spookystuff.rdd.SpookyDataset]].apply that supersedes both fetch
+    *     & extract
     *   - extract will be gone, fetch now becomes an alias of apply
     *   - define-by-run API takes a function [[com.tribbloids.spookystuff.row.AgentState]] =>
     *     [[com.tribbloids.spookystuff.row.Lineage]] as its only argument
@@ -28,7 +28,7 @@ object __DefineByRun {
     *
     * Stage 2:
     *
-    *   - (optional) [[ExecutionPlan]] API can be merged into [[com.tribbloids.spookystuff.rdd.FetchedDataset]]
+    *   - (optional) [[ExecutionPlan]] API can be merged into [[com.tribbloids.spookystuff.rdd.SpookyDataset]]
     *   - native soft/multi-pass execution mode: [[ExecutionPlan]]s can read from a Dataset, which represents result of
     *     a previous execution that partially succeeded: Each [[com.tribbloids.spookystuff.agent.Agent]] & extraction
     *     may fail for any reason (e.g. service unavailable, API or robot.txt quota exceeded, reached designated *

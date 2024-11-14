@@ -58,7 +58,7 @@ case class Doc(
   def withMetadata(tuples: (String, Any)*): Doc = {
 
     this.copy(
-      metadata = this.metadata ++: ResourceMetadata.From.tuple(tuples *)
+      metadata = this.metadata ++: ResourceMetadata.From.tuple(tuples*)
     )(content)
   }
 
@@ -66,7 +66,7 @@ case class Doc(
 
     object ContentTypeDetection extends NOTSerializable {
 
-      lazy val declaredOpt: Option[CSSQuery] = {
+      lazy val declaredOpt: Option[String] = {
         metadata.ContentType.get
           .map(v => "" + v) // TODO: why?
           .orElse(declaredContentType)
@@ -187,18 +187,18 @@ case class Doc(
     case _      => Unrecognisable
   }
 
-  def saved: Seq[CSSQuery] = content.blob.saved
+  def saved: Seq[String] = content.blob.saved
 
   case class save(
       spooky: SpookyContext,
       overwrite: Boolean = false
   ) {
 
-    def to(
+    def as(
         pathParts: Seq[String]
     ): Content = {
 
-      val path = CommonUtils.\\\(pathParts *)
+      val path = CommonUtils.\\\(pathParts*)
 
       def wCtx = content.withCtx(spooky)
 
@@ -207,10 +207,10 @@ case class Doc(
       saved
     }
 
-    def apply(pathParts: Seq[String]): Content = to(pathParts)
+//    def apply(pathParts: Seq[String]): Content = as(pathParts)
 
     def auditing(): Content = {
-      apply(spooky.dirConf.auditing :: spooky.conf.auditingFileStructure(Doc.this) :: Nil)
+      as(spooky.dirConf.auditing :: spooky.conf.auditingFilePaths(Doc.this) :: Nil)
 
     }
 
@@ -221,14 +221,14 @@ case class Doc(
     // TODO: merge into cascade retries
     def errorDump(): Content = {
 
-      apply(errorDumpRoot :: spooky.conf.errorDumpFileStructure(Doc.this) :: Nil)
+      as(errorDumpRoot :: spooky.conf.errorDumpFilePaths(Doc.this) :: Nil)
 
     }
 
     def errorDumpLocally(): Content = {
 
-      apply(
-        errorDumpRoot :: spooky.conf.errorDumpFileStructure(Doc.this) :: Nil
+      as(
+        errorDumpRoot :: spooky.conf.errorDumpFilePaths(Doc.this) :: Nil
       )
     }
   }

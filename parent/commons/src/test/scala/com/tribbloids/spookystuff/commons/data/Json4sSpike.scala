@@ -19,7 +19,7 @@ class Json4sSpike extends BaseSpec {
 
       val v: ListMap[String, Int] = ListMap("a" -> 1, "b" -> 2)
       val json = JsonMethods.compact(Extraction.decompose(v))
-      val v2 = Extraction.extract[ListMap[String, Int]](JsonMethods.parse(StringInput(json)))
+      val v2 = Extraction.extract[ListMap[String, Int]](JsonMethods.parse(json))
       assert(v == v2)
     }
 
@@ -27,7 +27,7 @@ class Json4sSpike extends BaseSpec {
 
       val v = new Path("http://www.google.com")
       val json = JsonMethods.compact(Extraction.decompose(v))
-      val v2 = Extraction.extract[Path](JsonMethods.parse(StringInput(json)))
+      val v2 = Extraction.extract[Path](JsonMethods.parse(json))
       assert(v == v2)
     }
   }
