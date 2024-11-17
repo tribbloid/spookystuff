@@ -1,7 +1,7 @@
 package com.tribbloids.spookystuff.io.lock
 
+import ai.acyclic.prover.commons.spark.serialization.NOTSerializable
 import com.tribbloids.spookystuff.commons.CommonUtils
-import com.tribbloids.spookystuff.commons.serialization.NOTSerializable
 import com.tribbloids.spookystuff.io.lock.Lock.InMemoryLock
 import com.tribbloids.spookystuff.io.{URIExecution, URIResolver}
 

@@ -6,7 +6,7 @@ import ai.acyclic.prover.commons.util.Caching
 import ai.acyclic.prover.commons.util.Caching.{ConcurrentMap, ConcurrentSet}
 import com.tribbloids.spookystuff.execution.ExplorePlan.ExeID
 import com.tribbloids.spookystuff.execution.{Explore, ExploreRunner}
-import com.tribbloids.spookystuff.row.{Data, LocalityGroup}
+import com.tribbloids.spookystuff.row.LocalityGroup
 
 /**
   * Singleton, always in the JVM and shared by all executors on the same machine.
@@ -33,7 +33,7 @@ object ExploreLocalCache {
     }
   }
 
-  val getExecution_untyped: :=>.CachedLazy[ExeID, Execution[Nothing, Nothing]] = {
+  val getExecution_untyped: :=>.Lazy[ExeID, Execution[Nothing, Nothing]] = {
     val raw = :=> { (_: ExeID) =>
       Execution()
     }
@@ -58,6 +58,6 @@ object ExploreLocalCache {
   }
 
   def deregisterAll(exeID: ExeID): Unit = {
-    getExecution_untyped.underlyingCache.remove(exeID)
+    getExecution_untyped.lookup.remove(exeID)
   }
 }

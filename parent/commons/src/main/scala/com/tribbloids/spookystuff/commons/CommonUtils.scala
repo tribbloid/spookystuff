@@ -32,7 +32,7 @@ object CommonUtils {
     else part + suffix
   }
 
-  def /:/(parts: String*): String = qualifiedName("/")(parts *)
+  def /:/(parts: String*): String = qualifiedName("/")(parts*)
   def :/(part: String): String = addSuffix("/", part)
 
   def \\\(parts: String*): String = {
@@ -41,7 +41,7 @@ object CommonUtils {
         _.replace('/', File.separatorChar)
       )
     }
-    qualifiedName(File.separator)(_parts *)
+    qualifiedName(File.separator)(_parts*)
   }
   def :\(part: String): String = {
     val _part = part.replace('/', File.separatorChar)
@@ -150,7 +150,7 @@ object CommonUtils {
     val proto2 = proto.map {
       case (k, v) => k -> v.head._2
     }
-    ListMap(proto2 *)
+    ListMap(proto2*)
   }
 
   // copied from org.apache.spark.util.Utils

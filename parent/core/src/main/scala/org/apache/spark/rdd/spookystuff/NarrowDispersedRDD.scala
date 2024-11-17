@@ -1,6 +1,6 @@
 package org.apache.spark.rdd.spookystuff
 
-import com.tribbloids.spookystuff.commons.serialization.NOTSerializable
+import ai.acyclic.prover.commons.spark.serialization.NOTSerializable
 import org.apache.spark.*
 import org.apache.spark.rdd.RDD
 import org.apache.spark.rdd.spookystuff.NarrowDispersedRDD.*

@@ -51,6 +51,8 @@ object Data {
 
   object Exploring {}
 
+  // TODO:  case class Fetching
+
   /**
     * contains all schematic data accumulated over graph traversal path, but contains no schema, ad-hoc local access
     * requires combining with schema from Spark driver

@@ -101,7 +101,7 @@ case class Visualisation[D <: Domain](
 
       val bufferList = buffer.toList
 
-      val bufferSet = ListMap(bufferList.map(v => v -> {}) *).keySet
+      val bufferSet = ListMap(bufferList.map(v => v -> {})*).keySet
 
       {
         // TODO: don't remove! set ordering varies depending on scala versions

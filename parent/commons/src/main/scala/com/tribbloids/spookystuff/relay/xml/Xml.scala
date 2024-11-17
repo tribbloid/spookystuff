@@ -180,7 +180,7 @@ object Xml {
   }
 
   class XmlNode(name: String, children: Seq[Node], attributes: MetaData)
-      extends Elem(null, name, attributes, TopScope, false, children *)
+      extends Elem(null, name, attributes, TopScope, false, children*)
 
   class XmlElem(name: String, value: String) extends Elem(null, name, xml.Null, TopScope, false, Text(value))
 }

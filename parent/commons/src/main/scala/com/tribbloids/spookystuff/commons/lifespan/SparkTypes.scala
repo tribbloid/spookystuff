@@ -1,6 +1,6 @@
 package com.tribbloids.spookystuff.commons.lifespan
 
-import com.tribbloids.spookystuff.commons.serialization.NOTSerializable
+import ai.acyclic.prover.commons.spark.serialization.NOTSerializable
 import org.apache.spark.SparkContext
 import org.apache.spark.scheduler.{SparkListener, SparkListenerApplicationEnd}
 import org.apache.spark.sql.SparkSession

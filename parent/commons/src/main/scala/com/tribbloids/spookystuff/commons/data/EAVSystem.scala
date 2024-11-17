@@ -16,7 +16,7 @@ trait EAVSystem {
 
     final override def system: EAVSystem = EAVSystem.this
 
-    @transient lazy val canonical: ^ = ^(Map(KVs.defined *))
+    @transient lazy val canonical: ^ = ^(Map(KVs.defined*))
   }
 
   object EAV extends HasEncoder[^] {
@@ -47,12 +47,12 @@ trait EAVSystem {
 
     final def iterableInternal(kvs: Iterable[(String, V)]): ^ = {
 
-      constructor(ListMap[String, V](kvs.toSeq *))
+      constructor(ListMap[String, V](kvs.toSeq*))
     }
 
     final def iterable(kvs: Iterable[Tuple2[?, V]]): ^ = {
       val _kvs = kvs.map {
-        case (k: `^` #Attr[_], v) =>
+        case (k: `^`#Attr[_], v) =>
           k.name -> v
         case (k: String, v) =>
           k -> v
@@ -74,7 +74,7 @@ trait EAVSystem {
         }
       }
 
-      tuple(_kvs *)
+      tuple(_kvs*)
     }
   }
 
@@ -111,7 +111,7 @@ trait EAVSystem {
                 kk -> TreeIR.leaf[Any](vv)
             }
 
-            TreeIR.Builder(Some(ll.rootTag)).map(subNodes *)
+            TreeIR.Builder(Some(ll.rootTag)).map(subNodes*)
           case others @ _ =>
             others
         }

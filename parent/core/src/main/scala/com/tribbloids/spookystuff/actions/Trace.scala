@@ -1,11 +1,11 @@
 package com.tribbloids.spookystuff.actions
 
 import ai.acyclic.prover.commons.cap.Capability
+import ai.acyclic.prover.commons.spark.serialization.NOTSerializable
 import com.tribbloids.spookystuff.SpookyContext
 import com.tribbloids.spookystuff.actions.Trace.Repr
 import com.tribbloids.spookystuff.agent.Agent
 import com.tribbloids.spookystuff.caching.{DFSDocCache, InMemoryDocCache}
-import com.tribbloids.spookystuff.commons.serialization.NOTSerializable
 import com.tribbloids.spookystuff.doc.Observation
 import com.tribbloids.spookystuff.row.SpookySchema
 

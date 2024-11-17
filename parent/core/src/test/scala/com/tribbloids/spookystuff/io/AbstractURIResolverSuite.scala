@@ -1,8 +1,8 @@
 package com.tribbloids.spookystuff.io
 
+import ai.acyclic.prover.commons.spark.serialization.AssertSerializable
 import ai.acyclic.prover.commons.spark.{Envs, SparkEnvSpec}
 import com.tribbloids.spookystuff.testutils.FileDocsFixture
-import com.tribbloids.spookystuff.commons.serialization.AssertSerializable
 import com.tribbloids.spookystuff.io.AbstractURIResolverSuite.SequentialCheck
 import org.apache.commons.io.IOUtils
 import org.apache.spark.SparkContext
@@ -113,8 +113,7 @@ abstract class AbstractURIResolverSuite extends SparkEnvSpec with FileDocsFixtur
 
   it("resolver is serializable") {
 
-    AssertSerializable(
-      resolver,
+    AssertSerializable(resolver).on(
       condition = { (v1: URIResolver, v2: URIResolver) =>
         v1.toString == v2.toString
       }

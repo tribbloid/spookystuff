@@ -1,6 +1,6 @@
 package com.tribbloids.spookystuff.dsl
 
-import ai.acyclic.prover.commons.util.Retry
+import ai.acyclic.prover.commons.util.{Causes, Retry}
 import com.tribbloids.spookystuff.commons.{CommonUtils, TreeThrowable}
 import com.tribbloids.spookystuff.io.{LocalResolver, URLConnectionResolver, WriteMode}
 import com.tribbloids.spookystuff.utils.SpookyUtils
@@ -54,7 +54,7 @@ trait BinaryDeployment extends Serializable {
               new UnsupportedOperationException(
                 s"${this.getClass.getSimpleName} cannot find resource for deployment, " +
                   s"please provide Internet Connection or deploy manually",
-                TreeThrowable.combine(seq)
+                Causes.combine(seq)
               )
             }
           )
@@ -104,7 +104,7 @@ trait BinaryDeployment extends Serializable {
       agg = { seq =>
         new IllegalStateException(
           s"${this.getClass.getSimpleName} cannot find deployed binary",
-          TreeThrowable.combine(seq)
+          Causes.combine(seq)
         )
       }
     )

@@ -2,7 +2,7 @@ package com.tribbloids.spookystuff.commons.data
 
 import com.tribbloids.spookystuff.testutils.BaseSpec
 import org.apache.hadoop.fs.Path
-import org.json4s.{DefaultFormats, Extraction, StringInput}
+import org.json4s.{DefaultFormats, Extraction}
 import org.json4s.jackson.JsonMethods
 import org.scalatest.Ignore
 

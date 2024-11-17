@@ -1,7 +1,6 @@
 package com.tribbloids.spookystuff.testutils
 
 import ai.acyclic.prover.commons.spark.{SparkEnvSpec, TestHelper}
-import ai.acyclic.prover.commons.util.Magnet.OptionMagnet
 import com.tribbloids.spookystuff.SpookyContext
 import com.tribbloids.spookystuff.conf._
 

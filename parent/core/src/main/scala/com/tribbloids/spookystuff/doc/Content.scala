@@ -1,8 +1,8 @@
 package com.tribbloids.spookystuff.doc
 
+import ai.acyclic.prover.commons.spark.serialization.NOTSerializable
 import com.tribbloids.spookystuff.SpookyContext
 import com.tribbloids.spookystuff.commons.TreeThrowable
-import com.tribbloids.spookystuff.commons.serialization.NOTSerializable
 import com.tribbloids.spookystuff.io.HDFSResolver
 import org.apache.commons.io.IOUtils
 import org.apache.hadoop.fs.{FSDataOutputStream, Path}

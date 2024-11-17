@@ -1,10 +1,10 @@
 package com.tribbloids.spookystuff.doc
 
 import ai.acyclic.prover.commons.same.EqualBy
+import ai.acyclic.prover.commons.spark.serialization.NOTSerializable
 import com.tribbloids.spookystuff.*
 import com.tribbloids.spookystuff.caching.DocCacheLevel
 import com.tribbloids.spookystuff.commons.CommonUtils
-import com.tribbloids.spookystuff.commons.serialization.NOTSerializable
 import com.tribbloids.spookystuff.doc.Content.InMemoryBlob
 import com.tribbloids.spookystuff.doc.Observation.DocUID
 import com.tribbloids.spookystuff.doc.Unstructured.Unrecognisable

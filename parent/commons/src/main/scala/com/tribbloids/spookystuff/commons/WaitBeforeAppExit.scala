@@ -1,8 +1,8 @@
 package com.tribbloids.spookystuff.commons
 
+import ai.acyclic.prover.commons.spark.serialization.BeforeAndAfterShipping
 import com.tribbloids.spookystuff.commons.lifespan.Cleanable.Lifespan
 import com.tribbloids.spookystuff.commons.lifespan.LocalCleanable
-import com.tribbloids.spookystuff.commons.serialization.BeforeAndAfterShipping
 
 object WaitBeforeAppExit extends LocalCleanable {
 

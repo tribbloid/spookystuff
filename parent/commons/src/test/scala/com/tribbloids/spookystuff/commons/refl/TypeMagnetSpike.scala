@@ -1,6 +1,6 @@
 package com.tribbloids.spookystuff.commons.refl
 
-import com.tribbloids.spookystuff.commons.serialization.AssertSerializable
+import ai.acyclic.prover.commons.spark.serialization.AssertSerializable
 import com.tribbloids.spookystuff.testutils.BaseSpec
 import org.apache.spark.sql.catalyst.ScalaReflection
 import org.apache.spark.sql.catalyst.ScalaReflection.universe

@@ -12,6 +12,6 @@ case class Transitions(vs: Seq[Transition]) {
   // Not the fastest, Charset doesn't grow dynamically
   val transitionsMap: MultiMaps.Immutable[Token, Transition] = {
 
-    MultiMaps.Immutable.apply(kvs *)
+    MultiMaps.Immutable.apply(kvs*)
   }
 }

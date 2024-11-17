@@ -1,7 +1,7 @@
 package com.tribbloids.spookystuff
 
 import shapeless.labelled
-import shapeless.labelled.{FieldType, field}
+import shapeless.labelled.{field, FieldType}
 import shapeless.tag.@@
 
 package object linq {

@@ -29,7 +29,7 @@ trait RDDImplicits extends SpookyViews_Imp0 with ai.acyclic.prover.commons.spark
         {
           val values = str.split(splitter)
 
-          ListMap(headers.zip(values) *)
+          ListMap(headers.zip(values)*)
         }
       }
     }

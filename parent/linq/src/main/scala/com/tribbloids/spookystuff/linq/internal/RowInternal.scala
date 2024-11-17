@@ -2,7 +2,7 @@ package com.tribbloids.spookystuff.linq.internal
 
 import ai.acyclic.prover.commons.function.hom.Hom
 import com.tribbloids.spookystuff.linq.*
-import com.tribbloids.spookystuff.linq.Linq.{Row, named}
+import com.tribbloids.spookystuff.linq.Linq.{named, Row}
 import com.tribbloids.spookystuff.linq.Tuple.Empty
 import shapeless.ops.record.Keys
 

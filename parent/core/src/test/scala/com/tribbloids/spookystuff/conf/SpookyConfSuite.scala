@@ -1,8 +1,8 @@
 package com.tribbloids.spookystuff.conf
 
+import ai.acyclic.prover.commons.spark.serialization.AssertSerializable
 import com.tribbloids.spookystuff.testutils.SpookyBaseSpec
 import com.tribbloids.spookystuff.commons.ConfUtils
-import com.tribbloids.spookystuff.commons.serialization.AssertSerializable
 import org.apache.spark.SparkConf
 
 import scala.util.Random
@@ -17,8 +17,7 @@ class SpookyConfSuite extends SpookyBaseSpec {
 
   it("SpookyConf is serializable") {
 
-    AssertSerializable(
-      conf,
+    AssertSerializable(conf).on(
       condition = { (v1: SpookyConf, v2: SpookyConf) =>
         v1.cacheFilePaths == v2.cacheFilePaths
       }

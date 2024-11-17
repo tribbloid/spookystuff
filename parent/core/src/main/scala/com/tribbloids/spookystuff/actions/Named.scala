@@ -19,4 +19,3 @@ trait Named extends Action {
     this.nameOpt = same.asInstanceOf[Named].nameOpt
   }
 }
-

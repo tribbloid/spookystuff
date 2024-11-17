@@ -1,7 +1,7 @@
 package com.tribbloids.spookystuff
 
+import ai.acyclic.prover.commons.util.Causes
 import com.tribbloids.spookystuff.testutils.BaseSpec
-import com.tribbloids.spookystuff.commons.TreeThrowable
 
 class SpookyExceptionSuite extends BaseSpec {
 
@@ -10,7 +10,7 @@ class SpookyExceptionSuite extends BaseSpec {
 
       val ee = new DFSReadException(
         "ee",
-        TreeThrowable.combine(
+        Causes.combine(
           Seq(
             new AssertionError("2"),
             new AssertionError("1")

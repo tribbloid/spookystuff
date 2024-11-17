@@ -1,6 +1,5 @@
 package com.tribbloids.spookystuff.row
 
-import com.tribbloids.spookystuff.actions.Wget
 import com.tribbloids.spookystuff.testutils.SpookyBaseSpec
 
 /**

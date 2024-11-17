@@ -1,10 +1,9 @@
 package com.tribbloids.spookystuff.utils
 
 import com.tribbloids.spookystuff.commons.CommonViews
-import com.tribbloids.spookystuff.dsl.Sampler
 
 import scala.collection.immutable.ListMap
-import scala.collection.{Factory, Map}
+import scala.collection.Factory
 import scala.language.implicitConversions
 import scala.reflect.ClassTag
 

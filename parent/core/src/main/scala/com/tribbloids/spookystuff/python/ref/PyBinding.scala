@@ -7,7 +7,6 @@ import com.tribbloids.spookystuff.commons.lifespan.LocalCleanable
 import com.tribbloids.spookystuff.relay.TreeIR
 import com.tribbloids.spookystuff.relay.io.Encoder
 import org.json4s
-import org.json4s.StringInput
 import org.json4s.jackson.JsonMethods.parse
 
 import scala.language.dynamics

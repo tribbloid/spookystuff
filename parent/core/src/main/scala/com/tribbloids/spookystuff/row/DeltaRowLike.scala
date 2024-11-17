@@ -1,7 +1,7 @@
 package com.tribbloids.spookystuff.row
 
+import ai.acyclic.prover.commons.spark.serialization.NOTSerializable
 import com.tribbloids.spookystuff.SpookyContext
-import com.tribbloids.spookystuff.commons.serialization.NOTSerializable
 import com.tribbloids.spookystuff.execution.Delta
 
 @deprecated("scaffold in an abandoned architecture, don't used")

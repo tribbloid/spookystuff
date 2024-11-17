@@ -1,7 +1,6 @@
 package com.tribbloids.spookystuff.execution
 
 import ai.acyclic.prover.commons.function.hom.Hom.:=>
-import com.tribbloids.spookystuff.doc.Doc
 import com.tribbloids.spookystuff.row.*
 
 trait Delta[I, O] extends Serializable {

@@ -2,7 +2,6 @@ package com.tribbloids.spookystuff.rdd
 
 import ai.acyclic.prover.commons.spark.Envs
 import com.tribbloids.spookystuff.actions.Wget
-import com.tribbloids.spookystuff.doc.{Elements, Unstructured}
 import com.tribbloids.spookystuff.metrics.Acc
 import com.tribbloids.spookystuff.testutils.{FileDocsFixture, SpookyBaseSpec}
 
@@ -37,7 +36,7 @@ class SpookyDatasetSpec extends SpookyBaseSpec with FileDocsFixture {
 
     val set = spooky
       .fetch(_ => Wget(HTML_URL))
-      .select { row =>
+      .select { _ =>
         acc += 1
         ()
 

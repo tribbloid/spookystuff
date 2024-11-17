@@ -1,7 +1,7 @@
 package com.tribbloids.spookystuff.doc
 
+import ai.acyclic.prover.commons.spark.serialization.AssertSerializable
 import com.tribbloids.spookystuff.actions.*
-import com.tribbloids.spookystuff.commons.serialization.AssertSerializable
 import com.tribbloids.spookystuff.testutils.{FileDocsFixture, SpookyBaseSpec}
 
 /**
@@ -19,8 +19,7 @@ class UnstructuredSpec extends SpookyBaseSpec with FileDocsFixture {
       assert(elements.size === 10)
 
       elements.foreach { element =>
-        AssertSerializable[Unstructured](
-          element,
+        AssertSerializable[Unstructured](element).on(
           condition = { (element, element2) =>
             assert(element === element2)
             assert(

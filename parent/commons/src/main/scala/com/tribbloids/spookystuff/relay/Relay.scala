@@ -5,7 +5,7 @@ import com.tribbloids.spookystuff.relay.xml.{XMLFormats, Xml}
 import org.apache.spark.ml.util.Identifiable
 import org.json4s.JsonAST.{JArray, JObject}
 import org.json4s.jackson.JsonMethods
-import org.json4s.{Formats, JField, JValue, StringInput}
+import org.json4s.{Formats, JField, JValue}
 
 import scala.language.implicitConversions
 import scala.xml.{Elem, NodeSeq, XML}

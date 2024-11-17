@@ -1,6 +1,6 @@
 package com.tribbloids.spookystuff.testutils
 
-import ai.acyclic.prover.commons.spark.RDDImplicits._rddImplicits
+import ai.acyclic.prover.commons.spark.RDDImplicits._rddExtensions
 import ai.acyclic.prover.commons.spark.TestHelper
 import com.tribbloids.spookystuff.commons.{AwaitWithHeartbeat, CommonUtils}
 import com.tribbloids.spookystuff.utils.RDDImplicits.sparkContextView

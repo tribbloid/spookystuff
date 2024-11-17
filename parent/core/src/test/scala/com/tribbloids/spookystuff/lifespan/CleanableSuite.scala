@@ -1,9 +1,9 @@
 package com.tribbloids.spookystuff.lifespan
 
+import ai.acyclic.prover.commons.spark.serialization.AssertSerializable
 import com.tribbloids.spookystuff.commons.CommonUtils
 import com.tribbloids.spookystuff.commons.lifespan.Cleanable.Lifespan
 import com.tribbloids.spookystuff.commons.lifespan.{Cleanable, LeafType, LocalCleanable}
-import com.tribbloids.spookystuff.commons.serialization.AssertSerializable
 import com.tribbloids.spookystuff.testutils.SpookyBaseSpec
 import org.apache.spark.{HashPartitioner, SparkException, TaskContext}
 
@@ -222,10 +222,9 @@ object CleanableSuite {
 
   def lifespanIsSerializable(v: Lifespan): Unit = {
 
-    AssertSerializable[Lifespan](
-      v,
+    AssertSerializable[Lifespan](v).on(
       condition = { (v1, v2) =>
-        AssertSerializable.serializableCondition(v1, v2)
+        AssertSerializable.strongCondition(v1, v2)
         Seq(v1, v2).foreach {
           case v: LeafType#Internal =>
             v.requireUsable()

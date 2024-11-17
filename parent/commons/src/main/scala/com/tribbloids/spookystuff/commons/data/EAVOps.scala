@@ -47,16 +47,16 @@ case class EAVOps[T <: EAVLike](self: T)(
       }
     }
 
-    sys.From.tuple(result *)
+    sys.From.tuple(result*)
   }
 
   def updated(kvs: Magnets.AttrValueMag[Any]*): T = {
-    ++:(sys.From(kvs *))
+    ++:(sys.From(kvs*))
   }
 
   def drop(vs: Magnets.AttrMag*): T = sys.From.iterable(self.lookup -- vs.flatMap(_.names))
 
-  def dropAll(vs: Iterable[Magnets.AttrMag]): T = drop(vs.toSeq *)
+  def dropAll(vs: Iterable[Magnets.AttrMag]): T = drop(vs.toSeq*)
 
   def --(vs: Iterable[Magnets.AttrMag]): T = dropAll(vs)
 }

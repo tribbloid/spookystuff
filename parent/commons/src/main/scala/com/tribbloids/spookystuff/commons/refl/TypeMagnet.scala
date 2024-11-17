@@ -1,6 +1,6 @@
 package com.tribbloids.spookystuff.commons.refl
 
-import com.tribbloids.spookystuff.commons.serialization.{SerializerEnv, SerializerOverride}
+import ai.acyclic.prover.commons.spark.serialization.{SerializerEnv, SerializerOverride}
 
 import scala.language.implicitConversions
 import scala.reflect.ClassTag

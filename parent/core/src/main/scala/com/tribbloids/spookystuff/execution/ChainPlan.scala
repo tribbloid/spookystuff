@@ -1,6 +1,5 @@
 package com.tribbloids.spookystuff.execution
 
-import ai.acyclic.prover.commons.util.Magnet.PreferRightMagnet
 import com.tribbloids.spookystuff.commons.refl.CatalystTypeOps
 import com.tribbloids.spookystuff.execution.ExecutionPlan.CanChain
 import com.tribbloids.spookystuff.row.*

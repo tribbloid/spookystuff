@@ -35,7 +35,7 @@ class ActionSuite extends SpookyBaseSpec {
         """
           |Wget
           |  "http://dummy.com"
-          |  MustHaveTitle()
+          |  MustHaveTitle
         """.stripMargin
       )
     }

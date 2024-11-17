@@ -1,7 +1,7 @@
 package com.tribbloids.spookystuff
 
+import ai.acyclic.prover.commons.spark.serialization.AssertSerializable
 import com.tribbloids.spookystuff.actions.*
-import com.tribbloids.spookystuff.commons.serialization.AssertWeaklySerializable
 import com.tribbloids.spookystuff.conf.{Core, Dir, SpookyConf}
 import com.tribbloids.spookystuff.rdd.SpookyDataset
 import com.tribbloids.spookystuff.testutils.{FileDocsFixture, SpookyBaseSpec}
@@ -13,29 +13,30 @@ class SpookyContextSpec extends SpookyBaseSpec with FileDocsFixture {
     val spooky: SpookyContext = this.spooky
     spooky.Plugins.registerEnabled()
 
-    AssertWeaklySerializable[SpookyContext](
-      spooky,
-      condition = { (v1, v2) =>
-        Seq(v1, v2)
-          .map { _ =>
-            v1.Plugins.cached.lookup.values
-          }
-          .reduce { (v1, v2) =>
-            assert(v1 == v2)
-            v1
-          }
+    AssertSerializable[SpookyContext](spooky)
+      .on(
+        condition = { (v1, v2) =>
+          Seq(v1, v2)
+            .map { _ =>
+              v1.Plugins.cached.lookup.values
+            }
+            .reduce { (v1, v2) =>
+              assert(v1 == v2)
+              v1
+            }
 
-      }
-    )
+        }
+      )
   }
 
   it("SpookyContext.dsl should be Serializable") {
 
     val spooky = this.spooky
 
-    AssertWeaklySerializable(
+    AssertSerializable(
       spooky.dsl
     )
+      .weakly()
   }
 
   it("derived instances of a SpookyContext should have the same configuration") {

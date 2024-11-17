@@ -1,7 +1,5 @@
 package com.tribbloids.spookystuff.doc
 
-import org.jsoup.select.{Evaluator, QueryParser}
-
 trait DocQuery {
   // also a magnet from string or JSoup
 

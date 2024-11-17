@@ -1,10 +1,9 @@
 package com.tribbloids.spookystuff.row
 
-import com.tribbloids.spookystuff.commons.serialization.NOTSerializable
+import ai.acyclic.prover.commons.spark.serialization.NOTSerializable
 import com.tribbloids.spookystuff.doc.*
 import com.tribbloids.spookystuff.doc.Observation.{DocUID, Failure, Success}
 import com.tribbloids.spookystuff.execution.ChainPlan
-import com.tribbloids.spookystuff.rdd.SpookyDataset
 import com.tribbloids.spookystuff.row.Data.Scope
 
 import scala.collection.mutable

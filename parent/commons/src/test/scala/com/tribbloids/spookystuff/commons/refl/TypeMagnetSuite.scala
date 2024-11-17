@@ -1,9 +1,9 @@
 package com.tribbloids.spookystuff.commons.refl
 
+import ai.acyclic.prover.commons.spark.serialization.AssertSerializable
 import com.tribbloids.spookystuff.commons.PairwiseConversionMixin
 import com.tribbloids.spookystuff.commons.PairwiseConversionMixin.Repr
 import com.tribbloids.spookystuff.commons.refl.TypeMagnetSuite.TypeTagRepr
-import com.tribbloids.spookystuff.commons.serialization.AssertSerializable
 import com.tribbloids.spookystuff.relay.TestBeans.*
 import com.tribbloids.spookystuff.testutils.BaseSpec
 import org.apache.spark.sql.catalyst.ScalaReflection

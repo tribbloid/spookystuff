@@ -1,8 +1,8 @@
 package com.tribbloids.spookystuff.commons
 
-import com.tribbloids.spookystuff.commons.TreeThrowable.ExceptionWithCauses
+import ai.acyclic.prover.commons.util.Causes
+import ai.acyclic.prover.commons.util.Causes.Undefined
 
-import scala.util.control.NoStackTrace
 import scala.util.{Failure, Success, Try}
 
 object TreeThrowable {
@@ -30,12 +30,6 @@ object TreeThrowable {
     }
   }
 
-  /**
-    * Not a real throwable, just a placeholder indicating lack of trials
-    */
-  sealed trait Undefined extends Throwable
-  object Undefined extends Undefined
-
   //  def aggregate(
   //                 fn: Seq[Throwable] => Throwable,
   //                 extra: Seq[Throwable] = Nil
@@ -52,7 +46,7 @@ object TreeThrowable {
 
   def &&&[T](
       trials: Seq[Try[T]],
-      combine: Seq[Throwable] => Throwable = combine(_),
+      combine: Seq[Throwable] => Throwable = Causes.combine(_),
       extra: Seq[Throwable] = Nil
   ): Seq[T] = {
 
@@ -69,7 +63,7 @@ object TreeThrowable {
 
   def |||[T](
       trials: Seq[Try[T]],
-      agg: Seq[Throwable] => Throwable = combine(_),
+      agg: Seq[Throwable] => Throwable = Causes.combine(_),
       extra: Seq[Throwable] = Nil
   ): Seq[T] = {
 
@@ -94,7 +88,7 @@ object TreeThrowable {
     */
   def |||^[T](
       trials: Seq[() => T],
-      agg: Seq[Throwable] => Throwable = combine(_),
+      agg: Seq[Throwable] => Throwable = Causes.combine(_),
       extra: Seq[Throwable] = Nil
   ): Option[T] = {
 
@@ -117,22 +111,6 @@ object TreeThrowable {
   }
 
   /**
-    * @param foldUnary
-    *   not recommended to set to false, should use Wrapper() directly for type safety
-    * @return
-    */
-  def combine(causes: Seq[Throwable], foldUnary: Boolean = true): Throwable = {
-    val _causes = causes.distinct.filterNot(_.isInstanceOf[Undefined])
-    if (_causes.isEmpty) return Undefined
-
-    if (_causes.size == 1 && foldUnary) {
-      _causes.head
-    } else {
-      ExceptionWithCauses(causes = _causes)
-    }
-  }
-
-  /**
     * same as [[combine]], except that any [[Undefined]] detected will cause the output to be also [[Undefined]]
     * indicating that a lack of trials is the ultimate cause and can be situationally ignored
     * @param causes
@@ -144,20 +122,10 @@ object TreeThrowable {
   def parallel(causes: Seq[Throwable], foldUnary: Boolean = true): Throwable = {
     val undefined = causes.find(_.isInstanceOf[Undefined])
     undefined.getOrElse(
-      combine(causes, foldUnary)
+      Causes.combine(causes, foldUnary)
     )
   }
 
-  protected case class ExceptionWithCauses(
-      override val causes: Seq[Throwable] = Nil
-  ) extends Exception
-      with NoStackTrace
-      with TreeThrowable {
-
-    override def getCause: Throwable = causes.headOption.orNull
-
-    val simpleMsg: String = s"[CAUSED BY ${causes.size} EXCEPTION(S)]"
-  }
 }
 
 trait TreeThrowable extends Throwable {
@@ -167,8 +135,8 @@ trait TreeThrowable extends Throwable {
   def causes: Seq[Throwable] = {
     val cause = getCause
     cause match {
-      case ExceptionWithCauses(causes) => causes
-      case _                           => Option(cause).toSeq
+      case Causes(causes) => causes
+      case _              => Option(cause).toSeq
     }
   }
   lazy val treeNodeView: TreeNodeView = TreeNodeView(this)

@@ -2,9 +2,9 @@ package com.tribbloids.spookystuff.conf
 
 import ai.acyclic.prover.commons.function.hom.Hom
 import ai.acyclic.prover.commons.same.Same
+import ai.acyclic.prover.commons.spark.serialization.NOTSerializable
 import ai.acyclic.prover.commons.util.Caching
 import com.tribbloids.spookystuff.commons.TreeThrowable
-import com.tribbloids.spookystuff.commons.serialization.NOTSerializable
 
 import scala.collection.mutable.ArrayBuffer
 import scala.language.implicitConversions
@@ -24,7 +24,7 @@ trait PluginRegistry {
 
   abstract class Factory[P <: Plugin](
       implicit
-      ubEv: ClassTag[P]
+      ctg: ClassTag[P]
   ) extends Serializable {
 
     type Out[_ <: P]
