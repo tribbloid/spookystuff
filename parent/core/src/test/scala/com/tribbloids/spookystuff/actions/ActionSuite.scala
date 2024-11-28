@@ -46,16 +46,16 @@ class ActionSuite extends SpookyBaseSpec {
     val a = OverdueExport
     val session = new Agent(this.spooky)
     assert(
-      a.hardTerminateTimeout(session).max == spookyConf.remoteResourceTimeout.max + Const.hardTerminateOverhead
+      a.getTimeout_hardTerminate(session).max == spookyConf.remoteResourceTimeout.max + Const.hardTerminateOverhead
     )
-    a in 10.seconds
+    val b = a in 10.seconds
     assert(
-      a.hardTerminateTimeout(session).max == 10.seconds + Const.hardTerminateOverhead
+      b.getTimeout_hardTerminate(session).max == 10.seconds + Const.hardTerminateOverhead
     )
 
     val (_, time) = CommonUtils.timed {
       try {
-        a.fetch(spooky)
+        b.fetch(spooky)
         sys.error("impossible")
       } catch {
         case e: ActionException =>

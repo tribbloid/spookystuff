@@ -5,7 +5,7 @@ import com.tribbloids.spookystuff.doc.Observation
 
 trait ActionPlaceholder extends Action {
 
-  override protected def doExe(agent: Agent): Seq[Observation] = {
+  override protected[actions] def doExe(agent: Agent): Seq[Observation] = {
     throw new UnsupportedOperationException(s"${this.getClass.getSimpleName} is a placeholder")
   }
 }

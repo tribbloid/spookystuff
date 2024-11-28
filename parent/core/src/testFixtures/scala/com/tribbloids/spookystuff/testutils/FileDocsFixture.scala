@@ -1,6 +1,6 @@
 package com.tribbloids.spookystuff.testutils
 
-trait FileDocsFixture extends RemoteDocsFixture {
+private[testutils] trait FileDocsFixture extends RemoteDocsFixture {
 
   import TestDocsResolver._
 
@@ -14,3 +14,5 @@ trait FileDocsFixture extends RemoteDocsFixture {
   def DIR_URL: String = unpacked("testutils/files")
   def DEEP_DIR_URL: String = unpacked("testutils/dir")
 }
+
+object FileDocsFixture extends FileDocsFixture

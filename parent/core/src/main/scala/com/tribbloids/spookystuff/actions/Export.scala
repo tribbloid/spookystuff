@@ -13,7 +13,7 @@ abstract class Export extends Named {
 
   def filter: DocFilter = DocFilterImpl.Bypass
 
-  final override def outputNames: Set[String] = Set(this.name)
+  final override def outputNames: Set[String] = Set(name)
 
   final override def skeleton: Option[Export.this.type] = None // have not impact to driver
 
@@ -37,3 +37,5 @@ abstract class Export extends Named {
 
   def doExeNoName(agent: Agent): Seq[Observation]
 }
+
+object Export {}

@@ -4,9 +4,12 @@ import ai.acyclic.prover.commons.spark.serialization.AssertSerializable
 import com.tribbloids.spookystuff.actions.*
 import com.tribbloids.spookystuff.conf.{Core, Dir, SpookyConf}
 import com.tribbloids.spookystuff.rdd.SpookyDataset
-import com.tribbloids.spookystuff.testutils.{FileDocsFixture, SpookyBaseSpec}
+import com.tribbloids.spookystuff.testutils.{FileDocsFixture, RemoteDocsFixture, SpookyBaseSpec}
 
-class SpookyContextSpec extends SpookyBaseSpec with FileDocsFixture {
+class SpookyContextSpec extends SpookyBaseSpec {
+
+  lazy val resources: RemoteDocsFixture.type = RemoteDocsFixture
+  import resources.*
 
   it("SpookyContext should be Serializable") {
 

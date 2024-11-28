@@ -57,8 +57,7 @@ abstract class ActionLike extends Product with Serializable with Verbose {
   def dryRun: DryRun
 
   // the minimal equivalent action that can be put into backtrace
-  // TODO: this.type cleanup
-  def skeleton: Option[this.type] = Some(this)
+  def skeleton: Option[ActionLike] = Some(this)
 
   def apply(agent: Agent): Seq[Observation]
 

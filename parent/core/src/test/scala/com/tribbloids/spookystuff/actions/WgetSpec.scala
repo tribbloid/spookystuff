@@ -2,7 +2,7 @@ package com.tribbloids.spookystuff.actions
 
 import com.tribbloids.spookystuff.actions.Delay.RandomDelay
 import com.tribbloids.spookystuff.doc.Doc
-import com.tribbloids.spookystuff.testutils.{LocalOnly, SpookyBaseSpec}
+import com.tribbloids.spookystuff.testutils.{LocalOnly, RemoteDocsFixture, SpookyBaseSpec}
 import org.scalatest.Tag
 
 import java.sql.Timestamp
@@ -16,6 +16,9 @@ object WgetSpec {
 class WgetSpec extends SpookyBaseSpec {
 
   import com.tribbloids.spookystuff.dsl.*
+
+  lazy val resources: RemoteDocsFixture.type = RemoteDocsFixture
+  import resources.*
 
   def wget(uri: String): Action = Wget(uri)
 

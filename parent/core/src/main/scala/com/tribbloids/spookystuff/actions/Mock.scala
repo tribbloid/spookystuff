@@ -7,7 +7,7 @@ case class Mock(
     observations: Seq[Observation]
 ) extends Action {
 
-  override protected def doExe(agent: Agent): Seq[Observation] = {
+  override protected[actions] def doExe(agent: Agent): Seq[Observation] = {
 
     observations
   }

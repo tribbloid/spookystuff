@@ -7,26 +7,27 @@ import com.tribbloids.spookystuff.testutils.{FileDocsFixture, SpookyBaseSpec}
 /**
   * Created by peng on 12/3/14.
   */
-class FetchedRowSuite extends SpookyBaseSpec with FileDocsFixture {
+class FetchedRowSuite extends SpookyBaseSpec {
 
-  it("get page") {
-    val pages = Wget(HTML_URL).fetch(spooky)
-    val row = Row.mock(data = (), observations = pages).asFetched(spooky)
+  lazy val resources: FileDocsFixture.type = FileDocsFixture
+  import resources.*
+
+  it("get only doc") {
+    val doc = Wget(HTML_URL).fetch(spooky).head
+    val row = Row((), Wget(HTML_URL)).asFetched(spooky)
 
     val page1 = row.docs.only
-    assert(page1.ofName === pages.head)
+    assert(page1.uid === doc.uid)
 
-    println(Wget(HTML_URL).toString)
     val defaultName = Wget(HTML_URL).toString
     val page2 = row.docs.ofName(defaultName).only
-    assert(page2.ofName === pages.head)
+    assert(page2.uid === doc.uid)
   }
 
   it("get unstructured") {
-    val docs = (Wget(HTML_URL) as 'pp).fetch(spooky)
-    val proto = Row
-      .mock(observations = docs)
-      .asFetched(spooky)
+    val wget = Wget(HTML_URL) as "pp"
+    val doc = wget.fetch(spooky).head
+    val proto = Row((), wget).asFetched(spooky)
 
     val row = {
       Seq(proto).select { row =>
@@ -35,11 +36,10 @@ class FetchedRowSuite extends SpookyBaseSpec with FileDocsFixture {
           val lang: Elements[Unstructured] = row.docs.\("label")
         }
       }.head
-
     }
 
-    val page2 = row.docs("pp")
-    assert(page2.head.unbox === docs.head.root)
+    val doc2 = row.docs("pp").only
+    assert(doc2.root === doc.root)
 
     val e1 = row.data.e1
     assert(e1.attr("title").get === "Wikipedia")
@@ -50,17 +50,17 @@ class FetchedRowSuite extends SpookyBaseSpec with FileDocsFixture {
 
   describe("rescope") {
 
-    it("byDistinctNames: ['a 'b 'a 'b] ~> ['a 'b] ['a 'b]") {
+    it("['a 'b 'a 'b] ~> ['a 'b] ['a 'b]") {
 
-      def wget = Wget(HTML_URL)
+      val wget = Wget(HTML_URL)
 
-      val trace = wget ~ 'a +>
-        wget ~ 'b +>
-        wget ~ 'a +>
-        wget ~ 'b
-      val row1 = Row(trace).asFetched(spooky)
+      val trace = wget ~ "a" +>
+        wget ~ "b" +>
+        wget ~ "a" +>
+        wget ~ "b"
+      val row1 = Row((), hasTrace = trace).asFetched(spooky)
 
-      val rows: Seq[Data.Scoped[Trace]] = row1.rescope.byDistinctNames
+      val rows: Seq[Data.Scoped[Unit]] = row1.rescope.byDistinctNames
 
       val groupedNames = rows.map { row =>
         row.scope.observationUIDs
@@ -71,7 +71,6 @@ class FetchedRowSuite extends SpookyBaseSpec with FileDocsFixture {
       }
 
       assert(groupedNames == Seq("ab", "ab"))
-
     }
   }
 }

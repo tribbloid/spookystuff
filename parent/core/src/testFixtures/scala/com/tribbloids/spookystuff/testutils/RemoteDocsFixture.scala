@@ -18,3 +18,5 @@ trait RemoteDocsFixture {
   def HTTPS_IP_URL: String = "https://api.ipify.org/"
 //  def USERAGENT_URL = "https://www.whatismybrowser.com/detect/what-is-my-user-agent/"
 }
+
+object RemoteDocsFixture extends RemoteDocsFixture

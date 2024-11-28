@@ -1,9 +1,11 @@
 package com.tribbloids.spookystuff.rdd
 
 import ai.acyclic.prover.commons.spark.Envs
+import ai.acyclic.prover.commons.spark.serialization.AssertSerializable
 import com.tribbloids.spookystuff.actions.Wget
+import com.tribbloids.spookystuff.execution.FetchPlan
 import com.tribbloids.spookystuff.metrics.Acc
-import com.tribbloids.spookystuff.testutils.{FileDocsFixture, SpookyBaseSpec}
+import com.tribbloids.spookystuff.testutils.{FileDocsFixture, RemoteDocsFixture, SpookyBaseSpec}
 
 import java.io.File
 import scala.reflect.ClassTag
@@ -11,10 +13,25 @@ import scala.reflect.ClassTag
 /**
   * Created by peng on 5/10/15.
   */
-class SpookyDatasetSpec extends SpookyBaseSpec with FileDocsFixture {
+class SpookyDatasetSpec extends SpookyBaseSpec {
+
+  lazy val resources: FileDocsFixture.type = FileDocsFixture
+  import resources.*
 
   it(s".map should not run preceding transformation multiple times") {
     val acc = Acc.create(0)
+
+    val dd = spooky
+      .fetch(_ => Wget(HTML_URL))
+
+//    val _fn = dd.plan.asInstanceOf[FetchPlan[Unit, Unit]].fn
+    val _fn = { (_: Unit) => Wget(HTML_URL) }
+
+//    val _fn = { (_: Unit) => Wget("abc") }
+
+    AssertSerializable(_fn).weakly()
+
+    dd.count()
 
     val set = spooky
       .fetch(_ => Wget(HTML_URL))

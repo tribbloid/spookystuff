@@ -7,7 +7,7 @@ trait Actions extends ActionLike {
     names.reduceLeftOption(_ ++ _).getOrElse(Set())
   }
 
-  final protected def childrenSkeleton: Trace = children.flatMap(_.skeleton)
+  final protected def childrenSkeleton: Trace = Trace(children.flatMap(_.skeleton))
 
   // names are not encoded in PageUID and are injected after being read from cache
   override def injectFrom(same: ActionLike): Unit = {

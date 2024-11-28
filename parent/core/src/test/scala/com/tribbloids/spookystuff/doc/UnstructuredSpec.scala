@@ -9,7 +9,7 @@ import com.tribbloids.spookystuff.testutils.{FileDocsFixture, SpookyBaseSpec}
   */
 class UnstructuredSpec extends SpookyBaseSpec with FileDocsFixture {
 
-  lazy val page: Doc = Wget(HTML_URL).as('old).fetch(spooky).head.asInstanceOf[Doc]
+  lazy val page: Doc = Wget(HTML_URL).as("old").fetch(spooky).head.asInstanceOf[Doc]
 
   describe("is serializable for") {
 

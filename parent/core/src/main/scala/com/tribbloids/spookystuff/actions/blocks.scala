@@ -24,7 +24,7 @@ object Block {
 abstract class Block(
     override val children: Trace
 ) extends Actions
-    with Named
+    with MayExport
     with WaybackLike {
 
   override def wayback: Option[Long] =
@@ -38,17 +38,6 @@ abstract class Block(
         _.wayback
       }
 
-  //  override def as(name: Symbol) = {
-  //    super.as(name)
-  //
-  //    children.foreach{
-  //      case n: Named => n.as(name)
-  //      case _ =>
-  //    }
-  //
-  //    this
-  //  }
-
   def cacheEmptyOutput: DocCacheLevel.Value = DocCacheLevel.All
 
   final override def doExe(agent: Agent): Seq[Observation] = {
@@ -60,11 +49,10 @@ abstract class Block(
       {
         val fetched = tuple._1
 
-        val updatedName = this.nameOpt.getOrElse {
-          fetched.uid.name
-        }
         fetched.updated(
-          uid = fetched.uid.copy(backtrace = backtrace, blockIndex = tuple._2, blockSize = doc.size)(name = updatedName)
+          uid = fetched.uid.copy(backtrace = backtrace, blockIndex = tuple._2, blockSize = doc.size)(name =
+            fetched.uid.name
+          )
         )
       }
     }
@@ -251,14 +239,14 @@ case class OAuthV2(self: Wget) extends Block(self) with Driverless {
   }
 }
 
-final case class AndThen(
-    self: Action,
-    f: Seq[Observation] => Seq[Observation]
-) extends Block(self) {
-
-  override def skeleton: Option[AndThen.this.type] = Some(this)
-
-  override def doExeNoUID(agent: Agent): Seq[Observation] = {
-    f(self.exe(agent))
-  }
-}
+//final case class AndThen(
+//    self: Action,
+//    f: Seq[Observation] => Seq[Observation]
+//) extends Block(self) {
+//
+//  override def skeleton: Option[AndThen.this.type] = Some(this)
+//
+//  override def doExeNoUID(agent: Agent): Seq[Observation] = {
+//    f(self.exe(agent))
+//  }
+//}

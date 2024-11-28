@@ -1,21 +1,39 @@
 package com.tribbloids.spookystuff.actions
 
-trait Named extends Action {
+import com.tribbloids.spookystuff.agent.Agent
+import com.tribbloids.spookystuff.doc.Observation
 
-  var nameOpt: Option[String] = None
-  def name: String = nameOpt.getOrElse(this.toString)
+trait Named extends MayExport with Product {
 
-  def as(name: Symbol): this.type = {
-    assert(name != null)
+  def name: String = this.toString
+}
 
-    this.nameOpt = Some(name.name)
-    this
-  }
+object Named {
 
-  final def ~(name: Symbol): this.type = as(name)
+  case class Explicitly[T <: MayExport](
+      delegate: T,
+      override val name: String
+  ) extends Named {
 
-  override def injectFrom(same: ActionLike): Unit = {
-    super.injectFrom(same)
-    this.nameOpt = same.asInstanceOf[Named].nameOpt
+    final override def outputNames: Set[String] = Set(name)
+
+    override protected[actions] def doExe(agent: Agent): Seq[Observation] = {
+
+      val result = delegate.doExe(agent).map { observation =>
+        observation.updated(
+          uid = observation.uid.copy()(name = name)
+        )
+      }
+      result
+    }
+
+    override def injectFrom(same: ActionLike): Unit = {
+      same match {
+        case _same: Explicitly[_] =>
+          delegate.injectFrom(_same.delegate)
+      }
+    }
+
+    override def skeleton: Option[T] = Some(delegate)
   }
 }

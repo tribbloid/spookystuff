@@ -15,12 +15,13 @@ import org.slf4j.LoggerFactory
   * exclusively in typing into an url bar or textbox, but it's flexible enough to be used anywhere. extends Product to
   * make sure all subclasses are case classes
   */
-//TODO: merging with Extractor[Seq[Fetched]]?
 @SQLUserDefinedType(udt = classOf[ActionUDT])
 trait Action extends ActionLike with HasTrace {
 
   override def children: Trace = Nil
   @transient override lazy val asTrace: Trace = List(this)
+
+  override def skeleton: Option[Action] = Some(this)
 
   var timeElapsed: Long = -1 // only set once
 
@@ -55,7 +56,7 @@ trait Action extends ActionLike with HasTrace {
   // TODO: according to RL convention, should only return 1 Observation
   final override def apply(agent: Agent): Seq[Observation] = {
 
-    val results =
+    val results = {
       try {
         exe(agent)
       } catch {
@@ -68,6 +69,7 @@ trait Action extends ActionLike with HasTrace {
           }
           throw ex
       }
+    }
 
     this.timeElapsed = System.currentTimeMillis() - agent.startTimeMillis
     agent.spooky.spookyMetrics.pagesFetchedFromRemote += results.count(_.isInstanceOf[Doc])
@@ -101,14 +103,14 @@ trait Action extends ActionLike with HasTrace {
 
     var baseStr = s"[${agent.taskContextOpt.map(_.partitionId()).getOrElse(0)}]+> ${this.toString}"
     this match {
-      case timed: Timed.ThreadSafe =>
-        baseStr = baseStr + s" in ${timed.timeout(agent)}"
+      case timed: Timed =>
+        baseStr = baseStr + s" in ${timed.getTimeout(agent)}"
         LoggerFactory.getLogger(this.getClass).info(this.withDetail(baseStr))
 
         agent.progress.ping()
 
         // the following execute f in a different thread, thus `timed` has to be declared as `ThreadSafe`
-        CommonUtils.withTimeout(timed.hardTerminateTimeout(agent))(
+        CommonUtils.withTimeout(timed.getTimeout_hardTerminate(agent))(
           f,
           agent.progress.defaultHeartbeat
         )
@@ -125,9 +127,9 @@ trait Action extends ActionLike with HasTrace {
     }
   }
 
-  protected def doExe(agent: Agent): Seq[Observation]
+  protected[actions] def doExe(agent: Agent): Seq[Observation]
 
-  def andThen(f: Seq[Observation] => Seq[Observation]): Action = AndThen(this, f)
+//  def andThen(f: Seq[Observation] => Seq[Observation]): Action = AndThen(this, f)
 
   override def injectFrom(same: ActionLike): Unit = {
     super.injectFrom(same)

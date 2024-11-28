@@ -204,25 +204,24 @@ class SpookyViewsSuite extends SpookyBaseSpec {
   }
 
   it("result of allTaskLocationStrs can be used as partition's preferred location") {
-    // TODO: change to more succinct ignore
-    if (org.apache.spark.SPARK_VERSION.replaceAllLiterally(".", "").toInt >= 160) {
-      val tlStrs = sc.allTaskLocationStrs
-      tlStrs.foreach(println)
-      val length = tlStrs.size
-      val seq: Seq[((Int, String), Seq[String])] = (1 to 100).map { i =>
-        val nodeName = tlStrs(Random.nextInt(length))
-        (i -> nodeName) -> Seq(nodeName)
-      }
 
-      val created = sc.makeRDD[(Int, String)](seq)
-      // TODO: this RDD is extremely partitioned, can we use coalesce to reduce it?
-      val conditions = created
-        .map { tuple =>
-          tuple._2 == _SQLHelper.taskLocationStrOpt.get
-        }
-        .collect()
-      assert(conditions.count(identity) == 100)
+    val tlStrs = sc.allTaskLocationStrs
+    tlStrs.foreach(println)
+    val length = tlStrs.size
+    val seq: Seq[((Int, String), Seq[String])] = (1 to 100).map { i =>
+      val nodeName = tlStrs(Random.nextInt(length))
+      (i -> nodeName) -> Seq(nodeName)
     }
+
+    val created = sc.makeRDD[(Int, String)](seq)
+    // TODO: this RDD is extremely partitioned, can we use coalesce to reduce it?
+    val conditions = created
+      .map { tuple =>
+        tuple._2 == _SQLHelper.taskLocationStrOpt.get
+      }
+      .collect()
+    assert(conditions.count(identity) == 100)
+
   }
 
   //  test("1") {

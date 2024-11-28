@@ -1,11 +1,14 @@
 package com.tribbloids.spookystuff.doc
 
 import com.tribbloids.spookystuff.actions.Wget
-import com.tribbloids.spookystuff.testutils.SpookyBaseSpec
+import com.tribbloids.spookystuff.testutils.{RemoteDocsFixture, SpookyBaseSpec}
 import com.tribbloids.spookystuff.commons.CommonUtils
 import org.apache.commons.csv.CSVFormat
 
 class DocSpec extends SpookyBaseSpec {
+
+  lazy val resources: RemoteDocsFixture = RemoteDocsFixture
+  import resources.*
 
   describe("wget, save, load") {
 

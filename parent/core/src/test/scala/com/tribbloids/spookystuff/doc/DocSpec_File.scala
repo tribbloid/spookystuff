@@ -3,7 +3,10 @@ package com.tribbloids.spookystuff.doc
 import com.tribbloids.spookystuff.actions.Wget
 import com.tribbloids.spookystuff.testutils.FileDocsFixture
 
-class DocSpec_File extends DocSpec with FileDocsFixture {
+class DocSpec_File extends DocSpec {
+
+  override lazy val resources: FileDocsFixture.type = FileDocsFixture
+  import resources.*
 
   describe("wget, save, load") {
 

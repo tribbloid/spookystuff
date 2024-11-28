@@ -44,7 +44,7 @@ object Wpost {
 
     def getResolver(agent: Agent): OmniResolver = {
 
-      val timeout = this.timeout(agent).max.toMillis.toInt
+      val timeout = this.getTimeout(agent).max.toMillis.toInt
       val hadoopConf = agent.spooky.hadoopConf
       val proxy = agent.spooky.conf.webProxy {}
 
