@@ -29,25 +29,25 @@ object SpookyConf {
 case class SpookyConf(
     shareMetrics: Boolean = false, // TODO: not necessary
 
-    webProxy: WebProxyFactory = WebProxyFactories.NoProxy,
-    httpHeadersFactory: Unit :=> Map[String, String] = :=>(_ => SpookyConf.defaultHTTPHeaders),
-    oAuthKeysFactory: Unit :=> OAuthKeys = :=>(_ => null),
+    webProxy: WebProxyFactory = WebProxyFactory.NoProxy,
+    httpHeadersFactory: Unit :=> Map[String, String] = :=>.at(_ => SpookyConf.defaultHTTPHeaders),
+    oAuthKeysFactory: Unit :=> OAuthKeys = :=>.at(_ => null),
     //    var browserResolution: (Int, Int) = (1920, 1080),
     remote: Boolean = true, // if disabled won't use remote client at all
     //
     auditing: Auditing = Auditing.Both,
-    auditingFilePaths: ByDoc[String] = FilePaths.UUIDName(FilePaths.Hierarchical),
+    auditingFilePaths: DocPath = DocPath.UUIDName(TracePath.Hierarchical),
     //
     cacheWrite: Boolean = true,
     cacheRead: Boolean = true, // TODO: this enable both in-memory and DFS cache, should allow more refined control
 
     cachedDocsLifeSpan: Duration = 7.day,
     IgnoreCachedDocsBefore: Option[Date] = None,
-    cacheFilePaths: ByTrace[String] = FilePaths.Hierarchical,
+    cacheFilePaths: TracePath = TracePath.Hierarchical,
     //
     errorDump: Boolean = true,
     errorScreenshot: Boolean = true,
-    errorDumpFilePaths: ByDoc[String] = FilePaths.UUIDName(FilePaths.Hierarchical),
+    errorDumpFilePaths: DocPath = DocPath.UUIDName(TracePath.Hierarchical),
     //
     remoteResourceTimeout: Timeout = Timeout(60.seconds),
     DFSTimeout: Timeout = Timeout(40.seconds),

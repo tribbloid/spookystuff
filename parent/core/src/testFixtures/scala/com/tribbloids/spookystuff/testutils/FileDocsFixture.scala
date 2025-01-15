@@ -1,6 +1,6 @@
 package com.tribbloids.spookystuff.testutils
 
-private[testutils] trait FileDocsFixture extends RemoteDocsFixture {
+trait FileDocsFixture extends RemoteDocsFixture {
 
   import TestDocsResolver._
 

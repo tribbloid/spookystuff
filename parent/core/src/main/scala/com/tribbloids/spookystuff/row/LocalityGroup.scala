@@ -1,7 +1,7 @@
 package com.tribbloids.spookystuff.row
 
 import ai.acyclic.prover.commons.function.hom.Hom.:=>
-import ai.acyclic.prover.commons.same.EqualBy
+import ai.acyclic.prover.commons.multiverse.{CanEqual, Projection}
 import com.tribbloids.spookystuff.SpookyContext
 import com.tribbloids.spookystuff.actions.Trace
 import com.tribbloids.spookystuff.actions.Trace.Rollout
@@ -36,11 +36,13 @@ case class LocalityGroup(
     keyByOvrd: Option[Any] = None // used by custom keyBy arg in fetch and explore.
 )(
     val rollout: Rollout = Rollout(trace)
-) extends EqualBy
+) extends Projection.Equals
     with SpookyContext.CanRunWith {
   // TODO: should the name be "SIMDGroup/SPMDGroup"
 
-  @transient lazy val samenessKey: Any = keyByOvrd.getOrElse(trace)
+  {
+    canEqualProjections += CanEqual.Native.on(keyByOvrd.getOrElse(trace))
+  }
 
 //  def cache(vs: Seq[Observation]): this.type = {
 //    rollout.cache(vs)

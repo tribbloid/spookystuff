@@ -1,12 +1,12 @@
 package com.tribbloids.spookystuff.commons.lifespan
 
-import ai.acyclic.prover.commons.same.EqualBy
+import ai.acyclic.prover.commons.multiverse.Projection
 import ai.acyclic.prover.commons.spark.serialization.BeforeAndAfterShipping
 import com.tribbloids.spookystuff.commons.lifespan.Cleanable.{Batch, BatchID}
 
 import scala.util.Try
 
-abstract class LifespanInternal extends BeforeAndAfterShipping with EqualBy {
+abstract class LifespanInternal extends BeforeAndAfterShipping with Projection.Equals {
 
   {
     initOnce

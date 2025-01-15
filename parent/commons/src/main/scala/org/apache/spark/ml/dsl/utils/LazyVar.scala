@@ -1,6 +1,6 @@
 package org.apache.spark.ml.dsl.utils
 
-import ai.acyclic.prover.commons.same.EqualBy
+import ai.acyclic.prover.commons.multiverse.{CanEqual, Projection}
 import ai.acyclic.prover.commons.util.Magnet.OptionMagnet
 
 import scala.language.implicitConversions
@@ -16,7 +16,11 @@ import scala.language.implicitConversions
 class LazyVar[T](
     fn: => T
 ) extends Serializable
-    with EqualBy {
+    with Projection.Equals {
+
+  {
+    canEqualProjections += CanEqual.Native.on(value)
+  }
 
   @volatile protected var cached: OptionMagnet[T] = null.asInstanceOf[T]
 
@@ -40,8 +44,6 @@ class LazyVar[T](
   }
 
   def isCached: Boolean = cached.nonEmpty
-
-  override def samenessKey: Any = value
 
   override def toString: String = value.toString
 }

@@ -1,6 +1,6 @@
 package com.tribbloids.spookystuff.row
 
-import com.tribbloids.spookystuff.actions.{Trace, Wget}
+import com.tribbloids.spookystuff.actions.Wget
 import com.tribbloids.spookystuff.doc.{Elements, Unstructured}
 import com.tribbloids.spookystuff.testutils.{FileDocsFixture, SpookyBaseSpec}
 

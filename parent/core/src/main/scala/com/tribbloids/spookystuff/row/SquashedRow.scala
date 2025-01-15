@@ -180,7 +180,7 @@ case class SquashedRow[D](
 //    }
   }
 
-  @transient lazy val withSchema: :=>[SpookySchema, WithSchema[D]] = :=> { v =>
+  @transient lazy val withSchema: :=>[SpookySchema, WithSchema[D]] = :=>.at { v =>
     WithSchema(this, v)
   }
 }

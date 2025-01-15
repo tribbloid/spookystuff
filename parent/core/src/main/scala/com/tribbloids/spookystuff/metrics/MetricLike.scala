@@ -1,9 +1,8 @@
 package com.tribbloids.spookystuff.metrics
 
-import ai.acyclic.prover.commons.same.EqualBy
 import org.apache.spark.ml.dsl.utils.ClassOpsMixin
 
-trait MetricLike extends Product with ClassOpsMixin with Serializable with EqualBy {
+trait MetricLike extends Product with ClassOpsMixin with Serializable {
 
   def displayNameOvrd: Option[String] = None
 

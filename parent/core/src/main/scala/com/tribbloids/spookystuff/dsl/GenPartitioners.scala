@@ -43,7 +43,7 @@ object GenPartitioners {
 
   case class Wide(
       partitionerFactory: RDD[?] :=> Partitioner = {
-        PartitionerFactories.SamePartitioner
+        PartitionerFactory.SamePartitioner
       }
   ) extends AnyGenPartitioner {
 
@@ -72,7 +72,7 @@ object GenPartitioners {
   // reduce workload by avoiding repeated access to the same url caused by duplicated context or diamond links (A->B,A->C,B->D,C->D)
   case class DocCacheAware(
       partitionerFactory: RDD[?] :=> Partitioner = {
-        PartitionerFactories.SamePartitioner
+        PartitionerFactory.SamePartitioner
       }
   ) extends AnyGenPartitioner {
 

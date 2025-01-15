@@ -1,5 +1,6 @@
 package com.tribbloids.spookystuff
 
+import ai.acyclic.prover.commons.function.hom.Hom
 import ai.acyclic.prover.commons.function.hom.Hom.:=>
 import ai.acyclic.prover.commons.spark.SparkContextView
 import ai.acyclic.prover.commons.spark.serialization.{NOTSerializable, SerializerOverride}
@@ -54,7 +55,7 @@ object SpookyContext {
 
     // cached results will be dropped for being NOTSerializable
     @transient final lazy val withCtx: SpookyContext :=> _WithCtx =
-      :=>(_WithCtx).cached()
+      Hom.Fn.at(_WithCtx).cached()
   }
 }
 

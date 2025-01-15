@@ -25,6 +25,7 @@ include(":parent")
 include(":prover-commons")
 project(":prover-commons").projectDir = file("prover-commons/module")
 include(
+    ":prover-commons:infra",
     ":prover-commons:core",
     ":prover-commons:meta2",
     ":prover-commons:spark"
@@ -34,9 +35,10 @@ include(
 
     // uses unstable & experimental scala features, should be modified very slowly & carefully
     ":parent:commons",
-    ":parent:linq",
-    ":parent:parsing",
+//    ":parent:parsing", // obsolete, moving to inductive graph soon
     ":parent:core",
+
+//    ":parent:linq", // Scala 3 will need a new impl
 //    ":parent:web",
 //    ":parent:integration",
 //    ":parent:showcase",

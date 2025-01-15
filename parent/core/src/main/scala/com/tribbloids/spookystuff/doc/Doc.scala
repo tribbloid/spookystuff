@@ -1,6 +1,6 @@
 package com.tribbloids.spookystuff.doc
 
-import ai.acyclic.prover.commons.same.EqualBy
+import ai.acyclic.prover.commons.multiverse.Projection
 import ai.acyclic.prover.commons.spark.serialization.NOTSerializable
 import com.tribbloids.spookystuff.*
 import com.tribbloids.spookystuff.caching.DocCacheLevel
@@ -44,7 +44,7 @@ case class Doc(
 )(
     var content: Content = null
 ) extends Observation.Success
-    with EqualBy {
+    with Projection.Equals {
 
   import Doc.*
 

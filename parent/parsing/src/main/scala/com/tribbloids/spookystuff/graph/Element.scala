@@ -1,6 +1,6 @@
 package com.tribbloids.spookystuff.graph
 
-import ai.acyclic.prover.commons.same.EqualBy
+import ai.acyclic.prover.commons.multiverse.Projection
 import com.tribbloids.spookystuff.commons.Types
 import com.tribbloids.spookystuff.graph.IDAlgebra.Rotator
 import com.tribbloids.spookystuff.graph.Module.{Heads, Tails}
@@ -70,7 +70,7 @@ object Element {
 
   /////////////////////////////////////
 
-  trait NodeLike[T <: Domain] extends Element[T] with EqualBy {
+  trait NodeLike[T <: Domain] extends Element[T] with Projection.Equals {
 
     def isDangling: Boolean = {
       samenessKey == algebra.idAlgebra.DANGLING

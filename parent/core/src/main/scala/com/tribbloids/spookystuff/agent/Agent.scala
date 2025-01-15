@@ -47,7 +47,7 @@ class Agent(
 
     override def init: Impl = new Impl {
 
-      override def apply[V <: Sys](v: V): Out[V] = {
+      override def apply[V <: Sys](v: V): this.Out[V] = {
         val plugin: V#Plugin = spooky.Plugins.apply(v)
 
         progress.ping()

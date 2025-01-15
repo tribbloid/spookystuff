@@ -1,11 +1,15 @@
 package com.tribbloids.spookystuff.commons.data
 
-import ai.acyclic.prover.commons.same.EqualBy
+import ai.acyclic.prover.commons.multiverse.{CanEqual, Projection}
 import ai.acyclic.prover.commons.util.Magnet.OptionMagnet
 
 import scala.util.Try
 
-trait AttrLike[T] extends Serializable with EqualBy {
+trait AttrLike[T] extends Serializable with Projection.Equals {
+
+  {
+    canEqualProjections += CanEqual.Native.on(this.allNames -> get)
+  }
 
   def name: String
   def aliases: List[String]
@@ -26,8 +30,6 @@ trait AttrLike[T] extends Serializable with EqualBy {
 
   final def get: Option[T] = tryGet.toOption
   final def value: T = tryGet.get
-
-  override def samenessKey: Any = this.allNames -> get
 }
 
 object AttrLike {

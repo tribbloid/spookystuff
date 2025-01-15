@@ -7,13 +7,13 @@ dependencies {
     api(project(":parent:commons"))
     testFixturesApi(testFixtures(project(":parent:commons")))
 
-    api(project(":parent:linq"))
+//    api(project(":parent:linq"))
 
     testFixturesApi("org.jprocesses:jProcesses:1.6.5")
 
 //    testapi( "com.tribbloids.spookystuff:spookystuff-mldsl:${project.version}"
     api("oauth.signpost:signpost-core:2.1.1")
-    api("org.apache.commons:commons-csv:1.10.0")
+    api("org.apache.commons:commons-csv:1.13.0")
     // https://mvnrepository.com/artifact/org.typelevel/cats-effect
 //    implementation("org.typelevel:cats-effect_${vs.scalaBinaryV}:3.4.2")
 

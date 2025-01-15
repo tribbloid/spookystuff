@@ -1,6 +1,6 @@
 package com.tribbloids.spookystuff.graph
 
-import ai.acyclic.prover.commons.same.EqualBy
+import ai.acyclic.prover.commons.multiverse.Projection
 import com.tribbloids.spookystuff.graph.Layout.Facet
 
 import scala.collection.mutable.ArrayBuffer
@@ -16,7 +16,7 @@ object ElementView {
   }
 }
 
-trait ElementView[D <: Domain] extends Algebra.Aliases[D] with EqualBy {
+trait ElementView[D <: Domain] extends Algebra.Aliases[D] with Projection.Equals {
 
   val core: Layout[D]#Core[?]
   final override def algebra: Algebra[D] = core.algebra

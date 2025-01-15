@@ -3,9 +3,8 @@ package com.tribbloids.spookystuff.rdd
 import ai.acyclic.prover.commons.spark.Envs
 import ai.acyclic.prover.commons.spark.serialization.AssertSerializable
 import com.tribbloids.spookystuff.actions.Wget
-import com.tribbloids.spookystuff.execution.FetchPlan
 import com.tribbloids.spookystuff.metrics.Acc
-import com.tribbloids.spookystuff.testutils.{FileDocsFixture, RemoteDocsFixture, SpookyBaseSpec}
+import com.tribbloids.spookystuff.testutils.{FileDocsFixture, SpookyBaseSpec}
 
 import java.io.File
 import scala.reflect.ClassTag

@@ -3,7 +3,6 @@ package com.tribbloids.spookystuff
 import com.esotericsoftware.kryo.Kryo
 import com.tribbloids.spookystuff.conf.{Dir, SpookyConf}
 import com.tribbloids.spookystuff.doc.*
-import com.tribbloids.spookystuff.dsl.*
 import com.tribbloids.spookystuff.metrics.SpookyMetrics
 import com.tribbloids.spookystuff.row.FetchedRow
 import org.apache.spark.serializer.KryoRegistrator
@@ -14,7 +13,7 @@ import java.util.concurrent.TimeUnit
 import scala.collection.immutable.ListMap
 import scala.concurrent.duration.FiniteDuration
 
-//TODO: not all classes are registered, will need benchmark to evaluate gains in Kryo Ser/De
+//TODO: not all classes are registered, need an adaptive codegen to register them automatically
 class SpookyKryoRegistrator extends KryoRegistrator {
 
   override def registerClasses(kryo: Kryo): Unit = {
@@ -42,9 +41,7 @@ class SpookyKryoRegistrator extends KryoRegistrator {
 
       // parameters
       classOf[FiniteDuration],
-      classOf[TimeUnit],
-      FilePaths.getClass,
-      PartitionerFactories.getClass
+      classOf[TimeUnit]
     )
     array.foreach(kryo.register)
   }

@@ -1,24 +1,24 @@
 package com.tribbloids.spookystuff.dsl
 
-import ai.acyclic.prover.commons.function.hom.Hom.Mono
+import ai.acyclic.prover.commons.function.hom.Hom
 
 import scala.util.Random
 
-trait Sampler extends Mono.Impl[Any, Sampler._I, Sampler._O] {}
+trait Sampler extends Hom.Impl.Poly1[Sampler.In, Sampler.Out] {}
 
 object Sampler {
 
-  type _I[T] = Seq[T]
-  type _O[T] = Seq[Option[T]]
+  type In[T] = Seq[T]
+  type Out[T] = Seq[Option[T]]
 
   object Identity extends Sampler {
 
-    override def apply[T <: Any](arg: In[T]): _O[T] = arg.map(v => Some(v))
+    override def apply[T <: Any](arg: In[T]): Out[T] = arg.map(v => Some(v))
   }
 
   object LeftOuter extends Sampler {
 
-    override def apply[T <: Any](arg: Sampler._I[T]): Out[T] = {
+    override def apply[T <: Any](arg: Sampler.In[T]): Out[T] = {
 
       if (arg.isEmpty) Seq(None)
       else arg.map(v => Some(v))
@@ -35,7 +35,7 @@ object Sampler {
 
   case class FirstN(n: Int) extends Sampler {
 
-    override def apply[T <: Any](arg: Sampler._I[T]): Out[T] = {
+    override def apply[T <: Any](arg: Sampler.In[T]): Out[T] = {
 
       arg.slice(0, n).map(v => Some(v))
     }
@@ -47,7 +47,7 @@ object Sampler {
   // TODO : can be faster
   case class DownsamplingByRatio(ratio: Double) extends Sampler {
 
-    override def apply[T <: Any](arg: Sampler._I[T]): Out[T] = {
+    override def apply[T <: Any](arg: Sampler.In[T]): Out[T] = {
 
       Random
         .shuffle(arg)
@@ -59,7 +59,7 @@ object Sampler {
   // TODO : can be faster
   case class DownsamplingToN(n: Int) extends Sampler {
 
-    override def apply[T <: Any](arg: Sampler._I[T]): Out[T] = {
+    override def apply[T <: Any](arg: Sampler.In[T]): Out[T] = {
       Random
         .shuffle(arg)
         .slice(0, n)

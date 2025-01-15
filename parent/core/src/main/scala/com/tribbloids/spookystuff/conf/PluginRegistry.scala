@@ -1,7 +1,8 @@
 package com.tribbloids.spookystuff.conf
 
-import ai.acyclic.prover.commons.function.hom.Hom
-import ai.acyclic.prover.commons.same.Same
+import ai.acyclic.prover.commons.function.bound.TypeBound
+import ai.acyclic.prover.commons.function.hom.Hom.BoundView
+import ai.acyclic.prover.commons.multiverse.CanEqual
 import ai.acyclic.prover.commons.spark.serialization.NOTSerializable
 import ai.acyclic.prover.commons.util.Caching
 import com.tribbloids.spookystuff.commons.TreeThrowable
@@ -27,17 +28,26 @@ trait PluginRegistry {
       ctg: ClassTag[P]
   ) extends Serializable {
 
+    object Bound extends TypeBound {
+
+      type Min = Nothing
+      type Max = P
+    }
+
+    val domain = {
+      new BoundView(Bound)
+    }
+
     type Out[_ <: P]
-    trait Impl extends Hom.Impl.Dependent[P, Out]
+    trait Impl extends domain.Dependent.Impl[Out]
 
     protected def init: Impl
 
-    final lazy val cached: Hom.Mono.Cached[P, Impl] = {
+    final lazy val cached = {
 
-      Hom
-        .MonoOps(init)
+      init
         .cached(
-          Same.Native.Lookup(Caching.ConcurrentMap())
+          CanEqual.Native.Lookup(Caching.ConcurrentMap())
         )
     }
 
