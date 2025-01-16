@@ -29,7 +29,7 @@ object XMLWeakDeserializer {
     override def getMessage: String = detailedStr
   }
 
-  case class ParsingException(
+  class ParsingException(
       override val shortStr: String,
       override val cause: Exception,
       metadata: ExceptionMetadata

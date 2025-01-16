@@ -14,7 +14,7 @@ import scala.reflect.ClassTag
   */
 class SpookyDatasetSpec extends SpookyBaseSpec {
 
-  lazy val resources: FileDocsFixture.type = FileDocsFixture
+  @transient lazy val resources: FileDocsFixture.type = FileDocsFixture
   import resources.*
 
   it(s".map should not run preceding transformation multiple times") {
@@ -24,9 +24,9 @@ class SpookyDatasetSpec extends SpookyBaseSpec {
       .fetch(_ => Wget(HTML_URL))
 
 //    val _fn = dd.plan.asInstanceOf[FetchPlan[Unit, Unit]].fn
-    val _fn = { (_: Unit) => Wget(HTML_URL) }
+    val _fn = { () => Wget(HTML_URL) }
 
-//    val _fn = { (_: Unit) => Wget("abc") }
+//    val _fn = { () => Wget("abc") }
 
     AssertSerializable(_fn).weakly()
 

@@ -7,6 +7,7 @@ import com.tribbloids.spookystuff.commons.lifespan.LocalCleanable
 import com.tribbloids.spookystuff.relay.TreeIR
 import com.tribbloids.spookystuff.relay.io.Encoder
 import org.json4s
+import org.json4s.StringInput
 import org.json4s.jackson.JsonMethods.parse
 
 import scala.language.dynamics
@@ -61,7 +62,7 @@ class PyBinding(
       //        val jsonOpt = driver.evalExpr(s"$ref.__dict__")
       val jsonOpt = driver.evalExpr(s"json.dumps($ref.__dict__)")
       jsonOpt.map { json =>
-        val jValue = parse(json)
+        val jValue = parse(StringInput(json))
         Encoder.forValue(jValue)
       }
     }

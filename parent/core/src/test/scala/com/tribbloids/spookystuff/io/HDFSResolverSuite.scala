@@ -44,7 +44,7 @@ class HDFSResolverSuite extends AbstractURIResolverSuite {
 
   it(" ... on executors") {
     val resolver = this.resolverWithUGI
-    val HTML_URL = this.HTML_URL
+    val HTML_URL = resource.HTML_URL
     val users = sc
       .parallelize(1 to (sc.defaultParallelism * 2))
       .mapPartitions { _ =>

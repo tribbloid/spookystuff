@@ -2,8 +2,8 @@ package com.tribbloids.spookystuff.io
 
 import ai.acyclic.prover.commons.spark.serialization.AssertSerializable
 import ai.acyclic.prover.commons.spark.{Envs, SparkEnvSpec}
-import com.tribbloids.spookystuff.testutils.FileDocsFixture
 import com.tribbloids.spookystuff.io.AbstractURIResolverSuite.SequentialCheck
+import com.tribbloids.spookystuff.testutils.FileDocsFixture
 import org.apache.commons.io.IOUtils
 import org.apache.spark.SparkContext
 import org.apache.spark.broadcast.Broadcast
@@ -44,7 +44,9 @@ object AbstractURIResolverSuite {
 /**
   * Created by peng on 07/10/15.
   */
-abstract class AbstractURIResolverSuite extends SparkEnvSpec with FileDocsFixture {
+abstract class AbstractURIResolverSuite extends SparkEnvSpec {
+
+  @transient lazy val resource: FileDocsFixture.type = FileDocsFixture
 
   @transient val resolver: URIResolver
   @transient val schemaPrefix: String
@@ -127,7 +129,7 @@ abstract class AbstractURIResolverSuite extends SparkEnvSpec with FileDocsFixtur
       val rdd = sc.parallelize(1 to 100, 10)
 
       val resolver: URIResolver = this.resolver
-      val HTML_URL = this.HTML_URL
+      val HTML_URL = resource.HTML_URL
       val mdRDD = rdd.map { _ =>
         val md = resolver.input(HTML_URL)(_.metadata.all)
         md

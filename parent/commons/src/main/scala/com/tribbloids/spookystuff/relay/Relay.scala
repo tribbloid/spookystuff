@@ -5,7 +5,7 @@ import com.tribbloids.spookystuff.relay.xml.{XMLFormats, Xml}
 import org.apache.spark.ml.util.Identifiable
 import org.json4s.JsonAST.{JArray, JObject}
 import org.json4s.jackson.JsonMethods
-import org.json4s.{Formats, JField, JValue}
+import org.json4s.{Formats, JField, JValue, StringInput}
 
 import scala.language.implicitConversions
 import scala.xml.{Elem, NodeSeq, XML}
@@ -96,7 +96,7 @@ abstract class Relay[Proto] {
       fromJField(rootTag -> jv)
     }
 
-    final def fromJSON(json: String): Proto = fromJValue(JsonMethods.parse(json))
+    final def fromJSON(json: String): Proto = fromJValue(JsonMethods.parse(StringInput(json)))
 
     final def fromXMLNode(ns: NodeSeq): Proto = {
       val jv: JValue = Xml.toJson(ns)
