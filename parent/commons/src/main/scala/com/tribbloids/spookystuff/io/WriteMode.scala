@@ -14,4 +14,4 @@ object WriteMode extends Enumeration {
   object Ignore extends WriteMode
 }
 
-abstract class WriteMode
+sealed abstract class WriteMode

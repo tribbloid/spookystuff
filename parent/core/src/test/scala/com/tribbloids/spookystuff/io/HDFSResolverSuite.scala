@@ -36,7 +36,7 @@ class HDFSResolverSuite extends AbstractURIResolverSuite {
   }
 
   it("can override login UGI") {
-    val user: String = resolverWithUGI.input(HTML_URL) { _ =>
+    val user: String = resolverWithUGI.input(resource.HTML_URL) { _ =>
       UserGroupInformation.getCurrentUser.getUserName
     }
     user.shouldBe("dummy")

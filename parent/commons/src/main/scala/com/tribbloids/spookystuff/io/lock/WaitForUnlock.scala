@@ -32,9 +32,9 @@ case class WaitForUnlock(
   def duringOnce[T](fn: URIExecution => T): T = {
     unlockIfPossible()
 
-    try {
-      fn(exe)
-    }
+//    try {
+    fn(exe)
+//    }
   }
 
   final def during[T](fn: URIExecution => T): T = inMemory.synchronized {

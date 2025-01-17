@@ -21,10 +21,10 @@ subprojects {
             scalaCompileOptions.additionalParameters.addAll(
                 listOf(
 
-//                    "-Xsource:3-cross",
-                    "-Xsource:3",
+//                    "-Xsource:3",
+                    "-Xsource:3-cross",
                     // quickfix should be disabled ASAP after migration
-                    "-quickfix:any",
+//                    "-quickfix:any",
 //                    "-quickfix:cat=scala3-migration",
 
                     "-P:kind-projector:underscore-placeholders",

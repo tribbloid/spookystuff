@@ -37,7 +37,7 @@ object NarrowDispersedRDD {
 
   trait PseudoRandom extends Serializable {
 
-    def Generator: NarrowMapping => PRGen
+    def getGen(v: NarrowMapping): PRGen
 
     case class Execution[T](
         mapping: NarrowMapping,
@@ -45,7 +45,7 @@ object NarrowDispersedRDD {
         narrowIndex: Int
     ) extends NOTSerializable {
 
-      val gen: PRGen = Generator(mapping)
+      val gen: PRGen = getGen(mapping)
 
       def computePartition: Iterator[T] = {
         prevPartition
@@ -76,32 +76,34 @@ object NarrowDispersedRDD {
       pSizeGen: Int => Long
   ) extends PseudoRandom {
 
-    case class Generator(
-        mapping: NarrowMapping
-    ) extends PRGen {
+    override def getGen(mapping: NarrowMapping): PRGen = {
 
-      val pSizes: Seq[Long] = mapping.to.map(pSizeGen)
+      new PRGen {
 
-      val counter: AtomicInteger = new AtomicInteger(0)
-      val state_narrowIndex: AtomicInteger = new AtomicInteger(0)
+        val pSizes: Seq[Long] = mapping.to.map(pSizeGen)
 
-      override def nextNarrowIndex(datum: Any): Int = {
-        val state_size = pSizes(state_narrowIndex.get())
-        val result = state_narrowIndex
+        val counter: AtomicInteger = new AtomicInteger(0)
+        val state_narrowIndex: AtomicInteger = new AtomicInteger(0)
 
-        if (counter.getAndIncrement() >= state_size) {
-          state_narrowIndex.incrementAndGet()
-          if (state_narrowIndex.get() > mapping.maxNarrowIndex)
-            state_narrowIndex.set(mapping.maxNarrowIndex)
+        override def nextNarrowIndex(datum: Any): Int = {
+          val state_size = pSizes(state_narrowIndex.get())
+          val result = state_narrowIndex
 
-          counter.set(0)
+          if (counter.getAndIncrement() >= state_size) {
+            state_narrowIndex.incrementAndGet()
+            if (state_narrowIndex.get() > mapping.maxNarrowIndex)
+              state_narrowIndex.set(mapping.maxNarrowIndex)
+
+            counter.set(0)
+          }
+
+          result.get()
         }
 
-        result.get()
-      }
+        override def hasMore(datum: Any, narrowIndex: Int): Boolean = {
+          state_narrowIndex.get() <= narrowIndex
+        }
 
-      override def hasMore(datum: Any, narrowIndex: Int): Boolean = {
-        state_narrowIndex.get() <= narrowIndex
       }
     }
   }

@@ -18,7 +18,7 @@ import org.apache.spark.broadcast.Broadcast
 import org.apache.spark.rdd.RDD
 import org.apache.spark.sql.{Dataset, SQLContext, SparkSession}
 
-import scala.language.implicitConversions
+import scala.language.{implicitConversions, reflectiveCalls}
 import scala.reflect.ClassTag
 import scala.util.Try
 
@@ -51,11 +51,11 @@ object SpookyContext {
   trait CanRunWith {
 
     type _WithCtx <: NOTSerializable // TODO: with AnyVal
-    def _WithCtx: SpookyContext => _WithCtx
+    def _WithCtx: { def apply(v: SpookyContext): _WithCtx }
 
     // cached results will be dropped for being NOTSerializable
     @transient final lazy val withCtx: SpookyContext :=> _WithCtx =
-      Hom.Fn.at(_WithCtx).cached()
+      Hom.Fn.at(v => _WithCtx(v)).cached()
   }
 }
 

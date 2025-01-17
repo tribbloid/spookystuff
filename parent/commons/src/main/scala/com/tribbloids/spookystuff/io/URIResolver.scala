@@ -6,6 +6,7 @@ import org.apache.commons.io.IOUtils
 
 import java.io.*
 import scala.concurrent.duration.DurationInt
+import scala.language.reflectiveCalls
 import scala.util.Random
 
 /*
@@ -26,7 +27,7 @@ abstract class URIResolver extends Serializable {
   trait Execution {
 
     type _Resource <: Resource
-    def _Resource: WriteMode => _Resource
+    def _Resource: { def apply(v: WriteMode): _Resource }
 
     def outer: URIResolver = URIResolver.this
 
@@ -128,7 +129,7 @@ abstract class URIResolver extends Serializable {
   }
 
   type _Execution <: Execution
-  def _Execution: String => _Execution
+  def _Execution: { def apply(v: String): _Execution }
 
   final type _Resource = _Execution#_Resource
 

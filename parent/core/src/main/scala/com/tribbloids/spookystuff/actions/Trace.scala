@@ -54,6 +54,7 @@ object Trace {
       this.disableCached
     }
 
+    object _WithCtx
     case class _WithCtx(spooky: SpookyContext) extends NOTSerializable {
 
       def play(): Seq[Observation] = {
