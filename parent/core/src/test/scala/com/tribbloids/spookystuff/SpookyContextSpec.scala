@@ -8,7 +8,7 @@ import com.tribbloids.spookystuff.testutils.{RemoteDocsFixture, SpookyBaseSpec}
 
 class SpookyContextSpec extends SpookyBaseSpec {
 
-  lazy val resources: RemoteDocsFixture.type = RemoteDocsFixture
+  val resources: RemoteDocsFixture.type = RemoteDocsFixture
   import resources.*
 
   it("SpookyContext should be Serializable") {

@@ -9,7 +9,7 @@ import com.tribbloids.spookystuff.testutils.{FileDocsFixture, SpookyBaseSpec}
   */
 class FetchedRowSuite extends SpookyBaseSpec {
 
-  lazy val resources: FileDocsFixture.type = FileDocsFixture
+  val resources: FileDocsFixture.type = FileDocsFixture
   import resources.*
 
   it("get only doc") {

@@ -17,7 +17,7 @@ class WgetSpec extends SpookyBaseSpec {
 
   import com.tribbloids.spookystuff.dsl.*
 
-  lazy val resources: RemoteDocsFixture.type = RemoteDocsFixture
+  val resources: RemoteDocsFixture.type = RemoteDocsFixture
   import resources.*
 
   def wget(uri: String): Action = Wget(uri)

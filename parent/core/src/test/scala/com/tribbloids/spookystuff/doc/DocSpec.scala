@@ -7,7 +7,7 @@ import org.apache.commons.csv.CSVFormat
 
 class DocSpec extends SpookyBaseSpec {
 
-  lazy val resources: RemoteDocsFixture = RemoteDocsFixture
+  val resources: RemoteDocsFixture = RemoteDocsFixture
   import resources.*
 
   describe("wget, save, load") {
