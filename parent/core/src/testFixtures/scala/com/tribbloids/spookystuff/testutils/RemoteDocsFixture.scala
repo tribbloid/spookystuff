@@ -3,7 +3,7 @@ package com.tribbloids.spookystuff.testutils
 /**
   * Created by peng on 17/05/16.
   */
-trait RemoteDocsFixture {
+trait RemoteDocsFixture extends Serializable {
 
   def HTML_URL: String = "http://tribbloid.github.io/spookystuff/test/Wikipedia.html"
   def JSON_URL: String = "http://tribbloid.github.io/spookystuff/test/tribbloid.json"
