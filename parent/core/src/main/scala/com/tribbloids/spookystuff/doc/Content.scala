@@ -16,7 +16,7 @@ import org.apache.tika.sax.ToHTMLContentHandler
 import java.nio.charset.Charset
 import java.util.UUID
 
-sealed trait Content extends SpookyContext.CanRunWith with Serializable {
+sealed trait Content extends SpookyContext.Contextual with Serializable {
 
   import Content.*
 
@@ -145,6 +145,7 @@ sealed trait Content extends SpookyContext.CanRunWith with Serializable {
 
   }
 
+  override def withCtx(v: SpookyContext): _WithCtx = _WithCtx(v)
 }
 
 object Content {

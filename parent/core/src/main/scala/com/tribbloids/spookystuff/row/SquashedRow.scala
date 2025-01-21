@@ -70,7 +70,7 @@ object SquashedRow {
 case class SquashedRow[D](
     localityGroup: LocalityGroup,
     batch: Seq[D]
-) extends SpookyContext.CanRunWith {
+) extends SpookyContext.Contextual {
   // can only support 1 agent
   // will trigger a fork if not all agent actions were captured by the LocalityGroup
 
@@ -149,7 +149,7 @@ case class SquashedRow[D](
 
     lazy val unSquash: Seq[FetchedRow[D]] = {
 
-      val agent = localityGroup.mkAgent(ctx)
+      val agent = localityGroup.withCtx(ctx)
 
       batch.map { r1 =>
         FetchedRow(agent, r1)
@@ -183,4 +183,6 @@ case class SquashedRow[D](
   @transient lazy val withSchema: :=>[SpookySchema, WithSchema[D]] = :=>.at { v =>
     WithSchema(this, v)
   }
+
+  override def withCtx(v: SpookyContext): _WithCtx = _WithCtx(v)
 }

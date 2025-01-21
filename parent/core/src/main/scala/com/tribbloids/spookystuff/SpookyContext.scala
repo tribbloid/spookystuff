@@ -1,6 +1,5 @@
 package com.tribbloids.spookystuff
 
-import ai.acyclic.prover.commons.function.hom.Hom
 import ai.acyclic.prover.commons.function.hom.Hom.:=>
 import ai.acyclic.prover.commons.spark.SparkContextView
 import ai.acyclic.prover.commons.spark.serialization.{NOTSerializable, SerializerOverride}
@@ -18,7 +17,7 @@ import org.apache.spark.broadcast.Broadcast
 import org.apache.spark.rdd.RDD
 import org.apache.spark.sql.{Dataset, SQLContext, SparkSession}
 
-import scala.language.{implicitConversions, reflectiveCalls}
+import scala.language.implicitConversions
 import scala.reflect.ClassTag
 import scala.util.Try
 
@@ -48,14 +47,18 @@ object SpookyContext {
 
   implicit def asSparkContextView(spooky: SpookyContext): SparkContextView = SparkContextView(spooky.sparkContext)
 
-  trait CanRunWith {
+  trait Contextual {
+    // supertype of data types that should be processed with SpookyContext
 
     type _WithCtx <: NOTSerializable // TODO: with AnyVal
-    def _WithCtx: { def apply(v: SpookyContext): _WithCtx }
+    def withCtx(v: SpookyContext): _WithCtx
 
     // cached results will be dropped for being NOTSerializable
     @transient final lazy val withCtx: SpookyContext :=> _WithCtx =
-      Hom.Fn.at(v => _WithCtx(v)).cached()
+      :=>.at[SpookyContext] { v =>
+        withCtx(v)
+      }
+        .cached()
   }
 }
 
@@ -106,7 +109,9 @@ case class SpookyContext(
 
   }
 
-  def getPlugin[T <: PluginSystem](v: T): v.Plugin = Plugins.cached.apply(v: v.type)
+  def getPlugin[T <: PluginSystem](v: T): v.Plugin = {
+    Plugins.cached.apply(v: v.type)
+  }
   def setPlugin(vs: PluginSystem#Plugin*): this.type = {
     // no deployement
     requireNotShipped()
@@ -239,6 +244,4 @@ case class SpookyContext(
     lazy val _rdd: RDD[Unit] = sparkContext.parallelize(Seq(()))
     this.create(_rdd)
   }
-
-  object dsl extends Serializable {}
 }

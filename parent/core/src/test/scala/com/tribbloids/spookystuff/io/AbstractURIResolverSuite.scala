@@ -46,7 +46,7 @@ object AbstractURIResolverSuite {
   */
 abstract class AbstractURIResolverSuite extends SparkEnvSpec {
 
-   val resource: FileDocsFixture.type = FileDocsFixture
+  val resource: FileDocsFixture.type = FileDocsFixture
 
   @transient val resolver: URIResolver
   @transient val schemaPrefix: String

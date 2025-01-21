@@ -26,7 +26,9 @@ object DeltaRowLike {
   ) {}
 }
 
-sealed trait DeltaRowLike[O] extends SpookyContext.CanRunWith {
+sealed trait DeltaRowLike[O] extends SpookyContext.Contextual {
 
   case class _WithCtx(spookyContext: SpookyContext) extends NOTSerializable {}
+
+  override def withCtx(v: SpookyContext): _WithCtx = _WithCtx(v)
 }

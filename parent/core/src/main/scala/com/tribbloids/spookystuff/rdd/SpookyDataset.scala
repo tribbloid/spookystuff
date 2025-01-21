@@ -48,8 +48,6 @@ object SpookyDataset extends SpookyDataset_Imp0 {
       enc: TypedEncoder[D]
   ) {
 
-    implicit private def ctg: ClassTag[D] = enc.classTag
-
     final def toFrameless: TypedDataset[D] = {
 
       val ds = TypedDataset.create(ops.toRDD)(enc, ops.spark)

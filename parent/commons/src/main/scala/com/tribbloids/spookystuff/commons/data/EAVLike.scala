@@ -23,7 +23,7 @@ trait EAVLike extends HasEagerInnerObjects with RootTagged with Serializable {
   override def rootTag: String = Xml.ROOT
 
   protected def getLookup: Map[String, Any] = internal.toMap
-  @transient final lazy val lookup = getLookup
+  final lazy val lookup = getLookup
 
   @transient private lazy val providedHintStr: Option[String] = {
     if (lookup.isEmpty) {

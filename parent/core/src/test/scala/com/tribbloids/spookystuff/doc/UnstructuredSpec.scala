@@ -9,7 +9,7 @@ import com.tribbloids.spookystuff.testutils.{FileDocsFixture, SpookyBaseSpec}
   */
 class UnstructuredSpec extends SpookyBaseSpec {
 
-   val resources: FileDocsFixture.type = FileDocsFixture
+  val resources: FileDocsFixture.type = FileDocsFixture
   import resources.*
 
   @transient lazy val page: Doc = Wget(HTML_URL).as("old").fetch(spooky).head.asInstanceOf[Doc]

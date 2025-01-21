@@ -1,6 +1,5 @@
 package com.tribbloids.spookystuff.row
 
-import ai.acyclic.prover.commons.function.hom.Hom.:=>
 import ai.acyclic.prover.commons.multiverse.{CanEqual, Projection}
 import com.tribbloids.spookystuff.SpookyContext
 import com.tribbloids.spookystuff.actions.Trace
@@ -37,7 +36,7 @@ case class LocalityGroup(
 )(
     val rollout: Rollout = Rollout(trace)
 ) extends Projection.Equals
-    with SpookyContext.CanRunWith {
+    with SpookyContext.Contextual {
   // TODO: should the name be "SIMDGroup/SPMDGroup"
 
   {
@@ -58,9 +57,9 @@ case class LocalityGroup(
     this.copy(keyByOvrd = Option(fn(this.trace)))(this.rollout)
 
   type _WithCtx = AgentState
-  val _WithCtx: SpookyContext => AgentState = { (ctx: SpookyContext) =>
-    AgentState.Real(this, ctx)
-  }
 
-  def mkAgent: :=>[SpookyContext, AgentState] = withCtx
+  override def withCtx(v: SpookyContext): AgentState = {
+
+    AgentState.Real(this, v)
+  }
 }

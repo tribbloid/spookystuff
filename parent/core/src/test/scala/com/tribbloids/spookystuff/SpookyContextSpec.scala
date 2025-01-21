@@ -32,15 +32,15 @@ class SpookyContextSpec extends SpookyBaseSpec {
       )
   }
 
-  it("SpookyContext.dsl should be Serializable") {
-
-    val spooky = this.spooky
-
-    AssertSerializable(
-      spooky.dsl
-    )
-      .weakly()
-  }
+//  it("SpookyContext.dsl should be Serializable") {
+//
+//    val spooky = this.spooky
+//
+//    AssertSerializable(
+//      spooky.dsl
+//    )
+//      .weakly()
+//  }
 
   it("derived instances of a SpookyContext should have the same configuration") {
 

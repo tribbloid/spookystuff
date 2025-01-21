@@ -23,7 +23,7 @@ object Trace {
 
   def of(vs: Action*): Trace = Trace(vs.toList)
 
-  case class Rollout(asTrace: Trace) extends HasTrace with SpookyContext.CanRunWith {
+  case class Rollout(asTrace: Trace) extends HasTrace with SpookyContext.Contextual {
     // unlike trace, it is always executed by the agent from scratch
     // thus, execution result can be cached, as replaying it will most likely have the same result (if the trace is deterministic)
 
@@ -54,7 +54,6 @@ object Trace {
       this.disableCached
     }
 
-    object _WithCtx
     case class _WithCtx(spooky: SpookyContext) extends NOTSerializable {
 
       def play(): Seq[Observation] = {
@@ -78,6 +77,8 @@ object Trace {
 
       lazy val trajectory: Seq[Observation] = cached.trajectory
     }
+
+    override def withCtx(v: SpookyContext): _WithCtx = _WithCtx(v)
   }
 
   object Rollout {
