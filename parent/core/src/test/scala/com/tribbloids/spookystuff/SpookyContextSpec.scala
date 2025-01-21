@@ -9,7 +9,62 @@ import com.tribbloids.spookystuff.testutils.{RemoteDocsFixture, SpookyBaseSpec}
 class SpookyContextSpec extends SpookyBaseSpec {
 
   val resources: RemoteDocsFixture.type = RemoteDocsFixture
-  import resources.*
+
+  {
+    val r = resources
+    import r.*
+
+    describe("each execution should have") {
+
+      it("independent metrics if sharedMetrics=false") {
+
+        val spooky = this.spooky
+        spooky(Core).confUpdate(_.copy(shareMetrics = false))
+
+        val d1 = spooky
+          .fetch(_ => Wget(HTML_URL))
+        d1.fetchedRDD.count()
+
+        val d2 = spooky
+          .fetch(_ => Wget(HTML_URL))
+        d2.fetchedRDD.count()
+
+        val seq = Seq(d1, d2)
+
+        val metrics = seq.map(_.spooky.spookyMetrics)
+
+        metrics
+          .map(_.View.toMap)
+          .reduce { (v1, v2) =>
+            v1 mapShouldBe v2
+            assert(!v1.eq(v2))
+            v1
+          }
+
+        seq.foreach { d =>
+          assert(d.spooky.spookyMetrics.pagesFetched.value === 1)
+        }
+      }
+
+      it("shared metrics if sharedMetrics=true") {
+
+        val spooky = this.spooky
+        spooky(Core).confUpdate(_.copy(shareMetrics = true))
+
+        val rdd1 = spooky
+          .fetch(_ => Wget(HTML_URL))
+        rdd1.count()
+
+        val rdd2 = spooky
+          .fetch(_ => Wget(HTML_URL))
+        rdd2.count()
+
+        rdd1.spooky.spookyMetrics.toTreeIR.treeView.treeString shouldBe
+          rdd2.spooky.spookyMetrics.toTreeIR.treeView.treeString
+      }
+    }
+
+  }
 
   it("SpookyContext should be Serializable") {
 
@@ -73,56 +128,6 @@ class SpookyContextSpec extends SpookyBaseSpec {
     val conf1 = spooky.dirConf.prettyJSON
     val conf2 = rdd2.spooky.dirConf.prettyJSON
     conf1 shouldBe conf2
-  }
-
-  describe("each execution should have") {
-
-    it("independent metrics if sharedMetrics=false") {
-
-      val spooky = this.spooky
-      spooky(Core).confUpdate(_.copy(shareMetrics = false))
-
-      val d1 = spooky
-        .fetch(_ => Wget(HTML_URL))
-      d1.fetchedRDD.count()
-
-      val d2 = spooky
-        .fetch(_ => Wget(HTML_URL))
-      d2.fetchedRDD.count()
-
-      val seq = Seq(d1, d2)
-
-      val metrics = seq.map(_.spooky.spookyMetrics)
-
-      metrics
-        .map(_.View.toMap)
-        .reduce { (v1, v2) =>
-          v1 mapShouldBe v2
-          assert(!v1.eq(v2))
-          v1
-        }
-
-      seq.foreach { d =>
-        assert(d.spooky.spookyMetrics.pagesFetched.value === 1)
-      }
-    }
-
-    it("shared metrics if sharedMetrics=true") {
-
-      val spooky = this.spooky
-      spooky(Core).confUpdate(_.copy(shareMetrics = true))
-
-      val rdd1 = spooky
-        .fetch(_ => Wget(HTML_URL))
-      rdd1.count()
-
-      val rdd2 = spooky
-        .fetch(_ => Wget(HTML_URL))
-      rdd2.count()
-
-      rdd1.spooky.spookyMetrics.toTreeIR.treeView.treeString shouldBe
-        rdd2.spooky.spookyMetrics.toTreeIR.treeView.treeString
-    }
   }
 
   describe("create from") {

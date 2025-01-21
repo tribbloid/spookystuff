@@ -49,7 +49,7 @@ object TestBeans {
   class NOTSerializableID(_id: Int) extends WithID(_id) with NOTSerializable {
 
     Assertions.intercept[Exception] {
-      AssertSerializable(this)
+      AssertSerializable(this).weakly()
     }
   }
   object NOTSerializableID {
