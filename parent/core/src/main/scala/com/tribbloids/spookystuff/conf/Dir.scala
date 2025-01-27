@@ -1,5 +1,6 @@
 package com.tribbloids.spookystuff.conf
 
+import ai.acyclic.prover.commons.util.PathMagnet
 import com.tribbloids.spookystuff.SpookyContext
 import com.tribbloids.spookystuff.commons.ConfUtils
 import com.tribbloids.spookystuff.metrics.AbstractMetrics
@@ -19,13 +20,15 @@ object Dir extends PluginSystem {
       errorScreenshotLocal: String = null // System.getProperty("spooky.dirs.errorscreenshot.local")
   ) extends ConfLike {
 
-    import com.tribbloids.spookystuff.utils.RDDImplicits.*
-
     override def importFrom(sparkConf: SparkConf): Conf = {
 
       implicit val _sparkConf: SparkConf = sparkConf
 
-      val _root = Option(root).getOrElse(ConfUtils.getOrDefault("spooky.dirs.root", defaultConf.root))
+      val _root = {
+        val str = Option(root).getOrElse(ConfUtils.getOrDefault("spooky.dirs.root", defaultConf.root))
+        PathMagnet.URI(str)
+      }
+
       val _localRoot =
         Option(localRoot).getOrElse(ConfUtils.getOrDefault("spooky.dirs.root", defaultConf.localRoot))
 
@@ -34,25 +37,25 @@ object Dir extends PluginSystem {
         root = _root,
         localRoot = _localRoot,
         auditing = Option(auditing).getOrElse(
-          ConfUtils.getOrDefault("spooky.dirs.auditing", _root \\ "auditing")
+          ConfUtils.getOrDefault("spooky.dirs.auditing", _root :/ "auditing")
         ),
         cache = Option(cache).getOrElse(
-          ConfUtils.getOrDefault("spooky.dirs.cache", _root \\ "cache")
+          ConfUtils.getOrDefault("spooky.dirs.cache", _root :/ "cache")
         ),
         errorDump = Option(errorDump).getOrElse(
-          ConfUtils.getOrDefault("spooky.dirs.error.dump", _root \\ "errorDump")
+          ConfUtils.getOrDefault("spooky.dirs.error.dump", _root :/ "errorDump")
         ),
         errorScreenshot = Option(errorScreenshot).getOrElse(
-          ConfUtils.getOrDefault("spooky.dirs.error.screenshot", _root \\ "errorScreenshot")
+          ConfUtils.getOrDefault("spooky.dirs.error.screenshot", _root :/ "errorScreenshot")
         ),
         checkpoint = Option(checkpoint).getOrElse(
-          ConfUtils.getOrDefault("spooky.dirs.checkpoint", _root \\ "checkpoint")
+          ConfUtils.getOrDefault("spooky.dirs.checkpoint", _root :/ "checkpoint")
         ),
         errorDumpLocal = Option(errorDumpLocal).getOrElse(
-          ConfUtils.getOrDefault("spooky.dirs.error.dump.local", _root \\ "errorDumpLocal")
+          ConfUtils.getOrDefault("spooky.dirs.error.dump.local", _root :/ "errorDumpLocal")
         ),
         errorScreenshotLocal = Option(errorScreenshotLocal).getOrElse(
-          ConfUtils.getOrDefault("spooky.dirs.error.screenshot.local", _root \\ "errorScreenshotLocal")
+          ConfUtils.getOrDefault("spooky.dirs.error.screenshot.local", _root :/ "errorScreenshotLocal")
         )
       ).asInstanceOf[this.type]
       result

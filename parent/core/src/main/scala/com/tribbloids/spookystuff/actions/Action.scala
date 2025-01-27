@@ -85,12 +85,12 @@ trait Action extends ActionLike with HasTrace {
     val uid = rawDoc.uid.copy(backtrace = backtrace)(name = null)
     val doc = rawDoc.copy(uid = uid)(rawDoc.content)
     try {
-      doc.save(spooky).errorDump()
+      doc.prepareSave(spooky).errorDump()
       "saved to: " + doc.saved.last
     } catch {
       case _: Exception =>
         try {
-          doc.save(spooky).errorDumpLocally()
+          doc.prepareSave(spooky).errorDumpLocally()
           "DFS inaccessible.........saved to: " + doc.saved.last
         } catch {
           case _: Exception =>
@@ -104,13 +104,15 @@ trait Action extends ActionLike with HasTrace {
     var baseStr = s"[${agent.taskContextOpt.map(_.partitionId()).getOrElse(0)}]+> ${this.toString}"
     this match {
       case timed: Timed =>
-        baseStr = baseStr + s" in ${timed.getTimeout(agent)}"
+        val timeout = timed.getTimeout(agent)
+
+        baseStr = baseStr + s" in ${timeout}"
         LoggerFactory.getLogger(this.getClass).info(this.withDetail(baseStr))
 
         agent.progress.ping()
 
         // the following execute f in a different thread, thus `timed` has to be declared as `ThreadSafe`
-        CommonUtils.withTimeout(timed.getTimeout_hardTerminate(agent))(
+        CommonUtils.withTimeout(timeout.hardTerimination)(
           f,
           agent.progress.defaultHeartbeat
         )

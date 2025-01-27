@@ -1,6 +1,6 @@
 package com.tribbloids.spookystuff.io
 
-import ai.acyclic.prover.commons.util.Retry
+import ai.acyclic.prover.commons.util.{PathMagnet, Retry}
 import com.tribbloids.spookystuff.agent.WebProxySetting
 import com.tribbloids.spookystuff.utils.http.*
 import org.apache.hadoop.shaded.org.apache.http.client.HttpClient
@@ -124,15 +124,15 @@ case class HTTPResolver(
 //    currentHost.toURI + currentReq.getURI
 //  }
 
-  case class _Execution(pathStr: String) extends Execution {
+  implicit class _Execution(uri: PathMagnet.URIPath) extends Execution {
 
     lazy val readRequest: HttpUriRequest = {
 
-      val uri = HttpUtils.uri(pathStr)
-      readRequestFactory(uri)
+      val _uri = HttpUtils.uri(uri)
+      readRequestFactory(_uri)
     }
 
-    override def absolutePathStr: String = readRequest.getURI.toString
+    override def absolutePath = readRequest.getURI.toString
 
     override def _delete(mustExist: Boolean): Unit = {
       unsupported("delete")

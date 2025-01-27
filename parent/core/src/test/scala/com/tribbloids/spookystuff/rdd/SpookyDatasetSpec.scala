@@ -279,7 +279,11 @@ class SpookyDatasetSpec extends SpookyBaseSpec {
       val ds = first
         .inductively()
         .fetch { row =>
-          val path: String = row.docs.\("root directory").attr("path").get
+          val docs = row.docs
+
+          val dirs = docs.\("root directory")
+
+          val path: String = dirs.attr("path").get
 
           Wget(path)
         }
@@ -296,7 +300,7 @@ class SpookyDatasetSpec extends SpookyBaseSpec {
     describe("savePage") {
 
       def dummyFileExists() = {
-        val file = new File(Envs.USER_DIR :\ "temp" :\ "dummy.html")
+        val file = new File(Envs.USER_DIR \\ "temp" \\ "dummy.html")
         val exists_deleted = file.exists() -> file.delete()
         exists_deleted._1 && exists_deleted._2
       }

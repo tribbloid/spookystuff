@@ -19,6 +19,7 @@ object SpookyUtils {
 
   //  def retryWithDeadline[T](n: Int, t: Duration)(fn: => T): T = retry(n){withDeadline(t){fn}}
 
+  // TODO: move to PathMag
   def canonizeFileName(
       name: String,
       noDash: Boolean = false
@@ -48,6 +49,7 @@ object SpookyUtils {
 
     result
   }
+  // end TODO
 
   // Spark SQL does not currently support column names with dots (see SPARK-2775),
   // so we'll need to post-process the inferred schema to convert dots into underscores:

@@ -46,7 +46,6 @@ subprojects {
     dependencies {
 
         bothImpl("org.apache.spark:spark-sql_${vs.scala.binaryV}:${sparkV}")
-        bothImpl("org.apache.spark:spark-mllib_${vs.scala.binaryV}:${sparkV}")
 
         testRuntimeOnly("org.apache.spark:spark-yarn_${vs.scala.binaryV}:${sparkV}")
 
@@ -57,6 +56,7 @@ subprojects {
         constraints {
 
             // TODO: some of the following may no longer be necessary
+            // TODO: move to prover-commons spark module
             api("org.apache.httpcomponents:httpclient:4.5.2")
 
 //            api("com.google.guava:guava:16.0.1")

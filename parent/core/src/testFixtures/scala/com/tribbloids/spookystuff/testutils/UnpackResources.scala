@@ -1,10 +1,10 @@
 package com.tribbloids.spookystuff.testutils
 
 import ai.acyclic.prover.commons.spark.TestHelper
+import ai.acyclic.prover.commons.util.PathMagnet
 import com.tribbloids.spookystuff.CommonConst
 import com.tribbloids.spookystuff.commons.classpath.ClasspathResolver
 import com.tribbloids.spookystuff.commons.lifespan.Cleanable
-import com.tribbloids.spookystuff.commons.CommonUtils
 import com.tribbloids.spookystuff.io.{LocalResolver, WriteMode}
 
 import java.net.URL
@@ -14,8 +14,8 @@ import java.nio.file.{Path, Paths}
   * Created by peng on 20/09/16.
   */
 case class UnpackResources(
-    root: String,
-    unpackedParent: String = CommonConst.UNPACK_RESOURCE_DIR
+    root: PathMagnet.URIPath,
+    unpackedParent: PathMagnet.LocalFSPath = CommonConst.UNPACK_RESOURCE_DIR
 ) extends Cleanable {
 
   {
@@ -28,7 +28,7 @@ case class UnpackResources(
     ClasspathResolver
       .execute(root)
       .treeCopyTo(
-        LocalResolver.execute(unpackedParent),
+        LocalResolver.execute(unpackedParent.universal),
         WriteMode.Overwrite
       )
     Thread.sleep(5000) // for eventual consistency
@@ -40,7 +40,7 @@ case class UnpackResources(
 
   def unpacked(resourcePath: String): String = {
     unpackOnce
-    CommonUtils.\\\(unpackedParent, resourcePath)
+    unpackedParent \\ resourcePath
   }
 
   def unpackedPath(resourcePath: String): Path = {

@@ -1,6 +1,6 @@
 package com.tribbloids.spookystuff.commons.classpath
 
-import com.tribbloids.spookystuff.commons.CommonUtils
+import ai.acyclic.prover.commons.util.PathMagnet
 import com.tribbloids.spookystuff.commons.lifespan.Cleanable
 import com.tribbloids.spookystuff.io.{Resource, ResourceMetadata, URIExecution, URIResolver, WriteMode}
 import io.github.classgraph.{ClassGraph, ResourceList, ScanResult}
@@ -51,25 +51,24 @@ case class ClasspathResolver(
     }
   }
 
-  object _Execution extends (String => _Execution) {}
-  case class _Execution(
-      pathStr: String
+  implicit class _Execution(
+      originalPath: PathMagnet.URIPath
   ) extends Execution {
 
-    lazy val childPattern: String = CommonUtils.\\\(pathStr, "*")
-    lazy val offspringPattern: String = CommonUtils.\\\(pathStr, "**")
+    lazy val path = originalPath.normaliseToLocal
 
     lazy val referenceInfo: String = doIO() { io =>
       val info = io.firstRefOpt match {
         case Some(r) =>
-          s"\tresource `$pathStr` refers to ${r.getURL.toString}"
+          s"\tresource `$path` refers to ${r.getURL.toString}"
         case None =>
-          s"\tresource `$pathStr` has no reference"
+          s"\tresource `$path` has no reference"
       }
       info
     }
 
-    override def absolutePathStr: String = pathStr
+    override def absolutePath: PathMagnet.URIPath =
+      PathMagnet.URIPath(path) // TODO: classpath jar file should use absolute path
 
     object _Resource extends (WriteMode => _Resource)
     case class _Resource(mode: WriteMode) extends Resource with Scanning {
@@ -77,7 +76,8 @@ case class ClasspathResolver(
       override protected def _outer: URIExecution = _Execution.this
 
       lazy val _refs: LazyVar[ResourceList] = LazyVar {
-        scanResult.getResourcesWithPath(pathStr)
+        val v = scanResult.getResourcesWithPath(path)
+        v
       }
       def firstRefOpt: Option[io.github.classgraph.Resource] = _refs.value.asScala.headOption
       def firstRef: io.github.classgraph.Resource = firstRefOpt.getOrElse(???)
@@ -89,7 +89,7 @@ case class ClasspathResolver(
       override def getType: String =
         if (!_refs.value.isEmpty) Resource.FILE
         else if (children.nonEmpty) Resource.DIR
-        else throw new NoSuchFileException(s"File $pathStr doesn't exist")
+        else throw new NoSuchFileException(s"File $path doesn't exist")
 
       def find(wildcard: String): Seq[_Execution] = {
         val list = scanResult
@@ -106,8 +106,8 @@ case class ClasspathResolver(
         result.toSeq
       }
 
-      override lazy val children: Seq[_Execution] = find(childPattern)
-      lazy val offspring: Seq[_Execution] = find(offspringPattern)
+      override lazy val children: Seq[_Execution] = find(path.glob_children)
+      lazy val offspring: Seq[_Execution] = find(path.glob_offspring)
 
       override def getContentType: String = Files.probeContentType(firstRef.getClasspathElementFile.toPath)
 
@@ -147,7 +147,7 @@ case class ClasspathResolver(
     def treeCopyTo(targetRootExe: URIResolver#Execution, mode: WriteMode): Unit = doIO() { i =>
       val offspring = i.offspring
       offspring.foreach { (v: ClasspathResolver#Execution) =>
-        val dst = CommonUtils.\\\(targetRootExe.absolutePathStr, v.absolutePathStr)
+        val dst = targetRootExe.absolutePath :/ v.absolutePath
 
         v.copyTo(targetRootExe.outer.execute(dst), mode)
       }

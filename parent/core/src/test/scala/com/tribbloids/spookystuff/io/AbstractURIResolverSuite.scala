@@ -76,23 +76,23 @@ abstract class AbstractURIResolverSuite extends SparkEnvSpec {
 
   it("can convert relative path of non-existing file") {
     {
-      val abs = resolver.toAbsolute(nonExistingFile.pathStr)
-      assert(abs == schemaPrefix + Envs.USER_DIR + "/" + nonExistingFile.pathStr)
+      val abs = resolver.toAbsolute(nonExistingFile.path)
+      assert(abs == schemaPrefix + Envs.USER_DIR + "/" + nonExistingFile.path)
     }
 
     {
-      val abs = resolver.toAbsolute(nonExistingSubFile.pathStr)
-      assert(abs == schemaPrefix + Envs.USER_DIR + "/" + nonExistingSubFile.pathStr)
+      val abs = resolver.toAbsolute(nonExistingSubFile.path)
+      assert(abs == schemaPrefix + Envs.USER_DIR + "/" + nonExistingSubFile.path)
     }
   }
 
   it("can convert absolute path of non-existing file") {
-    val abs = resolver.toAbsolute(Absolute.nonExistingSubFile.pathStr)
-    assert(abs == schemaPrefix + Absolute.nonExistingSubFile.pathStr)
+    val abs = resolver.toAbsolute(Absolute.nonExistingSubFile.path)
+    assert(abs == schemaPrefix + Absolute.nonExistingSubFile.path)
   }
 
   it(".toAbsolute is idempotent") {
-    val once = resolver.toAbsolute(nonExistingFile.pathStr)
+    val once = resolver.toAbsolute(nonExistingFile.path)
     val twice = resolver.toAbsolute(once)
     assert(once === twice)
     assert(once.startsWith(schemaPrefix))
@@ -156,12 +156,12 @@ abstract class AbstractURIResolverSuite extends SparkEnvSpec {
 
       existingFile.requireEmptyFile {
 
-        val session = resolver.execute(existingFile.pathStr)
+        val session = resolver.execute(existingFile.path)
 
         var vs1 = session.input(accessorVs)
 
         for (i <- 1 to 3) {
-          resolver.output(existingFile.pathStr, WriteMode.Overwrite) { out =>
+          resolver.output(existingFile.path, WriteMode.Overwrite) { out =>
             val a = Array.ofDim[Byte](16 * i)
             Random.nextBytes(a)
 
@@ -184,11 +184,11 @@ abstract class AbstractURIResolverSuite extends SparkEnvSpec {
 
       dir.requireVoid {
 
-        resolver.output(nonExistingSubFile.pathStr, WriteMode.CreateOnly) { out =>
+        resolver.output(nonExistingSubFile.path, WriteMode.CreateOnly) { out =>
           out.stream
         }
 
-        resolver.input(dir.pathStr) { in =>
+        resolver.input(dir.path) { in =>
           assert(in.isExisting)
         }
       }
@@ -200,7 +200,7 @@ abstract class AbstractURIResolverSuite extends SparkEnvSpec {
 
         for (i <- 1 to 3) {
           intercept[IOException] {
-            resolver.output(existingFile.pathStr, WriteMode.CreateOnly) { out =>
+            resolver.output(existingFile.path, WriteMode.CreateOnly) { out =>
               out.stream
             }
           }
@@ -212,9 +212,9 @@ abstract class AbstractURIResolverSuite extends SparkEnvSpec {
 
       existingFile.requireVoid {
 
-        resolver.output(existingFile.pathStr, WriteMode.CreateOnly) { out1 =>
+        resolver.output(existingFile.path, WriteMode.CreateOnly) { out1 =>
           out1.stream
-          resolver.output(existingFile.pathStr, WriteMode.CreateOnly) { out2 =>
+          resolver.output(existingFile.path, WriteMode.CreateOnly) { out2 =>
             intercept[IOException] {
 
               out2.stream
@@ -231,9 +231,9 @@ abstract class AbstractURIResolverSuite extends SparkEnvSpec {
         existingFile.requireRandomContent(16) {
           nonExistingFile.requireVoid {
 
-            resolver.execute(existingFile.pathStr).copyTo(nonExistingFile.pathStr, WriteMode.CreateOnly)
+            resolver.execute(existingFile.path).copyTo(nonExistingFile.path, WriteMode.CreateOnly)
 
-            val copied = resolver.input(nonExistingFile.pathStr)(_.getLength == 16)
+            val copied = resolver.input(nonExistingFile.path)(_.getLength == 16)
             assert(copied)
           }
         }
@@ -243,9 +243,9 @@ abstract class AbstractURIResolverSuite extends SparkEnvSpec {
         existingFile.requireRandomContent(16) {
           nonExistingFile.requireRandomContent(16) {
 
-            resolver.execute(existingFile.pathStr).copyTo(nonExistingFile.pathStr, WriteMode.Overwrite)
+            resolver.execute(existingFile.path).copyTo(nonExistingFile.path, WriteMode.Overwrite)
 
-            val copied = resolver.input(nonExistingFile.pathStr)(_.getLength == 16)
+            val copied = resolver.input(nonExistingFile.path)(_.getLength == 16)
             assert(copied)
           }
         }
@@ -257,7 +257,7 @@ abstract class AbstractURIResolverSuite extends SparkEnvSpec {
   it("move 1 file to the same target should be sequential") {
 
     existingFile.requireEmptyFile {
-      val pathStr = existingFile.absolutePathStr
+      val pathStr = existingFile.absolutePath
       val rdd = sc.parallelize(1 to numWrites, numWrites)
 
       val resolver: URIResolver = this.resolver
@@ -294,7 +294,7 @@ abstract class AbstractURIResolverSuite extends SparkEnvSpec {
   it("move 1 file to different targets should be sequential") {
 
     existingFile.requireEmptyFile {
-      val pathStr = existingFile.absolutePathStr
+      val pathStr = existingFile.absolutePath
       val rdd = sc.parallelize(1 to numWrites, numWrites)
 
       val resolver: URIResolver = this.resolver
@@ -331,7 +331,7 @@ abstract class AbstractURIResolverSuite extends SparkEnvSpec {
   // TODO: doesn't work, no guarantee
   ignore("move different files to the same target should be sequential") {
     existingFile.requireEmptyFile {
-      val pathStr = existingFile.absolutePathStr
+      val pathStr = existingFile.absolutePath
       val rdd = sc.parallelize(1 to numWrites, numWrites)
 
       val resolver: URIResolver = this.resolver
@@ -379,7 +379,7 @@ abstract class AbstractURIResolverSuite extends SparkEnvSpec {
   ignore("touch should be sequential") {
 
     existingFile.requireVoid {
-      val pathStr = existingFile.pathStr
+      val pathStr = existingFile.path
       val rdd = sc.parallelize(1 to numWrites, numWrites)
 
       val resolver: URIResolver = this.resolver
@@ -442,28 +442,28 @@ abstract class AbstractURIResolverSuite extends SparkEnvSpec {
       it("to existing file") {
         existingFile.requireRandomContent() {
 
-          doTest(existingFile.absolutePathStr)
+          doTest(existingFile.absolutePath)
         }
       }
 
       it("to empty directory") {
 
         dir.requireEmptyDir {
-          doTest(dir.absolutePathStr)
+          doTest(dir.absolutePath)
         }
       }
 
       it("to non empty directory") {
 
         nonExistingSubFile.requireRandomContent() {
-          doTest(dir.absolutePathStr)
+          doTest(dir.absolutePath)
         }
       }
 
       ignore("... even for non existing path") {
         nonExistingFile.requireVoid {
 
-          doTest(nonExistingFile.absolutePathStr)
+          doTest(nonExistingFile.absolutePath)
         }
       }
     }
@@ -530,7 +530,7 @@ abstract class AbstractURIResolverSuite extends SparkEnvSpec {
           }
 
           val groundTruth = (10 to numWrites + 10).map(_.byteValue())
-          doTestIO(existingFile.execution.absolutePathStr, groundTruth)
+          doTestIO(existingFile.execution.absolutePath, groundTruth)
         }
       }
 
@@ -538,7 +538,7 @@ abstract class AbstractURIResolverSuite extends SparkEnvSpec {
         nonExistingFile.requireVoid {
 
           val groundTruth = (1 to numWrites).map(_.byteValue())
-          doTestIO(nonExistingFile.execution.absolutePathStr, groundTruth)
+          doTestIO(nonExistingFile.execution.absolutePath, groundTruth)
         }
       }
     }

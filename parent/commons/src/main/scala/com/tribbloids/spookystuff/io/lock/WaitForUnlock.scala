@@ -22,7 +22,7 @@ case class WaitForUnlock(
 
         canBeUnlocked match {
           case Some(v) =>
-            v.exe.moveTo(exe.absolutePathStr)
+            v.exe.moveTo(exe.absolutePath)
           case None =>
             throw ee
         }

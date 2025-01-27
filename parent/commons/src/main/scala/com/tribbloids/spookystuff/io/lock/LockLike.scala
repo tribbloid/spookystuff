@@ -1,7 +1,7 @@
 package com.tribbloids.spookystuff.io.lock
 
 import ai.acyclic.prover.commons.spark.serialization.NOTSerializable
-import com.tribbloids.spookystuff.commons.CommonUtils
+import ai.acyclic.prover.commons.util.PathMagnet
 import com.tribbloids.spookystuff.io.lock.Lock.InMemoryLock
 import com.tribbloids.spookystuff.io.{URIExecution, URIResolver}
 
@@ -16,25 +16,24 @@ trait LockLike extends NOTSerializable {
   def exe: URIExecution
 
   val resolver: URIResolver = exe.outer
-  def absolutePathStr: String = exe.absolutePathStr
 
   @transient lazy val inMemory: InMemoryLock = {
-    val result = Lock.inMemoryLocks.getOrElseUpdate(exe.outer.getClass -> exe.absolutePathStr, InMemoryLock())
+    val result = Lock.inMemoryLocks.getOrElseUpdate(exe.outer.getClass -> exe.absolutePath, InMemoryLock())
     result
   }
 
   case object PathStrs {
 
-    lazy val dir: String = exe.absolutePathStr + LOCK
+    lazy val lockPath: PathMagnet.URIPath = exe.absolutePath + _LOCK
 
-    lazy val locked: String = CommonUtils.\\\(dir, id.toString + LOCKED)
+    lazy val locked: String = lockPath :/ (id.toString + _LOCKED)
 
-    lazy val old: String = CommonUtils.\\\(dir, id.toString + OLD)
+    lazy val old: String = lockPath :/ (id.toString + _OLD)
   }
 
   case object Moved {
 
-    lazy val dir: resolver._Execution = resolver.execute(PathStrs.dir)
+    lazy val dir: resolver._Execution = resolver.execute(PathStrs.lockPath)
 
     lazy val locked: resolver._Execution = resolver.execute(PathStrs.locked)
 
@@ -44,9 +43,9 @@ trait LockLike extends NOTSerializable {
 
 object LockLike {
 
-  final val LOCK: String = ".lock"
+  final val _LOCK: String = ".lock"
 
-  final val LOCKED: String = ".locked"
+  final val _LOCKED: String = ".locked"
 
-  final val OLD: String = ".old"
+  final val _OLD: String = ".old"
 }

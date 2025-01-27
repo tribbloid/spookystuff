@@ -22,7 +22,7 @@ import scala.util.Try
 
 object PythonDriver {
 
-  final val DEFAULT_PYTHON_PATH = Envs.USER_HOME :\ ".spookystuff" :\ "python"
+  final val DEFAULT_PYTHON_PATH = Envs.USER_HOME \\ ".spookystuff" \\ "python"
   //  final val MODULE_NAME = "pyspookystuff"
   //  final val MODULE_RESOURCE = "com/tribbloids/" :/ MODULE_NAME
   final val PYTHON_RESOURCE = "python"

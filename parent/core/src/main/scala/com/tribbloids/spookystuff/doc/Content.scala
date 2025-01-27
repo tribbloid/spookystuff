@@ -1,6 +1,7 @@
 package com.tribbloids.spookystuff.doc
 
 import ai.acyclic.prover.commons.spark.serialization.NOTSerializable
+import ai.acyclic.prover.commons.util.PathMagnet.URIPath
 import com.tribbloids.spookystuff.SpookyContext
 import com.tribbloids.spookystuff.commons.TreeThrowable
 import com.tribbloids.spookystuff.io.HDFSResolver
@@ -85,7 +86,7 @@ sealed trait Content extends SpookyContext.Contextual with Serializable {
 
     lazy val raw: Array[Byte] = blob.raw
 
-    def doSave1(
+    private def doSave1(
         path: String,
         overwrite: Boolean = false
     ): Path = { // return absolute path
@@ -124,11 +125,21 @@ sealed trait Content extends SpookyContext.Contextual with Serializable {
     }
 
     def save1(
-        path: String,
+        path: URIPath,
+        extension: Option[String] = None,
         overwrite: Boolean = false
     ): Content = {
 
-      val absolutePath = doSave1(path, overwrite).toString
+      val withExtension = extension
+        .orElse(
+          defaultFileExtension
+        )
+        .map { ext =>
+          path dot ext
+        }
+        .getOrElse(path)
+
+      val absolutePath = doSave1(withExtension, overwrite).toString
 
       val newBlob = blob match {
         case v: InMemoryBlob =>

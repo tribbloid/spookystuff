@@ -2,10 +2,8 @@ package com.tribbloids.spookystuff.relay
 
 import com.tribbloids.spookystuff.relay.io.{DateSerializer, Decoder, Encoder, FormattedText}
 import com.tribbloids.spookystuff.relay.xml.{XMLFormats, Xml}
-import org.apache.spark.ml.util.Identifiable
-import org.json4s.JsonAST.{JArray, JObject}
 import org.json4s.jackson.JsonMethods
-import org.json4s.{Formats, JField, JValue, StringInput}
+import org.json4s.{Formats, JValue}
 
 import scala.language.implicitConversions
 import scala.xml.{Elem, NodeSeq, XML}
@@ -30,6 +28,7 @@ abstract class Relay[Proto] {
   // TODO: should be `BiRelay`
 
   import Relay.*
+  import org.json4s.*
 
   type IR_>> <: IR
   type IR_<< <: IR
@@ -96,7 +95,12 @@ abstract class Relay[Proto] {
       fromJField(rootTag -> jv)
     }
 
-    final def fromJSON(json: String): Proto = fromJValue(JsonMethods.parse(StringInput(json)))
+    final def fromJSON(json: String): Proto = {
+
+      val parsed = JsonMethods.parse(json)
+
+      fromJValue(parsed)
+    }
 
     final def fromXMLNode(ns: NodeSeq): Proto = {
       val jv: JValue = Xml.toJson(ns)
@@ -116,21 +120,21 @@ abstract class Relay[Proto] {
       fromXMLNode(nodes)
     }
 
-    def Param(
-        parent: String,
-        name: String,
-        doc: String,
-        isValid: Proto => Boolean
-    ): MessageMLParam[Proto] = new MessageMLParam[Proto](this, parent, name, doc, isValid)
+//    def Param(
+//        parent: String,
+//        name: String,
+//        doc: String,
+//        isValid: Proto => Boolean
+//    ): MessageMLParam[Proto] = new MessageMLParam[Proto](this, parent, name, doc, isValid)
 
-    def Param(parent: String, name: String, doc: String): MessageMLParam[Proto] =
-      Param(parent, name, doc, (_: Proto) => true)
+//    def Param(parent: String, name: String, doc: String): MessageMLParam[Proto] =
+//      Param(parent, name, doc, (_: Proto) => true)
 
-    def Param(parent: Identifiable, name: String, doc: String, isValid: Proto => Boolean): MessageMLParam[Proto] =
-      Param(parent.uid, name, doc, isValid)
-
-    def Param(parent: Identifiable, name: String, doc: String): MessageMLParam[Proto] =
-      Param(parent.uid, name, doc)
+//    def Param(parent: Identifiable, name: String, doc: String, isValid: Proto => Boolean): MessageMLParam[Proto] =
+//      Param(parent.uid, name, doc, isValid)
+//
+//    def Param(parent: Identifiable, name: String, doc: String): MessageMLParam[Proto] =
+//      Param(parent.uid, name, doc)
   }
 
   trait API {

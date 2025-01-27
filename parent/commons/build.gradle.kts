@@ -2,7 +2,7 @@ val vs = versions()
 
 dependencies {
 
-    api(project(":prover-commons:spark")) // TODO: incldue meta?
+    api(project(":prover-commons:spark"))
     testFixturesApi(testFixtures(project(":prover-commons:spark")))
 
     api("io.github.classgraph:classgraph:4.8.179")

@@ -12,7 +12,7 @@ import java.util.Date
 
 object DocUtils {
 
-  def dfsRead[T](message: String, pathStr: String, spooky: SpookyContext)(f: Progress => T): T = {
+  def dfsRead[T](logMsg: String, errorMsg: String, spooky: SpookyContext)(f: Progress => T): T = {
     try {
       val result = CommonUtils.retry(Const.DFSLocalRetries) {
         val progress = Progress()
@@ -26,18 +26,18 @@ object DocUtils {
     } catch {
       case e: Exception =>
         spooky.spookyMetrics.DFSReadFailure += 1
-        val ex = new DFSReadException(pathStr, e)
+        val ex = new DFSReadException(errorMsg, e)
 
         if (spooky.conf.failOnDFSRead) throw ex
         else {
-          LoggerFactory.getLogger(this.getClass).warn(message, ex)
+          LoggerFactory.getLogger(this.getClass).warn(logMsg, ex)
           null.asInstanceOf[T]
         }
     }
   }
 
   // always fail on retry depletion and timeout
-  def dfsWrite[T](message: String, pathStr: String, spooky: SpookyContext)(f: Progress => T): T = {
+  def dfsWrite[T](logMsg: String, errorMsg: String, spooky: SpookyContext)(f: Progress => T): T = {
     try {
       val result = CommonUtils.retry(Const.DFSLocalRetries) {
         val progress = Progress()
@@ -51,7 +51,8 @@ object DocUtils {
     } catch {
       case e: Exception =>
         spooky.spookyMetrics.DFSWriteFailure += 1
-        val ex = new DFSWriteException(pathStr, e)
+        val ex = new DFSWriteException(errorMsg, e)
+        LoggerFactory.getLogger(this.getClass).error(logMsg, ex)
         throw ex
 //        if (spooky.spookyConf.failOnDFSRead) throw ex // TODO: add failOnDFSWrite
 //        else {

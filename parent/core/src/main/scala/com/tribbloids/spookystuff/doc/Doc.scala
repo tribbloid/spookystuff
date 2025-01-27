@@ -2,9 +2,9 @@ package com.tribbloids.spookystuff.doc
 
 import ai.acyclic.prover.commons.multiverse.Projection
 import ai.acyclic.prover.commons.spark.serialization.NOTSerializable
+import ai.acyclic.prover.commons.util.PathMagnet
 import com.tribbloids.spookystuff.*
 import com.tribbloids.spookystuff.caching.DocCacheLevel
-import com.tribbloids.spookystuff.commons.CommonUtils
 import com.tribbloids.spookystuff.doc.Content.InMemoryBlob
 import com.tribbloids.spookystuff.doc.Observation.DocUID
 import com.tribbloids.spookystuff.doc.Unstructured.Unrecognisable
@@ -189,46 +189,49 @@ case class Doc(
 
   def saved: Seq[String] = content.blob.saved
 
-  case class save(
+  case class prepareSave(
       spooky: SpookyContext,
       overwrite: Boolean = false
   ) {
 
-    def as(
-        pathParts: Seq[String]
-    ): Content = {
-
-      val path = CommonUtils.\\\(pathParts*)
+    def save(
+        path: PathMagnet.URIPath,
+        extension: Option[String] = None
+    ): Unit = {
 
       def wCtx = content.withCtx(spooky)
 
-      val saved = wCtx.save1(path, overwrite)
+      val saved = wCtx.save1(path, extension, overwrite)
       Doc.this.content = saved
-      saved
     }
 
 //    def apply(pathParts: Seq[String]): Content = as(pathParts)
 
-    def auditing(): Content = {
-      as(spooky.dirConf.auditing :: spooky.conf.auditingFilePaths(Doc.this) :: Nil)
-
+    def auditing(): Unit = {
+      val uri = PathMagnet.URIPath(spooky.dirConf.auditing) :/
+        spooky.conf.auditingFilePaths(Doc.this)
+      save(uri)
     }
 
-    private lazy val errorDumpRoot =
-      if (Doc.this.isImage) spooky.dirConf.errorScreenshot
-      else spooky.dirConf.errorDump
+    private lazy val errorDumpRoot = {
+      val str =
+        if (Doc.this.isImage) spooky.dirConf.errorScreenshot
+        else spooky.dirConf.errorDump
+
+      PathMagnet.URIPath(str)
+    }
 
     // TODO: merge into cascade retries
-    def errorDump(): Content = {
+    def errorDump(): Unit = {
 
-      as(errorDumpRoot :: spooky.conf.errorDumpFilePaths(Doc.this) :: Nil)
+      save(errorDumpRoot :/ spooky.conf.errorDumpFilePaths(Doc.this))
 
     }
 
-    def errorDumpLocally(): Content = {
+    def errorDumpLocally(): Unit = {
 
-      as(
-        errorDumpRoot :: spooky.conf.errorDumpFilePaths(Doc.this) :: Nil
+      save(
+        errorDumpRoot :/ spooky.conf.errorDumpFilePaths(Doc.this)
       )
     }
   }

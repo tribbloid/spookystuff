@@ -166,7 +166,7 @@ abstract class SpookyBaseSpec extends SpookyEnvSpec with BeforeAndAfterEach with
         cacheRead = false
       ),
       Dir.Conf(
-        root = Envs.USER_TEMP_DIR :\ "spooky-unit"
+        root = Envs.USER_TEMP_DIR \\ "spooky-unit"
       )
     )
   }

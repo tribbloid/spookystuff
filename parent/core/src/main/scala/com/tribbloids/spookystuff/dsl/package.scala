@@ -1,6 +1,7 @@
 package com.tribbloids.spookystuff
 
 import ai.acyclic.prover.commons.function.hom.Hom.:=>
+import ai.acyclic.prover.commons.util.PathMagnet
 import com.tribbloids.spookystuff.actions.*
 import com.tribbloids.spookystuff.agent.WebProxySetting
 import com.tribbloids.spookystuff.doc.Doc
@@ -50,12 +51,15 @@ package object dsl extends DSL {
           val last = actionStrs.last
           val omitted = File.separator + (trace.length - 4) + "more" + File.separator
 
-          SpookyUtils.\\\(oneTwoThree*) + omitted + last
-        } else SpookyUtils.\\\(actionStrs*)
+          PathMagnet.URIPath(oneTwoThree*) :/ omitted :/ last
+
+        } else {
+          PathMagnet.URIPath(actionStrs*)
+        }
 
         val hash = "" + trace.hashCode
 
-        SpookyUtils.canonizeUrn(SpookyUtils.\\\(actionConcat, hash))
+        SpookyUtils.canonizeUrn(actionConcat :/ hash)
       }
     }
   }
@@ -66,13 +70,17 @@ package object dsl extends DSL {
 
     case class UUIDName(encoder: TracePath) extends build._Impl {
 
-      override def apply(page: Doc): String =
-        SpookyUtils.\\\(encoder(page.uid.backtrace), UUID.randomUUID().toString)
+      override def apply(page: Doc): String = {
+        val encoded: PathMagnet.URIPath = encoder(page.uid.backtrace)
+        encoded :/ UUID.randomUUID().toString
+      }
     }
 
     case class TimeStampName(encoder: TracePath) extends build._Impl {
-      override def apply(page: Doc): String =
-        SpookyUtils.\\\(encoder(page.uid.backtrace), SpookyUtils.canonizeFileName(page.timeMillis.toString))
+      override def apply(page: Doc): String = {
+        val encoded: PathMagnet.URIPath = encoder(page.uid.backtrace)
+        encoded :/ SpookyUtils.canonizeFileName(page.timeMillis.toString)
+      }
     }
   }
 

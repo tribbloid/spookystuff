@@ -61,7 +61,7 @@ class DocSpec_File extends DocSpec {
         )
 
       val raw = page.content.blob.raw
-      page.save(spooky, overwrite = true).auditing()
+      page.prepareSave(spooky, overwrite = true).auditing()
 
       val loadedContent = DocUtils.load(page.saved.head)(spooky)
 

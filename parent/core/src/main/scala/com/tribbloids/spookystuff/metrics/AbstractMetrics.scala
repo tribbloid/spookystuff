@@ -1,6 +1,6 @@
 package com.tribbloids.spookystuff.metrics
 
-import com.tribbloids.spookystuff.commons.CommonUtils
+import ai.acyclic.prover.commons.util.PathMagnet
 import com.tribbloids.spookystuff.commons.refl.ReflectionUtils
 import com.tribbloids.spookystuff.relay.TreeIR
 import org.apache.spark.util.AccumulatorV2
@@ -70,7 +70,10 @@ abstract class AbstractMetrics extends MetricLike {
     }
 
     def toMap: Map[String, T] = toTreeIR.pathToValueMap.map {
-      case (k, v) => CommonUtils./:/(k*) -> v
+      case (k, v) => {
+        val kstr: String = PathMagnet.URIPath(k*)
+        kstr -> v
+      }
     }
   }
 

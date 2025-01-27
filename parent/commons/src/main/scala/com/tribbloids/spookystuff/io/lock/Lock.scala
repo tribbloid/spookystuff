@@ -20,14 +20,14 @@ case class Lock(
   protected def acquire(): URIExecution = {
 
     try {
-      exe.moveTo(Moved.locked.absolutePathStr)
+      exe.moveTo(Moved.locked.absolutePath)
     } catch {
       case ee @ (_: FileNotFoundException | _: NoSuchFileException) =>
         val canBeUnlocked = expired.scanForUnlocking(Moved.dir)
 
         canBeUnlocked match {
           case Some(v) =>
-            v.exe.moveTo(Moved.locked.absolutePathStr)
+            v.exe.moveTo(Moved.locked.absolutePath)
           case None =>
             throw ee
         }
@@ -45,7 +45,7 @@ case class Lock(
       exe.moveTo(PathStrs.old, force = true)
     }
 
-    Moved.locked.moveTo(exe.absolutePathStr, force = true)
+    Moved.locked.moveTo(exe.absolutePath, force = true)
   }
 
   protected def duringOnce[T](fn: URIExecution => T): T = {
@@ -76,13 +76,13 @@ case class Lock(
 
 //    Lock.acquired += execution -> System.currentTimeMillis()
 
-    this.logPrefixed(s"=== ACQUIRED!: ${execution.absolutePathStr}")
+    this.logPrefixed(s"=== ACQUIRED!: ${execution.absolutePath}")
   }
 
   def logRelease(execution: URIExecution): Unit = {
 //    Lock.acquired -= execution
 
-    this.logPrefixed(s"=== RELEASED! ${execution.absolutePathStr}")
+    this.logPrefixed(s"=== RELEASED! ${execution.absolutePath}")
   }
 }
 

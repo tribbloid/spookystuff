@@ -1,6 +1,6 @@
 package com.tribbloids.spookystuff.io
 
-import ai.acyclic.prover.commons.util.Retry
+import ai.acyclic.prover.commons.util.{PathMagnet, Retry}
 import com.tribbloids.spookystuff.utils.http.HttpUtils
 
 import java.io.{InputStream, OutputStream}
@@ -31,11 +31,11 @@ case class URLConnectionResolver(
 
   import scala.jdk.CollectionConverters.*
 
-  case class _Execution(pathStr: String) extends Execution {
+  implicit class _Execution(_uri: PathMagnet.URIPath) extends Execution {
 
-    override def absolutePathStr: String = pathStr
+    override def absolutePath = _uri
 
-    val uri: URI = HttpUtils.uri(pathStr)
+    val uri: URI = HttpUtils.uri(_uri)
     val _conn: URLConnection = input2Connection(uri)
 
     case class _Resource(mode: WriteMode) extends Resource with MimeTypeMixin {

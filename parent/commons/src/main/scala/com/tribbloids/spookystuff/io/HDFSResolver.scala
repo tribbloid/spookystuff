@@ -1,6 +1,6 @@
 package com.tribbloids.spookystuff.io
 
-import ai.acyclic.prover.commons.util.Retry
+import ai.acyclic.prover.commons.util.{PathMagnet, Retry}
 import org.apache.hadoop.conf.Configuration
 import org.apache.hadoop.fs.*
 import org.apache.hadoop.fs.permission.FsPermission
@@ -55,17 +55,16 @@ case class HDFSResolver(
     }
   }
 
-  object _Execution extends (String => _Execution) {}
-  case class _Execution(pathStr: String) extends Execution {
+  implicit class _Execution(path: PathMagnet.URIPath) extends Execution {
 
-    val path: Path = new Path(pathStr)
+    val hdfsPath: Path = new Path(path)
 
-    lazy val fc: FileContext = FileContext.getFileContext(path.toUri, _hadoopConf)
+    lazy val fc: FileContext = FileContext.getFileContext(hdfsPath.toUri, _hadoopConf)
 
-    override lazy val absolutePathStr: String = doAsUGI {
+    override lazy val absolutePath: PathMagnet.URIPath = doAsUGI {
 
       val defaultURI = fc.getDefaultFileSystem.getUri
-      val qualified = path.makeQualified(defaultURI, fc.getWorkingDirectory)
+      val qualified = hdfsPath.makeQualified(defaultURI, fc.getWorkingDirectory)
 
       val uri: URI = qualified.toUri
       val newAuthority = Option(uri.getAuthority).getOrElse("")
@@ -79,7 +78,7 @@ case class HDFSResolver(
 
       override protected def _outer: URIExecution = _Execution.this
 
-      lazy val status: FileStatus = fc.getFileStatus(path)
+      lazy val status: FileStatus = fc.getFileStatus(hdfsPath)
 
       override lazy val getName: String = status.getPath.getName
 
@@ -90,7 +89,7 @@ case class HDFSResolver(
         else UNKNOWN
       }
 
-      override def _requireExisting(): Unit = require(fc.util().exists(path))
+      override def _requireExisting(): Unit = require(fc.util().exists(hdfsPath))
 
       override lazy val getContentType: String = {
         if (isDirectory) DIR_MIME_OUT
@@ -108,7 +107,7 @@ case class HDFSResolver(
       override lazy val children: Seq[_Execution] = {
         if (isDirectory) {
 
-          val childrenItr = fc.listStatus(path)
+          val childrenItr = fc.listStatus(hdfsPath)
 
           val children = {
             val v = ArrayBuffer.empty[FileStatus]
@@ -128,18 +127,18 @@ case class HDFSResolver(
       }
 
       override protected def _newIStream: InputStream = {
-        fc.open(path)
+        fc.open(hdfsPath)
       }
 
       override protected def _newOStream: OutputStream = {
         import CreateFlag.*
 
-        mkParent(path)
+        mkParent(hdfsPath)
 
         val result = mode match {
-          case WriteMode.CreateOnly => fc.create(path, util.EnumSet.of(CREATE))
-          case WriteMode.Append     => fc.create(path, util.EnumSet.of(CREATE, APPEND))
-          case WriteMode.Overwrite  => fc.create(path, util.EnumSet.of(CREATE, OVERWRITE))
+          case WriteMode.CreateOnly => fc.create(hdfsPath, util.EnumSet.of(CREATE))
+          case WriteMode.Append     => fc.create(hdfsPath, util.EnumSet.of(CREATE, APPEND))
+          case WriteMode.Overwrite  => fc.create(hdfsPath, util.EnumSet.of(CREATE, OVERWRITE))
         }
 
         result
@@ -154,7 +153,7 @@ case class HDFSResolver(
 
       (isExisting, mustExist) match {
         case (false, false) =>
-        case _              => fc.delete(path, true)
+        case _              => fc.delete(hdfsPath, true)
       }
     }
 
@@ -165,9 +164,9 @@ case class HDFSResolver(
       mkParent(newPath)
 
       if (force)
-        fc.rename(path, newPath, Options.Rename.OVERWRITE)
+        fc.rename(hdfsPath, newPath, Options.Rename.OVERWRITE)
       else
-        fc.rename(path, newPath)
+        fc.rename(hdfsPath, newPath)
     }
 
     protected def mkParent(path: Path): Unit = {

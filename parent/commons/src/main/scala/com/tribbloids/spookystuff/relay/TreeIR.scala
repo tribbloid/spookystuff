@@ -8,6 +8,7 @@ import scala.collection.immutable.ListMap
 import scala.language.implicitConversions
 
 trait TreeIR[LEAF] extends IR with Product {
+  // TODO: can fold into inductive tree impl with Inspection
 
   import TreeIR.*
 

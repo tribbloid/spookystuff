@@ -83,17 +83,6 @@ class SpookyViewsSuite extends SpookyBaseSpec {
     assert(Array(1, 2.2, "a").filterByType[String] == Seq("a"))
   }
 
-  val nullStr: String = null: String
-  it(":/ can handle null component") {
-
-    assert(nullStr :/ nullStr :/ "abc" :/ null :/ null == "abc")
-  }
-
-  it("\\\\ can handle null component") {
-
-    assert(nullStr \\ nullStr \\ "abc" \\ null \\ null == "abc")
-  }
-
   it("injectPassthroughPartitioner should not move partitions") {
     val rdd1: RDD[WithID] = sc
       .parallelize(1 to 100)

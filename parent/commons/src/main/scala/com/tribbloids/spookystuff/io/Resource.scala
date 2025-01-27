@@ -45,7 +45,7 @@ abstract class Resource extends LocalCleanable {
 
   protected def _outer: URIExecution
 
-  lazy val getURI: String = _outer.absolutePathStr
+  lazy val getURI: String = _outer.absolutePath
 
   def getName: String
 
@@ -61,7 +61,7 @@ abstract class Resource extends LocalCleanable {
       _requireExisting()
     } catch {
       case e: Exception =>
-        val bothPaths = Seq(_outer.absolutePathStr, getURI).distinct.mkString(" ~> ")
+        val bothPaths = Seq(_outer.absolutePath, getURI).distinct.mkString(" ~> ")
         throw new IOException(s"Resource ${bothPaths} does not exist", e)
     }
   }

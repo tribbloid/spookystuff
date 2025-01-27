@@ -1,22 +1,24 @@
 package com.tribbloids.spookystuff.io
 
 import ai.acyclic.prover.commons.spark.serialization.NOTSerializable
+import ai.acyclic.prover.commons.util.PathMagnet
 import com.tribbloids.spookystuff.agent.WebProxySetting
 import com.tribbloids.spookystuff.utils.http.*
 import org.apache.hadoop.conf.Configuration
 import org.apache.hadoop.shaded.org.apache.http.client.methods.HttpRequestBase
 
 import java.net.URI
+import scala.language.reflectiveCalls
 
 trait CompoundResolver extends URIResolver {
 
-  def getImpl(pathStr: String): URIResolver
+  def getImpl(uri: PathMagnet.URIPath): URIResolver
 
-  case class _Execution(pathStr: String) extends Execution {
+  implicit class _Execution(uri: PathMagnet.URIPath) extends Execution {
 
-    lazy val impl: URIExecution = getImpl(pathStr).execute(pathStr)
+    lazy val impl: URIExecution = getImpl(uri).execute(uri)
 
-    override def absolutePathStr: String = impl.absolutePathStr
+    override def absolutePath: PathMagnet.URIPath = impl.absolutePath
 
     override def _delete(mustExist: Boolean): Unit = impl.delete(mustExist)
 
@@ -46,7 +48,7 @@ object CompoundResolver {
 
     lazy val ftp: URLConnectionResolver = URLConnectionResolver(timeoutMillis)
 
-    override def getImpl(uri: String): URIResolver = {
+    override def getImpl(uri: PathMagnet.URIPath): URIResolver = {
 
       val _uri = HttpUtils.uri(uri)
       val scheme = _uri.getScheme
@@ -70,7 +72,7 @@ object CompoundResolver {
   ) extends FSResolver(hadoopConfFactory, timeoutMillis)
       with NOTSerializable {
 
-    override def getImpl(uri: String): URIResolver = {
+    override def getImpl(uri: PathMagnet.URIPath): URIResolver = {
 
       val _uri = HttpUtils.uri(uri)
       val scheme = _uri.getScheme

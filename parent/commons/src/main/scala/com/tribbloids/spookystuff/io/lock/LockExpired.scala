@@ -61,7 +61,7 @@ case class LockExpired(
     }
 
     val lockedFiles: Seq[URIExecution] = files.filter { file =>
-      file.absolutePathStr.split('.').lastOption.contains(LockLike.LOCKED)
+      file.absolutePath.split('.').lastOption.contains(LockLike._LOCKED)
     }
 
     val result = _scanForUnlocking(lockedFiles)

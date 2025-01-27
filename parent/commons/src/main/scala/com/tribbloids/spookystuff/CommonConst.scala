@@ -21,7 +21,5 @@ object CommonConst {
     val blocking: Boolean = true
   }
 
-  val hardTerminateOverhead: Duration = 20.seconds
-
-  val UNPACK_RESOURCE_DIR: String = Envs.ROOT_TEMP_DIR :\ "spookystuff" :\ "resources"
+  val UNPACK_RESOURCE_DIR: String = Envs.ROOT_TEMP_DIR \\ "spookystuff" \\ "resources"
 }

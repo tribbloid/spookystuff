@@ -64,7 +64,7 @@ object WebDriverFactory {
     // TODO: separate win/mac/linux32/linux64 versions
     final val defaultRemoteURL = "https://docs.google.com/uc?export=download&id=1tHWQTXy471_MTu5XBYwgvN6zEg741cD8"
 
-    final def DEFAULT_PATH: String = Envs.USER_HOME :\ ".spookystuff" :\ "phantomjs"
+    final def DEFAULT_PATH: String = Envs.USER_HOME \\ ".spookystuff" \\ "phantomjs"
 
     def defaultLocalPath: String = {
       ConfUtils.getOrDefault("phantomjs.path", DEFAULT_PATH)

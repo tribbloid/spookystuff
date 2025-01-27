@@ -1,19 +1,19 @@
 package com.tribbloids.spookystuff.io
 
-import com.tribbloids.spookystuff.commons.CommonUtils
+import ai.acyclic.prover.commons.util.PathMagnet
 import com.tribbloids.spookystuff.commons.lifespan.LocalCleanable
 
 import scala.util.Random
 
 case class TempResource(
     resolver: URIResolver,
-    pathStr: String
+    path: PathMagnet.URIPath
 ) extends LocalCleanable {
 
   import TempResource.*
 
-  lazy val execution: resolver.Execution = resolver.execute(pathStr)
-  def absolutePathStr: String = execution.absolutePathStr
+  lazy val execution: resolver.Execution = resolver.execute(path)
+  def absolutePath = execution.absolutePath
 
 //  def absolutePathStr: String = session.absolutePathStr
 
@@ -45,7 +45,9 @@ case class TempResource(
 
   def requireEmptyDir[T](fn: => T): T = deleteBeforeAndAfter {
 
-    val subExe = resolver.execute(CommonUtils.\\\(execution.absolutePathStr, "Random" + Random.nextLong()))
+    val subExe = resolver.execute(
+      execution.absolutePath :/ "Random" :/ Random.nextLong().toString
+    )
 
     subExe.createNew()
     subExe.delete(false)
@@ -78,7 +80,7 @@ case class TempResource(
   }
 
   def \(subDir: String): TempResource = this.copy(
-    pathStr = CommonUtils.\\\(this.pathStr, subDir)
+    path = this.path :/ subDir
   )
 }
 

@@ -2,14 +2,15 @@ package com.tribbloids.spookystuff.commons.data
 
 import com.tribbloids.spookystuff.testutils.BaseSpec
 import org.apache.hadoop.fs.Path
-import org.json4s.{DefaultFormats, Extraction, StringInput}
 import org.json4s.jackson.JsonMethods
-import org.scalatest.Ignore
 
 import scala.collection.immutable.ListMap
 
-@Ignore
+//@Ignore
 class Json4sSpike extends BaseSpec {
+  import org.json4s.*
+
+  // TODO: how to fix these two cases?
 
   implicit val fm: DefaultFormats.type = DefaultFormats
 
@@ -19,7 +20,7 @@ class Json4sSpike extends BaseSpec {
 
       val v: ListMap[String, Int] = ListMap("a" -> 1, "b" -> 2)
       val json = JsonMethods.compact(Extraction.decompose(v))
-      val v2 = Extraction.extract[ListMap[String, Int]](JsonMethods.parse(StringInput(json)))
+      val v2 = Extraction.extract[ListMap[String, Int]](JsonMethods.parse(json))
       assert(v == v2)
     }
 
@@ -27,7 +28,7 @@ class Json4sSpike extends BaseSpec {
 
       val v = new Path("http://www.google.com")
       val json = JsonMethods.compact(Extraction.decompose(v))
-      val v2 = Extraction.extract[Path](JsonMethods.parse(StringInput(json)))
+      val v2 = Extraction.extract[Path](JsonMethods.parse(json))
       assert(v == v2)
     }
   }

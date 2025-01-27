@@ -2,12 +2,11 @@ package com.tribbloids.spookystuff.python.ref
 
 import com.tribbloids.spookystuff.SpookyContext
 import com.tribbloids.spookystuff.agent.PythonDriver
-import com.tribbloids.spookystuff.utils.SpookyUtils
 import com.tribbloids.spookystuff.commons.lifespan.LocalCleanable
 import com.tribbloids.spookystuff.relay.TreeIR
 import com.tribbloids.spookystuff.relay.io.Encoder
+import com.tribbloids.spookystuff.utils.SpookyUtils
 import org.json4s
-import org.json4s.StringInput
 import org.json4s.jackson.JsonMethods.parse
 
 import scala.language.dynamics
@@ -22,6 +21,7 @@ class PyBinding(
 ) extends Dynamic
     with LocalCleanable {
 
+  import json4s.*
   import ref.*
 
   {
@@ -62,7 +62,7 @@ class PyBinding(
       //        val jsonOpt = driver.evalExpr(s"$ref.__dict__")
       val jsonOpt = driver.evalExpr(s"json.dumps($ref.__dict__)")
       jsonOpt.map { json =>
-        val jValue = parse(StringInput(json))
+        val jValue = parse(json)
         Encoder.forValue(jValue)
       }
     }

@@ -8,6 +8,10 @@ case class Timeout(
     noProgress: Duration = 30.seconds
 ) {
 
+  import Timeout.*
+
+  lazy val hardTerimination: Duration = max + hardTerminateOverhead
+
   override lazy val toString: String =
     s"[$max / ${noProgress} if no progress]"
 }
@@ -15,4 +19,6 @@ case class Timeout(
 object Timeout {
 
   implicit def fromDuration(v: Duration): Timeout = Timeout(v)
+
+  val hardTerminateOverhead: Duration = 20.seconds
 }

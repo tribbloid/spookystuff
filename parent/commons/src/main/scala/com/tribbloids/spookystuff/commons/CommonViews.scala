@@ -6,11 +6,11 @@ abstract class CommonViews {
 
   @transient lazy val specialChars: String = "(?=[]\\[+$&|!(){}^\"~*?:\\\\-])"
 
-  implicit class StringView(str: String) {
-
-    def :/(other: String): String = CommonUtils./:/(str, other)
-    def \\(other: String): String = CommonUtils.\\\(str, other)
-  }
+//  implicit class StringView(str: String) { // TODO: remove, should use PathMagnet
+//
+//    def :/(other: String): String = CommonUtils./:/(str, other)
+////    def \\(other: String): String = CommonUtils.\\\(str, other)
+//  }
 
   implicit class Function2PrivilegedAction[T](f: => T) extends PrivilegedAction[T] {
     override def run(): T = {

@@ -1,6 +1,6 @@
 package com.tribbloids.spookystuff.io
 
-import ai.acyclic.prover.commons.util.Retry
+import ai.acyclic.prover.commons.util.{PathMagnet, Retry}
 import com.tribbloids.spookystuff.io.lock.{Lock, LockExpired}
 import org.apache.commons.io.IOUtils
 
@@ -31,7 +31,7 @@ abstract class URIResolver extends Serializable {
 
     def outer: URIResolver = URIResolver.this
 
-    def absolutePathStr: String
+    def absolutePath: PathMagnet.URIPath
 
     protected def _delete(mustExist: Boolean = true): Unit
 
@@ -129,36 +129,49 @@ abstract class URIResolver extends Serializable {
   }
 
   type _Execution <: Execution
-  def _Execution: { def apply(v: String): _Execution }
+  implicit def _Execution(path: PathMagnet.URIPath): _Execution
+
+//  type ExecutionMixin <: Execution
+//
+//  case class ExecutionBase(v: PathMagnet.URIPath) {
+//    self: Execution =>
+//  }
+//
+//  final type _Execution = ExecutionBase & ExecutionMixin
+//
+////  type _Execution <: Execution
+////  def _Execution: { def apply(v: PathMagnet.URIPath): _Execution }
+//
+//  final def execute(uri: PathMagnet.URIPath): _Execution = {
+//    new ExecutionBase(uri) with ExecutionMixin
+//  }
+
+  def execute(uri: PathMagnet.URIPath) = _Execution(uri)
 
   final type _Resource = _Execution#_Resource
-
-  final def execute(pathStr: String): _Execution = {
-    _Execution(pathStr)
-  }
 
   def retry: Retry = URIResolver.default.retry
   def lockExpire: LockExpired = URIResolver.default.lockExpired
 
-  final def input[T](pathStr: String)(f: _Resource#InputView => T): T = {
-    val exe = execute(pathStr)
+  final def input[T](uri: PathMagnet.URIPath)(f: _Resource#InputView => T): T = {
+    val exe = execute(uri)
     exe.input(f)
   }
 
-  final def output[T](pathStr: String, mode: WriteMode)(f: _Resource#OutputView => T): T = {
-    val exe = execute(pathStr)
+  final def output[T](uri: PathMagnet.URIPath, mode: WriteMode)(f: _Resource#OutputView => T): T = {
+    val exe = execute(uri)
     exe.output(mode)(f)
   }
 
-  final def toAbsolute(pathStr: String): String = execute(pathStr).absolutePathStr
+  final def toAbsolute(uri: PathMagnet.URIPath): PathMagnet.URIPath = execute(uri).absolutePath
 
-  final def isAbsolute(pathStr: String): Boolean = {
-    toAbsolute(pathStr) == pathStr
+  final def isAbsolute(uri: PathMagnet.URIPath): Boolean = {
+    toAbsolute(uri) == uri
   }
 
-  def ensureAbsolute(file: File): Unit = {
-    assert(file.isAbsolute, s"BAD DESIGN: ${file.getPath} is not an absolute path")
-  }
+//  def ensureAbsolute(file: File): Unit = {
+//    assert(file.isAbsolute, s"BAD DESIGN: ${file.getPath} is not an absolute path")
+//  }
 
 //  def resourceOrAbsolute(pathStr: String): String = {
 //    val resourcePath =
@@ -171,8 +184,8 @@ abstract class URIResolver extends Serializable {
   /**
     * ensure sequential access, doesn't work on non-existing path
     */
-  def lock[T](pathStr: String)(fn: URIExecution => T): T = {
-    val exe = execute(pathStr)
+  def lock[T](uri: PathMagnet.URIPath)(fn: URIExecution => T): T = {
+    val exe = execute(uri)
 
     val lock = new Lock(exe, lockExpire)
 

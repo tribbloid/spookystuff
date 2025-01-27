@@ -1,6 +1,7 @@
 package com.tribbloids.spookystuff.row
 
 import ai.acyclic.prover.commons.spark.serialization.NOTSerializable
+import ai.acyclic.prover.commons.util.PathMagnet
 import com.tribbloids.spookystuff.doc.*
 import com.tribbloids.spookystuff.doc.Observation.{DocUID, Failure, Success}
 import com.tribbloids.spookystuff.execution.ChainPlan
@@ -145,9 +146,9 @@ object FetchedRow {
   * serializable, has to be created from [[SquashedRow]] on the fly
   */
 case class FetchedRow[D](
-    agentState: AgentState,
+    @transient agentState: AgentState,
     data: D
-) extends NOTSerializable {
+) {
 
   lazy val effectiveScope: Scope = {
 
@@ -242,7 +243,7 @@ case class FetchedRow[D](
       }
 
       def save(
-          path: String,
+          path: PathMagnet.URIPath,
           extension: Option[String] = None,
           overwrite: Boolean = false
       ): Unit = {
@@ -250,9 +251,7 @@ case class FetchedRow[D](
         self.zipWithIndex.foreach {
 
           case (doc, _) =>
-            val saveParts = Seq(path) ++ extension
-
-            doc.save(agentState.ctx, overwrite).as(saveParts)
+            doc.prepareSave(agentState.ctx, overwrite).save(path, extension)
         }
       }
     }

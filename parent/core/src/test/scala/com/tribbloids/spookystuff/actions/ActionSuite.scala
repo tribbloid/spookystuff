@@ -1,7 +1,7 @@
 package com.tribbloids.spookystuff.actions
 
 import com.tribbloids.spookystuff.agent.Agent
-import com.tribbloids.spookystuff.commons.CommonUtils
+import com.tribbloids.spookystuff.commons.{CommonUtils, Timeout}
 import com.tribbloids.spookystuff.doc.Observation
 import com.tribbloids.spookystuff.testutils.SpookyBaseSpec
 import com.tribbloids.spookystuff.{ActionException, Const}
@@ -46,11 +46,11 @@ class ActionSuite extends SpookyBaseSpec {
     val a = OverdueExport
     val session = new Agent(this.spooky)
     assert(
-      a.getTimeout_hardTerminate(session).max == spookyConf.remoteResourceTimeout.max + Const.hardTerminateOverhead
+      a.getTimeout(session).hardTerimination == spookyConf.remoteResourceTimeout.max + Timeout.hardTerminateOverhead
     )
     val b = a in 10.seconds
     assert(
-      b.getTimeout_hardTerminate(session).max == 10.seconds + Const.hardTerminateOverhead
+      b.getTimeout(session).hardTerimination == 10.seconds + Timeout.hardTerminateOverhead
     )
 
     val (_, time) = CommonUtils.timed {

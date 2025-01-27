@@ -23,7 +23,7 @@ abstract class ITBaseSpec extends SpookyBaseSpec with FileURIDocsFixture {
 
   lazy val roots: Seq[String] = {
 
-    val local: Seq[String] = Seq(Envs.USER_TEMP_DIR :\ "spooky-integration")
+    val local: Seq[String] = Seq(Envs.USER_TEMP_DIR \\ "spooky-integration")
 
     local ++ TestHelper.S3Path
   }

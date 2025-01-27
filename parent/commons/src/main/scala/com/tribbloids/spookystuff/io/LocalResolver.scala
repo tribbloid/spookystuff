@@ -1,6 +1,6 @@
 package com.tribbloids.spookystuff.io
 
-import ai.acyclic.prover.commons.util.Retry
+import ai.acyclic.prover.commons.util.{PathMagnet, Retry}
 import org.apache.commons.io.FileUtils
 
 import java.io.{File, InputStream, OutputStream}
@@ -15,50 +15,50 @@ case class LocalResolver(
   @transient lazy val metadataParser: ResourceMetadata.ReflectionParser[File] =
     ResourceMetadata.ReflectionParser[File]()
 
-  object _Execution extends (String => _Execution) {}
-  case class _Execution(pathStr: String) extends Execution {
+  implicit class _Execution(
+      originalPath: PathMagnet.URIPath
+  ) extends Execution {
 
     import Resource.*
-
-    val path: Path = Paths.get(pathStr)
-
     import scala.jdk.CollectionConverters.*
 
+    val nioPath: Path = Paths.get(originalPath.normaliseToLocal)
+
+    val absoluteNioPath = nioPath.toAbsolutePath
+
     // CAUTION: resolving is different on each driver or executors
-    val absolutePath: Path = path.toAbsolutePath
+    override val absolutePath = PathMagnet.URIPath(absoluteNioPath.toString)
 
     // this is an old IO object, usage should be minimised
     // TODO: should embrace NIO 100%?
     // https://java7fs.fandom.com/wiki/Why_File_sucks
-    @transient lazy val file: File = path.toFile
-
-    override lazy val absolutePathStr: String = absolutePath.toString
+    @transient lazy val file: File = nioPath.toFile
 
     object _Resource extends (WriteMode => _Resource)
     case class _Resource(mode: WriteMode) extends Resource {
 
       override protected def _outer: URIExecution = _Execution.this
 
-      override lazy val getName: String = path.getFileName.toString
+      override lazy val getName: String = nioPath.getFileName.toString
 
       override lazy val getType: String = {
-        if (Files.isDirectory(path)) DIR
-        else if (Files.isSymbolicLink(path)) SYMLINK
-        else if (Files.isRegularFile(path)) FILE
+        if (Files.isDirectory(nioPath)) DIR
+        else if (Files.isSymbolicLink(nioPath)) SYMLINK
+        else if (Files.isRegularFile(nioPath)) FILE
         else if (isExisting) UNKNOWN
-        else throw new NoSuchFileException(s"File $path doesn't exist")
+        else throw new NoSuchFileException(s"File $nioPath doesn't exist")
       }
 
       override def _requireExisting(): Unit = require(file.exists())
 
       override lazy val getContentType: String = {
         if (isDirectory) DIR_MIME_OUT
-        else Files.probeContentType(path)
+        else Files.probeContentType(nioPath)
       }
 
-      override lazy val getLength: Long = Files.size(path)
+      override lazy val getLength: Long = Files.size(nioPath)
 
-      override lazy val getLastModified: Long = Files.getLastModifiedTime(path).toMillis
+      override lazy val getLastModified: Long = Files.getLastModifiedTime(nioPath).toMillis
 
       override lazy val _metadata: ResourceMetadata = {
         // TODO: use Files.getFileAttributeView
@@ -69,7 +69,7 @@ case class LocalResolver(
         if (isDirectory) {
 
           Files
-            .newDirectoryStream(path)
+            .newDirectoryStream(nioPath)
             .iterator()
             .asScala
             .toSeq
@@ -80,7 +80,7 @@ case class LocalResolver(
       }
 
       override protected def _newIStream: InputStream = {
-        Files.newInputStream(path)
+        Files.newInputStream(nioPath)
       }
 
       override protected def _newOStream: OutputStream = {
@@ -88,28 +88,28 @@ case class LocalResolver(
         val fos = (isExisting, mode) match {
 
           case (true, WriteMode.CreateOnly) =>
-            throw new FileAlreadyExistsException(s"$absolutePathStr already exists")
+            throw new FileAlreadyExistsException(s"$absolutePath already exists")
 
           case (true, WriteMode.Overwrite) =>
             delete(false)
             //              Files.createFile(path)
-            Files.newOutputStream(path, StandardOpenOption.CREATE_NEW, StandardOpenOption.SYNC)
+            Files.newOutputStream(nioPath, StandardOpenOption.CREATE_NEW, StandardOpenOption.SYNC)
 
           case (true, WriteMode.Append) =>
-            Files.newOutputStream(path, StandardOpenOption.APPEND, StandardOpenOption.SYNC)
+            Files.newOutputStream(nioPath, StandardOpenOption.APPEND, StandardOpenOption.SYNC)
 
           case (false, _) =>
             if (!isExisting) {
 
-              Files.createDirectories(absolutePath.getParent)
+              Files.createDirectories(absoluteNioPath.getParent)
               //              Files.createFile(path)
             }
-            Files.newOutputStream(path, StandardOpenOption.CREATE_NEW, StandardOpenOption.SYNC)
+            Files.newOutputStream(nioPath, StandardOpenOption.CREATE_NEW, StandardOpenOption.SYNC)
         }
 
-        val permissions = Files.getPosixFilePermissions(path)
+        val permissions = Files.getPosixFilePermissions(nioPath)
         permissions.addAll(extraPermissions.asJava)
-        Files.setPosixFilePermissions(path, permissions)
+        Files.setPosixFilePermissions(nioPath, permissions)
 
         fos
       }
@@ -130,9 +130,9 @@ case class LocalResolver(
       Files.createDirectories(newPath.getParent)
 
       if (force)
-        Files.move(absolutePath, newPath, StandardCopyOption.ATOMIC_MOVE, StandardCopyOption.REPLACE_EXISTING)
+        Files.move(absoluteNioPath, newPath, StandardCopyOption.ATOMIC_MOVE, StandardCopyOption.REPLACE_EXISTING)
       else
-        Files.move(absolutePath, newPath, StandardCopyOption.ATOMIC_MOVE)
+        Files.move(absoluteNioPath, newPath, StandardCopyOption.ATOMIC_MOVE)
     }
   }
 }

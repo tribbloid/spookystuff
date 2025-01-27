@@ -46,7 +46,7 @@ object TestSiteServer {
 
     resourceHandler.setDirectoriesListed(true)
     resourceHandler.setWelcomeFiles(Array[String]("test-sites.html"))
-    resourceHandler.setResourceBase(Envs.USER_DIR :\ "test-sites")
+    resourceHandler.setResourceBase(Envs.USER_DIR \\ "test-sites")
 
     val handlers = new HandlerList
     handlers.setHandlers(Array(RedirectHandler, resourceHandler, new DefaultHandler))

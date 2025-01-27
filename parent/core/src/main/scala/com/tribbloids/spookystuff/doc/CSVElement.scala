@@ -28,12 +28,14 @@ object CSVElement {
     override def breadcrumb: Option[Seq[String]] = ???
 
     override def children(selector: DocQuery): Elements[Unstructured] = {
-      if (!this.headers.contains(selector)) Elements.empty
+      val _selector = selector.toString
+
+      if (!this.headers.contains(_selector)) Elements.empty
       else {
         val data = parsedList.map { record =>
-          val datum = record.get(selector.toString)
+          val datum = record.get(_selector)
 
-          new Cell(uri, datum, selector.toString)
+          new Cell(uri, datum, _selector)
         }
         Elements(
           data

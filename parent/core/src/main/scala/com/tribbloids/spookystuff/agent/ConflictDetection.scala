@@ -1,7 +1,8 @@
 package com.tribbloids.spookystuff.agent
 
+import ai.acyclic.prover.commons.util.PathMagnet
 import com.tribbloids.spookystuff.commons.lifespan.Cleanable
-import com.tribbloids.spookystuff.commons.{CommonUtils, TreeThrowable}
+import com.tribbloids.spookystuff.commons.TreeThrowable
 
 import scala.util.Try
 
@@ -11,13 +12,13 @@ import scala.util.Try
 trait ConflictDetection extends Cleanable {
 
   def _resourceIDs: Map[String, Set[?]]
-  def _resourceQualifier: String = this.getClass.getCanonicalName
+  def _resourceQualifier: PathMagnet.URIPath = this.getClass.getCanonicalName
 
   final def resourceIDs: Map[String, Set[Any]] = _resourceIDs.map { tuple =>
     val rawK =
       if (tuple._1.isEmpty) null
       else tuple._1
-    val k = CommonUtils./:/(_resourceQualifier, rawK)
+    val k: String = _resourceQualifier :/ rawK
     val v = tuple._2.map(_.asInstanceOf[Any])
     k -> v
   }

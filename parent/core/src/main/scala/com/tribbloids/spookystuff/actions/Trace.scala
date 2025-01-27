@@ -136,7 +136,7 @@ case class Trace(
 
           observed.foreach { observed =>
             spooky.conf.auditing.apply(observed).map { doc =>
-              doc.save(spooky).auditing()
+              doc.prepareSave(spooky).auditing()
             }
             // TODO: doc.content can now use the file saved for auditing
           }

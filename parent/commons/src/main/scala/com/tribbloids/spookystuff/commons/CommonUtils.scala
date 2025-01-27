@@ -32,21 +32,22 @@ object CommonUtils {
     else part + suffix
   }
 
-  def /:/(parts: String*): String = qualifiedName("/")(parts*)
-  def :/(part: String): String = addSuffix("/", part)
+//  def /:/(parts: String*): String = qualifiedName("/")(parts*)
+//  def :/(part: String): String = addSuffix("/", part)
 
-  def \\\(parts: String*): String = {
-    val _parts = parts.flatMap { v =>
-      Option(v).map(
-        _.replace('/', File.separatorChar)
-      )
-    }
-    qualifiedName(File.separator)(_parts*)
-  }
-  def :\(part: String): String = {
-    val _part = part.replace('/', File.separatorChar)
-    addSuffix(File.separator, _part)
-  }
+  // TODO: removed, normalisation from \ to / is file-system dependent
+//  def \\\(parts: String*): String = {
+//    val _parts = parts.flatMap { v =>
+//      Option(v).map(
+//        _.replace('/', File.separatorChar)
+//      )
+//    }
+//    qualifiedName(File.separator)(_parts*)
+//  }
+//  def :\(part: String): String = {
+//    val _part = part.replace('/', File.separatorChar)
+//    addSuffix(File.separator, _part)
+//  }
 
   def uri2fileName(path: String): String = path.split(File.separatorChar).last
 
