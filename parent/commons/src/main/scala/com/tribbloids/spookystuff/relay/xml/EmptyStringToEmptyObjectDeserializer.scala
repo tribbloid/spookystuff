@@ -6,7 +6,7 @@ import org.json4s.*
 import org.json4s.reflect.TypeInfo
 
 // <tag/> => tag: {}
-object EmptyStringToEmptyObjectDeserializer extends XMLWeakDeserializer[Any] {
+object EmptyStringToEmptyObjectDeserializer extends XMLCompat.DeserializerBase[Any] {
 
   override def _deserialize(
       implicit

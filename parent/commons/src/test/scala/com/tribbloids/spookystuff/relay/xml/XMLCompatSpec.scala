@@ -1,9 +1,10 @@
 package com.tribbloids.spookystuff.relay.xml
 
+import com.tribbloids.spookystuff.relay.json.BaseFormats
 import com.tribbloids.spookystuff.testutils.BaseSpec
 import org.json4s.{DefaultFormats, Formats, JObject}
 
-object XMLWeakDeserializerSuite {
+object XMLCompatSpec {
   case class StrStr(
       a: String,
       b: String
@@ -39,11 +40,11 @@ object XMLWeakDeserializerSuite {
   )
 }
 
-class XMLWeakDeserializerSuite extends BaseSpec {
+class XMLCompatSpec extends BaseSpec {
 
-  implicit val formats: Formats = XMLFormats.defaultFormats
+  implicit val formats: Formats = BaseFormats ++ XMLCompat.serializers
 
-  import XMLWeakDeserializerSuite.*
+  import XMLCompatSpec.*
   import org.json4s.Extraction.*
 
   it("sanity test") {

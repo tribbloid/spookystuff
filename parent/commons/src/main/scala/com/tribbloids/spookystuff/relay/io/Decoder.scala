@@ -1,7 +1,7 @@
 package com.tribbloids.spookystuff.relay.io
 
-import com.tribbloids.spookystuff.relay.xml.{XMLFormats, Xml}
-import com.tribbloids.spookystuff.relay.{IR, TreeIR}
+import com.tribbloids.spookystuff.relay.xml.Xml
+import com.tribbloids.spookystuff.relay.{IR, Relay, TreeIR}
 import org.json4s.{Extraction, Formats, JField, JsonAST}
 
 trait Decoder[+_IR <: IR] extends (JField => _IR) {
@@ -12,7 +12,7 @@ trait Decoder[+_IR <: IR] extends (JField => _IR) {
 object Decoder {
 
   case class Plain[D](
-      formats: Formats = XMLFormats.defaultFormats
+      formats: Formats = Relay.defaultFormats
   )(
       implicit
       typeInfo: Manifest[D]
@@ -30,7 +30,7 @@ object Decoder {
 
   // TODO: this implementation is incomplete
   case class AnyTree(
-      formats: Formats = XMLFormats.defaultFormats
+      formats: Formats = Relay.defaultFormats
   ) extends Decoder[TreeIR[Any]] {
 
     override def apply(jf: (String, JsonAST.JValue)): TreeIR[Any] = {

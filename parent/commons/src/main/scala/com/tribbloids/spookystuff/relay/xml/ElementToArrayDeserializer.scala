@@ -8,7 +8,7 @@ import java.util
 
 // <tag>12</tag> => tag: [12]
 // <tag>abc</tag> => tag: ["abc"]
-object ElementToArrayDeserializer extends XMLWeakDeserializer[Any] {
+object ElementToArrayDeserializer extends XMLCompat.DeserializerBase[Any] {
 
   val listClass: Class[List[?]] = classOf[List[?]]
   val seqClass: Class[Seq[?]] = classOf[Seq[?]]

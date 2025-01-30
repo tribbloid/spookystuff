@@ -14,7 +14,7 @@ import org.slf4j.LoggerFactory
 
 object ActionLike extends AutomaticRelay[ActionLike] {
 
-  override lazy val fallbackFormats: Formats = super.fallbackFormats + DurationJSONSerializer
+  override lazy val formats: Formats = super.formats + DurationJSONSerializer
 
   // TODO: aggregate all object that has children
   case class TreeNodeView(

@@ -1,7 +1,8 @@
 package com.tribbloids.spookystuff.relay
 
-import com.tribbloids.spookystuff.relay.io.{DateSerializer, Decoder, Encoder, FormattedText}
-import com.tribbloids.spookystuff.relay.xml.{XMLFormats, Xml}
+import com.tribbloids.spookystuff.relay.io.{Decoder, Encoder, FormattedText}
+import com.tribbloids.spookystuff.relay.json.{BaseFormats, FailsafeToBinaryCompat, NativeJVMObjectCompat, SQLDateCompat}
+import com.tribbloids.spookystuff.relay.xml.{XMLCompat, Xml}
 import org.json4s.jackson.JsonMethods
 import org.json4s.{Formats, JValue}
 
@@ -33,7 +34,7 @@ abstract class Relay[Proto] {
   type IR_>> <: IR
   type IR_<< <: IR
 
-  def fallbackFormats: Formats = Relay.defaultFormats
+  def formats: Formats = Relay.defaultFormats
 
   implicit def findRelay: Relay[Proto] = this
   implicit def toEncoder_>>(v: Proto): Encoder[IR_>>] = {
@@ -41,7 +42,7 @@ abstract class Relay[Proto] {
     val ir = toMessage_>>(v)
     Encoder[IR_>>](
       ir,
-      this.fallbackFormats
+      this.formats
     )
   }
 
@@ -145,7 +146,20 @@ abstract class Relay[Proto] {
 
 object Relay {
 
-  lazy val defaultFormats: Formats = XMLFormats.defaultFormats + DateSerializer
+  lazy val defaultFormats: Formats = {
+
+    val result = BaseFormats // should work in most cases
+      ++ XMLCompat.serializers
+      + SQLDateCompat._Serializer
+      + NativeJVMObjectCompat._Serializer
+
+    result
+  }
+//    + FallbackToBinaryCompat.SparkEnvSerializer.JVM
+
+  lazy val xmlPrinter = XMLCompat.printer
+
+//  lazy val jsonPrinter =
 
   implicit def fallbackRelay[T: Manifest]: Relay[T] = new ToSelf[T]()
 
@@ -156,7 +170,7 @@ object Relay {
       typeInfo: Manifest[relay.IR_<< #Body]
   ): relay.DecoderView = {
     val decoder: Decoder[TreeIR.Leaf[relay.IR_<< #Body]] =
-      Decoder.Plain[relay.IR_<< #Body](relay.fallbackFormats)(typeInfo)
+      Decoder.Plain[relay.IR_<< #Body](relay.formats)(typeInfo)
     relay.DecoderView(decoder.asInstanceOf[Decoder[relay.IR_<<]])
   }
 

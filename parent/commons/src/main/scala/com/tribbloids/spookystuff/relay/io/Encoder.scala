@@ -1,6 +1,6 @@
 package com.tribbloids.spookystuff.relay.io
 
-import com.tribbloids.spookystuff.relay.xml.{XMLFormats, Xml}
+import com.tribbloids.spookystuff.relay.xml.Xml
 import com.tribbloids.spookystuff.relay.{IR, Relay, TreeIR}
 import org.json4s.JsonAST.JObject
 import org.json4s.jackson.JsonMethods.*
@@ -10,7 +10,7 @@ import scala.xml.NodeSeq
 
 case class Encoder[_IR <: IR](
     ir: _IR,
-    formats: Formats = XMLFormats.defaultFormats
+    formats: Formats = Relay.defaultFormats
 ) extends Serializable {
 
 //  def toMsg: ir.Body = ir.body
@@ -48,7 +48,7 @@ case class Encoder[_IR <: IR](
   def prettyXML(
       implicit
       formats: Formats = formats
-  ): String = XMLFormats.defaultXMLPrinter.formatNodes(toXMLNode)
+  ): String = Relay.xmlPrinter.formatNodes(toXMLNode)
   def toXMLStr(pretty: Boolean = true)(
       implicit
       formats: Formats = formats

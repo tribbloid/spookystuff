@@ -5,7 +5,7 @@ import org.json4s.*
 import org.json4s.reflect.TypeInfo
 
 // <tag>12</tag> => tag: 12
-object StringToNumberDeserializer extends XMLWeakDeserializer[Any] {
+object StringToNumberDeserializer extends XMLCompat.DeserializerBase[Any] {
 
   override def _deserialize(
       implicit
