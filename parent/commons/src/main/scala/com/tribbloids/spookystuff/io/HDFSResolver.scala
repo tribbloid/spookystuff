@@ -1,6 +1,7 @@
 package com.tribbloids.spookystuff.io
 
 import ai.acyclic.prover.commons.util.{PathMagnet, Retry}
+import com.tribbloids.spookystuff.commons.data.ReflCanUnapply
 import org.apache.hadoop.conf.Configuration
 import org.apache.hadoop.fs.*
 import org.apache.hadoop.fs.permission.FsPermission
@@ -100,8 +101,9 @@ case class HDFSResolver(
 
       override lazy val getLastModified: Long = status.getModificationTime
 
-      override lazy val _metadata: ResourceMetadata = {
-        HDFSResolver.metadataParser.apply(status)
+      override lazy val extraMetadata: ResourceMetadata = {
+        val unapplied = HDFSResolver.unapplyFileStatus.unapply(status)
+        ResourceMetadata.BuildFrom.unappliedForm(unapplied)
       }
 
       override lazy val children: Seq[_Execution] = {
@@ -199,7 +201,7 @@ object HDFSResolver {
 
   def noUGIFactory: () => None.type = () => None
 
-  val metadataParser: ResourceMetadata.ReflectionParser[FileStatus] = ResourceMetadata.ReflectionParser[FileStatus]()
+  val unapplyFileStatus: ReflCanUnapply[FileStatus] = ReflCanUnapply[FileStatus]()
 
   //  def serviceUGIFactory = () => Some(SparkHelper.serviceUGI)
   //

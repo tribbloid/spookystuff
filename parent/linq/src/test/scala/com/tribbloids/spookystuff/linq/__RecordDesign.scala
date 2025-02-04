@@ -23,7 +23,6 @@ object __RecordDesign {
     * For explore, things are more complex, as it involves a 2-stage resolving process:
     *
     *   - apply Delta, commit into visited (I => O)
-    *
     *   - apply Fork, commit into open (I => J => (I, Trace), such that fork can be recursively applied to I)
     *     - or (I => Forking[I, K] => (I, Trace))
     *

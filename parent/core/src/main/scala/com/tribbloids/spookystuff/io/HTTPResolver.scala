@@ -161,11 +161,11 @@ case class HTTPResolver(
 
       override lazy val getLastModified: Long = -1
 
-      override lazy val _metadata: ResourceMetadata = {
+      override lazy val extraMetadata: ResourceMetadata = {
         val mapped = _readResponse.getAllHeaders.map { header =>
           header.getName -> header.getValue
         }.toSeq
-        ResourceMetadata.From.tuple(mapped*)
+        ResourceMetadata(mapped*)
       }
 
       override def cleanImpl(): Unit = {

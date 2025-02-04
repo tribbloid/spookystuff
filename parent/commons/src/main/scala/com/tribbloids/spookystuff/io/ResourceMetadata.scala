@@ -1,12 +1,12 @@
 package com.tribbloids.spookystuff.io
 
-import com.tribbloids.spookystuff.commons.data.EAVSystem
+import com.tribbloids.spookystuff.commons.data.EAVSchema
 
-object ResourceMetadata extends EAVSystem {
+object ResourceMetadata extends EAVSchema {
 
-  case class ^(
+  implicit final class EAV(
       override val internal: collection.Map[String, Any]
-  ) extends EAV.CaseInsensitive {
+  ) extends EAVMixin.CaseInsensitive {
 
     case object URI extends Attr[String]()
 
@@ -27,5 +27,16 @@ object ResourceMetadata extends EAVSystem {
       val result = URI.get
       result
     }
+
+    def normalise(): EAV = {
+
+      val newInternal = internal.view.mapValues {
+        case v: String => v
+        case v: Number => v
+        case v         => "" + v
+      }.toMap
+      EAV(newInternal)
+    }
+
   }
 }

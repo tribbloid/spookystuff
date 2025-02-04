@@ -1,5 +1,6 @@
 package com.tribbloids.spookystuff.io
 
+import com.tribbloids.spookystuff.commons.data.ReflCanUnapply
 import com.tribbloids.spookystuff.commons.lifespan.LocalCleanable
 import org.apache.commons.io.output.NullOutputStream
 import org.apache.spark.ml.dsl.utils.LazyVar
@@ -74,22 +75,24 @@ abstract class Resource extends LocalCleanable {
 
   def getLastModified: Long
 
-  protected def _metadata: ResourceMetadata
+  protected def extraMetadata: ResourceMetadata
 
   def children: Seq[URIExecution] = Nil
 
   case object metadata {
 
-    // TODO: this should not be necessary
+    lazy val base: ResourceMetadata = {
+      val unapplied = Resource.unapplyResource.unapply(Resource.this)
+      ResourceMetadata.BuildFrom.unappliedForm(unapplied)
+    }
 
-    final lazy val root: ResourceMetadata = {
+    lazy val root: ResourceMetadata = {
 
-      val reflective: ResourceMetadata = Resource.resourceParser.apply(Resource.this)
-      val result = reflective.++:(_metadata)
+      val result = base ++: extraMetadata
       result
     }
 
-    final lazy val all: ResourceMetadata = {
+    lazy val all: ResourceMetadata = {
 
       val grouped: Map[String, Seq[ResourceMetadata]] = children
         .map(exe => exe.input(in => in.metadata.root))
@@ -104,7 +107,7 @@ abstract class Resource extends LocalCleanable {
           }
       }.toMap
 
-      val result = root :++ ResourceMetadata.^(childMaps)
+      val result = root :++ ResourceMetadata.EAV(childMaps)
       result
     }
   }
@@ -132,7 +135,7 @@ object Resource {
     implicit def asResource[R <: Resource, T](io: R#_IOView[T]): R = io.outer
   }
 
-  val resourceParser: ResourceMetadata.ReflectionParser[Resource] = ResourceMetadata.ReflectionParser[Resource]()
+  val unapplyResource: ReflCanUnapply[Resource] = ReflCanUnapply[Resource]()
 
   final val DIR = "directory"
   final val FILE = "file"

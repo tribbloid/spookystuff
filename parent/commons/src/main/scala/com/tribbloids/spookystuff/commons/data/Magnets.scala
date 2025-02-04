@@ -11,8 +11,12 @@ object Magnets {
 
   object AttrValueMag {
 
-    implicit def fromTuple1[T](kv: (String, T)): AttrValueMag[T] = AttrValueMag(kv._1, Some(kv._2))
-    implicit def fromTuple2[T](kv: (AttrLike[T], T)): AttrValueMag[T] = AttrValueMag(kv._1.name, Some(kv._2))
+    implicit def fromKeyValue[T](kv: (String, T)): AttrValueMag[T] = AttrValueMag(kv._1, Some(kv._2))
+    implicit def fromAttrValue[T](kv: (AttrLike[T], T)): AttrValueMag[T] = AttrValueMag(kv._1.name, Some(kv._2))
+
+// fuck scala
+    implicit def fromKeyValues[T](kv: Seq[(String, T)]): Seq[AttrValueMag[T]] = kv.map(v => v)
+    implicit def fromAttrValues[T](kv: Seq[(AttrLike[T], T)]): Seq[AttrValueMag[T]] = kv.map(v => v)
 
     implicit def fromItr[T, Src](kvs: Iterable[Src])(
         implicit

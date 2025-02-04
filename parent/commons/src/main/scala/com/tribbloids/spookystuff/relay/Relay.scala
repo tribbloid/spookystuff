@@ -1,7 +1,7 @@
 package com.tribbloids.spookystuff.relay
 
 import com.tribbloids.spookystuff.relay.io.{Decoder, Encoder, FormattedText}
-import com.tribbloids.spookystuff.relay.json.{BaseFormats, FailsafeToBinaryCompat, NativeJVMObjectCompat, SQLDateCompat}
+import com.tribbloids.spookystuff.relay.json.{BaseFormats, SpecificTypeCompat}
 import com.tribbloids.spookystuff.relay.xml.{XMLCompat, Xml}
 import org.json4s.jackson.JsonMethods
 import org.json4s.{Formats, JValue}
@@ -148,10 +148,11 @@ object Relay {
 
   lazy val defaultFormats: Formats = {
 
-    val result = BaseFormats // should work in most cases
-      ++ XMLCompat.serializers
-      + SQLDateCompat._Serializer
-      + NativeJVMObjectCompat._Serializer
+    val result: Formats = BaseFormats // should work in most cases
+      ++ XMLCompat.deserializers
+      + SpecificTypeCompat.DurationJSONSerDe
+      + SpecificTypeCompat.SQLDateSerDe
+//      + NativeJVMObjectCompat._Serializer
 
     result
   }

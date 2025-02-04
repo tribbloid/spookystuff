@@ -87,6 +87,7 @@ object TypeMagnet extends FromClassTagMixin {
   }
 
   protected class FromTypeTag[T](@transient protected val __typeTag: TypeTag[T]) extends TypeMagnet[T] {
+    // TODO: dropped in Scala 3, switch to manifest or TASTy typetag
 
     {
       typeTag_ser

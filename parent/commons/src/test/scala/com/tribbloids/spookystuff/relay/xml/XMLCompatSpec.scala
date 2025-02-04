@@ -42,7 +42,7 @@ object XMLCompatSpec {
 
 class XMLCompatSpec extends BaseSpec {
 
-  implicit val formats: Formats = BaseFormats ++ XMLCompat.serializers
+  implicit val formats: Formats = BaseFormats ++ XMLCompat.deserializers
 
   import XMLCompatSpec.*
   import org.json4s.Extraction.*

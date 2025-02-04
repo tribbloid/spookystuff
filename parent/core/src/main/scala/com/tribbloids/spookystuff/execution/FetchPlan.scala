@@ -59,7 +59,7 @@ object FetchPlan {
         { row =>
           val mag = fn(row)
 
-          val normalised: (HasTraceSet, I) = mag.revoke match {
+          val normalised: (HasTraceSet, I) = mag.original match {
             case Left(traces) =>
               traces -> row.data
             case Right(v) =>

@@ -42,7 +42,6 @@ object __RowDesign {
     *       it is far more easier to use an RDD from further upstream.
     *     - Several RDDs consisting of SquashedRows that are identical in data but differs only in delta may be created.
     *       How would you decide which one to persist/checkpoint? Should they all be persisted?
-    *
     *   - \2. [[SquashedRow]]: consisting of a [[LocalityGroup]], modified [[Lineage.WithScope]]s, and an
     *     [[AgentState]]. When [[AgentState]] is serialized, the trajectory can be discarded on demand, but the agent is
     *     always discarded, recreated on deserialization, and replay all the backtrace to reach the same state

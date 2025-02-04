@@ -1,35 +1,35 @@
 package com.tribbloids.spookystuff.commons.data
 
-import com.tribbloids.spookystuff.commons.data.EAVSystem
+import com.tribbloids.spookystuff.commons.data.EAVSchema
 import com.tribbloids.spookystuff.testutils.BaseSpec
 import com.tribbloids.spookystuff.relay.Relay
 
 class EAVLikeSuite extends BaseSpec {
 
   import EAVLikeSuite.*
-  import EAVSystem.NoAttr.*
+  import EAVSchema.NoAttr.*
 
-  val wellformed: ^ = EAVSystem.NoAttr.From(
+  val wellformed: EAV = EAVSchema.NoAttr(
     "int" -> 1,
     "double" -> 2.5,
     "itr" -> Seq("a", "b"),
-    "map" -> EAVSystem.NoAttr.From("a" -> 1, "b" -> 2),
+    "map" -> EAVSchema.NoAttr("a" -> 1, "b" -> 2),
     "path" -> "file://home/dir"
   )
 
-  val nested: ^ = wellformed :++ EAVSystem.NoAttr.From(
+  val nested: EAV = wellformed :++ EAVSchema.NoAttr(
     "children" -> wellformed
   )
 
-  val withNull: ^ = wellformed :++ EAVSystem.NoAttr.From("nullable" -> null)
+  val withNull: EAV = wellformed :++ EAVSchema.NoAttr("nullable" -> null)
 
-  val withEnum: WithEnum.^ = WithEnum.^(wellformed.updated("enumField" -> "bb").internal)
+  val withEnum: WithEnum.EAV = WithEnum.EAV(wellformed.updated("enumField" -> "bb").internal)
 
-  val noAttrDecoderView: EAVSystem.NoAttr._Relay#DecoderView = Relay.toFallbackDecoderView(EAVSystem.NoAttr.relay)
+  val noAttrDecoderView: EAVSchema.NoAttr._Relay#DecoderView = Relay.toFallbackDecoderView(EAVSchema.NoAttr.relay)
 
   it("wellformed <=> JSON") {
 
-    val o: ^ = wellformed
+    val o: EAV = wellformed
     val json = o.toJSON()
     json.shouldBe(
       """
@@ -112,9 +112,9 @@ class EAVLikeSuite extends BaseSpec {
 
 object EAVLikeSuite {
 
-  object WithEnum extends EAVSystem {
+  object WithEnum extends EAVSchema {
 
-    case class ^(internal: collection.Map[String, Any]) extends EAV {
+    implicit class EAV(val internal: collection.Map[String, Any]) extends EAVMixin {
 
       case object enumField extends Attr[String]()
     }

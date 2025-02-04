@@ -165,7 +165,7 @@ object SpookyUtils {
 
         // assert(Files.exists(dst))
         // NIO copy should use non-NIO for validation to eliminate stream caching
-        val dstContent = LocalResolver.input(dst.toString) { in =>
+        val dstContent = LocalResolver.default.input(dst.toString) { in =>
           IOUtils.toByteArray(in.stream)
         }
         //      assert(srcContent.length == dstContent.length, pathsStr + " copy failed")

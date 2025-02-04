@@ -4,7 +4,7 @@ import com.tribbloids.spookystuff.commons.CommonUtils
 
 case class EAVOps[T <: EAVLike](self: T)(
     implicit
-    val sys: EAVSystem.Aux[T]
+    val schema: EAVSchema.Aux[T]
 ) {
 
   /**
@@ -12,7 +12,7 @@ case class EAVOps[T <: EAVLike](self: T)(
     */
   def :++(that: T): T = {
 
-    sys.^(CommonUtils.mergePreserveOrder(self.internal, that.internal))
+    schema.EAV(CommonUtils.mergePreserveOrder(self.internal, that.internal))
   }
 
   /**
@@ -47,14 +47,16 @@ case class EAVOps[T <: EAVLike](self: T)(
       }
     }
 
-    sys.From.tuple(result*)
+    schema.BuildFrom.seqInternal(result)
   }
 
   def updated(kvs: Magnets.AttrValueMag[Any]*): T = {
-    ++:(sys.From(kvs*))
+    ++:(schema(kvs*))
   }
 
-  def drop(vs: Magnets.AttrMag*): T = sys.From.iterable(self.lookup -- vs.flatMap(_.names))
+  def drop(vs: Magnets.AttrMag*): T = schema.BuildFrom.seqInternal(
+    (self.lookup -- vs.flatMap(_.names)).toSeq
+  )
 
   def dropAll(vs: Iterable[Magnets.AttrMag]): T = drop(vs.toSeq*)
 

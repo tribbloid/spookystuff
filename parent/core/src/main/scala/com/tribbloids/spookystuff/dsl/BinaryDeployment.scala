@@ -130,7 +130,7 @@ object BinaryDeployment {
   val MIN_SIZE_K: Double = 1024.0 * 60
 
   def verifyExe(pathStr: String): Try[String] = Try {
-    val isExists = LocalResolver.execute(pathStr).satisfy { v =>
+    val isExists = LocalResolver.default.execute(pathStr).satisfy { v =>
       v.getLength >= MIN_SIZE_K * 1024
     }
     assert(isExists, s"PhantomJS executable at $pathStr doesn't exist")

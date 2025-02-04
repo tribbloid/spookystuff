@@ -1,6 +1,7 @@
 package com.tribbloids.spookystuff.io
 
 import ai.acyclic.prover.commons.util.{PathMagnet, Retry}
+import com.tribbloids.spookystuff.commons.data.ReflCanUnapply
 import org.apache.commons.io.FileUtils
 
 import java.io.{File, InputStream, OutputStream}
@@ -11,9 +12,7 @@ case class LocalResolver(
     override val retry: Retry = URIResolver.default.retry,
     extraPermissions: Set[PosixFilePermission] = Set()
 ) extends URIResolver {
-
-  @transient lazy val metadataParser: ResourceMetadata.ReflectionParser[File] =
-    ResourceMetadata.ReflectionParser[File]()
+  import LocalResolver.*
 
   implicit class _Execution(
       originalPath: PathMagnet.URIPath
@@ -60,9 +59,10 @@ case class LocalResolver(
 
       override lazy val getLastModified: Long = Files.getLastModifiedTime(nioPath).toMillis
 
-      override lazy val _metadata: ResourceMetadata = {
+      override lazy val extraMetadata: ResourceMetadata = {
         // TODO: use Files.getFileAttributeView
-        metadataParser(file)
+        val unapplied = unapplyFile.unapply(file)
+        ResourceMetadata.BuildFrom.unappliedForm(unapplied)
       }
 
       override lazy val children: Seq[_Execution] = {
@@ -137,4 +137,13 @@ case class LocalResolver(
   }
 }
 
-object LocalResolver extends LocalResolver(URIResolver.default.retry, Set())
+object LocalResolver {
+
+  object default
+      extends LocalResolver(
+        URIResolver.default.retry,
+        Set()
+      )
+
+  lazy val unapplyFile: ReflCanUnapply[File] = ReflCanUnapply[File]()
+}

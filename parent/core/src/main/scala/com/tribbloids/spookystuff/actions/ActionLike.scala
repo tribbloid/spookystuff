@@ -6,15 +6,11 @@ import com.tribbloids.spookystuff.caching.{DFSDocCache, InMemoryDocCache}
 import com.tribbloids.spookystuff.commons.{CommonUtils, TreeView, Verbose}
 import com.tribbloids.spookystuff.doc.{Doc, Observation}
 import com.tribbloids.spookystuff.relay.AutomaticRelay
-import com.tribbloids.spookystuff.relay.io.DurationJSONSerializer
 import com.tribbloids.spookystuff.row.SpookySchema
 import com.tribbloids.spookystuff.{Const, QueryException, SpookyContext}
-import org.json4s.Formats
 import org.slf4j.LoggerFactory
 
 object ActionLike extends AutomaticRelay[ActionLike] {
-
-  override lazy val formats: Formats = super.formats + DurationJSONSerializer
 
   // TODO: aggregate all object that has children
   case class TreeNodeView(

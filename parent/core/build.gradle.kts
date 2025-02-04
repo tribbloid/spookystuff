@@ -22,7 +22,7 @@ dependencies {
     api("org.apache.tika:tika-parsers-standard-package:${tikaV}")
     api("com.googlecode.juniversalchardet:juniversalchardet:1.0.3")
 
-    api("org.jsoup:jsoup:1.17.2")
+    api("org.jsoup:jsoup:1.18.3")
     // TODO: why do I need this? Selenium HtmlUnitDriver should be enough
 
     api("com.syncthemall:boilerpipe:1.2.2")

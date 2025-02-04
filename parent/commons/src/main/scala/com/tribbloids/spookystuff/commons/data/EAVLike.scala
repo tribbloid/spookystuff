@@ -18,7 +18,7 @@ trait EAVLike extends HasEagerInnerObjects with RootTagged with Serializable {
 
   def internal: collection.Map[String, Any]
 
-  def system: EAVSystem
+  def system: EAVSchema
 
   override def rootTag: String = Xml.ROOT
 
@@ -225,5 +225,5 @@ trait EAVLike extends HasEagerInnerObjects with RootTagged with Serializable {
 
 object EAVLike {
 
-  implicit def toOps[T <: EAVLike](v: T): EAVOps[T] = EAVOps(v)(v.system.asInstanceOf[EAVSystem.Aux[T]])
+  implicit def toOps[T <: EAVLike](v: T): EAVOps[T] = EAVOps(v)(v.system.asInstanceOf[EAVSchema.Aux[T]])
 }

@@ -283,7 +283,7 @@ class SpookyDatasetSpec extends SpookyBaseSpec {
 
           val dirs = docs.\("root directory")
 
-          val path: String = dirs.attr("path").get
+          val path: String = dirs.attr("uri").get
 
           Wget(path)
         }

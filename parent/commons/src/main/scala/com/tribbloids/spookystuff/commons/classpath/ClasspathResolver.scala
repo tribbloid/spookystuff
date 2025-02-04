@@ -1,6 +1,7 @@
 package com.tribbloids.spookystuff.commons.classpath
 
 import ai.acyclic.prover.commons.util.PathMagnet
+import com.tribbloids.spookystuff.commons.data.ReflCanUnapply
 import com.tribbloids.spookystuff.commons.lifespan.Cleanable
 import com.tribbloids.spookystuff.io.{Resource, ResourceMetadata, URIExecution, URIResolver, WriteMode}
 import io.github.classgraph.{ClassGraph, ResourceList, ScanResult}
@@ -17,9 +18,7 @@ case class ClasspathResolver(
 ) extends URIResolver {
 
   import scala.jdk.CollectionConverters.*
-
-  @transient lazy val metadataParser: ResourceMetadata.ReflectionParser[io.github.classgraph.Resource] =
-    ResourceMetadata.ReflectionParser[io.github.classgraph.Resource]()
+  import ClasspathResolver.*
 
   lazy val graph: ClassGraph = {
     var base = new ClassGraph() // .enableClassInfo.ignoreClassVisibility
@@ -35,7 +34,7 @@ case class ClasspathResolver(
     base
   }
 
-  trait Scanning extends Cleanable {
+  trait CanScan extends Cleanable {
 
     // TODO: this may not be efficient as every new _Execution requires a new can, but for safety ...
     lazy val _scanResult: LazyVar[ScanResult] = LazyVar {
@@ -71,7 +70,7 @@ case class ClasspathResolver(
       PathMagnet.URIPath(path) // TODO: classpath jar file should use absolute path
 
     object _Resource extends (WriteMode => _Resource)
-    case class _Resource(mode: WriteMode) extends Resource with Scanning {
+    case class _Resource(mode: WriteMode) extends Resource with CanScan {
 
       override protected def _outer: URIExecution = _Execution.this
 
@@ -115,7 +114,11 @@ case class ClasspathResolver(
 
       override def getLastModified: Long = firstRef.getLastModified
 
-      override protected def _metadata: ResourceMetadata = metadataParser(firstRef)
+      override protected def extraMetadata: ResourceMetadata = {
+
+        val unapplied = unapplyResource.unapply(firstRef)
+        ResourceMetadata.BuildFrom.unappliedForm(unapplied)
+      }
 
       override protected def _newIStream: InputStream = {
         try {
@@ -156,8 +159,8 @@ case class ClasspathResolver(
 
   }
 
-  def debug[T](fn: Debugging => T): T = {
-    val o = Debugging()
+  def debug[T](fn: CanDebug => T): T = {
+    val o = CanDebug()
 
     try {
       fn(o)
@@ -166,7 +169,7 @@ case class ClasspathResolver(
     }
   }
 
-  case class Debugging() extends Scanning {
+  case class CanDebug() extends CanScan {
 
     case class Display(
         pathConflictFilter: String => Boolean = { v =>
@@ -272,7 +275,7 @@ case class ClasspathResolver(
         s"""
              | === CONFLICTS ===
              |${Conflicts.formatted}
-             | 
+             |
              | === FILES ====
              |${Files.formatted}
              |""".stripMargin.trim
@@ -331,4 +334,7 @@ object ClasspathResolver {
       .lastOption
       .getOrElse(s"file path $v is empty")
   }
+
+  lazy val unapplyResource: ReflCanUnapply[io.github.classgraph.Resource] =
+    ReflCanUnapply[io.github.classgraph.Resource]()
 }

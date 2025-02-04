@@ -4,5 +4,5 @@ package object io {
 
   type URIExecution = URIResolver#Execution
 
-  type ResourceMetadata = ResourceMetadata.^
+  type ResourceMetadata = ResourceMetadata.EAV
 }

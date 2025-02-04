@@ -28,7 +28,7 @@ case class UnpackResources(
     ClasspathResolver
       .execute(root)
       .treeCopyTo(
-        LocalResolver.execute(unpackedParent.universal),
+        LocalResolver.default.execute(unpackedParent.universal),
         WriteMode.Overwrite
       )
     Thread.sleep(5000) // for eventual consistency

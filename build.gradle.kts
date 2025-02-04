@@ -20,7 +20,6 @@ allprojects {
     idea {
 
         module {
-
             excludeDirs = excludeDirs + files(
                 "temp",
 

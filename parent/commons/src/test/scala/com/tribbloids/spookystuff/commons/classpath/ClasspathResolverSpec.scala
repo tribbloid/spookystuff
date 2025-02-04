@@ -9,6 +9,8 @@ import java.io.File
 
 class ClasspathResolverSpec extends AnyFunSpec {
 
+  val resolver = LocalResolver.default
+
   describe("copyResourceToDirectory") {
 
     it("can extract a dependency's package in a jar") {
@@ -16,7 +18,7 @@ class ClasspathResolverSpec extends AnyFunSpec {
 
       ClasspathResolver
         .execute("org/apache/log4j/xml")
-        .treeCopyTo(LocalResolver.execute(dst.universal), WriteMode.Overwrite)
+        .treeCopyTo(resolver.execute(dst.universal), WriteMode.Overwrite)
 
       val dir = new File(dst)
       assert(dir.list().nonEmpty)
@@ -28,7 +30,7 @@ class ClasspathResolverSpec extends AnyFunSpec {
 
       ClasspathResolver
         .execute("com/tribbloids/spookystuff/io/lock")
-        .treeCopyTo(LocalResolver.execute(dst.universal), WriteMode.Overwrite)
+        .treeCopyTo(resolver.execute(dst.universal), WriteMode.Overwrite)
 
       val dir = new File(dst)
       assert(dir.list().nonEmpty)

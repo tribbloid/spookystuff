@@ -5,6 +5,7 @@ import ai.acyclic.prover.commons.spark.serialization.NOTSerializable
 import ai.acyclic.prover.commons.util.PathMagnet
 import com.tribbloids.spookystuff.*
 import com.tribbloids.spookystuff.caching.DocCacheLevel
+import com.tribbloids.spookystuff.commons.data.Magnets.AttrValueMag
 import com.tribbloids.spookystuff.doc.Content.InMemoryBlob
 import com.tribbloids.spookystuff.doc.Observation.DocUID
 import com.tribbloids.spookystuff.doc.Unstructured.Unrecognisable
@@ -58,7 +59,7 @@ case class Doc(
   def withMetadata(tuples: (String, Any)*): Doc = {
 
     this.copy(
-      metadata = this.metadata ++: ResourceMetadata.From.tuple(tuples*)
+      metadata = this.metadata ++: ResourceMetadata(tuples.map(v => AttrValueMag.fromKeyValue(v))*)
     )(content)
   }
 

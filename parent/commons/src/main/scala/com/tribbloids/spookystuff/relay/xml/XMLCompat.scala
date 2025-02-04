@@ -25,7 +25,7 @@ object XMLCompat {
         custom: Seq[String] = Nil
     )
 
-    private val debuggingCache = Caching.ConcurrentCache[Long, ParsingException]()
+    private val debuggingCache = Caching.ConcurrentCache[Long, XMLParsingException]()
 
     trait ExceptionLike extends Throwable with Verbose {
 
@@ -34,7 +34,7 @@ object XMLCompat {
       override def getMessage: String = detailedStr
     }
 
-    class ParsingException(
+    class XMLParsingException(
         override val shortStr: String,
         override val cause: Exception,
         metadata: ExceptionMetadata
@@ -72,7 +72,7 @@ object XMLCompat {
     import Debugging.*
 
     // cannot serialize
-    override def serialize(
+    final override def serialize(
         implicit
         format: Formats
     ): PartialFunction[Any, JValue] = PartialFunction.empty
@@ -100,7 +100,7 @@ object XMLCompat {
         fn
       } catch {
         case e: MappingException =>
-          throw new ParsingException(
+          throw new XMLParsingException(
             e.getMessage,
             e,
             metadata
@@ -136,7 +136,7 @@ object XMLCompat {
     ): PartialFunction[(TypeInfo, JValue), T]
   }
 
-  val serializers = Seq(
+  val deserializers = Seq(
     StringToNumberDeserializer,
     EmptyStringToEmptyObjectDeserializer,
     ElementToArrayDeserializer

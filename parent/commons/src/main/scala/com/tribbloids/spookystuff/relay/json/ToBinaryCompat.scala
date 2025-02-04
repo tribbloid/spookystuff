@@ -7,14 +7,14 @@ import org.slf4j.LoggerFactory
 import java.nio.ByteBuffer
 import java.util.Base64
 
-object FailsafeToBinaryCompat {
+object ToBinaryCompat {
 
   // fallback mechanism that works for any java object
-  abstract class SparkEnvSerializer(
+  abstract class SparkBinarySerDe(
       sparkSerializer: org.apache.spark.serializer.Serializer
   ) extends Serializer[Any] {
 
-    val VID: Long = -47597349821L
+//    val VID: Long = -47597349821L
 
     @transient lazy val base64: (Base64.Encoder, Base64.Decoder) = {
       Base64.getEncoder -> Base64.getDecoder
@@ -86,10 +86,10 @@ object FailsafeToBinaryCompat {
     }
   }
 
-  object SparkEnvSerializer {
+  object SparkBinarySerDe {
 
-    object JVM extends SparkEnvSerializer(SerializerEnv.Default.javaSerializer)
+    object JVM extends SparkBinarySerDe(SerializerEnv.Default.javaSerializer)
 
-    object Kryo extends SparkEnvSerializer(SerializerEnv.Default.kryoSerializer)
+    object Kryo extends SparkBinarySerDe(SerializerEnv.Default.kryoSerializer)
   }
 }

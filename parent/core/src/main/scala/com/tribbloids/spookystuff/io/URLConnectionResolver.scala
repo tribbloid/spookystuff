@@ -55,7 +55,7 @@ case class URLConnectionResolver(
 
       override lazy val getLastModified: Long = conn.getLastModified
 
-      override lazy val _metadata: ResourceMetadata = {
+      override lazy val extraMetadata: ResourceMetadata = {
         val map = conn.getHeaderFields.asScala.toMap.view.mapValues { _list =>
           val list = _list.asScala
           val result =
@@ -63,7 +63,7 @@ case class URLConnectionResolver(
             else list
           result.asInstanceOf[Any]
         }.toMap
-        ResourceMetadata.^(map)
+        ResourceMetadata.EAV(map)
       }
 
       override protected def _newIStream: InputStream = {

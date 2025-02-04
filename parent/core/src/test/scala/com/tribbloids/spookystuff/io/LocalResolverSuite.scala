@@ -12,6 +12,6 @@ object LocalResolverSuite {
   */
 class LocalResolverSuite extends AbstractURIResolverSuite {
 
-  @transient lazy val resolver: URIResolver = LocalResolver
+  @transient lazy val resolver: URIResolver = LocalResolver.default
   @transient lazy val schemaPrefix: String = ""
 }
