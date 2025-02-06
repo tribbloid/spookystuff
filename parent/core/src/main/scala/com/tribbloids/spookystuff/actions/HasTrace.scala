@@ -1,5 +1,7 @@
 package com.tribbloids.spookystuff.actions
 
+import com.tribbloids.spookystuff.actions.Trace.NoOp
+
 import scala.language.implicitConversions
 
 trait HasTrace extends HasTraceSet {
@@ -10,7 +12,13 @@ trait HasTrace extends HasTraceSet {
 
   // many-to-one
   def +>(another: Action): Trace = Trace(asTrace :+ another)
-  def +>(others: Trace): Trace = Trace(asTrace ++ others)
+  def +>(that: Trace): Trace = {
+
+    (this, that) match {
+      case (NoOp, _) => NoOp
+    }
+    Trace(asTrace ++ that)
+  }
 }
 
 object HasTrace {

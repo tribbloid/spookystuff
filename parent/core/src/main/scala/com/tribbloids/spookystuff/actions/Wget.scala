@@ -54,7 +54,7 @@ case class Wget(
     val cacheLevel = DocCacheLevel.getDefault(uriOption)
     val doc = resolver.input(uri) { in =>
       if (in.isDirectory) {
-        val xmlStr = in.metadata.all.normalise().toXMLStr()
+        val xmlStr = in.metadata.all.toXMLStr()
 
         Doc(
           uid = DocUID(List(this), this)(),

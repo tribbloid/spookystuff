@@ -205,29 +205,29 @@ case class FetchedRow[D](
 //    })
 //  }
 
-  lazy val observations: ObservationsView[Observation] = {
+  lazy val observations: DocsView[Observation] = {
 
     val seq = effectiveScope.observationUIDs.map { uid =>
       agentState.lookup(uid)
     }
 
-    new ObservationsView(seq)
+    new DocsView(seq)
   }
 
-  lazy val docs: ObservationsView[Doc] = observations.docs
-  lazy val succeeded: ObservationsView[Success] = observations.succeeded
-  lazy val failed: ObservationsView[Failure] = observations.failed
+  lazy val docs: DocsView[Doc] = observations.docs
+  lazy val succeeded: DocsView[Success] = observations.succeeded
+  lazy val failed: DocsView[Failure] = observations.failed
 
-  object ObservationsView {
+  object DocsView {
 
-    implicit def asBatch[T <: Observation](v: ObservationsView[T]): Seq[T] = v.self
+    implicit def asBatch[T <: Observation](v: DocsView[T]): Seq[T] = v.self
 
-    class Single[T <: Observation](val value: T) extends ObservationsView(Seq(value)) {}
+    class Single[T <: Observation](val value: T) extends DocsView(Seq(value)) {}
 
-    implicit def asDoc[T <: Observation](v: ObservationsView.Single[T]): T = v.value
+    implicit def asDoc[T <: Observation](v: DocsView.Single[T]): T = v.value
 
     implicit class DocExtensions(
-        self: ObservationsView[Doc]
+        self: DocsView[Doc]
     ) extends Elements[Unstructured] {
 
       override def unbox: Seq[Unstructured] = {
@@ -258,43 +258,43 @@ case class FetchedRow[D](
 
   }
 
-  class ObservationsView[T <: Observation](val self: Seq[T]) extends NOTSerializable {
+  class DocsView[T <: Observation](val self: Seq[T]) extends NOTSerializable {
 
-    def collect[R <: Observation](fn: PartialFunction[T, R]): ObservationsView[R] =
-      new ObservationsView[R](self.collect(fn))
+    def collect[R <: Observation](fn: PartialFunction[T, R]): DocsView[R] =
+      new DocsView[R](self.collect(fn))
 
-    @transient lazy val succeeded: ObservationsView[Success] = collect {
+    @transient lazy val succeeded: DocsView[Success] = collect {
       case v: Success => v
     }
 
-    @transient lazy val failed: ObservationsView[Failure] = collect {
+    @transient lazy val failed: DocsView[Failure] = collect {
       case v: Failure => v
     }
 
-    @transient lazy val docs: ObservationsView[Doc] = collect {
+    @transient lazy val docs: DocsView[Doc] = collect {
       case v: Doc => v
     }
 
-    def ofName(name: String): ObservationsView[T] = collect {
+    def ofName(name: String): DocsView[T] = collect {
       case v if v.name == name => v
     }
 
-    def apply(name: String): ObservationsView[T] = ofName(name)
+    def apply(name: String): DocsView[T] = ofName(name)
 
-    lazy val headOption: Option[ObservationsView.Single[T]] = self.headOption.map { doc =>
-      new ObservationsView.Single(doc)
+    lazy val headOption: Option[DocsView.Single[T]] = self.headOption.map { doc =>
+      new DocsView.Single(doc)
     }
 
-    def head: ObservationsView.Single[T] = headOption
+    def head: DocsView.Single[T] = headOption
       .getOrElse(throw new UnsupportedOperationException("No doc found"))
 
-    lazy val only: ObservationsView.Single[T] = {
+    lazy val only: DocsView.Single[T] = {
 
       if (self.size > 1) throw new UnsupportedOperationException("Ambiguous key referring to multiple docs")
       else head
     }
 
-    def forAuditing: ObservationsView[Doc] = collect {
+    def forAuditing: DocsView[Doc] = collect {
       Function.unlift { v =>
         v.docForAuditing
       }

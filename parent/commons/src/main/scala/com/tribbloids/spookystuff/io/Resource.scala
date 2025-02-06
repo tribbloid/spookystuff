@@ -81,15 +81,15 @@ abstract class Resource extends LocalCleanable {
 
   case object metadata {
 
-    lazy val base: ResourceMetadata = {
-      val unapplied = Resource.unapplyResource.unapply(Resource.this)
-      ResourceMetadata.BuildFrom.unappliedForm(unapplied)
-    }
-
     lazy val root: ResourceMetadata = {
 
+      val base: ResourceMetadata = {
+        val unapplied = Resource.unapplyResource.unapply(Resource.this)
+        ResourceMetadata.BuildFrom.unappliedForm(unapplied)
+      }
+
       val result = base ++: extraMetadata
-      result
+      result.normalise()
     }
 
     lazy val all: ResourceMetadata = {

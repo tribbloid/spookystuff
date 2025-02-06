@@ -281,9 +281,11 @@ class SpookyDatasetSpec extends SpookyBaseSpec {
         .fetch { row =>
           val docs = row.docs
 
+          val str = docs.map(_.contentStr)
+
           val dirs = docs.\("root directory")
 
-          val path: String = dirs.attr("uri").get
+          val path: String = dirs.\("path").text.get
 
           Wget(path)
         }

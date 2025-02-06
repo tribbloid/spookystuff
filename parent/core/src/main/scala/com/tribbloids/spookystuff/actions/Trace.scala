@@ -23,6 +23,10 @@ object Trace {
 
   def of(vs: Action*): Trace = Trace(vs.toList)
 
+  object NoOp extends Rollout(Trace()) {
+    cache(Nil)
+  }
+
   case class Rollout(asTrace: Trace) extends HasTrace with SpookyContext.Contextual {
     // unlike trace, it is always executed by the agent from scratch
     // thus, execution result can be cached, as replaying it will most likely have the same result (if the trace is deterministic)
@@ -91,8 +95,6 @@ object Trace {
       // TODO: returned type will become a class
     }
   }
-
-  lazy val NoOp: Rollout & Rollout.Cached = Rollout(Trace()).cache(Nil)
 }
 
 case class Trace(

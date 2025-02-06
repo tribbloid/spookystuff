@@ -32,8 +32,8 @@ object ResourceMetadata extends EAVSchema {
 
       val newInternal = internal.view.mapValues {
         case v: String => v
-        case v: Number => v
-        case v         => "" + v
+        case v: AnyRef => "" + v
+        case v         => v
       }.toMap
       EAV(newInternal)
     }

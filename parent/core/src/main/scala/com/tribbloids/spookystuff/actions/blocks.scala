@@ -71,9 +71,9 @@ abstract class Block(
 object ClusterRetry {
 
   def apply(
-      trace: HasTrace,
-      retries: Int = Const.clusterRetries,
-      cacheEmptyOutput: DocCacheLevel.Value = DocCacheLevel.NoCache
+             trace: HasTrace,
+             retries: Int = Const.clusterRetries,
+             cacheEmptyOutput: DocCacheLevel.Value = DocCacheLevel.NoCache
   ): ClusterRetryImpl = {
 
     ClusterRetryImpl(trace)(retries, cacheEmptyOutput)

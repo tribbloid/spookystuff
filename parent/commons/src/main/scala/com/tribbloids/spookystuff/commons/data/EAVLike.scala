@@ -1,5 +1,6 @@
 package com.tribbloids.spookystuff.commons.data
 
+import ai.acyclic.prover.commons.multiverse.{CanEqual, Projection}
 import ai.acyclic.prover.commons.util.Magnet.OptionMagnet
 import com.tribbloids.spookystuff.commons.{CommonUtils, TreeThrowable}
 import com.tribbloids.spookystuff.relay.RootTagged
@@ -14,7 +15,11 @@ import scala.util.Try
 /**
   * entity-(with)-attribute-value
   */
-trait EAVLike extends HasEagerInnerObjects with RootTagged with Serializable {
+trait EAVLike extends HasEagerInnerObjects with RootTagged with Projection.Equals with Serializable {
+
+  {
+    this.canEqualProjections += CanEqual.Native.on(internal)
+  }
 
   def internal: collection.Map[String, Any]
 
