@@ -27,45 +27,45 @@ object SpookyConf {
   * Created by peng on 12/06/14. will be shipped to workers
   */
 case class SpookyConf(
-    shareMetrics: Boolean = false, // TODO: not necessary
+                       shareMetrics: Boolean = false, // TODO: not necessary
 
-    webProxy: WebProxyFactory = WebProxyFactory.NoProxy,
-    httpHeadersFactory: Unit :=> Map[String, String] = :=>.at(_ => SpookyConf.defaultHTTPHeaders),
-    oAuthKeysFactory: Unit :=> OAuthKeys = :=>.at(_ => null),
-    //    var browserResolution: (Int, Int) = (1920, 1080),
-    remote: Boolean = true, // if disabled won't use remote client at all
-    //
-    auditing: Auditing = Auditing.Both,
-    auditingFilePaths: DocPath = DocPath.UUIDName(TracePath.Hierarchical),
-    //
-    cacheWrite: Boolean = true,
-    cacheRead: Boolean = true, // TODO: this enable both in-memory and DFS cache, should allow more refined control
+                       webProxy: WebProxyFactory = WebProxyFactory.NoProxy,
+                       httpHeadersFactory: Unit :=> Map[String, String] = :=>.at(_ => SpookyConf.defaultHTTPHeaders),
+                       oAuthKeysFactory: Unit :=> OAuthKeys = :=>.at(_ => null),
+                       //    var browserResolution: (Int, Int) = (1920, 1080),
+                       remote: Boolean = true, // if disabled won't use remote client at all
+                       //
+                       auditing: Auditing = Auditing.Both,
+                       auditingFilePaths: DocPath = DocPath.UUIDName(TracePath.Hierarchical),
+                       //
+                       cacheWrite: Boolean = true,
+                       cacheRead: Boolean = true, // TODO: this enable both in-memory and DFS cache, should allow more refined control
 
-    cachedDocsLifeSpan: Duration = 7.day,
-    IgnoreCachedDocsBefore: Option[Date] = None,
-    cacheFilePaths: TracePath = TracePath.Hierarchical,
-    //
-    errorDump: Boolean = true,
-    errorScreenshot: Boolean = true,
-    errorDumpFilePaths: DocPath = DocPath.UUIDName(TracePath.Hierarchical),
-    //
-    remoteResourceTimeout: Timeout = Timeout(60.seconds),
-    DFSTimeout: Timeout = Timeout(40.seconds),
-    failOnDFSRead: Boolean = false,
-    //
-    localityPartitioner: GenPartitioner = GenPartitioners.Wide(),
-    //
-    flattenSampler: Sampler = Sampler.Identity,
-    forkSampler: Sampler = Sampler.Identity, // join takes remote actions and cost much more than flatten.
-    exploreSampler: Sampler = Sampler.Identity, // join takes remote actions and cost much more than flatten.
-    //
-    explorePathPlanning: PathPlanning = PathPlanners_Simple.BreadthFirst,
-    exploreRange: Range = 0 until Int.MaxValue,
-    exploreEpochInterval: Int = 50,
-    exploreCheckpointInterval: Int = 50, // disabled if <=0
+                       cachedDocsLifeSpan: Duration = 7.day,
+                       IgnoreCachedDocsBefore: Option[Date] = None,
+                       cacheFilePaths: TracePath = TracePath.Hierarchical,
+                       //
+                       errorDump: Boolean = true,
+                       errorScreenshot: Boolean = true,
+                       errorDumpFilePaths: DocPath = DocPath.UUIDName(TracePath.Hierarchical),
+                       //
+                       remoteResourceTimeout: Timeout = Timeout(60.seconds),
+                       DFSTimeout: Timeout = Timeout(40.seconds),
+                       failOnDFSRead: Boolean = false,
+                       //
+                       localityPartitioner: GenPartitioner = GenPartitioners.Wide(),
+                       //
+                       selectSampling: Sampler = Sampler.Identity,
+                       fetchSampling: Sampler = Sampler.Identity, // takes remote actions and cost much more than flatten.
+                       exploreSampling: Sampler = Sampler.Identity, // takes remote actions and cost much more than flatten.
+                       //
+                       explorePathPlanning: PathPlanning = PathPlanners_Simple.BreadthFirst,
+                       exploreRange: Range = 0 until Int.MaxValue,
+                       exploreEpochInterval: Int = 50,
+                       exploreCheckpointInterval: Int = 50, // disabled if <=0
 
-    // if encounter too many out of memory error, change to MEMORY_AND_DISK_SER
-    defaultStorageLevel: StorageLevel = StorageLevel.MEMORY_AND_DISK
+                       // if encounter too many out of memory error, change to MEMORY_AND_DISK_SER
+                       defaultStorageLevel: StorageLevel = StorageLevel.MEMORY_AND_DISK
 ) extends Core.ConfLike
     with Serializable {
 
@@ -93,8 +93,8 @@ case class SpookyConf(
     val sampler: Sampler.FirstN = Sampler.FirstN(1)
 
     this.copy(
-      flattenSampler = sampler,
-      forkSampler = sampler,
+      selectSampling = sampler,
+      fetchSampling = sampler,
       exploreRange = 0 to 2
     )
   }

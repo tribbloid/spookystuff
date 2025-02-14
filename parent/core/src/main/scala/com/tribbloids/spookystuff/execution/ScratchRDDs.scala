@@ -122,7 +122,7 @@ object ScratchRDDs {
 case class ScratchRDDs(
     tempTables: ArrayBuffer[(String, Dataset[?])] = ArrayBuffer(),
     tempRDDs: ArrayBuffer[RDD[?]] = ArrayBuffer(),
-    tempDSs: ArrayBuffer[Dataset[?]] = ArrayBuffer(),
+    tempDSs: ArrayBuffer[Dataset[?]] = ArrayBuffer(), // TODO: merge into tempTables
     tempBroadcasts: ArrayBuffer[Broadcast[?]] = ArrayBuffer(),
     defaultStorageLevel: StorageLevel = StorageLevel.MEMORY_AND_DISK
 ) extends LocalCleanable
@@ -153,15 +153,6 @@ case class ScratchRDDs(
     result
   }
 
-  def persistDS(
-      ds: Dataset[?],
-      storageLevel: StorageLevel = defaultStorageLevel
-  ): Unit = {
-
-    ds.persist(storageLevel)
-    tempDSs += ds
-  }
-
   def persist[T](
       rdd: RDD[T],
       storageLevel: StorageLevel = defaultStorageLevel
@@ -173,15 +164,6 @@ case class ScratchRDDs(
     rdd
   }
 
-  def unpersistDS(
-      ds: Dataset[?],
-      blocking: Boolean = false
-  ): Unit = {
-
-    ds.unpersist(blocking)
-    tempDSs -= ds
-  }
-
   def unpersist(
       rdd: RDD[?],
       blocking: Boolean = false
@@ -189,6 +171,27 @@ case class ScratchRDDs(
 
     rdd.unpersist(blocking)
     tempRDDs -= rdd
+  }
+
+  object datasets {
+
+    def persist(
+        ds: Dataset[?],
+        storageLevel: StorageLevel = defaultStorageLevel
+    ): Unit = {
+
+      ds.persist(storageLevel)
+      tempDSs += ds
+    }
+
+    def unpersist(
+        ds: Dataset[?],
+        blocking: Boolean = false
+    ): Unit = {
+
+      ds.unpersist(blocking)
+      tempDSs -= ds
+    }
   }
 
   // TODO: add a utility function to make RDD to be uncached automatically once a number of downstream RDDs (can be filtered) are caculated.

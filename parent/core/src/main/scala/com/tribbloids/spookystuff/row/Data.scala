@@ -6,14 +6,15 @@ import java.util.UUID
 import scala.language.implicitConversions
 
 trait Data[D] {
+  // TODO: merge with BuildRow, move into object
 
-  def data: D
+  def raw: D
 //  def sourceScope: Option[SourceScope]
 }
 
 object Data {
 
-  implicit def unbox[D](v: Data[D]): D = v.data
+  implicit def unbox[D](v: Data[D]): D = v.raw
 
 //  case class Raw[D](
 //      data: D
@@ -44,7 +45,7 @@ object Data {
 
   // TODO: can this be a dependent type since scopeUIDs has to be tied to a Rollout?
   case class Scoped[D](
-      data: D,
+      raw: D,
       scope: Scope
       // if missing, always refers to all snapshoted observations in the trajectory
   ) extends Data[D] {}
@@ -60,7 +61,7 @@ object Data {
     * CAUTION: implementation should be simple and close to DataSet API in Apache Spark, all type-level operations
     * should go into [[com.tribbloids.spookystuff.linq.LinqBase]]
     *
-    * @param data
+    * @param raw
     *   internal representation
     * @param lineageID
     *   only used in [[com.tribbloids.spookystuff.dsl.PathPlanning]], multiple [[Exploring]] with identical
@@ -72,7 +73,7 @@ object Data {
     */
   @SerialVersionUID(6534469387269426194L)
   case class Exploring[D](
-      data: D,
+      raw: D,
       lineageID: Option[UUID] = None,
       isOutOfRange: Boolean = false,
       depthOpt: Option[Int] = None,

@@ -1,8 +1,10 @@
 package com.tribbloids.spookystuff.actions
 
 import ai.acyclic.prover.commons.cap.Capability
+import ai.acyclic.prover.commons.cap.Capability.<>:
 import ai.acyclic.prover.commons.spark.serialization.NOTSerializable
 import com.tribbloids.spookystuff.SpookyContext
+import com.tribbloids.spookystuff.actions.Foundation.{HasTrace, TraceSet}
 import com.tribbloids.spookystuff.actions.Trace.Repr
 import com.tribbloids.spookystuff.agent.Agent
 import com.tribbloids.spookystuff.caching.{DFSDocCache, InMemoryDocCache}
@@ -23,11 +25,7 @@ object Trace {
 
   def of(vs: Action*): Trace = Trace(vs.toList)
 
-  object NoOp extends Rollout(Trace()) {
-    cache(Nil)
-  }
-
-  case class Rollout(asTrace: Trace) extends HasTrace with SpookyContext.Contextual {
+  case class Rollout(trace: Trace) extends HasTrace with SpookyContext.Contextual {
     // unlike trace, it is always executed by the agent from scratch
     // thus, execution result can be cached, as replaying it will most likely have the same result (if the trace is deterministic)
 
@@ -41,14 +39,17 @@ object Trace {
       * assuming that most [[Observation]]s will be auto-saved into DFS, their serialized form can exclude contents and
       * thus be very small, making such manual discarding an optimisation with diminishing return
       */
-    @volatile private var _cached: Seq[Observation] = _
+    @volatile private var _cached: Seq[Observation] = {
+      if (trace.isEmpty) Nil
+      else null
+    }
 
     def cachedOpt: Option[Seq[Observation]] = Option(_cached)
 
-    def enableCached: Rollout & Cached = this.asInstanceOf[Rollout & Cached]
+    def enableCached: Rollout <>: Cached = this <>: Cached
     def disableCached: Rollout = this.asInstanceOf[Rollout]
 
-    def cache(vs: Seq[Observation]): Rollout & Cached = {
+    def cache(vs: Seq[Observation]): Rollout <>: Cached = {
       this._cached = vs
       this.enableCached
     }
@@ -61,12 +62,12 @@ object Trace {
     case class _WithCtx(spooky: SpookyContext) extends NOTSerializable {
 
       def play(): Seq[Observation] = {
-        val result = asTrace.fetch(spooky)
+        val result = trace.fetch(spooky)
         Rollout.this._cached = result
         result
       }
 
-      lazy val cached: Rollout & Cached = {
+      lazy val cached: Rollout <>: Cached = {
 
         Trace.this.synchronized {
 
@@ -87,9 +88,10 @@ object Trace {
 
   object Rollout {
 
-    trait Cached extends Capability
+    object Cached extends Capability
+    type Cached = Cached.type
 
-    implicit class CachedRolloutView(v: Rollout & Cached) {
+    implicit class CachedRolloutView(v: Rollout <>: Cached) {
 
       def trajectory: Seq[Observation] = v.cachedOpt.get
       // TODO: returned type will become a class
@@ -105,8 +107,8 @@ case class Trace(
 
   import Trace.*
 
-  override def asTrace: Trace = this
-  override def children: Trace = asTrace
+  override def trace: Trace = this
+  override def children: Trace = trace
 
   override def toString: String = children.mkString("{ ", " -> ", " }")
 
@@ -176,8 +178,8 @@ case class Trace(
       val child = children(i)
       if (child.hasOutput) {
         val backtrace: Repr = child match {
-          case _: Driverless => child :: Nil
-          case _             => children.slice(0, i).flatMap(_.skeleton) :+ child
+          case _: Action.Driverless => child :: Nil
+          case _                    => children.slice(0, i).flatMap(_.skeleton) :+ child
         }
         result += backtrace
       }

@@ -23,11 +23,11 @@ class SpookyContextSpec extends SpookyBaseSpec {
 
         val d1 = spooky
           .fetch(_ => Wget(HTML_URL))
-        d1.fetchedRDD.count()
+        d1.rdd.count()
 
         val d2 = spooky
           .fetch(_ => Wget(HTML_URL))
-        d2.fetchedRDD.count()
+        d2.rdd.count()
 
         val seq = Seq(d1, d2)
 

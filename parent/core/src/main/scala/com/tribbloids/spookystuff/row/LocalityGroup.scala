@@ -10,7 +10,7 @@ import scala.language.implicitConversions
 object LocalityGroup {
 
   lazy val NoOp: LocalityGroup = {
-    val result = LocalityGroup(Trace.NoOp)()
+    val result = LocalityGroup(NoOp)()
     result.rollout.cache(Nil)
     result
   }
@@ -27,12 +27,12 @@ object LocalityGroup {
   *
   * @param trace
   *   static shared trace
-  * @param keyByOvrd
+  * @param groupKeyOvrd
   *   custom function that affects sameness
   */
 case class LocalityGroup(
     trace: Trace,
-    keyByOvrd: Option[Any] = None // used by custom keyBy arg in fetch and explore.
+    groupKeyOvrd: Option[Any] = None // used by custom keyBy arg in fetch and explore.
 )(
     val rollout: Rollout = Rollout(trace)
 ) extends Projection.Equals
@@ -40,7 +40,7 @@ case class LocalityGroup(
   // TODO: should the name be "SIMDGroup/SPMDGroup"
 
   {
-    canEqualProjections += CanEqual.Native.on(keyByOvrd.getOrElse(trace))
+    canEqualProjections += CanEqual.Native.on(groupKeyOvrd.getOrElse(trace))
   }
 
 //  def cache(vs: Seq[Observation]): this.type = {
@@ -54,12 +54,12 @@ case class LocalityGroup(
 //  }
 
   def sameBy[T](fn: Trace => T): LocalityGroup =
-    this.copy(keyByOvrd = Option(fn(this.trace)))(this.rollout)
+    this.copy(groupKeyOvrd = Option(fn(this.trace)))(this.rollout)
 
   type _WithCtx = AgentState
 
   override def withCtx(v: SpookyContext): AgentState = {
 
-    AgentState.Real(this, v)
+    AgentState.Actual(this, v)
   }
 }

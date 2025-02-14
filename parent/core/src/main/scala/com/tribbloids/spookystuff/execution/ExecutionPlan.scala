@@ -54,13 +54,14 @@ abstract class ExecutionPlan[O](
 
   lazy val beaconRDDOpt: Option[BeaconRDD[LocalityGroup]] = inheritedBeaconRDDOpt
 
-  protected def execute: SquashedRDD[O]
+  protected def prepare: SquashedRDD[O]
 
-  final def fetch: SquashedRDD[O] = {
+  final private def execute: SquashedRDD[O] = {
 
-    this.execute
+    this.prepare
       .map { row =>
-        row.localityGroup.withCtx(spooky).trajectory // always fetch before rendering an RDD
+        row.localityGroup.withCtx(spooky).trajectory
+        // always run the agent to get observations before caching RDD
         row
       }
   }
@@ -85,13 +86,12 @@ abstract class ExecutionPlan[O](
         cached
       // if not cached, execute from upstream and use it.
       case None =>
-        val exe = fetch
-        val result = exe
+        val exe = execute
 
         if (storageLevel != StorageLevel.NONE) {
-          _cachedRDD = result.persist(storageLevel)
+          _cachedRDD = exe.persist(storageLevel)
         }
-        result
+        exe
     }
   }
 
@@ -99,7 +99,7 @@ abstract class ExecutionPlan[O](
     squashedRDD.map(_.withSchema(outputSchema))
   }
 
-  @transient final lazy val fetchedRDD: RDD[FetchedRow[O]] =
+  @transient final lazy val rdd: RDD[FetchedRow[O]] =
     SquashedRDDWithSchema.flatMap(row => row.withCtx.unSquash)
 
   // -------------------------------------

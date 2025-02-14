@@ -96,7 +96,7 @@ trait PluginSystem extends Serializable {
     // end of definitions
 
     final override def clone: Plugin = { // TODO: clean
-      default(spooky).withEffectiveConf(getConf)
+      getDefault(spooky).withEffectiveConf(getConf)
     }
 
     /**
@@ -107,10 +107,10 @@ trait PluginSystem extends Serializable {
     }
   }
 
-  def default(spooky: SpookyContext): Plugin
+  def getDefault(spooky: SpookyContext): Plugin
 
   final def init(spooky: SpookyContext, conf: Conf): Plugin = {
-    default(spooky).withConf(conf)
+    getDefault(spooky).withConf(conf)
   }
 
   lazy val enableOnce: Unit = PluginRegistry.enable(this)

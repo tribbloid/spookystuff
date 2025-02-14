@@ -1,5 +1,6 @@
 package com.tribbloids.spookystuff.actions
 
+import com.tribbloids.spookystuff.actions.Foundation.HasTrace
 import com.tribbloids.spookystuff.actions.Trace.DryRun
 import com.tribbloids.spookystuff.agent.Agent
 import com.tribbloids.spookystuff.commons.CommonUtils
@@ -19,7 +20,7 @@ import org.slf4j.LoggerFactory
 trait Action extends ActionLike with HasTrace {
 
   override def children: Trace = Nil
-  @transient override lazy val asTrace: Trace = List(this)
+  @transient override lazy val trace: Trace = List(this)
 
   override def skeleton: Option[Action] = Some(this)
 
@@ -137,4 +138,16 @@ trait Action extends ActionLike with HasTrace {
     super.injectFrom(same)
     this.timeElapsed = same.asInstanceOf[Action].timeElapsed
   }
+}
+
+object Action {
+
+  trait Placeholder extends Action {
+
+    override protected[actions] def doExe(agent: Agent): Seq[Observation] = {
+      throw new UnsupportedOperationException(s"${this.getClass.getSimpleName} is a placeholder")
+    }
+  }
+
+  trait Driverless extends Action {}
 }

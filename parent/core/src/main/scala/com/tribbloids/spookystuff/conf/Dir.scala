@@ -78,7 +78,7 @@ object Dir extends PluginSystem {
     override def metrics: Metrics = Metrics()
   }
 
-  override def default(spooky: SpookyContext): Plugin =
+  override def getDefault(spooky: SpookyContext): Plugin =
     Plugin(
       spooky,
       defaultConf

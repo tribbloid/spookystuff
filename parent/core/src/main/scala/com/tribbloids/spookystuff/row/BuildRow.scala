@@ -1,54 +1,55 @@
 package com.tribbloids.spookystuff.row
 
 import com.tribbloids.spookystuff.SpookyContext
-import com.tribbloids.spookystuff.actions.{HasTrace, Mock, Trace}
+import com.tribbloids.spookystuff.actions.Foundation.HasTrace
+import com.tribbloids.spookystuff.actions.{Mock, NoOp}
 import com.tribbloids.spookystuff.doc.Observation
 
-object Row {
+object BuildRow {
 
   def mock[D](
       data: D,
       observations: Seq[Observation]
-  ): Row[D] = {
+  ): BuildRow[D] = {
 
     val mockAction = Mock(observations)
 
-    Row(data, mockAction)
+    BuildRow(data, mockAction)
   }
 
   def mock(
       observations: Seq[Observation]
-  ): Row[Unit] = {
+  ): BuildRow[Unit] = {
     mock((), observations)
   }
 
   def noOp[D](
       data: D
-  ): Row[D] = {
-    Row(data)
+  ): BuildRow[D] = {
+    BuildRow(data)
   }
 
-  lazy val blank: Row[Unit] = Row(())
+  lazy val blank: BuildRow[Unit] = BuildRow(())
 }
 
 /**
   * just a constructor, need to be cast into [[SquashedRow]] or [[FetchedRow]]
   */
-case class Row[D](
+case class BuildRow[D](
     data: D,
-    hasTrace: HasTrace = Trace.NoOp
+    hasTrace: HasTrace = NoOp
 ) {
 
-  def asSquashed: SquashedRow[D] = {
+  def squashed: SquashedRow[D] = {
     SquashedRow(
-      LocalityGroup(hasTrace.asTrace)(),
+      LocalityGroup(hasTrace.trace)(),
       Seq(data)
     )
   }
 
-  def asFetched(ctx: SpookyContext): FetchedRow[D] = {
+  def fetched(ctx: SpookyContext): FetchedRow[D] = {
     FetchedRow(
-      agentState = AgentState.Real(LocalityGroup(hasTrace.asTrace)(), ctx),
+      agentState = AgentState.Actual(LocalityGroup(hasTrace.trace)(), ctx),
       data = data
     )
   }

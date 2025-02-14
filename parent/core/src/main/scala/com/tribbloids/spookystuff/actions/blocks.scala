@@ -1,6 +1,7 @@
 package com.tribbloids.spookystuff.actions
 
 import com.tribbloids.spookystuff.*
+import com.tribbloids.spookystuff.actions.Foundation.HasTrace
 import com.tribbloids.spookystuff.actions.Wayback.WaybackLike
 import com.tribbloids.spookystuff.agent.Agent
 import com.tribbloids.spookystuff.caching.DocCacheLevel
@@ -195,7 +196,7 @@ final case class Loop(
 
     try {
       for (_ <- 0 until limit) {
-        for (action <- children.asTrace) {
+        for (action <- children.trace) {
           pages ++= action.exe(agent)
         }
       }
@@ -210,7 +211,7 @@ final case class Loop(
 }
 
 @SerialVersionUID(8623719358582480968L)
-case class OAuthV2(self: Wget) extends Block(self) with Driverless {
+case class OAuthV2(self: Wget) extends Block(self) with Action.Driverless {
 
   def rewrite(agent: Agent): Wget = {
 

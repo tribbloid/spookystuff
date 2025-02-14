@@ -15,7 +15,6 @@ object ChainPlan extends CatalystTypeOps.ImplicitMixin {
 
   object FlatMap {
 
-//    type ResultMag[O] = PreferRightMagnet[Seq[O], Batch[O]]
     type _Fn[I, O] = FetchedRow[I] => Batch[O]
 
     def normalise[I, O](
@@ -29,7 +28,6 @@ object ChainPlan extends CatalystTypeOps.ImplicitMixin {
 
   object Map {
 
-//    type ResultMag[O] = PreferRightMagnet[O, Yield[O]]
     type _Fn[I, O] = FetchedRow[I] => O
 
     def normalise[I, O](fn: _Fn[I, O]): ChainPlan.this.Fn[I, O] = { row =>
@@ -54,7 +52,7 @@ case class ChainPlan[I, O: ClassTag]( // narrow means narrow transformation in A
     fn: ChainPlan.Fn[I, O]
 ) extends UnaryPlan[I, O](child) {
 
-  final override def execute: SquashedRDD[O] = {
+  final override def prepare: SquashedRDD[O] = {
 
     val rdd = child.squashedRDD
     val result = rdd.map { squashed =>

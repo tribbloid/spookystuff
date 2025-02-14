@@ -1,5 +1,6 @@
 package com.tribbloids.spookystuff.rdd
 
+import ai.acyclic.prover.commons.util.Magnet.OptionMagnet
 import com.tribbloids.spookystuff.SpookyContext
 import com.tribbloids.spookystuff.actions.*
 import com.tribbloids.spookystuff.commons.refl.CatalystTypeOps
@@ -7,12 +8,11 @@ import com.tribbloids.spookystuff.conf.SpookyConf
 import com.tribbloids.spookystuff.dsl.*
 import com.tribbloids.spookystuff.execution.*
 import com.tribbloids.spookystuff.execution.ExplorePlan.Params
-import com.tribbloids.spookystuff.rdd.SpookyDataset.DataView
 import com.tribbloids.spookystuff.row.*
 import frameless.{TypedDataset, TypedEncoder}
 import org.apache.spark.SparkContext
 import org.apache.spark.rdd.RDD
-import org.apache.spark.sql.{DataFrame, Dataset, SparkSession}
+import org.apache.spark.sql.{DataFrame, Dataset}
 import org.apache.spark.storage.StorageLevel
 
 import scala.language.implicitConversions
@@ -22,35 +22,22 @@ object SpookyDataset extends SpookyDataset_Imp0 {
 
   implicit def asRDD[D](self: SpookyDataset[D]): RDD[FetchedRow[D]] = self.rdd
 
-  class DataView[D: ClassTag](
-      val spark: SparkSession,
-      val toRDD: RDD[D]
-  ) {
+//  class ExportDataView[D: ClassTag](
+//      val spark: SparkSession,
+//      val toRDD: RDD[D]
+//  ) {}
 
-    def sortBy[T: ClassTag: Ordering](fn: D => T, ascending: Boolean = true): DataView[D] = {
-      val sorted = toRDD.sortBy(fn, ascending)
-      new DataView(spark, sorted)
-    }
-
-    def sorted(ascending: Boolean = true)(
-        implicit
-        lemma: Ordering[D]
-    ): DataView[D] = {
-
-      sortBy[D](identity, ascending)
-    }
-  }
-
-  implicit class FramelessView[D](
-      ops: DataView[D]
+  implicit class TypedDatasetView[D](
+      ops: SpookyDataset[D]
   )(
       implicit
+      ctag: ClassTag[D],
       enc: TypedEncoder[D]
   ) {
 
     final def toFrameless: TypedDataset[D] = {
 
-      val ds = TypedDataset.create(ops.toRDD)(enc, ops.spark)
+      val ds = TypedDataset.create(ops.data)(enc, ops.spooky.sparkSession)
 
       ds
     }
@@ -106,8 +93,6 @@ case class SpookyDataset[D](
     plan.storageLevel = lv
   }
 
-  def rdd: RDD[FetchedRow[D]] = this.fetchedRDD
-
   def spooky: SpookyContext = plan.spooky
   def schema: SpookySchema = plan.outputSchema
 
@@ -115,10 +100,31 @@ case class SpookyDataset[D](
 
   def data(
       implicit
-      enc: ClassTag[D]
-  ): DataView[D] = {
+      ctag: ClassTag[D]
+  ): RDD[D] = {
+    this.rdd.map(_.data)
+  }
 
-    new DataView(spooky.sparkSession, rdd.map(_.data))
+  def sortBy[E: ClassTag: Ordering](
+      fn: SortPlan.Fn[D, E],
+      ascending: Boolean = true,
+      numPartitions: OptionMagnet[Int] = None
+  ): SpookyDataset[D] = {
+    val plan = SortPlan(this.plan, fn, ascending, numPartitions)
+
+    SpookyDataset(plan)
+  }
+
+  def sorted(
+      ascending: Boolean = true,
+      numPartitions: OptionMagnet[Int] = None
+  )(
+      implicit
+      ctag: ClassTag[D],
+      lemma: Ordering[D]
+  ) = {
+
+    sortBy[D](v => v.data, ascending, numPartitions)
   }
 
 //  /** TODO: remove, caching should be handled else
@@ -128,7 +134,7 @@ case class SpookyDataset[D](
 //  trait Cached {}
 
   def execute(): this.type = {
-    rdd.foreach(_ => ())
+    this.rdd.foreach(_ => ())
     this
   }
 
@@ -136,12 +142,15 @@ case class SpookyDataset[D](
 
     def apply[O: ClassTag](
         fn: ChainPlan.FlatMap._Fn[D, O]
+    )(
+        implicit
+        sampling: Sampler = spooky.conf.selectSampling
     ): SpookyDataset[O] = {
 
       SpookyDataset(
         ChainPlan(
           SpookyDataset.this,
-          ChainPlan.FlatMap.normalise(fn)
+          ChainPlan.FlatMap.normalise(fn).andThen(v => sampling(v))
         )
       )
     }
@@ -150,12 +159,17 @@ case class SpookyDataset[D](
 
   object map {
 
-    def apply[O: ClassTag](fn: ChainPlan.Map._Fn[D, O]): SpookyDataset[O] = {
+    def apply[O: ClassTag](
+        fn: ChainPlan.Map._Fn[D, O]
+    )(
+        implicit
+        sampling: Sampler = spooky.conf.selectSampling
+    ): SpookyDataset[O] = {
 
       SpookyDataset(
         ChainPlan(
           SpookyDataset.this,
-          ChainPlan.Map.normalise(fn)
+          ChainPlan.Map.normalise(fn).andThen(v => sampling(v))
         )
       )
     }
@@ -199,19 +213,30 @@ case class SpookyDataset[D](
 //  }
 
   // Always left
-  def fetch(fn: FetchPlan.Invar._Fn[D])(
+  def fetch[ON, O: ClassTag](fn: FetchedRow[D] => ON)(
       implicit
+      sampling: Sampler = spooky.conf.fetchSampling,
       keyBy: Trace => Any = identity,
       genPartitioner: GenPartitioner = spooky.conf.localityPartitioner,
-      ctg: ClassTag[D]
-  ): SpookyDataset[D] = {
+      canFetch: CanFetch[ON, D, O]
+      //      ctg: ClassTag[D]
+  ): SpookyDataset[O] = {
+
+    val normalForm: FetchPlan.Fn[D, O] = { inputRow => // TODO: trace/expose circuit
+      val intermediate = fn(inputRow)
+
+      val batch = canFetch.normalise(inputRow.data, intermediate)
+
+      val sampled = sampling(batch)
+      sampled
+    }
 
     SpookyDataset(
-      FetchPlan(plan, FetchPlan.Invar.normalise(fn), keyBy, genPartitioner)
+      FetchPlan(plan, normalForm, keyBy, genPartitioner)(canFetch.cTag)
     )
   }
 
-  case class inductively(
+  case class exploreOn(
       range: Range = spooky.conf.exploreRange,
       pathPlanning: PathPlanning = spooky.conf.explorePathPlanning,
       //
@@ -220,22 +245,34 @@ case class SpookyDataset[D](
       //
       //      ordinalField: Field = null,
       //      depthField: Field = null, // TODO: Some of them has to be moved upwards
-  )(
-      implicit
-      ctg: ClassTag[D]
   ) {
 
-    def fetch(fn: ExplorePlan.Invar._Fn[D])(
+    def fetch[
+        ON // notice the lack of Output type as fetch here must be recursive
+    ](fn: FetchedRow[Data.Exploring[D]] => ON)(
         implicit
+        sampling: Sampler = spooky.conf.exploreSampling,
         keyBy: Trace => Any = identity,
-        genPartitioner: GenPartitioner = spooky.conf.localityPartitioner
+        genPartitioner: GenPartitioner = spooky.conf.localityPartitioner,
+        canFetch: CanFetch[ON, D, D]
     ): SpookyDataset[Data.Exploring[D]] = {
-      val actualFn = ExplorePlan.Invar.normalise(fn)
+
+      val normalForm: FetchPlan.Fn[Data.Exploring[D], D] = { inputRow =>
+        // TODO: remove duplication
+        val intermediate = fn(inputRow)
+
+        val batch = canFetch.normalise(inputRow.data, intermediate)
+
+        val sampled = sampling(batch)
+        sampled
+      }
+
+      val invarForm = ExplorePlan.Invar.normalise(normalForm)
 
       val params = Params(range)
       val out: ExplorePlan[D, Data.Exploring[D]] = ExplorePlan(
         plan,
-        actualFn,
+        invarForm,
         keyBy,
         genPartitioner,
         params,

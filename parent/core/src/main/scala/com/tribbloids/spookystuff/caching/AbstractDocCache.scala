@@ -3,6 +3,7 @@ package com.tribbloids.spookystuff.caching
 import com.tribbloids.spookystuff.SpookyContext
 import com.tribbloids.spookystuff.actions.Wayback.WaybackLike
 import com.tribbloids.spookystuff.actions.*
+import com.tribbloids.spookystuff.actions.Foundation.HasTrace
 import com.tribbloids.spookystuff.doc.Observation
 
 /**
@@ -46,7 +47,7 @@ trait AbstractDocCache {
 
   def put(k: HasTrace, v: Seq[Observation], spooky: SpookyContext): this.type = {
 
-    if (cacheable(v)) putImpl(k.asTrace, v, spooky)
+    if (cacheable(v)) putImpl(k.trace, v, spooky)
     else this
   }
   def putImpl(k: Trace, v: Seq[Observation], spooky: SpookyContext): this.type

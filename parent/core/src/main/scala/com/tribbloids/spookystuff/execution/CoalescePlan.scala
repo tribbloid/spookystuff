@@ -10,7 +10,7 @@ case class CoalescePlan[D](
     ord: Ordering[SquashedRow[D]] = null
 ) extends UnaryPlan[D, D](child) {
 
-  override protected def execute: SquashedRDD[D] = {
+  override protected def prepare: SquashedRDD[D] = {
 
     val childRDD = child.squashedRDD
     val n = numPartitions(childRDD)

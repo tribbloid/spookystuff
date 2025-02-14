@@ -27,19 +27,20 @@ trait PluginRegistry {
       implicit
       ctg: ClassTag[P]
   ) extends Serializable {
+    {
+      cached
+    }
 
     object Bound extends TypeBound {
 
       type Min = Nothing
       type Max = P
-    }
 
-    val domain = {
-      new BoundView(Bound)
+      val view = new BoundView(this)
     }
 
     type Out[_ <: P]
-    trait Impl extends domain.Dependent.Impl[Out]
+    trait Impl extends Bound.view.Dependent.Impl[Out]
 
     protected def init: Impl
 
@@ -51,17 +52,13 @@ trait PluginRegistry {
         )
     }
 
-    {
-      cached
-    }
-
     def registerEnabled(): Unit = {
       // ahead-of-time initialization based on enabled plugins
       // may take a long time then fail, only attempted once
       val trials = enabled.flatMap {
         case v: P =>
           val result = scala.util.Try {
-            this.apply(v)
+            cached.apply(v)
           }
           Some(result)
         case _ =>
@@ -71,7 +68,7 @@ trait PluginRegistry {
       TreeThrowable.&&&(trials)
     }
 
-    implicit def asMono(v: this.type): cached.type = v.cached
+    implicit def asCached(v: this.type): cached.type = v.cached
   }
 }
 

@@ -1,6 +1,6 @@
 package com.tribbloids.spookystuff.utils
 
-import ai.acyclic.prover.commons.debug.CallStackRef
+import ai.acyclic.prover.commons.debug.SrcDefinition
 
 trait ShippingMarks extends Serializable {
 
@@ -24,13 +24,15 @@ trait ShippingMarks extends Serializable {
   /**
     * can only be used on driver
     */
-  def requireNotShipped(): Unit = {
-    def methodName = CallStackRef.below().head.getMethodName
+  def requireNotShipped()(
+      implicit
+      src: SrcDefinition
+  ): Unit = {
 
     require(
       notShipped, {
         notShipped
-        s"${getClass.getSimpleName}: method $methodName can only be used on Spark driver, it is disabled after shipping"
+        s"${getClass.getSimpleName} can only be used on Spark driver, it is disabled after shipping ... at ${src.shortText}"
       }
     )
   }

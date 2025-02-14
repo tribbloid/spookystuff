@@ -41,6 +41,6 @@ object Python extends PluginSystem.HasDriver {
 
   implicitly[this.Driver =:= PythonDriver]
 
-  override def default(spooky: SpookyContext): Plugin =
+  override def getDefault(spooky: SpookyContext): Plugin =
     Plugin(spooky, defaultConf).withConf(defaultConf)
 }

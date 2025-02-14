@@ -64,10 +64,14 @@ case class ExploreRunner[I, O](
       group: LocalityGroup
   ) {
 
+    def isNoOp: Boolean = group.trace.trace.isEmpty
+
     def intoOpen(
         value: Vector[Open.Exploring],
         reducer: Open.Reducer = pathPlanningImpl.openReducer
     ): Unit = {
+      if (isNoOp) return // NoOp will terminate the ExploreRunner
+
       val oldVs: Vector[Open.Exploring] = open.getOrElse(group, Vector.empty)
       val newVs = reducer(value, oldVs)
       open += group -> newVs
@@ -166,7 +170,7 @@ case class ExploreRunner[I, O](
         {
           // commit out into visited
           val inRange: Explore.BatchK[O] = _outs.toVector.flatMap { out =>
-            val result = openExploring.copy(data = out)
+            val result = openExploring.copy(raw = out)
 
             val depth = result.depthOpt.getOrElse(Int.MaxValue)
 
@@ -179,7 +183,7 @@ case class ExploreRunner[I, O](
             } else None
 
             reprOpt.map { e =>
-              openExploring.copy(data = e)
+              openExploring.copy(raw = e)
             }
           }
 
@@ -192,8 +196,8 @@ case class ExploreRunner[I, O](
             case (nexTtraceSet, nextData) =>
               val nextElem: Open.Exploring = openExploring.depth_++.copy(nextData)
 
-              val nextPayload: Open.Exploring = openExploring.copy(data = nextElem)
-              nexTtraceSet.asTraceSet.map { trace =>
+              val nextPayload: Open.Exploring = openExploring.copy(raw = nextElem)
+              nexTtraceSet.traceSet.map { trace =>
                 trace -> nextPayload
               }
           }

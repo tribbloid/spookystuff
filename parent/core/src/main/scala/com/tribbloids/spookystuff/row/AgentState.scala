@@ -9,7 +9,7 @@ import scala.collection.MapView
 
 object AgentState {
 
-  case class Real( // TODO: merge into LocalityGroup.WithCtx
+  case class Actual( // TODO: merge into LocalityGroup.WithCtx
       group: LocalityGroup,
       ctx: SpookyContext
   ) extends AgentState {
@@ -45,6 +45,7 @@ trait AgentState extends NOTSerializable {
   //  Delta can only interact with DataRow, interacting with Agent is not possible
   //  as a result, there is no point of multiple agents using 1 LocalityGroup, nothing needs to be shared
 
+  def group: LocalityGroup
   def ctx: SpookyContext
   def trajectory: Seq[Observation]
 

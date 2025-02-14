@@ -14,7 +14,7 @@ class FetchedRowSuite extends SpookyBaseSpec {
 
   it("get only doc") {
     val doc = Wget(HTML_URL).fetch(spooky).head
-    val row = Row((), Wget(HTML_URL)).asFetched(spooky)
+    val row = BuildRow((), Wget(HTML_URL)).fetched(spooky)
 
     val page1 = row.docs.only
     assert(page1.uid === doc.uid)
@@ -27,7 +27,7 @@ class FetchedRowSuite extends SpookyBaseSpec {
   it("get unstructured") {
     val wget = Wget(HTML_URL) as "pp"
     val doc = wget.fetch(spooky).head
-    val proto = Row((), wget).asFetched(spooky)
+    val proto = BuildRow((), wget).fetched(spooky)
 
     val row = {
       Seq(proto).select { row =>
@@ -58,7 +58,7 @@ class FetchedRowSuite extends SpookyBaseSpec {
         wget ~ "b" +>
         wget ~ "a" +>
         wget ~ "b"
-      val row1 = Row((), hasTrace = trace).asFetched(spooky)
+      val row1 = BuildRow((), hasTrace = trace).fetched(spooky)
 
       val rows: Seq[Data.Scoped[Unit]] = row1.rescope.byDistinctNames
 

@@ -194,7 +194,7 @@ case class FetchedRow[D](
 
       outerBuffer.zipWithIndex.map {
         case (v, i) =>
-          Data.Scoped(data = data, scope = Scope(v, i))
+          Data.Scoped(raw = data, scope = Scope(v, i))
       }.toSeq
     }
   }

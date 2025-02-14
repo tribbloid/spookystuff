@@ -54,11 +54,10 @@ object SpookyContext {
     def withCtx(v: SpookyContext): _WithCtx
 
     // cached results will be dropped for being NOTSerializable
-    @transient final lazy val withCtx: SpookyContext :=> _WithCtx =
-      :=>.at[SpookyContext] { v =>
-        withCtx(v)
-      }
-        .cached()
+    @transient final lazy val withCtx: SpookyContext :=> _WithCtx = :=>.at[SpookyContext] { v =>
+      withCtx(v)
+    }
+      .cached()
   }
 }
 
@@ -79,7 +78,7 @@ case class SpookyContext(
 
       def apply[T <: PluginSystem](arg: T): arg.Plugin = {
         requireNotShipped()
-        val result = arg.default(SpookyContext.this)
+        val result = arg.getDefault(SpookyContext.this)
         result
       }
     }
@@ -215,7 +214,7 @@ case class SpookyContext(
     //      val ttg = implicitly[TypeTag[T]]
 
     val self = rdd.map { data =>
-      Row(data).asSquashed
+      BuildRow(data).squashed
     }
     SpookyDataset.ofRDD(
       self,

@@ -1,8 +1,8 @@
 package com.tribbloids.spookystuff.execution
 
-import com.tribbloids.spookystuff.actions.{HasTraceSet, Trace}
+import com.tribbloids.spookystuff.actions.Trace
 import com.tribbloids.spookystuff.caching.ExploreLocalCache
-import com.tribbloids.spookystuff.dsl.{GenPartitioner, PathPlanning, Sampler}
+import com.tribbloids.spookystuff.dsl.{GenPartitioner, PathPlanning}
 import com.tribbloids.spookystuff.execution.ExecutionPlan.CanChain
 import com.tribbloids.spookystuff.execution.ExplorePlan.Params
 import com.tribbloids.spookystuff.row.*
@@ -23,48 +23,70 @@ object ExplorePlan {
     * @tparam O
     *   output
     */
-  type Batches[I, O] = (FetchPlan.Batch[I], ChainPlan.Batch[O])
+  type Batch[I, O] = (FetchPlan.Batch[I], ChainPlan.Batch[O])
 
-  type Fn[I, O] = FetchedRow[Data.Exploring[I]] => Batches[I, O]
+  type Fn[I, O] = FetchedRow[Data.Exploring[I]] => Batch[I, O]
 
+  /**
+    * special case in which the output data uses the recursive data directly
+    *
+    * the only case supported by [[com.tribbloids.spookystuff.rdd.SpookyDataset.exploreOn]]
+    *
+    * to get other cases, you need to define a [[ChainPlan]] and let query optimiser to merge it into [[ExplorePlan]]
+    */
   object Invar {
 
-    type ResultMag[I] = proto.ResultMag[I]
-    type _Fn[I] = FetchedRow[Data.Exploring[I]] => ResultMag[I]
+    type _Batch[I] = Batch[I, Data.Exploring[I]]
 
-    val proto: FetchPlan.Invar.type = FetchPlan.Invar
+    type _Fn[I] = Fn[I, Data.Exploring[I]]
 
-    def normalise[I](
-        fn: _Fn[I],
-        sampler: Sampler = Sampler.Identity
-    ): Fn[I, Data.Exploring[I]] = {
+    def normalise[I](fn: FetchPlan.Fn[Data.Exploring[I], I]): _Fn[I] = { v =>
+      val left: FetchPlan.Batch[I] = fn(v)
 
-      val inductive: FetchPlan.Fn[Data.Exploring[I], I] = FetchPlan.ToTraceSet.normalise[Data.Exploring[I], I](
-        { row =>
-          val mag: ResultMag[I] = fn(row)
+      val right = left.map(_._2).map { nextRaw =>
+        val nextExploring = v.data.copy(
+          raw = nextRaw
+        )
 
-          val normalised: (HasTraceSet, I) = mag.original match {
-            case Left(traces) =>
-              traces -> row.data
-            case Right(v) =>
-              v._1 -> v._2
-          }
-
-          normalised
-        },
-        sampler
-      )
-
-      val result: Fn[I, Data.Exploring[I]] = { row =>
-        val first = inductive(row)
-        val second: ChainPlan.Batch[Data.Exploring[I]] = Seq(row.data)
-
-        first -> second
+        nextExploring
       }
 
-      result
+      val result: _Batch[I] = left -> right
 
+      result
     }
+
+//    def normalise[I](
+//        fn: _Fn[I],
+//        sampler: Sampler = Sampler.Identity
+//    ): Fn[I, Data.Exploring[I]] = {
+//
+//      val inductive: FetchPlan.Fn[Data.Exploring[I], I] = FetchPlan.ToTraceSet.normalise[Data.Exploring[I], I](
+//        { row =>
+//          val mag: ResultMag[I] = fn(row)
+//
+//          val normalised = mag.original match {
+//            case Left(traces) =>
+//              traces -> row.data
+//            case Right(v) =>
+//              v._1 -> v.₂
+//          }
+//
+//          normalised
+//        },
+//        sampler
+//      )
+//
+//      val result: Fn[I, Data.Exploring[I]] = { row =>
+//        val first = inductive(row)
+//        val second: ChainPlan.Batch[Data.Exploring[I]] = Seq(row.data)
+//
+//        first -> second
+//      }
+//
+//      result
+//
+//    }
   }
 
   type ExeID = UUID
@@ -123,7 +145,7 @@ case class ExplorePlan[I, O](
   val pathPlanningImpl: PathPlanning.Impl[I, O] =
     pathPlanning._Impl[I, O](_effectiveParams, this.outputSchema)
 
-  override def execute: SquashedRDD[O] = {
+  override def prepare: SquashedRDD[O] = {
 
     if (spooky.sparkContext.getCheckpointDir.isEmpty && checkpointInterval > 0)
       spooky.sparkContext.setCheckpointDir(spooky.dirConf.checkpoint)
@@ -207,7 +229,7 @@ case class ExplorePlan[I, O](
             row.isOutOfRange
           }
 
-          val inRange = inRangeExploring.map(v => v.data)
+          val inRange = inRangeExploring.map(v => v.raw)
 
           val result = SquashedRow[O](v._1, inRange)
 

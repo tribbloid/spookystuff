@@ -16,7 +16,7 @@ import scala.util.Random
 case class Delay(
     override val cooldown: Duration = Const.Interaction.delayMax
 ) extends Interaction
-    with Driverless {
+    with Action.Driverless {
 
   override def exeNoOutput(agent: Agent): Unit = {
     // do nothing
@@ -36,7 +36,7 @@ object Delay {
       override val cooldown: Duration = Const.Interaction.delayMin,
       maxDelay: Duration = Const.Interaction.delayMax
   ) extends Interaction
-      with Driverless {
+      with Action.Driverless {
 
     assert(maxDelay >= cooldown)
 

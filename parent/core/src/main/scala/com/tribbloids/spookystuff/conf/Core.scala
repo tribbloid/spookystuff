@@ -18,7 +18,7 @@ object Core extends PluginSystem {
     override def withEffectiveConf(conf: SpookyConf): Plugin = copy(effectiveConf = conf)
   }
 
-  override def default(spooky: SpookyContext): Plugin = {
+  override def getDefault(spooky: SpookyContext): Plugin = {
     val default = SpookyConf.default
     Plugin(spooky, default).withConf(default)
   }

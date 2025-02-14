@@ -11,7 +11,7 @@ package com.tribbloids.spookystuff.dsl
   * selector 'abc.S("div#a1").attrs("src"): first "src" attribute of an unstructured field that match the selector
   */
 
-class DSL extends DSL_Imp0 {
+trait DSL {
 
 //  def S: GenExtractor[FR, Doc] = GetOnlyDocExpr
 //  def S(selector: String): GenExtractor[FR, Elements[Unstructured]] = S.andMap(_.root).findAll(selector)

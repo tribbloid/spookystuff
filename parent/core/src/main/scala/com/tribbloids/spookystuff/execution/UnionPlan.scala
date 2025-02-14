@@ -8,7 +8,7 @@ case class UnionPlan[D](
 ) extends ExecutionPlan[D](children) {
 
   // TODO: also use PartitionerAwareUnionRDD
-  def execute: SquashedRDD[D] = {
+  def prepare: SquashedRDD[D] = {
     new UnionRDD(
       spooky.sparkContext,
       children.map(_.squashedRDD)

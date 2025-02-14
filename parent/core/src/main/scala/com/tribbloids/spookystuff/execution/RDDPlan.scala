@@ -6,9 +6,9 @@ import com.tribbloids.spookystuff.row.{BeaconRDD, LocalityGroup, SpookySchema, S
   * Basic Plan with no children, isExecuted always= true
   */
 case class RDDPlan[D](
-    override val computeSchema: SpookySchema,
-    @transient execute: SquashedRDD[D],
-    @transient beaconRDD: Option[BeaconRDD[LocalityGroup]] = None
+                       override val computeSchema: SpookySchema,
+                       @transient prepare: SquashedRDD[D],
+                       @transient beaconRDD: Option[BeaconRDD[LocalityGroup]] = None
 ) extends ExecutionPlan[D](
       Seq(),
       computeSchema.ec

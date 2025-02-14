@@ -9,7 +9,7 @@ import java.net.URI
 abstract class HttpMethod(
     uri: String
 ) extends Export
-    with Driverless
+    with Action.Driverless
     with Timed.ThreadSafe
     with Wayback {
 
