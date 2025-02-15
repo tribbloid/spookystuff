@@ -13,5 +13,5 @@ case class SpookySchema(ec: ExecutionContext)
 //)
 {
 
-  def ctx: SpookyContext = ec.spooky
+  def ctx: SpookyContext = ec.ctx
 }

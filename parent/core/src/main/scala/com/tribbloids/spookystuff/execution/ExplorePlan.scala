@@ -267,7 +267,7 @@ case class ExplorePlan[I, O](
       val out1: (FetchPlan.Batch[I], ChainPlan.Batch[O]) = this.fn(row)
 
       val out2: ChainPlan.Batch[O2] = out1._2.flatMap { data =>
-        val row2 = FetchedRow(row.agentState, data)
+        val row2 = row.copy(data = data)
 
         val result = fn(row2)
 

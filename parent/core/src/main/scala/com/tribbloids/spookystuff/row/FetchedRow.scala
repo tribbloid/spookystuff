@@ -4,7 +4,7 @@ import ai.acyclic.prover.commons.spark.serialization.NOTSerializable
 import ai.acyclic.prover.commons.util.PathMagnet
 import com.tribbloids.spookystuff.doc.*
 import com.tribbloids.spookystuff.doc.Observation.{DocUID, Failure, Success}
-import com.tribbloids.spookystuff.execution.ChainPlan
+import com.tribbloids.spookystuff.execution.{ChainPlan, ExecutionContext}
 import com.tribbloids.spookystuff.row.Data.Scope
 
 import scala.collection.mutable
@@ -68,7 +68,7 @@ object FetchedRow {
           val newData = ChainPlan.FlatMap.normalise(fn).apply(v)
 
           newData.map { datum =>
-            FetchedRow(v.agentState, datum)
+            v.copy(data = datum)
           }
         }
       }
@@ -83,7 +83,7 @@ object FetchedRow {
           val newData = ChainPlan.Map.normalise(fn).apply(v)
 
           newData.map { datum =>
-            FetchedRow(v.agentState, datum)
+            v.copy(data = datum)
           }
 
         }
@@ -146,11 +146,17 @@ object FetchedRow {
   * serializable, has to be created from [[SquashedRow]] on the fly
   */
 case class FetchedRow[D](
-    @transient agentState: AgentState,
-    data: D
+    localityGroup: LocalityGroup,
+    data: D, // deliberately singular
+    ec: ExecutionContext
 ) {
 
-  lazy val effectiveScope: Scope = {
+  @transient lazy val agentState: AgentState =
+    AgentState.Impl(localityGroup, ec) // will be discarded & recreated when being moved to another computer
+
+  @transient lazy val squash: SquashedRow[D] = SquashedRow(localityGroup, Seq(data))
+
+  @transient lazy val effectiveScope: Scope = {
 
     val result = data match {
       case v: Data.Scoped[_] => v.scope

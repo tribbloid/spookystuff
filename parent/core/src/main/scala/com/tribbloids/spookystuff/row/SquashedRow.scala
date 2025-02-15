@@ -4,6 +4,7 @@ import ai.acyclic.prover.commons.function.hom.Hom.:=>
 import ai.acyclic.prover.commons.spark.serialization.NOTSerializable
 import com.tribbloids.spookystuff.SpookyContext
 import com.tribbloids.spookystuff.doc.Observation
+import com.tribbloids.spookystuff.execution.ExecutionContext
 
 import scala.language.implicitConversions
 
@@ -12,7 +13,7 @@ object SquashedRow {
   def ofData[D](data: D*): SquashedRow[D] = {
 
     SquashedRow(
-      LocalityGroup.NoOp,
+      LocalityGroup.noOp,
       data
     )
   }
@@ -149,10 +150,8 @@ case class SquashedRow[D](
 
     lazy val unSquash: Seq[FetchedRow[D]] = {
 
-      val agent = localityGroup.withCtx(ctx)
-
-      batch.map { r1 =>
-        FetchedRow(agent, r1)
+      batch.map { d =>
+        FetchedRow(localityGroup, d, ExecutionContext(ctx))
       }
     }
 

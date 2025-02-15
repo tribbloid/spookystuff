@@ -42,7 +42,7 @@ case class SortPlan[D, E: Ordering: ClassTag](
     }
 
     val result = sorted.map { v =>
-      SquashedRow(v.agentState.group, Seq(v.data))
+      v.squash
     }
 
     result

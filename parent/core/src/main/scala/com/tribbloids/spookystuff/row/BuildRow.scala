@@ -4,6 +4,7 @@ import com.tribbloids.spookystuff.SpookyContext
 import com.tribbloids.spookystuff.actions.Foundation.HasTrace
 import com.tribbloids.spookystuff.actions.{Mock, NoOp}
 import com.tribbloids.spookystuff.doc.Observation
+import com.tribbloids.spookystuff.execution.ExecutionContext
 
 object BuildRow {
 
@@ -49,8 +50,9 @@ case class BuildRow[D](
 
   def fetched(ctx: SpookyContext): FetchedRow[D] = {
     FetchedRow(
-      agentState = AgentState.Actual(LocalityGroup(hasTrace.trace)(), ctx),
-      data = data
+      LocalityGroup(hasTrace.trace)(),
+      data,
+      ExecutionContext(ctx)
     )
   }
 }

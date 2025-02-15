@@ -32,7 +32,7 @@ abstract class ExecutionPlan[O](
     children.map(_.ec).reduce(_ :++ _)
   )
 
-  def spooky: SpookyContext = ec.spooky
+  def spooky: SpookyContext = ec.ctx
   def scratchRDDs: ScratchRDDs = ec.scratchRDDs
 
   protected def computeSchema: SpookySchema = {

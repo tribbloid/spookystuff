@@ -126,7 +126,7 @@ case class FetchPlan[I, O: ClassTag](
 
       val out2: Seq[(Trace, O2)] = out1.flatMap {
         case (traces, data) =>
-          val row2 = FetchedRow(row.agentState, data)
+          val row2 = row.copy(data = data)
 
           fn(row2).map { v =>
             traces -> v

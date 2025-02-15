@@ -2,14 +2,15 @@ package com.tribbloids.spookystuff.row
 
 import ai.acyclic.prover.commons.multiverse.{CanEqual, Projection}
 import com.tribbloids.spookystuff.SpookyContext
-import com.tribbloids.spookystuff.actions.Trace
+import com.tribbloids.spookystuff.actions.{NoOp, Trace}
 import com.tribbloids.spookystuff.actions.Trace.Rollout
+import com.tribbloids.spookystuff.execution.ExecutionContext
 
 import scala.language.implicitConversions
 
 object LocalityGroup {
 
-  lazy val NoOp: LocalityGroup = {
+  lazy val noOp: LocalityGroup = {
     val result = LocalityGroup(NoOp)()
     result.rollout.cache(Nil)
     result
@@ -43,16 +44,6 @@ case class LocalityGroup(
     canEqualProjections += CanEqual.Native.on(groupKeyOvrd.getOrElse(trace))
   }
 
-//  def cache(vs: Seq[Observation]): this.type = {
-//    rollout.cache(vs)
-//    this
-//  }
-//
-//  def uncache: this.type = {
-//    rollout.uncache
-//    this
-//  }
-
   def sameBy[T](fn: Trace => T): LocalityGroup =
     this.copy(groupKeyOvrd = Option(fn(this.trace)))(this.rollout)
 
@@ -60,6 +51,6 @@ case class LocalityGroup(
 
   override def withCtx(v: SpookyContext): AgentState = {
 
-    AgentState.Actual(this, v)
+    AgentState.Impl(this, ExecutionContext(v))
   }
 }

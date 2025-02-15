@@ -8,13 +8,13 @@ import org.slf4j.LoggerFactory
 import scala.util.Try
 
 case class ExecutionContext(
-    spooky: SpookyContext,
+    ctx: SpookyContext,
     @transient scratchRDDs: ScratchRDDs = ScratchRDDs()
 ) {
 
   lazy val deployPluginsOnce: Unit = {
     try {
-      spooky.Plugins.deployAll()
+      ctx.Plugins.deployAll()
     } catch {
       case e: Throwable =>
         LoggerFactory
@@ -39,7 +39,7 @@ case class ExecutionContext(
 
   def persist[T](
       rdd: RDD[T],
-      storageLevel: StorageLevel = spooky.conf.defaultStorageLevel
+      storageLevel: StorageLevel = ctx.conf.defaultStorageLevel
   ): RDD[T] = {
 
     scratchRDDs.persist(rdd, storageLevel)

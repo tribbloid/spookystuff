@@ -4,23 +4,24 @@ import ai.acyclic.prover.commons.spark.serialization.NOTSerializable
 import com.tribbloids.spookystuff.SpookyContext
 import com.tribbloids.spookystuff.actions.Trace
 import com.tribbloids.spookystuff.doc.Observation
+import com.tribbloids.spookystuff.execution.ExecutionContext
 
 import scala.collection.MapView
 
 object AgentState {
 
-  case class Actual( // TODO: merge into LocalityGroup.WithCtx
-      group: LocalityGroup,
-      ctx: SpookyContext
+  case class Impl( // TODO: merge into LocalityGroup.WithCtx
+      localityGroup: LocalityGroup,
+      override val ec: ExecutionContext
   ) extends AgentState {
 
     // TODO: This class is minimal before imperative/define-by-run Agent API:
     //  Delta can only interact with DataRow, interacting with Agent is not possible
     //  as a result, there is no point of multiple agents using 1 LocalityGroup, nothing needs to be shared
 
-    def rollout: Trace.Rollout = group.rollout
+    def rollout: Trace.Rollout = localityGroup.rollout
 
-    lazy val trajectory: Seq[Observation] = rollout.withCtx(ctx).trajectory
+    lazy val trajectory: Seq[Observation] = rollout.withCtx(ec.ctx).trajectory
   }
 
 //  case class Mock(
@@ -45,19 +46,24 @@ trait AgentState extends NOTSerializable {
   //  Delta can only interact with DataRow, interacting with Agent is not possible
   //  as a result, there is no point of multiple agents using 1 LocalityGroup, nothing needs to be shared
 
-  def group: LocalityGroup
-  def ctx: SpookyContext
+  def localityGroup: LocalityGroup
+  def ec: ExecutionContext
   def trajectory: Seq[Observation]
 
-  protected lazy val lookup_multi: Map[Observation.DocUID, Seq[Observation]] = {
+  final def ctx = ec.ctx
 
-    trajectory.groupBy { oo =>
-      oo.uid
+  lazy val lookup: MapView[Observation.DocUID, Observation] = {
+
+    lazy val lookup_multi: Map[Observation.DocUID, Seq[Observation]] = {
+
+      trajectory.groupBy { oo =>
+        oo.uid
+      }
     }
-  }
 
-  lazy val lookup: MapView[Observation.DocUID, Observation] = lookup_multi.view.mapValues { v =>
-    require(v.size == 1, "multiple observations with identical UID")
-    v.head
+    lookup_multi.view.mapValues { v =>
+      require(v.size == 1, "multiple observations with identical UID")
+      v.head
+    }
   }
 }
