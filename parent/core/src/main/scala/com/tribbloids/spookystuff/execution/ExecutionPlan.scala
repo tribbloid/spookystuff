@@ -1,7 +1,6 @@
 package com.tribbloids.spookystuff.execution
 
 import com.tribbloids.spookystuff.SpookyContext
-import com.tribbloids.spookystuff.commons.lifespan.Cleanable
 import com.tribbloids.spookystuff.row.*
 import org.apache.spark.rdd.RDD
 import org.apache.spark.storage.StorageLevel
@@ -22,8 +21,8 @@ object ExecutionPlan {
 abstract class ExecutionPlan[O](
     val children: Seq[ExecutionPlan[?]],
     val ec: ExecutionContext
-) extends Serializable
-    with Cleanable {
+) extends Serializable {
+  // NOT a Cleanable! multiple copies will be created by Ser/De which will cause double free problem
 
   def this(
       children: Seq[ExecutionPlan[?]]
@@ -33,7 +32,7 @@ abstract class ExecutionPlan[O](
   )
 
   def spooky: SpookyContext = ec.ctx
-  def scratchRDDs: ScratchRDDs = ec.scratchRDDs
+  def tempRefs: TemporaryRefs = ec.tempRefs
 
   protected def computeSchema: SpookySchema = {
     // TODO: merge into outputSchema
@@ -104,14 +103,8 @@ abstract class ExecutionPlan[O](
 
   // -------------------------------------
 
-  def scratchRDDPersist[T](
+  def persistTemporarily[T](
       rdd: RDD[T],
       storageLevel: StorageLevel = ExecutionPlan.this.spooky.conf.defaultStorageLevel
-  ): RDD[T] = scratchRDDs.persist(rdd, storageLevel)
-
-  override protected def cleanImpl(): Unit = {
-//    cachedRDDOpt.foreach { v => // TODO: fix lifespan
-//      v.unpersist(false)
-//    }
-  }
+  ): RDD[T] = tempRefs.persist(rdd, storageLevel)
 }

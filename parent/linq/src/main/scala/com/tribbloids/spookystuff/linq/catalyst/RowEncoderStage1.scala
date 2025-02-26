@@ -1,11 +1,11 @@
 package com.tribbloids.spookystuff.linq.catalyst
 
-import com.tribbloids.spookystuff.linq.Tuple
+import ai.acyclic.prover.commons.compat.TupleX
 import frameless.{NewInstanceExprs, RecordEncoderFields}
 import org.apache.spark.sql.catalyst.expressions.{CreateNamedStruct, Expression, GetStructField, Literal}
 import shapeless.Lazy
 
-case class RowEncoderStage1[G <: Tuple, H <: Tuple](
+case class RowEncoderStage1[G <: TupleX, H <: TupleX](
 )(
     implicit
 //    i1: DropUnitValues.Aux[G, H],
@@ -40,7 +40,7 @@ case class RowEncoderStage1[G <: Tuple, H <: Tuple](
 
 object RowEncoderStage1 {
 
-  implicit def usingDerivation[G <: Tuple, H <: Tuple](
+  implicit def usingDerivation[G <: TupleX, H <: TupleX](
       implicit
       i3: Lazy[RecordEncoderFields[H]],
       i4: Lazy[NewInstanceExprs[G]]

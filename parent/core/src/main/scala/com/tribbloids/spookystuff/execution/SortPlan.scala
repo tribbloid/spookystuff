@@ -1,7 +1,7 @@
 package com.tribbloids.spookystuff.execution
 
 import ai.acyclic.prover.commons.util.Magnet.OptionMagnet
-import com.tribbloids.spookystuff.row.{FetchedRow, SquashedRDD, SquashedRow}
+import com.tribbloids.spookystuff.row.{FetchedRow, SquashedRDD}
 
 import scala.reflect.ClassTag
 
@@ -29,13 +29,13 @@ case class SortPlan[D, E: Ordering: ClassTag](
         rows
       }
 
-    scratchRDDs.persist(unsquashed)
+    tempRefs.persist(unsquashed)
     // this can save some recomputation at the expense of memory
     // see https://issues.apache.org/jira/browse/SPARK-1021
 
     val sorted = numPartitions.original match {
 
-      case Some(v) =>
+      case Some(v: Int) =>
         unsquashed.sortBy(byFn, ascending, v)
       case None =>
         unsquashed.sortBy(byFn, ascending)

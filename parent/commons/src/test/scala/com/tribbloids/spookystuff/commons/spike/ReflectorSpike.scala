@@ -3,9 +3,11 @@ package com.tribbloids.spookystuff.commons.spike
 import ai.acyclic.prover.commons.debug.print_@
 import com.tribbloids.spookystuff.testutils.BaseSpec
 import org.json4s.DefaultFormats
+import org.scalatest.Ignore
 
 import scala.reflect.Manifest
 
+@Ignore
 class ReflectorSpike extends BaseSpec {
   // test how Reflector handles different classes
 

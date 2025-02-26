@@ -176,42 +176,6 @@ case class SpookyDataset[D](
   }
   def select: map.type = map
 
-//  def dataRDDSorted(
-//      implicit
-//      ev: Ordering[D]
-//  ): RDD[D] = { // DO NOT DELETE!
-//
-//    val dataRDD = this.map(_.data)
-//    plan.scratchRDDPersist(dataRDD)
-//
-//    val sorted = dataRDD.sortBy(identity, ascending = true, 1)
-//    sorted.setName("sort")
-//
-//    sorted.foreachPartition { _ => } // force execution TODO: remove, won't force
-//    plan.scratchRDDs.unpersist(dataRDD)
-//
-//    sorted
-//  }
-
-//  def explode(
-//      ex: Extractor[Any],
-//      forkType: ForkType = ForkType.default,
-//      ordinalField: Field = null,
-//      sampler: Sampler[Any] = spooky.conf.flattenSampler
-//  ): FetchedDataset = {
-//
-//    val (on, extracted) = ex match {
-//      case Get(ff) =>
-//        ff -> this
-//      case _ =>
-//        val effectiveEx = ex.withForkFieldIfMissing
-//        val ff = effectiveEx.field
-//        ff -> this.extract(ex)
-//    }
-//
-//    ChainPlan.selectOptimized(extracted.plan, ExplodeData(on, ordinalField, sampler, forkType))
-//  }
-
   // Always left
   def fetch[ON, O: ClassTag](fn: FetchedRow[D] => ON)(
       implicit
@@ -280,9 +244,7 @@ case class SpookyDataset[D](
         epochInterval,
         checkpointInterval
       )
-      SpookyDataset(
-        out
-      )
+      SpookyDataset(out)
     }
 
 //    object flatMap {}

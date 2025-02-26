@@ -2,12 +2,13 @@ package com.tribbloids.spookystuff.commons.spike
 
 import com.fasterxml.jackson.databind.{JsonNode, ObjectMapper}
 import com.fasterxml.jackson.module.scala.{ClassTagExtensions, DefaultScalaModule, JavaTypeable}
+import org.scalatest.Ignore
 
 import scala.collection.immutable.ListMap
 
 object JacksonScalaSpike {}
 
-//@Ignore
+@Ignore
 class JacksonScalaSpike extends CodecSpike {
 
   val mapper = new ObjectMapper() with ClassTagExtensions

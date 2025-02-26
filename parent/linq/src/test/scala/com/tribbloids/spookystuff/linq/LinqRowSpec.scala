@@ -1,17 +1,20 @@
 package com.tribbloids.spookystuff.linq
 
+import ai.acyclic.prover.commons.compat.NamedTupleX.:=
+import ai.acyclic.prover.commons.compat.TupleX.{*:, T0}
 import ai.acyclic.prover.commons.spark.TestHelper
 import ai.acyclic.prover.commons.testlib.BaseSpec
 import ai.acyclic.prover.commons.util.Summoner
 import com.tribbloids.spookystuff.linq.Linq.Row
-import com.tribbloids.spookystuff.linq.LinqBase.^
+import com.tribbloids.spookystuff.linq.Foundation.^
 import com.tribbloids.spookystuff.linq.RowFunctions.explode
 import com.tribbloids.spookystuff.linq.internal.RowInternal
 import frameless.{TypedDataset, TypedEncoder}
 import org.apache.spark.sql.SparkSession
 import shapeless.HList
-import shapeless.record.Record
 import shapeless.test.illTyped
+
+import scala.collection.immutable.ListMap
 
 class LinqRowSpec extends BaseSpec {
 
@@ -56,7 +59,7 @@ class LinqRowSpec extends BaseSpec {
 
   describe("merge") {
 
-    it("right") {
+    it("prefer right") {
 
       val merged = xy +<+ yz
 
@@ -66,7 +69,7 @@ class LinqRowSpec extends BaseSpec {
       assert(merged.y == 1.0) // favours the first operand
     }
 
-    it("left") {
+    it("prefer left") {
 
       val merged = xy +>+ yz
 
@@ -76,7 +79,7 @@ class LinqRowSpec extends BaseSpec {
       assert(merged.y == "ab") // favours the first operand
     }
 
-    it("with duplicated keys") {
+    it("no conflict") {
 
       illTyped("xy +!+ yz")
 
@@ -88,9 +91,11 @@ class LinqRowSpec extends BaseSpec {
 
     describe("with selection") {
 
-      it("right") {
+      it("prefer right") {
 
-        val merged = xy ++ yz.y
+        val merged = xy +<+ yz.y
+
+        merged: Row[("x" := Int) *: ("y" := Double) *: T0]
 
         assert(merged._internal.keys.runtimeList == List('x, 'y))
         assert(merged._internal.repr.runtimeList == List(1, 1.0))
@@ -100,7 +105,7 @@ class LinqRowSpec extends BaseSpec {
 
   describe("update") {
 
-    it("right") {
+    it(".") {
 
       val updated = xy.update(y = "cd")
       assert(updated.x == 1)
@@ -108,19 +113,13 @@ class LinqRowSpec extends BaseSpec {
 
     }
 
-    it("left") {
-
-      val updated = xy.update(x = 2)
-
+    it("if not exists") {
+// TODO: impl
     }
 
-//    it("with duplicated keys") {
-//
-//      illTyped("xy.update(x = 1.2)")
-//
-//      val updated = xy.update(y = "cd")
-//
-//    }
+    it("no conflict") {
+      // TODO: impl
+    }
   }
 
   val xys = Seq(xy, xy.update(y = "cd"))
@@ -240,7 +239,7 @@ class LinqRowSpec extends BaseSpec {
   }
 
   //  it("removeAll") {
-  //    // TODO implementations of records.Updater/Update/UpdateAll are all defective due to macro
+  //    // TODO implementations of records.UpdateAll are defective due to macro
   //
   //    val t1 = TypedRow.ofNamedArgs(x = 1, y = "ab", z = 1.1)
   ////    val r1 = t1.removeAll(Columns("x", "y"))
@@ -295,14 +294,24 @@ class LinqRowSpec extends BaseSpec {
 
       implicitly[t2._internal.Repr =:= t2GT._internal.Repr]
 
-      assert(t2GT._internal.keys.runtimeList == List('x, 'y))
-
-      assert(t2._internal.keys.runtimeList == List('x, 'y))
-
+      assert(t2GT._internal.runtimeMap == ListMap('x -> 1, 'y -> 1.0))
       assert(t2.y == 1.0)
     }
 
-    //    it("remove") {}
+    it("remove") {
+
+      val t1 = ^(x = 1, y = "ab")
+      val col = t1._fields.y
+
+      val removedAsTuple = col.remove.asTuple()
+
+      assert(removedAsTuple == "ab" -> 1 *: T0)
+
+      val removed = col.remove()
+
+      assert(removed._internal.runtimeMap == ListMap('x -> 1))
+      assert(removed.x == 1)
+    }
   }
 
   describe("in Dataset") {
@@ -358,6 +367,5 @@ class LinqRowSpec extends BaseSpec {
 
 object LinqRowSpec {
 
-  val RR = Record.`'x -> Int, 'y -> String`
-  type RR = RR.T
+  type RR = ("X" := Int) *: ("Y" := String) *: T0
 }

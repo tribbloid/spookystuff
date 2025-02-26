@@ -78,8 +78,6 @@ trait PyRef extends Cleanable {
   def varNamePrefix = DSLUtils.toCamelCase(simpleClassName)
   def packageName: String = pyClassNameParts.slice(0, pyClassNameParts.length - 1).mkString(".")
 
-//  override def chainClean: Seq[Cleanable] = bindings
-
   def _Py(
       driver: PythonDriver,
       spookyOpt: Option[SpookyContext] = None

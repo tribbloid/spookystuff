@@ -1,7 +1,6 @@
 package com.tribbloids.spookystuff.execution
 
 import com.tribbloids.spookystuff.actions.Trace
-import com.tribbloids.spookystuff.caching.ExploreLocalCache
 import com.tribbloids.spookystuff.dsl.{GenPartitioner, PathPlanning}
 import com.tribbloids.spookystuff.execution.ExecutionPlan.CanChain
 import com.tribbloids.spookystuff.execution.ExplorePlan.Params
@@ -173,17 +172,26 @@ case class ExplorePlan[I, O](
         openSetAcc.reset
 
         val stateRDD_+ : RDD[(LocalityGroup, State[I, O])] = stateRDD.mapPartitions { itr =>
-          val runner = ExploreRunner(itr, pathPlanningImpl, sameBy)
-          val state_+ = runner
+          val __DEBUG1 = itr.toList
+          val _itr = __DEBUG1.iterator
+
+//          val _itr = itr
+
+          val runner = ExploreRunner(_itr, pathPlanningImpl, sameBy)
+          val states_+ = runner
             .Run(fn)
             .recursively(
               epochInterval
             )
+
+          val __DEBUG2 = states_+.toList
+          val result = __DEBUG2.iterator
+
           openSetAcc add runner.open.size.toLong
-          state_+
+          result
         }
 
-        scratchRDDPersist(stateRDD_+)
+        persistTemporarily(stateRDD_+)
         if (checkpointInterval > 0 && epochI % checkpointInterval == 0) {
           stateRDD_+.checkpoint()
         }
@@ -198,7 +206,7 @@ case class ExplorePlan[I, O](
             s"Epoch $epochI: $nRows total, $openSetSize pending"
           )
 
-        scratchRDDs.unpersist(stateRDD)
+        tempRefs.unpersist(stateRDD)
         if (openSetSize == 0) {
           stop = true
 
@@ -217,11 +225,11 @@ case class ExplorePlan[I, O](
     }
 
     val result: RDD[SquashedRow[O]] = finalStateRDD
-      .mapPartitions { itr =>
-        ExploreLocalCache.deregisterAll(params.executionID)
-        // manual cleanup, one per node is enough, one per executor is not too much slower
-        itr
-      }
+//      .mapPartitions { itr => // TODO: deregister
+//        ExploreLocalCache.deregisterAll(params.executionID)
+//        // manual cleanup, one per node is enough, one per executor is not too much slower
+//        itr
+//      }
       .flatMap { v =>
         val visitedOpt = v._2.visited
         visitedOpt.map { visited =>
@@ -235,7 +243,6 @@ case class ExplorePlan[I, O](
 
           result
         }
-
       }
 
     result

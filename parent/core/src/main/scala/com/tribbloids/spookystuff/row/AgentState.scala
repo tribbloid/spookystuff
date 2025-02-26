@@ -1,7 +1,6 @@
 package com.tribbloids.spookystuff.row
 
 import ai.acyclic.prover.commons.spark.serialization.NOTSerializable
-import com.tribbloids.spookystuff.SpookyContext
 import com.tribbloids.spookystuff.actions.Trace
 import com.tribbloids.spookystuff.doc.Observation
 import com.tribbloids.spookystuff.execution.ExecutionContext

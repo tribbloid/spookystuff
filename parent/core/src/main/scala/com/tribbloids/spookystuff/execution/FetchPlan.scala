@@ -2,7 +2,6 @@ package com.tribbloids.spookystuff.execution
 
 import com.tribbloids.spookystuff.actions.*
 import com.tribbloids.spookystuff.dsl.GenPartitioner
-import com.tribbloids.spookystuff.execution.ExecutionPlan.CanChain
 import com.tribbloids.spookystuff.row.*
 import org.apache.spark.rdd.RDD
 
@@ -90,7 +89,8 @@ case class FetchPlan[I, O: ClassTag](
     genPartitioner: GenPartitioner
 ) extends UnaryPlan[I, O](child)
     with CanInjectBeaconRDD[O]
-    with CanChain[O] {
+//    with CanChain[O] // TODO: remove, no advantage after rewriting
+    {
 
   override def prepare: SquashedRDD[O] = {
 
@@ -119,25 +119,25 @@ case class FetchPlan[I, O: ClassTag](
       }
   }
 
-  override def chain[O2: ClassTag](fn: ChainPlan.Fn[O, O2]): FetchPlan[I, O2] = {
-
-    val newFn: FetchPlan.Fn[I, O2] = { row =>
-      val out1 = this.fn(row)
-
-      val out2: Seq[(Trace, O2)] = out1.flatMap {
-        case (traces, data) =>
-          val row2 = row.copy(data = data)
-
-          fn(row2).map { v =>
-            traces -> v
-          }
-      }
-
-      out2
-    }
-
-    this.copy(
-      fn = newFn
-    )
-  }
+//  override def chain[O2: ClassTag](fn: ChainPlan.Fn[O, O2]): FetchPlan[I, O2] = {
+//
+//    val newFn: FetchPlan.Fn[I, O2] = { row =>
+//      val out1 = this.fn(row)
+//
+//      val out2: Seq[(Trace, O2)] = out1.flatMap {
+//        case (traces, data) =>
+//          val row2 = row.copy(data = data)
+//
+//          fn(row2).map { v =>
+//            traces -> v
+//          }
+//      }
+//
+//      out2
+//    }
+//
+//    this.copy(
+//      fn = newFn
+//    )
+//  }
 }

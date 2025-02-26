@@ -1,7 +1,7 @@
 package com.tribbloids.spookystuff.actions
 
 import ai.acyclic.prover.commons.cap.Capability
-import ai.acyclic.prover.commons.cap.Capability.<>:
+import ai.acyclic.prover.commons.cap.Capability.<>
 import ai.acyclic.prover.commons.spark.serialization.NOTSerializable
 import com.tribbloids.spookystuff.SpookyContext
 import com.tribbloids.spookystuff.actions.Foundation.{HasTrace, TraceSet}
@@ -46,10 +46,10 @@ object Trace {
 
     def cachedOpt: Option[Seq[Observation]] = Option(_cached)
 
-    def enableCached: Rollout <>: Cached = this <>: Cached
+    def enableCached: Rollout <> Cached = Capability(this) <> Cached
     def disableCached: Rollout = this.asInstanceOf[Rollout]
 
-    def cache(vs: Seq[Observation]): Rollout <>: Cached = {
+    def cache(vs: Seq[Observation]): Rollout <> Cached = {
       this._cached = vs
       this.enableCached
     }
@@ -67,7 +67,7 @@ object Trace {
         result
       }
 
-      lazy val cached: Rollout <>: Cached = {
+      lazy val cached: Rollout <> Cached = {
 
         Trace.this.synchronized {
 
@@ -91,7 +91,7 @@ object Trace {
     object Cached extends Capability
     type Cached = Cached.type
 
-    implicit class CachedRolloutView(v: Rollout <>: Cached) {
+    implicit class CachedRolloutView(v: Rollout <> Cached) {
 
       def trajectory: Seq[Observation] = v.cachedOpt.get
       // TODO: returned type will become a class

@@ -95,7 +95,7 @@ object GenPartitioners {
         val result = ref.sparkContext
           .emptyRDD[(K, Unit)]
           .partitionBy(partitioner)
-        ec.scratchRDDs.persist(result, StorageLevel.MEMORY_AND_DISK)
+        ec.tempRefs.persist(result, StorageLevel.MEMORY_AND_DISK)
         result.count()
         Some(result)
       }

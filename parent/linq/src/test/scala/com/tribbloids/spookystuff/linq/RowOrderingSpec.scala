@@ -1,8 +1,9 @@
 package com.tribbloids.spookystuff.linq
 
+import ai.acyclic.prover.commons.cap.Capability.<>
 import ai.acyclic.prover.commons.testlib.BaseSpec
 import com.tribbloids.spookystuff.linq.Linq.Row
-import com.tribbloids.spookystuff.linq.LinqBase.^
+import com.tribbloids.spookystuff.linq.Foundation.^
 import shapeless.test.illTyped
 
 class RowOrderingSpec extends BaseSpec {
@@ -21,7 +22,7 @@ class RowOrderingSpec extends BaseSpec {
 
     it("for all fields") {
 
-      val r1 = CanSort(^(a = 1, b = "ab"))
+      val r1 = CanSort.row(^(a = 1, b = "ab"))
 
       assert(r1.a == 1)
       r1.a: Int <> CanSort.type
@@ -38,7 +39,7 @@ class RowOrderingSpec extends BaseSpec {
 
   it("summon") {
 
-    val r1 = CanSort(^(a = 1, b = "ab"))
+    val r1 = CanSort.row(^(a = 1, b = "ab"))
 
     val ordering = implicitly[Ordering[Row[r1._internal.Repr]]]
   }
@@ -53,7 +54,7 @@ class RowOrderingSpec extends BaseSpec {
       fn(r1).runtimeList.mkString(",").shouldBe("()")
     }
 
-    val r2 = CanSort(r1)
+    val r2 = CanSort.row(r1)
 
     {
       val fn = ordering.at[r2._internal.Repr].Factory().fn

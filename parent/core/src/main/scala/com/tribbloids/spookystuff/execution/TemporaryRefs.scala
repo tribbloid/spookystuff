@@ -17,7 +17,7 @@ import scala.util.Random
 /**
   * NOT serializable, can only run on driver
   */
-object ScratchRDDs {
+object TemporaryRefs {
   val prefix: String = "temp_"
 
   // TODO: this name should be validated against current DB to ensure that such name doesn't exist
@@ -30,10 +30,10 @@ object ScratchRDDs {
   type InScope = Scoped#InScope
 
   case class Scoped(
-      root: ScratchRDDs
+      root: TemporaryRefs
   ) {
 
-    val children: mutable.HashMap[Set[ScopeID], ScratchRDDs] = mutable.HashMap.empty
+    val children: mutable.HashMap[Set[ScopeID], TemporaryRefs] = mutable.HashMap.empty
 
     @transient var activeScopeIDs: Set[ScopeID] = Set.empty
 
@@ -44,19 +44,19 @@ object ScratchRDDs {
 
     case class InScope(scopeIDs: Set[ScopeID]) {
 
-      def get: ScratchRDDs = {
+      def get: TemporaryRefs = {
 
         if (scopeIDs.isEmpty) root
         else {
           children.getOrElseUpdate(
             scopeIDs,
-            ScratchRDDs(defaultStorageLevel = root.defaultStorageLevel)
+            TemporaryRefs(defaultStorageLevel = root.defaultStorageLevel)
           )
         }
 
       }
 
-      def filter: Seq[(Set[ScopeID], ScratchRDDs)] = {
+      def filter: Seq[(Set[ScopeID], TemporaryRefs)] = {
 
         if (scopeIDs.isEmpty) Seq(Set.empty[ScopeID] -> root)
         else {
@@ -114,12 +114,12 @@ object ScratchRDDs {
 
   object Scoped {
 
-    implicit def fromRoot(v: ScratchRDDs): Scoped = Scoped(v)
+    implicit def fromRoot(v: TemporaryRefs): Scoped = Scoped(v)
   }
 
 }
 
-case class ScratchRDDs(
+case class TemporaryRefs(
     tempTables: ArrayBuffer[(String, Dataset[?])] = ArrayBuffer(),
     tempRDDs: ArrayBuffer[RDD[?]] = ArrayBuffer(),
     tempDSs: ArrayBuffer[Dataset[?]] = ArrayBuffer(), // TODO: merge into tempTables
@@ -136,7 +136,7 @@ case class ScratchRDDs(
 
     existing match {
       case None =>
-        val tempTableName = ScratchRDDs.tempTableName()
+        val tempTableName = TemporaryRefs.tempTableName()
         ds.createOrReplaceTempView(tempTableName)
         tempTables += tempTableName -> ds
         tempTableName
@@ -226,11 +226,11 @@ case class ScratchRDDs(
     tempBroadcasts.clear()
   }
 
-  protected def <+>[T](b: ScratchRDDs, f: ScratchRDDs => ArrayBuffer[T]): ArrayBuffer[T] = {
+  protected def <+>[T](b: TemporaryRefs, f: TemporaryRefs => ArrayBuffer[T]): ArrayBuffer[T] = {
     f(this) ++ f(b)
   }
 
-  def :++(that: ScratchRDDs): ScratchRDDs = {
+  def :++(that: TemporaryRefs): TemporaryRefs = {
     this.copy(
       <+>(that, _.tempTables),
       <+>(that, _.tempRDDs),

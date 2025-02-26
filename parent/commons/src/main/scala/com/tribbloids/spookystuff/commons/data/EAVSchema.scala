@@ -31,8 +31,6 @@ trait EAVSchema {
 
   /**
     * TODO: use [[ai.acyclic.prover.commons.function.Mk]] after Scala upgrade
-    * @return
-    *   constructor of ^
     */
 
   type EAV <: EAVMixin
@@ -71,7 +69,7 @@ trait EAVSchema {
     def unappliedForm(opt: OptionMagnet[UnappliedForm]): EAV = {
 
       opt.original match {
-        case Some(v) =>
+        case Some(v: UnappliedForm) =>
           val actualKVs = v.kvPairs.collect {
             case (Some(k), v) =>
               k -> v

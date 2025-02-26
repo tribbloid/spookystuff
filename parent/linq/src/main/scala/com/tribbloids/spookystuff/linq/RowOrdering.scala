@@ -1,5 +1,7 @@
 package com.tribbloids.spookystuff.linq
 
+import ai.acyclic.prover.commons.cap.Capability.<>
+import ai.acyclic.prover.commons.compat.TupleX
 import ai.acyclic.prover.commons.function.hom.Hom
 import com.tribbloids.spookystuff.linq.Linq.Row
 import com.tribbloids.spookystuff.linq.internal.TupleOrdering
@@ -7,7 +9,7 @@ import shapeless.ops.hlist.Mapper
 
 class RowOrdering {
 
-  trait Impl[T <: Tuple] extends Ordering[Row[T]]
+  trait Impl[T <: TupleX] extends Ordering[Row[T]]
 }
 
 object RowOrdering {
@@ -18,27 +20,27 @@ object RowOrdering {
 
     trait By_Imp0 extends Hom.Poly {
 
-      implicit def ignore[T]: T Target Unit = this.at[T] { (_: T) =>
+      implicit def ignore[T]: T |- Unit = this.at[T] { (_: T) =>
         ()
       }
     }
 
     object By extends By_Imp0 {
 
-      implicit def accept[T <: ? <> CanSort.type]: T Target T = this.at[T] { (v: T) =>
+      implicit def accept[T <: ? <> CanSort.type]: T |- T = this.at[T] { (v: T) =>
         v
       }
     }
 
-    def at[R <: Tuple] = new At[R]
-    class At[R <: Tuple] {
+    def at[R <: TupleX] = new At[R]
+    class At[R <: TupleX] {
 
       // applicable to all cases of Tuple, even without KeyTags
       case class Factory[
-          MO <: Tuple
+          MO <: TupleX
       ]()(
           implicit
-          mapper: Mapper.Aux[By.asShapelessPoly1.type, R, MO]
+          mapper: Mapper.Aux[By.asTupleMapper.type, R, MO]
       ) {
 
         lazy val fn: Row[R] => MO = { (row: Row[R]) =>
@@ -64,11 +66,11 @@ object RowOrdering {
     trait Giver {
 
       implicit def _ordering[
-          R <: Tuple,
-          MO <: Tuple
+          R <: TupleX,
+          MO <: TupleX
       ](
           implicit
-          mapper: Mapper.Aux[By.asShapelessPoly1.type, R, MO],
+          mapper: Mapper.Aux[By.asTupleMapper.type, R, MO],
           delegate: TupleOrdering.Native.Impl[MO]
       ): Impl[R] = at[R].Factory().get
     }

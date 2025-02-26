@@ -1,12 +1,15 @@
 package com.tribbloids.spookystuff.linq.internal
 
+import ai.acyclic.prover.commons.compat.NamedTupleX.:=
+import ai.acyclic.prover.commons.compat.TupleX.{*:, T0}
+import ai.acyclic.prover.commons.compat.{Key, TupleX, XStr}
 import ai.acyclic.prover.commons.function.hom.Hom
-import com.tribbloids.spookystuff.linq.*
-import com.tribbloids.spookystuff.linq.Linq.{named, Row}
-import com.tribbloids.spookystuff.linq.Tuple.Empty
+import com.tribbloids.spookystuff.linq.Linq.Row
 import shapeless.ops.record.Keys
 
-case class RowInternal[L <: Tuple](
+import scala.collection.immutable.ListMap
+
+case class RowInternal[L <: TupleX](
     runtimeVector: Vector[Any]
 ) {
 
@@ -20,7 +23,9 @@ case class RowInternal[L <: Tuple](
 
   @transient lazy val repr: L = {
     runtimeVector
-      .foldRight[Tuple](Tuple.empty) { (s, x) =>
+      .foldRight[TupleX](TupleX.T0) { (s, x) =>
+        import TupleX._ops
+
         s *: x
       }
       .asInstanceOf[L]
@@ -34,16 +39,22 @@ case class RowInternal[L <: Tuple](
       implicit
       ev: Keys[L]
   ): Keys[L]#Out = repr.keys
+
+  def runtimeMap(
+      implicit
+      ev: Keys[L]
+  ) = {
+
+    ListMap(
+      keys.runtimeList.zip(runtimeVector): _*
+    )
+
+  }
 }
 
 object RowInternal {
 
-  // TODO: remove, nameless columns is not supported in RecordEncoderField
-  //  object ofArgs extends ProductArgs {
-  //    def applyProduct[L <: Tuple](list: L): TypedRow[L] = fromTuple(list)
-  //  }
-
-  def ofTuple[L <: Tuple](
+  def ofTuple[L <: TupleX](
       data: L
   ): Row[L] = {
 
@@ -52,20 +63,20 @@ object RowInternal {
     new Row[L](cells.to(Vector))
   }
 
-  def ofShapelessTagged[K <: XStr, V](
+  def ofTagged[K <: XStr, V](
       v: K := V
-  ): Row[(K := V) *: Empty] = ofTuple(v *: Tuple.empty)
+  ): Row[(K := V) *: T0] = ofTuple(v *: TupleX.T0)
 
   sealed protected trait ofData_Imp0 extends Hom.Poly {
 
-    implicit def fromValue[V]: V Target Row[("value" := V) *: Tuple.Empty] = at[V] { v =>
-      ofTuple((named["value"] := v) *: Tuple.empty)
+    implicit def fromValue[V]: V |- Row[("value" := V) *: TupleX.T0] = at[V] { v =>
+      ofTuple((Key["value"] := v) *: TupleX.T0)
     }
   }
 
   object ofData extends ofData_Imp0 {
 
-    implicit def id[L <: Tuple]: Row[L] Target Row[L] = at[Row[L]] {
+    implicit def id[L <: TupleX]: Row[L] |- Row[L] = at[Row[L]] {
       identity[Row[L]]
     }
   }

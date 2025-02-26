@@ -1,10 +1,11 @@
 package com.tribbloids.spookystuff.linq.internal
 
-import com.tribbloids.spookystuff.linq.{*:, Tuple}
+import ai.acyclic.prover.commons.compat.TupleX
+import ai.acyclic.prover.commons.compat.TupleX.*:
 
 trait TupleOrdering {
 
-  trait Impl[T <: Tuple] extends Ordering[T]
+  trait Impl[T <: TupleX] extends Ordering[T]
 }
 
 object TupleOrdering {
@@ -12,11 +13,11 @@ object TupleOrdering {
   // from shapeless.ops.hlists
   object Native extends TupleOrdering {
 
-    implicit object empty extends Impl[Tuple.Empty] {
-      def compare(x: Tuple.Empty, y: Tuple.Empty): Int = 0
+    implicit object empty extends Impl[TupleX.T0] {
+      def compare(x: TupleX.T0, y: TupleX.T0): Int = 0
     }
 
-    implicit def others[H, T <: Tuple](
+    implicit def others[H, T <: TupleX](
         implicit
         hOrdering: Ordering[H],
         tOrdering: Impl[T]

@@ -2,10 +2,11 @@ package com.tribbloids.spookystuff.commons.spike
 
 import org.json4s.jackson.JsonMethods
 import org.json4s.reflect.Reflector
+import org.scalatest.Ignore
 
 import scala.collection.immutable.ListMap
 
-//@Ignore
+@Ignore
 class Json4sSpike extends CodecSpike {
   import org.json4s.*
 

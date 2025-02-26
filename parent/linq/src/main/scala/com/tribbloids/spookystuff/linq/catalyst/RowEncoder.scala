@@ -1,7 +1,7 @@
 package com.tribbloids.spookystuff.linq.catalyst
 
+import ai.acyclic.prover.commons.compat.TupleX
 import com.tribbloids.spookystuff.linq.Linq.Row
-import com.tribbloids.spookystuff.linq.Tuple
 import frameless.TypedEncoder
 import org.apache.spark.sql.FramelessInternals
 import org.apache.spark.sql.catalyst.expressions.*
@@ -10,7 +10,7 @@ import org.apache.spark.sql.types.*
 
 import scala.reflect.ClassTag
 
-abstract class RowEncoder[F, G <: Tuple, H <: Tuple](
+abstract class RowEncoder[F, G <: TupleX, H <: TupleX](
     implicit
     stage1: RowEncoderStage1[G, H],
     classTag: ClassTag[F]
@@ -44,7 +44,7 @@ object RowEncoder {
 
   lazy val catalystAdapterLit: Literal = Literal.fromObject(RowAdapter)
 
-  case class ^[G <: Tuple, H <: Tuple](
+  case class ^[G <: TupleX, H <: TupleX](
   )(
       implicit
       stage1: RowEncoderStage1[G, H],

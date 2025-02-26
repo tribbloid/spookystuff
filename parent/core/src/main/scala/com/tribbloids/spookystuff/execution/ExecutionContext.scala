@@ -9,7 +9,7 @@ import scala.util.Try
 
 case class ExecutionContext(
     ctx: SpookyContext,
-    @transient scratchRDDs: ScratchRDDs = ScratchRDDs()
+    @transient tempRefs: TemporaryRefs = TemporaryRefs()
 ) {
 
   lazy val deployPluginsOnce: Unit = {
@@ -31,9 +31,9 @@ case class ExecutionContext(
     //    assert(this.spooky == b.spooky,
     //      "cannot merge execution plans due to diverging SpookyContext")
 
-    val bb = b.scratchRDDs
+    val bb = b.tempRefs
     this.copy(
-      scratchRDDs = scratchRDDs :++ bb
+      tempRefs = tempRefs :++ bb
     )
   }
 
@@ -42,6 +42,6 @@ case class ExecutionContext(
       storageLevel: StorageLevel = ctx.conf.defaultStorageLevel
   ): RDD[T] = {
 
-    scratchRDDs.persist(rdd, storageLevel)
+    tempRefs.persist(rdd, storageLevel)
   }
 }

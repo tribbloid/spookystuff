@@ -1,20 +1,14 @@
 package com.tribbloids.spookystuff.linq
 
-import com.tribbloids.spookystuff.linq.LinqBase.{BatchView, CellLike, RowLike}
-import com.tribbloids.spookystuff.linq.Tuple.Empty
+import ai.acyclic.prover.commons.compat.NamedTupleX.:=
+import ai.acyclic.prover.commons.compat.TupleX.{*:, T1}
+import ai.acyclic.prover.commons.compat.{Key, TupleX, XStr}
+import com.tribbloids.spookystuff.linq.Foundation.{CellLike, KVBatch, RowLike}
 import com.tribbloids.spookystuff.linq.internal.{ElementWisePoly, RowInternal}
 
 object Linq {
 
   import scala.language.dynamics
-
-  case class Cell[K <: XStr, V](self: V) extends CellLike[T1[K := V]] {
-
-    override def asRow: Row[(K := V) *: Empty] = {
-
-      RowInternal.ofShapelessTagged(named[K] := self.asInstanceOf[V])
-    }
-  }
 
   /**
     * shapeless Tuple & Record has high runtime overhead and poor Scala 3 compatibility. its usage should be minimized
@@ -26,7 +20,7 @@ object Linq {
     * @tparam T
     *   Record type
     */
-  final class Row[T <: Tuple](
+  final class Row[T <: TupleX](
       runtimeData: Vector[Any] // TODO: should use unboxed binary data structure, Java 21 or Apache Arrow maybe helpful
   ) extends Dynamic
       with RowLike[T] {
@@ -35,7 +29,6 @@ object Linq {
     //  since graphframe table always demand id/src/tgt columns, should the default
     //  representation be SemiRow? that contains both structured and newType part?
 
-    import Field.<>
     import shapeless.ops.record.*
 
     /**
@@ -46,59 +39,77 @@ object Linq {
       */
     def selectDynamic(key: XStr)(
         implicit
-        selector: Selector[T, ColumnTag[key.type]]
-    ): selector.Out <> Field.Named[key.type, selector.Out] = {
+        selector: Selector[T, Key.Tag[key.type]]
+//        remover: Remover[T, key.type]
+    ): key.type := selector.Out = {
 
       val value: selector.Out = _fields.selectDynamic(key).value
 
-      Field.Named[key.type].apply(value: selector.Out)
+      Key[key.type] := value
+
+//      Field.Named[key.type].apply(value: selector.Out)
 
     }
 
     @transient override lazy val toString: String = runtimeData.mkString("[", ",", "]")
 
-    // TODO: remove, don't use, Field.Name mixin is good enough!
-    sealed class FieldView[K, V](
-        val key: K
-    )(
-        val selector: Selector.Aux[T, K, V]
-    ) {
+    type FieldSelectorAux[K, V] = Selector.Aux[T, Key.Tag[K], V]
 
-      lazy val valueWithField: V = selector(_internal.repr)
+    sealed class FieldSelection[
+        K <: XStr, // index, CAUTION: this is neither a key nor a string, in shapeless record it is usually a Symbol defined by @@
+        V
+    ]()(
+        implicit
+        val selector: FieldSelectorAux[K, V]
+//        val remover: FieldRemover[K]
+    ) extends CellLike[T1[K := V]] { // TODO: merge with RecordEntryAsCell
+
+      type FieldRemover = Remover[T, Key.Tag[K]]
+      type FieldRemoverAux[O2 <: TupleX] = Remover.Aux[T, Key.Tag[K], (V, O2)]
+
+      lazy val value_tagged: K := V = value.asInstanceOf[K := V]
 
       lazy val value: V = {
-        valueWithField // TODO: should remove Field capability mixins
+        selector(_internal.repr)
       }
 
-      lazy val asRow: Row[(K ->> V) *: Tuple.Empty] = {
-        RowInternal.ofTuple(->>[K](valueWithField) *: Tuple.empty)
+      lazy val asRow: Row[(K := V) *: TupleX.T0] = {
+        RowInternal.ofTuple((Key[K] := value_tagged) *: TupleX.T0)
       }
 
-      //    lazy val value: V = selector(asRepr)
+      object remove {
 
-      //    object remove {
-      //
-      //      def apply[L2 <: Tuple, O2 <: Tuple]()(
-      //          implicit
-      //          ev: Remover.Aux[L, K, (Any, O2)]
-      //      ): TypedRow[O2] = {
-      //
-      ////        val tuple = repr.remove(key)(ev)
-      //        val tuple = ev.apply(repr)
-      //
-      //        TypedRowInternal.ofTuple(tuple._2)
-      //      }
-      //    }
-      //    def - : remove.type = remove
+        def apply[O2 <: TupleX]()(
+            implicit
+            exactRemover: FieldRemoverAux[O2]
+        ): Row[O2] = {
 
-      object set {
+          val tuple = exactRemover.apply(_internal.repr)
+          val after: O2 = tuple._2
+
+          RowInternal.ofTuple(after)
+        }
+
+        def asTuple()(
+            implicit
+            remover: FieldRemover
+        ) = {
+
+          val tuple = remover.apply(_internal.repr)
+          tuple
+
+        }
+      }
+      def drop = remove
+
+      object set { // TODO: name usually associated with in-place update, should use copy() or update() instead
 
         def apply[VV](value: VV)(
             implicit
-            ev: ElementWisePoly.preferRight.LemmaAtRows[T, (K ->> VV) *: Tuple.Empty]
+            ev: ElementWisePoly.preferRight.LemmaAtRows[T, (K := VV) *: TupleX.T0]
         ): ev.Out = {
 
-          val neo: Row[(K ->> VV) *: Tuple.Empty] = RowInternal.ofTuple(->>[K](value) *: Tuple.empty)
+          val neo: Row[(K := VV) *: TupleX.T0] = RowInternal.ofTuple((Key[K] := value) *: TupleX.T0)
 
           val result = ev.apply(Row.this -> neo)
 
@@ -132,8 +143,9 @@ object Linq {
 
       def selectDynamic(key: XStr)(
           implicit
-          selector: Selector[T, ColumnTag[key.type]]
-      ) = new FieldView[ColumnTag[key.type], selector.Out](ColumnTag(key))(selector)
+          selector: Selector[T, Key.Tag[key.type]]
+//          remover: Remover[T, key.type]
+      ) = new FieldSelection[key.type, selector.Out]()(selector)
     }
 
     @transient lazy val _internal: RowInternal[T] = {
@@ -143,22 +155,11 @@ object Linq {
 
   }
 
-  implicit class _SeqExtensions[T <: Tuple](
-      val asBatch: Seq[Row[T]]
-  ) extends LinqBase.LeftOpsMixin[T]
-      with BatchView[T] {
+  implicit class Rows[T <: TupleX](
+      val rows: Seq[Row[T]]
+  ) extends Foundation.LeftOpsMixin[T]
+      with KVBatch[T] {
 
     // cartesian product can be directly called on Seq
   }
-
-  // --------------------------------------------------------------------------------------------------------------------
-
-  class NamedValueConstructor[K <: XStr]() {
-
-    def :=[V](v: V): K := v.type = {
-      v.asInstanceOf[K := v.type]
-    }
-  }
-  def named[K <: XStr] = new NamedValueConstructor[K]()
-
 }
