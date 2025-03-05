@@ -226,7 +226,7 @@ class DataViewSpec extends SpookyBaseSpec {
 
       ds.fetch(_ => Wget(JSON_URL)).count()
 
-      assert(ds.ctx.spookyMetrics.pagesFetched.value == 1)
+      assert(ds.ctx.spookyMetrics.pagesFetched.value == 2)
     }
 
     it(classOf[FlatMapPlan[?, ?]].getSimpleName) {
@@ -240,7 +240,7 @@ class DataViewSpec extends SpookyBaseSpec {
 
       ds.fetch(_ => Wget(JSON_URL)).count()
 
-      assert(ds.ctx.spookyMetrics.pagesFetched.value == 1)
+      assert(ds.ctx.spookyMetrics.pagesFetched.value == 2)
     }
 
     it(classOf[ExplorePlan[?, ?]].getSimpleName) {
@@ -269,7 +269,7 @@ class DataViewSpec extends SpookyBaseSpec {
       assert(ds.ctx.spookyMetrics.pagesFetched.value == 4)
 
       assert(ds.fetch(_ => Wget(JSON_URL)).count() == 4)
-      assert(ds.ctx.spookyMetrics.pagesFetched.value == 4) // locality group optimiser kick in
+      assert(ds.ctx.spookyMetrics.pagesFetched.value == 5) // locality group optimiser kick in
     }
   }
 

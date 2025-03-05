@@ -146,10 +146,7 @@ case class ExplorePlan[I, O](
         openSetAcc.reset
 
         val stateRDD_+ : RDD[(LocalityGroup, State[I, O])] = stateRDD.mapPartitions { itr =>
-          val __DEBUG1 = itr.toList
-          val _itr = __DEBUG1.iterator
-
-//          val _itr = itr
+          val _itr = itr
 
           val runner = ExploreRunner(_itr, pathPlanningImpl, sameBy)
           val states_+ = runner
@@ -158,11 +155,8 @@ case class ExplorePlan[I, O](
               epochInterval
             )
 
-          val __DEBUG2 = states_+.toList
-          val result = __DEBUG2.iterator
-
           openSetAcc add runner.open.size.toLong
-          result
+          states_+
         }
 
         if (checkpointInterval > 0 && epochI % checkpointInterval == 0) {
