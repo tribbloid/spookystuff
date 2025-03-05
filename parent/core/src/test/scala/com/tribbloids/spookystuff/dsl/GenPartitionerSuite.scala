@@ -16,7 +16,7 @@ class GenPartitionerSuite extends SpookyBaseSpec {
   it("DocCacheAware can co-partition 2 RDDs") {
     val numPartitions = Random.nextInt(80) + 9
 
-    val gp = GenPartitioners
+    val gp = Locality
       .DocCacheAware { (_: Any) =>
         new HashPartitioner(numPartitions)
       }

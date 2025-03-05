@@ -23,7 +23,8 @@
 //        Wget('A.href),
 //        depthField = 'depth
 //      )
-//      .select(row => row
+//      .select(row =>
+//        row
 ////        'A.text ~ 'category,
 ////        S"h1".text ~ 'header
 //      )

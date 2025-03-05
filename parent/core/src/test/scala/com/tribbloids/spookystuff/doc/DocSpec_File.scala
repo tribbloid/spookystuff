@@ -1,12 +1,17 @@
 package com.tribbloids.spookystuff.doc
 
 import com.tribbloids.spookystuff.actions.Wget
-import com.tribbloids.spookystuff.testutils.FileDocsFixture
+import com.tribbloids.spookystuff.testutils.{FileDocsFixture, UnpackResources}
 
 class DocSpec_File extends DocSpec {
 
   override val resources: FileDocsFixture.type = FileDocsFixture
   import resources.*
+
+  implicit class normaliseTmpPathOps(v: String) {
+
+    def normalised: String = v.replace(UnpackResources.ROOT_DIR, "")
+  }
 
   describe("wget, save, load") {
 
@@ -21,42 +26,40 @@ class DocSpec_File extends DocSpec {
       assert(page.charsetOpt.map(_.name().toLowerCase).get == "utf-8")
       assert(page.findAll("title").texts.isEmpty)
 
-      assert(page.code.get.contains("<URI>file:///tmp/spookystuff/resources/testutils/files/Wikipedia.html</URI>"))
-
       page
         .findAll("uri")
         .map(_.text.get)
         .mkString("\n")
+        .normalised
         .shouldBe(
           """
-            |
-            |file:///tmp/spookystuff/resources/testutils/files
-            |file:///tmp/spookystuff/resources/testutils/files/Test.pdf
-            |file:///tmp/spookystuff/resources/testutils/files/Wikipedia.html
-            |file:///tmp/spookystuff/resources/testutils/files/autocomplete.html
-            |file:///tmp/spookystuff/resources/testutils/files/element_disappears_on_click.html
-            |file:///tmp/spookystuff/resources/testutils/files/example.xml
-            |file:///tmp/spookystuff/resources/testutils/files/file_upload_form.html
-            |file:///tmp/spookystuff/resources/testutils/files/firebug-1.11.4.xpi
-            |file:///tmp/spookystuff/resources/testutils/files/firepath-0.9.7-fx.xpi
-            |file:///tmp/spookystuff/resources/testutils/files/hello_world.txt
-            |file:///tmp/spookystuff/resources/testutils/files/jquery-1.8.3.js
-            |file:///tmp/spookystuff/resources/testutils/files/jquery-ui-1.10.4.css
-            |file:///tmp/spookystuff/resources/testutils/files/jquery-ui-1.10.4.js
-            |file:///tmp/spookystuff/resources/testutils/files/logo11w.png
-            |file:///tmp/spookystuff/resources/testutils/files/long_ajax_request.html
-            |file:///tmp/spookystuff/resources/testutils/files/page_with_alerts.html
-            |file:///tmp/spookystuff/resources/testutils/files/page_with_dynamic_select.html
-            |file:///tmp/spookystuff/resources/testutils/files/page_with_frames.html
-            |file:///tmp/spookystuff/resources/testutils/files/page_with_images.html
-            |file:///tmp/spookystuff/resources/testutils/files/page_with_jquery.html
-            |file:///tmp/spookystuff/resources/testutils/files/page_with_js_errors.html
-            |file:///tmp/spookystuff/resources/testutils/files/page_with_selects_without_jquery.html
-            |file:///tmp/spookystuff/resources/testutils/files/page_with_tabs.html
-            |file:///tmp/spookystuff/resources/testutils/files/page_with_uploads.html
-            |file:///tmp/spookystuff/resources/testutils/files/sigproc-sp.pdf
-            |file:///tmp/spookystuff/resources/testutils/files/table.csv
-            |file:///tmp/spookystuff/resources/testutils/files/tribbloid.json
+            |file:///testutils/files
+            |file:///testutils/files/Test.pdf
+            |file:///testutils/files/Wikipedia.html
+            |file:///testutils/files/autocomplete.html
+            |file:///testutils/files/element_disappears_on_click.html
+            |file:///testutils/files/example.xml
+            |file:///testutils/files/file_upload_form.html
+            |file:///testutils/files/firebug-1.11.4.xpi
+            |file:///testutils/files/firepath-0.9.7-fx.xpi
+            |file:///testutils/files/hello_world.txt
+            |file:///testutils/files/jquery-1.8.3.js
+            |file:///testutils/files/jquery-ui-1.10.4.css
+            |file:///testutils/files/jquery-ui-1.10.4.js
+            |file:///testutils/files/logo11w.png
+            |file:///testutils/files/long_ajax_request.html
+            |file:///testutils/files/page_with_alerts.html
+            |file:///testutils/files/page_with_dynamic_select.html
+            |file:///testutils/files/page_with_frames.html
+            |file:///testutils/files/page_with_images.html
+            |file:///testutils/files/page_with_jquery.html
+            |file:///testutils/files/page_with_js_errors.html
+            |file:///testutils/files/page_with_selects_without_jquery.html
+            |file:///testutils/files/page_with_tabs.html
+            |file:///testutils/files/page_with_uploads.html
+            |file:///testutils/files/sigproc-sp.pdf
+            |file:///testutils/files/table.csv
+            |file:///testutils/files/tribbloid.json
             |""".stripMargin
         )
 
@@ -83,12 +86,13 @@ class DocSpec_File extends DocSpec {
         .findAll("uri")
         .map(_.text.get)
         .mkString("\n")
+        .normalised
         .shouldBe(
           """
-            |file:///tmp/spookystuff/resources/testutils/dir
-            |file:///tmp/spookystuff/resources/testutils/dir/dir
-            |file:///tmp/spookystuff/resources/testutils/dir/hivetable.csv
-            |file:///tmp/spookystuff/resources/testutils/dir/table.csv
+            |file:///testutils/dir
+            |file:///testutils/dir/dir
+            |file:///testutils/dir/hivetable.csv
+            |file:///testutils/dir/table.csv
             |""".stripMargin
         )
     }

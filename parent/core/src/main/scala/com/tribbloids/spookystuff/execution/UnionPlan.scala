@@ -10,7 +10,7 @@ case class UnionPlan[D](
   // TODO: also use PartitionerAwareUnionRDD
   def prepare: SquashedRDD[D] = {
     new UnionRDD(
-      spooky.sparkContext,
+      ctx.sparkContext,
       children.map(_.squashedRDD)
     )
   }

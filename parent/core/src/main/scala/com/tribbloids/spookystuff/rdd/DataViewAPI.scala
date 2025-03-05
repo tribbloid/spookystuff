@@ -8,8 +8,8 @@ import org.apache.spark.storage.StorageLevel
 /**
   * Created by peng on 2/12/15.
   */
-trait DatasetAPI[D] {
-  self: SpookyDataset[D] =>
+trait DataViewAPI[D] {
+  self: DataView[D] =>
 
   //  def filter(f: SquashedPageRow => Boolean): PageRowRDD = selfRDD.filter(f)
   //
@@ -28,7 +28,7 @@ trait DatasetAPI[D] {
   )(
       implicit
       ord: Ordering[SquashedRow[D]] = null
-  ): SpookyDataset[D] = this.copy(
+  ): DataView[D] = this.copy(
     CoalescePlan(plan, numPartitions, shuffle, ord)
   )
 
@@ -38,7 +38,7 @@ trait DatasetAPI[D] {
   )(
       implicit
       ord: Ordering[SquashedRow[D]] = null
-  ): SpookyDataset[D] = {
+  ): DataView[D] = {
 
     _coalesce(
       { _ =>
@@ -53,7 +53,7 @@ trait DatasetAPI[D] {
   )(
       implicit
       ord: Ordering[SquashedRow[D]] = null
-  ): SpookyDataset[D] = {
+  ): DataView[D] = {
 
     coalesce(numPartitions, shuffle = true)(ord)
   }
@@ -63,40 +63,17 @@ trait DatasetAPI[D] {
   //             seed: Long = Utils.random.nextLong()): PageRowRDD =
   //    selfRDD.sample(withReplacement, fraction, seed)
 
-  def union(other: SpookyDataset[D]*): SpookyDataset[D] = this.copy(
+  def union(other: DataView[D]*): DataView[D] = this.copy(
     UnionPlan(Seq(plan) ++ other.map(_.plan))
   )
 
-  def ++(other: SpookyDataset[D]): SpookyDataset[D] = this.union(other)
-
-  //  def sortBy[K](
-  //                 f: (PageRow) => K,
-  //                 ascending: Boolean = true,
-  //                 numPartitions: Int = selfRDD.partitions.length )(
-  //                 implicit ord: Ordering[K], ctag: ClassTag[K]
-  //                 ): PageRowRDD = selfRDD.sortBy(f, ascending, numPartitions)(ord, ctag)
-  //
-  //  def intersection(other: PageRowRDD): PageRowRDD = this.derive(
-  //    selfRDD.intersection(other.selfRDD),
-  //    this.webCachePairRDD.intersectionByKey(other.webCachePairRDD)(_ ++ _),
-  //    this.schema.intersect(other.schema)//TODO: need validation that it won't change sequence
-  //  )
-  //
-  //  def intersection(other: RDD[SquashedPageRow]): PageRowRDD = selfRDD.intersection(other)
-  //
-  //  def intersection(other: PageRowRDD, numPartitions: Int): PageRowRDD = this.derive(
-  //    selfRDD.intersection(other.selfRDD, numPartitions),
-  //    this.webCachePairRDD.intersectionByKey(other.webCachePairRDD)(_ ++ _),
-  //    this.schema.intersect(other.schema)
-  //  )
-  //
-  //  def intersection(other: RDD[SquashedPageRow], numPartitions: Int): PageRowRDD = selfRDD.intersection(other, numPartitions)
+  def ++(other: DataView[D]): DataView[D] = this.union(other)
 
   // TODO: advanced caching: persist an Execution Plan and make its deep copies reusable.
   // cache & persist wont' execute plans immediately, they only apply to the result of doExecute() once finished
   def cache(): this.type = persist()
 
-  def persist(): this.type = this.persist(plan.spooky.conf.defaultStorageLevel)
+  def persist(): this.type = this.persist(plan.ctx.conf.defaultStorageLevel)
 
   def persist(newLevel: StorageLevel): this.type = {
     assert(newLevel != StorageLevel.NONE)

@@ -18,6 +18,12 @@ trait Elements[+T <: Unstructured] extends Unstructured with Delegating[Seq[T]] 
 
   def uris: Seq[String] = unbox.map(_.uri)
 
+  @transient override lazy val uri: String = {
+    val distinct = uris.distinct
+    require(distinct.size == 1, "No element or elements have different URIs: " + distinct.mkString(", "))
+    distinct.head
+  }
+
   def codes: Seq[String] = unbox.flatMap(_.code)
 
   def formattedCodes: Seq[String] = unbox.flatMap(_.formattedCode)
@@ -36,8 +42,7 @@ trait Elements[+T <: Unstructured] extends Unstructured with Delegating[Seq[T]] 
 
   def boilerPipes: Seq[String] = unbox.flatMap(_.boilerPipe)
 
-  override def uri: String = uris.headOption.orNull
-
+  // TODO: the following headOption should become mkString
   override def text: Option[String] = texts.headOption
 
   override def code: Option[String] = codes.headOption

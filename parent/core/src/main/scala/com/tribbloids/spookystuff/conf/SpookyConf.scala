@@ -53,13 +53,13 @@ case class SpookyConf(
                        DFSTimeout: Timeout = Timeout(40.seconds),
                        failOnDFSRead: Boolean = false,
                        //
-                       localityPartitioner: GenPartitioner = GenPartitioners.Wide(),
+                       genPartitioner: Locality = Locality.Wide(),
                        //
                        selectSampling: Sampler = Sampler.Identity,
                        fetchSampling: Sampler = Sampler.Identity, // takes remote actions and cost much more than flatten.
                        exploreSampling: Sampler = Sampler.Identity, // takes remote actions and cost much more than flatten.
                        //
-                       explorePathPlanning: PathPlanning = PathPlanners_Simple.BreadthFirst,
+                       explorePathPlanning: PathPlanning = PathPlanning_Simple.BreadthFirst,
                        exploreRange: Range = 0 until Int.MaxValue,
                        exploreEpochInterval: Int = 50,
                        exploreCheckpointInterval: Int = 50, // disabled if <=0

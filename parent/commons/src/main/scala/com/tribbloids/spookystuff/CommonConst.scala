@@ -1,6 +1,5 @@
 package com.tribbloids.spookystuff
 
-import ai.acyclic.prover.commons.spark.Envs
 
 object CommonConst {
 
@@ -20,6 +19,4 @@ object CommonConst {
     val delayMin: Duration = 0.second
     val blocking: Boolean = true
   }
-
-  val UNPACK_RESOURCE_DIR: String = Envs.ROOT_TEMP_DIR \\ "spookystuff" \\ "resources"
 }

@@ -43,14 +43,14 @@ case class BuildRow[D](
 
   def squashed: SquashedRow[D] = {
     SquashedRow(
-      LocalityGroup(hasTrace.trace)(),
+      LocalityGroup(hasTrace.trace),
       Seq(data)
     )
   }
 
   def fetched(ctx: SpookyContext): FetchedRow[D] = {
     FetchedRow(
-      LocalityGroup(hasTrace.trace)(),
+      LocalityGroup(hasTrace.trace),
       data,
       ExecutionContext(ctx)
     )

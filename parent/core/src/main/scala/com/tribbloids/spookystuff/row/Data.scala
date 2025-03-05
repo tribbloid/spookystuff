@@ -3,9 +3,8 @@ package com.tribbloids.spookystuff.row
 import com.tribbloids.spookystuff.doc.Observation.DocUID
 
 import java.util.UUID
-import scala.language.implicitConversions
 
-trait Data[D] {
+trait Data[+D] {
   // TODO: merge with BuildRow, move into object
 
   def raw: D
@@ -14,12 +13,8 @@ trait Data[D] {
 
 object Data {
 
-  implicit def unbox[D](v: Data[D]): D = v.raw
+//  implicit def unbox[D](v: Data[D]): D = v.raw
 
-//  case class Raw[D](
-//      data: D
-//  ) extends Data[D]
-//
 //  case class Flatten[D]( TODO: should I use this?
 //      data: D,
   //      // temporary columns used in inner/outer join, can be committed into D on demand
@@ -38,9 +33,6 @@ object Data {
   object Scoped {
 
     def unscoped[D](data: D): Scoped[D] = Scoped(data, Scope(Nil))
-
-//    def default[D](data: D): Scoped[D] = Scoped(data, None)
-
   }
 
   // TODO: can this be a dependent type since scopeUIDs has to be tied to a Rollout?
@@ -72,11 +64,11 @@ object Data {
     *   all [[com.tribbloids.spookystuff.execution.ExplorePlan]] epochs
     */
   @SerialVersionUID(6534469387269426194L)
-  case class Exploring[D](
+  case class Exploring[+D](
       raw: D,
-      lineageID: Option[UUID] = None,
+      lineageID: Option[UUID] = None, // should be non-optional
       isOutOfRange: Boolean = false,
-      depthOpt: Option[Int] = None,
+      depth: Int = 0,
       path: Vector[Scope] = Vector.empty
       // contain every used sourceScope in exploration history
   ) extends Data[D] {
@@ -85,10 +77,10 @@ object Data {
     //    assert(data.isInstanceOf[Serializable]) // fail early  TODO: this should be moved into Debugging mode
     //  }
 
-    def idRefresh: Exploring[D] = this.copy(lineageID = Some(UUID.randomUUID()))
+    def startLineage: Exploring[D] = this.copy(lineageID = Some(UUID.randomUUID()))
 
-    def depth_++ : Exploring[D] = this.copy(depthOpt = Some(depthOpt.map(_ + 1).getOrElse(0)))
+    def depth_++ : Exploring[D] = this.copy(depth = depth + 1)
 
-    lazy val orderBy: (Option[Int], Vector[Int]) = (depthOpt, path.map(_.ordinalIndex))
+    lazy val orderBy: (Int, Vector[Int]) = (depth, path.map(_.ordinalIndex))
   }
 }

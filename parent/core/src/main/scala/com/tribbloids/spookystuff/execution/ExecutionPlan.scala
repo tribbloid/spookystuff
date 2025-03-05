@@ -12,7 +12,7 @@ object ExecutionPlan {
   trait CanChain[O] {
     self: ExecutionPlan[O] =>
 
-    def chain[O2: ClassTag](fn: ChainPlan.Fn[O, O2]): ExecutionPlan[O2]
+    def chain[O2: ClassTag](fn: FlatMapPlan.Fn[O, O2]): ExecutionPlan[O2]
   }
 }
 
@@ -31,7 +31,7 @@ abstract class ExecutionPlan[O](
     children.map(_.ec).reduce(_ :++ _)
   )
 
-  def spooky: SpookyContext = ec.ctx
+  def ctx: SpookyContext = ec.ctx
   def tempRefs: TemporaryRefs = ec.tempRefs
 
   protected def computeSchema: SpookySchema = {
@@ -53,13 +53,20 @@ abstract class ExecutionPlan[O](
 
   lazy val beaconRDDOpt: Option[BeaconRDD[LocalityGroup]] = inheritedBeaconRDDOpt
 
+  /**
+    * @return
+    *   RDD with execution graph WITHOUT fetching trajectory
+    */
   protected def prepare: SquashedRDD[O]
 
-  final private def execute: SquashedRDD[O] = {
+  /**
+    * like prepare, but with execution graph WITH fetched trajectory
+    */
+  @transient final protected lazy val fetched: SquashedRDD[O] = {
 
     this.prepare
       .map { row =>
-        row.localityGroup.withCtx(spooky).trajectory
+        row.localityGroup.withCtx(ctx).trajectory
         // always run the agent to get observations before caching RDD
         row
       }
@@ -80,15 +87,16 @@ abstract class ExecutionPlan[O](
     // any RDD access will cause all plugins to be deployed
 
     cachedRDDOpt match {
-      // if cached and loaded, use it
       case Some(cached) =>
+        // if cached and loaded, use it
         cached
-      // if not cached, execute from upstream and use it.
       case None =>
-        val exe = execute
-
-        if (storageLevel != StorageLevel.NONE) {
-          _cachedRDD = exe.persist(storageLevel)
+        // if not cached, execute from upstream and use it.
+        val exe = if (storageLevel != StorageLevel.NONE) {
+          _cachedRDD = fetched.persist(storageLevel)
+          _cachedRDD
+        } else {
+          prepare
         }
         exe
     }
@@ -98,13 +106,7 @@ abstract class ExecutionPlan[O](
     squashedRDD.map(_.withSchema(outputSchema))
   }
 
-  @transient final lazy val rdd: RDD[FetchedRow[O]] =
-    SquashedRDDWithSchema.flatMap(row => row.withCtx.unSquash)
-
-  // -------------------------------------
-
-  def persistTemporarily[T](
-      rdd: RDD[T],
-      storageLevel: StorageLevel = ExecutionPlan.this.spooky.conf.defaultStorageLevel
-  ): RDD[T] = tempRefs.persist(rdd, storageLevel)
+  @transient final lazy val rdd: RDD[FetchedRow[O]] = {
+    SquashedRDDWithSchema.flatMap(rowWithSchema => rowWithSchema.unSquash)
+  }
 }

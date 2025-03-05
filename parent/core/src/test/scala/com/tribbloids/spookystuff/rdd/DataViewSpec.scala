@@ -3,14 +3,14 @@ package com.tribbloids.spookystuff.rdd
 import ai.acyclic.prover.commons.debug.print_@
 import ai.acyclic.prover.commons.spark.Envs
 import com.tribbloids.spookystuff.actions.{NoOp, Wget}
-import com.tribbloids.spookystuff.execution.{ChainPlan, ExplorePlan, FetchPlan}
+import com.tribbloids.spookystuff.execution.{ExplorePlan, FetchPlan, FlatMapPlan}
 import com.tribbloids.spookystuff.metrics.Acc
 import com.tribbloids.spookystuff.testutils.{FileDocsFixture, SpookyBaseSpec}
 
 import java.io.File
 import scala.reflect.ClassTag
 
-object SpookyDatasetSpec {
+object DataViewSpec {
 
   val resource: FileDocsFixture.type = FileDocsFixture
 }
@@ -18,9 +18,9 @@ object SpookyDatasetSpec {
 /**
   * Created by peng on 5/10/15.
   */
-class SpookyDatasetSpec extends SpookyBaseSpec {
+class DataViewSpec extends SpookyBaseSpec {
 
-  import SpookyDatasetSpec.resource.*
+  import DataViewSpec.resource.*
 
   describe("should not run preceding transformation twice+") {
 
@@ -34,9 +34,6 @@ class SpookyDatasetSpec extends SpookyBaseSpec {
           ()
         }
       assert(acc.value == 0)
-
-      //    val rdd = set.rdd
-      //    assert(acc.value == 0)
 
       ds.count()
       assert(acc.value == 1)
@@ -67,7 +64,7 @@ class SpookyDatasetSpec extends SpookyBaseSpec {
       .foreach {
         case (group, sorted) =>
 
-          def render[D: ClassTag: Ordering](ds: SpookyDataset[D]): SpookyDataset[D] = {
+          def render[D: ClassTag: Ordering](ds: DataView[D]): DataView[D] = {
 
             if (sorted) ds.sorted()
             else ds
@@ -105,7 +102,7 @@ class SpookyDatasetSpec extends SpookyBaseSpec {
                 }
               assert(acc.value == 0)
 
-              val df = (SpookyDataset.TypedDatasetView(render(ds)): SpookyDataset.TypedDatasetView[String]).toDF
+              val df = (DataView.TypedDatasetView(render(ds)): DataView.TypedDatasetView[String]).toDF
 
               df.count()
               assert(acc.value == 1)
@@ -225,58 +222,35 @@ class SpookyDatasetSpec extends SpookyBaseSpec {
         .persist()
       ds.count()
 
-      assert(ds.spooky.spookyMetrics.pagesFetched.value == 1)
-      ds.spooky.spookyMetrics.resetAll()
+      assert(ds.ctx.spookyMetrics.pagesFetched.value == 1)
 
       ds.fetch(_ => Wget(JSON_URL)).count()
 
-      assert(ds.spooky.spookyMetrics.pagesFetched.value == 1)
+      assert(ds.ctx.spookyMetrics.pagesFetched.value == 1)
     }
 
-    it(classOf[ChainPlan[?, ?]].getSimpleName) {
+    it(classOf[FlatMapPlan[?, ?]].getSimpleName) {
       val ds = spooky
         .fetch(_ => Wget(HTML_URL))
         .select(_ => "Wikipedia")
         .persist()
       ds.count()
 
-      assert(ds.spooky.spookyMetrics.pagesFetched.value == 1)
-      ds.spooky.spookyMetrics.resetAll()
+      assert(ds.ctx.spookyMetrics.pagesFetched.value == 1)
 
-      ds.fetch(_ => Wget(JSON_URL))
-        .count()
+      ds.fetch(_ => Wget(JSON_URL)).count()
 
-      assert(ds.spooky.spookyMetrics.pagesFetched.value == 1)
+      assert(ds.ctx.spookyMetrics.pagesFetched.value == 1)
     }
 
-    // TODO: move to new submodule
-    //  it("flatten plan can be persisted") {
-    //    val ds = spooky
-    //      .fetch(_ => Wget(HTML_URL))
-    //      .explode(
-    //        Lit(Array("a" -> 1, "b" -> 2)) ~ 'Array
-    //      )
-    //      .persist()
-    //    ds.count()
-    //
-    //    assert(ds.spooky.spookyMetrics.pagesFetched.value == 1)
-    //    ds.spooky.spookyMetrics.resetAll()
-    //
-    //    ds.wget(
-    //      JSON_URL
-    //    ).count()
-    //
-    //    assert(ds.spooky.spookyMetrics.pagesFetched.value == 1)
-    //  }
-
     it(classOf[ExplorePlan[?, ?]].getSimpleName) {
-      val first: SpookyDataset[Unit] = spooky
+      val entry: DataView[Unit] = spooky
         .fetch { _ =>
           Wget(DEEP_DIR_URL)
         }
-      val ds = first
-        .exploreOn()
-        .fetch { row =>
+      val ds = entry
+        .recursively()
+        .explore { row =>
           val docs = row.docs
 
           val dirs = docs.\("root directory")
@@ -287,18 +261,15 @@ class SpookyDatasetSpec extends SpookyBaseSpec {
             case Some(p) => Wget(p)
             case None    => NoOp
           }
-          print_@(s"reading ${result}")
 
           result
         }
         .persist()
-      assert(ds.count() == 1)
+      assert(ds.count() == 4)
+      assert(ds.ctx.spookyMetrics.pagesFetched.value == 4)
 
-      ds.spooky.spookyMetrics.resetAll()
-
-      ds.fetch(_ => Wget(JSON_URL)).count()
-
-      assert(ds.spooky.spookyMetrics.pagesFetched.value == 1)
+      assert(ds.fetch(_ => Wget(JSON_URL)).count() == 4)
+      assert(ds.ctx.spookyMetrics.pagesFetched.value == 4) // locality group optimiser kick in
     }
   }
 

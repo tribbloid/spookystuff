@@ -4,7 +4,7 @@ import ai.acyclic.prover.commons.spark.serialization.NOTSerializable
 import ai.acyclic.prover.commons.util.PathMagnet
 import com.tribbloids.spookystuff.doc.*
 import com.tribbloids.spookystuff.doc.Observation.{DocUID, Failure, Success}
-import com.tribbloids.spookystuff.execution.{ChainPlan, ExecutionContext}
+import com.tribbloids.spookystuff.execution.{ExecutionContext, FlatMapPlan}
 import com.tribbloids.spookystuff.row.Data.Scope
 
 import scala.collection.mutable
@@ -61,11 +61,11 @@ object FetchedRow {
     object flatMap {
 
       def apply[O: ClassTag](
-          fn: ChainPlan.FlatMap._Fn[D, O]
+          fn: FlatMapPlan.FlatMap._Fn[D, O]
       ): Seq[FetchedRow[O]] = {
 
         self.flatMap { v =>
-          val newData = ChainPlan.FlatMap.normalise(fn).apply(v)
+          val newData = FlatMapPlan.FlatMap.normalise(fn).apply(v)
 
           newData.map { datum =>
             v.copy(data = datum)
@@ -77,10 +77,10 @@ object FetchedRow {
 
     object map {
 
-      def apply[O: ClassTag](fn: ChainPlan.Map._Fn[D, O]): Seq[FetchedRow[O]] = {
+      def apply[O: ClassTag](fn: FlatMapPlan.Map._Fn[D, O]): Seq[FetchedRow[O]] = {
 
         self.flatMap { v =>
-          val newData = ChainPlan.Map.normalise(fn).apply(v)
+          val newData = FlatMapPlan.Map.normalise(fn).apply(v)
 
           newData.map { datum =>
             v.copy(data = datum)
@@ -150,6 +150,10 @@ case class FetchedRow[D](
     data: D, // deliberately singular
     ec: ExecutionContext
 ) {
+
+  {
+    agentState.trajectory // FetchedRow by definition is always fetched
+  }
 
   @transient lazy val agentState: AgentState =
     AgentState.Impl(localityGroup, ec) // will be discarded & recreated when being moved to another computer

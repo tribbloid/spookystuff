@@ -6,7 +6,7 @@ import com.tribbloids.spookystuff.row.*
 
 import scala.reflect.ClassTag
 
-object ChainPlan extends CatalystTypeOps.ImplicitMixin {
+object FlatMapPlan extends CatalystTypeOps.ImplicitMixin {
 
 //  type Yield[O] = Data.Scoped[O]
   type Batch[O] = Seq[O]
@@ -15,14 +15,14 @@ object ChainPlan extends CatalystTypeOps.ImplicitMixin {
 
   object FlatMap {
 
-    type _Fn[I, O] = FetchedRow[I] => Batch[O]
+    type _Fn[I, O] = FetchedRow[I] => IterableOnce[O]
 
     def normalise[I, O](
         fn: _Fn[I, O]
-    ): ChainPlan.this.Fn[I, O] = { row =>
+    ): FlatMapPlan.this.Fn[I, O] = { row =>
       val result = fn(row)
 
-      result
+      result.iterator.toSeq
     }
   }
 
@@ -30,7 +30,9 @@ object ChainPlan extends CatalystTypeOps.ImplicitMixin {
 
     type _Fn[I, O] = FetchedRow[I] => O
 
-    def normalise[I, O](fn: _Fn[I, O]): ChainPlan.this.Fn[I, O] = { row =>
+    def normalise[I, O](
+        fn: _Fn[I, O]
+    ): FlatMapPlan.this.Fn[I, O] = { row =>
       val result = fn(row)
       Seq(result)
     }
@@ -47,9 +49,9 @@ object ChainPlan extends CatalystTypeOps.ImplicitMixin {
 
 }
 
-case class ChainPlan[I, O: ClassTag]( // narrow means narrow transformation in Apache Spark
+case class FlatMapPlan[I, O: ClassTag]( // narrow means narrow transformation in Apache Spark
     override val child: ExecutionPlan[I],
-    fn: ChainPlan.Fn[I, O]
+    fn: FlatMapPlan.Fn[I, O]
 ) extends UnaryPlan[I, O](child) {
 
   final override def prepare: SquashedRDD[O] = {

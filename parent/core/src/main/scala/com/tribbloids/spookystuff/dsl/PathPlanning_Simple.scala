@@ -7,7 +7,7 @@ import com.tribbloids.spookystuff.row.*
 
 import scala.collection.mutable
 
-object PathPlanners_Simple {
+object PathPlanning_Simple {
 
   import PathPlanning.*
 
@@ -59,15 +59,15 @@ object PathPlanners_Simple {
         new ReducerProto[O]
       }
 
-      override val ordering: Open.RowOrdering = Ordering.by { (tuple: (LocalityGroup, Vector[Open.Exploring])) =>
+      override val ordering: Open.RowOrdering = Ordering.by { (tuple: (LocalityGroup, Seq[Open.Exploring])) =>
         val inProgress: mutable.Set[LocalityGroup] = ExploreLocalCache
           .getOnGoingRunners(params.executionID)
           .flatMap { (v: ExploreRunner[I, O]) =>
             v.fetchingInProgressOpt
           }
 
-        val result = if (inProgress contains tuple._1) {
-          (Int.MaxValue, (None, Vector.empty))
+        val result: (Int, (Int, Vector[Int])) = if (inProgress contains tuple._1) {
+          (Int.MaxValue, (Int.MaxValue, Vector.empty))
           // if in progress by any local executor, do not select, wait for another executor to finish it first
         } else {
           val dataRows = tuple._2
@@ -82,11 +82,11 @@ object PathPlanners_Simple {
       override protected def pruneSelectedNonEmpty(
           open: Open.Batch,
           visited: Visited.Batch
-      ): Vector[Open.Exploring] = {
+      ): Seq[Open.Exploring] = {
 
-        val visitedDepth = visited.head.depthOpt
+        val visitedDepth = visited.head.depth
         open.filter { row =>
-          row.depthOpt < visitedDepth
+          row.depth < visitedDepth
         }
       }
     }

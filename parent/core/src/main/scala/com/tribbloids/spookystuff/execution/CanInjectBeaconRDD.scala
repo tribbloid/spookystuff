@@ -1,13 +1,13 @@
 package com.tribbloids.spookystuff.execution
 
-import com.tribbloids.spookystuff.dsl.{GenPartitioner, GenPartitionerLike}
+import com.tribbloids.spookystuff.dsl.{Locality, LocalityLike}
 import com.tribbloids.spookystuff.row.{BeaconRDD, LocalityGroup}
 
 trait CanInjectBeaconRDD[O] extends ExecutionPlan[O] {
 
-  def genPartitioner: GenPartitioner
+  def genPartitioner: Locality
 
-  lazy val gpImpl: GenPartitionerLike.Instance[LocalityGroup] = {
+  lazy val gpImpl: LocalityLike.Instance[LocalityGroup] = {
     genPartitioner.getInstance[LocalityGroup](outputSchema)
   }
 

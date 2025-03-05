@@ -19,7 +19,7 @@ object ExploreRunner {}
 case class ExploreRunner[I, O](
     partition: Iterator[(LocalityGroup, State[I, O])],
     pathPlanningImpl: PathPlanning.Impl[I, O],
-    sameBy: Trace => Any
+    sameByFn: Trace => Any
 ) extends Explore.Common[I, O]
     with NOTSerializable {
 
@@ -27,10 +27,10 @@ case class ExploreRunner[I, O](
 
   def exeID: ExeID = pathPlanningImpl.params.executionID
 
-  lazy val spooky: SpookyContext = pathPlanningImpl.schema.ctx
+  lazy val ctx: SpookyContext = pathPlanningImpl.schema.ctx
 
   // TODO: add fast sorted implementation
-  val open: ConcurrentMap[LocalityGroup, Vector[Open.Exploring]] =
+  val open: ConcurrentMap[LocalityGroup, Seq[Open.Exploring]] =
     ConcurrentMap()
 
   val visited: ConcurrentMap[LocalityGroup, Visited.Batch] = ConcurrentMap()
@@ -38,7 +38,7 @@ case class ExploreRunner[I, O](
   lazy val row0Partition: Iterator[SquashedRow[I]] = {
     partition.flatMap {
       case (group, state) =>
-        val _group = group.sameBy(sameBy)
+        val _group = group.sameBy(sameByFn) // old group key override will be ignored
 
 //        state.row0.map { v =>
 //          row0s += v.copy(agentState = v.agentState.copy(group = _group))
@@ -47,7 +47,7 @@ case class ExploreRunner[I, O](
           open += _group -> v
         }
         state.visited.foreach { v =>
-          visited += _group -> v
+          visited += _group -> v.toVector
         }
 
         state.row0.map { v =>
@@ -67,12 +67,12 @@ case class ExploreRunner[I, O](
     def isNoOp: Boolean = group.trace.trace.isEmpty
 
     def intoOpen(
-        value: Vector[Open.Exploring],
+        value: Seq[Open.Exploring],
         reducer: Open.Reducer = pathPlanningImpl.openReducer
     ): Unit = {
       if (isNoOp) return // NoOp will terminate the ExploreRunner
 
-      val oldVs: Vector[Open.Exploring] = open.getOrElse(group, Vector.empty)
+      val oldVs: Seq[Open.Exploring] = open.getOrElse(group, Vector.empty)
       val newVs = reducer(value, oldVs)
       open += group -> newVs
     }
@@ -81,7 +81,7 @@ case class ExploreRunner[I, O](
         value: Vector[Visited.Exploring],
         reducer: Visited.Reducer = pathPlanningImpl.visitedReducer
     ): Unit = {
-      val oldVs: Vector[Visited.Exploring] = visited.getOrElse(group, Vector.empty)
+      val oldVs: Seq[Visited.Exploring] = visited.getOrElse(group, Vector.empty)
       val newVs = reducer(value, oldVs)
       visited += group -> newVs
     }
@@ -102,7 +102,7 @@ case class ExploreRunner[I, O](
       exe.visited.synchronized {
         val oldVs: Option[Visited.Batch] = exe.visited.get(key._1)
         val newVs = (Seq(value) ++ oldVs).reduce(reducer)
-        exe.visited.put(key._1, newVs)
+        exe.visited.put(key._1, newVs.toVector)
       }
     }
 
@@ -122,7 +122,7 @@ case class ExploreRunner[I, O](
       val row0Opt: Option[SquashedRow[Open.Exploring]] = row0Partition
         .nextOption()
         .map { row =>
-          row.exploring
+          row.exploring.startLineage
         }
 
       val row: SquashedRow[Open.Exploring] = row0Opt
@@ -160,7 +160,7 @@ case class ExploreRunner[I, O](
 
       outer.fetchingInProgressOpt = Some(selectedRow.localityGroup)
 
-      val unSquashedRows: Seq[FetchedRow[Open.Exploring]] = selectedRow.withCtx(spooky).unSquash
+      val unSquashedRows: Seq[FetchedRow[Open.Exploring]] = selectedRow.withCtx(ctx).unSquash
 
       val _ = unSquashedRows.map { input =>
         val openExploring: Open.Exploring = input.data
@@ -169,25 +169,26 @@ case class ExploreRunner[I, O](
 
         {
           // commit out into visited
-          val inRange: Explore.BatchK[O] = _outs.toVector.flatMap { out =>
+          val inRange: Explore.BatchK[O] = _outs.flatMap { out =>
             val result = openExploring.copy(raw = out)
 
-            val depth = result.depthOpt.getOrElse(Int.MaxValue)
+            val depth = result.depth
 
             val reprOpt = if (depth < minRange) {
-              Some(
-                result.copy(isOutOfRange = true)
-              )
+              Some(result.copy(isOutOfRange = true))
             } else if (depth < maxRange) {
               Some(result)
-            } else None
-
-            reprOpt.map { e =>
-              openExploring.copy(raw = e)
+            } else {
+              None
             }
+
+            reprOpt
+//            reprOpt.map { e =>
+//              openExploring.copy(raw = e)
+//            }
           }
 
-          Commit(selectedRow.localityGroup).intoVisited(inRange)
+          Commit(selectedRow.localityGroup).intoVisited(inRange.toVector)
         }
 
         {
@@ -196,14 +197,14 @@ case class ExploreRunner[I, O](
             case (nexTtraceSet, nextData) =>
               val nextElem: Open.Exploring = openExploring.depth_++.copy(nextData)
 
-              val nextPayload: Open.Exploring = openExploring.copy(raw = nextElem)
+//              val nextElem: Open.Exploring = openExploring.copy(raw = nextElem)
               nexTtraceSet.traceSet.map { trace =>
-                trace -> nextPayload
+                trace -> nextElem
               }
           }
 
           val grouped: MapView[LocalityGroup, Seq[Open.Exploring]] = fetched
-            .groupBy(v => LocalityGroup(v._1)().sameBy(sameBy))
+            .groupBy(v => LocalityGroup(v._1).sameBy(sameByFn))
             .view
             .mapValues(_.map(_._2))
 

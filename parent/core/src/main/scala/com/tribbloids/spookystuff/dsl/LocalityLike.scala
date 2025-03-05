@@ -1,6 +1,6 @@
 package com.tribbloids.spookystuff.dsl
 
-import com.tribbloids.spookystuff.dsl.GenPartitionerLike.Instance
+import com.tribbloids.spookystuff.dsl.LocalityLike.Instance
 import com.tribbloids.spookystuff.execution.ExecutionContext
 import com.tribbloids.spookystuff.row.{BeaconRDD, SpookySchema}
 import com.tribbloids.spookystuff.utils.locality.LocalityRDDView
@@ -8,16 +8,15 @@ import org.apache.spark.rdd.RDD
 
 import scala.reflect.ClassTag
 
-/**
-  * Created by peng on 1/27/15.
-  */
-//TODO: name should be 'planner'?
-trait GenPartitionerLike[L, -U >: L] {
+trait LocalityLike[
+    L, // lower bound
+    -U >: L // upper bound
+] {
 
   def getInstance[K >: L <: U: ClassTag](schema: SpookySchema): Instance[K]
 }
 
-object GenPartitionerLike {
+object LocalityLike {
 
   import com.tribbloids.spookystuff.utils.RDDImplicits.*
 
@@ -98,7 +97,7 @@ object GenPartitionerLike {
     ): RDD[(K, K)]
   }
 
-  trait PassThrough extends AnyGenPartitioner {
+  trait PassThrough extends GenLocality {
 
     def getInstance[K: ClassTag](schema: SpookySchema): Instance[K] = {
       Inst[K]()

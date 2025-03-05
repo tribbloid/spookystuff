@@ -5,6 +5,7 @@ import ai.acyclic.prover.commons.spark.serialization.NOTSerializable
 import com.tribbloids.spookystuff.SpookyContext
 import com.tribbloids.spookystuff.doc.Observation
 import com.tribbloids.spookystuff.execution.ExecutionContext
+import com.tribbloids.spookystuff.execution.ExplorePlan.State
 
 import scala.language.implicitConversions
 
@@ -16,55 +17,6 @@ object SquashedRow {
       LocalityGroup.noOp,
       data
     )
-  }
-
-//  def ofDatum(dataRow: DataRow): SquashedRow = ofData(Seq(dataRow))
-
-//  lazy val blank: SquashedRow = {
-//    ofData(Seq(DataRow.blank))
-//  }
-  // TODO: gone, use FetchedRow.toSquashedRow()
-
-  case class WithSchema[D](
-      self: SquashedRow[D],
-      schema: SpookySchema
-  ) {
-
-    @transient lazy val withCtx: self._WithCtx = self.withCtx(schema.ctx)
-
-    /**
-      * operation is applied per unSquashed row, each row may yield multiple runnable traces
-      *
-      * this function will never remove a single unSquashed row, in worst case, each row yield an empty trace
-      *
-      * @return
-      *   a mapping from runnable trace to data
-      */
-//    def interpolateAndRewrite(
-//        traces: TraceSet
-//    ): Seq[(Trace, DataView)] = {
-//
-//      val pairs: Seq[(DataView, TraceSet.NonEmpty)] = withCtx.unSquash.map { row =>
-//        val raw = traces.flatMap { trace =>
-//          val rewritten = trace.interpolateAndRewrite(row, schema)
-//          rewritten
-//        }
-//
-//        row.dataRow -> TraceSet(raw).avoidEmpty
-//      }
-//
-//      val result = pairs.flatMap {
-//        case (d, ts) =>
-//          ts.map(t => t -> d)
-//      }
-//
-//      result
-//    }
-  }
-
-  object WithSchema {
-
-    implicit def unbox[D](v: WithSchema[D]): v.self._WithCtx = v.withCtx
   }
 }
 
@@ -87,63 +39,27 @@ case class SquashedRow[D](
     this
   }
 
-//  def explodeData(
-//      field: Field, // TODO: changed to Resolved[Any]
-//      ordinalKey: Field,
-//      forkType: ForkType,
-//      sampler: Sampler[Any]
-//  ): SquashedRow = {
-//
-//    val newRows = dataRows.flatMap { row =>
-//      val newDataRows = row.self.explode(
-//        field,
-//        ordinalKey,
-//        forkType,
-//        sampler
-//      )
-//      val newRows = newDataRows.map { dd =>
-//        row.copy(self = dd)
-//      }
-//      newRows
-//    }
-//
-//    val result = this.copy(dataRows = newRows)
-//
-//    result
-//  }
+  object exploring {
 
-//  def flatMapData[DD](
-//      fn: Data.Scoped[D] => Seq[Data.Scoped[DD]]
-//  ): SquashedRow[DD] = {
-//
-//    val newDataRows = batch.flatMap { row =>
-//      val newRows = fn(row)
-//      newRows
-//    }
-//
-//    this.copy(batch = newDataRows)
-//  }
+    def state0[O]: (LocalityGroup, State[D, O]) = {
 
-//  def remove(fields: Field*): SquashedRow = {
-//
-//    val newRows = dataRows.map { row =>
-//      row.copy(self = row.self.--(fields))
-//    }
-//
-//    this.copy(
-//      dataRows = newRows
-//    )
-//  }
+      localityGroup -> State(
+        row0 = Some(SquashedRow.this),
+        open = None,
+        visited = None
+      )
+    }
 
-  def exploring: SquashedRow[Data.Exploring[D]] = {
-    this.copy(
-      batch = {
-        batch.map { d =>
-          val result = Data.Exploring(d).idRefresh
-          result
+    def startLineage: SquashedRow[Data.Exploring[D]] = {
+      SquashedRow.this.copy(
+        batch = {
+          batch.map { d =>
+            val result = Data.Exploring(d).startLineage
+            result
+          }
         }
-      }
-    )
+      )
+    }
   }
 
   case class _WithCtx(ctx: SpookyContext) extends NOTSerializable {
@@ -155,32 +71,16 @@ case class SquashedRow[D](
       }
     }
 
-//    def flatMap[O](
-//        fn: ChainPlan.Fn[D, O]
-//    ): SquashedRow[O] = {
-//
-//      val newDataRows: Seq[Data.Scoped[O]] = unSquash.flatMap { (row: FetchedRow[D]) =>
-//        val newRows = fn(row)
-//        newRows
-//      }
-//
-//      SquashedRow.this.copy(batch = newDataRows)
-//    }
-
-//    def fetch[O](fn: FetchPlan.Fn[D, O]): FetchPlan.Batch[O] = {
-//
-//      val result = unSquash.flatMap { (row: FetchedRow[D]) =>
-//        val traces = fn(row)
-//
-//        traces
-//      }
-//
-//      result
-//    }
   }
 
-  @transient lazy val withSchema: :=>[SpookySchema, WithSchema[D]] = :=>.at { v =>
-    WithSchema(this, v)
+  class WithSchema(
+      schema: SpookySchema
+  ) extends _WithCtx(schema.ctx) {
+    // empty at the moment, but SpookySchema may be extended later
+  }
+
+  @transient lazy val withSchema: :=>[SpookySchema, WithSchema] = :=>.at { v =>
+    new WithSchema(v)
   }
 
   override def withCtx(v: SpookyContext): _WithCtx = _WithCtx(v)

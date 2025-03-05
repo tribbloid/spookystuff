@@ -11,7 +11,7 @@ import scala.language.implicitConversions
 object LocalityGroup {
 
   lazy val noOp: LocalityGroup = {
-    val result = LocalityGroup(NoOp)()
+    val result = LocalityGroup(NoOp)
     result.rollout.cache(Nil)
     result
   }
@@ -33,9 +33,9 @@ object LocalityGroup {
   */
 case class LocalityGroup(
     trace: Trace,
-    groupKeyOvrd: Option[Any] = None // used by custom keyBy arg in fetch and explore.
-)(
-    val rollout: Rollout = Rollout(trace)
+    groupKeyOvrd: Option[Any] = None, // used by custom keyBy arg in fetch and explore.
+
+    rolloutOvrd: Option[Rollout] = None
 ) extends Projection.Equals
     with SpookyContext.Contextual {
   // TODO: should the name be "SIMDGroup/SPMDGroup"
@@ -44,8 +44,10 @@ case class LocalityGroup(
     canEqualProjections += CanEqual.Native.on(groupKeyOvrd.getOrElse(trace))
   }
 
+  @transient lazy val rollout = rolloutOvrd.getOrElse(Rollout(trace))
+
   def sameBy[T](fn: Trace => T): LocalityGroup =
-    this.copy(groupKeyOvrd = Option(fn(this.trace)))(this.rollout)
+    this.copy(groupKeyOvrd = Option(fn(this.trace)))
 
   type _WithCtx = AgentState
 

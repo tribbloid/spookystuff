@@ -11,7 +11,7 @@ trait CanFetch[
     O // output row
 ] extends Serializable {
 
-  def normalise(inputRow: I, on: ON): Batch[O]
+  def normaliseOutput(inputRow: I, on: ON): Batch[O]
 
   def cTag: ClassTag[O]
 }
@@ -27,7 +27,7 @@ object CanFetch {
 
     new CanFetch[T, I, I] {
 
-      override def normalise(inputRow: I, on: T): Batch[I] = {
+      override def normaliseOutput(inputRow: I, on: T): Batch[I] = {
 
         on.traceSet.toSeq.map { trace =>
           (trace, inputRow)
@@ -38,20 +38,20 @@ object CanFetch {
     }
   }
 
-  implicit def onTracesAndRowUpdate[T <: HasTraceSet, I, O](
+  implicit def onTracesAndNewData[T <: HasTraceSet, I, O](
       implicit
       _cTag: ClassTag[O]
   ): CanFetch[Seq[(T, O)], I, O] = {
 
     new CanFetch[Seq[(T, O)], I, O] {
 
-      override def normalise(inputRow: I, on: Seq[(T, O)]): Batch[O] = {
+      override def normaliseOutput(inputRow: I, on: Seq[(T, O)]): Batch[O] = {
 
         on.flatMap {
 
           case (traceSet, outputRow) =>
 
-            onTraceSet[T, O].normalise(outputRow, traceSet)
+            onTraceSet[T, O].normaliseOutput(outputRow, traceSet)
         }
       }
 

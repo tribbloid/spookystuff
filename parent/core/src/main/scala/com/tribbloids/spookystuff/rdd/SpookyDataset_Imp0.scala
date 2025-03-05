@@ -6,5 +6,5 @@ import scala.language.implicitConversions
 
 trait SpookyDataset_Imp0 {
 
-  implicit def asPlan[D](self: SpookyDataset[D]): ExecutionPlan[D] = self.plan
+  implicit def asPlan[D](self: DataView[D]): ExecutionPlan[D] = self.plan
 }

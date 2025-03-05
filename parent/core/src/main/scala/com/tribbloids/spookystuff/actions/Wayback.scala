@@ -16,14 +16,16 @@ trait Wayback extends WaybackLike {
 
   // TODO change to immutable
   // TODO change to better time repr
-  var wayback: Option[Long] = _
+  var waybackInternal: Long = _
+
+  def wayback: Option[Long] = Option(waybackInternal)
 
   def waybackTo(date: Date): this.type = {
     waybackToTimeMillis(date.getTime)
   }
 
   def waybackToTimeMillis(time: Long): this.type = {
-    this.wayback = Some(time)
+    this.waybackInternal = time
     this
   }
 }

@@ -5,16 +5,14 @@ import com.tribbloids.spookystuff.row.{Data, LocalityGroup}
 
 object Explore {
 
-  type BatchK[T] = Vector[Data.Exploring[T]]
+  type BatchK[+T] = Seq[Data.Exploring[T]]
 
   trait ReducerTypes[T] {
 
     type Exploring = Data.Exploring[T] // in open & visited cache, don't participate in ordering or reduce
-    type Batch = Vector[Exploring]
+    type Batch = Seq[Exploring]
 
-    type RowOrdering = Ordering[(LocalityGroup, Vector[Exploring])]
-    // TODO:
-    //  in fact, should use SquashedRow directly
+    type RowOrdering = Ordering[(LocalityGroup, Seq[Exploring])]
 
     type Reducer = Explore.ReducerK[T]
   }

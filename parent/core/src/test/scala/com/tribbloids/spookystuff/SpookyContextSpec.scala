@@ -3,7 +3,7 @@ package com.tribbloids.spookystuff
 import ai.acyclic.prover.commons.spark.serialization.AssertSerializable
 import com.tribbloids.spookystuff.actions.*
 import com.tribbloids.spookystuff.conf.{Core, Dir, SpookyConf}
-import com.tribbloids.spookystuff.rdd.SpookyDataset
+import com.tribbloids.spookystuff.rdd.DataView
 import com.tribbloids.spookystuff.testutils.{RemoteDocsFixture, SpookyBaseSpec}
 
 class SpookyContextSpec extends SpookyBaseSpec {
@@ -31,7 +31,7 @@ class SpookyContextSpec extends SpookyBaseSpec {
 
         val seq = Seq(d1, d2)
 
-        val metrics = seq.map(_.spooky.spookyMetrics)
+        val metrics = seq.map(_.ctx.spookyMetrics)
 
         metrics
           .map(_.View.toMap)
@@ -42,7 +42,7 @@ class SpookyContextSpec extends SpookyBaseSpec {
           }
 
         seq.foreach { d =>
-          assert(d.spooky.spookyMetrics.pagesFetched.value === 1)
+          assert(d.ctx.spookyMetrics.pagesFetched.value === 1)
         }
       }
 
@@ -59,8 +59,8 @@ class SpookyContextSpec extends SpookyBaseSpec {
           .fetch(_ => Wget(HTML_URL))
         rdd2.count()
 
-        rdd1.spooky.spookyMetrics.toTreeIR.treeView.treeString shouldBe
-          rdd2.spooky.spookyMetrics.toTreeIR.treeView.treeString
+        rdd1.ctx.spookyMetrics.toTreeIR.treeView.treeString shouldBe
+          rdd2.ctx.spookyMetrics.toTreeIR.treeView.treeString
       }
     }
 
@@ -103,10 +103,10 @@ class SpookyContextSpec extends SpookyBaseSpec {
     spooky(Core).confUpdate(_.copy(shareMetrics = false))
 
     val rdd2 = spooky.create(Seq("dummy"))
-    assert(!(rdd2.spooky eq spooky))
+    assert(!(rdd2.ctx eq spooky))
 
     val conf1 = spooky.dirConf.prettyJSON
-    val conf2 = rdd2.spooky.dirConf.prettyJSON
+    val conf2 = rdd2.ctx.dirConf.prettyJSON
     conf1 shouldBe conf2
   }
 
@@ -123,10 +123,10 @@ class SpookyContextSpec extends SpookyBaseSpec {
     )
 
     val rdd2 = spooky.create(Seq("dummy"))
-    assert(!(rdd2.spooky eq spooky))
+    assert(!(rdd2.ctx eq spooky))
 
     val conf1 = spooky.dirConf.prettyJSON
-    val conf2 = rdd2.spooky.dirConf.prettyJSON
+    val conf2 = rdd2.ctx.dirConf.prettyJSON
     conf1 shouldBe conf2
   }
 
@@ -134,7 +134,7 @@ class SpookyContextSpec extends SpookyBaseSpec {
 
     it("Seq") {
 
-      val rdd: SpookyDataset[String] = spooky.create(Seq("a", "b"))
+      val rdd: DataView[String] = spooky.create(Seq("a", "b"))
 
       val data = rdd.squashedRDD.collect().flatMap(_.batch).toList
       assert(data == List("a", "b"))

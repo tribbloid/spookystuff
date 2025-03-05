@@ -25,7 +25,7 @@ case class SortPlan[D, E: Ordering: ClassTag](
 
     val unsquashed = child.squashedRDD
       .flatMap { v =>
-        val rows = v.withCtx(child.spooky).unSquash
+        val rows = v.withCtx(child.ctx).unSquash
         rows
       }
 
