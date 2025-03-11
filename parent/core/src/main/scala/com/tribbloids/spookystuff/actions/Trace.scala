@@ -2,7 +2,6 @@ package com.tribbloids.spookystuff.actions
 
 import ai.acyclic.prover.commons.cap.Capability
 import ai.acyclic.prover.commons.cap.Capability.<>
-import ai.acyclic.prover.commons.debug.print_@
 import ai.acyclic.prover.commons.spark.serialization.NOTSerializable
 import com.tribbloids.spookystuff.SpookyContext
 import com.tribbloids.spookystuff.actions.Foundation.{HasTrace, HasTraceSet}
