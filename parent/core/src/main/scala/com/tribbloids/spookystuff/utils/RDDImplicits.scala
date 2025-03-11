@@ -14,11 +14,11 @@ import scala.reflect.ClassTag
   */
 object RDDImplicits extends RDDImplicits
 
-trait RDDImplicits extends SpookyViews_Imp0 with ai.acyclic.prover.commons.spark.RDDImplicits {
+trait RDDImplicits extends RDDImplicits_Imp0 with ai.acyclic.prover.commons.spark.RDDImplicits {
 
   implicit def sparkContextView(self: SparkContext): SparkContextView = SparkContextView(self)
 
-  implicit class StringRDDView(val self: RDD[String]) {
+  implicit class _stringRDDView(val self: RDD[String]) {
 
     // csv has to be headerless, there is no better solution as header will be shuffled to nowhere
     def csvToMap(headerRow: String, splitter: String = ","): RDD[Map[String, String]] = {
@@ -26,18 +26,16 @@ trait RDDImplicits extends SpookyViews_Imp0 with ai.acyclic.prover.commons.spark
 
       // cannot handle when a row is identical to headerline, but whatever
       self.map { str =>
-        {
-          val values = str.split(splitter)
+        val values = str.split(splitter)
 
-          ListMap(headers.zip(values)*)
-        }
+        ListMap(headers.zip(values)*)
       }
     }
 
     def tsvToMap(headerRow: String): RDD[Map[String, String]] = csvToMap(headerRow, "\t")
   }
 
-  implicit class PairRDDView[K: ClassTag, V: ClassTag](val self: RDD[(K, V)]) {
+  implicit class _pairRDDView[K: ClassTag, V: ClassTag](val self: RDD[(K, V)]) {
 
     import RDD.*
     // get 3 RDDs that shares key partitioning: leftExclusive, intersection, rightExclusive

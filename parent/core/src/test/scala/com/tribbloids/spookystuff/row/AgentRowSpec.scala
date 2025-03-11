@@ -7,7 +7,7 @@ import com.tribbloids.spookystuff.testutils.{FileDocsFixture, SpookyBaseSpec}
 /**
   * Created by peng on 12/3/14.
   */
-class FetchedRowSuite extends SpookyBaseSpec {
+class AgentRowSpec extends SpookyBaseSpec {
 
   val resources: FileDocsFixture.type = FileDocsFixture
   import resources.*

@@ -21,7 +21,7 @@ import com.tribbloids.spookystuff.actions.{Trace, TraceView}
 import com.tribbloids.spookystuff.row.SpookySchema
 import com.tribbloids.spookystuff.uav.UAVConf
 import com.tribbloids.spookystuff.uav.actions.{UAVNavigation, Waypoint}
-import com.tribbloids.spookystuff.uav.dsl.GenPartitioners
+import com.tribbloids.spookystuff.uav.dsl.Localitys
 import com.tribbloids.spookystuff.uav.spatial.point.NED
 import com.tribbloids.spookystuff.uav.telemetry.LinkStatus
 
@@ -71,7 +71,7 @@ object JSpritRunner {
 
   def solveVRP(
       vrp: VehicleRoutingProblem,
-      gp: GenPartitioners.VRP
+      gp: Localitys.VRP
   ): (VehicleRoutingProblemSolution, Double) = {
 
     val stateManager: StateManager = new StateManager(vrp)
@@ -161,7 +161,7 @@ object JSpritRunner {
 }
 
 case class JSpritRunner(
-    problem: GenPartitioners.VRP,
+    problem: Localitys.VRP,
     schema: SpookySchema,
     uavs: Array[LinkStatus],
     traces: Array[TraceView]

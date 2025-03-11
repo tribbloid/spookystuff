@@ -5,7 +5,7 @@ import ai.acyclic.prover.commons.util.PathMagnet
 import com.tribbloids.spookystuff.actions.*
 import com.tribbloids.spookystuff.agent.WebProxySetting
 import com.tribbloids.spookystuff.doc.Doc
-import com.tribbloids.spookystuff.dsl.LocalityLike.Instance
+import com.tribbloids.spookystuff.dsl.DataLocality.Instance
 import com.tribbloids.spookystuff.execution.ExecutionContext
 import com.tribbloids.spookystuff.row.{BeaconRDD, LocalityGroup, SpookySchema}
 import com.tribbloids.spookystuff.utils.SpookyUtils
@@ -103,15 +103,15 @@ package object dsl extends DSL {
 
   }
 
-  type GenLocality = LocalityLike[LocalityGroup, Any]
-  type Locality = LocalityLike[LocalityGroup, LocalityGroup]
+  type Locality_Wide = DataLocality[LocalityGroup, Any]
+  type Locality = DataLocality[LocalityGroup, LocalityGroup]
 
   object Locality {
 
-    case object Passthrogh extends LocalityLike.PassThrough
+    case object Passthrogh extends DataLocality.PassThrough
 
     // this won't merge identical traces and do lookup, only used in case each resolve may yield different result
-    case object Narrow extends GenLocality {
+    case object Narrow extends Locality_Wide {
 
       def getInstance[K: ClassTag](schema: SpookySchema): Instance[K] = {
         Inst[K]()
@@ -141,7 +141,7 @@ package object dsl extends DSL {
         partitionerFactory: RDD[?] => Partitioner = {
           PartitionerFactory.SamePartitioner
         }
-    ) extends GenLocality {
+    ) extends Locality_Wide {
 
       def getInstance[K: ClassTag](schema: SpookySchema): Instance[K] = {
         Inst[K]()
@@ -170,7 +170,7 @@ package object dsl extends DSL {
         partitionerFactory: RDD[?] => Partitioner = {
           PartitionerFactory.SamePartitioner
         }
-    ) extends GenLocality {
+    ) extends Locality_Wide {
 
       def getInstance[K: ClassTag](schema: SpookySchema): Instance[K] = {
         Inst[K](schema.ec)

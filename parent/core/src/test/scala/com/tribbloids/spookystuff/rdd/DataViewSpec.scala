@@ -102,7 +102,7 @@ class DataViewSpec extends SpookyBaseSpec {
                 }
               assert(acc.value == 0)
 
-              val df = (DataView.TypedDatasetView(render(ds)): DataView.TypedDatasetView[String]).toDF
+              val df = (DataView._typedDatasetView(render(ds)): DataView._typedDatasetView[String]).asDataFrame
 
               df.count()
               assert(acc.value == 1)
@@ -120,7 +120,7 @@ class DataViewSpec extends SpookyBaseSpec {
 
               assert(acc.value == 0)
 
-              val json = render(ds).toJSON
+              val json = render(ds).asJSONDataset
               //      assert(acc.value == 0)
 
               json.count()
@@ -222,11 +222,11 @@ class DataViewSpec extends SpookyBaseSpec {
         .persist()
       ds.count()
 
-      assert(ds.ctx.spookyMetrics.pagesFetched.value == 1)
+      assert(ds.ctx.metrics.pagesFetched.value == 1)
 
       ds.fetch(_ => Wget(JSON_URL)).count()
 
-      assert(ds.ctx.spookyMetrics.pagesFetched.value == 2)
+      assert(ds.ctx.metrics.pagesFetched.value == 2)
     }
 
     it(classOf[FlatMapPlan[?, ?]].getSimpleName) {
@@ -236,11 +236,11 @@ class DataViewSpec extends SpookyBaseSpec {
         .persist()
       ds.count()
 
-      assert(ds.ctx.spookyMetrics.pagesFetched.value == 1)
+      assert(ds.ctx.metrics.pagesFetched.value == 1)
 
       ds.fetch(_ => Wget(JSON_URL)).count()
 
-      assert(ds.ctx.spookyMetrics.pagesFetched.value == 2)
+      assert(ds.ctx.metrics.pagesFetched.value == 2)
     }
 
     it(classOf[ExplorePlan[?, ?]].getSimpleName) {
@@ -266,10 +266,10 @@ class DataViewSpec extends SpookyBaseSpec {
         }
         .persist()
       assert(ds.count() == 4)
-      assert(ds.ctx.spookyMetrics.pagesFetched.value == 4)
+      assert(ds.ctx.metrics.pagesFetched.value == 4)
 
       assert(ds.fetch(_ => Wget(JSON_URL)).count() == 4)
-      assert(ds.ctx.spookyMetrics.pagesFetched.value == 5) // locality group optimiser kick in
+      assert(ds.ctx.metrics.pagesFetched.value == 5) // locality group optimiser kick in
     }
   }
 
@@ -316,7 +316,7 @@ class DataViewSpec extends SpookyBaseSpec {
         .select { row =>
           row.docs.save(s"file://${Envs.USER_DIR}/temp/dummy", overwrite = true)
         }
-        .execute()
+        .compute()
 
       assert(dummyFileExists())
     }

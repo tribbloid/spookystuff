@@ -58,8 +58,9 @@ class ExploreRunnerSpec extends SpookyBaseSpec {
           case (group, state) =>
             val data = state.visited.toSeq.flatten
 
-            data.map { v =>
-              (v.depth, group.trace, v.raw)
+            data.map {
+              case (v, _) =>
+                (v.depth, group.trace, v.raw)
             }
         }
         .sortBy(_._1)
@@ -104,7 +105,7 @@ class ExploreRunnerSpec extends SpookyBaseSpec {
         }
 
       val plan = Option(ds.plan).collect {
-        case v: ExplorePlan[Data.Exploring[Unit], Option[String]] => v
+        case v: ExplorePlan[Data.Exploring[Unit], Data.Exploring[Option[String]]] => v
       }.get
 
       val runner = {
@@ -122,8 +123,9 @@ class ExploreRunnerSpec extends SpookyBaseSpec {
           case (group, state) =>
             val data = state.visited.toSeq.flatten
 
-            data.map { v =>
-              (v.depth, group.trace, v.raw)
+            data.map {
+              case (v, _) =>
+                (v.depth, group.trace, v.raw)
             }
         }
         .sortBy(_._1)
@@ -133,7 +135,7 @@ class ExploreRunnerSpec extends SpookyBaseSpec {
           (
             i,
             from.toString.replace(UnpackResources.ROOT_DIR, ""),
-            to.getOrElse("").replace(UnpackResources.ROOT_DIR, "")
+            to.raw.getOrElse("").replace(UnpackResources.ROOT_DIR, "")
           )
       }
 

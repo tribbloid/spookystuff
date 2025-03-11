@@ -152,7 +152,7 @@ case class ClasspathResolver(
       offspring.foreach { (v: ClasspathResolver#Execution) =>
         val dst = targetRootExe.absolutePath :/ v.absolutePath
 
-        v.copyTo(targetRootExe.outer.execute(dst), mode)
+        v.copyTo(targetRootExe.outer.on(dst), mode)
       }
       Thread.sleep(5000) // for eventual consistency
     }

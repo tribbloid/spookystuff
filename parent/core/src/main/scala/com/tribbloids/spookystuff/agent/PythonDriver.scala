@@ -42,10 +42,10 @@ object PythonDriver {
     val pythonDir = new File(pythonPath)
     FileUtils.deleteQuietly(pythonDir)
 
-    val exe = ClasspathResolver.execute(PythonDriver.PYTHON_RESOURCE)
+    val exe = ClasspathResolver.on(PythonDriver.PYTHON_RESOURCE)
 
     exe.treeCopyTo(
-      LocalResolver.default.execute(pythonPath),
+      LocalResolver.default.on(pythonPath),
       WriteMode.CreateOnly
     )
 

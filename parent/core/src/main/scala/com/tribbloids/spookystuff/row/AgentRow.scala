@@ -12,7 +12,7 @@ import scala.collection.mutable.ArrayBuffer
 import scala.language.implicitConversions
 import scala.reflect.ClassTag
 
-object FetchedRow {
+object AgentRow {
 
   /**
     * providing the following APIs:
@@ -40,29 +40,14 @@ object FetchedRow {
   //  it only records operation performed on it if the function explicitly ask for it, otherwise it degrades to its value (can still trace if it is used tho)
   //  - can we afford this luxury? how many functions can be defined to ask for it? can we weaken the arg types of functions without extra work?
 
-  implicit class SeqView[D](self: Seq[FetchedRow[D]]) {
-
-    // the following functions are also available for a single FetchedRow, treated as Seq(v)
-//    def dummy(): Any = ???
-
-//    def withNormalisedDocs: Seq[FetchedRow[D]] = { TODO: gone, normalised doc now selected from row
-//
-//      self.map(v =>
-//        v.copy(
-//          observations = v.observations.map {
-//            case v: Doc => v.normalised
-//            case v      => v
-//          }
-//        )
-//      )
-//    }
+  implicit class SeqView[D](self: Seq[AgentRow[D]]) {
 
     // TODO: fold into a SpookyDataset backed by a local/non-distributed data structure
     object flatMap {
 
       def apply[O: ClassTag](
           fn: FlatMapPlan.FlatMap._Fn[D, O]
-      ): Seq[FetchedRow[O]] = {
+      ): Seq[AgentRow[O]] = {
 
         self.flatMap { v =>
           val newData = FlatMapPlan.FlatMap.normalise(fn).apply(v)
@@ -77,7 +62,7 @@ object FetchedRow {
 
     object map {
 
-      def apply[O: ClassTag](fn: FlatMapPlan.Map._Fn[D, O]): Seq[FetchedRow[O]] = {
+      def apply[O: ClassTag](fn: FlatMapPlan.Map._Fn[D, O]): Seq[AgentRow[O]] = {
 
         self.flatMap { v =>
           val newData = FlatMapPlan.Map.normalise(fn).apply(v)
@@ -91,74 +76,31 @@ object FetchedRow {
     }
     def select: map.type = map
 
-//    def select[O](
-//        fn: FetchedRow[D] => Seq[O]
-//    ): ChainPlan.Batch[O] = {
-//
-//      self.flatMap { row =>
-//        fn(row)
-//      }
-//    }
-
-    // TODO: move to sql module
-//    def withColumns[
-//        IT <: Tuple,
-//        O,
-//        OT <: Tuple
-//    ](
-//        fn: FetchedRow[D] :=> Seq[O]
-//    )(
-//        implicit
-//        toRow1: RowInternal.ofData.Lemma[D, Row[IT]],
-//        toRow2: RowInternal.ofData.Lemma[O, Row[OT]],
-//        merge: ElementWisePoly.preferRight.LemmaAtRows[IT, OT]
-//    ): ChainPlan.Out[merge.Out] = {
-//
-//      val _fn = fn.andThen { outs =>
-//        outs.map { out =>
-//          val row1 = toRow1(self.head.data)
-//          val row2 = toRow2(out)
-//          merge(row1 -> row2)
-//        }
-//      }
-//
-//      select(_fn)
-//    }
-//
-//    def explode[O](
-//        fn: FetchedRow[D] => Seq[O]
-//    ): ChainPlan.Out[O] = {
-//
-//      ???
-//    }
-//
   }
-
-//  implicit def toSeqView[D](self: Seq[FetchedRow[D]]): SeqView[D] = SeqView(self)
-
-//  lazy val blank: Proto[Unit] = Proto((), Nil)
-//
-//  lazy val blank: FetchedRow[Unit](AgentState)
 }
 
 /**
   * abstracted data structure where expression can be resolved. not the main data structure in execution plan, Not
   * serializable, has to be created from [[SquashedRow]] on the fly
   */
-case class FetchedRow[D](
+case class AgentRow[D](
     localityGroup: LocalityGroup,
     data: D, // deliberately singular
+    index: Int,
     ec: ExecutionContext
 ) {
 
   {
-    agentState.trajectory // FetchedRow by definition is always fetched
+    agentState.trajectory // by definition, always pre-fetched to serve multiple data in a squashed row
   }
 
-  @transient lazy val agentState: AgentState =
-    AgentState.Impl(localityGroup, ec) // will be discarded & recreated when being moved to another computer
+  @transient lazy val agentState: AgentState = {
+    AgentState.Impl(localityGroup, ec)
+    // will be discarded & recreated when being moved to another computer
+    //  BUT NOT the already computed rollout trajectory!, they are carried within the localityGroup
+  }
 
-  @transient lazy val squash: SquashedRow[D] = SquashedRow(localityGroup, Seq(data))
+  @transient lazy val squash: SquashedRow[D] = SquashedRow(localityGroup, Seq(data -> index))
 
   @transient lazy val effectiveScope: Scope = {
 

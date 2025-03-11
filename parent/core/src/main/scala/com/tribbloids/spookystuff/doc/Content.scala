@@ -82,7 +82,7 @@ sealed trait Content extends SpookyContext.Contextual with Serializable {
     }
   }
 
-  case class _WithCtx(ctx: SpookyContext) extends NOTSerializable {
+  implicit class _WithCtx(ctx: SpookyContext) extends NOTSerializable {
 
     lazy val raw: Array[Byte] = blob.raw
 
@@ -111,7 +111,7 @@ sealed trait Content extends SpookyContext.Contextual with Serializable {
         try {
           os.write(raw) //       remember that apache IOUtils is defective for DFS!
 
-          val metrics = ctx.spookyMetrics
+          val metrics = ctx.metrics
           metrics.saved += 1
           //        metrics.savedPath.add(path -> progress.indicator.longValue())
 
@@ -155,8 +155,6 @@ sealed trait Content extends SpookyContext.Contextual with Serializable {
     }
 
   }
-
-  override def withCtx(v: SpookyContext): _WithCtx = _WithCtx(v)
 }
 
 object Content {

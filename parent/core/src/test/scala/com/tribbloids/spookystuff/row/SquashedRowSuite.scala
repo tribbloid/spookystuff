@@ -12,4 +12,17 @@ class SquashedRowSuite extends SpookyBaseSpec {
 //    val grouped = row.batch.map(_.sourceScope)
 //    assert(grouped == Seq(Seq()))
 //  }
+
+  describe("withCtx") {
+
+    it("will not generate duplicated objects") {
+
+      val row = BuildRow("abc").squashed
+
+      val w1 = row.withCtx(spooky)
+      val w2 = row.withCtx(spooky)
+
+      assert(w1 eq w2)
+    }
+  }
 }

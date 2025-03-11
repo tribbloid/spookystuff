@@ -27,7 +27,7 @@ object AbstractURIResolverSuite {
       Try {
         val v = ii.incrementAndGet()
         if (v > max)
-          throw new UnsupportedOperationException(s"cannot acquire - semaphore value $v is out of range")
+          throw new UnsupportedOperationException(s"acquired but concurrency $v exceeded quota $max")
       }
     }
 
@@ -35,7 +35,7 @@ object AbstractURIResolverSuite {
       Try {
         val v = ii.getAndDecrement()
         if (v > max || v <= 0)
-          throw new UnsupportedOperationException(s"released - semaphore value $v is out of range")
+          throw new UnsupportedOperationException(s"released but concurrency $v exceeded quota $max")
       }
     }
   }
@@ -156,7 +156,7 @@ abstract class AbstractURIResolverSuite extends SparkEnvSpec {
 
       existingFile.requireEmptyFile {
 
-        val session = resolver.execute(existingFile.path)
+        val session = resolver.on(existingFile.path)
 
         var vs1 = session.input(accessorVs)
 
@@ -231,7 +231,7 @@ abstract class AbstractURIResolverSuite extends SparkEnvSpec {
         existingFile.requireRandomContent(16) {
           nonExistingFile.requireVoid {
 
-            resolver.execute(existingFile.path).copyTo(nonExistingFile.path, WriteMode.CreateOnly)
+            resolver.on(existingFile.path).copyTo(nonExistingFile.path, WriteMode.CreateOnly)
 
             val copied = resolver.input(nonExistingFile.path)(_.getLength == 16)
             assert(copied)
@@ -243,7 +243,7 @@ abstract class AbstractURIResolverSuite extends SparkEnvSpec {
         existingFile.requireRandomContent(16) {
           nonExistingFile.requireRandomContent(16) {
 
-            resolver.execute(existingFile.path).copyTo(nonExistingFile.path, WriteMode.Overwrite)
+            resolver.on(existingFile.path).copyTo(nonExistingFile.path, WriteMode.Overwrite)
 
             val copied = resolver.input(nonExistingFile.path)(_.getLength == 16)
             assert(copied)
@@ -254,160 +254,163 @@ abstract class AbstractURIResolverSuite extends SparkEnvSpec {
 
   }
 
-  it("move 1 file to the same target should be sequential") {
+  describe("sequential access -") {
 
-    existingFile.requireEmptyFile {
-      val pathStr = existingFile.absolutePath
-      val rdd = sc.parallelize(1 to numWrites, numWrites)
+    it("move 1 file to the same target") {
 
-      val resolver: URIResolver = this.resolver
+      existingFile.requireEmptyFile {
+        val pathStr = existingFile.absolutePath
+        val rdd = sc.parallelize(1 to numWrites, numWrites)
 
-      val ss = SequentialCheck(sc)
+        val resolver: URIResolver = this.resolver
 
-      val errors = rdd
-        .map { _ =>
-          resolver.retry {
+        val ss = SequentialCheck(sc)
 
-            resolver
-              .execute(pathStr)
-              .moveTo(pathStr + ".moved")
+        val errors = rdd
+          .map { _ =>
+            resolver.retry {
 
-            val r1 = ss.acquire().failed.toOption.toSeq
-            Thread.sleep(Random.nextInt(10))
-            val r2 = ss.release().failed.toOption.toSeq
+              resolver
+                .on(pathStr)
+                .moveTo(pathStr + ".moved")
 
-            resolver
-              .execute(pathStr + ".moved")
-              .moveTo(pathStr)
+              val r1 = ss.acquire().failed.toOption.toSeq
+              Thread.sleep(Random.nextInt(10))
+              val r2 = ss.release().failed.toOption.toSeq
 
-            r1 ++ r2
+              resolver
+                .on(pathStr + ".moved")
+                .moveTo(pathStr)
+
+              r1 ++ r2
+            }
           }
-        }
-        .collect()
-        .flatten
-        .toSeq
+          .collect()
+          .flatten
+          .toSeq
 
-      assert(errors.isEmpty, errors.mkString("\n"))
+        assert(errors.isEmpty, errors.mkString("\n"))
+      }
     }
-  }
 
-  it("move 1 file to different targets should be sequential") {
+    it("move 1 file to different targets") {
 
-    existingFile.requireEmptyFile {
-      val pathStr = existingFile.absolutePath
-      val rdd = sc.parallelize(1 to numWrites, numWrites)
+      existingFile.requireEmptyFile {
+        val pathStr = existingFile.absolutePath
+        val rdd = sc.parallelize(1 to numWrites, numWrites)
 
-      val resolver: URIResolver = this.resolver
+        val resolver: URIResolver = this.resolver
 
-      val ss = SequentialCheck(sc)
+        val ss = SequentialCheck(sc)
 
-      val errors = rdd
-        .map { i =>
-          resolver.retry {
+        val errors = rdd
+          .map { i =>
+            resolver.retry {
 
-            resolver
-              .execute(pathStr)
-              .moveTo(pathStr + i + ".moved")
+              resolver
+                .on(pathStr)
+                .moveTo(pathStr + i + ".moved")
 
-            val r1 = ss.acquire().failed.toOption.toSeq
-            Thread.sleep(Random.nextInt(10))
-            val r2 = ss.release().failed.toOption.toSeq
+              val r1 = ss.acquire().failed.toOption.toSeq
+              Thread.sleep(Random.nextInt(10))
+              val r2 = ss.release().failed.toOption.toSeq
 
-            resolver
-              .execute(pathStr + i + ".moved")
-              .moveTo(pathStr)
+              resolver
+                .on(pathStr + i + ".moved")
+                .moveTo(pathStr)
 
-            r1 ++ r2
+              r1 ++ r2
+            }
           }
-        }
-        .collect()
-        .flatten
-        .toSeq
+          .collect()
+          .flatten
+          .toSeq
 
-      assert(errors.isEmpty, errors.mkString("\n"))
+        assert(errors.isEmpty, errors.mkString("\n"))
+      }
     }
   }
 
   // TODO: doesn't work, no guarantee
-  ignore("move different files to the same target should be sequential") {
-    existingFile.requireEmptyFile {
-      val pathStr = existingFile.absolutePath
-      val rdd = sc.parallelize(1 to numWrites, numWrites)
+  ignore("sequential access (conflict free) -") {
 
-      val resolver: URIResolver = this.resolver
+    it("move different files to the same target") {
+      existingFile.requireEmptyFile {
+        val pathStr = existingFile.absolutePath
+        val rdd = sc.parallelize(1 to numWrites, numWrites)
 
-      val ss = SequentialCheck(sc)
-      val errors = rdd
-        .map { i =>
-          resolver.retry {
+        val resolver: URIResolver = this.resolver
 
-            val src = resolver
-              .execute(pathStr + s"${Random.nextLong()}")
+        val ss = SequentialCheck(sc)
+        val errors = rdd
+          .map { i =>
+            resolver.retry {
 
-            try {
+              val src = resolver.on(pathStr + s"${Random.nextLong()}")
 
-//              src.createNew()
-              src.output(WriteMode.CreateOnly) { oo =>
-                oo.stream.write(("" + i).getBytes)
+              try {
+                src.output(WriteMode.CreateOnly) { oo =>
+                  oo.stream.write(("" + i).getBytes)
+                }
+                src.moveTo(pathStr + ".moved")
+              } catch {
+                case e: IOException =>
+                  src.delete(false)
+                  throw e
               }
-              src.moveTo(pathStr)
-            } catch {
-              case e: Exception =>
-                src.delete(false)
-                throw e
+
+              val r1 = ss.acquire().failed.toOption.toSeq
+              Thread.sleep(Random.nextInt(10))
+              val r2 = ss.release().failed.toOption.toSeq
+
+              resolver // many threads will move file into the same location and delete it
+                .on(pathStr + ".moved")
+                .delete(false)
+
+              r1 ++ r2
             }
-
-            val r1 = ss.acquire().failed.toOption.toSeq
-            Thread.sleep(Random.nextInt(10))
-            val r2 = ss.release().failed.toOption.toSeq
-
-            resolver
-              .execute(pathStr + ".moved")
-              .delete(false)
-
-            r1 ++ r2
           }
-        }
-        .collect()
-        .flatten
-        .toSeq
+          .collect()
+          .flatten
+          .toSeq
 
-      assert(errors.isEmpty, errors.mkString("\n"))
+        assert(errors.isEmpty, errors.mkString("\n"))
+      }
     }
-  }
 
-  ignore("touch should be sequential") {
+    it("create new file") {
 
-    existingFile.requireVoid {
-      val pathStr = existingFile.path
-      val rdd = sc.parallelize(1 to numWrites, numWrites)
+      existingFile.requireVoid {
+        val pathStr = existingFile.path
+        val rdd = sc.parallelize(1 to numWrites, numWrites)
 
-      val resolver: URIResolver = this.resolver
+        val resolver: URIResolver = this.resolver
 
-      val ss = SequentialCheck(sc)
-      val errors = rdd
-        .map { _ =>
-          resolver.retry {
-            resolver
-              .execute(pathStr)
-              .createNew()
+        val ss = SequentialCheck(sc)
+        val errors = rdd
+          .map { _ =>
+            resolver.retry {
+              resolver
+                .on(pathStr)
+                .createNew()
 
-            val r1 = ss.acquire().failed.toOption.toSeq
-            Thread.sleep(Random.nextInt(10))
-            val r2 = ss.release().failed.toOption.toSeq
+              val r1 = ss.acquire().failed.toOption.toSeq
+              Thread.sleep(Random.nextInt(10))
+              val r2 = ss.release().failed.toOption.toSeq
 
-            resolver
-              .execute(pathStr)
-              .delete()
+              resolver
+                .on(pathStr)
+                .delete()
 
-            r1 ++ r2
+              r1 ++ r2
+            }
           }
-        }
-        .collect()
-        .flatten
-        .toSeq
+          .collect()
+          .flatten
+          .toSeq
 
-      assert(errors.isEmpty, errors.mkString("\n"))
+        assert(errors.isEmpty, errors.mkString("\n"))
+      }
     }
   }
 
@@ -460,88 +463,91 @@ abstract class AbstractURIResolverSuite extends SparkEnvSpec {
         }
       }
 
+      // TODO: doesn't work
       ignore("... even for non existing path") {
         nonExistingFile.requireVoid {
 
           doTest(nonExistingFile.absolutePath)
         }
       }
-    }
 
-    def doTestIO(
-        url: String,
-        groundTruth: Seq[Byte]
-    ): Unit = {
+      describe("for reading and writing") {
 
-      try {
-        val rdd = sc.parallelize(1 to numWrites, numWrites)
+        def doTestIO(
+            url: String,
+            groundTruth: Seq[Byte]
+        ): Unit = {
 
-        val resolver: URIResolver = this.resolver
+          try {
+            val rdd = sc.parallelize(1 to numWrites, numWrites)
 
-        rdd.foreach { _ =>
-          resolver.lock(url) { exe =>
-            val bytes: Array[Byte] = exe.input { in =>
-              if (in.isExisting) IOUtils.toByteArray(in.stream)
-              else Array.empty
+            val resolver: URIResolver = this.resolver
+
+            rdd.foreach { _ =>
+              resolver.lock(url) { exe =>
+                val bytes: Array[Byte] = exe.input { in =>
+                  if (in.isExisting) IOUtils.toByteArray(in.stream)
+                  else Array.empty
+                }
+
+                val lastByte: Byte = bytes.toSeq.lastOption.getOrElse(0)
+
+                val withExtra = bytes :+ (lastByte + 1).byteValue()
+
+                //            println(s"write ${bytes.length} => ${withExtra.length}")
+
+                exe.output(WriteMode.Overwrite) { out =>
+                  val stream = out.stream
+                  stream.write(withExtra)
+                }
+              }
             }
 
-            val lastByte: Byte = bytes.toSeq.lastOption.getOrElse(0)
+            Thread.sleep(2000)
 
-            val withExtra = bytes :+ (lastByte + 1).byteValue()
+            val bytes = resolver
+              .input(url) { in =>
+                IOUtils.toByteArray(in.stream)
+              }
+              .toSeq
 
-            //            println(s"write ${bytes.length} => ${withExtra.length}")
+            val truncated = bytes.slice(0, groundTruth.size)
 
-            exe.output(WriteMode.Overwrite) { out =>
-              val stream = out.stream
-              stream.write(withExtra)
+            assert(
+              s"${truncated.size} elements:\n ${truncated.mkString(" ")}" ===
+                s"${groundTruth.size} elements:\n ${groundTruth.mkString(" ")}"
+            )
+            assert(truncated.length === groundTruth.size)
+
+          } finally {
+
+            resolver.on(url).delete(false)
+          }
+        }
+
+        it("existing file") {
+          existingFile.requireEmptyFile {
+
+            existingFile.execution.output(WriteMode.Overwrite) { out =>
+              out.stream.write(Array(10.byteValue()))
             }
+
+            val groundTruth = (10 to numWrites + 10).map(_.byteValue())
+            doTestIO(existingFile.execution.absolutePath, groundTruth)
           }
         }
 
-        Thread.sleep(2000)
+        // TODO: doesn't work
+        ignore("non-existing file") {
+          nonExistingFile.requireVoid {
 
-        val bytes = resolver
-          .input(url) { in =>
-            IOUtils.toByteArray(in.stream)
+            val groundTruth = (1 to numWrites).map(_.byteValue())
+            doTestIO(nonExistingFile.execution.absolutePath, groundTruth)
           }
-          .toSeq
-
-        val truncated = bytes.slice(0, groundTruth.size)
-
-        assert(
-          s"${truncated.size} elements:\n ${truncated.mkString(" ")}" ===
-            s"${groundTruth.size} elements:\n ${groundTruth.mkString(" ")}"
-        )
-        assert(truncated.length === groundTruth.size)
-
-      } finally {
-
-        resolver.execute(url).delete(false)
+        }
       }
     }
 
-    describe("can guarantee sequential read and write") {
-
-      it("to existing file") {
-        existingFile.requireEmptyFile {
-
-          existingFile.execution.output(WriteMode.Overwrite) { out =>
-            out.stream.write(Array(10.byteValue()))
-          }
-
-          val groundTruth = (10 to numWrites + 10).map(_.byteValue())
-          doTestIO(existingFile.execution.absolutePath, groundTruth)
-        }
-      }
-
-      ignore("to non-existing file") {
-        nonExistingFile.requireVoid {
-
-          val groundTruth = (1 to numWrites).map(_.byteValue())
-          doTestIO(nonExistingFile.execution.absolutePath, groundTruth)
-        }
-      }
-    }
   }
 
 }

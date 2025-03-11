@@ -13,7 +13,7 @@ object FetchPlan {
 
   type Batch[O] = Seq[(Trace, O)]
 
-  type Fn[I, O] = FetchedRow[I] => Batch[O]
+  type Fn[I, O] = AgentRow[I] => Batch[O]
 }
 
 /**
@@ -26,7 +26,7 @@ case class FetchPlan[I, O: ClassTag](
     override val child: ExecutionPlan[I],
     fn: FetchPlan.Fn[I, O],
     sameBy: Trace => Any,
-    genPartitioner: Locality
+    locality: Locality
 ) extends UnaryPlan[I, O](child)
     with CanInjectBeaconRDD[O]
 //    with CanChain[O] // TODO: remove, no advantage after rewriting
@@ -34,19 +34,19 @@ case class FetchPlan[I, O: ClassTag](
 
   override def prepare: SquashedRDD[O] = {
 
-    val sketched: RDD[(LocalityGroup, O)] = child.squashedRDD
+    val sketched: RDD[(LocalityGroup, (O, Int))] = child.squashedRDD
       .flatMap { (v: SquashedRow[I]) =>
         val rows = v.withCtx(child.ctx).unSquash
 
-        val seq = rows.flatMap(fn)
+        val seq = rows.flatMap(fn).zipWithIndex
 
         seq.map {
-          case (trace, v) =>
-            LocalityGroup(trace).sameBy(sameBy) -> v
+          case ((trace, v), i) =>
+            LocalityGroup(trace).sameBy(sameBy) -> (v -> i)
         }
       }
 
-    val grouped: RDD[(LocalityGroup, Iterable[O])] = gpImpl.groupByKey(sketched, beaconRDDOpt)
+    val grouped: RDD[(LocalityGroup, Iterable[(O, Int)])] = gpImpl.groupByKey(sketched, beaconRDDOpt)
 
     grouped
       .map { tuple =>

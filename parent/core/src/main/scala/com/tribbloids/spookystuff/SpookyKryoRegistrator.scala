@@ -4,7 +4,7 @@ import com.esotericsoftware.kryo.Kryo
 import com.tribbloids.spookystuff.conf.{Dir, SpookyConf}
 import com.tribbloids.spookystuff.doc.*
 import com.tribbloids.spookystuff.metrics.SpookyMetrics
-import com.tribbloids.spookystuff.row.FetchedRow
+import com.tribbloids.spookystuff.row.AgentRow
 import org.apache.spark.serializer.KryoRegistrator
 import org.apache.spark.sql.catalyst.ScalaReflection.universe.TypeTag
 
@@ -20,7 +20,7 @@ class SpookyKryoRegistrator extends KryoRegistrator {
     val array: Array[Class[?]] = Array(
       // used by PageRow
       classOf[TypeTag[?]],
-      classOf[FetchedRow[?]],
+      classOf[AgentRow[?]],
       classOf[ListMap[?, ?]],
       classOf[UUID],
       classOf[Elements[?]],

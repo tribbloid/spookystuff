@@ -74,7 +74,7 @@ case class LocalResolver(
             .asScala
             .toSeq
             .map { subPath =>
-              execute(subPath.toString)
+              on(subPath.toString)
             }
         } else Nil
       }

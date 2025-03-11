@@ -158,7 +158,7 @@ abstract class SpookyBaseSpec extends SpookyEnvSpec with BeforeAndAfterEach with
 
   override def beforeEach(): Unit = CommonUtils.retry(3, 1000, silent = true) {
     //    SpookyEnvFixture.cleanDriverInstances()
-    spooky.spookyMetrics.resetAll()
+    spooky.metrics.resetAll()
 
     spooky.setConf(
       SpookyConf(
@@ -183,4 +183,10 @@ abstract class SpookyBaseSpec extends SpookyEnvSpec with BeforeAndAfterEach with
     }
     TreeThrowable.&&&(result)
   }
+
+  implicit class stripTmpRootOps(v: String) {
+
+    def stripTmpRoot: String = v.replace(UnpackResources.ROOT_DIR, "")
+  }
+
 }

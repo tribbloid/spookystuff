@@ -16,7 +16,7 @@ trait CompoundResolver extends URIResolver {
 
   implicit class _Execution(uri: PathMagnet.URIPath) extends Execution {
 
-    lazy val impl: URIExecution = getImpl(uri).execute(uri)
+    lazy val impl: URIExecution = getImpl(uri).on(uri)
 
     override def absolutePath: PathMagnet.URIPath = impl.absolutePath
 

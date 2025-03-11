@@ -4,45 +4,28 @@ import scala.language.implicitConversions
 
 object Foundation {
 
+//  type TraceSet = Set[Trace]
+
   trait HasTraceSet {
 
     def traceSet: Set[Trace]
 
-    def *>(that: HasTraceSet): TraceSet = {
+    def *>(that: HasTraceSet): Set[Trace] = {
       val newTraces = this.traceSet.flatMap(left =>
         that.traceSet.map { right =>
           left +> right
         }
       )
-      TraceSet(newTraces.map(v => v: Trace))
+      newTraces.map(v => v: Trace)
     }
 
-    def ||(other: HasTraceSet): TraceSet = TraceSet(traceSet ++ other.traceSet)
+    def ||(other: HasTraceSet): Set[Trace] = traceSet ++ other.traceSet
   }
 
-  /**
-    * read [[ai.acyclic.prover.commons.__OperatorPrecedence]] when defining new operators
-    * @param traceSet
-    *   no duplicated Trace
-    */
-  case class TraceSet(traceSet: Set[Trace]) extends HasTraceSet {
-
-    def outputNames: Set[String] = traceSet.map(_.outputNames).reduce(_ ++ _)
-
-    //      def avoidEmpty: NonEmpty = {
-    //        val result = if (traces.isEmpty) {
-    //          FetchImpl(Set(Trace.NoOp))
-    //        } else {
-    //          this
-    //        }
-    //        result.asInstanceOf[NonEmpty]
-    //      }
-  }
-
-  object TraceSet {
-
-    def of(traces: Trace*): TraceSet = TraceSet(traces.toSet)
-  }
+//  object TraceSet {
+//
+//    def of(traces: Trace*): TraceSet = TraceSet(traces.toSet)
+//  }
 
 //  type Induction[+T] = Induction.K[T]
   object Induction {

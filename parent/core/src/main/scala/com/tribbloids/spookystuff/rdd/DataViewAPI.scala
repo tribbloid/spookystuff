@@ -77,14 +77,14 @@ trait DataViewAPI[D] {
 
   def persist(newLevel: StorageLevel): this.type = {
     assert(newLevel != StorageLevel.NONE)
-    this.storageLevel = newLevel
+    plan.persist(newLevel)
     this
   }
 
   def unpersist(blocking: Boolean = true): this.type = {
-    this.storageLevel = StorageLevel.NONE
-    this.plan.cachedRDDOpt.foreach(_.unpersist(blocking))
-    this.plan._cachedRDD = null
+    plan.unpersist(blocking)
+    plan.cachedRDDOpt.foreach(_.unpersist(blocking))
+    plan._cachedRDD = null
     this
   }
 

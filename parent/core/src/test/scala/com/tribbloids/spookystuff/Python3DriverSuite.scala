@@ -2,6 +2,7 @@ package com.tribbloids.spookystuff
 
 import com.tribbloids.spookystuff.python.PyConverter
 import Python3DriverSuite.Runner
+import ai.acyclic.prover.commons.debug.print_@
 import com.tribbloids.spookystuff.agent.PythonDriver
 import com.tribbloids.spookystuff.testutils.SpookyBaseSpec
 import com.tribbloids.spookystuff.commons.lifespan.Cleanable.Lifespan
@@ -193,7 +194,7 @@ class Python3DriverSuite extends SpookyBaseSpec {
         }
       }
       assert(time <= 6000)
-      println("============== SUCCESS!!!!!!!!!!! ==============")
+//      print_@("============== SUCCESS!!!!!!!!!!! ==============")
     }
   }
 

@@ -31,7 +31,7 @@ class SpookyContextSpec extends SpookyBaseSpec {
 
         val seq = Seq(d1, d2)
 
-        val metrics = seq.map(_.ctx.spookyMetrics)
+        val metrics = seq.map(_.ctx.metrics)
 
         metrics
           .map(_.View.toMap)
@@ -42,7 +42,7 @@ class SpookyContextSpec extends SpookyBaseSpec {
           }
 
         seq.foreach { d =>
-          assert(d.ctx.spookyMetrics.pagesFetched.value === 1)
+          assert(d.ctx.metrics.pagesFetched.value === 1)
         }
       }
 
@@ -59,8 +59,8 @@ class SpookyContextSpec extends SpookyBaseSpec {
           .fetch(_ => Wget(HTML_URL))
         rdd2.count()
 
-        rdd1.ctx.spookyMetrics.toTreeIR.treeView.treeString shouldBe
-          rdd2.ctx.spookyMetrics.toTreeIR.treeView.treeString
+        rdd1.ctx.metrics.toTreeIR.treeView.treeString shouldBe
+          rdd2.ctx.metrics.toTreeIR.treeView.treeString
       }
     }
 
@@ -136,7 +136,7 @@ class SpookyContextSpec extends SpookyBaseSpec {
 
       val rdd: DataView[String] = spooky.create(Seq("a", "b"))
 
-      val data = rdd.squashedRDD.collect().flatMap(_.batch).toList
+      val data = rdd.squashedRDD.collect().flatMap(_.batch).map(_._1).toList
       assert(data == List("a", "b"))
     }
   }

@@ -14,39 +14,38 @@ import frameless.{TypedDataset, TypedEncoder}
 import org.apache.spark.SparkContext
 import org.apache.spark.rdd.RDD
 import org.apache.spark.sql.{DataFrame, Dataset}
-import org.apache.spark.storage.StorageLevel
 
 import scala.language.implicitConversions
 import scala.reflect.ClassTag
 
 object DataView extends SpookyDataset_Imp0 {
 
-  implicit def asRDD[D](self: DataView[D]): RDD[FetchedRow[D]] = self.rdd
+  implicit def asRDD[D](self: DataView[D]): RDD[AgentRow[D]] = self.rdd
 
-  implicit class TypedDatasetView[D](
-      ops: DataView[D]
+  implicit class _typedDatasetView[D: ClassTag](
+      self: DataView[D]
   )(
       implicit
-      ctag: ClassTag[D],
       enc: TypedEncoder[D]
   ) {
 
-    final def toFrameless: TypedDataset[D] = {
+    def typedDatasetView: _typedDatasetView[D] = this
 
-      val ds = TypedDataset.create(ops.dataRDD)(enc, ops.ctx.sparkSession)
+    final def asFramelessDataset: TypedDataset[D] = {
+
+      val ds = TypedDataset.create(self.dataRDD)(enc, self.ctx.sparkSession)
 
       ds
     }
 
-    final def toDataset: Dataset[D] = toFrameless.dataset
+    final def asDataset: Dataset[D] = asFramelessDataset.dataset
 
     // move to extension, DF support is interfering with Scala 3
-    def toDF: DataFrame = toDataset.toDF()
+    def asDataFrame: DataFrame = asDataset.toDF()
 
-    def toJSON: Dataset[String] = {
-      toDataset.toJSON
+    def asJSONDataset: Dataset[String] = {
+      asDataset.toJSON
     }
-
   }
 
   def ofRDD[D](
@@ -83,18 +82,22 @@ case class DataView[D](
     this
   }
 
-  val plan: ExecutionPlan[D] = _plan.normalise
+  val plan: ExecutionPlan[D] = _plan.normalisedPlan
 
   def sparkContext: SparkContext = plan.ctx.sparkContext
-  def storageLevel: StorageLevel = plan.storageLevel
-  def storageLevel_=(lv: StorageLevel): Unit = {
-    plan.storageLevel = lv
-  }
 
   def ctx: SpookyContext = plan.ctx
   def schema: SpookySchema = plan.outputSchema
 
   def isCached: Boolean = plan.isCached
+
+  @transient final lazy val SquashedRDDWithSchema = {
+    plan.squashedRDD.map(_.withSchema(plan.outputSchema))
+  }
+
+  @transient final lazy val rdd: RDD[AgentRow[D]] = {
+    SquashedRDDWithSchema.flatMap(rowWithSchema => rowWithSchema.withCtx.unSquash)
+  }
 
   def dataRDD(
       implicit
@@ -131,7 +134,7 @@ case class DataView[D](
 //    */
 //  trait Cached {}
 
-  def execute(): this.type = {
+  def compute(): this.type = {
     this.rdd.foreach(_ => ())
     this
   }
@@ -177,7 +180,7 @@ case class DataView[D](
   def foreach(fn: FlatMapPlan.Map._Fn[D, Unit] = { _ => () }) = {
 
     map { row =>
-      row.localityGroup.withCtx(ctx).trajectory
+      row.localityGroup.withCtx.apply(ctx).trajectory
       // always execute the agent eagerly
       fn(row)
     }
@@ -188,10 +191,10 @@ case class DataView[D](
       FO, // function output
       O: ClassTag
   ](
-      fn: FetchedRow[D] => FO,
+      fn: AgentRow[D] => FO,
       sampling: Sampler = ctx.conf.fetchSampling,
       keyBy: Trace => Any = identity,
-      genPartitioner: Locality = ctx.conf.genPartitioner
+      locality: Locality = ctx.conf.locality
   )(
       implicit
       canFetch: CanFetch[FO, D, O]
@@ -207,7 +210,7 @@ case class DataView[D](
     }
 
     DataView(
-      FetchPlan(plan, normalForm, keyBy, genPartitioner)(canFetch.cTag)
+      FetchPlan(plan, normalForm, keyBy, locality)(canFetch.cTag)
     )
   }
 
@@ -241,7 +244,7 @@ case class DataView[D](
       checkpointInterval: Int = ctx.conf.exploreCheckpointInterval // set to Int.MaxValue to disable checkpointing,
   ) {
 
-    val transformRowBeforeRecursion: FetchedRow[Data.Exploring[D]] => Seq[FetchedRow[Data.Exploring[M]]] = { row =>
+    val transformRowBeforeRecursion: AgentRow[Data.Exploring[D]] => Seq[AgentRow[Data.Exploring[M]]] = { row =>
       val data = fnBeforeRecursion(row).map { _raw =>
         row.data.copy(raw = _raw)
       }
@@ -256,19 +259,19 @@ case class DataView[D](
     def explore[
         FO // function output, notice the lack of Output type as fetch here must be recursive
     ](
-        fn: FetchedRow[Data.Exploring[M]] => FO,
+        fn: AgentRow[Data.Exploring[M]] => FO,
         sampling: Sampler = ctx.conf.exploreSampling,
         keyBy: Trace => Any = identity,
-        genPartitioner: Locality = ctx.conf.genPartitioner
+        locality: Locality = ctx.conf.locality
     )(
         implicit
         canFetch: CanFetch[FO, D, D]
-    ): DataView[M] = {
+    ): DataView[Data.Exploring[M]] = {
 
-      val normalForm: ExplorePlan.Fn[D, M] = { inputRow =>
+      val normalForm: ExplorePlan.Fn[D, Data.Exploring[M]] = { inputRow =>
         // TODO: remove duplication
 
-        val intermediate: Seq[FetchedRow[Data.Exploring[M]]] = transformRowBeforeRecursion(inputRow)
+        val intermediate: Seq[AgentRow[Data.Exploring[M]]] = transformRowBeforeRecursion(inputRow)
 
         val batch = intermediate.flatMap { row =>
           val fo: FO = fn(row)
@@ -277,17 +280,17 @@ case class DataView[D](
           batch
         }
         val recursive = sampling(batch)
-        val out = intermediate.map(_.data.raw)
+        val out = intermediate.map(_.data)
 
         recursive -> out
       }
 
       val params = Params(range)
-      val out: ExplorePlan[D, M] = ExplorePlan(
+      val out: ExplorePlan[D, Data.Exploring[M]] = ExplorePlan(
         plan,
         normalForm,
         keyBy,
-        genPartitioner,
+        locality,
         params,
         pathPlanning,
         epochInterval,
@@ -300,7 +303,7 @@ case class DataView[D](
     // TODO: all selected data prior to fetch will become inductive data update
     //    object map {}
 
-    object flatMap {
+    case object flatMap {
 
       def apply[MM](
           fn: FlatMapPlan.FlatMap._Fn[Data.Exploring[M], MM]
@@ -312,7 +315,7 @@ case class DataView[D](
         val fnNormalised: FlatMapPlan.Fn[Data.Exploring[M], MM] = FlatMapPlan.FlatMap.normalise(fn)
 
         val chained: FlatMapPlan.Fn[Data.Exploring[D], MM] = { row =>
-          val before: Seq[FetchedRow[Data.Exploring[M]]] = transformRowBeforeRecursion(row)
+          val before: Seq[AgentRow[Data.Exploring[M]]] = transformRowBeforeRecursion(row)
 
           val after = before.flatMap { row =>
             fnNormalised(row)
@@ -328,7 +331,7 @@ case class DataView[D](
     }
     def selectMany: flatMap.type = flatMap
 
-    object map {
+    case object map {
 
       def apply[MM](
           fn: FlatMapPlan.Map._Fn[Data.Exploring[M], MM]

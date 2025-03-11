@@ -1,8 +1,8 @@
 package com.tribbloids.spookystuff.uav.planning.TrafficControls
 
 import com.tribbloids.spookystuff.actions.TraceView
-import com.tribbloids.spookystuff.dsl.GenPartitionerLike
-import com.tribbloids.spookystuff.dsl.GenPartitionerLike.Instance
+import com.tribbloids.spookystuff.dsl.LocalityLike
+import com.tribbloids.spookystuff.dsl.LocalityLike.Instance
 import com.tribbloids.spookystuff.row.{BeaconRDD, SpookySchema}
 import com.tribbloids.spookystuff.uav.planning._
 import org.apache.spark.TaskContext
@@ -26,7 +26,7 @@ case class Avoid(
   case class Inst(schema: SpookySchema)(
       implicit
       val ctg: ClassTag[TraceView]
-  ) extends GenPartitionerLike.Instance[TraceView] {
+  ) extends LocalityLike.Instance[TraceView] {
 
     override def reduceByKey[V: ClassTag](
         rdd: RDD[(TraceView, V)],

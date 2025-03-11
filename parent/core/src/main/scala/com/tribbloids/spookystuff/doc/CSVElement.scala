@@ -73,7 +73,7 @@ object CSVElement {
 
     override def boilerPipe: Option[String] = text
 
-    override def findAll(selector: DocQuery): Elements[Unstructured] = children(selector)
+    override def find(selector: DocQuery): Elements[Unstructured] = children(selector)
 
     override def findAllWithSiblings(selector: DocQuery, range: Range): Elements[Siblings[Unstructured]] =
       childrenWithSiblings(selector, range)
@@ -93,7 +93,7 @@ object CSVElement {
       val header: String
   ) extends Unstructured {
 
-    override def findAll(selector: DocQuery): Elements[Unstructured] = Elements.empty
+    override def find(selector: DocQuery): Elements[Unstructured] = Elements.empty
 
     override def text: Option[String] = ownText
 

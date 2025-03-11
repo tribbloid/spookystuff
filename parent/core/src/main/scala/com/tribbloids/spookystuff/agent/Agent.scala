@@ -22,11 +22,11 @@ class Agent(
     override val _lifespan: Lifespan = Lifespan.TaskOrJVM().forShipping
 ) extends LocalCleanable {
 
-  spooky.spookyMetrics.sessionInitialized += 1
+  spooky.metrics.sessionInitialized += 1
   val startTimeMillis: Long = new Date().getTime
   val backtrace: ArrayBuffer[Action] = ArrayBuffer()
 
-  object SessionLog {
+  object Log {
 
     lazy val level1: String = SpookyUtils.canonizeFileName(lifespan.registeredIDs.mkString("-"), noDash = true)
 
@@ -98,6 +98,6 @@ class Agent(
   override def cleanImpl(): Unit = {
     Drivers.releaseAll()
 
-    spooky.spookyMetrics.sessionReclaimed += 1
+    spooky.metrics.sessionReclaimed += 1
   }
 }

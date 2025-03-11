@@ -8,7 +8,7 @@ package object row {
 
   object SquashedRDD {
 
-    type WithSchema[D] = RDD[SquashedRow[D]#WithSchema]
+    type WithSchema[D] = RDD[SquashedRow[D]#_WithSchema]
   }
 
   type BeaconRDD[K] = RDD[(K, Unit)]

@@ -2,14 +2,14 @@ package com.tribbloids.spookystuff.actions
 
 import ai.acyclic.prover.commons.cap.Capability
 import ai.acyclic.prover.commons.cap.Capability.<>
+import ai.acyclic.prover.commons.debug.print_@
 import ai.acyclic.prover.commons.spark.serialization.NOTSerializable
 import com.tribbloids.spookystuff.SpookyContext
-import com.tribbloids.spookystuff.actions.Foundation.{HasTrace, TraceSet}
+import com.tribbloids.spookystuff.actions.Foundation.{HasTrace, HasTraceSet}
 import com.tribbloids.spookystuff.actions.Trace.Repr
 import com.tribbloids.spookystuff.agent.Agent
 import com.tribbloids.spookystuff.caching.{DFSDocCache, InMemoryDocCache}
 import com.tribbloids.spookystuff.doc.Observation
-import com.tribbloids.spookystuff.row.SpookySchema
 
 import scala.collection.mutable.ArrayBuffer
 import scala.language.implicitConversions
@@ -25,6 +25,25 @@ object Trace {
 
   def of(vs: Action*): Trace = Trace(vs.toList)
 
+  /**
+    * read [[ai.acyclic.prover.commons.__OperatorPrecedence]] when defining new operators
+    * @param traceSet
+    *   no duplicated Trace
+    */
+  implicit class _setView(val traceSet: Set[Trace]) extends HasTraceSet {
+
+    def outputNames: Set[String] = traceSet.map(_.outputNames).reduce(_ ++ _)
+
+    //      def avoidEmpty: NonEmpty = {
+    //        val result = if (traces.isEmpty) {
+    //          FetchImpl(Set(Trace.NoOp))
+    //        } else {
+    //          this
+    //        }
+    //        result.asInstanceOf[NonEmpty]
+    //      }
+  }
+
   case class Rollout(trace: Trace) extends HasTrace with SpookyContext.Contextual {
     // unlike trace, it is always executed by the agent from scratch
     // thus, execution result can be cached, as replaying it will most likely have the same result (if the trace is deterministic)
@@ -39,7 +58,7 @@ object Trace {
       * assuming that most [[Observation]]s will be auto-saved into DFS, their serialized form can exclude contents and
       * thus be very small, making such manual discarding an optimisation with diminishing return
       */
-    @volatile private var _cached: Seq[Observation] = {
+    private var _cached: Seq[Observation] = {
       if (trace.isEmpty) Nil
       else null
     }
@@ -59,7 +78,7 @@ object Trace {
       this.disableCached
     }
 
-    case class _WithCtx(spooky: SpookyContext) extends NOTSerializable {
+    implicit class _WithCtx(spooky: SpookyContext) extends NOTSerializable {
 
       def play(): Seq[Observation] = {
         val result = trace.fetch(spooky)
@@ -73,7 +92,11 @@ object Trace {
 
           if (Rollout.this.cachedOpt.nonEmpty) {
             // no need
+
+//            print_@(s"cached ${Rollout.this}, no need to play")
           } else {
+
+//            print_@(s"playing ${Rollout.this}")
             play()
           }
           enableCached
@@ -82,8 +105,6 @@ object Trace {
 
       lazy val trajectory: Seq[Observation] = cached.trajectory
     }
-
-    override def withCtx(v: SpookyContext): _WithCtx = _WithCtx(v)
   }
 
   object Rollout {
@@ -91,7 +112,9 @@ object Trace {
     object Cached extends Capability
     type Cached = Cached.type
 
-    implicit class CachedRolloutView(v: Rollout <> Cached) {
+    implicit def fromTrace(v: Trace): Rollout = Rollout(v)
+
+    implicit class _cachedView(v: Rollout <> Cached) {
 
       def trajectory: Seq[Observation] = v.cachedOpt.get
       // TODO: returned type will become a class
@@ -186,11 +209,6 @@ case class Trace(
     }
 
     result.map(v => v: Trace).toList
-  }
-
-  def rewriteLocally(schema: SpookySchema): TraceSet = {
-
-    TraceSet.of(RewriteRule.Rules(localRewriteRules(schema)).rewriteAll(Seq(this))*)
   }
 
   // the minimal equivalent action that can be put into backtrace

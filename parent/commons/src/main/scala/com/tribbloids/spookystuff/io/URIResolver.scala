@@ -57,7 +57,7 @@ abstract class URIResolver extends Serializable {
 
     final def copyTo(target: String, mode: WriteMode): Unit = {
 
-      val tgtExe = outer.execute(target)
+      val tgtExe = outer.on(target)
 
       copyTo(tgtExe, mode)
     }
@@ -146,7 +146,7 @@ abstract class URIResolver extends Serializable {
 //    new ExecutionBase(uri) with ExecutionMixin
 //  }
 
-  def execute(uri: PathMagnet.URIPath) = _Execution(uri)
+  def on(uri: PathMagnet.URIPath) = _Execution(uri)
 
   final type _Resource = _Execution#_Resource
 
@@ -154,16 +154,16 @@ abstract class URIResolver extends Serializable {
   def lockExpire: LockExpired = URIResolver.default.lockExpired
 
   final def input[T](uri: PathMagnet.URIPath)(f: _Resource#InputView => T): T = {
-    val exe = execute(uri)
+    val exe = on(uri)
     exe.input(f)
   }
 
   final def output[T](uri: PathMagnet.URIPath, mode: WriteMode)(f: _Resource#OutputView => T): T = {
-    val exe = execute(uri)
+    val exe = on(uri)
     exe.output(mode)(f)
   }
 
-  final def toAbsolute(uri: PathMagnet.URIPath): PathMagnet.URIPath = execute(uri).absolutePath
+  final def toAbsolute(uri: PathMagnet.URIPath): PathMagnet.URIPath = on(uri).absolutePath
 
   final def isAbsolute(uri: PathMagnet.URIPath): Boolean = {
     toAbsolute(uri) == uri
@@ -185,7 +185,7 @@ abstract class URIResolver extends Serializable {
     * ensure sequential access, doesn't work on non-existing path
     */
   def lock[T](uri: PathMagnet.URIPath)(fn: URIExecution => T): T = {
-    val exe = execute(uri)
+    val exe = on(uri)
 
     val lock = new Lock(exe, lockExpire)
 

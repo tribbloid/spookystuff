@@ -40,7 +40,7 @@ class WaypointIT extends APMQuadFixture {
       .create(df)
       .fetch(
         Waypoint('_1) +> Waypoint('_2) +> Mark(),
-        genPartitioner = GenPartitioners.Narrow // current genPartitioner is ill-suited
+        locality = Localitys.Narrow // current locality is ill-suited
       )
       .toObjectRDD(S.formattedCode)
       .collect()
@@ -54,7 +54,7 @@ class WaypointIT extends APMQuadFixture {
       .create(df)
       .fetch(
         Waypoint('_1) +> Waypoint('_2) +> Mark(),
-        genPartitioner = GenPartitioners.Narrow
+        locality = Localitys.Narrow
       )
       .collect()
 

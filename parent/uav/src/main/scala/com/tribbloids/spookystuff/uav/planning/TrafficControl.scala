@@ -1,5 +1,5 @@
 package com.tribbloids.spookystuff.uav.planning
 
-import com.tribbloids.spookystuff.dsl.GenPartitioner
+import com.tribbloids.spookystuff.dsl.Locality
 
-trait TrafficControl extends GenPartitioner {}
+trait TrafficControl extends Locality {}

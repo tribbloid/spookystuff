@@ -1,9 +1,9 @@
 package com.tribbloids.spookystuff.uav.planning.VRPOptimizers
 
 import com.tribbloids.spookystuff.actions.TraceView
-import com.tribbloids.spookystuff.dsl.GenPartitionerLike.RepartitionKeyImpl
+import com.tribbloids.spookystuff.dsl.LocalityLike.RepartitionKeyImpl
 import com.tribbloids.spookystuff.row.{BeaconRDD, SpookySchema}
-import com.tribbloids.spookystuff.uav.dsl.GenPartitioners
+import com.tribbloids.spookystuff.uav.dsl.Localitys
 import com.tribbloids.spookystuff.uav.planning._
 import com.tribbloids.spookystuff.uav.telemetry.{LinkStatus, LinkUtils}
 import org.apache.spark.rdd.RDD
@@ -11,7 +11,7 @@ import org.apache.spark.rdd.RDD
 object JSprit extends VRPOptimizer {}
 
 case class JSprit(
-    problem: GenPartitioners.VRP,
+    problem: Localitys.VRP,
     schema: SpookySchema
 ) extends RepartitionKeyImpl[TraceView] {
 

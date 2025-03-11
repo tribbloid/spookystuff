@@ -9,7 +9,7 @@ import scala.util.Random
 /**
   * Created by peng on 20/12/16.
   */
-class GenPartitionerSuite extends SpookyBaseSpec {
+class LocalitySuite extends SpookyBaseSpec {
 
   import com.tribbloids.spookystuff.utils.RDDImplicits.*
 

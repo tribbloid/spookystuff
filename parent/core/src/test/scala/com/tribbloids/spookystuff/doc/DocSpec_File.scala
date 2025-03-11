@@ -1,17 +1,13 @@
 package com.tribbloids.spookystuff.doc
 
 import com.tribbloids.spookystuff.actions.Wget
-import com.tribbloids.spookystuff.testutils.{FileDocsFixture, UnpackResources}
+import com.tribbloids.spookystuff.testutils.FileDocsFixture
 
 class DocSpec_File extends DocSpec {
 
   override val resources: FileDocsFixture.type = FileDocsFixture
   import resources.*
 
-  implicit class normaliseTmpPathOps(v: String) {
-
-    def normalised: String = v.replace(UnpackResources.ROOT_DIR, "")
-  }
 
   describe("wget, save, load") {
 
@@ -24,13 +20,13 @@ class DocSpec_File extends DocSpec {
 
       assert(page.mimeType == "inode/directory")
       assert(page.charsetOpt.map(_.name().toLowerCase).get == "utf-8")
-      assert(page.findAll("title").texts.isEmpty)
+      assert(page.find("title").texts.isEmpty)
 
       page
-        .findAll("uri")
+        .find("uri")
         .map(_.text.get)
         .mkString("\n")
-        .normalised
+        .stripTmpRoot
         .shouldBe(
           """
             |file:///testutils/files
@@ -80,13 +76,13 @@ class DocSpec_File extends DocSpec {
 
       assert(page.mimeType == "inode/directory")
       assert(page.charsetOpt.map(_.name().toLowerCase).get == "utf-8")
-      assert(page.findAll("title").texts.isEmpty)
+      assert(page.find("title").texts.isEmpty)
 
       page
-        .findAll("uri")
+        .find("uri")
         .map(_.text.get)
         .mkString("\n")
-        .normalised
+        .stripTmpRoot
         .shouldBe(
           """
             |file:///testutils/dir

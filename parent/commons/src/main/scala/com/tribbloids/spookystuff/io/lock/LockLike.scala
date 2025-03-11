@@ -33,9 +33,9 @@ trait LockLike extends NOTSerializable {
 
   case object Moved {
 
-    lazy val dir: resolver._Execution = resolver.execute(PathStrs.lockPath)
+    lazy val dir: resolver._Execution = resolver.on(PathStrs.lockPath)
 
-    lazy val locked: resolver._Execution = resolver.execute(PathStrs.locked)
+    lazy val locked: resolver._Execution = resolver.on(PathStrs.locked)
 
     //    lazy val old: resolver.Execution = resolver.Execution(PathStrs.old)
   }

@@ -37,7 +37,7 @@ class FetchPlanSpec extends SpookyBaseSpec {
 
     rdd1.rdd.count()
 
-    assert(rdd1.ctx.spookyMetrics.pagesFetched.value === 1)
+    assert(rdd1.ctx.metrics.pagesFetched.value === 1)
   }
 
   it("fetch() + select() + count() will fetch once") {
@@ -48,7 +48,7 @@ class FetchPlanSpec extends SpookyBaseSpec {
 
     rdd1.rdd.count()
 
-    assert(rdd1.ctx.spookyMetrics.pagesFetched.value === 1)
+    assert(rdd1.ctx.metrics.pagesFetched.value === 1)
   }
 
   it("FetchPlan should create a new beaconRDD if its upstream doesn't have one") {
@@ -62,7 +62,7 @@ class FetchPlanSpec extends SpookyBaseSpec {
     val rdd1 = src
       .fetch(
         _ => Wget(HTML_URL),
-        genPartitioner = Locality.DocCacheAware { _ =>
+        locality = Locality.DocCacheAware { _ =>
           partitioner
         }
       )
@@ -78,7 +78,7 @@ class FetchPlanSpec extends SpookyBaseSpec {
       .select(_ => "abc")
       .fetch(
         _ => Wget(HTML_URL),
-        genPartitioner = Locality.DocCacheAware { _ =>
+        locality = Locality.DocCacheAware { _ =>
           partitioner
         }
       )
@@ -89,7 +89,7 @@ class FetchPlanSpec extends SpookyBaseSpec {
     val rdd2 = rdd1
       .fetch(
         _ => Wget(HTML_URL),
-        genPartitioner = Locality.DocCacheAware { _ =>
+        locality = Locality.DocCacheAware { _ =>
           partitioner2
         }
       )

@@ -24,8 +24,8 @@ object PathPlanning {
     def openReducer_global: Open.Reducer = openReducer
 
     def selectNextOpen(
-        open: ConcurrentMap[LocalityGroup, Seq[Open.Exploring]]
-    ): (LocalityGroup, Seq[Open.Exploring])
+        open: ConcurrentMap[LocalityGroup, Open.Batch]
+    ): (LocalityGroup, Open.Batch)
 
     def visitedReducer: Visited.Reducer // precede eliminator
 
@@ -41,7 +41,7 @@ object PathPlanning {
       final def pruneSelected(
           open: Open.Batch,
           inCacheVisited: Visited.Batch
-      ): Seq[Open.Exploring] = {
+      ): Open.Batch = {
         if (open.isEmpty || inCacheVisited.isEmpty) open
         else pruneSelectedNonEmpty(open, inCacheVisited)
       }
@@ -49,15 +49,15 @@ object PathPlanning {
       protected def pruneSelectedNonEmpty(
           open: Open.Batch,
           inCacheVisited: Visited.Batch
-      ): Seq[Open.Exploring]
+      ): Open.Batch
 
       final override def selectNextOpen(
-          open: ConcurrentMap[LocalityGroup, Seq[Open.Exploring]]
-      ): (LocalityGroup, Seq[Open.Exploring]) = {
+          open: ConcurrentMap[LocalityGroup, Open.Batch]
+      ): (LocalityGroup, Open.Batch) = {
         // may return pair with empty DataRows
 
         // TODO: Should I use pre-sorted collection like SortedMap? Or is it over-engineering?
-        val bestOpen: (LocalityGroup, Seq[Open.Exploring]) = open.min(ordering)
+        val bestOpen: (LocalityGroup, Open.Batch) = open.min(ordering)
         val bestOpenGroup = bestOpen._1
 
         open -= bestOpenGroup

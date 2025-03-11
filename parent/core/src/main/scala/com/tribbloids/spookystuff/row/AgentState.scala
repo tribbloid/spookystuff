@@ -20,7 +20,10 @@ object AgentState {
 
     def rollout: Trace.Rollout = localityGroup.rollout
 
-    lazy val trajectory: Seq[Observation] = rollout.withCtx(ec.ctx).trajectory
+    lazy val trajectory: Seq[Observation] = {
+
+      rollout.withCtx.apply(ec.ctx).trajectory
+    }
   }
 
 //  case class Mock(

@@ -1,13 +1,13 @@
 package com.tribbloids.spookystuff.execution
 
 import ai.acyclic.prover.commons.util.Magnet.OptionMagnet
-import com.tribbloids.spookystuff.row.{FetchedRow, SquashedRDD}
+import com.tribbloids.spookystuff.row.{AgentRow, SquashedRDD}
 
 import scala.reflect.ClassTag
 
 object SortPlan {
 
-  type Fn[D, E] = FetchedRow[D] => E
+  type Fn[D, E] = AgentRow[D] => E
 }
 
 case class SortPlan[D, E: Ordering: ClassTag](
@@ -23,13 +23,14 @@ case class SortPlan[D, E: Ordering: ClassTag](
 
   override protected def prepare: SquashedRDD[D] = {
 
+    tempRefs.persist(child.squashedRDD)
+
     val unsquashed = child.squashedRDD
       .flatMap { v =>
         val rows = v.withCtx(child.ctx).unSquash
         rows
       }
 
-    tempRefs.persist(unsquashed)
     // this can save some recomputation at the expense of memory
     // see https://issues.apache.org/jira/browse/SPARK-1021
 
@@ -47,4 +48,7 @@ case class SortPlan[D, E: Ordering: ClassTag](
 
     result
   }
+
+  // TODO: since SortPlan work on squashedRDD, not computed RDD
+  //  a rewrite could be invoked to push it down beneath FlatMapPlan to avoid duplicated fetching
 }

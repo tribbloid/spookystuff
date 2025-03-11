@@ -21,11 +21,11 @@ object DocUtils {
           progress.defaultHeartbeat
         )
       }
-      spooky.spookyMetrics.DFSReadSuccess += 1
+      spooky.metrics.DFSReadSuccess += 1
       result
     } catch {
       case e: Exception =>
-        spooky.spookyMetrics.DFSReadFailure += 1
+        spooky.metrics.DFSReadFailure += 1
         val ex = new DFSReadException(errorMsg, e)
 
         if (spooky.conf.failOnDFSRead) throw ex
@@ -46,11 +46,11 @@ object DocUtils {
           progress.defaultHeartbeat
         )
       }
-      spooky.spookyMetrics.DFSWriteSuccess += 1
+      spooky.metrics.DFSWriteSuccess += 1
       result
     } catch {
       case e: Exception =>
-        spooky.spookyMetrics.DFSWriteFailure += 1
+        spooky.metrics.DFSWriteFailure += 1
         val ex = new DFSWriteException(errorMsg, e)
         LoggerFactory.getLogger(this.getClass).error(logMsg, ex)
         throw ex

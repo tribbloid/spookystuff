@@ -7,27 +7,23 @@ import com.tribbloids.spookystuff.doc.Observation
 import com.tribbloids.spookystuff.execution.ExecutionContext
 import com.tribbloids.spookystuff.execution.ExplorePlan.State
 
-import scala.language.implicitConversions
-
 object SquashedRow {
 
   def ofData[D](data: D*): SquashedRow[D] = {
 
     SquashedRow(
       LocalityGroup.noOp,
-      data
+      data.zipWithIndex
     )
   }
 }
 
 case class SquashedRow[D](
     localityGroup: LocalityGroup,
-    batch: Seq[D]
+    batch: Seq[(D, Int)]
 ) extends SpookyContext.Contextual {
   // can only support 1 agent
   // will trigger a fork if not all agent actions were captured by the LocalityGroup
-
-  import SquashedRow.*
 
   def cache(v: Seq[Observation]): this.type = {
     localityGroup.rollout.cache(v)
@@ -53,35 +49,36 @@ case class SquashedRow[D](
     def startLineage: SquashedRow[Data.Exploring[D]] = {
       SquashedRow.this.copy(
         batch = {
-          batch.map { d =>
-            val result = Data.Exploring(d).startLineage
-            result
+          batch.map { t =>
+            val result = Data.Exploring(t._1).startLineage
+            result -> t._2
           }
         }
       )
     }
   }
 
-  case class _WithCtx(ctx: SpookyContext) extends NOTSerializable {
+  implicit final class _WithCtx(ctx: SpookyContext) extends NOTSerializable {
 
-    lazy val unSquash: Seq[FetchedRow[D]] = {
+    lazy val unSquash: Seq[AgentRow[D]] = {
 
-      batch.map { d =>
-        FetchedRow(localityGroup, d, ExecutionContext(ctx))
+      batch.map { t =>
+        AgentRow(localityGroup, t._1, t._2, ExecutionContext(ctx))
       }
     }
-
   }
 
-  class WithSchema(
+  implicit class _WithSchema(
       schema: SpookySchema
-  ) extends _WithCtx(schema.ctx) {
+  ) {
     // empty at the moment, but SpookySchema may be extended later
+
+    val withCtx = SquashedRow.this.withCtx(schema.ctx)
   }
 
-  @transient lazy val withSchema: :=>[SpookySchema, WithSchema] = :=>.at { v =>
-    new WithSchema(v)
+  @transient lazy val withSchema: :=>[SpookySchema, _WithSchema] = :=>.at { v =>
+    new _WithSchema(v)
   }
+    .cached()
 
-  override def withCtx(v: SpookyContext): _WithCtx = _WithCtx(v)
 }

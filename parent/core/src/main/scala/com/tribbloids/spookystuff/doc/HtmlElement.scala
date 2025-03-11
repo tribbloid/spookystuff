@@ -61,7 +61,7 @@ class HtmlElement private (
     }
   }
 
-  override def findAll(selector: DocQuery): Elements[HtmlElement] =
+  override def find(selector: DocQuery): Elements[HtmlElement] =
     Elements(
       parsed
         .select(selector.toString)

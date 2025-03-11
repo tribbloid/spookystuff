@@ -11,11 +11,11 @@ object FlatMapPlan extends CatalystTypeOps.ImplicitMixin {
 //  type Yield[O] = Data.Scoped[O]
   type Batch[O] = Seq[O]
 
-  type Fn[I, O] = FetchedRow[I] => Batch[O]
+  type Fn[I, O] = AgentRow[I] => Batch[O]
 
   object FlatMap {
 
-    type _Fn[I, O] = FetchedRow[I] => IterableOnce[O]
+    type _Fn[I, O] = AgentRow[I] => IterableOnce[O]
 
     def normalise[I, O](
         fn: _Fn[I, O]
@@ -28,7 +28,7 @@ object FlatMapPlan extends CatalystTypeOps.ImplicitMixin {
 
   object Map {
 
-    type _Fn[I, O] = FetchedRow[I] => O
+    type _Fn[I, O] = AgentRow[I] => O
 
     def normalise[I, O](
         fn: _Fn[I, O]
@@ -58,10 +58,12 @@ case class FlatMapPlan[I, O: ClassTag]( // narrow means narrow transformation in
 
     val rdd = child.squashedRDD
     val result = rdd.map { squashed =>
-      val rows: Seq[FetchedRow[I]] = squashed.withSchema(child.outputSchema).unSquash
+      val rows: Seq[AgentRow[I]] = squashed.withCtx(child.ctx).unSquash
 
       val results = rows.flatMap { row =>
-        fn(row)
+        fn(row).map { result =>
+          result -> row.index
+        }
       }
 
       squashed.copy(
@@ -71,12 +73,12 @@ case class FlatMapPlan[I, O: ClassTag]( // narrow means narrow transformation in
     result
   }
 
-  override def normalise: ExecutionPlan[O] = {
+  override lazy val normalisedPlan: ExecutionPlan[O] = {
     // if uncached, should be executed through others (FetchPlan & ExplorePlan)
 
     if (!this.isCached) {
 
-      val _child = child.normalise
+      val _child = child.normalisedPlan
 
       _child match {
         case plan: CanChain[I] =>

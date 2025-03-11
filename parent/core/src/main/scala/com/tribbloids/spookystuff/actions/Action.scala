@@ -73,7 +73,7 @@ trait Action extends ActionLike with HasTrace {
     }
 
     this.timeElapsed = System.currentTimeMillis() - agent.startTimeMillis
-    agent.spooky.spookyMetrics.pagesFetchedFromRemote += results.count(_.isInstanceOf[Doc])
+    agent.spooky.metrics.pagesFetchedFromRemote += results.count(_.isInstanceOf[Doc])
 
     results
   }

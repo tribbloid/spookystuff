@@ -17,8 +17,8 @@ class ClasspathResolverSpec extends AnyFunSpec {
       val dst = Envs.USER_TEMP_DIR \\ "log4j"
 
       ClasspathResolver
-        .execute("org/apache/log4j/xml")
-        .treeCopyTo(resolver.execute(dst.universal), WriteMode.Overwrite)
+        .on("org/apache/log4j/xml")
+        .treeCopyTo(resolver.on(dst.universal), WriteMode.Overwrite)
 
       val dir = new File(dst)
       assert(dir.list().nonEmpty)
@@ -29,8 +29,8 @@ class ClasspathResolverSpec extends AnyFunSpec {
       val dst = Envs.USER_TEMP_DIR \\ "utils"
 
       ClasspathResolver
-        .execute("com/tribbloids/spookystuff/io/lock")
-        .treeCopyTo(resolver.execute(dst.universal), WriteMode.Overwrite)
+        .on("com/tribbloids/spookystuff/io/lock")
+        .treeCopyTo(resolver.on(dst.universal), WriteMode.Overwrite)
 
       val dir = new File(dst)
       assert(dir.list().nonEmpty)

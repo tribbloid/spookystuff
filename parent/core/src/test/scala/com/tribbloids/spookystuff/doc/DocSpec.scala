@@ -21,7 +21,7 @@ class DocSpec extends SpookyBaseSpec {
 
       assert(page.mimeType == "text/html")
       assert(page.charsetOpt.map(_.name().toLowerCase).get == "utf-8")
-      assert(page.findAll("title").texts.head startsWith "Wikipedia")
+      assert(page.find("title").texts.head startsWith "Wikipedia")
 
       val raw = page.blob.raw
 
@@ -62,7 +62,7 @@ class DocSpec extends SpookyBaseSpec {
 
       assert(page.mimeType == "image/png")
       assert(page.charsetOpt.map(_.name().toLowerCase).get == "utf-8")
-      assert(page.findAll("title").text.get == "")
+      assert(page.find("title").text.get == "")
 
       val raw = page.blob.raw
       page.prepareSave(spooky, overwrite = true).auditing()
@@ -81,7 +81,7 @@ class DocSpec extends SpookyBaseSpec {
 
       assert(page.mimeType == "application/pdf")
       assert(page.charsetOpt.map(_.name().toLowerCase).get == "utf-8")
-      assert(page.findAll("title").text.get == "Microsoft Word - Document1")
+      assert(page.find("title").text.get == "Microsoft Word - Document1")
 
       val raw = page.blob.raw
       page.prepareSave(spooky, overwrite = true).auditing()
@@ -100,9 +100,9 @@ class DocSpec extends SpookyBaseSpec {
 
       assert(page.mimeType == "application/xml")
       assert(page.charsetOpt.map(_.name().toLowerCase).get == "utf-8")
-      assert(page.findAll("title").texts.isEmpty)
+      assert(page.find("title").texts.isEmpty)
 
-      assert(page.findAll("profiles > profile").size == 5)
+      assert(page.find("profiles > profile").size == 5)
 
       val raw = page.blob.raw
       page.prepareSave(spooky, overwrite = true).auditing()
@@ -128,9 +128,9 @@ class DocSpec extends SpookyBaseSpec {
       assert(
         Set("iso-8859-1", "utf-8") contains page.charsetOpt.map(_.name().toLowerCase).get
       ) // the file is just using ASCII chars
-      assert(page.findAll("title").texts.isEmpty)
+      assert(page.find("title").texts.isEmpty)
 
-      assert(page.findAll("Name").size == 14)
+      assert(page.find("Name").size == 14)
 
       val raw = page.blob.raw
       page.prepareSave(spooky, overwrite = true).auditing()

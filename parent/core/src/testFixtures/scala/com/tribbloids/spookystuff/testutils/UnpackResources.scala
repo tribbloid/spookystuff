@@ -30,9 +30,9 @@ case class UnpackResources(
   // run once and for all TODO: or clean up at shutdown hook
   lazy val unpackOnce: Unit = {
     ClasspathResolver
-      .execute(root)
+      .on(root)
       .treeCopyTo(
-        LocalResolver.default.execute(unpackedParent.universal),
+        LocalResolver.default.on(unpackedParent.universal),
         WriteMode.Overwrite
       )
     Thread.sleep(5000) // for eventual consistency

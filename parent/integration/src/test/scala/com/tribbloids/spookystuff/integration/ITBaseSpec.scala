@@ -34,10 +34,10 @@ abstract class ITBaseSpec extends SpookyBaseSpec with FileURIDocsFixture {
     //    htmlUnit
   )
 
-  lazy val genPartitioners: Seq[GenPartitionerLike[LocalityGroup, Any]] = Seq(
-    GenPartitioners.Narrow,
-    GenPartitioners.Wide(),
-    GenPartitioners.DocCacheAware()
+  lazy val localitys: Seq[LocalityLike[LocalityGroup, Any]] = Seq(
+    Localitys.Narrow,
+    Localitys.Wide(),
+    Localitys.DocCacheAware()
   )
 
   import duration._
@@ -45,7 +45,7 @@ abstract class ITBaseSpec extends SpookyBaseSpec with FileURIDocsFixture {
   // testing matrix
   for (case (root, rootI) <- roots.zipWithIndex) {
     for (driver <- webDriverFactories) {
-      for (gp <- genPartitioners) {
+      for (gp <- localitys) {
         it(s"$gp - $driver - $rootI") {
 
           _ctxOverride = SpookyContext(sql)

@@ -5,14 +5,14 @@ import com.tribbloids.spookystuff.row.{Data, LocalityGroup}
 
 object Explore {
 
-  type BatchK[+T] = Seq[Data.Exploring[T]]
+  type BatchK[+T] = Seq[(Data.Exploring[T], Int)]
 
   trait ReducerTypes[T] {
 
     type Exploring = Data.Exploring[T] // in open & visited cache, don't participate in ordering or reduce
-    type Batch = Seq[Exploring]
+    type Batch = BatchK[T]
 
-    type RowOrdering = Ordering[(LocalityGroup, Seq[Exploring])]
+    type RowOrdering = Ordering[(LocalityGroup, Batch)]
 
     type Reducer = Explore.ReducerK[T]
   }

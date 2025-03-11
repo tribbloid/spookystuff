@@ -1,6 +1,7 @@
 package com.tribbloids.spookystuff.execution
 
 import com.tribbloids.spookystuff.actions.Trace
+import com.tribbloids.spookystuff.caching.ExploreLocalCache
 import com.tribbloids.spookystuff.dsl.{Locality, PathPlanning}
 import com.tribbloids.spookystuff.execution.ExecutionPlan.CanChain
 import com.tribbloids.spookystuff.execution.ExplorePlan.Params
@@ -25,55 +26,20 @@ object ExplorePlan {
     */
   type Batch[I, O] = (FetchPlan.Batch[I], FlatMapPlan.Batch[O])
 
-  type Fn[I, O] = FetchedRow[Data.Exploring[I]] => Batch[I, O]
-
-  /**
-    * special case in which the output data uses the recursive data directly
-    *
-    * the only case supported by [[com.tribbloids.spookystuff.rdd.DataView.recursively]]
-    *
-    * to get other cases, you need to define a [[FlatMapPlan]] and let query optimiser to merge it into [[ExplorePlan]]
-    */
-  object Invar {
-
-    type _Batch[I] = Batch[I, Data.Exploring[I]]
-
-    type _Fn[I] = Fn[I, Data.Exploring[I]]
-
-    def normalise[I](
-        fn: FetchPlan.Fn[Data.Exploring[I], I]
-    ): _Fn[I] = { v =>
-      val left: FetchPlan.Batch[I] = fn(v)
-
-      val right = left.map(_._2).map { nextRaw =>
-        val nextExploring = v.data.copy(
-          raw = nextRaw
-        )
-
-        nextExploring
-      }
-
-      val result: _Batch[I] = left -> right
-
-      result
-    }
-  }
+  type Fn[I, O] = AgentRow[Data.Exploring[I]] => Batch[I, O]
 
   type ExeID = UUID
   def nextExeID(): ExeID = UUID.randomUUID()
 
   case class Params(
-      private val _range: Range,
+      private val _depthRange: Range,
       executionID: ExeID = nextExeID()
   ) {
 
-    @transient lazy val range: Range = {
-      require(_range.min >= 0, "explore range cannot be lower than 0")
-      _range
+    @transient lazy val depthRange: Range = {
+      require(_depthRange.min >= 0, "explore range cannot be lower than 0")
+      _depthRange
     }
-
-    @transient lazy val maxRange: Int = range.max
-    @transient lazy val minRange: Int = range.min
   }
 
   // use Array to minimize serialization footage
@@ -89,7 +55,7 @@ case class ExplorePlan[I, O](
     override val child: ExecutionPlan[I],
     fn: ExplorePlan.Fn[I, O],
     sameBy: Trace => Any = identity,
-    genPartitioner: Locality,
+    locality: Locality,
     params: Params,
     pathPlanning: PathPlanning,
     epochInterval: Int,
@@ -116,9 +82,6 @@ case class ExplorePlan[I, O](
     pathPlanning._Impl[I, O](_effectiveParams, this.outputSchema)
 
   @transient lazy val state0RDD: RDD[(LocalityGroup, State[I, O])] = {
-    child.squashedRDD.count()
-
-//    ctx.blockUntilKilled(1000000)
 
     child.squashedRDD
       .map { row0 =>
@@ -156,7 +119,7 @@ case class ExplorePlan[I, O](
             )
 
           openSetAcc add runner.open.size.toLong
-          states_+
+          states_+.iterator
         }
 
         if (checkpointInterval > 0 && epochI % checkpointInterval == 0) {
@@ -200,24 +163,26 @@ case class ExplorePlan[I, O](
     }
 
     val result: RDD[SquashedRow[O]] = finalStateRDD
-//      .mapPartitions { itr => // TODO: deregister
-//        ExploreLocalCache.deregisterAll(params.executionID)
-//        // manual cleanup, one per node is enough, one per executor is not too much slower
-//        itr
-//      }
+      .mapPartitions { itr =>
+        ExploreLocalCache.deregisterAll(params.executionID)
+        // manual cleanup, one per node is enough, one per executor is not too much slower
+        itr
+      }
       .flatMap { v =>
         val visitedOpt = v._2.visited
-        visitedOpt.map { visited =>
+        val inRange: Seq[SquashedRow[O]] = visitedOpt.toSeq.map { visited =>
           val inRangeExploring = visited.filterNot { row =>
-            row.isOutOfRange
+            row._1.isOutOfRange
           }
 
-          val inRange = inRangeExploring.map(v => v.raw)
+          val inRange = inRangeExploring.map(v => v._1.raw -> v._2)
 
-          val result = SquashedRow[O](v._1, inRange)
+          val result = SquashedRow(v._1, inRange)
 
           result
         }
+
+        inRange
       }
 
     result

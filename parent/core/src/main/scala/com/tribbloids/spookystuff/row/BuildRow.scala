@@ -34,7 +34,7 @@ object BuildRow {
 }
 
 /**
-  * just a constructor, need to be cast into [[SquashedRow]] or [[FetchedRow]]
+  * just a constructor, need to be cast into [[SquashedRow]] or [[AgentRow]]
   */
 case class BuildRow[D](
     data: D,
@@ -44,14 +44,15 @@ case class BuildRow[D](
   def squashed: SquashedRow[D] = {
     SquashedRow(
       LocalityGroup(hasTrace.trace),
-      Seq(data)
+      Seq(data -> 0)
     )
   }
 
-  def fetched(ctx: SpookyContext): FetchedRow[D] = {
-    FetchedRow(
+  def fetched(ctx: SpookyContext): AgentRow[D] = {
+    AgentRow(
       LocalityGroup(hasTrace.trace),
       data,
+      0,
       ExecutionContext(ctx)
     )
   }

@@ -51,7 +51,7 @@ case class Takeoff(
   }
 
   /**
-    * inserted by GenPartitioner for path calculation
+    * inserted by Locality for path calculation
     */
   def prevNav = prevNavOpt.getOrElse {
     throw new UnsupportedOperationException("prevNavOpt is unset")

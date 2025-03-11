@@ -13,19 +13,9 @@ trait Data[+D] {
 
 object Data {
 
-//  implicit def unbox[D](v: Data[D]): D = v.raw
-
-//  case class Flatten[D]( TODO: should I use this?
-//      data: D,
-  //      // temporary columns used in inner/outer join, can be committed into D on demand
-  //      // they will be missing if it is a outer fork that failed to produce any result
-//      key: Option[D],
-//      ordinalIndex: Int = 0
-//  ) extends Data[D]
-
   case class Scope(
       observationUIDs: Seq[DocUID],
-      ordinalIndex: Int = 0
+      index: Int = 0
 
       // a list of DocUIDs that can be found in associated Rollout, DocUID has small serialized form
   ) {}
@@ -68,8 +58,8 @@ object Data {
       raw: D,
       lineageID: Option[UUID] = None, // should be non-optional
       isOutOfRange: Boolean = false,
-      depth: Int = 0,
-      path: Vector[Scope] = Vector.empty
+      depth: Int = 0
+//      path: Vector[Scope] = Vector.empty
       // contain every used sourceScope in exploration history
   ) extends Data[D] {
 
@@ -81,6 +71,6 @@ object Data {
 
     def depth_++ : Exploring[D] = this.copy(depth = depth + 1)
 
-    lazy val orderBy: (Int, Vector[Int]) = (depth, path.map(_.ordinalIndex))
+//    lazy val orderBy: (Int, Vector[Int]) = (depth, path.map(_.index))
   }
 }

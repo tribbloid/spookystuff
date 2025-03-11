@@ -39,7 +39,7 @@ class JsonElement private (
 
   override def hashCode(): Int = (this.field, this.uri).hashCode()
 
-  override def findAll(selector: DocQuery): Elements[JsonElement] = {
+  override def find(selector: DocQuery): Elements[JsonElement] = {
 
     val selected = field._2 \\ selector.toString
 
@@ -48,7 +48,7 @@ class JsonElement private (
 
   // TODO: how to implement?
   override def findAllWithSiblings(selector: DocQuery, range: Range): Elements[Siblings[JsonElement]] = {
-    val found = this.findAll(selector).unbox
+    val found = this.find(selector).unbox
     Elements(found.map(unstructured => new Siblings(List(unstructured))))
   }
 

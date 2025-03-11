@@ -1,6 +1,6 @@
 package com.tribbloids.spookystuff.dsl
 
-import com.tribbloids.spookystuff.dsl.LocalityLike.Instance
+import com.tribbloids.spookystuff.dsl.DataLocality.Instance
 import com.tribbloids.spookystuff.execution.ExecutionContext
 import com.tribbloids.spookystuff.row.{BeaconRDD, SpookySchema}
 import com.tribbloids.spookystuff.utils.locality.LocalityRDDView
@@ -8,7 +8,7 @@ import org.apache.spark.rdd.RDD
 
 import scala.reflect.ClassTag
 
-trait LocalityLike[
+trait DataLocality[
     L, // lower bound
     -U >: L // upper bound
 ] {
@@ -16,7 +16,7 @@ trait LocalityLike[
   def getInstance[K >: L <: U: ClassTag](schema: SpookySchema): Instance[K]
 }
 
-object LocalityLike {
+object DataLocality {
 
   import com.tribbloids.spookystuff.utils.RDDImplicits.*
 
@@ -39,7 +39,7 @@ object LocalityLike {
     ): Option[BeaconRDD[K]] = None
 
     // TODO: comparing to old implementation, does this create too much object overhead?
-    def groupByKey[V: ClassTag](
+    final def groupByKey[V: ClassTag](
         rdd: RDD[(K, V)],
         beaconRDDOpt: Option[BeaconRDD[K]] = None
     ): RDD[(K, Iterable[V])] = {
@@ -52,13 +52,6 @@ object LocalityLike {
         reducer: (V, V) => V,
         beaconRDDOpt: Option[BeaconRDD[K]] = None
     ): RDD[(K, V)]
-
-    //      groupByKey(rdd, beaconRDDOpt)
-    //        .map(
-    //          tuple =>
-    //            tuple._1 -> tuple._2.reduce(reducer)
-    //        )
-    //    }
   }
 
   /**
@@ -97,7 +90,7 @@ object LocalityLike {
     ): RDD[(K, K)]
   }
 
-  trait PassThrough extends GenLocality {
+  trait PassThrough extends Locality_Wide {
 
     def getInstance[K: ClassTag](schema: SpookySchema): Instance[K] = {
       Inst[K]()

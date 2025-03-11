@@ -12,9 +12,9 @@ import scala.util.Try
 object UAVViews {
 
   /**
-    * if left Nil will randomly choose any one from the fleet. can be changed by GenPartitioner to enforce globally
+    * if left Nil will randomly choose any one from the fleet. can be changed by Locality to enforce globally
     * optimal execution. if task already has a drone (TaskLocal) and its not in this list, will throw an error!
-    * GenPartitioner can detect this early
+    * Locality can detect this early
     */
   implicit class SessionView(session: Session) {
 

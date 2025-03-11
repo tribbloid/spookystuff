@@ -39,7 +39,7 @@
 //      .fetch (
 //        Move('_1, '_2)
 //          +> Mark(),
-//        genPartitioner = GenPartitioners.Narrow // current genPartitioner is ill-suited
+//        locality = Localitys.Narrow // current locality is ill-suited
 //      )
 //      .toObjectRDD(S.formattedCode)
 //      .collect()
@@ -56,7 +56,7 @@
 //      .fetch (
 //        Move('_1, '_2)
 //          +> Mark(),
-//        genPartitioner = GenPartitioners.Narrow
+//        locality = Localitys.Narrow
 //      )
 //      .collect()
 //  }

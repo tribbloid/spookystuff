@@ -7,7 +7,7 @@ import scala.collection.Factory
 import scala.language.implicitConversions
 import scala.reflect.ClassTag
 
-abstract class SpookyViews_Imp0 extends CommonViews {
+abstract class RDDImplicits_Imp0 extends CommonViews {
 
   implicit class IterableView[F[t] <: Iterable[t], A](self: F[A]) {
 

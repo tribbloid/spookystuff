@@ -21,18 +21,17 @@ object PathPlanning_Simple {
         schema: SpookySchema
     ) extends Impl.CanPruneSelected[I, O] {
 
-      import scala.Ordering.Implicits.*
 
       class ReducerProto[T] extends Explore.ReducerK[T] {
         override def reduce(v1: Batch, v2: Batch): Batch = {
 
           val map = {
             (v1 ++ v2).groupBy { v =>
-              v.lineageID.get
+              v._1.lineageID.get
             }
           }
 
-          val candidates = map.values.toSeq
+          val candidates: Seq[Batch] = map.values.toSeq
 
           if (candidates.isEmpty) Vector.empty
           else if (candidates.size == 1) candidates.head
@@ -40,7 +39,7 @@ object PathPlanning_Simple {
 
             val result = candidates
               .minBy { vs =>
-                val sortEv = vs.map(_.orderBy).min
+                val sortEv = vs.map(_._1.depth).min -> vs.map(_._2).min
                 // TODO: this may need validation, not sure if consistent with old impl
                 sortEv
               }
@@ -59,21 +58,21 @@ object PathPlanning_Simple {
         new ReducerProto[O]
       }
 
-      override val ordering: Open.RowOrdering = Ordering.by { (tuple: (LocalityGroup, Seq[Open.Exploring])) =>
+      override val ordering: Open.RowOrdering = Ordering.by { (tuple: (LocalityGroup, Open.Batch)) =>
         val inProgress: mutable.Set[LocalityGroup] = ExploreLocalCache
           .getOnGoingRunners(params.executionID)
           .flatMap { (v: ExploreRunner[I, O]) =>
             v.fetchingInProgressOpt
           }
 
-        val result: (Int, (Int, Vector[Int])) = if (inProgress contains tuple._1) {
-          (Int.MaxValue, (Int.MaxValue, Vector.empty))
+        val result: (Int, (Int, Int)) = if (inProgress contains tuple._1) {
+          (Int.MaxValue, (Int.MaxValue, 0))
           // if in progress by any local executor, do not select, wait for another executor to finish it first
         } else {
           val dataRows = tuple._2
           val firstDataRow = dataRows.head
 
-          (0, firstDataRow.orderBy)
+          (0, firstDataRow._1.depth -> firstDataRow._2)
         }
 
         result
@@ -82,11 +81,11 @@ object PathPlanning_Simple {
       override protected def pruneSelectedNonEmpty(
           open: Open.Batch,
           visited: Visited.Batch
-      ): Seq[Open.Exploring] = {
+      ): Open.Batch = {
 
-        val visitedDepth = visited.head.depth
+        val visitedDepth = visited.head._1.depth
         open.filter { row =>
-          row.depth < visitedDepth
+          row._1.depth < visitedDepth
         }
       }
     }

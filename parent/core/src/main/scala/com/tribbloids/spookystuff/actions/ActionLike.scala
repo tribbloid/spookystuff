@@ -32,7 +32,7 @@ abstract class ActionLike extends Product with Serializable with Verbose {
 
   /**
     * invoked on executors, immediately after definition *IMPORTANT!* may be called several times, before or after
-    * GenPartitioner.
+    * Locality.
     */
   def localRewriteRules[D](schema: SpookySchema): Seq[RewriteRule[Trace]] = Nil
 
@@ -63,7 +63,7 @@ abstract class ActionLike extends Product with Serializable with Verbose {
       fetchOnce(spooky)
     }
     val numPages = results.count(_.isInstanceOf[Doc])
-    spooky.spookyMetrics.pagesFetched += numPages
+    spooky.metrics.pagesFetched += numPages
 
     results
   }
@@ -86,17 +86,17 @@ abstract class ActionLike extends Product with Serializable with Verbose {
         }
 
     if (!pagesFromCache.contains(null)) {
-      spooky.spookyMetrics.fetchFromCacheSuccess += 1
+      spooky.metrics.fetchFromCacheSuccess += 1
 
       val results = pagesFromCache.flatten
-      spooky.spookyMetrics.pagesFetchedFromCache += results.count(_.isInstanceOf[Doc])
+      spooky.metrics.pagesFetchedFromCache += results.count(_.isInstanceOf[Doc])
       this.children.foreach { action =>
         LoggerFactory.getLogger(this.getClass).info(s"(cached)+> ${action.toString}")
       }
 
       results
     } else {
-      spooky.spookyMetrics.fetchFromCacheFailure += 1
+      spooky.metrics.fetchFromCacheFailure += 1
 
       if (!spooky.conf.remote)
         throw new QueryException(
@@ -106,11 +106,11 @@ abstract class ActionLike extends Product with Serializable with Verbose {
       spooky.withSession { session =>
         try {
           val result = this.apply(session)
-          spooky.spookyMetrics.fetchFromRemoteSuccess += 1
+          spooky.metrics.fetchFromRemoteSuccess += 1
           result
         } catch {
           case e: Exception =>
-            spooky.spookyMetrics.fetchFromRemoteFailure += 1
+            spooky.metrics.fetchFromRemoteFailure += 1
             session.Drivers.releaseAll()
             throw e
         }

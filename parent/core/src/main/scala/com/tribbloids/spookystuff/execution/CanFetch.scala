@@ -20,7 +20,7 @@ object CanFetch {
 
   import FetchPlan.*
 
-  implicit def onTraceSet[T <: HasTraceSet, I](
+  implicit def _onTraceSet[T <: HasTraceSet, I](
       implicit
       _cTag: ClassTag[I]
   ): CanFetch[T, I, I] = {
@@ -38,7 +38,30 @@ object CanFetch {
     }
   }
 
-  implicit def onTracesAndNewData[T <: HasTraceSet, I, O](
+  implicit def _onCollection[S[T] <: IterableOnce[T], T <: HasTraceSet, I](
+      implicit
+      _cTag: ClassTag[I]
+  ): CanFetch[S[T], I, I] = {
+
+    new CanFetch[S[T], I, I] {
+
+      override def normaliseOutput(inputRow: I, on: S[T]): Batch[I] = {
+
+        on.iterator.toSeq
+          .flatMap { v =>
+            v.traceSet
+          }
+          .distinct
+          .map { trace =>
+            (trace, inputRow)
+          }
+      }
+
+      override def cTag: ClassTag[I] = _cTag
+    }
+  }
+
+  implicit def _onCollectionWithData[T <: HasTraceSet, I, O](
       implicit
       _cTag: ClassTag[O]
   ): CanFetch[Seq[(T, O)], I, O] = {
@@ -51,7 +74,7 @@ object CanFetch {
 
           case (traceSet, outputRow) =>
 
-            onTraceSet[T, O].normaliseOutput(outputRow, traceSet)
+            _onTraceSet[T, O].normaliseOutput(outputRow, traceSet)
         }
       }
 

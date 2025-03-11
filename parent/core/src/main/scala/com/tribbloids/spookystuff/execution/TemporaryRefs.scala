@@ -21,7 +21,7 @@ object TemporaryRefs {
   val prefix: String = "temp_"
 
   // TODO: this name should be validated against current DB to ensure that such name doesn't exist
-  def tempTableName(): String = {
+  def nextTempTableName(): String = {
     prefix + Math.abs(Random.nextInt())
   }
 
@@ -29,7 +29,7 @@ object TemporaryRefs {
 
   type InScope = Scoped#InScope
 
-  case class Scoped(
+  case class Scoped( // TODO: remove, useless
       root: TemporaryRefs
   ) {
 
@@ -119,7 +119,7 @@ object TemporaryRefs {
 
 }
 
-case class TemporaryRefs(
+case class TemporaryRefs( // TODO: should be "RefCounting"
     tempTables: ArrayBuffer[(String, Dataset[?])] = ArrayBuffer(),
     tempRDDs: ArrayBuffer[RDD[?]] = ArrayBuffer(),
     tempDSs: ArrayBuffer[Dataset[?]] = ArrayBuffer(), // TODO: merge into tempTables
@@ -136,7 +136,7 @@ case class TemporaryRefs(
 
     existing match {
       case None =>
-        val tempTableName = TemporaryRefs.tempTableName()
+        val tempTableName = TemporaryRefs.nextTempTableName()
         ds.createOrReplaceTempView(tempTableName)
         tempTables += tempTableName -> ds
         tempTableName

@@ -7,6 +7,7 @@ import com.tribbloids.spookystuff.actions.Trace
 import com.tribbloids.spookystuff.caching.ExploreLocalCache
 import com.tribbloids.spookystuff.dsl.PathPlanning
 import com.tribbloids.spookystuff.execution.ExplorePlan.{ExeID, State}
+import com.tribbloids.spookystuff.execution.FetchPlan.Batch
 import com.tribbloids.spookystuff.row.*
 
 import scala.collection.MapView
@@ -30,13 +31,13 @@ case class ExploreRunner[I, O](
   lazy val ctx: SpookyContext = pathPlanningImpl.schema.ctx
 
   // TODO: add fast sorted implementation
-  val open: ConcurrentMap[LocalityGroup, Seq[Open.Exploring]] =
+  val open: ConcurrentMap[LocalityGroup, Open.Batch] =
     ConcurrentMap()
 
   val visited: ConcurrentMap[LocalityGroup, Visited.Batch] = ConcurrentMap()
 
-  lazy val row0Partition: Iterator[SquashedRow[I]] = {
-    partition.flatMap {
+  lazy val row0Partition: BufferedIterator[SquashedRow[I]] = {
+    val unbuffered: Iterator[SquashedRow[I]] = partition.flatMap {
       case (group, state) =>
         val _group = group.sameBy(sameByFn) // old group key override will be ignored
 
@@ -54,6 +55,8 @@ case class ExploreRunner[I, O](
           v.copy(localityGroup = _group)
         }
     }
+    val buffered = unbuffered.buffered // TODO: are there more memory-light buffer with length 1?
+    buffered
   }
 
   def isFullyExplored: Boolean = row0Partition.isEmpty && open.isEmpty
@@ -66,24 +69,63 @@ case class ExploreRunner[I, O](
 
     def isNoOp: Boolean = group.trace.trace.isEmpty
 
+    def filterByMaxDepth[T](batch: Explore.BatchK[T]): Explore.BatchK[T] = {
+      val result = batch.flatMap { v =>
+        val depth = v._1.depth
+
+        val reprOpt: Option[Data.Exploring[T]] = if (depth < depthRange.max) {
+          Some(v._1)
+        } else {
+          None
+        }
+
+        reprOpt.map { next =>
+          next -> v._2
+        }
+      }
+      result
+    }
+
     def intoOpen(
-        value: Seq[Open.Exploring],
+        value: Open.Batch,
         reducer: Open.Reducer = pathPlanningImpl.openReducer
     ): Unit = {
       if (isNoOp) return // NoOp will terminate the ExploreRunner
 
-      val oldVs: Seq[Open.Exploring] = open.getOrElse(group, Vector.empty)
-      val newVs = reducer(value, oldVs)
+      val effective = filterByMaxDepth(value)
+
+      val oldVs: Open.Batch = open.getOrElse(group, Vector.empty)
+      val newVs = reducer(effective, oldVs)
       open += group -> newVs
+
+      open
     }
 
     def intoVisited(
-        value: Vector[Visited.Exploring],
+        value: Visited.Batch,
         reducer: Visited.Reducer = pathPlanningImpl.visitedReducer
     ): Unit = {
-      val oldVs: Seq[Visited.Exploring] = visited.getOrElse(group, Vector.empty)
-      val newVs = reducer(value, oldVs)
+
+      val effective = filterByMaxDepth(value)
+      // TODO: no need to mark, just delete immediately
+      val markedByMinDepth = effective.map { v =>
+        val depth = v._1.depth
+
+        val result = if (depth < depthRange.min) {
+          v._1.copy(isOutOfRange = true) -> v._2
+        } else {
+          v
+        }
+        result
+      }
+
+      val oldVs: Visited.Batch = visited.getOrElse(group, Vector.empty)
+      val newVs = reducer(markedByMinDepth, oldVs)
       visited += group -> newVs
+
+//      val __DEBUG = newVs.map(v => v._1.depth)
+
+      visited
     }
   }
 
@@ -160,61 +202,65 @@ case class ExploreRunner[I, O](
 
       outer.fetchingInProgressOpt = Some(selectedRow.localityGroup)
 
-      val unSquashedRows: Seq[FetchedRow[Open.Exploring]] = selectedRow.withCtx(ctx).unSquash
+      val unSquashedRows: Seq[AgentRow[Open.Exploring]] = selectedRow.withCtx(ctx).unSquash
 
       val _ = unSquashedRows.map { input =>
         val openExploring: Open.Exploring = input.data
 
-        val (_induction, _outs) = fn(input)
+        val (_induction: Batch[I], _outs: FlatMapPlan.Batch[O]) = fn(input)
 
         {
-          // commit out into visited
-          val inRange: Explore.BatchK[O] = _outs.flatMap { out =>
-            val result = openExploring.copy(raw = out)
 
-            val depth = result.depth
-
-            val reprOpt = if (depth < minRange) {
-              Some(result.copy(isOutOfRange = true))
-            } else if (depth < maxRange) {
-              Some(result)
-            } else {
-              None
-            }
-
-            reprOpt
-//            reprOpt.map { e =>
-//              openExploring.copy(raw = e)
-//            }
+          val visited = _outs.map { v =>
+            openExploring.copy(v) -> input.index
           }
 
-          Commit(selectedRow.localityGroup).intoVisited(inRange.toVector)
+          // commit out into visited
+//          val inRange: Visited.Batch = _outs.flatMap { out =>
+//            val result: Data.Exploring[O] = openExploring.copy(raw = out)
+//
+//            val depth = result.depth
+//
+//            val max = maxRange
+//            val min = minRange
+//
+//            val reprOpt: Option[(Data.Exploring[O], Int)] = if (depth < minRange) {
+//              Some(result.copy(isOutOfRange = true) -> input.index)
+//            } else if (depth < maxRange) {
+//              Some(result -> input.index)
+//            } else {
+//              None
+//            }
+//
+//            reprOpt
+//          }
+
+          Commit(selectedRow.localityGroup).intoVisited(visited)
         }
 
         {
           // recursively generate new openSet
-          val fetched: Seq[(Trace, Open.Exploring)] = _induction.flatMap {
-            case (nexTtraceSet, nextData) =>
+          val fetched: Seq[(Trace, (Open.Exploring, Int))] = _induction.zipWithIndex.flatMap {
+            case ((nexTtraceSet, nextData), index) =>
               val nextElem: Open.Exploring = openExploring.depth_++.copy(nextData)
 
-//              val nextElem: Open.Exploring = openExploring.copy(raw = nextElem)
               nexTtraceSet.traceSet.map { trace =>
-                trace -> nextElem
+                trace -> (nextElem -> index)
               }
           }
 
-          val grouped: MapView[LocalityGroup, Seq[Open.Exploring]] = fetched
+          val grouped: MapView[LocalityGroup, Open.Batch] = fetched
             .groupBy(v => LocalityGroup(v._1).sameBy(sameByFn))
             .view
             .mapValues(_.map(_._2))
 
           // this will be used to filter dataRows yield by the next fork, it will not affect current transformation
-          val filtered: List[(LocalityGroup, Seq[Open.Exploring])] = grouped.filter {
+          val filtered: List[(LocalityGroup, Open.Batch)] = grouped.filter {
             case (_, v) =>
               v.nonEmpty
           }.toList
 
-          filtered.foreach { (newOpen: (LocalityGroup, Seq[Open.Exploring])) =>
+          filtered.foreach { (newOpen: (LocalityGroup, Open.Batch)) =>
             val trace_+ = newOpen._1
             Commit(trace_+).intoOpen(newOpen._2.toVector)
           }
@@ -226,7 +272,7 @@ case class ExploreRunner[I, O](
 
     def recursively(
         maxItr: Int
-    ): Iterator[(LocalityGroup, State[I, O])] =
+    ): collection.Set[(LocalityGroup, State[I, O])] =
       try {
 
         ExploreLocalCache.register(outer)
@@ -234,7 +280,7 @@ case class ExploreRunner[I, O](
         // export openSet and visitedSet: they DO NOT need to be cogrouped: Spark shuffle will do it anyway.
         // a big problem here is whether each weakly referenced DataRow in the cache can be exported multiple times.
         // Does this mess with the reducer?
-        def finish(): Iterator[(LocalityGroup, State[I, O])] = {
+        def finish() = {
 
           val allKeys = outer.open.keySet ++ outer.visited.keySet
 
@@ -253,10 +299,10 @@ case class ExploreRunner[I, O](
           outer.commitVisitedIntoLocalCache(pathPlanningImpl.visitedReducer)
           // committed rows can no longer be canceled, only evicted by soft cache
 
-          result.iterator
+          result
         }
 
-        while (row0Partition.hasNext) {
+        while (row0Partition.headOption.nonEmpty) {
           once()
         }
         // row0 has to be fully executed

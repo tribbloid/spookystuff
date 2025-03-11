@@ -1,8 +1,8 @@
 package com.tribbloids.spookystuff.uav.dsl
 
 import com.tribbloids.spookystuff.actions.TraceView
-import com.tribbloids.spookystuff.dsl.GenPartitioner
-import com.tribbloids.spookystuff.dsl.GenPartitionerLike.Instance
+import com.tribbloids.spookystuff.dsl.Locality
+import com.tribbloids.spookystuff.dsl.LocalityLike.Instance
 import com.tribbloids.spookystuff.row.{BeaconRDD, SpookySchema}
 import com.tribbloids.spookystuff.uav.actions.mixin.HasCost
 import com.tribbloids.spookystuff.uav.planning._
@@ -13,11 +13,11 @@ import scala.reflect.ClassTag
 /**
   * Created by peng on 31/12/16.
   */
-object GenPartitioners {
+object Localitys {
 
   case class VRP(
-      base: GenPartitioner = {
-        com.tribbloids.spookystuff.dsl.GenPartitioners.Wide()
+      base: Locality = {
+        com.tribbloids.spookystuff.dsl.Localitys.Wide()
       },
       // if missing, use ALL OF THEM!
       numUAVOverride: Option[Int] = None,
@@ -33,7 +33,7 @@ object GenPartitioners {
         None
         //                    Some(CollisionAvoidances.Clearance())
       }
-  ) extends GenPartitioner {
+  ) extends Locality {
 
     override def getInstance[K >: TraceView <: TraceView: ClassTag](schema: SpookySchema): Instance[K] = {
       Inst(schema).asInstanceOf[Instance[K]]

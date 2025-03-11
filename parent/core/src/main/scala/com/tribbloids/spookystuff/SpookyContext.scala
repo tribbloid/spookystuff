@@ -1,5 +1,6 @@
 package com.tribbloids.spookystuff
 
+import ai.acyclic.prover.commons.function.hom.Hom
 import ai.acyclic.prover.commons.function.hom.Hom.:=>
 import ai.acyclic.prover.commons.spark.SparkContextView
 import ai.acyclic.prover.commons.spark.serialization.{NOTSerializable, SerializerOverride}
@@ -17,6 +18,7 @@ import org.apache.spark.broadcast.Broadcast
 import org.apache.spark.rdd.RDD
 import org.apache.spark.sql.{Dataset, SQLContext, SparkSession}
 
+import java.util.UUID
 import scala.language.implicitConversions
 import scala.reflect.ClassTag
 import scala.util.Try
@@ -51,19 +53,33 @@ object SpookyContext {
     // supertype of data types that should be processed with SpookyContext
 
     type _WithCtx <: NOTSerializable // TODO: with AnyVal
-    def withCtx(v: SpookyContext): _WithCtx
+    protected def _WithCtx(v: SpookyContext): _WithCtx
 
     // cached results will be dropped for being NOTSerializable
-    @transient final lazy val withCtx: SpookyContext :=> _WithCtx = :=>.at[SpookyContext] { v =>
-      withCtx(v)
+    @transient final lazy val withCtxFn: Hom.Fn.CachedLazy[SpookyContext, _WithCtx] =
+      :=>.at[SpookyContext] { v =>
+        assert(
+          withCtxFn.lookup.isEmpty, {
+            s"fuck you: ${v} ${withCtxFn.lookup.keys.mkString}"
+          }
+        )
+
+        _WithCtx(v)
+      }
+        .cached()
+
+    def withCtx(v: SpookyContext) = {
+
+      withCtxFn.apply(v)
     }
-      .cached()
   }
 }
 
 case class SpookyContext(
     @transient sparkSession: SparkSession // can't be used on executors, TODO: change to SparkSession
 ) extends ShippingMarks {
+
+  val uuid: UUID = UUID.randomUUID()
 
   // can be shipped to executors to determine behaviours of actions
   // features can be configured in-place without affecting metrics
@@ -172,7 +188,7 @@ case class SpookyContext(
 
   @transient lazy val pathResolver: HDFSResolver = HDFSResolver(() => hadoopConf)
 
-  def spookyMetrics: SpookyMetrics = getPlugin(Core).metrics
+  def metrics: SpookyMetrics = getPlugin(Core).metrics
 
   final override def clone: SpookyContext = { // TODO: clean
     val result = SpookyContext(sqlContext)

@@ -43,7 +43,7 @@ case class UAVConf(
     // including tcp, udp and serial,
     // some of them may be unreachable but you don't care.
     // connection list is configured by user and shared by all executors
-    // blacklist is node specific and determined by GenPartitioner
+    // blacklist is node specific and determined by Locality
     // routing now becomes part of Connection?
 
     var fleet: Fleet = Fleet.Inventory(Nil),
@@ -56,7 +56,7 @@ case class UAVConf(
     var home: Location = UAVConf.DEFAULT_HOME_LOCATION,
     var costEstimator: CostEstimator = CostEstimator.L2Distance(),
     var uavSpeed: Double = 5.0,
-    // used by Rewriters to clamp Waypoint's altitude before being submitted to Global Planner (GenPartitioner)4
+    // used by Rewriters to clamp Waypoint's altitude before being submitted to Global Planner (Locality)4
     // IMPORTANT: always rewrite locally first, globally last!
     // All UAVNavigation will climb into range before doing anything else.
     var takeoffMinAltitude: Double = 10.0, // TODO: simplify to 10.0 to 121.92?
