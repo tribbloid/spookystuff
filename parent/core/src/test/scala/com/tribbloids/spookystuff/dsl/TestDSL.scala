@@ -4,7 +4,7 @@
 //import com.tribbloids.spookystuff.doc.Observation
 //import com.tribbloids.spookystuff.extractors.Alias
 //import com.tribbloids.spookystuff.rdd.FetchedDataset
-//import com.tribbloids.spookystuff.row.{FetchedRow, Field, Lineage, SquashedRow}
+//import com.tribbloids.spookystuff.row.{AgentRow, Field, Lineage, SquashedRow}
 //import com.tribbloids.spookystuff.testutils.{FileDocsFixture, SpookyBaseSpec}
 //
 //
@@ -18,7 +18,7 @@
 //    Wget(HTML_URL) ~ 'page
 //  ).fetch(spooky)
 //
-//  lazy val row: FetchedRow = SquashedRow
+//  lazy val row: AgentRow = SquashedRow
 //    .ofData(Lineage.blank)
 //    .cache(pages)
 //    .withCtx(spooky)
@@ -80,7 +80,7 @@
 //  it("string interpolation") {
 //    val expr = x"static ${'notexist}".resolve(emptySchema)
 //    assert(expr.lift.apply(row).isEmpty)
-//    assert(expr.orElse[FetchedRow, String] { case _ => " " }.apply(row) == " ")
+//    assert(expr.orElse[AgentRow, String] { case _ => " " }.apply(row) == " ")
 //  }
 //
 //  it("SpookyContext can be cast to a blank RDD with empty schema") {

@@ -2,9 +2,7 @@ package com.tribbloids.spookystuff.web.actions
 
 import com.tribbloids.spookystuff.actions.{Interaction, RewriteRule, Trace}
 import com.tribbloids.spookystuff.doc.{Doc, Unstructured}
-import com.tribbloids.spookystuff.extractors.Col
-import com.tribbloids.spookystuff.extractors.impl.Lit
-import com.tribbloids.spookystuff.row.{FetchedRow, SpookySchema}
+import com.tribbloids.spookystuff.row.{AgentRow, SpookySchema}
 import com.tribbloids.spookystuff.agent.Agent
 import com.tribbloids.spookystuff.utils.SpookyUtils
 import com.tribbloids.spookystuff.web.conf.Web
@@ -25,11 +23,9 @@ abstract class WebInteraction(
     override val cooldown: Duration,
     val blocking: Boolean
 ) extends Interaction
-    with WebTimed {
+    with WebDriverTimeout {
 
   import WebInteraction._
-
-  override def globalRewriteRules(schema: SpookySchema): Seq[RewriteRule[Trace]] = Seq(AutoSnapshotRule)
 
   override def doExe(agent: Agent): Seq[Doc] = {
 
@@ -73,31 +69,18 @@ object WebInteraction {
   *   support cell interpolation
   */
 case class Visit(
-    uri: Col[String],
+    uri: String,
     override val cooldown: Duration = Const.Interaction.delayMin,
     override val blocking: Boolean = Const.Interaction.blocking
 ) extends WebInteraction(cooldown, blocking) {
 
   override def exeNoOutput(agent: Agent): Unit = {
-    agent.driverOf(Web).get(uri.value)
+    agent.driverOf(Web).get(uri)
 
     //    if (hasTitle) {
     //      val wait = new WebDriverWait(session.driver, timeout(session).toSeconds)
     //      wait.until(ExpectedConditions.not(ExpectedConditions.titleIs("")))
     //    }
-  }
-
-  override def doInterpolate(pageRow: FetchedRow, schema: SpookySchema): Option[this.type] = {
-    val first: Option[Any] = this.uri.resolve(schema).lift(pageRow).flatMap(SpookyUtils.asOption[Any])
-
-    val uriStr: Option[String] = first.flatMap {
-      case element: Unstructured => element.href
-      case str: String           => Option(str)
-      case obj: Any              => Option(obj.toString)
-      case _                     => None
-    }
-
-    uriStr.map(str => this.copy(uri = Lit.erased(str)).asInstanceOf[this.type])
   }
 }
 
@@ -201,9 +184,6 @@ case class ClickNext(
     }
     throw new ActionException("all elements has been clicked before")
   }
-
-  override def doInterpolate(pageRow: FetchedRow, schema: SpookySchema): Option[this.type] =
-    Some(this.copy().asInstanceOf[this.type])
 }
 
 /**
@@ -235,7 +215,7 @@ case class Submit(
   */
 case class TextInput(
     selector: Selector,
-    text: Col[String],
+    text: String,
     override val cooldown: Duration = Const.Interaction.delayMin,
     override val blocking: Boolean = Const.Interaction.blocking
 ) extends WebInteraction(cooldown, blocking) {
@@ -243,21 +223,7 @@ case class TextInput(
 
     val element = this.getElement(selector, agent)
 
-    element.sendKeys(text.value)
-  }
-
-  override def doInterpolate(pageRow: FetchedRow, schema: SpookySchema): Option[this.type] = {
-
-    val first = this.text.resolve(schema).lift(pageRow).flatMap(SpookyUtils.asOption[Any])
-
-    val textStr: Option[String] = first.flatMap {
-      case element: Unstructured => element.text
-      case str: String           => Option(str)
-      case obj: Any              => Option(obj.toString)
-      case _                     => None
-    }
-
-    textStr.map(str => this.copy(text = Lit.erased(str)).asInstanceOf[this.type])
+    element.sendKeys(text)
   }
 }
 
@@ -271,7 +237,7 @@ case class TextInput(
   */
 case class DropDownSelect(
     selector: Selector,
-    value: Col[String],
+    value: String,
     override val cooldown: Duration = Const.Interaction.delayMin,
     override val blocking: Boolean = Const.Interaction.blocking
 ) extends WebInteraction(cooldown, blocking) {
@@ -280,20 +246,7 @@ case class DropDownSelect(
     val element = this.getElement(selector, agent)
 
     val select = new Select(element)
-    select.selectByValue(value.value)
-  }
-
-  override def doInterpolate(pageRow: FetchedRow, schema: SpookySchema): Option[this.type] = {
-    val first = this.value.resolve(schema).lift(pageRow).flatMap(SpookyUtils.asOption[Any])
-
-    val valueStr: Option[String] = first.flatMap {
-      case element: Unstructured => element.attr("value")
-      case str: String           => Option(str)
-      case obj: Any              => Option(obj.toString)
-      case _                     => None
-    }
-
-    valueStr.map(str => this.copy(value = Lit.erased(str)).asInstanceOf[this.type])
+    select.selectByValue(value)
   }
 }
 
@@ -323,7 +276,7 @@ case class ToFrame(selector: Selector) extends WebInteraction(null, false) {
   *   selector of the element this script is executed against, if null, against the entire page
   */
 case class ExeScript(
-    script: Col[String],
+    script: String,
     selector: Selector = null,
     override val cooldown: Duration = Const.Interaction.delayMin,
     override val blocking: Boolean = Const.Interaction.blocking
@@ -337,24 +290,10 @@ case class ExeScript(
         Some(element)
       }
 
-    val scriptStr = script.value
     agent.driverOf(Web) match {
-      case d: JavascriptExecutor => d.executeScript(scriptStr, element.toArray: _*)
+      case d: JavascriptExecutor => d.executeScript(script, element.toArray: _*)
       case _                     => throw new UnsupportedOperationException("this web browser driver is not supported")
     }
-  }
-
-  override def doInterpolate(pageRow: FetchedRow, schema: SpookySchema): Option[this.type] = {
-    val first = this.script.resolve(schema).lift(pageRow).flatMap(SpookyUtils.asOption[Any])
-
-    val scriptStr: Option[String] = first.flatMap {
-      case element: Unstructured => element.text
-      case str: String           => Option(str)
-      case obj: Any              => Option(obj.toString)
-      case _                     => None
-    }
-
-    scriptStr.map(str => this.copy(script = Lit.erased(str)).asInstanceOf[this.type])
   }
 }
 

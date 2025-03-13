@@ -1,10 +1,9 @@
 package com.tribbloids.spookystuff.linq
 
 import ai.acyclic.prover.commons.cap.Capability.<>
-import ai.acyclic.prover.commons.compat.TupleX
+import ai.acyclic.prover.commons.compat.{TupleX, TupleXOrdering}
 import ai.acyclic.prover.commons.function.hom.Hom
 import com.tribbloids.spookystuff.linq.Linq.Row
-import com.tribbloids.spookystuff.linq.internal.TupleOrdering
 import shapeless.ops.hlist.Mapper
 
 class RowOrdering {
@@ -51,7 +50,7 @@ object RowOrdering {
 
         def get(
             implicit
-            delegate: TupleOrdering.Native.Impl[MO]
+            delegate: TupleXOrdering.Native.Impl[MO]
         ): Impl[R] = {
 
           new Impl[R] {
@@ -71,7 +70,7 @@ object RowOrdering {
       ](
           implicit
           mapper: Mapper.Aux[By.asTupleMapper.type, R, MO],
-          delegate: TupleOrdering.Native.Impl[MO]
+          delegate: TupleXOrdering.Native.Impl[MO]
       ): Impl[R] = at[R].Factory().get
     }
   }

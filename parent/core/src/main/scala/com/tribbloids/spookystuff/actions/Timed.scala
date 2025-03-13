@@ -22,7 +22,7 @@ trait Timed extends Action {
 
 object Timed {
 
-  trait ThreadSafe extends Timed
-
-  trait ThreadUnsafe extends Timed
+  // TODO: remove, irrelevant as each action will only be used in 1 thread
+//  trait ThreadSafe extends Timed
+//  trait ThreadUnsafe extends Timed
 }

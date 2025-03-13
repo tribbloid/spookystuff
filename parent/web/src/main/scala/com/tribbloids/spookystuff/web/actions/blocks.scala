@@ -1,9 +1,9 @@
 package com.tribbloids.spookystuff.web.actions
 
-import com.tribbloids.spookystuff._
-import com.tribbloids.spookystuff.actions.{Block, Loop, Trace}
+import com.tribbloids.spookystuff.*
+import com.tribbloids.spookystuff.actions.{Block, DocCondition, Loop, Trace}
 import com.tribbloids.spookystuff.doc.{Doc, Observation}
-import com.tribbloids.spookystuff.row.{FetchedRow, SpookySchema}
+import com.tribbloids.spookystuff.row.{AgentRow, SpookySchema}
 import com.tribbloids.spookystuff.agent.Agent
 
 import scala.collection.mutable.ArrayBuffer
@@ -66,13 +66,4 @@ final case class WebDocIf(
     pages.toSeq
   }
 
-  override def doInterpolate(pageRow: FetchedRow, schema: SpookySchema): Option[this.type] = {
-    val _ifTrue = Trace(ifTrue).doInterpolateSeq(pageRow, schema)
-    val _ifFalse = Trace(ifFalse).doInterpolateSeq(pageRow, schema)
-
-    val result = this
-      .copy(ifTrue = _ifTrue.getOrElse(Trace()), ifFalse = _ifFalse.getOrElse(Trace()))
-      .asInstanceOf[this.type]
-    Some(result)
-  }
 }

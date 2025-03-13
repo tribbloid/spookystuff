@@ -18,7 +18,7 @@ object AgentRow {
     * providing the following APIs:
     *
     * (functional)
-    *   - flatMapWithScope(FetchedRow[D] => Seq[ WithScope[D] ])
+    *   - flatMapWithScope(AgentRow[D] => Seq[ WithScope[D] ])
     *   - flatMap/select(D => Seq[O]) (heavy use of >< to compose fields)
     *     - TypedRowFunctions.explode() can be used on a field
     *   - map(D => O)
@@ -35,7 +35,7 @@ object AgentRow {
 
   // TODO: question: should these be part of FetchedDataset?
   //  - do we need a tracer interface (like in dual-number autograd in jax) to enable define-by-run?
-  //  - if so, the paradigm for FetchedRow[T] & FetchedRow[NamedTuple] could be different!
+  //  - if so, the paradigm for AgentRow[T] & AgentRow[NamedTuple] could be different!
   //  - in define-by-run, the tracer is just a thin wrapper of a function argument,
   //  it only records operation performed on it if the function explicitly ask for it, otherwise it degrades to its value (can still trace if it is used tho)
   //  - can we afford this luxury? how many functions can be defined to ask for it? can we weaken the arg types of functions without extra work?

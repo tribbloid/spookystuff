@@ -69,7 +69,7 @@ class ActionSuite extends SpookyBaseSpec {
 
 object ActionSuite {
 
-  case object OverdueExport extends Export with Timed.ThreadSafe {
+  case object OverdueExport extends Export with Timed {
 
     override def doExeNoName(agent: Agent): Seq[Observation] = {
       Thread.sleep(120 * 1000)

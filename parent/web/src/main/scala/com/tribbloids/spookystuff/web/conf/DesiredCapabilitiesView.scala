@@ -93,7 +93,7 @@ case class DesiredCapabilitiesView(
           spooky.conf.remoteResourceTimeout.max.toMillis
         )
 
-        val headersOpt = Option(spooky.conf.httpHeadersFactory).flatMap(v => Option(v.apply()))
+        val headersOpt = Option(spooky.conf.httpHeadersFactory).flatMap(v => Option(v.apply(())))
         headersOpt.foreach { headers =>
           headers.foreach {
             case (k, v) =>

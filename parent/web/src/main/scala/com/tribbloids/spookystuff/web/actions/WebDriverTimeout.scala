@@ -11,12 +11,14 @@ import java.util
 
 import scala.language.implicitConversions
 
-trait WebTimed extends WebAction with Timed.ThreadUnsafe {
+trait WebDriverTimeout extends WebAction with Timed {
 
   implicit def nanos2JDuration(v: Long): Duration = java.time.Duration.ofNanos(v)
 
-  def webDriverWait(agent: Agent): WebDriverWait =
-    new WebDriverWait(agent.driverOf(Web), this.timeout(agent).max.toNanos)
+  def webDriverWait(agent: Agent): WebDriverWait = {
+
+    new WebDriverWait(agent.driverOf(Web), this.getTimeout(agent).max.toNanos)
+  }
 
   def getClickableElement(selector: Selector, agent: Agent): WebElement = {
 

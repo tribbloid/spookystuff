@@ -155,7 +155,7 @@ object Linq {
 
   }
 
-  implicit class Rows[T <: TupleX](
+  implicit class _rowSeqView[T <: TupleX](
       val rows: Seq[Row[T]]
   ) extends Foundation.LeftOpsMixin[T]
       with KVBatch[T] {

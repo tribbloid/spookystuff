@@ -29,7 +29,7 @@ object Explore {
     // output should not tamper other fields of Data.Exploring[D]
 //    type DeltaFn = SquashedRow[Elem] => SquashedRow[Out]
 
-//    type ForkFn = FetchedRow[Out] => Seq[Elem]
+//    type ForkFn = AgentRow[Out] => Seq[Elem]
   }
 
   // TODO: how to simplify?

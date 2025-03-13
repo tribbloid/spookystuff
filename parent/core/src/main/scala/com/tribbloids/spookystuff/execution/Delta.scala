@@ -40,7 +40,7 @@ object Delta {
 //  }
 
 //  case class FlatMap[I, O](
-//      fn: FetchedRow[I] :=> Seq[O]
+//      fn: AgentRow[I] :=> Seq[O]
 //  ) extends Delta[I, O] {
 //
 //    override def repr(schema: SpookySchema): SquashedRow[I] :=> SquashedRow[O] = :=> { squashedRow =>
@@ -70,7 +70,7 @@ object Delta {
 //      NT <: Tuple,
 //      OT <: Tuple
 //  ](
-//      fn: FetchedRow[I] :=> Seq[N]
+//      fn: AgentRow[I] :=> Seq[N]
 //  )(
 //      implicit
 //      ev1: TypedRow.ofData.=>>[I, IT],
@@ -119,7 +119,7 @@ object Delta {
 //  }
 
 //  case class SaveContent[I](
-//      getDocs: FetchedRow[I] => Map[String, Doc],
+//      getDocs: AgentRow[I] => Map[String, Doc],
 //      overwrite: Boolean
 //  ) extends Delta[I, I] {
 //
@@ -129,8 +129,8 @@ object Delta {
 //        val withCtx = v.withCtx(schema.ctx)
 //
 //        withCtx.unSquash
-//          .foreach { fetchedRow =>
-//            val docs = getDocs(fetchedRow)
+//          .foreach { AgentRow =>
+//            val docs = getDocs(AgentRow)
 //
 //            docs.foreach {
 //              case (k, doc) =>

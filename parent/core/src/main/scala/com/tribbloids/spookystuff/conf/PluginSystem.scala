@@ -14,7 +14,7 @@ object PluginSystem {
 
   lazy val emptySparkConf: SparkConf = new SparkConf(false)
 
-  trait HasDriver extends PluginSystem {
+  trait DriverGen extends PluginSystem {
 
     type Driver <: DriverLike
 

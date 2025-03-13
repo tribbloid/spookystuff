@@ -1,6 +1,6 @@
 package com.tribbloids.spookystuff.web.actions
 
-import ai.acyclic.prover.commons.same.EqualBy
+import ai.acyclic.prover.commons.multiverse.Projection
 import com.tribbloids.spookystuff.relay.{IR, Relay, TreeIR}
 import com.tribbloids.spookystuff.selenium.BySizzleSelector
 import org.apache.spark.sql.types.SQLUserDefinedType
@@ -39,12 +39,12 @@ object Selector extends Relay.ToMsg[Selector] {
       val pattern = tuple._2
       withPrefix match {
         case pattern(str) =>
-          return Selector(tuple._1, str)
+          return Selector(tuple._1(str))
         case _ =>
       }
     }
 
-    Selector(bySizzle, v)
+    Selector(bySizzle(v))
   }
 
   override type Msg = String
@@ -55,11 +55,8 @@ object Selector extends Relay.ToMsg[Selector] {
 }
 
 @SQLUserDefinedType(udt = classOf[SelectorUDT])
-case class Selector(factory: String => By, pattern: String) extends EqualBy {
-
-  @transient lazy val by: By = factory(pattern)
+case class Selector(by: By) {
 
   override def toString: String = by.toString
 
-  override lazy val samenessKey: By = by
 }

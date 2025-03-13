@@ -1,11 +1,11 @@
 package com.tribbloids.spookystuff.web.actions
 
 import com.tribbloids.spookystuff.Const
-import com.tribbloids.spookystuff.actions.{Export, Wayback}
+import com.tribbloids.spookystuff.actions.{DocFilter, Export, Wayback}
 import com.tribbloids.spookystuff.doc.Observation.DocUID
-import com.tribbloids.spookystuff.doc._
+import com.tribbloids.spookystuff.doc.*
 import com.tribbloids.spookystuff.dsl.DocFilterImpl
-import com.tribbloids.spookystuff.row.{FetchedRow, SpookySchema}
+import com.tribbloids.spookystuff.row.{AgentRow, SpookySchema}
 import com.tribbloids.spookystuff.agent.Agent
 import com.tribbloids.spookystuff.web.conf.Web
 
@@ -23,20 +23,18 @@ case class Snapshot(
   override def doExeNoName(agent: Agent): Seq[Doc] = {
     // no effect if WebDriver is missing
 
-    val pageOpt = agent.Drivers.getExisting(Web).map { webDriver =>
-      Doc(
-        DocUID((agent.backtrace :+ this).toList, this)(),
-        webDriver.getCurrentUrl,
-        Some("text/html; charset=UTF-8")
-        //      serializableCookies
-      )().setRaw(webDriver.getPageSource.getBytes("UTF8"))
-    }
-    //    if (contentType != null) Seq(page.copy(declaredContentType = Some(contentType)))
-    pageOpt.map(v => Seq(v)).getOrElse(Nil)
-  }
+    val webDriver = agent.driverOf(Web)
 
-  override def doInterpolate(pageRow: FetchedRow, schema: SpookySchema): Option[Snapshot.this.type] = {
-    this.copy().asInstanceOf[this.type].injectWayback(this.wayback, pageRow, schema)
+    val doc = Doc(
+      DocUID((agent.backtrace :+ this).toList, this)(),
+      webDriver.getCurrentUrl,
+      Some("text/html; charset=UTF-8")
+      //      serializableCookies
+    )().setRaw(webDriver.getPageSource.getBytes("UTF8"))
+
+    //    if (contentType != null) Seq(page.copy(declaredContentType = Some(contentType)))
+
+    Seq(doc)
   }
 }
 
