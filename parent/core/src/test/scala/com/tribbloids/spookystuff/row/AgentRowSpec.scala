@@ -20,7 +20,7 @@ class AgentRowSpec extends SpookyBaseSpec {
     assert(page1.uid === doc.uid)
 
     val defaultName = Wget(HTML_URL).toString
-    val page2 = row.docs.ofName(defaultName).only
+    val page2 = row.docs.ofName("Wget").only
     assert(page2.uid === doc.uid)
   }
 

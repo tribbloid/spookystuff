@@ -1,56 +1,68 @@
 package com.tribbloids.spookystuff.caching
 
 import com.tribbloids.spookystuff.SpookyContext
-import com.tribbloids.spookystuff.actions.Wayback.WaybackLike
 import com.tribbloids.spookystuff.actions.*
-import com.tribbloids.spookystuff.actions.Foundation.HasTrace
 import com.tribbloids.spookystuff.doc.Observation
+
+import java.util.Date
 
 /**
   * Created by peng on 07/06/16.
   */
 trait AbstractDocCache {
 
-  def get(k: Trace, spooky: SpookyContext): Option[Seq[Observation]] = {
-    val pagesOpt = getImpl(k, spooky)
+  def get(trace: HasTrace, spooky: SpookyContext): Option[Seq[Observation]] = {
+    val cacheKey = trace.cacheKey
+    val cachedOpt = getImpl(cacheKey, spooky)
 
-    val dryRun = k.dryRun
+    val dryRun: Seq[Trace] = trace.dryRun
 
-    val result = pagesOpt.map { pages =>
+    val result = cachedOpt.map { pages =>
       for (page <- pages) yield {
-        val pageBacktrace: Trace = page.uid.backtrace
-        val similarTrace = dryRun.find(_ == pageBacktrace).get
+        val cachedBacktrace: Trace = page.uid.backtrace
+        val desiredBacktrace: Trace = dryRun.find(v => v.cacheKey.contains(cachedBacktrace)).get
 
-        Trace(pageBacktrace)
-          .injectFrom(
-            Trace(similarTrace)
-          ) // this is to allow actions in backtrace to have different name than those cached
+        val export = desiredBacktrace.last.asInstanceOf[Export] // TODO: too punishable in runtime
+
+//        Trace(cachedBacktrace)
+//          .injectFrom(
+//            Trace(desiredBacktrace)
+//          ) // this is to allow actions in backtrace to have different name than those cached
         page.updated(
-          uid = page.uid.copy()(name = Option(page.uid.output).map(_.name).orNull)
+          uid = page.uid.copy(
+            backtrace = desiredBacktrace,
+            `export` = export
+          )(
+            name = export.name
+          )
         )
       }
     }
     result
   }
-  def getImpl(k: Trace, spooky: SpookyContext): Option[Seq[Observation]]
+  def getImpl(key: CacheKey, spooky: SpookyContext): Option[Seq[Observation]]
 
-  def getOrElsePut(k: Trace, v: Seq[Observation], spooky: SpookyContext): Seq[Observation] = {
+//  def getOrElsePut(k: Trace, v: Seq[Observation], spooky: SpookyContext): Seq[Observation] = {
+//
+//    val gg = get(k, spooky)
+//    gg.getOrElse {
+//      put(k, v, spooky)
+//      v
+//    }
+//  }
 
-    val gg = get(k, spooky)
-    gg.getOrElse {
-      put(k, v, spooky)
-      v
-    }
+  def isCacheable(v: Seq[Observation]): Boolean
+
+  def put(trace: HasTrace, v: Seq[Observation], spooky: SpookyContext): this.type = {
+
+    if (isCacheable(v)) {
+
+      val cacheKey = trace.cacheKey
+      putImpl(cacheKey, v, spooky)
+    } else
+      this
   }
-
-  def cacheable(v: Seq[Observation]): Boolean
-
-  def put(k: HasTrace, v: Seq[Observation], spooky: SpookyContext): this.type = {
-
-    if (cacheable(v)) putImpl(k.trace, v, spooky)
-    else this
-  }
-  def putImpl(k: Trace, v: Seq[Observation], spooky: SpookyContext): this.type
+  def putImpl(key: CacheKey, v: Seq[Observation], spooky: SpookyContext): this.type
 
   def inTimeRange(action: Action, fetched: Observation, spooky: SpookyContext): Boolean = {
     val range = getTimeRange(action, spooky)
@@ -60,14 +72,17 @@ trait AbstractDocCache {
 
   def getTimeRange(action: Action, spooky: SpookyContext): (Long, Long) = {
     val waybackOption = action match {
-      case w: WaybackLike =>
-        w.wayback.map { result =>
+      case w: CanWayback =>
+        w.wayback.map { timeMillis =>
           spooky.conf.IgnoreCachedDocsBefore match {
             case Some(date) =>
-              assert(result > date.getTime, "SpookyConf.pageNotExpiredSince cannot be set to later than wayback date")
+              assert(
+                timeMillis > date.getTime,
+                s"SpookyConf.IgnoreCachedDocsBefore date (${date}) cannot be set to later than wayback date (${new Date(timeMillis)})"
+              )
             case None =>
           }
-          result
+          timeMillis
         }
       case _ =>
         None

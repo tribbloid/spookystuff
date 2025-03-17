@@ -16,8 +16,8 @@ case class ConversionError(
   override def updated(
       uid: DocUID = this.uid,
       cacheLevel: DocCacheLevel.Value = this.cacheLevel
-  ): ConversionError.this.type = {
-    this.copy(delegate = delegate.updated(uid, cacheLevel)).asInstanceOf[this.type]
+  ): ConversionError = {
+    this.copy(delegate = delegate.updated(uid, cacheLevel))
   }
 
   override def cacheLevel: DocCacheLevel.Value = delegate.cacheLevel

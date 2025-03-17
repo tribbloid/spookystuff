@@ -6,7 +6,7 @@ import com.tribbloids.spookystuff.web.actions.{Snapshot, Visit, WaitFor}
 
 class FilePathsSuite extends SpookyBaseSpec {
 
-  import scala.concurrent.duration._
+  import scala.concurrent.duration.*
 
   // TODO: add more non-primary-construtor params
   val doc1 = spooky

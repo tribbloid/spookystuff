@@ -1,13 +1,13 @@
 package com.tribbloids.spookystuff.actions
 
-trait RewriteRule[T] extends Serializable {
+trait NormaliseRule[T] extends Serializable {
 
   def rewrite(v: T): Seq[T]
 }
 
-object RewriteRule {
+object NormaliseRule {
 
-  case class Rules[T](rules: Seq[RewriteRule[T]]) {
+  case class Rules[T](rules: Seq[NormaliseRule[T]]) {
 
     def rewriteAll(values: Seq[T]): Seq[T] = {
       val result = rules.foldLeft(values) { (opt, rewriter) =>

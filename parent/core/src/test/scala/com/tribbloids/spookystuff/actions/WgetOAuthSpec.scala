@@ -13,7 +13,7 @@ class WgetOAuthSpec extends WgetSpec {
   override def wget(uri: String): Action = {
     val action: OAuthV2 = OAuthV2(Wget(uri))
     val session = new Agent(spooky)
-    val effective = action.rewrite(session)
+    val effective = action.temporaryDelegate(session)
     assert(effective.uri !== uri)
     action
   }

@@ -32,7 +32,7 @@ object Web extends DriverGen {
       spooky: SpookyContext,
       effectiveConf: Conf,
       metrics: Metrics = Metrics()
-  ) extends PluginLike {
+  ) extends _PluginLike {
 
     override def driverFactory: DriverFactory[CleanWebDriver] = getConf.webDriverFactory
 
@@ -40,9 +40,10 @@ object Web extends DriverGen {
       * only swap out configuration do not replace anything else
       */
     override def withEffectiveConf(conf: Conf): Plugin = copy(spooky, conf)
+
   }
 
-  override def default(spooky: SpookyContext): Plugin = {
+  override def getDefault(spooky: SpookyContext): Plugin = {
     Plugin(spooky, defaultConf).withEffectiveConf(defaultConf)
   }
 }

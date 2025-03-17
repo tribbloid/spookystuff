@@ -2,7 +2,6 @@ package com.tribbloids.spookystuff.caching
 
 import ai.acyclic.prover.commons.util.PathMagnet
 import com.tribbloids.spookystuff.SpookyContext
-import com.tribbloids.spookystuff.actions.Trace
 import com.tribbloids.spookystuff.doc.{DocUtils, Observation}
 import org.apache.hadoop.fs.Path
 
@@ -13,17 +12,17 @@ import java.util.UUID
   */
 object DFSDocCache extends AbstractDocCache {
 
-  def cacheable(v: Seq[Observation]): Boolean = {
+  def isCacheable(v: Seq[Observation]): Boolean = {
     v.exists(v => v.cacheLevel.isInstanceOf[DocCacheLevel.DFS])
   }
 
-  def getImpl(k: Trace, spooky: SpookyContext): Option[Seq[Observation]] = {
+  def getImpl(key: CacheKey, spooky: SpookyContext): Option[Seq[Observation]] = {
 
     val pathStr =
       PathMagnet.URIPath(spooky.dirConf.cache) :/
-        spooky.conf.cacheFilePaths(k)
+        spooky.conf.cacheFilePaths(key.shortestForm)
 
-    val (earliestTime: Long, latestTime: Long) = getTimeRange(k.last, spooky)
+    val (earliestTime: Long, latestTime: Long) = getTimeRange(key.lastAction, spooky)
 
     val pages = DocUtils.restoreLatest(
       new Path(pathStr),
@@ -34,11 +33,11 @@ object DFSDocCache extends AbstractDocCache {
     Option(pages)
   }
 
-  def putImpl(k: Trace, v: Seq[Observation], spooky: SpookyContext): this.type = {
+  def putImpl(key: CacheKey, v: Seq[Observation], spooky: SpookyContext): this.type = {
 
     val pathStr =
       PathMagnet.URIPath(spooky.dirConf.cache) :/
-        spooky.conf.cacheFilePaths(k) :/
+        spooky.conf.cacheFilePaths(key.shortestForm) :/
         UUID.randomUUID().toString
 
     DocUtils.cache(v, pathStr)(spooky)

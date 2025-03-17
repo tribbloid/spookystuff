@@ -3,12 +3,15 @@ package com.tribbloids.spookystuff.actions
 import ai.acyclic.prover.commons.cap.Capability
 import ai.acyclic.prover.commons.cap.Capability.<>
 import ai.acyclic.prover.commons.spark.serialization.NOTSerializable
-import com.tribbloids.spookystuff.SpookyContext
-import com.tribbloids.spookystuff.actions.Foundation.{HasTrace, HasTraceSet}
+import com.tribbloids.spookystuff.{Const, QueryException, SpookyContext}
+import com.tribbloids.spookystuff.actions.HasTrace.MayChangeState
+import com.tribbloids.spookystuff.actions.Foundation.HasTraceSet
 import com.tribbloids.spookystuff.actions.Trace.Repr
 import com.tribbloids.spookystuff.agent.Agent
-import com.tribbloids.spookystuff.caching.{DFSDocCache, InMemoryDocCache}
-import com.tribbloids.spookystuff.doc.Observation
+import com.tribbloids.spookystuff.caching.{CacheKey, DFSDocCache, InMemoryDocCache}
+import com.tribbloids.spookystuff.commons.CommonUtils
+import com.tribbloids.spookystuff.doc.{Doc, Observation}
+import org.slf4j.LoggerFactory
 
 import scala.collection.mutable.ArrayBuffer
 import scala.language.implicitConversions
@@ -31,7 +34,7 @@ object Trace {
     */
   implicit class _setView(val traceSet: Set[Trace]) extends HasTraceSet {
 
-    def outputNames: Set[String] = traceSet.map(_.outputNames).reduce(_ ++ _)
+    def outputNames: Set[String] = traceSet.map(_.exportNames).reduce(_ ++ _)
 
     //      def avoidEmpty: NonEmpty = {
     //        val result = if (traces.isEmpty) {
@@ -43,7 +46,7 @@ object Trace {
     //      }
   }
 
-  case class Rollout(trace: Trace) extends HasTrace with SpookyContext.Contextual {
+  case class Rollout(trace: Trace) extends SpookyContext.Contextual {
     // unlike trace, it is always executed by the agent from scratch
     // thus, execution result can be cached, as replaying it will most likely have the same result (if the trace is deterministic)
 
@@ -125,14 +128,29 @@ case class Trace(
     self: Repr = Nil
     // TODO: this should be gone, delegating to Same.By.Wrapper
 ) extends Actions
-    with HasTrace { // remember trace is not a block! its the super container that cannot be wrapped
+    with MayChangeState { // remember trace is not a block! its the super container that cannot be wrapped
 
   import Trace.*
 
   override def trace: Trace = this
-  override def children: Trace = trace
 
-  override def toString: String = children.mkString("{ ", " -> ", " }")
+  override def toString: String = trace.mkString("{ ", " -> ", " }")
+
+//  final def trace_anonymous: Trace = {
+//
+//    val transformed = trace.map {
+//
+//      case Named(v, _) => v
+//      case v           => v
+//    }
+//
+//    transformed
+//  }
+
+  final def cacheKey: CacheKey = {
+
+    CacheKey.NormalFormKey(trace)
+  }
 
   override def apply(agent: Agent): Seq[Observation] = {
     // the state of the agent is unknown, cannot cache result so far
@@ -148,15 +166,15 @@ case class Trace(
     } else {
 
       val _children: Seq[Action] =
-        if (lazyExe) children.to(LazyList)
+        if (lazyExe) trace.to(LazyList)
         // this is a good pattern as long as anticipated result doesn't grow too long
-        else children
+        else trace
 
       _children.flatMap { action =>
         val observed: Seq[Observation] = action.apply(agent)
-        agent.backtrace ++= action.skeleton
+        agent.backtraceBuffer ++= action.stateChangeOnly
 
-        if (action.hasOutput) {
+        if (action.hasExport) {
 
           val spooky = agent.spooky
 
@@ -193,15 +211,78 @@ case class Trace(
     results
   }
 
-  override lazy val dryRun: DryRun = {
+  def fetch(spooky: SpookyContext): Seq[Observation] = {
+
+    val results = CommonUtils.retry(Const.remoteResourceLocalRetries) {
+      fetchOnce(spooky)
+    }
+    val numPages = results.count(_.isInstanceOf[Doc])
+    spooky.metrics.pagesFetched += numPages
+
+    results
+  }
+
+  def fetchOnce(spooky: SpookyContext): Seq[Observation] = {
+
+    if (!this.hasExport) return Nil
+
+    val pagesFromCache: Seq[Seq[Observation]] =
+      if (!spooky.conf.cacheRead) Seq(null)
+      else
+        dryRun.map { dry =>
+          val view = Trace(dry)
+          InMemoryDocCache
+            .get(view, spooky)
+            .orElse {
+              DFSDocCache.get(view, spooky)
+            }
+            .orNull
+        }
+
+    if (!pagesFromCache.contains(null)) {
+      spooky.metrics.fetchFromCacheSuccess += 1
+
+      val results = pagesFromCache.flatten
+      spooky.metrics.pagesFetchedFromCache += results.count(_.isInstanceOf[Doc])
+      this.trace.foreach { action =>
+        LoggerFactory.getLogger(this.getClass).info(s"(cached)+> ${action.toString}")
+      }
+
+      results
+    } else {
+      spooky.metrics.fetchFromCacheFailure += 1
+
+      if (!spooky.conf.remote)
+        throw new QueryException(
+          "Resource is not cached and not allowed to be fetched remotely, " +
+            "the later can be enabled by setting SpookyContext.conf.remote=true"
+        )
+      spooky.withSession { session =>
+        try {
+          val result = this.apply(session)
+          spooky.metrics.fetchFromRemoteSuccess += 1
+          result
+        } catch {
+          case e: Exception =>
+            spooky.metrics.fetchFromRemoteFailure += 1
+            session.Drivers.releaseAll()
+            throw e
+        }
+      }
+    }
+  }
+
+  lazy val dryRun: DryRun = {
     val result: ArrayBuffer[Repr] = ArrayBuffer()
 
-    for (i <- children.indices) {
-      val child = children(i)
-      if (child.hasOutput) {
+    for ((child, i) <- trace.zipWithIndex) yield {
+
+      if (child.hasExport) {
         val backtrace: Repr = child match {
           case _: Action.Driverless => child :: Nil
-          case _                    => children.slice(0, i).flatMap(_.skeleton) :+ child
+          case _ =>
+            val preceding = trace.slice(0, i)
+            preceding.flatMap(_.stateChangeOnly) :+ child
         }
         result += backtrace
       }
@@ -211,7 +292,15 @@ case class Trace(
   }
 
   // the minimal equivalent action that can be put into backtrace
-  override def skeleton: Option[Trace.this.type] =
-    Some(new Trace(this.childrenSkeleton).asInstanceOf[this.type])
+  override def stateChangeOnly: Trace = {
 
+    self.flatMap {
+
+      case child: Action with MayChangeState =>
+        val result = child.stateChangeOnly.trace
+
+        result
+      case _ => Nil
+    }
+  }
 }

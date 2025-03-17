@@ -19,7 +19,7 @@ case class NoDoc(
   override def updated(
       uid: DocUID = this.uid,
       cacheLevel: DocCacheLevel.Value = this.cacheLevel
-  ): NoDoc.this.type = this.copy(backtrace = uid.backtrace, cacheLevel = cacheLevel).asInstanceOf[this.type]
+  ): NoDoc = this.copy(backtrace = uid.backtrace, cacheLevel = cacheLevel)
 
   override type RootType = Unit
   override def root: Unit = {}

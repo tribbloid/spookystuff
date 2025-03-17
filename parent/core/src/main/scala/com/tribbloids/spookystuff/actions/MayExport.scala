@@ -1,12 +1,36 @@
 package com.tribbloids.spookystuff.actions
 
-trait MayExport extends Action {
+import com.tribbloids.spookystuff.actions.HasTrace.StateChangeTag
 
-  def as(name: String): Named.Explicitly[this.type] = {
-    assert(name != null)
+object MayExport {
 
-    Named.Explicitly(this, name)
+  trait Named extends MayExport {
+    self: StateChangeTag =>
+
+    private var _nameOvrd: String = _
+
+    protected def originalName: String = this.productPrefix
+
+    def name: String = Option(_nameOvrd).getOrElse(originalName)
+    def name_=(v: String): Unit = _nameOvrd = v
   }
 
-  final def ~(name: String): Named.Explicitly[MayExport.this.type] = as(name)
+  implicit class _mayExportOps[T <: Named](self: T) {
+
+    def as(name: String): T = {
+      val copied = self.deepCopy()
+      copied.name = name
+      copied
+    }
+
+    final def ~(name: String): T = as(name)
+  }
+}
+
+trait MayExport extends Action {
+  self: StateChangeTag =>
+
+//  def outputName: String = this.productPrefix
+//
+//  final override def outputNames: Set[String] = Set(outputName)
 }

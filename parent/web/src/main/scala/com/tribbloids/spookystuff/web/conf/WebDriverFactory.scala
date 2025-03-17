@@ -121,10 +121,10 @@ object WebDriverFactory {
               "OPENSSL_CONF" -> "/dev/null" // https://github.com/bazelbuild/rules_closure/issues/351
             ).asJava
           )
-          .withLogFile(new File(s"${agent.SessionLog.dirPath}/PhantomJSDriver.log"))
+          .withLogFile(new File(s"${agent.Log.dirPath}/PhantomJSDriver.log"))
           //        .withLogFile(new File("/dev/null"))
           .usingGhostDriverCommandLineArguments(
-            Array(s"""service_log_path="${agent.SessionLog.dirPath}/GhostDriver.log"""")
+            Array(s"""service_log_path="${agent.Log.dirPath}/GhostDriver.log"""")
           )
         //        .usingGhostDriverCommandLineArguments(Array.empty)
 

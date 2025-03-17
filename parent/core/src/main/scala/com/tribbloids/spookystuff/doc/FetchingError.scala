@@ -26,8 +26,8 @@ case class FetchingError(
   override def updated(
       uid: DocUID = this.uid,
       cacheLevel: DocCacheLevel.Value = this.cacheLevel
-  ): FetchingError.this.type = {
-    this.copy(delegate = delegate.updated(uid, cacheLevel)).asInstanceOf[this.type]
+  ): FetchingError = {
+    this.copy(delegate = delegate.updated(uid, cacheLevel))
   }
 
   override def cacheLevel: DocCacheLevel.Value = delegate.cacheLevel

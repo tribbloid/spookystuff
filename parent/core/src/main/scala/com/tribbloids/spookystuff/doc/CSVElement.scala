@@ -20,7 +20,7 @@ object CSVElement {
     import scala.jdk.CollectionConverters.*
 
     val parsed: CSVParser = CSVParser.parse(_text, csvFormat)
-    val parsedList: List[CSVRecord] = parsed.asScala.toList
+    val parsedItr: Iterable[CSVRecord] = parsed.asScala
     val headers: List[String] = parsed.getHeaderMap.asScala.keys.toList
 
     override def text: Option[String] = Some(_text)
@@ -32,11 +32,11 @@ object CSVElement {
 
       if (!this.headers.contains(_selector)) Elements.empty
       else {
-        val data = parsedList.map { record =>
+        val data = parsedItr.map { record =>
           val datum = record.get(_selector)
 
           new Cell(uri, datum, _selector)
-        }
+        }.toList
         Elements(
           data
         )
@@ -46,7 +46,7 @@ object CSVElement {
     override def childrenWithSiblings(selector: DocQuery, range: Range): Elements[Siblings[Unstructured]] = {
       if (!this.headers.contains(selector)) Elements.empty
       else {
-        val data = parsedList.map { record =>
+        val data = parsedItr.map { record =>
           val index = headers.indexOf(selector.toString)
           val siblingHeaders = headers.slice(index + range.min, index + range.max)
           val delimiter = csvFormat.getDelimiter.toString
@@ -60,7 +60,7 @@ object CSVElement {
           )
         }
         Elements(
-          data
+          data.toList
         )
       }
     }

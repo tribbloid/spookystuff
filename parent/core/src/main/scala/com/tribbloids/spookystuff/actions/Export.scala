@@ -3,19 +3,18 @@ package com.tribbloids.spookystuff.actions
 import com.tribbloids.spookystuff.agent.Agent
 import com.tribbloids.spookystuff.doc.*
 import com.tribbloids.spookystuff.dsl.DocFilterImpl
+import com.tribbloids.spookystuff.actions.HasTrace.NoStateChange
 
 /**
   * Export a page from the browser or http client the page an be anything including HTML/XML file, image, PDF file or
   * JSON string.
   */
 @SerialVersionUID(564570120183654L)
-abstract class Export extends Named {
+abstract class Export extends MayExport.Named with NoStateChange {
+
+  override def exportNames: Set[String] = Set(name)
 
   def filter: DocFilter = DocFilterImpl.Bypass
-
-  final override def outputNames: Set[String] = Set(name)
-
-  final override def skeleton: Option[Export.this.type] = None // have not impact to driver
 
   final def doExe(agent: Agent): Seq[Observation] = {
     val results = doExeNoName(agent)

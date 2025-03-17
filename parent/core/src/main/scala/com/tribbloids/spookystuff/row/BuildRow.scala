@@ -1,8 +1,7 @@
 package com.tribbloids.spookystuff.row
 
 import com.tribbloids.spookystuff.SpookyContext
-import com.tribbloids.spookystuff.actions.Foundation.HasTrace
-import com.tribbloids.spookystuff.actions.{Mock, NoOp}
+import com.tribbloids.spookystuff.actions.{HasTrace, Mock, NoOp}
 import com.tribbloids.spookystuff.doc.Observation
 import com.tribbloids.spookystuff.execution.ExecutionContext
 

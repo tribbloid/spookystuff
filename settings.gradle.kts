@@ -39,7 +39,7 @@ include(
     ":parent:core",
 
     ":parent:linq", // Scala 3 will need a new impl
-    ":parent:web",
+//    ":parent:web",
 //    ":parent:integration",
 //    ":parent:showcase",
 )

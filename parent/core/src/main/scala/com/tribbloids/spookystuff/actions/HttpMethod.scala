@@ -9,9 +9,8 @@ import java.net.URI
 abstract class HttpMethod(
     uri: String
 ) extends Export
-    with Action.Driverless
-    with Timed
-    with Wayback {
+    with MayTimeout
+    with CanWayback {
 
   @transient lazy val uriOption: Option[URI] = {
     val uriStr = uri.trim()

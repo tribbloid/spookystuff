@@ -43,7 +43,7 @@ class ActionSuite extends SpookyBaseSpec {
 
   it("Timed mixin can terminate execution if it takes too long") {
 
-    val a = OverdueExport
+    val a = AlwaysTimeoutExample
     val session = new Agent(this.spooky)
     assert(
       a.getTimeout(session).hardTerimination == spookyConf.remoteResourceTimeout.max + Timeout.hardTerminateOverhead
@@ -69,7 +69,7 @@ class ActionSuite extends SpookyBaseSpec {
 
 object ActionSuite {
 
-  case object OverdueExport extends Export with Timed {
+  case object AlwaysTimeoutExample extends Export with MayTimeout {
 
     override def doExeNoName(agent: Agent): Seq[Observation] = {
       Thread.sleep(120 * 1000)

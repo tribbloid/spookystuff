@@ -19,7 +19,7 @@ trait Module[T <: Domain] extends Algebra.Aliases[T] {
       idRotator: Rotator[ID],
       node_+ : Types.Reduce[NodeData] = nodeAlgebra.add
   ): this.type =
-    _replicate(m).asInstanceOf[this.type]
+    _replicate(m)
 }
 
 object Module {

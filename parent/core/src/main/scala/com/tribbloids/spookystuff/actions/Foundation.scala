@@ -28,51 +28,31 @@ object Foundation {
 //  }
 
 //  type Induction[+T] = Induction.K[T]
-  object Induction {
-
-//    sealed trait K[+T] {
+//  object Induction {
 //
-////      final def withRow[T2](row: T2): FetchAndUpdateRows[T2] = {
-////        FetchAndUpdateRowsImpl(traces.map(v => (v, row)).toSeq)
-////      }
+////    sealed trait K[+T] {
+////
+//////      final def withRow[T2](row: T2): FetchAndUpdateRows[T2] = {
+//////        FetchAndUpdateRowsImpl(traces.map(v => (v, row)).toSeq)
+//////      }
+////
+//////      final def ->[T2](row: T2): OutboundWithRowUpdate[T2] = withRow(row)
+////    }
+////
+////    case object Terminate extends Induction[Nothing] {
+////      // delete row, won't appear in result or participate in further computation
+////      // by default, NoOp in explore will converted to terminate automatically
+////
+////      override def traces: Set[Trace] = Set.empty
+////    }
 //
-////      final def ->[T2](row: T2): OutboundWithRowUpdate[T2] = withRow(row)
-//    }
+////    trait NonEmptyCap { self: Fetch => }
+////    type NonEmpty = Fetch & NonEmptyCap
+//  }
+
+//  trait HasTrace extends HasTraceSet {
 //
-//    case object Terminate extends Induction[Nothing] {
-//      // delete row, won't appear in result or participate in further computation
-//      // by default, NoOp in explore will converted to terminate automatically
+//    def trace: Trace
 //
-//      override def traces: Set[Trace] = Set.empty
-//    }
-
-//    trait NonEmptyCap { self: Fetch => }
-//    type NonEmpty = Fetch & NonEmptyCap
-  }
-
-  trait HasTrace extends HasTraceSet {
-
-    def trace: Trace
-
-    @transient final override lazy val traceSet: Set[Trace] = Set(trace)
-
-    // many-to-one
-    //  def +>(another: Action): Trace = Trace(asTrace :+ another)
-    def +>(that: HasTrace): Trace = {
-
-//      (this, that) match {
-//        case (NoOp, _) => NoOp
-//        case (_, NoOp) => NoOp // TODO: should this be changed to EndOfStream?
-//        case _         => Trace(asTrace ++ that.asTrace)
-//      }
-
-      Trace(trace ++ that.trace)
-    }
-  }
-
-  object HasTrace {
-
-    implicit def unbox(v: HasTrace): Trace = v.trace
-  }
-
+//  }
 }

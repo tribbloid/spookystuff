@@ -1,11 +1,11 @@
 package com.tribbloids.spookystuff.actions
 
-import com.tribbloids.spookystuff.actions.Foundation.HasTrace
-import com.tribbloids.spookystuff.actions.Trace.DryRun
+import com.tribbloids.spookystuff.{ActionException, SpookyContext}
+import com.tribbloids.spookystuff.actions.HasTrace.{NoStateChange, StateChangeTag}
 import com.tribbloids.spookystuff.agent.Agent
 import com.tribbloids.spookystuff.commons.CommonUtils
 import com.tribbloids.spookystuff.doc.{Doc, Observation}
-import com.tribbloids.spookystuff.{ActionException, SpookyContext}
+import org.apache.commons.lang3.SerializationUtils
 import org.apache.spark.sql.types.SQLUserDefinedType
 import org.slf4j.LoggerFactory
 
@@ -17,22 +17,20 @@ import org.slf4j.LoggerFactory
   * make sure all subclasses are case classes
   */
 @SQLUserDefinedType(udt = classOf[ActionUDT])
-trait Action extends ActionLike with HasTrace {
+trait Action extends HasTrace {
+  self: StateChangeTag =>
 
-  override def children: Trace = Nil
   @transient override lazy val trace: Trace = List(this)
-
-  override def skeleton: Option[Action] = Some(this)
 
   var timeElapsed: Long = -1 // only set once
 
-  override def dryRun: DryRun = {
-    if (hasOutput) {
-      List(List(this))
-    } else {
-      List()
-    }
-  }
+//  override def dryRun: DryRun = {
+//    if (hasExport) {
+//      List(List(this))
+//    } else {
+//      List()
+//    }
+//  }
 
   // execute errorDumps as side effects
   protected def getSessionExceptionMessage(
@@ -42,7 +40,7 @@ trait Action extends ActionLike with HasTrace {
     var message: String = "\n{\n"
 
     message += {
-      agent.backtrace.map { action =>
+      agent.backtraceBuffer.map { action =>
         "| " + action.toString
       } ++
         Seq("+> " + this.detailedStr)
@@ -104,7 +102,7 @@ trait Action extends ActionLike with HasTrace {
 
     var baseStr = s"[${agent.taskContextOpt.map(_.partitionId()).getOrElse(0)}]+> ${this.toString}"
     this match {
-      case timed: Timed =>
+      case timed: MayTimeout =>
         val timeout = timed.getTimeout(agent)
 
         baseStr = baseStr + s" in ${timeout}"
@@ -134,20 +132,31 @@ trait Action extends ActionLike with HasTrace {
 
 //  def andThen(f: Seq[Observation] => Seq[Observation]): Action = AndThen(this, f)
 
-  override def injectFrom(same: ActionLike): Unit = {
-    super.injectFrom(same)
-    this.timeElapsed = same.asInstanceOf[Action].timeElapsed
-  }
+//  override def injectFrom(same: ActionLike): Unit = {
+//    super.injectFrom(same)
+//    this.timeElapsed = same.asInstanceOf[Action].timeElapsed
+//  }
 }
 
 object Action {
 
-  trait Placeholder extends Action {
+//  trait Placeholder extends Action {
+//
+//    override protected[actions] def doExe(agent: Agent): Seq[Observation] = {
+//      throw new UnsupportedOperationException(s"${this.getClass.getSimpleName} is a placeholder")
+//    }
+//  }
 
-    override protected[actions] def doExe(agent: Agent): Seq[Observation] = {
-      throw new UnsupportedOperationException(s"${this.getClass.getSimpleName} is a placeholder")
-    }
+  trait Driverless extends Action with NoStateChange {
+    // have not impact to driver, mutually exclusively with MayChangeState
   }
 
-  trait Driverless extends Action {}
+  implicit class _actionOps[T <: Action](self: T) {
+
+    def deepCopy(): T = {
+
+      val copy = SerializationUtils.clone(self).asInstanceOf[T]
+      copy
+    }
+  }
 }

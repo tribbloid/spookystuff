@@ -20,7 +20,7 @@
 //  override def updated(
 //      uid: DocUID = this.uid,
 //      cacheLevel: DocCacheLevel.Value = this.cacheLevel
-//  ): DryRun.this.type = this.copy(backtrace = uid.backtrace).asInstanceOf[this.type]
+//  ): DryRun.this.type = this.copy(backtrace = uid.backtrace)
 //
 //  override type RootType = Unit
 //  override def root: Unit = {}

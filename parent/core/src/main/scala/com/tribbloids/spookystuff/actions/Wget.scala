@@ -49,8 +49,6 @@ case class Wget(
 
   override def doExeNoName(agent: Agent): Seq[Observation] = {
 
-    Thread.sleep(100)
-
     val resolver = getResolver(agent)
 
     val cacheLevel = DocCacheLevel.getDefault(uriOption)

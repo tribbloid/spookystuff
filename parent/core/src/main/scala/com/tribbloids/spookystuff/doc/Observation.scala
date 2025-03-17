@@ -20,16 +20,13 @@ object Observation {
   @SerialVersionUID(612503421395L)
   case class DocUID(
       backtrace: Trace,
-      output: Export,
+      `export`: Export,
       //                    sessionStartTime: Long,
-      blockIndex: Int = 0,
+      blockIndex: Int = 0, // TODO: remove, useless
       blockSize: Int = 1
   )( // number of pages in a block output,
-      val name: String = Option(output).map(_.name).orNull
-  ) {
-    // TODO: name should just be "UID"
-  }
-
+      val name: String = `export`.name
+  ) {}
 }
 
 // all subclasses should be small, will be shipped around by Spark
@@ -42,7 +39,7 @@ sealed trait Observation extends Serializable {
   def updated(
       uid: DocUID = this.uid,
       cacheLevel: DocCacheLevel.Value = this.cacheLevel
-  ): this.type
+  ): Observation
 
   def cacheLevel: DocCacheLevel.Value
 

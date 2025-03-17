@@ -57,7 +57,7 @@ object Dir extends PluginSystem {
         errorScreenshotLocal = Option(errorScreenshotLocal).getOrElse(
           ConfUtils.getOrDefault("spooky.dirs.error.screenshot.local", _root :/ "errorScreenshotLocal")
         )
-      ).asInstanceOf[this.type]
+      )
       result
     }
   }

@@ -1,9 +1,9 @@
 package com.tribbloids.spookystuff
 
 import ai.acyclic.prover.commons.function.hom.Hom
-import com.tribbloids.spookystuff.actions.Foundation.HasTrace
+import com.tribbloids.spookystuff.actions.HasTrace.NoStateChange
 import com.tribbloids.spookystuff.agent.Agent
-import com.tribbloids.spookystuff.doc.Doc
+import com.tribbloids.spookystuff.doc.{Doc, Observation}
 
 /**
   * Created by peng on 3/26/15.
@@ -14,8 +14,10 @@ package object actions {
 
   type DocCondition = Hom.Impl.Circuit[(Doc, Agent), Boolean] // TODO: merge with Selector[Doc]
 
-  case object NoOp extends HasTrace {
+  case object NoOp extends HasTrace with NoStateChange {
     override def trace: Trace = Trace(Nil)
+
+    override def apply(agent: Agent): Seq[Observation] = Nil
   }
 
 //  case object Discard extends HasTraceSet {

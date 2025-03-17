@@ -4,6 +4,7 @@ import ai.acyclic.prover.commons.multiverse.Projection
 import ai.acyclic.prover.commons.spark.serialization.NOTSerializable
 import ai.acyclic.prover.commons.util.PathMagnet
 import com.tribbloids.spookystuff.*
+import com.tribbloids.spookystuff.actions.Trace
 import com.tribbloids.spookystuff.caching.DocCacheLevel
 import com.tribbloids.spookystuff.commons.data.Magnets.AttrValueMag
 import com.tribbloids.spookystuff.doc.Content.InMemoryBlob
@@ -54,7 +55,7 @@ case class Doc(
   override def updated(
       uid: DocUID = this.uid,
       cacheLevel: DocCacheLevel.Value = this.cacheLevel
-  ): Doc.this.type = this.copy(uid = uid, cacheLevel = cacheLevel)(content).asInstanceOf[this.type]
+  ): Doc = this.copy(uid = uid, cacheLevel = cacheLevel)(content)
 
   def withMetadata(tuples: (String, Any)*): Doc = {
 
@@ -205,8 +206,6 @@ case class Doc(
       val saved = wCtx.save1(path, extension, overwrite)
       Doc.this.content = saved
     }
-
-//    def apply(pathParts: Seq[String]): Content = as(pathParts)
 
     def auditing(): Unit = {
       val uri = PathMagnet.URIPath(spooky.dirConf.auditing) :/
