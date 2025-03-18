@@ -22,18 +22,15 @@ trait AbstractDocCache {
         val cachedBacktrace: Trace = page.uid.backtrace
         val desiredBacktrace: Trace = dryRun.find(v => v.cacheKey.contains(cachedBacktrace)).get
 
-        val export = desiredBacktrace.last.asInstanceOf[Export] // TODO: too punishable in runtime
-
 //        Trace(cachedBacktrace)
 //          .injectFrom(
 //            Trace(desiredBacktrace)
 //          ) // this is to allow actions in backtrace to have different name than those cached
         page.updated(
           uid = page.uid.copy(
-            backtrace = desiredBacktrace,
-            `export` = export
+            backtrace = desiredBacktrace
           )(
-            name = export.name
+            page.uid.nameOvrd
           )
         )
       }
@@ -72,7 +69,7 @@ trait AbstractDocCache {
 
   def getTimeRange(action: Action, spooky: SpookyContext): (Long, Long) = {
     val waybackOption = action match {
-      case w: CanWayback =>
+      case w: Wayback =>
         w.wayback.map { timeMillis =>
           spooky.conf.IgnoreCachedDocsBefore match {
             case Some(date) =>

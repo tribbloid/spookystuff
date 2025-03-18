@@ -8,7 +8,7 @@ import com.tribbloids.spookystuff.testutils.{BaseSpec, SpookyBaseSpec}
 import com.tribbloids.spookystuff.web.agent.CleanWebDriver
 
 // TODO: part of this test suite should be move to core
-abstract class AbstractTestTrace extends SpookyBaseSpec with BaseSpec {
+abstract class AbstractWebActionSpec extends SpookyBaseSpec with BaseSpec {
 
   import scala.concurrent.duration._
 

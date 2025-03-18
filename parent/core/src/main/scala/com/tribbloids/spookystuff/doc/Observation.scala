@@ -20,13 +20,27 @@ object Observation {
   @SerialVersionUID(612503421395L)
   case class DocUID(
       backtrace: Trace,
-      `export`: Export,
       //                    sessionStartTime: Long,
       blockIndex: Int = 0, // TODO: remove, useless
       blockSize: Int = 1
   )( // number of pages in a block output,
-      val name: String = `export`.name
-  ) {}
+      val nameOvrd: Option[String] = None // `export`.name
+  ) {
+
+    def `export`: Export = backtrace.lastOption
+      .collect {
+        case v: Export => v
+      }
+      .getOrElse {
+        val info: String = backtrace.toString()
+        throw new UnsupportedOperationException(
+          s"ill-formed backtrace, last element should always be an Export: \n ${info}"
+        )
+      }
+    // TODO: this should be a compile-time theorem
+
+    def name: String = nameOvrd.getOrElse(`export`.name)
+  }
 }
 
 // all subclasses should be small, will be shipped around by Spark

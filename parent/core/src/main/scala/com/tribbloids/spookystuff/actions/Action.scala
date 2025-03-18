@@ -40,7 +40,7 @@ trait Action extends HasTrace {
     var message: String = "\n{\n"
 
     message += {
-      agent.backtraceBuffer.map { action =>
+      agent.backtrace.map { action =>
         "| " + action.toString
       } ++
         Seq("+> " + this.detailedStr)
@@ -81,7 +81,7 @@ trait Action extends HasTrace {
     val backtrace: Trace =
       if (rawDoc.uid.backtrace.lastOption.exists(_ eq this)) rawDoc.uid.backtrace
       else rawDoc.uid.backtrace :+ this
-    val uid = rawDoc.uid.copy(backtrace = backtrace)(name = null)
+    val uid = rawDoc.uid.copy(backtrace = backtrace)(nameOvrd = None)
     val doc = rawDoc.copy(uid = uid)(rawDoc.content)
     try {
       doc.prepareSave(spooky).errorDump()
@@ -151,7 +151,7 @@ object Action {
     // have not impact to driver, mutually exclusively with MayChangeState
   }
 
-  implicit class _actionOps[T <: Action](self: T) {
+  implicit class _actionOps[T <: Action with Serializable](self: T) {
 
     def deepCopy(): T = {
 

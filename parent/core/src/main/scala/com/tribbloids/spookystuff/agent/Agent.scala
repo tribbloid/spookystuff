@@ -24,7 +24,7 @@ class Agent(
 
   spooky.metrics.sessionInitialized += 1
   val startTimeMillis: Long = new Date().getTime
-  val backtraceBuffer: ArrayBuffer[Action] = ArrayBuffer()
+  val backtrace: ArrayBuffer[Action] = ArrayBuffer()
 
   object Log {
 

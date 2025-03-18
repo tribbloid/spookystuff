@@ -18,6 +18,7 @@ import org.apache.tika.io.TikaInputStream
 import org.apache.tika.metadata.{Metadata, TikaCoreProperties}
 import org.mozilla.universalchardet.UniversalDetector
 
+import java.io.{Reader, StringReader}
 import scala.language.implicitConversions
 
 object Doc {
@@ -151,15 +152,18 @@ case class Doc(
     } else if (mimeType.contains("json")) {
       Some(JsonElement(contentStr, null, uri)) // not serialize, parsing is faster
     } else if (mimeType.contains("csv")) {
-      val csvFormat: CSVFormat = metadata.lookup
-        .get(Doc.CSV_FORMAT)
+      val metadatum = metadata.lookup.get(Doc.CSV_FORMAT)
+
+      val csvFormat: CSVFormat = metadatum
         .map {
           case v: CSVFormat => v
           case v @ _        => CSVFormat.valueOf(v.toString)
         }
         .getOrElse(Doc.defaultCSVFormat)
 
-      Some(CSVElement.Block.apply(contentStr, uri, csvFormat)) // not serialize, parsing is faster
+      val reader = new StringReader(contentStr)
+
+      Some(CSVElement.Block.apply(reader, uri, csvFormat)) // not serialize, parsing is faster
     } else if (mimeType.contains("plain") || mimeType.contains("text")) {
       Some(PlainElement(contentStr, uri)) // not serialize, parsing is faster
     } else {

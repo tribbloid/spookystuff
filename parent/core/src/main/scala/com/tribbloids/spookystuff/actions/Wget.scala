@@ -57,7 +57,7 @@ case class Wget(
         val xmlStr = in.metadata.all.toXMLStr()
 
         Doc(
-          uid = DocUID(List(this), this)(),
+          uid = DocUID(List(this))(),
           uri = in.getURI,
           declaredContentType = Some("inode/directory; charset=UTF-8"),
           cacheLevel = cacheLevel,
@@ -68,7 +68,7 @@ case class Wget(
         val raw = IOUtils.toByteArray(in.stream)
 
         Doc(
-          uid = DocUID(List(this), this)(),
+          uid = DocUID(List(this))(),
           uri = in.getURI,
           cacheLevel = cacheLevel,
           metadata = in.metadata.root

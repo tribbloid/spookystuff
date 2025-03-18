@@ -14,7 +14,7 @@ case class NoDoc(
 ) extends Serializable
     with Observation.Success {
 
-  @transient override lazy val uid: DocUID = DocUID(backtrace, null)()
+  @transient override lazy val uid: DocUID = DocUID(backtrace)()
 
   override def updated(
       uid: DocUID = this.uid,

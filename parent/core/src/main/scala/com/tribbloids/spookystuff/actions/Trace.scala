@@ -18,7 +18,7 @@ import scala.language.implicitConversions
 
 object Trace {
 
-  private type Repr = List[Action]
+  private type Repr = Seq[Action]
 
   implicit def unbox(v: Trace): Repr = v.self
   implicit def box(v: Repr): Trace = Trace(v)
@@ -172,7 +172,7 @@ case class Trace(
 
       _children.flatMap { action =>
         val observed: Seq[Observation] = action.apply(agent)
-        agent.backtraceBuffer ++= action.stateChangeOnly
+        agent.backtrace ++= action.stateChangeOnly
 
         if (action.hasExport) {
 

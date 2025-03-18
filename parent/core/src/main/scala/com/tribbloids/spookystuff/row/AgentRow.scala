@@ -5,6 +5,8 @@ import ai.acyclic.prover.commons.util.PathMagnet
 import com.tribbloids.spookystuff.doc.*
 import com.tribbloids.spookystuff.doc.Observation.{DocUID, Failure, Success}
 import com.tribbloids.spookystuff.execution.{ExecutionContext, FlatMapPlan}
+import com.tribbloids.spookystuff.row.AgentRow.ObservationSeqViewScaffold
+import com.tribbloids.spookystuff.row.AgentRow.ObservationSeqViewScaffold.SingletonMixin
 import com.tribbloids.spookystuff.row.Data.Scope
 
 import scala.collection.mutable
@@ -76,6 +78,53 @@ object AgentRow {
     }
     def select: map.type = map
 
+  }
+
+  trait ObservationSeqViewScaffold[T <: Observation] {
+    def batch: Seq[T]
+    def agentState: AgentState
+  }
+
+  object ObservationSeqViewScaffold {
+
+    implicit def asBatch[T <: Observation](v: ObservationSeqViewScaffold[T]): Seq[T] = v.batch
+
+    trait SingletonMixin[T <: Observation] extends ObservationSeqViewScaffold[T] {
+
+      def value: T
+    }
+
+    implicit def asDoc[T <: Observation](v: ObservationSeqViewScaffold.SingletonMixin[T]): T = v.value
+  }
+
+  implicit class DocSeqView(
+      self: ObservationSeqViewScaffold[Doc]
+  ) extends Elements[Unstructured] {
+
+    override def unbox: Seq[Unstructured] = {
+
+      val seq = self.batch.flatMap { doc =>
+        doc.rootOpt
+      }
+      Elements(seq)
+    }
+
+    val normalised: Seq[Observation] = self.collect { doc =>
+      doc.normalised
+    }
+
+    def save(
+        path: PathMagnet.URIPath,
+        extension: Option[String] = None,
+        overwrite: Boolean = false
+    ): Unit = {
+
+      self.zipWithIndex.foreach {
+
+        case (doc, _) =>
+          doc.prepareSave(self.agentState.ctx, overwrite).save(path, extension)
+      }
+    }
   }
 }
 
@@ -151,102 +200,62 @@ case class AgentRow[D](
     }
   }
 
-//  def docs: ObservationsView = {
-//    new ObservationsView(observations.collect {
-//      case v: Doc => v
-//    })
-//  }
-
-  lazy val observations: DocsView[Observation] = {
+  lazy val observations: ObservationSeqView[Observation] = {
 
     val seq = effectiveScope.observationUIDs.map { uid =>
       agentState.lookup(uid)
     }
 
-    new DocsView(seq)
+    new ObservationSeqView(seq)
   }
 
-  lazy val docs: DocsView[Doc] = observations.docs
-  lazy val succeeded: DocsView[Success] = observations.succeeded
-  lazy val failed: DocsView[Failure] = observations.failed
+  lazy val docs: ObservationSeqView[Doc] = observations.docs
+  lazy val succeeded: ObservationSeqView[Success] = observations.succeeded
+  lazy val failed: ObservationSeqView[Failure] = observations.failed
 
-  object DocsView {
+  class ObservationSeqView[T <: Observation](override val batch: Seq[T]) extends ObservationSeqViewScaffold[T] {
 
-    implicit def asBatch[T <: Observation](v: DocsView[T]): Seq[T] = v.self
+    override def agentState: AgentState = AgentRow.this.agentState
 
-    class Single[T <: Observation](val value: T) extends DocsView(Seq(value)) {}
+    def collect[R <: Observation](fn: PartialFunction[T, R]): ObservationSeqView[R] =
+      new ObservationSeqView[R](batch.collect(fn))
 
-    implicit def asDoc[T <: Observation](v: DocsView.Single[T]): T = v.value
-
-    implicit class DocExtensions(
-        self: DocsView[Doc]
-    ) extends Elements[Unstructured] {
-
-      override def unbox: Seq[Unstructured] = {
-
-        val seq = self.docs.flatMap { doc =>
-          doc.rootOpt
-        }
-        Elements(seq)
-      }
-
-      val normalised: Seq[Observation] = self.collect { doc =>
-        doc.normalised
-      }
-
-      def save(
-          path: PathMagnet.URIPath,
-          extension: Option[String] = None,
-          overwrite: Boolean = false
-      ): Unit = {
-
-        self.zipWithIndex.foreach {
-
-          case (doc, _) =>
-            doc.prepareSave(agentState.ctx, overwrite).save(path, extension)
-        }
-      }
-    }
-
-  }
-
-  class DocsView[T <: Observation](val self: Seq[T]) extends NOTSerializable {
-
-    def collect[R <: Observation](fn: PartialFunction[T, R]): DocsView[R] =
-      new DocsView[R](self.collect(fn))
-
-    @transient lazy val succeeded: DocsView[Success] = collect {
+    @transient lazy val succeeded: ObservationSeqView[Success] = collect {
       case v: Success => v
     }
 
-    @transient lazy val failed: DocsView[Failure] = collect {
+    @transient lazy val failed: ObservationSeqView[Failure] = collect {
       case v: Failure => v
     }
 
-    @transient lazy val docs: DocsView[Doc] = collect {
+    @transient lazy val docs: ObservationSeqView[Doc] = collect {
       case v: Doc => v
     }
 
-    def ofName(name: String): DocsView[T] = collect {
+    def ofName(name: String): ObservationSeqView[T] = collect {
       case v if v.name == name => v
     }
 
-    def apply(name: String): DocsView[T] = ofName(name)
+    def apply(name: String): ObservationSeqView[T] = ofName(name)
 
-    lazy val headOption: Option[DocsView.Single[T]] = self.headOption.map { doc =>
-      new DocsView.Single(doc)
+    type Singleton = SingletonMixin[T]
+
+    @transient lazy val headOption: Option[Singleton] = batch.headOption.map { doc =>
+      new ObservationSeqView[T](Seq(doc)) with SingletonMixin[T] {
+        override def value: T = doc
+      }
     }
 
-    def head: DocsView.Single[T] = headOption
+    def head: SingletonMixin[T] = headOption
       .getOrElse(throw new UnsupportedOperationException("No doc found"))
 
-    lazy val only: DocsView.Single[T] = {
+    @transient lazy val only: SingletonMixin[T] = {
 
-      if (self.size > 1) throw new UnsupportedOperationException("Ambiguous key referring to multiple docs")
+      if (batch.size > 1) throw new UnsupportedOperationException("Ambiguous key referring to multiple docs")
       else head
     }
 
-    def forAuditing: DocsView[Doc] = collect {
+    @transient lazy val forAuditing: ObservationSeqView[Doc] = collect {
       Function.unlift { v =>
         v.docForAuditing
       }

@@ -2,11 +2,13 @@ package com.tribbloids.spookystuff.actions
 
 import com.tribbloids.spookystuff.agent.Agent
 import com.tribbloids.spookystuff.commons.{CommonUtils, Timeout}
-import com.tribbloids.spookystuff.doc.Observation
+import com.tribbloids.spookystuff.doc.{Doc, Observation}
 import com.tribbloids.spookystuff.testutils.SpookyBaseSpec
 import com.tribbloids.spookystuff.{ActionException, Const}
+import com.tribbloids.spookystuff.doc.Observation.DocUID
 
 import scala.concurrent.{duration, TimeoutException}
+import scala.concurrent.duration.Duration
 
 class ActionSuite extends SpookyBaseSpec {
 
@@ -43,7 +45,7 @@ class ActionSuite extends SpookyBaseSpec {
 
   it("Timed mixin can terminate execution if it takes too long") {
 
-    val a = AlwaysTimeoutExample
+    val a = MockAlwaysTimeout
     val session = new Agent(this.spooky)
     assert(
       a.getTimeout(session).hardTerimination == spookyConf.remoteResourceTimeout.max + Timeout.hardTerminateOverhead
@@ -69,7 +71,7 @@ class ActionSuite extends SpookyBaseSpec {
 
 object ActionSuite {
 
-  case object AlwaysTimeoutExample extends Export with MayTimeout {
+  case object MockAlwaysTimeout extends Export with MayTimeout {
 
     override def doExeNoName(agent: Agent): Seq[Observation] = {
       Thread.sleep(120 * 1000)
@@ -77,4 +79,30 @@ object ActionSuite {
     }
   }
 
+  case object DefectiveExport extends Export {
+
+    override def doExeNoName(agent: Agent): Seq[Observation] = {
+      sys.error("error")
+    }
+  }
+
+  case class MockInteraction(info: String) extends Interaction with MayTimeout {
+
+    override def cooldown: Duration = Duration.Zero
+
+    override def exeNoOutput(agent: Agent): Unit = {}
+  }
+
+  case class MockExport() extends Export {
+
+    override def doExeNoName(agent: Agent): Seq[Observation] = {
+      Seq(
+        Doc(
+          DocUID(agent.backtrace.toSeq)(),
+          "http://dummy.com",
+          Some("text/html; charset=UTF-8")
+        )().setRaw("<html></html>".getBytes("UTF8"))
+      )
+    }
+  }
 }

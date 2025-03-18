@@ -3,6 +3,10 @@ package com.tribbloids.spookystuff.doc
 import org.apache.commons.csv.{CSVFormat, CSVParser}
 import org.apache.commons.csv.CSVRecord
 
+import java.io.Reader
+import scala.io.Source
+import scala.util.Try
+
 trait CSVElement
 
 object CSVElement {
@@ -12,31 +16,42 @@ object CSVElement {
     * <row> <header2>datum1</header2> <header2>datum1</header2> ... </row> ... </splitter>
     */
   case class Block(
-      _text: String,
+      reader: Reader,
       override val uri: String,
       csvFormat: CSVFormat
   ) extends Unstructured {
 
     import scala.jdk.CollectionConverters.*
 
-    val parsed: CSVParser = CSVParser.parse(_text, csvFormat)
-    val parsedItr: Iterable[CSVRecord] = parsed.asScala
+    val parsed: CSVParser = CSVParser.parse(reader, csvFormat)
+    val records: List[CSVRecord] = {
+
+      val tt = Try {
+        parsed.asScala.toList
+      }
+      tt.recover { (e: Exception) =>
+        throw new RuntimeException(s"Error reading ${uri}\n(using format ${csvFormat})\n  ${e.getMessage()}", e)
+      }.get
+    }
     val headers: List[String] = parsed.getHeaderMap.asScala.keys.toList
 
-    override def text: Option[String] = Some(_text)
+    @transient override lazy val text: Option[String] = {
 
-    override def breadcrumb: Option[Seq[String]] = ???
+      Some(parsed.toString())
+    }
+
+    override def breadcrumb: Option[Seq[String]] = None
 
     override def children(selector: DocQuery): Elements[Unstructured] = {
       val _selector = selector.toString
 
       if (!this.headers.contains(_selector)) Elements.empty
       else {
-        val data = parsedItr.map { record =>
+        val data = records.map { record =>
           val datum = record.get(_selector)
 
           new Cell(uri, datum, _selector)
-        }.toList
+        }
         Elements(
           data
         )
@@ -46,7 +61,7 @@ object CSVElement {
     override def childrenWithSiblings(selector: DocQuery, range: Range): Elements[Siblings[Unstructured]] = {
       if (!this.headers.contains(selector)) Elements.empty
       else {
-        val data = parsedItr.map { record =>
+        val data = records.map { record =>
           val index = headers.indexOf(selector.toString)
           val siblingHeaders = headers.slice(index + range.min, index + range.max)
           val delimiter = csvFormat.getDelimiter.toString
@@ -60,7 +75,7 @@ object CSVElement {
           )
         }
         Elements(
-          data.toList
+          data
         )
       }
     }
@@ -73,7 +88,7 @@ object CSVElement {
 
     override def boilerPipe: Option[String] = text
 
-    override def find(selector: DocQuery): Elements[Unstructured] = children(selector)
+    override def findAll(selector: DocQuery): Elements[Unstructured] = children(selector)
 
     override def findAllWithSiblings(selector: DocQuery, range: Range): Elements[Siblings[Unstructured]] =
       childrenWithSiblings(selector, range)
@@ -93,7 +108,7 @@ object CSVElement {
       val header: String
   ) extends Unstructured {
 
-    override def find(selector: DocQuery): Elements[Unstructured] = Elements.empty
+    override def findAll(selector: DocQuery): Elements[Unstructured] = Elements.empty
 
     override def text: Option[String] = ownText
 

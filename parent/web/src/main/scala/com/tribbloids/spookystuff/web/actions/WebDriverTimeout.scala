@@ -1,6 +1,7 @@
 package com.tribbloids.spookystuff.web.actions
 
-import com.tribbloids.spookystuff.actions.Timed
+import com.tribbloids.spookystuff.actions.HasTrace.StateChangeTag
+import com.tribbloids.spookystuff.actions.MayTimeout
 import com.tribbloids.spookystuff.agent.Agent
 import com.tribbloids.spookystuff.web.conf.Web
 import org.openqa.selenium.WebElement
@@ -8,10 +9,10 @@ import org.openqa.selenium.support.ui.{ExpectedConditions, WebDriverWait}
 
 import java.time.Duration
 import java.util
-
 import scala.language.implicitConversions
 
-trait WebDriverTimeout extends WebAction with Timed {
+trait WebDriverTimeout extends WebAction with MayTimeout {
+  self: StateChangeTag =>
 
   implicit def nanos2JDuration(v: Long): Duration = java.time.Duration.ofNanos(v)
 

@@ -1,6 +1,6 @@
 package com.tribbloids.spookystuff.web.actions
 
-import com.tribbloids.spookystuff.actions.{Interaction, RewriteRule, Trace}
+import com.tribbloids.spookystuff.actions.{Interaction, NormaliseRule, Trace}
 import com.tribbloids.spookystuff.doc.{Doc, Unstructured}
 import com.tribbloids.spookystuff.row.{AgentRow, SpookySchema}
 import com.tribbloids.spookystuff.agent.Agent

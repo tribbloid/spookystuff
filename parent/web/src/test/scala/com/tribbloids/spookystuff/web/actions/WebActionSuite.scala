@@ -155,13 +155,6 @@ class WebActionSuite extends SpookyBaseSpec {
 
 object WebActionSuite {
 
-  case object DefectiveExport extends Export {
-
-    override def doExeNoName(agent: Agent): Seq[Observation] = {
-      sys.error("error")
-    }
-  }
-
   case object DefectiveWebExport extends Export with WebAction {
 
     override def doExeNoName(agent: Agent): Seq[Observation] = {

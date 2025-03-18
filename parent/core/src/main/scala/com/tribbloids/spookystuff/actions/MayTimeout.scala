@@ -8,11 +8,6 @@ trait MayTimeout {
 
   var _timeout: Timeout = _ // TODO: how to make it immutable?
 
-  def in(timeout: Timeout): this.type = {
-    this._timeout = timeout
-    this
-  }
-
   def getTimeout(agent: Agent): Timeout =
     Option(MayTimeout.this._timeout).getOrElse(agent.spooky.conf.remoteResourceTimeout)
 
@@ -27,4 +22,14 @@ object MayTimeout {
   // TODO: remove, irrelevant, action will only be accessed by 1 thread
 //  trait ThreadSafe extends Timed
 //  trait ThreadUnsafe extends Timed
+
+  implicit class _ops[T <: Action with MayTimeout](self: T) {
+
+    def in(timeout: Timeout): T = {
+      val copy = self.deepCopy()
+
+      copy._timeout = timeout
+      copy
+    }
+  }
 }

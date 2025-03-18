@@ -15,7 +15,7 @@ object MayExport {
     def name_=(v: String): Unit = _nameOvrd = v
   }
 
-  implicit class _mayExportOps[T <: Named](self: T) {
+  implicit class _Ops[T <: Named](self: T) {
 
     def as(name: String): T = {
       val copied = self.deepCopy()

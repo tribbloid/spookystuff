@@ -10,7 +10,7 @@ abstract class HttpMethod(
     uri: String
 ) extends Export
     with MayTimeout
-    with CanWayback {
+    with Wayback {
 
   @transient lazy val uriOption: Option[URI] = {
     val uriStr = uri.trim()

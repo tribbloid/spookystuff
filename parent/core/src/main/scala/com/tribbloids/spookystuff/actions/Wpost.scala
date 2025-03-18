@@ -79,7 +79,7 @@ object Wpost {
             val cacheLevel = DocCacheLevel.getDefault(uriOption)
 
             Doc(
-              uid = DocUID(List(this), this)(),
+              uid = DocUID(List(this))(),
               uri = in.getURI,
               cacheLevel = cacheLevel,
               metadata = md

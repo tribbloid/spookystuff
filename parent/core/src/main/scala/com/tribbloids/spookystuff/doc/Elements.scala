@@ -49,7 +49,7 @@ trait Elements[+T <: Unstructured] extends Unstructured with Delegating[Seq[T]] 
 
   override def formattedCode: Option[String] = formattedCodes.headOption
 
-  override def find(selector: DocQuery): Elements[Unstructured] = Elements(unbox.flatMap(_.find(selector)))
+  override def findAll(selector: DocQuery): Elements[Unstructured] = Elements(unbox.flatMap(_.findAll(selector)))
 
   override def findAllWithSiblings(selector: DocQuery, range: Range): Elements[Siblings[Unstructured]] =
     Elements(unbox.flatMap(_.findAllWithSiblings(selector, range)))

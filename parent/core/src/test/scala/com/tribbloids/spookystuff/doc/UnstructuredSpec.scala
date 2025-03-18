@@ -17,7 +17,7 @@ class UnstructuredSpec extends SpookyBaseSpec {
   describe("is serializable for") {
 
     it("div") {
-      val elements = page.find("div.central-featured-lang")
+      val elements = page.findAll("div.central-featured-lang")
 
       assert(elements.size === 10)
 
@@ -33,7 +33,7 @@ class UnstructuredSpec extends SpookyBaseSpec {
                 .split("\n")
                 .map(_.trim)
             )
-            assert(element.find("a").size === element2.find("a").size)
+            assert(element.findAll("a").size === element2.findAll("a").size)
             assert(element.attr("class") === element2.attr("class"))
             assert(element.code === element2.code)
             assert(element.ownText === element2.ownText)
@@ -46,8 +46,8 @@ class UnstructuredSpec extends SpookyBaseSpec {
 
   it("attrs should handles empty attributes properly") {
 
-    assert(page.find("h1.central-textlogo img").attrs("title").nonEmpty)
-    assert(page.find("h1.central-textlogo img dummy").attrs("title").isEmpty)
-    assert(page.find("h1.central-textlogo img").attrs("dummy").isEmpty)
+    assert(page.findAll("h1.central-textlogo img").attrs("title").nonEmpty)
+    assert(page.findAll("h1.central-textlogo img dummy").attrs("title").isEmpty)
+    assert(page.findAll("h1.central-textlogo img").attrs("dummy").isEmpty)
   }
 }

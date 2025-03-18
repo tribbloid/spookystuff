@@ -6,7 +6,7 @@ object Unstructured {
 
   object Unrecognisable extends Unstructured {
     override def uri: String = ""
-    override def find(selector: DocQuery): Elements[Unstructured] = Elements.empty
+    override def findAll(selector: DocQuery): Elements[Unstructured] = Elements.empty
     override def findAllWithSiblings(selector: DocQuery, range: Range): Elements[Siblings[Unstructured]] =
       Elements.empty
     override def children(selector: DocQuery): Elements[Unstructured] = Elements.empty
@@ -31,12 +31,12 @@ trait Unstructured extends Serializable {
 
   def uri: String
 
-  def find(selector: DocQuery): Elements[Unstructured]
+  def findAll(selector: DocQuery): Elements[Unstructured]
 
-  final def \(selector: DocQuery): Elements[Unstructured] = find(selector)
+  final def \(selector: DocQuery): Elements[Unstructured] = findAll(selector)
 
   final def findFirst(selector: DocQuery): Option[Unstructured] =
-    find(selector).headOption
+    findAll(selector).headOption
 
   def findAllWithSiblings(
       selector: DocQuery,

@@ -36,7 +36,7 @@ class InMemoryDocCacheSpec extends SpookyBaseSpec with FileDocsFixture {
 
       spooky(Core).confUpdate(_.copy(cachedDocsLifeSpan = shortLifeSpan))
 
-      assert(doc.head.uid === DocUID(Wget(HTML_URL) :: Nil, Wget(HTML_URL))())
+      assert(doc.head.uid === DocUID(Wget(HTML_URL) :: Nil)())
 
       cache.put(action, doc, spooky)
 

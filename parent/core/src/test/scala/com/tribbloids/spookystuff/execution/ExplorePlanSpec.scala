@@ -86,7 +86,7 @@ class ExplorePlanSpec extends SpookyBaseSpec with FileDocsFixture {
           val trace = r.data.raw
           trace += r.index
 
-          val dirs = r.docs.find("root directory").find("URI").texts
+          val dirs = r.docs.findAll("root directory").findAll("URI").texts
 
           (trace.toSeq, r.data.depth, dirs)
         }
@@ -98,12 +98,12 @@ class ExplorePlanSpec extends SpookyBaseSpec with FileDocsFixture {
           }
         }
         .flatMap { r =>
-          val files = r.docs.find("root file").zipWithIndex
+          val files = r.docs.findAll("root file").zipWithIndex
 
           files.map {
             case (elem, i) =>
 
-              (r.data.raw, elem.find("name").text.get, elem.find("URI").text.get, i)
+              (r.data.raw, elem.findAll("name").text.get, elem.findAll("URI").text.get, i)
           }
         }
 

@@ -30,7 +30,7 @@ case class OAuthV2(original: Wget) extends HttpMethod(original.uri) { // TODO: t
 
     temporary.doExeNoName(agent).map {
       case doc: Doc =>
-        doc.updated(uid = doc.uid.copy(backtrace = this.trace, export = this)(doc.uid.name))
+        doc.updated(uid = doc.uid.copy(backtrace = this.trace)(doc.uid.nameOvrd))
       case others =>
         others
     }

@@ -8,7 +8,7 @@ case class PlainElement(
     override val uri: String
 ) extends Unstructured {
 
-  override def find(selector: DocQuery): Elements[Unstructured] = Elements.empty
+  override def findAll(selector: DocQuery): Elements[Unstructured] = Elements.empty
 
   override def findAllWithSiblings(selector: DocQuery, range: Range): Elements[Siblings[Unstructured]] =
     Elements.empty
