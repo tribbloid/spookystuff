@@ -5,26 +5,26 @@ import com.tribbloids.spookystuff.doc.{Doc, Observation}
 
 package object conf {
 
-  type Auditing = Auditing.build._Lemma {}
+  type Auditing = Auditing.fn._Lemma {}
 
   object Auditing extends Enumeration {
 
-    val build: :=>.BuildDomains[Observation, Seq[Doc]] = :=>.at[Observation].to[Seq[Doc]]
+    val fn: :=>.BuildDomains[Observation, Seq[Doc]] = :=>.at[Observation].to[Seq[Doc]]
 
-    val Disabled: build._Impl = build { _ =>
+    val disabled: fn._Impl = fn { _ =>
       Seq.empty
     }
 
-    val Original: build._Impl = build { v1 =>
+    val original: fn._Impl = fn { v1 =>
       v1.docForAuditing.toSeq
     }
 
-    val Converted: build._Impl = build { v1 =>
+    val normalised: fn._Impl = fn { v1 =>
       v1.docForAuditing.flatMap(_.normalised.docForAuditing).toSeq
     }
 
-    val Both: build._Impl = build { v1 =>
-      (Original(v1) ++ Converted(v1)).distinct
+    val originalAndNormalised: fn._Impl = fn { v1 =>
+      (original(v1) ++ normalised(v1)).distinct
     }
   }
 

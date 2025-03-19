@@ -10,9 +10,9 @@ import com.tribbloids.spookystuff.doc.{Doc, Observation}
   */
 package object actions {
 
-  type DocFilter = Hom.Impl.Circuit[(Doc, Agent), Doc] // TODO: merge with Selector[Doc]
+  type DocFilter = Hom.Impl.Circuit[(Doc, Agent), Doc]
 
-  type DocCondition = Hom.Impl.Circuit[(Doc, Agent), Boolean] // TODO: merge with Selector[Doc]
+  type DocCondition = Hom.Impl.Circuit[(Doc, Agent), Boolean]
 
   case object NoOp extends HasTrace with NoStateChange {
     override def trace: Trace = Trace(Nil)

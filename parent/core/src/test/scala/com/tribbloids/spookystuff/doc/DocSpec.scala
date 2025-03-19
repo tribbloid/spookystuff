@@ -1,9 +1,8 @@
 package com.tribbloids.spookystuff.doc
 
 import com.tribbloids.spookystuff.actions.Wget
-import com.tribbloids.spookystuff.testutils.{RemoteDocsFixture, SpookyBaseSpec}
 import com.tribbloids.spookystuff.commons.CommonUtils
-import org.apache.commons.csv.CSVFormat
+import com.tribbloids.spookystuff.testutils.{RemoteDocsFixture, SpookyBaseSpec}
 
 class DocSpec extends SpookyBaseSpec {
 
@@ -112,7 +111,7 @@ class DocSpec extends SpookyBaseSpec {
       assert(loadedContent === raw)
     }
 
-    it("csv") {
+    ignore("csv") {
 
       val results = Wget(CSV_URL).fetch(spooky)
 
@@ -120,9 +119,10 @@ class DocSpec extends SpookyBaseSpec {
       val page =
         results.head
           .asInstanceOf[Doc]
-          .withMetadata(
-            "csvFormat" -> CSVFormat.newFormat('\t').builder().setQuote('"').setHeader().build()
-          )
+//          .withMetadata(
+//            Doc.CSV_FORMAT ->
+//              CSVFormat.newFormat('\t').builder().setQuote('"').setHeader().build().toString
+//          )
 
       assert(page.mimeType == "text/csv")
       assert(

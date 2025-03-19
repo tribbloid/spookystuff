@@ -4,7 +4,6 @@ import ai.acyclic.prover.commons.multiverse.Projection
 import ai.acyclic.prover.commons.spark.serialization.NOTSerializable
 import ai.acyclic.prover.commons.util.PathMagnet
 import com.tribbloids.spookystuff.*
-import com.tribbloids.spookystuff.actions.Trace
 import com.tribbloids.spookystuff.caching.DocCacheLevel
 import com.tribbloids.spookystuff.commons.data.Magnets.AttrValueMag
 import com.tribbloids.spookystuff.doc.Content.InMemoryBlob
@@ -18,8 +17,8 @@ import org.apache.tika.io.TikaInputStream
 import org.apache.tika.metadata.{Metadata, TikaCoreProperties}
 import org.mozilla.universalchardet.UniversalDetector
 
-import java.io.{Reader, StringReader}
 import scala.language.implicitConversions
+import scala.util.{Success, Try}
 
 object Doc {
 
@@ -28,7 +27,7 @@ object Doc {
 
   val defaultCSVFormat: CSVFormat = CSVFormat.DEFAULT
 
-  implicit def asContent(v: Doc): Content = v.content
+  implicit def asContent(v: Doc): Content = v._content
 
   val defaultTextCharset: String = "ISO-8859-1"
   val defaultApplicationCharset: String = "UTF-8"
@@ -45,7 +44,7 @@ case class Doc(
     httpStatus: Option[StatusLine] = None,
     metadata: ResourceMetadata = ResourceMetadata.empty
 )(
-    var content: Content = null
+    private var _content: Content = null
 ) extends Observation.Success
     with Projection.Equals {
 
@@ -53,16 +52,18 @@ case class Doc(
 
   @transient lazy val samenessKey: Any = (uid, uri, metadata, timeMillis, httpStatus.toString)
 
+  def content = _content
+
   override def updated(
       uid: DocUID = this.uid,
       cacheLevel: DocCacheLevel.Value = this.cacheLevel
-  ): Doc = this.copy(uid = uid, cacheLevel = cacheLevel)(content)
+  ): Doc = this.copy(uid = uid, cacheLevel = cacheLevel)(_content)
 
   def withMetadata(tuples: (String, Any)*): Doc = {
 
     this.copy(
       metadata = this.metadata ++: ResourceMetadata(tuples.map(v => AttrValueMag.fromKeyValue(v))*)
-    )(content)
+    )(_content)
   }
 
   def setRaw(raw: Array[Byte]): this.type = {
@@ -134,7 +135,7 @@ case class Doc(
       }
     }
 
-    this.content = Content.Original(
+    this._content = Content.Original(
       new InMemoryBlob(raw),
       ContentTypeDetection.output
     )
@@ -144,27 +145,34 @@ case class Doc(
   // TODO: use compile-time summoning to find an element implementation that can resolve supplied MIME type
   @transient lazy val rootOpt: Option[Unstructured] = {
 
-    val content = this.content
+    val content = this._content
     import content.*
 
     if (mimeType.contains("html") || mimeType.contains("xml") || mimeType.contains("directory")) {
       Some(HtmlElement(contentStr, uri)) // not serialize, parsing is faster
     } else if (mimeType.contains("json")) {
       Some(JsonElement(contentStr, null, uri)) // not serialize, parsing is faster
-    } else if (mimeType.contains("csv")) {
-      val metadatum = metadata.lookup.get(Doc.CSV_FORMAT)
-
-      val csvFormat: CSVFormat = metadatum
-        .map {
-          case v: CSVFormat => v
-          case v @ _        => CSVFormat.valueOf(v.toString)
-        }
-        .getOrElse(Doc.defaultCSVFormat)
-
-      val reader = new StringReader(contentStr)
-
-      Some(CSVElement.Block.apply(reader, uri, csvFormat)) // not serialize, parsing is faster
-    } else if (mimeType.contains("plain") || mimeType.contains("text")) {
+    }
+//    else if (mimeType.contains("csv")) {
+    // TODO: disabled, will delegate to Univocity or Apache Tika later
+    //  Apache commons-csv is very brittle and slow
+//X
+//      val formatV = metadata.lookup.get(Doc.CSV_FORMAT)
+//
+//      val csvFormat: CSVFormat = formatV
+//        .map {
+//          case v: String =>
+//            CSVFormat.valueOf(v)
+//          case v =>
+//            throw new UnsupportedOperationException(s"expecting CSV format of String type, got ${v.getClass}")
+//        }
+//        .getOrElse(Doc.defaultCSVFormat)
+//
+//      val reader = new StringReader(contentStr)
+//
+//      Some(CSVElement.Block.apply(reader, uri, csvFormat)) // not serialize, parsing is faster
+//    }
+    else if (mimeType.contains("plain") || mimeType.contains("text")) {
       Some(PlainElement(contentStr, uri)) // not serialize, parsing is faster
     } else {
       None
@@ -172,13 +180,13 @@ case class Doc(
   }
 
   @transient lazy val normalised: Observation = {
-    rootOpt match {
-      case Some(_) =>
+    Try(rootOpt) match {
+      case Success(Some(_)) =>
         this
-      case None =>
+      case _ =>
         try {
           this.copy()(
-            content = this.content.normalised
+            _content = this._content.normalised
           )
         } catch {
           case e: Throwable =>
@@ -193,7 +201,7 @@ case class Doc(
     case _      => Unrecognisable
   }
 
-  def saved: Seq[String] = content.blob.saved
+  def saved: Seq[String] = _content.blob.saved
 
   case class prepareSave(
       spooky: SpookyContext,
@@ -205,10 +213,10 @@ case class Doc(
         extension: Option[String] = None
     ): Unit = {
 
-      def wCtx = content.withCtx(spooky)
+      def wCtx = _content.withCtx(spooky)
 
       val saved = wCtx.save1(path, extension, overwrite)
-      Doc.this.content = saved
+      Doc.this._content = saved
     }
 
     def auditing(): Unit = {
