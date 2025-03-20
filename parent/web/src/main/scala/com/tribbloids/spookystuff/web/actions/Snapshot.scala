@@ -1,7 +1,7 @@
 package com.tribbloids.spookystuff.web.actions
 
 import com.tribbloids.spookystuff.Const
-import com.tribbloids.spookystuff.actions.{Wayback, DocFilter, Export}
+import com.tribbloids.spookystuff.actions.{DocFilter, Export, Wayback}
 import com.tribbloids.spookystuff.doc.Observation.DocUID
 import com.tribbloids.spookystuff.doc.*
 import com.tribbloids.spookystuff.dsl.DocFilterImpl
@@ -26,7 +26,7 @@ case class Snapshot(
     val webDriver = agent.driverOf(Web)
 
     val doc = Doc(
-      DocUID((agent.backtrace :+ this).toList, this)(),
+      DocUID((agent.backtrace :+ this).toList)(),
       webDriver.getCurrentUrl,
       Some("text/html; charset=UTF-8")
       //      serializableCookies

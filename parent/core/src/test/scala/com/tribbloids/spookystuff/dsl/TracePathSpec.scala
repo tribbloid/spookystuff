@@ -1,7 +1,7 @@
 package com.tribbloids.spookystuff.dsl
 
 import com.tribbloids.spookystuff.actions.ActionSuite.{MockExport, MockInteraction}
-import com.tribbloids.spookystuff.testutils.{FileDocsFixture, RemoteDocsFixture, SpookyBaseSpec}
+import com.tribbloids.spookystuff.testutils.{FileDocsFixture, SpookyBaseSpec}
 
 import java.io.File
 

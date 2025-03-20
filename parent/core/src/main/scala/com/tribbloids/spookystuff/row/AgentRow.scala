@@ -1,6 +1,5 @@
 package com.tribbloids.spookystuff.row
 
-import ai.acyclic.prover.commons.spark.serialization.NOTSerializable
 import ai.acyclic.prover.commons.util.PathMagnet
 import com.tribbloids.spookystuff.doc.*
 import com.tribbloids.spookystuff.doc.Observation.{DocUID, Failure, Success}

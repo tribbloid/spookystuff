@@ -2,6 +2,7 @@ package com.tribbloids.spookystuff.web.conf
 
 import com.tribbloids.spookystuff.actions.Wget
 import com.tribbloids.spookystuff.testutils.{FileDocsFixture, SpookyBaseSpec}
+import com.tribbloids.spookystuff.testutils.SpookyEnvSpec.defaultCtx
 import com.tribbloids.spookystuff.web.actions.Visit
 import org.apache.spark.SparkException
 
@@ -39,7 +40,7 @@ class WebDriverSuite extends SpookyBaseSpec with FileDocsFixture {
 
       spooky
         .create(1 to 2)
-        .fetch(
+        .fetch(_ =>
           Wget(HTML_URL) // deploy will fail, but PhantomJS won't be used
         )
         .count()
@@ -47,9 +48,7 @@ class WebDriverSuite extends SpookyBaseSpec with FileDocsFixture {
       intercept[SparkException] {
         val docs = spooky
           .create(1 to 2)
-          .fetch(
-            Visit(HTML_URL)
-          )
+          .fetch(_ => Visit(HTML_URL))
           .map(_.observations)
 
         docs.collect().foreach(println)

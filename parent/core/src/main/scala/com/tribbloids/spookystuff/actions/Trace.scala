@@ -226,8 +226,8 @@ case class Trace(
 
     if (!this.hasExport) return Nil
 
-    val pagesFromCache: Seq[Seq[Observation]] =
-      if (!spooky.conf.cacheRead) Seq(null)
+    val pagesFromCache: Seq[Option[Seq[Observation]]] =
+      if (!spooky.conf.cacheRead) Seq(None)
       else
         dryRun.map { dry =>
           val view = Trace(dry)
@@ -236,13 +236,13 @@ case class Trace(
             .orElse {
               DFSDocCache.get(view, spooky)
             }
-            .orNull
         }
 
-    if (!pagesFromCache.contains(null)) {
+    if (!pagesFromCache.contains(None)) {
+      // cache incomplete, dryrun yields some backtraces that cannot be found, a new fetch from scratch is necessary
       spooky.metrics.fetchFromCacheSuccess += 1
 
-      val results = pagesFromCache.flatten
+      val results = pagesFromCache.map(v => v.get).flatten
       spooky.metrics.pagesFetchedFromCache += results.count(_.isInstanceOf[Doc])
       this.trace.foreach { action =>
         LoggerFactory.getLogger(this.getClass).info(s"(cached)+> ${action.toString}")

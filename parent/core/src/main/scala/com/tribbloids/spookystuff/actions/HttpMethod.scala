@@ -1,14 +1,16 @@
 package com.tribbloids.spookystuff.actions
 
+import com.tribbloids.spookystuff.actions.Action.Driverless
 import com.tribbloids.spookystuff.utils.http.HttpUtils
 
 import java.net.URI
 
 //TODO: handle RedirectException for too many redirections.
-//@SerialVersionUID(7344992460754628988L)
+@SerialVersionUID(7344992460754628988L)
 abstract class HttpMethod(
     uri: String
 ) extends Export
+    with Driverless
     with MayTimeout
     with Wayback {
 

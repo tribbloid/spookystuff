@@ -1,5 +1,6 @@
 package com.tribbloids.spookystuff.web.conf
 
+import ai.acyclic.prover.commons.spark.TestHelper
 import com.tribbloids.spookystuff.conf.DriverFactory.Transient
 import com.tribbloids.spookystuff.conf.{DriverFactory, PluginSystem, Python, PythonDriverFactory}
 import com.tribbloids.spookystuff.agent.Agent
@@ -56,7 +57,7 @@ class DriverFactorySpec extends SpookyBaseSpec with FileDocsFixture {
   it("If the old driver is released, the second taskLocal DriverFactory.get() should yield the same driver") {
     val conf = Web.Conf(WebDriverFactory.PhantomJS().taskLocal)
 
-    val spooky = new SpookyContext(sql)
+    val spooky = new SpookyContext(TestHelper.TestSparkSession)
     spooky.setConf(conf)
 
     val session1 = new Agent(spooky)

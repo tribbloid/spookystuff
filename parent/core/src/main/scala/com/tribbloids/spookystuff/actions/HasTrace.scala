@@ -15,14 +15,14 @@ object HasTrace extends AutomaticRelay[HasTrace] {
   implicit def asTrace(v: HasTrace): Trace = v.trace
 
   // TODO: aggregate all object that has children
-  case class TreeNodeView(
-      actionLike: HasTrace
-  ) extends TreeView.Immutable[TreeNodeView] {
-
-    override def children: Seq[TreeNodeView] = actionLike.trace.map {
-      TreeNodeView.apply
-    }
-  }
+//  case class TreeNodeView(
+//      actionLike: HasTrace
+//  ) extends TreeView.Immutable[TreeNodeView] {
+//
+//    override def children: Seq[TreeNodeView] = actionLike.trace.map {
+//      TreeNodeView.apply
+//    }
+//  }
 
   sealed trait StateChangeTag extends HasTrace
   trait MayChangeState extends StateChangeTag {
@@ -56,13 +56,6 @@ trait HasTrace extends HasTraceSet with Product with Serializable with Verbose {
 
 //  lazy val TreeNode: ActionLike.TreeNodeView = ActionLike.TreeNodeView(this)
 
-  /**
-    * invoked on executors, immediately after definition *IMPORTANT!* may be called several times, before or after
-    * Locality.
-    */
-  def dependentNormaliseRule[D](schema: SpookySchema): Seq[NormaliseRule[Trace]] = Nil
-  // TODO: this needs to be tested BEFORE web module
-
 //  def injectFrom(same: ActionLike): Unit = {}
   // TODO: remove, use Ser/De deep copy in case all variables needs to be copied
 
@@ -72,5 +65,4 @@ trait HasTrace extends HasTraceSet with Product with Serializable with Verbose {
   def exportNames: Set[String] = Set.empty
 
   def apply(agent: Agent): Seq[Observation]
-
 }

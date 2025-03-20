@@ -26,7 +26,7 @@ case class Screenshot(
     }
 
     val page = Doc(
-      DocUID((agent.backtrace :+ this).toList, this)(),
+      DocUID((agent.backtrace :+ this).toList)(),
       webDriver.getCurrentUrl,
       Some("image/png")
     )().setRaw(raw)

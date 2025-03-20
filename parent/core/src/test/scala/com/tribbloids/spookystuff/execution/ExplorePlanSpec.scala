@@ -127,8 +127,13 @@ class ExplorePlanSpec extends SpookyBaseSpec with FileDocsFixture {
         .stripTmpRoot
         .shouldBe(
           """
-            |[[ArraySeq(0),0,ArraySeq(file:///testutils/dir/dir)],hivetable.csv,file:///testutils/dir/hivetable.csv,0]
-            |[[ArraySeq(0),0,ArraySeq(file:///testutils/dir/dir)],table.csv,file:///testutils/dir/table.csv,1]
+            |[[ArraySeq(0),0,ArraySeq(file:///testutils/dir/dir)],Test.pdf,file:///testutils/dir/Test.pdf,0]
+            |[[ArraySeq(0),0,ArraySeq(file:///testutils/dir/dir)],Wikipedia.html,file:///testutils/dir/Wikipedia.html,1]
+            |[[ArraySeq(0),0,ArraySeq(file:///testutils/dir/dir)],example.xml,file:///testutils/dir/example.xml,2]
+            |[[ArraySeq(0),0,ArraySeq(file:///testutils/dir/dir)],hivetable.csv,file:///testutils/dir/hivetable.csv,3]
+            |[[ArraySeq(0),0,ArraySeq(file:///testutils/dir/dir)],logo11w.png,file:///testutils/dir/logo11w.png,4]
+            |[[ArraySeq(0),0,ArraySeq(file:///testutils/dir/dir)],table.csv,file:///testutils/dir/table.csv,5]
+            |[[ArraySeq(0),0,ArraySeq(file:///testutils/dir/dir)],tribbloid.json,file:///testutils/dir/tribbloid.json,6]
             |[[ArraySeq(0, 0),1,ArraySeq(file:///testutils/dir/dir/dir)],Test.pdf,file:///testutils/dir/dir/Test.pdf,0]
             |[[ArraySeq(0, 0, 0),2,ArraySeq(file:///testutils/dir/dir/dir/dir)],pom.xml,file:///testutils/dir/dir/dir/pom.xml,0]
             |[[ArraySeq(0, 0, 0, 0),3,ArraySeq()],tribbloid.json,file:///testutils/dir/dir/dir/dir/tribbloid.json,0]
@@ -159,7 +164,7 @@ class ExplorePlanSpec extends SpookyBaseSpec with FileDocsFixture {
       result
         .mkString("\n")
         .shouldBe(
-          `0..`._1.slice(0, 3).mkString("\n")
+          `0..`._1.slice(0, 8).mkString("\n")
         )
       assert(ctx.metrics.pagesFetched.value == 2)
     }
@@ -170,7 +175,7 @@ class ExplorePlanSpec extends SpookyBaseSpec with FileDocsFixture {
       result
         .mkString("\n")
         .shouldBe(
-          `0..`._1.slice(3, bigInt).mkString("\n")
+          `0..`._1.slice(8, bigInt).mkString("\n")
         )
       assert(ctx.metrics.pagesFetched.value == 4)
     }
@@ -181,7 +186,7 @@ class ExplorePlanSpec extends SpookyBaseSpec with FileDocsFixture {
       result
         .mkString("\n")
         .shouldBe(
-          `0..`._1.slice(3, 3).mkString("\n")
+          `0..`._1.slice(8, 8).mkString("\n")
         )
       assert(ctx.metrics.pagesFetched.value == 2)
     }

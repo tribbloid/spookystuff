@@ -4,9 +4,9 @@ import com.tribbloids.spookystuff.doc.{Doc, DocUtils}
 import com.tribbloids.spookystuff.agent.Agent
 import com.tribbloids.spookystuff.web.conf.Web
 import com.tribbloids.spookystuff.dsl
-import com.tribbloids.spookystuff.testutils.SpookyBaseSpec
+import com.tribbloids.spookystuff.testutils.{FileDocsFixture, SpookyBaseSpec}
 
-class TestPageFromBrowser extends SpookyBaseSpec {
+class WebDriverSpec extends SpookyBaseSpec with FileDocsFixture {
 
   import dsl._
 
@@ -27,7 +27,7 @@ class TestPageFromBrowser extends SpookyBaseSpec {
 
     val results = (
       Visit(HTML_URL) +>
-        Snapshot().as('T)
+        Snapshot().as("T")
     ).fetch(spooky)
 
     val resultsList = results.toArray
@@ -35,7 +35,7 @@ class TestPageFromBrowser extends SpookyBaseSpec {
     val page = resultsList(0).asInstanceOf[Doc]
 
     val raw = page.blob.raw
-    page.save(spooky, overwrite = true).auditing()
+    page.prepareSave(spooky, overwrite = true).auditing()
 
     val loadedContent = DocUtils.load(page.saved.head)(spooky)
 

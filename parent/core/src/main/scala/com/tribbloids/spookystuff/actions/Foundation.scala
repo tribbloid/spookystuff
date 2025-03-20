@@ -1,6 +1,5 @@
 package com.tribbloids.spookystuff.actions
 
-import scala.language.implicitConversions
 
 object Foundation {
 

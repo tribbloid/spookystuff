@@ -3,10 +3,17 @@ package com.tribbloids.spookystuff.actions
 import com.tribbloids.spookystuff.actions.Delay.RandomDelay
 import com.tribbloids.spookystuff.doc.Doc
 import com.tribbloids.spookystuff.testutils.{LocalOnly, RemoteDocsFixture, SpookyBaseSpec}
+import com.tribbloids.spookystuff.QueryException
 import org.scalatest.Tag
 
 import java.sql.Timestamp
+import java.util.Date
 import scala.concurrent.duration
+import com.tribbloids.spookystuff.QueryException
+import com.tribbloids.spookystuff.testutils.{FileDocsFixture, SpookyBaseSpec}
+
+import java.util.Date
+import scala.concurrent.duration.DurationInt
 
 object WgetSpec {
 
@@ -136,29 +143,49 @@ class WgetSpec extends SpookyBaseSpec {
     assert(results.head.uid.backtrace.last == wget(HTML_URL))
   }
 
-  // TODO: how to simulate a PKIX exception page?
-  //  test("wget should handle PKIX exception") {
-  //    spooky.conf.proxy = ProxyFactories.NoProxy
-  //
-  //    val results = List(
-  //      wget("https://www.canadacompany.ca/en/")
-  //    ).fetch(spooky)
-  //  }
+  it("dryrun should discard preceding actions when calculating Driverless action's backtrace") {
 
-//  val classes = Seq(
-//    classOf[Wget],
-//    classOf[Visit],
-//    classOf[Snapshot]
-//  )
-//
-//  classes.foreach {
-//    clazz =>
-//      val name = clazz.getCanonicalName
-//
-//      test(s"$name.serialVersionUID should be generated properly") {
-//        val expected = SpookyUtils.hash(clazz)
-//        val actual = java.io.ObjectStreamClass.lookup(clazz).getSerialVersionUID
-//        assert(expected == actual)
-//      }
-//  }
+    val dry = (Delay(10.seconds) +> Wget("http://dum.my")).dryRun
+    assert(dry.size == 1)
+    assert(dry.head == Trace.of(Wget("http://dum.my")))
+
+    val dry2 = (Delay(10.seconds) +> OAuthV2(Wget("http://dum.my"))).dryRun
+    assert(dry2.size == 1)
+    assert(dry2.head == Trace.of(OAuthV2(Wget("http://dum.my"))))
+  }
+
+  describe("Wayback should use old cache") {
+    import scala.concurrent.duration.*
+
+    it("Wget") {
+
+      spooky.confUpdate(
+        _.copy(
+          cacheWrite = true,
+          IgnoreCachedDocsBefore = Some(new Date())
+        )
+      )
+
+      val dates: Seq[Long] = (0 to 2).map { _ =>
+        val pages = (Delay(5.seconds) +> Wget(HTML_URL)).fetch(spooky) // 5s is long enough
+        assert(pages.size == 1)
+        pages.head.timeMillis
+      }
+
+      spooky.confUpdate(_.copy(cacheRead = true))
+
+      val cachedPages = (Delay(5.seconds)
+        +> Wget(HTML_URL).waybackToTimeMillis(dates(1) + 2000)).fetch(spooky)
+
+      assert(cachedPages.size == 1)
+      assert(cachedPages.head.timeMillis == dates(1))
+
+      spooky.confUpdate(_.copy(remote = false))
+
+      intercept[QueryException] {
+        (Delay(10.seconds)
+          +> Wget(HTML_URL).waybackToTimeMillis(dates.head - 2000)).fetch(spooky)
+      }
+    }
+  }
 }

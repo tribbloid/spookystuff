@@ -20,17 +20,10 @@ import org.slf4j.LoggerFactory
 trait Action extends HasTrace {
   self: StateChangeTag =>
 
-  @transient override lazy val trace: Trace = List(this)
+  @transient private lazy val _trace = List(this)
+  override def trace: Trace = _trace
 
   var timeElapsed: Long = -1 // only set once
-
-//  override def dryRun: DryRun = {
-//    if (hasExport) {
-//      List(List(this))
-//    } else {
-//      List()
-//    }
-//  }
 
   // execute errorDumps as side effects
   protected def getSessionExceptionMessage(
@@ -130,22 +123,9 @@ trait Action extends HasTrace {
 
   protected[actions] def doExe(agent: Agent): Seq[Observation]
 
-//  def andThen(f: Seq[Observation] => Seq[Observation]): Action = AndThen(this, f)
-
-//  override def injectFrom(same: ActionLike): Unit = {
-//    super.injectFrom(same)
-//    this.timeElapsed = same.asInstanceOf[Action].timeElapsed
-//  }
 }
 
 object Action {
-
-//  trait Placeholder extends Action {
-//
-//    override protected[actions] def doExe(agent: Agent): Seq[Observation] = {
-//      throw new UnsupportedOperationException(s"${this.getClass.getSimpleName} is a placeholder")
-//    }
-//  }
 
   trait Driverless extends Action with NoStateChange {
     // have not impact to driver, mutually exclusively with MayChangeState
@@ -154,6 +134,7 @@ object Action {
   implicit class _actionOps[T <: Action with Serializable](self: T) {
 
     def deepCopy(): T = {
+      // this wastes a lot of memory, but DSL is not the bulk of memory consumption
 
       val copy = SerializationUtils.clone(self).asInstanceOf[T]
       copy

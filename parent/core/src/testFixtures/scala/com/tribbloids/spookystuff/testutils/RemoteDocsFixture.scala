@@ -17,6 +17,8 @@ trait RemoteDocsFixture extends Serializable {
   def HTTP_IP_URL: String = "http://api.ipify.org/"
   def HTTPS_IP_URL: String = "https://api.ipify.org/"
 //  def USERAGENT_URL = "https://www.whatismybrowser.com/detect/what-is-my-user-agent/"
+
+  def DUMMY_URL: String = "ftp://www.dummy.co"
 }
 
 object RemoteDocsFixture extends RemoteDocsFixture
