@@ -10,7 +10,6 @@ import org.apache.spark.rdd.RDD
 import org.slf4j.LoggerFactory
 
 import java.util.UUID
-import scala.reflect.ClassTag
 import org.apache.spark.storage.StorageLevel
 
 object ExplorePlan {
@@ -208,7 +207,7 @@ case class ExplorePlan[I, O](
     gpImpl.reduceByKey(stateRDD, globalReducer, beaconRDDOpt)
   }
 
-  override def chain[O2: ClassTag](fn: FlatMapPlan.Fn[O, O2]): ExplorePlan[I, O2] = {
+  override def chain[O2](fn: FlatMapPlan.Fn[O, O2]): ExplorePlan[I, O2] = {
     val newFn: Fn[I, O2] = { row =>
       val out1: (FetchPlan.Batch[I], FlatMapPlan.Batch[O]) = this.fn(row)
 

@@ -1,4 +1,4 @@
-package com.tribbloids.spookystuff.rdd
+package com.tribbloids.spookystuff.dsl
 
 import com.tribbloids.spookystuff.execution.{CoalescePlan, UnionPlan}
 import com.tribbloids.spookystuff.row.SquashedRow
@@ -8,7 +8,7 @@ import org.apache.spark.storage.StorageLevel
 /**
   * Created by peng on 2/12/15.
   */
-trait DataViewAPI[D] {
+trait DataViewRDDInterface[D] {
   self: DataView[D] =>
 
   //  def filter(f: SquashedPageRow => Boolean): PageRowRDD = selfRDD.filter(f)

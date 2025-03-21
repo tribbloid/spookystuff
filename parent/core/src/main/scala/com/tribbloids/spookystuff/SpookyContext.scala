@@ -9,7 +9,7 @@ import com.tribbloids.spookystuff.commons.TreeException
 import com.tribbloids.spookystuff.conf.*
 import com.tribbloids.spookystuff.io.HDFSResolver
 import com.tribbloids.spookystuff.metrics.SpookyMetrics
-import com.tribbloids.spookystuff.rdd.DataView
+import com.tribbloids.spookystuff.dsl.DataView
 import com.tribbloids.spookystuff.row.*
 import com.tribbloids.spookystuff.utils.ShippingMarks
 import org.apache.hadoop.conf.Configuration

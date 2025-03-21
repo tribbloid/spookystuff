@@ -1,11 +1,10 @@
-package com.tribbloids.spookystuff.rdd
+package com.tribbloids.spookystuff.dsl
 
 import ai.acyclic.prover.commons.util.Magnet.OptionMagnet
 import com.tribbloids.spookystuff.SpookyContext
 import com.tribbloids.spookystuff.actions.*
 import com.tribbloids.spookystuff.commons.refl.CatalystTypeOps
 import com.tribbloids.spookystuff.conf.SpookyConf
-import com.tribbloids.spookystuff.dsl.*
 import com.tribbloids.spookystuff.execution.*
 import com.tribbloids.spookystuff.execution.ExplorePlan.Params
 import com.tribbloids.spookystuff.execution.FetchPlan.Batch
@@ -18,7 +17,7 @@ import org.apache.spark.sql.{DataFrame, Dataset}
 import scala.language.implicitConversions
 import scala.reflect.ClassTag
 
-object DataView extends SpookyDataset_Imp0 {
+object DataView extends DavaView_Imp0 {
 
   implicit def asRDD[D](self: DataView[D]): RDD[AgentRow[D]] = self.rdd
 
@@ -72,7 +71,7 @@ object DataView extends SpookyDataset_Imp0 {
   */
 case class DataView[D](
     private val _plan: ExecutionPlan[D]
-) extends DataViewAPI[D]
+) extends DataViewRDDInterface[D]
     with CatalystTypeOps.ImplicitMixin {
   // TODO: should be "ExecutionPlanView"
 
@@ -142,16 +141,14 @@ case class DataView[D](
   object flatMap {
 
     def apply[O: ClassTag](
-        fn: FlatMapPlan.FlatMap._Fn[D, O]
-    )(
-        implicit
-        sampling: Sampler = ctx.conf.selectSampling
+        fn: FlatMapPlan.FlatMap._Fn[D, O],
+        downSampling: DownSampling = ctx.conf.selectSampling
     ): DataView[O] = {
 
       DataView(
         FlatMapPlan(
           DataView.this,
-          FlatMapPlan.FlatMap.normalise(fn).andThen(v => sampling(v))
+          FlatMapPlan.FlatMap.normalise(fn).andThen(v => downSampling(v))
         )
       )
     }
@@ -160,17 +157,15 @@ case class DataView[D](
 
   object map {
 
-    def apply[O: ClassTag](
-        fn: FlatMapPlan.Map._Fn[D, O]
-    )(
-        implicit
-        sampling: Sampler = ctx.conf.selectSampling
+    def apply[O](
+        fn: FlatMapPlan.Map._Fn[D, O],
+        downSampling: DownSampling = ctx.conf.selectSampling
     ): DataView[O] = {
 
       DataView(
         FlatMapPlan(
           DataView.this,
-          FlatMapPlan.Map.normalise(fn).andThen(v => sampling(v))
+          FlatMapPlan.Map.normalise(fn).andThen(v => downSampling(v))
         )
       )
     }
@@ -192,7 +187,7 @@ case class DataView[D](
       O: ClassTag
   ](
       fn: AgentRow[D] => FO,
-      sampling: Sampler = ctx.conf.fetchSampling,
+      downSampling: DownSampling = ctx.conf.fetchSampling,
       keyBy: Trace => Any = identity,
       locality: Locality = ctx.conf.locality
   )(
@@ -205,7 +200,7 @@ case class DataView[D](
 
       val batch = canFetch.normaliseOutput(inputRow.data, intermediate)
 
-      val sampled = sampling(batch)
+      val sampled = downSampling(batch)
       sampled
     }
 
@@ -260,7 +255,7 @@ case class DataView[D](
         FO // function output, notice the lack of Output type as fetch here must be recursive
     ](
         fn: AgentRow[Data.Exploring[M]] => FO,
-        sampling: Sampler = ctx.conf.exploreSampling,
+        downSampling: DownSampling = ctx.conf.exploreSampling,
         keyBy: Trace => Any = identity,
         locality: Locality = ctx.conf.locality
     )(
@@ -279,7 +274,7 @@ case class DataView[D](
           val batch: Batch[D] = canFetch.normaliseOutput(inputRow.data.raw, fo)
           batch
         }
-        val recursive = sampling(batch)
+        val recursive = downSampling(batch)
         val out = intermediate.map(_.data)
 
         recursive -> out
@@ -306,10 +301,8 @@ case class DataView[D](
     case object flatMap {
 
       def apply[MM](
-          fn: FlatMapPlan.FlatMap._Fn[Data.Exploring[M], MM]
-      )(
-          implicit
-          sampling: Sampler = ctx.conf.selectSampling
+          fn: FlatMapPlan.FlatMap._Fn[Data.Exploring[M], MM],
+          downSampling: DownSampling = ctx.conf.selectSampling
       ): RecursiveView[MM] = {
 
         val fnNormalised: FlatMapPlan.Fn[Data.Exploring[M], MM] = FlatMapPlan.FlatMap.normalise(fn)
@@ -334,10 +327,8 @@ case class DataView[D](
     case object map {
 
       def apply[MM](
-          fn: FlatMapPlan.Map._Fn[Data.Exploring[M], MM]
-      )(
-          implicit
-          sampling: Sampler = ctx.conf.selectSampling
+          fn: FlatMapPlan.Map._Fn[Data.Exploring[M], MM],
+          downSampling: DownSampling = ctx.conf.selectSampling
       ): RecursiveView[MM] = {
 
         flatMap(FlatMapPlan.Map.normalise(fn))

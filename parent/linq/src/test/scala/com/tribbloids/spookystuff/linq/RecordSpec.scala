@@ -5,27 +5,27 @@ import ai.acyclic.prover.commons.compat.TupleX.{*:, T0}
 import ai.acyclic.prover.commons.spark.TestHelper
 import ai.acyclic.prover.commons.testlib.BaseSpec
 import ai.acyclic.prover.commons.util.Summoner
-import com.tribbloids.spookystuff.linq.Linq.Row
+import com.tribbloids.spookystuff.linq.Record
 import com.tribbloids.spookystuff.linq.Foundation.^
 import com.tribbloids.spookystuff.linq.RowFunctions.explode
-import com.tribbloids.spookystuff.linq.internal.RowInternal
 import frameless.{TypedDataset, TypedEncoder}
 import org.apache.spark.sql.SparkSession
 import shapeless.HList
 import shapeless.test.illTyped
 
 import scala.collection.immutable.ListMap
+import ai.acyclic.prover.commons.verification.Verify
 
-class LinqRowSpec extends BaseSpec {
+class RecordSpec extends BaseSpec {
 
   implicit def session: SparkSession = TestHelper.TestSparkSession
 
   it("Encoder") {
 
-    implicitly[LinqRowSpec.RR <:< HList]
+    implicitly[RecordSpec.RR <:< HList]
 
-    implicitly[TypedEncoder[Row[LinqRowSpec.RR]]]
-    Summoner.summon[TypedEncoder[Row[LinqRowSpec.RR]]]
+    implicitly[TypedEncoder[Record[RecordSpec.RR]]]
+    Summoner.summon[TypedEncoder[Record[RecordSpec.RR]]]
   }
 
   describe("construction") {
@@ -95,7 +95,7 @@ class LinqRowSpec extends BaseSpec {
 
         val merged = xy +<+ yz.y
 
-        merged: Row[("x" := Int) *: ("y" := Double) *: T0]
+        merged: Record[("x" := Int) *: ("y" := Double) *: T0]
 
         assert(merged._internal.keys.runtimeList == List('x, 'y))
         assert(merged._internal.repr.runtimeList == List(1, 1.0))
@@ -110,15 +110,43 @@ class LinqRowSpec extends BaseSpec {
       val updated = xy.update(y = "cd")
       assert(updated.x == 1)
       assert(updated.y == "cd")
-
     }
 
     it("if not exists") {
-// TODO: impl
+
+      val updated = xy.updateIfNotExists(y = "cd")
+      assert(updated.x == 1)
+      assert(updated.y == "ab")
     }
 
-    it("no conflict") {
-      // TODO: impl
+    it("if no conflict") {
+
+      val updated = xy.updateIfNoConflict(z = "cd")
+      assert(updated.x == 1)
+      assert(updated.z == "cd")
+
+      Verify.typeError {
+        "xy.append(Record(y = \"cd\"))"
+      }
+    }
+  }
+
+  describe("append (if no conflict)") {
+
+    it("data of any type") {
+      val updated = xy.append("cd")
+      assert(updated.x == 1)
+      assert(updated.value == "cd")
+    }
+
+    it("another record") {
+      val updated = xy.append(Record(z = "cd"))
+      assert(updated.x == 1)
+      assert(updated.z == "cd")
+
+      Verify.typeError {
+        "xy.append(Record(y = \"cd\"))"
+      }
     }
   }
 
@@ -346,7 +374,7 @@ class LinqRowSpec extends BaseSpec {
 
       val tx = ^(x = 1, y = "ab")
       val ty = ^(y = 1.0, z = 1.1)
-      val t1 = RowInternal.ofTuple(tx._internal.repr ++ ty._internal.repr)
+      val t1 = Record.ofTuple(tx._internal.repr ++ ty._internal.repr)
 
       val rdd = session.sparkContext.parallelize(Seq(t1))
       val ds = TypedDataset.create(rdd)
@@ -365,7 +393,7 @@ class LinqRowSpec extends BaseSpec {
 
 }
 
-object LinqRowSpec {
+object RecordSpec {
 
   type RR = ("X" := Int) *: ("Y" := String) *: T0
 }

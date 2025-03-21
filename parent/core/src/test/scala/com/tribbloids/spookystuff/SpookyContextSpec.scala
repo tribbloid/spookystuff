@@ -3,7 +3,7 @@ package com.tribbloids.spookystuff
 import ai.acyclic.prover.commons.spark.serialization.AssertSerializable
 import com.tribbloids.spookystuff.actions.*
 import com.tribbloids.spookystuff.conf.{Core, Dir, SpookyConf}
-import com.tribbloids.spookystuff.rdd.DataView
+import com.tribbloids.spookystuff.dsl.DataView
 import com.tribbloids.spookystuff.testutils.{RemoteDocsFixture, SpookyBaseSpec}
 
 class SpookyContextSpec extends SpookyBaseSpec {

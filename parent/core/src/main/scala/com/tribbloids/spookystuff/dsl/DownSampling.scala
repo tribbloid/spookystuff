@@ -4,14 +4,14 @@ import ai.acyclic.prover.commons.function.hom.Hom
 
 import scala.util.Random
 
-trait Sampler extends Hom.Impl.Poly1[Sampler.In, Sampler.Out] {} // TODO: should be DownSampling
+trait DownSampling extends Hom.Impl.Poly1[DownSampling.In, DownSampling.Out] {} // TODO: should be DownSampling
 
-object Sampler {
+object DownSampling {
 
   type In[T] = Seq[T]
   type Out[T] = Seq[T]
 
-  object Identity extends Sampler {
+  object Identity extends DownSampling {
 
     override def apply[T <: Any](arg: In[T]): Out[T] = arg
   }
@@ -24,9 +24,9 @@ object Sampler {
     Some(seq(index))
   }
 
-  case class FirstN(n: Int) extends Sampler {
+  case class FirstN(n: Int) extends DownSampling {
 
-    override def apply[T <: Any](arg: Sampler.In[T]): Out[T] = {
+    override def apply[T <: Any](arg: DownSampling.In[T]): Out[T] = {
 
       arg.slice(0, n)
     }
@@ -36,9 +36,9 @@ object Sampler {
   }
 
   // TODO : can be faster
-  case class DownsamplingByRatio(ratio: Double) extends Sampler {
+  case class DownsamplingByRatio(ratio: Double) extends DownSampling {
 
-    override def apply[T <: Any](arg: Sampler.In[T]): Out[T] = {
+    override def apply[T <: Any](arg: DownSampling.In[T]): Out[T] = {
 
       Random
         .shuffle(arg)
@@ -47,9 +47,9 @@ object Sampler {
   }
 
   // TODO : can be faster
-  case class DownsamplingToSize(n: Int) extends Sampler {
+  case class DownsamplingToSize(n: Int) extends DownSampling {
 
-    override def apply[T <: Any](arg: Sampler.In[T]): Out[T] = {
+    override def apply[T <: Any](arg: DownSampling.In[T]): Out[T] = {
       Random
         .shuffle(arg)
         .slice(0, n)

@@ -4,7 +4,6 @@ import com.tribbloids.spookystuff.commons.refl.CatalystTypeOps
 import com.tribbloids.spookystuff.execution.ExecutionPlan.CanChain
 import com.tribbloids.spookystuff.row.*
 
-import scala.reflect.ClassTag
 
 object FlatMapPlan extends CatalystTypeOps.ImplicitMixin {
 
@@ -49,7 +48,7 @@ object FlatMapPlan extends CatalystTypeOps.ImplicitMixin {
 
 }
 
-case class FlatMapPlan[I, O: ClassTag]( // narrow means narrow transformation in Apache Spark
+case class FlatMapPlan[I, O]( // narrow means narrow transformation in Apache Spark
     override val child: ExecutionPlan[I],
     fn: FlatMapPlan.Fn[I, O]
 ) extends UnaryPlan[I, O](child) {

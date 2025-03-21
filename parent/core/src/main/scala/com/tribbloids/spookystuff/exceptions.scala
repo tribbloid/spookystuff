@@ -4,22 +4,17 @@ import java.io.IOException
 
 import com.tribbloids.spookystuff.commons.TreeException
 
-trait SpookyException extends Exception with TreeException {
-
-  def cause: Throwable = null
-
-  override def getCause: Throwable = cause
-}
+trait SpookyException extends TreeException {}
 
 class ActionException(
     override val getMessage_simple: String = "",
-    override val cause: Throwable = null
+    override val getCause: Throwable = null
 ) extends SpookyException {}
 
 class PyException(
     val code: String,
     val output: String,
-    override val cause: Throwable = null,
+    override val getCause: Throwable = null,
     val historyCodeOpt: Option[String] = None
 ) extends SpookyException {
 
@@ -38,34 +33,34 @@ class PyException(
 case class PyInterpretationException(
     override val code: String,
     override val output: String,
-    override val cause: Throwable = null,
+    override val getCause: Throwable = null,
     override val historyCodeOpt: Option[String] = None
-) extends PyException(code, output, cause, historyCodeOpt)
+) extends PyException(code, output, getCause, historyCodeOpt)
 
 class RetryingException(
     override val getMessage_simple: String = "",
-    override val cause: Throwable = null
-) extends ActionException(getMessage_simple, cause)
+    override val getCause: Throwable = null
+) extends ActionException(getMessage_simple, getCause)
 
 class DFSReadException(
     override val getMessage_simple: String = "",
-    override val cause: Throwable = null
-) extends IOException(getMessage_simple, cause)
+    override val getCause: Throwable = null
+) extends IOException(getMessage_simple, getCause)
     with SpookyException
 
 class DFSWriteException(
     override val getMessage_simple: String = "",
-    override val cause: Throwable = null
-) extends IOException(getMessage_simple, cause)
+    override val getCause: Throwable = null
+) extends IOException(getMessage_simple, getCause)
     with SpookyException
 
 //TODO: cause confusion! replace with IllegalArgumentException or use mixin
 class QueryException(
     override val getMessage_simple: String = "",
-    override val cause: Throwable = null
+    override val getCause: Throwable = null
 ) extends SpookyException
 
 class BrowserDeploymentException(
     override val getMessage_simple: String = "",
-    override val cause: Throwable = null
+    override val getCause: Throwable = null
 ) extends SpookyException

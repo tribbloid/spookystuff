@@ -128,15 +128,19 @@ object TreeException {
 
 }
 
-trait TreeException extends Exception {
+trait TreeException extends Causes.HasCauses[Throwable] {
 
   import com.tribbloids.spookystuff.commons.TreeException.TreeNodeView
 
-  def causes: Seq[Throwable] = {
+  override def getCause: Throwable = null
+
+  override def causes: Seq[Throwable] = {
     val cause = getCause
     cause match {
-      case v: Causes.HasCauses[?] => v.causes
-      case _                      => Option(cause).toSeq
+      case v: Causes.HasCauses[?] =>
+        v.causes
+      case _ =>
+        Option(cause).toSeq
     }
   }
   lazy val treeNodeView: TreeNodeView = TreeNodeView(this)

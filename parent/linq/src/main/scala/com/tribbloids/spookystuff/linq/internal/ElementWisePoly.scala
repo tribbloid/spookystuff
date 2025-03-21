@@ -2,7 +2,7 @@ package com.tribbloids.spookystuff.linq.internal
 
 import ai.acyclic.prover.commons.compat.TupleX
 import ai.acyclic.prover.commons.function.hom.Hom
-import com.tribbloids.spookystuff.linq.Linq.Row
+import com.tribbloids.spookystuff.linq
 import com.tribbloids.spookystuff.linq.Foundation.{KVBatchLike, KVPairs}
 import com.tribbloids.spookystuff.linq.Foundation
 import shapeless.Poly2
@@ -14,18 +14,18 @@ trait ElementWisePoly extends Hom.Poly {
 
   val combineElements: Poly2
 
-  type LemmaAtRows[L <: TupleX, R <: TupleX] = Lemma.At[(Row[L], Row[R])]
+  type LemmaAtRows[L <: TupleX, R <: TupleX] = Lemma.At[(linq.Record[L], linq.Record[R])]
 
   implicit def only[L <: TupleX, R <: TupleX](
       implicit
       lemma: MergeWith[L, R, combineElements.type]
-  ): (Row[L], Row[R]) |- Row[lemma.Out] = at[(Row[L], Row[R])] { TupleX =>
+  ): (linq.Record[L], linq.Record[R]) |- linq.Record[lemma.Out] = at[(linq.Record[L], linq.Record[R])] { TupleX =>
     val (left, right) = TupleX
     val result = left._internal.repr.mergeWith(right._internal.repr)(combineElements)(lemma)
-    RowInternal.ofTuple(result)
+    linq.Record.ofTuple(result)
   }
 
-  case class MergeMethod[L <: TupleX](left: Row[L]) {
+  case class MergeMethod[L <: TupleX](left: linq.Record[L]) {
 
     def apply[R <: TupleX](right: KVPairs[R])(
         implicit
@@ -42,15 +42,15 @@ trait ElementWisePoly extends Hom.Poly {
     * the following method can only be applied to 2 cases:
     *
     *   - single object that can be coerced into [[Record.SeqAPI]] (higher precedence)
-    *   - Seq of [[Row.RowAPI]]
+    *   - Seq of [[Record.RowAPI]]
     *
-    * Seq of objects that can be coerced into [[Row.RowAPI]] cannot be used as input directly.
+    * Seq of objects that can be coerced into [[Record.RowAPI]] cannot be used as input directly.
     *
     * This is a deliberate design that prevents lists of [[Field.Named]] from participating in cartesian product
     * directly, consider use [[RowFunctions]].explode to explicitly convert it into Seq of [[Record]] instead
     */
 
-  abstract class CartesianProductMethod_Lvl0[L <: TupleX](left: Seq[Row[L]]) {
+  abstract class CartesianProductMethod_Lvl0[L <: TupleX](left: Seq[linq.Record[L]]) {
 
     def apply[R <: TupleX](right: Seq[KVPairs[R]])(
         implicit
@@ -77,7 +77,8 @@ trait ElementWisePoly extends Hom.Poly {
     }
   }
 
-  case class CartesianProductMethod[L <: TupleX](left: Seq[Row[L]]) extends CartesianProductMethod_Lvl0[L](left) {
+  case class CartesianProductMethod[L <: TupleX](left: Seq[linq.Record[L]])
+      extends CartesianProductMethod_Lvl0[L](left) {
 
     def apply[R <: TupleX](right: KVBatchLike[R])(
         implicit
@@ -128,7 +129,7 @@ object ElementWisePoly {
     }
   }
 
-  object requireNoConflict extends ElementWisePoly {
+  object ifNoConflict extends ElementWisePoly {
 
     object combineElements extends Poly2 {
       // not allowed, compilation error

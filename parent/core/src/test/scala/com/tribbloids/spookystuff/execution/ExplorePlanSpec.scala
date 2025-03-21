@@ -2,7 +2,7 @@ package com.tribbloids.spookystuff.execution
 
 import com.tribbloids.spookystuff.actions.Wget
 import com.tribbloids.spookystuff.dsl.Locality
-import com.tribbloids.spookystuff.rdd.DataView._typedDatasetView
+import com.tribbloids.spookystuff.dsl.DataView._typedDatasetView
 import com.tribbloids.spookystuff.testutils.{FileDocsFixture, SpookyBaseSpec}
 import org.apache.spark.HashPartitioner
 import org.apache.spark.sql.{DataFrame, Row}

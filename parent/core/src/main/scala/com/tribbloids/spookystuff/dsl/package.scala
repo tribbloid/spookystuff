@@ -18,7 +18,7 @@ import java.util.UUID
 import scala.reflect.ClassTag
 
 // should import DSL directly, instead of package dsl.
-package object dsl extends DSL {
+package object dsl {
 
   type TracePath = TracePath.build._Lemma
   object TracePath {

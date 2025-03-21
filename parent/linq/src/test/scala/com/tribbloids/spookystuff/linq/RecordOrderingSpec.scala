@@ -2,11 +2,11 @@ package com.tribbloids.spookystuff.linq
 
 import ai.acyclic.prover.commons.cap.Capability.<>
 import ai.acyclic.prover.commons.testlib.BaseSpec
-import com.tribbloids.spookystuff.linq.Linq.Row
+import com.tribbloids.spookystuff.linq.Record
 import com.tribbloids.spookystuff.linq.Foundation.^
 import shapeless.test.illTyped
 
-class RowOrderingSpec extends BaseSpec {
+class RecordOrderingSpec extends BaseSpec {
 
   import com.tribbloids.spookystuff.linq.Field.*
 
@@ -41,7 +41,7 @@ class RowOrderingSpec extends BaseSpec {
 
     val r1 = CanSort.row(^(a = 1, b = "ab"))
 
-    val ordering = implicitly[Ordering[Row[r1._internal.Repr]]]
+    val ordering = implicitly[Ordering[Record[r1._internal.Repr]]]
   }
 
   it("Default") {

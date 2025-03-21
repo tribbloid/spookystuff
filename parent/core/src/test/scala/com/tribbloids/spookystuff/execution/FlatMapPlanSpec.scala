@@ -1,6 +1,6 @@
 package com.tribbloids.spookystuff.execution
 
-import com.tribbloids.spookystuff.rdd.DataView
+import com.tribbloids.spookystuff.dsl.DataView
 import com.tribbloids.spookystuff.testutils.SpookyBaseSpec
 
 /**

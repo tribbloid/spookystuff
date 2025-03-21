@@ -8,14 +8,14 @@ import com.tribbloids.spookystuff.io.ResourceMetadata
 case class FetchingError(
     delegate: Doc,
     header: String = "",
-    override val cause: Exception = null
+    override val getCause: Exception = null
 ) extends ActionException(
       header + delegate.root.formattedCode
         .map(
           "\n" + _
         )
         .getOrElse(""),
-      cause
+      getCause
     )
     with Observation.Failure {
 

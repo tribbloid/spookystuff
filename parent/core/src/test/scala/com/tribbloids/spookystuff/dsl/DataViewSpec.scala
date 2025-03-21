@@ -1,4 +1,4 @@
-package com.tribbloids.spookystuff.rdd
+package com.tribbloids.spookystuff.dsl
 
 import ai.acyclic.prover.commons.debug.print_@
 import ai.acyclic.prover.commons.spark.Envs
