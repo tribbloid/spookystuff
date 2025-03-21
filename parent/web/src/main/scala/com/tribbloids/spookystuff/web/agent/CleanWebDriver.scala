@@ -3,7 +3,7 @@ package com.tribbloids.spookystuff.web.agent
 import com.tribbloids.spookystuff.CommonConst
 import com.tribbloids.spookystuff.agent.DriverLike
 import com.tribbloids.spookystuff.commons.lifespan.Cleanable.Lifespan
-import com.tribbloids.spookystuff.commons.{CommonUtils, TreeThrowable}
+import com.tribbloids.spookystuff.commons.{CommonUtils, TreeException}
 import org.openqa.selenium.remote.service.DriverService
 import org.openqa.selenium.{NoSuchSessionException, WebDriver}
 
@@ -29,7 +29,7 @@ class CleanWebDriver(
 
         val toBeExecuted = Seq(Try(self.quit())) ++ serviceOpt.map(v => Try(v.stop()))
 
-        TreeThrowable.&&&(toBeExecuted)
+        TreeException.&&&(toBeExecuted)
       }
     }
 

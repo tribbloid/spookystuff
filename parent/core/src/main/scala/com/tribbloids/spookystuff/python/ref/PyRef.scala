@@ -5,7 +5,7 @@ import com.tribbloids.spookystuff.SpookyContext
 import com.tribbloids.spookystuff.conf.Python
 import com.tribbloids.spookystuff.python.PyConverter
 import com.tribbloids.spookystuff.agent.{Agent, PythonDriver}
-import com.tribbloids.spookystuff.commons.{DSLUtils, TreeThrowable}
+import com.tribbloids.spookystuff.commons.{DSLUtils, TreeException}
 import com.tribbloids.spookystuff.commons.lifespan.Cleanable
 
 import scala.util.Try
@@ -101,7 +101,7 @@ trait PyRef extends Cleanable {
 
   override protected def cleanImpl(): Unit = {
 
-    TreeThrowable.&&&(
+    TreeException.&&&(
       bindings.map { binding =>
         Try(binding.clean(true))
       }

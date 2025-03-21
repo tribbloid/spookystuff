@@ -8,7 +8,7 @@ import com.tribbloids.spookystuff.io.ResourceMetadata
 case class FetchingError(
     delegate: Doc,
     header: String = "",
-    override val cause: Throwable = null
+    override val cause: Exception = null
 ) extends ActionException(
       header + delegate.root.formattedCode
         .map(

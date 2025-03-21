@@ -5,7 +5,7 @@ import ai.acyclic.prover.commons.function.hom.Hom.:=>
 import ai.acyclic.prover.commons.spark.SparkContextView
 import ai.acyclic.prover.commons.spark.serialization.{NOTSerializable, SerializerOverride}
 import com.tribbloids.spookystuff.agent.Agent
-import com.tribbloids.spookystuff.commons.TreeThrowable
+import com.tribbloids.spookystuff.commons.TreeException
 import com.tribbloids.spookystuff.conf.*
 import com.tribbloids.spookystuff.io.HDFSResolver
 import com.tribbloids.spookystuff.metrics.SpookyMetrics
@@ -108,11 +108,11 @@ case class SpookyContext(
 
       Try {
         registerEnabled()
-        val trials = registered.map { v =>
+        val tryDeploy = registered.map { v =>
           v.tryDeploy()
         }
 
-        TreeThrowable.&&&(trials)
+        TreeException.&&&(tryDeploy)
       }
     }
 

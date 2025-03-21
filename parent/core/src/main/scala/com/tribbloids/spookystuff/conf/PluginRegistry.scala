@@ -5,7 +5,7 @@ import ai.acyclic.prover.commons.function.hom.Hom.BoundView
 import ai.acyclic.prover.commons.multiverse.CanEqual
 import ai.acyclic.prover.commons.spark.serialization.NOTSerializable
 import ai.acyclic.prover.commons.util.Caching
-import com.tribbloids.spookystuff.commons.TreeThrowable
+import com.tribbloids.spookystuff.commons.TreeException
 
 import scala.collection.mutable.ArrayBuffer
 import scala.language.implicitConversions
@@ -65,7 +65,7 @@ trait PluginRegistry {
           None
       }.toSeq
 
-      TreeThrowable.&&&(trials)
+      TreeException.&&&(trials)
     }
 
     implicit def asCached(v: this.type): cached.type = v.cached

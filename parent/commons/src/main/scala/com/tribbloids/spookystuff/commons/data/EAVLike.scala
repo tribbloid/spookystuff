@@ -2,7 +2,7 @@ package com.tribbloids.spookystuff.commons.data
 
 import ai.acyclic.prover.commons.multiverse.{CanEqual, Projection}
 import ai.acyclic.prover.commons.util.Magnet.OptionMagnet
-import com.tribbloids.spookystuff.commons.{CommonUtils, TreeThrowable}
+import com.tribbloids.spookystuff.commons.{CommonUtils, TreeException}
 import com.tribbloids.spookystuff.relay.RootTagged
 import com.tribbloids.spookystuff.relay.xml.Xml
 
@@ -179,7 +179,7 @@ trait EAVLike extends HasEagerInnerObjects with RootTagged with Projection.Equal
         }
       }
 
-      TreeThrowable
+      TreeException
         .|||^(getExplicits :+ getDefault)
         .get
 

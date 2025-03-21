@@ -2,32 +2,9 @@ package com.tribbloids.spookystuff
 
 import java.io.IOException
 
-import com.tribbloids.spookystuff.commons.TreeThrowable
+import com.tribbloids.spookystuff.commons.TreeException
 
-/**
-  * Created by peng on 9/11/14. doesn't have to catch it every time
-  */
-////TODO: merge with MultiCauses
-//class TreeCauses(
-//                  message: String = "",
-//                  cause: Throwable = null
-//                ) extends RuntimeException(message, cause) {
-//
-//  override def getMessage: String = {
-//    //    if (cause == null) {
-//    messageStr
-//    //    }
-//    //    else {
-//    //      s"$messageStr\nCaused by: ${this.getCause}"
-//    //    }
-//  }
-//
-//  def messageStr: String = {
-//    this.message
-//  }
-//}
-
-trait SpookyException extends Exception with TreeThrowable {
+trait SpookyException extends Exception with TreeException {
 
   def cause: Throwable = null
 
@@ -35,7 +12,7 @@ trait SpookyException extends Exception with TreeThrowable {
 }
 
 class ActionException(
-    override val simpleMsg: String = "",
+    override val getMessage_simple: String = "",
     override val cause: Throwable = null
 ) extends SpookyException {}
 
@@ -46,7 +23,7 @@ class PyException(
     val historyCodeOpt: Option[String] = None
 ) extends SpookyException {
 
-  override def simpleMsg: String =
+  override def getMessage_simple: String =
     s"""
        |${historyCodeOpt.map(v => "\t### History ###\n" + v).getOrElse("")}
        |
@@ -66,29 +43,29 @@ case class PyInterpretationException(
 ) extends PyException(code, output, cause, historyCodeOpt)
 
 class RetryingException(
-    override val simpleMsg: String = "",
+    override val getMessage_simple: String = "",
     override val cause: Throwable = null
-) extends ActionException(simpleMsg, cause)
+) extends ActionException(getMessage_simple, cause)
 
 class DFSReadException(
-    override val simpleMsg: String = "",
+    override val getMessage_simple: String = "",
     override val cause: Throwable = null
-) extends IOException(simpleMsg, cause)
+) extends IOException(getMessage_simple, cause)
     with SpookyException
 
 class DFSWriteException(
-    override val simpleMsg: String = "",
+    override val getMessage_simple: String = "",
     override val cause: Throwable = null
-) extends IOException(simpleMsg, cause)
+) extends IOException(getMessage_simple, cause)
     with SpookyException
 
 //TODO: cause confusion! replace with IllegalArgumentException or use mixin
 class QueryException(
-    override val simpleMsg: String = "",
+    override val getMessage_simple: String = "",
     override val cause: Throwable = null
 ) extends SpookyException
 
 class BrowserDeploymentException(
-    override val simpleMsg: String = "",
+    override val getMessage_simple: String = "",
     override val cause: Throwable = null
 ) extends SpookyException

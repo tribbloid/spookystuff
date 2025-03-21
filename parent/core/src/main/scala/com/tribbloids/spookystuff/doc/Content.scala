@@ -3,7 +3,7 @@ package com.tribbloids.spookystuff.doc
 import ai.acyclic.prover.commons.spark.serialization.NOTSerializable
 import ai.acyclic.prover.commons.util.PathMagnet.URIPath
 import com.tribbloids.spookystuff.SpookyContext
-import com.tribbloids.spookystuff.commons.TreeThrowable
+import com.tribbloids.spookystuff.commons.TreeException
 import com.tribbloids.spookystuff.io.HDFSResolver
 import org.apache.commons.io.IOUtils
 import org.apache.hadoop.fs.{FSDataOutputStream, Path}
@@ -203,7 +203,7 @@ object Content {
             result
           }
 
-          val result = TreeThrowable.|||^(trials)
+          val result = TreeException.|||^(trials)
           result.get
         }
     }

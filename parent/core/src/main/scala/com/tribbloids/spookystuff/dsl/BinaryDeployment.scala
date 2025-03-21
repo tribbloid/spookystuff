@@ -1,7 +1,7 @@
 package com.tribbloids.spookystuff.dsl
 
 import ai.acyclic.prover.commons.util.{Causes, Retry}
-import com.tribbloids.spookystuff.commons.{CommonUtils, TreeThrowable}
+import com.tribbloids.spookystuff.commons.{CommonUtils, TreeException}
 import com.tribbloids.spookystuff.io.{LocalResolver, URLConnectionResolver, WriteMode}
 import com.tribbloids.spookystuff.utils.SpookyUtils
 import org.apache.commons.io.IOUtils
@@ -28,9 +28,9 @@ trait BinaryDeployment extends Serializable {
     // can only be called on worker
     lazy val deployOnce: Unit = {
 
-      val downloaded = Retry.FixedInterval(3) {
+      val downloaded: String = Retry.FixedInterval(3) {
 
-        TreeThrowable
+        TreeException
           .|||^(
             Seq(
               { () =>
@@ -89,7 +89,7 @@ trait BinaryDeployment extends Serializable {
     */
   lazy val verifiedLocalPath: String = {
 
-    val result: Option[String] = TreeThrowable.|||^(
+    val result: Option[String] = TreeException.|||^(
       Seq(
         // already exists
         { () =>

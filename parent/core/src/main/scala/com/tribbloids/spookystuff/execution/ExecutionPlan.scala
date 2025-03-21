@@ -49,7 +49,7 @@ abstract class ExecutionPlan[O](
 
   def firstChildOpt: Option[ExecutionPlan[?]] = children.headOption
 
-  object viz {
+  object info {
 
     override lazy val toString: String = pprinter.apply(this).toString()
   }

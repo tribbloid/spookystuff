@@ -3,10 +3,9 @@ package com.tribbloids.spookystuff.actions
 import com.tribbloids.spookystuff.actions.Foundation.HasTraceSet
 import com.tribbloids.spookystuff.actions.HasTrace.StateChangeTag
 import com.tribbloids.spookystuff.agent.Agent
-import com.tribbloids.spookystuff.commons.{TreeView, Verbose}
+import com.tribbloids.spookystuff.commons.Verbose
 import com.tribbloids.spookystuff.doc.Observation
 import com.tribbloids.spookystuff.relay.AutomaticRelay
-import com.tribbloids.spookystuff.row.SpookySchema
 
 import scala.language.implicitConversions
 

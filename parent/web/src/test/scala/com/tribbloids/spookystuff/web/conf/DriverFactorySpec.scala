@@ -2,7 +2,7 @@ package com.tribbloids.spookystuff.web.conf
 
 import ai.acyclic.prover.commons.spark.TestHelper
 import com.tribbloids.spookystuff.conf.DriverFactory.Transient
-import com.tribbloids.spookystuff.conf.{DriverFactory, PluginSystem, Python, PythonDriverFactory}
+import com.tribbloids.spookystuff.conf.{DriverFactory, DriverSystem, Python, PythonDriverFactory}
 import com.tribbloids.spookystuff.agent.Agent
 import com.tribbloids.spookystuff.testutils.{FileDocsFixture, SpookyBaseSpec}
 import com.tribbloids.spookystuff.web.actions.Visit
@@ -12,18 +12,18 @@ class DriverFactorySpec extends SpookyBaseSpec with FileDocsFixture {
 
   trait BaseCase {
 
-    val pluginSys: PluginSystem.DriverGen
-    type Driver = pluginSys.Driver
+    val system: DriverSystem
+    type Driver = system.Driver
 
     def driverFactory: Transient[Driver]
 
     lazy val taskLocalDriverFactory: DriverFactory.TaskLocal[Driver] = driverFactory.taskLocal
 
     it(s"$driverFactory can factoryReset") {
-      val session = new Agent(spooky)
-      val driver = driverFactory.dispatch(session)
+      val agent = new Agent(spooky)
+      val driver = driverFactory.dispatch(agent)
       driverFactory.factoryReset(driver)
-      driverFactory.destroy(driver, session.taskContextOpt)
+      driverFactory.destroy(driver, agent.taskContextOpt)
     }
 
 //    object TaskLocalCase {
@@ -36,17 +36,17 @@ class DriverFactorySpec extends SpookyBaseSpec with FileDocsFixture {
   }
 
   object PythonDriverCase extends BaseCase {
-    override val pluginSys: Python.type = Python
+    override val system: Python.type = Python
     override lazy val driverFactory = PythonDriverFactory._3
   }
 
   object WebDriverCase extends BaseCase {
-    override val pluginSys: Web.type = Web
+    override val system: Web.type = Web
     override lazy val driverFactory = WebDriverFactory.PhantomJS()
   }
 
   object HtmlUnitDriverCase extends BaseCase {
-    override val pluginSys: Web.type = Web
+    override val system: Web.type = Web
     override lazy val driverFactory = WebDriverFactory.HtmlUnit()
   }
 

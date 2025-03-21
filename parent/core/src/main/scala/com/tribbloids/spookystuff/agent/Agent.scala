@@ -2,10 +2,10 @@ package com.tribbloids.spookystuff.agent
 
 import com.tribbloids.spookystuff.SpookyContext
 import com.tribbloids.spookystuff.actions.Action
-import com.tribbloids.spookystuff.commons.TreeThrowable
+import com.tribbloids.spookystuff.commons.TreeException
 import com.tribbloids.spookystuff.commons.lifespan.Cleanable.Lifespan
 import com.tribbloids.spookystuff.commons.lifespan.LocalCleanable
-import com.tribbloids.spookystuff.conf.{Core, PluginRegistry, PluginSystem}
+import com.tribbloids.spookystuff.conf.{Core, DriverSystem, PluginRegistry}
 import com.tribbloids.spookystuff.io.Progress
 import com.tribbloids.spookystuff.utils.SpookyUtils
 import org.apache.spark.TaskContext
@@ -39,7 +39,7 @@ class Agent(
 
   lazy val progress: Progress = Progress()
 
-  type DriverGen = PluginSystem.DriverGen
+  type DriverGen = DriverSystem
 
   object Drivers extends PluginRegistry.Factory[DriverGen] {
 
@@ -64,7 +64,7 @@ class Agent(
       val plugins = spooky.Plugins.lookup.values.toList
 
       val wDrivers = plugins.collect {
-        case p: PluginSystem.DriverGen#Plugin =>
+        case p: DriverSystem#Plugin =>
           p
       }
 
@@ -81,7 +81,7 @@ class Agent(
 
       require(cached.lookup.isEmpty, "cache not empty")
 
-      TreeThrowable.&&&(trials)
+      TreeException.&&&(trials)
     }
 
     /**

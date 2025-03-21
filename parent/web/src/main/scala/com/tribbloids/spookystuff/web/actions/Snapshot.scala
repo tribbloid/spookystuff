@@ -5,7 +5,6 @@ import com.tribbloids.spookystuff.actions.{DocFilter, Export, Wayback}
 import com.tribbloids.spookystuff.doc.Observation.DocUID
 import com.tribbloids.spookystuff.doc.*
 import com.tribbloids.spookystuff.dsl.DocFilterImpl
-import com.tribbloids.spookystuff.row.{AgentRow, SpookySchema}
 import com.tribbloids.spookystuff.agent.Agent
 import com.tribbloids.spookystuff.web.conf.Web
 

@@ -1,51 +1,29 @@
 package com.tribbloids.spookystuff.web.actions
 
-import com.tribbloids.spookystuff.actions.{Delay, OAuthV2, Trace, Wget}
 import com.tribbloids.spookystuff.actions.ControlBlock.Loop
 import com.tribbloids.spookystuff.conf.DriverFactory
-import com.tribbloids.spookystuff.doc.Doc
-import com.tribbloids.spookystuff.agent.Agent
+import com.tribbloids.spookystuff.doc.{Doc, Observation}
 import com.tribbloids.spookystuff.testutils.{BaseSpec, SpookyBaseSpec}
 import com.tribbloids.spookystuff.web.agent.CleanWebDriver
 
-// TODO: part of this test suite should be move to core
-abstract class WebActionIT extends SpookyBaseSpec with BaseSpec {
+abstract class DriverDependentTemplate extends SpookyBaseSpec with BaseSpec {
 
   import scala.concurrent.duration.*
 
   def driverFactory: DriverFactory[CleanWebDriver]
 
-  it("inject output names should change output doc names") {
-
-    val t1 = (
-      Visit("http://webscraper.io/test-sites/e-commerce/ajax/computers/laptops")
-        +> Snapshot().as("a")
-        +> Loop(
-          ClickNext("button.btn", "1" :: Nil)
-            +> Delay(2.seconds)
-            +> Snapshot() ~ "b"
-        )
-    )
-
-    val t2 = (
-      Visit("http://webscraper.io/test-sites/e-commerce/ajax/computers/laptops")
-        +> Snapshot().as("c")
-        +> Loop(
-          ClickNext("button.btn", "1" :: Nil)
-            +> Delay(2.seconds)
-            +> Snapshot() ~ "d"
-        )
-    )
-
-    assert(t1.exportNames === Set("c", "d"))
-  }
-
   describe("Visit") {
 
-    it("and Snapshot") {
-      val builder = new Agent(spooky)
-      Visit("http://www.wikipedia.org")(builder)
-      val page = Snapshot()(builder).toList.head.asInstanceOf[Doc]
+    it("+> Snapshot") {
+
+      val results: Seq[Observation] = (
+        Visit("http://www.wikipedia.org") +>
+          WaitFor("input#searchInput").in(40.seconds) +>
+          Snapshot()
+      ).fetch(spooky)
+
+      assert(results.size == 1)
+      val page = results.head.asInstanceOf[Doc]
 
       //    assert(page.code.get.startsWith("<!DOCTYPE html>")) //not applicable to HtmlUnit
       assert(page.code.get.split('\n').map(_.trim).mkString.contains("<title>Wikipedia</title>"))
@@ -53,8 +31,8 @@ abstract class WebActionIT extends SpookyBaseSpec with BaseSpec {
       assert(page.uri contains "//www.wikipedia.org/")
     }
 
-    it("TextInput and Snapshot") {
-      val results = (
+    it("+> TextInput +> Snapshot") {
+      val results: Seq[Observation] = (
         Visit("http://www.wikipedia.org") +>
           WaitFor("input#searchInput").in(40.seconds) +>
           Snapshot().as("A") +>
@@ -63,10 +41,9 @@ abstract class WebActionIT extends SpookyBaseSpec with BaseSpec {
           Snapshot().as("B")
       ).fetch(spooky)
 
-      val resultsList = results
-      assert(resultsList.length === 2)
-      val result0 = resultsList.head.asInstanceOf[Doc]
-      val result1 = resultsList(1).asInstanceOf[Doc]
+      assert(results.length === 2)
+      val result0 = results.head.asInstanceOf[Doc]
+      val result1 = results(1).asInstanceOf[Doc]
 
       val id1 = Visit("http://www.wikipedia.org") ::
         WaitFor("input#searchInput") ::
@@ -159,14 +136,16 @@ abstract class WebActionIT extends SpookyBaseSpec with BaseSpec {
       str.shouldBe(
         """
           |{
-          |  "children" : [ {
-          |    "selector" : "By.sizzleCssSelector: o1",
-          |    "cooldown" : "0 seconds",
-          |    "blocking" : true
-          |  }, {
-          |    "filter" : { }
-          |  } ],
-          |  "limit" : 2147483647
+          |  "trace" : {
+          |    "self" : [ {
+          |      "selector" : "By.sizzleCssSelector: o1",
+          |      "cooldown" : "0 seconds",
+          |      "blocking" : true
+          |    }, {
+          |      "filter" : { }
+          |    } ]
+          |  },
+          |  "limit" : 16
           |}
         """.stripMargin
       )
@@ -179,14 +158,15 @@ abstract class WebActionIT extends SpookyBaseSpec with BaseSpec {
         .shouldBe(
           """
             |Loop
-            |  List
-            |    Click
-            |      "By.sizzleCssSelector: o1"
-            |      0 seconds
-            |      true
-            |    Snapshot
-            |      MustHaveTitle()
-            |  2147483647
+            |  Trace
+            |    List
+            |      Click
+            |        "By.sizzleCssSelector: o1"
+            |        0 seconds
+            |        true
+            |      Snapshot
+            |        MustHaveTitle
+            |  16
           """.stripMargin
         )
     }

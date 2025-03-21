@@ -1,7 +1,6 @@
 package com.tribbloids.spookystuff.conf
 
 import com.tribbloids.spookystuff.SpookyContext
-import com.tribbloids.spookystuff.agent.DriverLike
 import com.tribbloids.spookystuff.commons.lifespan.Cleanable
 import com.tribbloids.spookystuff.metrics.AbstractMetrics
 import com.tribbloids.spookystuff.relay.MessageAPI
@@ -14,27 +13,6 @@ object PluginSystem {
 
   lazy val emptySparkConf: SparkConf = new SparkConf(false)
 
-  trait DriverGen extends PluginSystem {
-
-    type Driver <: DriverLike
-
-    trait _PluginLike extends super.PluginLike {
-
-      def driverFactory: DriverFactory[Driver]
-
-      def driverFactoryOpt: Option[DriverFactory[Driver]] = Option(driverFactory)
-
-      override def tryDeploy(): Try[Unit] = {
-        super.tryDeploy().flatMap { _ =>
-          Try {
-            driverFactoryOpt.foreach(_.deployGlobally(spooky))
-          }
-        }
-      }
-    }
-
-    override type Plugin <: _PluginLike
-  }
 }
 
 trait PluginSystem extends Serializable {

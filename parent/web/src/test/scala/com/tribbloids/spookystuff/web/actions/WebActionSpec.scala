@@ -6,8 +6,9 @@ import com.tribbloids.spookystuff.actions.ControlBlock.LocalRetry
 import com.tribbloids.spookystuff.agent.Agent
 import com.tribbloids.spookystuff.doc.Observation
 import com.tribbloids.spookystuff.testutils.{FileDocsFixture, SpookyBaseSpec}
-import com.tribbloids.spookystuff.web.conf.Web
+import com.tribbloids.spookystuff.web.conf.{Web, WebDriverFactory}
 import org.apache.spark.rdd.RDD
+import org.scalatest.Suite
 
 import java.util.Date
 import scala.concurrent.duration
@@ -151,6 +152,36 @@ class WebActionSpec extends SpookyBaseSpec with FileDocsFixture {
           +> Screenshot().waybackToTimeMillis(dates.head - 2000)).fetch(spooky)
       }
     }
+  }
+
+  override lazy val nestedSuites: IndexedSeq[Suite] = {
+    object HtmlUnit extends DriverDependentTemplate {
+
+      override lazy val driverFactory: WebDriverFactory.HtmlUnit = WebDriverFactory.HtmlUnit()
+
+      object TaskLocal extends DriverDependentTemplate {
+
+        override lazy val driverFactory = WebDriverFactory.HtmlUnit().taskLocal
+      }
+    }
+
+    object TestTrace_PhantomJS extends DriverDependentTemplate {
+
+      override lazy val driverFactory: WebDriverFactory.PhantomJS = WebDriverFactory.PhantomJS()
+
+      object TaskLocal extends DriverDependentTemplate {
+
+        override lazy val driverFactory = WebDriverFactory.PhantomJS().taskLocal
+      }
+
+    }
+
+    IndexedSeq(
+      HtmlUnit,
+      HtmlUnit.TaskLocal,
+      TestTrace_PhantomJS,
+      TestTrace_PhantomJS.TaskLocal
+    )
   }
 }
 

@@ -5,13 +5,13 @@ import ai.acyclic.prover.commons.util.Causes.Undefined
 
 import scala.util.{Failure, Success, Try}
 
-object TreeThrowable {
+object TreeException {
 
   // TODO: rename to _TreeVew, keep consistency
   case class TreeNodeView(self: Throwable) extends TreeView.Immutable[TreeNodeView] {
     override def children: Seq[TreeNodeView] = {
       val result = self match {
-        case v: TreeThrowable =>
+        case v: Causes.HasCauses[?] =>
           v.causes.map(TreeNodeView.apply)
         case _ =>
           val eOpt = Option(self).flatMap(v => Option(v.getCause))
@@ -22,8 +22,8 @@ object TreeThrowable {
 
     override def simpleString(maxFields: Int): String = {
       self match {
-        case v: TreeThrowable =>
-          v.simpleMsg
+        case v: TreeException =>
+          v.getMessage_simple
         case _ =>
           self.getClass.getName + ": " + self.getMessage
       }
@@ -128,20 +128,20 @@ object TreeThrowable {
 
 }
 
-trait TreeThrowable extends Throwable {
+trait TreeException extends Exception {
 
-  import com.tribbloids.spookystuff.commons.TreeThrowable.TreeNodeView
+  import com.tribbloids.spookystuff.commons.TreeException.TreeNodeView
 
   def causes: Seq[Throwable] = {
     val cause = getCause
     cause match {
-      case Causes(causes) => causes
-      case _              => Option(cause).toSeq
+      case v: Causes.HasCauses[?] => v.causes
+      case _                      => Option(cause).toSeq
     }
   }
   lazy val treeNodeView: TreeNodeView = TreeNodeView(this)
 
   override def getMessage: String = treeNodeView.treeString(verbose = false)
 
-  def simpleMsg: String
+  def getMessage_simple: String
 }

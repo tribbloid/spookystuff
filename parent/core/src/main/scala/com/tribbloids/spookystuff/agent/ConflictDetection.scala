@@ -2,7 +2,7 @@ package com.tribbloids.spookystuff.agent
 
 import ai.acyclic.prover.commons.util.PathMagnet
 import com.tribbloids.spookystuff.commons.lifespan.Cleanable
-import com.tribbloids.spookystuff.commons.TreeThrowable
+import com.tribbloids.spookystuff.commons.TreeException
 
 import scala.util.Try
 
@@ -73,6 +73,6 @@ object ConflictDetection {
 
   def detectConflict(extra: Seq[Throwable] = Nil): Unit = {
 
-    TreeThrowable.&&&(conflicts, extra = extra)
+    TreeException.&&&(conflicts, extra = extra)
   }
 }

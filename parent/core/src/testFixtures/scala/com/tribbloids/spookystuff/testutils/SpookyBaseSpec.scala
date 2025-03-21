@@ -6,7 +6,7 @@ import com.tribbloids.spookystuff.SpookyContext
 import com.tribbloids.spookystuff.agent.DriverLike
 import com.tribbloids.spookystuff.commons.lifespan.Cleanable
 import com.tribbloids.spookystuff.commons.lifespan.Cleanable.Lifespan
-import com.tribbloids.spookystuff.commons.{CommonUtils, TreeThrowable}
+import com.tribbloids.spookystuff.commons.{CommonUtils, TreeException}
 import com.tribbloids.spookystuff.conf._
 import com.tribbloids.spookystuff.doc.{Doc, Unstructured}
 import com.tribbloids.spookystuff.execution.ExecutionContext
@@ -135,7 +135,7 @@ abstract class SpookyBaseSpec extends SpookyEnvSpec with BeforeAndAfterEach with
         }
       }
     }
-    TreeThrowable.&&&(result)
+    TreeException.&&&(result)
 
     SpookyBaseSpec.firstRun = false
   }
@@ -181,7 +181,7 @@ abstract class SpookyBaseSpec extends SpookyEnvSpec with BeforeAndAfterEach with
         }
       }
     }
-    TreeThrowable.&&&(result)
+    TreeException.&&&(result)
   }
 
   implicit class stripTmpRootOps(v: String) {

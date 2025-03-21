@@ -11,7 +11,7 @@ import java.time.Duration
 import java.util
 import scala.language.implicitConversions
 
-trait WebDriverTimeout extends WebAction with MayTimeout {
+trait BrowserTimeout extends WebAction with MayTimeout {
   self: StateChangeTag =>
 
   implicit def nanos2JDuration(v: Long): Duration = java.time.Duration.ofNanos(v)

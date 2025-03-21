@@ -1,6 +1,5 @@
 package com.tribbloids.spookystuff.web.actions
 
-import ai.acyclic.prover.commons.multiverse.Projection
 import com.tribbloids.spookystuff.relay.{IR, Relay, TreeIR}
 import com.tribbloids.spookystuff.selenium.BySizzleSelector
 import org.apache.spark.sql.types.SQLUserDefinedType
