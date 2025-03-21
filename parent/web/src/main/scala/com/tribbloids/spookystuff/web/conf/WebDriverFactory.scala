@@ -55,8 +55,8 @@ object WebDriverFactory {
   }
 
   case class PhantomJSDeployment(
-      override val localPath: String = PhantomJS.defaultLocalPath,
-      override val remoteURL: String = PhantomJS.defaultRemoteURL
+      override val targetPath: String = PhantomJS.defaultLocalPath,
+      override val repositoryURI: String = PhantomJS.defaultRemoteURL
   ) extends BinaryDeployment {}
 
   object PhantomJS {
@@ -92,7 +92,7 @@ object WebDriverFactory {
 
       val deployment = deploy(spooky)
 
-      deployment.OnDriver(spooky.sparkContext).deployOnce
+      deployment.OnSparkDriver(spooky.sparkContext).addSparkFile
     }
 
     case class DriverCreation(agent: Agent, lifespan: Lifespan) {
@@ -100,12 +100,12 @@ object WebDriverFactory {
       val deployment: BinaryDeployment = deploy(agent.spooky)
 
       val caps: DesiredCapabilitiesView = DesiredCapabilitiesView.default.Imported(agent.spooky).phantomJS
-      caps.setCapability(PhantomJSDriverService.PHANTOMJS_EXECUTABLE_PATH_PROPERTY, deployment.verifiedLocalPath)
+      caps.setCapability(PhantomJSDriverService.PHANTOMJS_EXECUTABLE_PATH_PROPERTY, deployment.localFilePath)
 
       lazy val service: PhantomJSDriverService = {
 
         val deployment = deploy(agent.spooky)
-        val pathStr = deployment.verifiedLocalPath
+        val pathStr = deployment.localFilePath
 
         val proxyOpt = Option(agent.spooky.conf.webProxy(())).map { v =>
           asSeleniumProxy(v)
