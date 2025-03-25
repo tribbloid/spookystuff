@@ -2,7 +2,7 @@ package com.tribbloids.spookystuff.row
 
 import ai.acyclic.prover.commons.util.PathMagnet
 import com.tribbloids.spookystuff.doc.*
-import com.tribbloids.spookystuff.doc.Observation.{DocUID, Failure, Success}
+import com.tribbloids.spookystuff.doc.Observation.{DocUID, Error, Success}
 import com.tribbloids.spookystuff.execution.{ExecutionContext, FlatMapPlan}
 import com.tribbloids.spookystuff.row.AgentRow.ObservationSeqViewScaffold
 import com.tribbloids.spookystuff.row.AgentRow.ObservationSeqViewScaffold.SingletonMixin
@@ -109,7 +109,7 @@ object AgentRow {
     }
 
     val normalised: Seq[Observation] = self.collect { doc =>
-      doc.normalised
+      doc.converted
     }
 
     def save(
@@ -210,7 +210,7 @@ case class AgentRow[D](
 
   lazy val docs: ObservationSeqView[Doc] = observations.docs
   lazy val succeeded: ObservationSeqView[Success] = observations.succeeded
-  lazy val failed: ObservationSeqView[Failure] = observations.failed
+  lazy val failed: ObservationSeqView[Error] = observations.failed
 
   class ObservationSeqView[T <: Observation](override val batch: Seq[T]) extends ObservationSeqViewScaffold[T] {
 
@@ -223,8 +223,8 @@ case class AgentRow[D](
       case v: Success => v
     }
 
-    @transient lazy val failed: ObservationSeqView[Failure] = collect {
-      case v: Failure => v
+    @transient lazy val failed: ObservationSeqView[Error] = collect {
+      case v: Error => v
     }
 
     @transient lazy val docs: ObservationSeqView[Doc] = collect {

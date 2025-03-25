@@ -2,7 +2,7 @@ package com.tribbloids.spookystuff
 
 import ai.acyclic.prover.commons.function.hom.Hom.:=>
 import ai.acyclic.prover.commons.util.PathMagnet
-import com.tribbloids.spookystuff.actions.*
+import com.tribbloids.spookystuff.actions.Trace
 import com.tribbloids.spookystuff.agent.WebProxySetting
 import com.tribbloids.spookystuff.doc.Doc
 import com.tribbloids.spookystuff.dsl.DataLocality.Instance
@@ -53,7 +53,7 @@ package object dsl {
         val actionConcat = if (actionStrs.size > 4) {
           val oneTwoThree = actionStrs.slice(0, 3)
           val last = actionStrs.last
-          val omitted = File.separator + (trace.length - 4) + "more" + File.separator
+          val omitted = (trace.length - 4) + "more" + File.separator
 
           PathMagnet.URIPath(oneTwoThree*) :/ omitted :/ last
 

@@ -1,5 +1,6 @@
 package com.tribbloids.spookystuff.doc
 
+import com.tribbloids.spookystuff.SpookyException
 import com.tribbloids.spookystuff.actions.{Export, Trace}
 import com.tribbloids.spookystuff.caching.DocCacheLevel
 import com.tribbloids.spookystuff.io.ResourceMetadata
@@ -11,7 +12,7 @@ object Observation {
 
   trait Success extends Observation
 
-  trait Failure extends Observation
+  trait Error extends SpookyException with Observation {}
 
   /**
     * Created by peng on 04/06/14.

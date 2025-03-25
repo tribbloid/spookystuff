@@ -3,14 +3,13 @@ package com.tribbloids.spookystuff.actions
 import ai.acyclic.prover.commons.cap.Capability
 import ai.acyclic.prover.commons.cap.Capability.<>
 import ai.acyclic.prover.commons.spark.serialization.NOTSerializable
-import com.tribbloids.spookystuff.{Const, QueryException, SpookyContext}
 import com.tribbloids.spookystuff.actions.HasTrace.MayChangeState
-import com.tribbloids.spookystuff.actions.Foundation.HasTraceSet
 import com.tribbloids.spookystuff.actions.Trace.Repr
 import com.tribbloids.spookystuff.agent.Agent
 import com.tribbloids.spookystuff.caching.{CacheKey, DFSDocCache, InMemoryDocCache}
 import com.tribbloids.spookystuff.commons.CommonUtils
 import com.tribbloids.spookystuff.doc.{Doc, Observation}
+import com.tribbloids.spookystuff.{Const, SpookyContext}
 import org.slf4j.LoggerFactory
 
 import scala.collection.mutable.ArrayBuffer
@@ -20,7 +19,7 @@ object Trace {
 
   private type Repr = Seq[Action]
 
-  implicit def unbox(v: Trace): Repr = v.self
+  implicit def unbox(v: Trace): Repr = v.repr
   implicit def box(v: Repr): Trace = Trace(v)
 
   type DryRun = List[Trace]
@@ -125,7 +124,7 @@ object Trace {
 }
 
 case class Trace(
-    self: Repr = Nil
+    repr: Repr = Nil
     // TODO: this should be gone, delegating to Same.By.Wrapper
 ) extends Actions
     with MayChangeState { // remember trace is not a block! its the super container that cannot be wrapped
@@ -188,7 +187,7 @@ case class Trace(
           if (spooky.conf.cacheWrite) {
 
             val failures = observed.collect {
-              case v: Observation.Failure => v
+              case v: Observation.Error => v
             }
             // will not cache even if there is only 1 failure
             if (failures.isEmpty) {
@@ -242,7 +241,7 @@ case class Trace(
       // cache incomplete, dryrun yields some backtraces that cannot be found, a new fetch from scratch is necessary
       spooky.metrics.fetchFromCacheSuccess += 1
 
-      val results = pagesFromCache.map(v => v.get).flatten
+      val results = pagesFromCache.flatMap(v => v.get)
       spooky.metrics.pagesFetchedFromCache += results.count(_.isInstanceOf[Doc])
       this.trace.foreach { action =>
         LoggerFactory.getLogger(this.getClass).info(s"(cached)+> ${action.toString}")
@@ -253,7 +252,7 @@ case class Trace(
       spooky.metrics.fetchFromCacheFailure += 1
 
       if (!spooky.conf.remote)
-        throw new QueryException(
+        throw new IllegalArgumentException(
           "Resource is not cached and not allowed to be fetched remotely, " +
             "the later can be enabled by setting SpookyContext.conf.remote=true"
         )
@@ -265,7 +264,7 @@ case class Trace(
         } catch {
           case e: Exception =>
             spooky.metrics.fetchFromRemoteFailure += 1
-            session.Drivers.releaseAll()
+            session.getDriver.releaseAll()
             throw e
         }
       }
@@ -294,7 +293,7 @@ case class Trace(
   // the minimal equivalent action that can be put into backtrace
   override def stateChangeOnly: Trace = {
 
-    self.flatMap {
+    repr.flatMap {
 
       case child: Action with MayChangeState =>
         val result = child.stateChangeOnly.trace

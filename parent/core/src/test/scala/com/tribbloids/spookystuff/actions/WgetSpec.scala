@@ -2,15 +2,12 @@ package com.tribbloids.spookystuff.actions
 
 import com.tribbloids.spookystuff.actions.Delay.RandomDelay
 import com.tribbloids.spookystuff.doc.Doc
-import com.tribbloids.spookystuff.testutils.{LocalOnly, RemoteDocsFixture}
+import com.tribbloids.spookystuff.testutils.{LocalOnly, RemoteDocsFixture, SpookyBaseSpec}
 import org.scalatest.Tag
 
 import java.sql.Timestamp
-import scala.concurrent.duration
-import com.tribbloids.spookystuff.QueryException
-import com.tribbloids.spookystuff.testutils.SpookyBaseSpec
-
 import java.util.Date
+import scala.concurrent.duration
 import scala.concurrent.duration.DurationInt
 
 object WgetSpec {
@@ -180,7 +177,7 @@ class WgetSpec extends SpookyBaseSpec {
 
       spooky.confUpdate(_.copy(remote = false))
 
-      intercept[QueryException] {
+      intercept[IllegalArgumentException] {
         (Delay(10.seconds)
           +> Wget(HTML_URL).waybackToTimeMillis(dates.head - 2000)).fetch(spooky)
       }

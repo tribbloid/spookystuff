@@ -1,6 +1,6 @@
 package com.tribbloids.spookystuff.execution
 
-import com.tribbloids.spookystuff.actions.Foundation.HasTraceSet
+import com.tribbloids.spookystuff.actions.HasTraceSet
 import com.tribbloids.spookystuff.execution.FetchPlan.Batch
 
 import scala.reflect.ClassTag

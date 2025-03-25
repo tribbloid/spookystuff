@@ -1,11 +1,9 @@
 package com.tribbloids.spookystuff.web.actions
 
-import com.tribbloids.spookystuff.Const
 import com.tribbloids.spookystuff.actions.{DocFilter, Export, Wayback}
-import com.tribbloids.spookystuff.doc.Observation.DocUID
-import com.tribbloids.spookystuff.doc.*
-import com.tribbloids.spookystuff.dsl.DocFilterImpl
 import com.tribbloids.spookystuff.agent.Agent
+import com.tribbloids.spookystuff.doc.*
+import com.tribbloids.spookystuff.doc.Observation.DocUID
 import com.tribbloids.spookystuff.web.conf.Web
 
 /**
@@ -13,7 +11,7 @@ import com.tribbloids.spookystuff.web.conf.Web
   * please use wget for images and pdf files always export as UTF8 charset
   */
 case class Snapshot(
-    override val filter: DocFilter = Const.defaultDocumentFilter
+    override val filter: DocFilter = DocFilter.default
 ) extends Export
     with WebAction
     with Wayback {
@@ -22,7 +20,7 @@ case class Snapshot(
   override def doExeNoName(agent: Agent): Seq[Doc] = {
     // no effect if WebDriver is missing
 
-    val webDriver = agent.driverOf(Web)
+    val webDriver = agent.getDriver(Web)
 
     val doc = Doc(
       DocUID((agent.backtrace :+ this).toList)(),
@@ -40,8 +38,7 @@ case class Snapshot(
 object Snapshot {
 
   // this is used to save GC when invoked by anothor component
-  object QuickSnapshot extends Snapshot(DocFilterImpl.Bypass)
-  object ErrorDump extends Snapshot(DocFilterImpl.Bypass)
+//  object QuickSnapshot extends Snapshot(DocFilterImpl.Bypass)
+  object ErrorDump extends Snapshot(DocFilter.Bypass)
   //  with MessageAPI
-
 }

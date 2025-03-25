@@ -1,6 +1,5 @@
 package com.tribbloids.spookystuff
 
-
 object CommonConst {
 
   import scala.concurrent.duration.*

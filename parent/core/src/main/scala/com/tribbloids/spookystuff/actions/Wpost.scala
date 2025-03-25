@@ -1,10 +1,9 @@
 package com.tribbloids.spookystuff.actions
 
-import com.tribbloids.spookystuff.Const
 import com.tribbloids.spookystuff.agent.Agent
 import com.tribbloids.spookystuff.caching.DocCacheLevel
-import com.tribbloids.spookystuff.doc.Observation.DocUID
 import com.tribbloids.spookystuff.doc.*
+import com.tribbloids.spookystuff.doc.Observation.DocUID
 import com.tribbloids.spookystuff.io.CompoundResolver.OmniResolver
 import com.tribbloids.spookystuff.io.{HTTPResolver, ResourceMetadata, WriteMode}
 import org.apache.commons.io.IOUtils
@@ -18,7 +17,7 @@ object Wpost {
 
   def apply(
       uri: String,
-      filter: DocFilter = Const.defaultDocumentFilter,
+      filter: DocFilter = DocFilter.defaultForImage,
       entity: HttpEntity = new StringEntity("")
   ): WpostImpl = WpostImpl(uri, filter)(entity)
 

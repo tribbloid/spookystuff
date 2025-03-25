@@ -1,5 +1,6 @@
 package com.tribbloids.spookystuff.dsl
 
+import ai.acyclic.prover.commons.spark.serialization.NOTSerializable
 import ai.acyclic.prover.commons.util.{Causes, Retry}
 import com.tribbloids.spookystuff.commons.{CommonUtils, TreeException}
 import com.tribbloids.spookystuff.io.{LocalResolver, URLConnectionResolver, WriteMode}
@@ -12,7 +13,6 @@ import java.io.File
 import java.nio.file.attribute.PosixFilePermission
 import java.util.UUID
 import scala.util.Try
-import ai.acyclic.prover.commons.spark.serialization.NOTSerializable
 
 trait BinaryDeployment extends Serializable {
   import BinaryDeployment.*
@@ -97,7 +97,7 @@ trait BinaryDeployment extends Serializable {
 
   }
 
-  final val sparkFileName: String = CommonUtils.encodeUriAsFileName(targetPath) + UUID.randomUUID().toString
+  final val sparkFileName: String = CommonUtils.inferFileNameFromURI(targetPath) + UUID.randomUUID().toString
 
   case class OnSparkDriver(sparkContext: SparkContext) extends NOTSerializable {
 

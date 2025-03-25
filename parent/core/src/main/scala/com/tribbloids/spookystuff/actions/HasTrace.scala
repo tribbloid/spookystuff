@@ -1,6 +1,5 @@
 package com.tribbloids.spookystuff.actions
 
-import com.tribbloids.spookystuff.actions.Foundation.HasTraceSet
 import com.tribbloids.spookystuff.actions.HasTrace.StateChangeTag
 import com.tribbloids.spookystuff.agent.Agent
 import com.tribbloids.spookystuff.commons.Verbose

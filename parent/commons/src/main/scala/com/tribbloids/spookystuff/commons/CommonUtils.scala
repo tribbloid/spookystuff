@@ -32,7 +32,7 @@ object CommonUtils {
     else part + suffix
   }
 
-  def encodeUriAsFileName(path: String): String = path.split(File.separatorChar).last
+  def inferFileNameFromURI(uri: String): String = uri.split(File.separatorChar).last
 
   // TODO: remove, use object API everywhere.
   def retry: Retry.FixedInterval.type = Retry.FixedInterval

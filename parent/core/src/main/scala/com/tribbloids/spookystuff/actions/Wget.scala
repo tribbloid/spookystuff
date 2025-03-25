@@ -1,10 +1,9 @@
 package com.tribbloids.spookystuff.actions
 
-import com.tribbloids.spookystuff.Const
 import com.tribbloids.spookystuff.agent.Agent
 import com.tribbloids.spookystuff.caching.DocCacheLevel
-import com.tribbloids.spookystuff.doc.Observation.DocUID
 import com.tribbloids.spookystuff.doc.*
+import com.tribbloids.spookystuff.doc.Observation.DocUID
 import com.tribbloids.spookystuff.io.CompoundResolver.OmniResolver
 import org.apache.commons.io.IOUtils
 import org.apache.hadoop.shaded.org.apache.http.client.methods.HttpGet
@@ -20,7 +19,7 @@ import org.apache.hadoop.shaded.org.apache.http.client.methods.HttpGet
 @SerialVersionUID(-8687280136721213696L)
 case class Wget(
     uri: String,
-    override val filter: DocFilter = Const.defaultDocumentFilter
+    override val filter: DocFilter = DocFilter.default
 ) extends HttpMethod(uri) {
 
   def getResolver(agent: Agent): OmniResolver = {

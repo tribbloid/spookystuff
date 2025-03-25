@@ -4,7 +4,6 @@ import com.tribbloids.spookystuff.commons.refl.CatalystTypeOps
 import com.tribbloids.spookystuff.execution.ExecutionPlan.CanChain
 import com.tribbloids.spookystuff.row.*
 
-
 object FlatMapPlan extends CatalystTypeOps.ImplicitMixin {
 
 //  type Yield[O] = Data.Scoped[O]

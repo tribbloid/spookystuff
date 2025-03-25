@@ -39,15 +39,13 @@ class Agent(
 
   lazy val progress: Progress = Progress()
 
-  type DriverGen = DriverSystem
+  object getDriver extends PluginRegistry.Factory[DriverSystem] {
 
-  object Drivers extends PluginRegistry.Factory[DriverGen] {
-
-    override type Out[V <: DriverGen] = V#Driver
+    override type Out[V <: DriverSystem] = V#Driver
 
     override def init: Impl = new Impl {
 
-      override def apply[V <: DriverGen](v: V): this.Out[V] = {
+      override def apply[V <: DriverSystem](v: V): this.Out[V] = {
         val plugin: V#Plugin = spooky.Plugins.apply(v)
 
         progress.ping()
@@ -68,7 +66,7 @@ class Agent(
           p
       }
 
-      val trials = wDrivers.map { (p: DriverGen#Plugin) =>
+      val trials = wDrivers.map { (p: DriverSystem#Plugin) =>
         Try {
           p.driverFactoryOpt.foreach { v =>
             v.release(Agent.this)
@@ -93,10 +91,8 @@ class Agent(
 //    }
   }
 
-  def driverOf[V <: DriverGen](v: V): V#Driver = Drivers.apply(v)
-
   override def cleanImpl(): Unit = {
-    Drivers.releaseAll()
+    getDriver.releaseAll()
 
     spooky.metrics.sessionReclaimed += 1
   }

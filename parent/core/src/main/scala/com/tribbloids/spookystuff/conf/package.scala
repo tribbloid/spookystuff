@@ -20,7 +20,7 @@ package object conf {
     }
 
     val normalised: fn._Impl = fn { v1 =>
-      v1.docForAuditing.flatMap(_.normalised.docForAuditing).toSeq
+      v1.docForAuditing.flatMap(_.converted.docForAuditing).toSeq
     }
 
     val originalAndNormalised: fn._Impl = fn { v1 =>

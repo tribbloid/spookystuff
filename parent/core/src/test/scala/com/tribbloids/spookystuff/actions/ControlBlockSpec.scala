@@ -2,10 +2,9 @@ package com.tribbloids.spookystuff.actions
 
 import com.tribbloids.spookystuff.actions.ControlBlock.{LocalRetry, Loop}
 import com.tribbloids.spookystuff.agent.Agent
-import com.tribbloids.spookystuff.testutils.SpookyBaseSpec
+import com.tribbloids.spookystuff.testutils.{FileDocsFixture, SpookyBaseSpec}
 
 import java.util.Date
-import com.tribbloids.spookystuff.testutils.FileDocsFixture
 
 class ControlBlockSpec extends SpookyBaseSpec with FileDocsFixture {
 
@@ -22,7 +21,7 @@ class ControlBlockSpec extends SpookyBaseSpec with FileDocsFixture {
     )
     loop.exe(agent)
 
-    assert(agent.Drivers.lookup.isEmpty)
+    assert(agent.getDriver.lookup.isEmpty)
 //    assert(!loop.needDriver)
   }
 
@@ -38,7 +37,7 @@ class ControlBlockSpec extends SpookyBaseSpec with FileDocsFixture {
     )
     retry.exe(agent)
 
-    assert(agent.Drivers.lookup.isEmpty)
+    assert(agent.getDriver.lookup.isEmpty)
   }
 
   it("LocalRetry will fail on malformed uri") {

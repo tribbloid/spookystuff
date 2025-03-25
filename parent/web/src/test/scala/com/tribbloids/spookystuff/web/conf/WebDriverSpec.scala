@@ -1,13 +1,11 @@
 package com.tribbloids.spookystuff.web.conf
 
-import com.tribbloids.spookystuff.actions.Wget
+import com.tribbloids.spookystuff.actions.{DocFilter, Wget}
 import com.tribbloids.spookystuff.agent.Agent
 import com.tribbloids.spookystuff.doc.{Doc, DocUtils}
-import com.tribbloids.spookystuff.dsl
-import com.tribbloids.spookystuff.testutils.{FileDocsFixture, SpookyBaseSpec}
 import com.tribbloids.spookystuff.testutils.SpookyEnvSpec.defaultCtx
+import com.tribbloids.spookystuff.testutils.{FileDocsFixture, SpookyBaseSpec}
 import com.tribbloids.spookystuff.web.actions.{Snapshot, Visit}
-import org.apache.spark.SparkException
 
 import java.util.Date
 
@@ -16,14 +14,12 @@ import java.util.Date
   */
 class WebDriverSpec extends SpookyBaseSpec with FileDocsFixture {
 
-  import dsl.*
-
   it("empty page") {
     val emptyPage: Doc = {
       val agent = new Agent(spooky)
-      agent.driverOf(Web)
+      agent.getDriver(Web)
 
-      Snapshot(DocFilterImpl.AcceptStatusCode2XX).apply(agent).toList.head.asInstanceOf[Doc]
+      Snapshot(DocFilter.AcceptStatusCode2XX).apply(agent).toList.head.asInstanceOf[Doc]
     }
 
     assert(emptyPage.findAll("div.dummy").attrs("href").isEmpty)
@@ -61,7 +57,7 @@ class WebDriverSpec extends SpookyBaseSpec with FileDocsFixture {
 
     try {
 
-      defaultCtx
+      val spooky = defaultCtx.copy()
 
       spooky(Web).confUpdate(
         _.copy(
@@ -75,25 +71,17 @@ class WebDriverSpec extends SpookyBaseSpec with FileDocsFixture {
         )
       )
 
-      spooky
-        .create(1 to 2)
-        .fetch(_ =>
-          Wget(HTML_URL) // deploy will fail, but PhantomJS won't be used
-        )
-        .count()
+      Wget(HTML_URL)
+        .as("T")
+        .fetch(spooky) // deploy will fail, but PhantomJS won't be used
 
-      intercept[SparkException] {
-        val docs = spooky
-          .create(1 to 2)
-          .fetch(_ => Visit(HTML_URL))
-          .map(_.observations)
+      intercept[Exception] {
 
-        docs.collect().foreach(println)
+        (
+          Visit(HTML_URL) +>
+            Snapshot().as("T")
+        ).fetch(spooky)
       }
-    } finally {
-//      getDefaultCtx
-
-//      spooky.getConf(Web).webDriverFactory = WebDriverFactory.PhantomJS()
-    }
+    } finally {}
   }
 }

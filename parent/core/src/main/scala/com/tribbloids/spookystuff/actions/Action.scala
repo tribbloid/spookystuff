@@ -1,10 +1,10 @@
 package com.tribbloids.spookystuff.actions
 
-import com.tribbloids.spookystuff.{ActionException, SpookyContext}
 import com.tribbloids.spookystuff.actions.HasTrace.{NoStateChange, StateChangeTag}
 import com.tribbloids.spookystuff.agent.Agent
 import com.tribbloids.spookystuff.commons.CommonUtils
 import com.tribbloids.spookystuff.doc.{Doc, Observation}
+import com.tribbloids.spookystuff.{ActionException, ActionExceptionWithCoreDump, SpookyContext, SpookyException}
 import org.apache.commons.lang3.SerializationUtils
 import org.apache.spark.sql.types.SQLUserDefinedType
 import org.slf4j.LoggerFactory
@@ -26,22 +26,51 @@ trait Action extends HasTrace {
   var timeElapsed: Long = -1 // only set once
 
   // execute errorDumps as side effects
-  protected def getSessionExceptionMessage(
-      agent: Agent,
-      docOpt: Option[Doc] = None
-  ): String = {
-    var message: String = "\n{\n"
+  protected def wrapException(
+      exception: Exception,
+      agent: Agent
+  ): ActionException = {
 
-    message += {
-      agent.backtrace.map { action =>
-        "| " + action.toString
-      } ++
-        Seq("+> " + this.detailedStr)
-    }.mkString("\n")
+    lazy val backtraceMsg: String = {
 
-    message += "\n}"
+      var builder: String = "\n{\n"
+      // TODO: this is not an actual builder
 
-    message
+      builder += {
+        agent.backtrace.map { action =>
+          "| " + action.toString
+        } ++
+          Seq("+> " + this.detailedStr)
+      }.mkString("\n")
+
+      builder += "\n}"
+      builder
+    }
+
+    exception match {
+      case e: SpookyException.HasCoreDump =>
+        val fullMsg = backtraceMsg + e.getMessage_simple
+        // do nothing, already dumped
+        new ActionException(fullMsg, e)
+      case e: SpookyException.HasDoc =>
+        val fullMsg = backtraceMsg + "\n" + e.getMessage_simple
+        lazy val errorDumpEnabled: Boolean = agent.spooky.conf.errorDump
+
+        if (errorDumpEnabled) {
+
+          // execute coreDump
+          val addendum = errorDump(e.doc, agent.spooky)
+
+          new ActionExceptionWithCoreDump(fullMsg + "\n" + e.getClass.getSimpleName + ": " + addendum, e)
+        } else {
+
+          new ActionException(fullMsg, e)
+        }
+
+      case e =>
+        val fullMsg = backtraceMsg + e.getMessage
+        new ActionException(fullMsg, e)
+    }
   }
 
   // also handle auditing, cache and errorDump
@@ -53,12 +82,19 @@ trait Action extends HasTrace {
         exe(agent)
       } catch {
         case e: Exception =>
-          val message: String = getSessionExceptionMessage(agent)
+          def ex = wrapException(e, agent)
 
-          val ex = e match {
-            case ae: ActionException => ae
-            case _                   => new ActionException(message, e)
-          }
+//          val ex = e match {
+//            case ee: ActionException =>
+//              // no need to wrap twice
+//              ee
+//            case ee: SpookyException.HasDoc =>
+//              val doc = ee.doc
+//              // invoking errorDump
+//              ex
+//            case _ =>
+//              new ActionException(wrapped, e)
+//          }
           throw ex
       }
     }
@@ -69,7 +105,7 @@ trait Action extends HasTrace {
     results
   }
 
-  protected def errorDump(message: String, rawDoc: Doc, spooky: SpookyContext): String = {
+  protected def errorDump(rawDoc: Doc, spooky: SpookyContext): String = {
 
     val backtrace: Trace =
       if (rawDoc.uid.backtrace.lastOption.exists(_ eq this)) rawDoc.uid.backtrace
@@ -80,13 +116,13 @@ trait Action extends HasTrace {
       doc.prepareSave(spooky).errorDump()
       "saved to: " + doc.saved.last
     } catch {
-      case _: Exception =>
+      case e1: Exception =>
         try {
           doc.prepareSave(spooky).errorDumpLocally()
-          "DFS inaccessible.........saved to: " + doc.saved.last
+          s"DFS inaccessible (${e1.toString}) ......... saved to: " + doc.saved.last
         } catch {
-          case _: Exception =>
-            "all file systems inaccessible.........not saved"
+          case e2: Exception =>
+            s"all file systems inaccessible (${e2.toString}) ......... not saved"
         }
     }
   }

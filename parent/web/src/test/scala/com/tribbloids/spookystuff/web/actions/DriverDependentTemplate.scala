@@ -48,7 +48,7 @@ abstract class DriverDependentTemplate extends SpookyBaseSpec with BaseSpec {
       val id1 = Visit("http://www.wikipedia.org") ::
         WaitFor("input#searchInput") ::
         Snapshot().as("C") :: Nil
-      assert(result0.uid.backtrace === id1)
+      assert(result0.uid.backtrace.repr === id1)
       assert(result0.code.get.split('\n').map(_.trim).mkString.contains("<title>Wikipedia</title>"))
       assert(result0.uri contains "//www.wikipedia.org")
       assert(result0.name === "A")
@@ -58,7 +58,7 @@ abstract class DriverDependentTemplate extends SpookyBaseSpec with BaseSpec {
         TextInput("input#searchInput", "Deep learning") ::
         Submit("button.pure-button") ::
         Snapshot().as("D") :: Nil
-      assert(result1.uid.backtrace === id2)
+      assert(result1.uid.backtrace.repr === id2)
       assert(result1.code.get.split('\n').map(_.trim).mkString.contains("<title>Deep learning"))
       assert(result1.uri contains "//en.wikipedia.org/wiki/Deep_learning")
       assert(result1.name === "B")
@@ -137,7 +137,7 @@ abstract class DriverDependentTemplate extends SpookyBaseSpec with BaseSpec {
         """
           |{
           |  "trace" : {
-          |    "self" : [ {
+          |    "repr" : [ {
           |      "selector" : "By.sizzleCssSelector: o1",
           |      "cooldown" : "0 seconds",
           |      "blocking" : true

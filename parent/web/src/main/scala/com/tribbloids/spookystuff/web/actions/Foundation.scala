@@ -1,13 +1,13 @@
 package com.tribbloids.spookystuff.web.actions
 
-import com.tribbloids.spookystuff.actions.{Action, Interaction}
 import com.tribbloids.spookystuff.actions.HasTrace.StateChangeTag
+import com.tribbloids.spookystuff.actions.{Action, Interaction}
 import com.tribbloids.spookystuff.agent.Agent
 import com.tribbloids.spookystuff.doc.Doc
 import com.tribbloids.spookystuff.web.conf.Web
-import com.tribbloids.spookystuff.{ActionException, Const}
-import org.openqa.selenium.{interactions, JavascriptExecutor, WebDriver}
+import com.tribbloids.spookystuff.{ActionException, ActionExceptionWithCoreDump, Const, SpookyException}
 import org.openqa.selenium.support.ui.{ExpectedCondition, ExpectedConditions, Select}
+import org.openqa.selenium.{JavascriptExecutor, WebDriver, interactions}
 import org.slf4j.LoggerFactory
 
 import scala.collection.mutable
@@ -24,49 +24,58 @@ trait Foundation extends Serializable {
   trait WebAction extends Action {
     self: StateChangeTag =>
 
-    {
-      Web.enableOnce
-      // TODO: this no longer works after moving to define-by-run API
-      //  as constructors are only executed in a function
-      //  instead, Web module should be initialised in the package object
-    }
+//    {
+//      Web.enableOnce
+//      // TODO: this no longer works after moving to define-by-run API
+//      //  as constructors are only executed in a function
+//      //  instead, Web module should be initialised in the package object
+//    }
 
     // execute errorDumps as side effects
-    override protected def getSessionExceptionMessage(
-        agent: Agent,
-        docOpt: Option[Doc] = None
-    ): String = {
+    override protected def wrapException(
+        exception: Exception,
+        agent: Agent
+    ): ActionException = {
 
-      var message = super.getSessionExceptionMessage(agent, docOpt)
+      val original: ActionException = super.wrapException(exception, agent)
 
-      lazy val errorDump: Boolean = agent.spooky.conf.errorDump
-      lazy val errorDumpScreenshot: Boolean = agent.spooky.conf.errorScreenshot
+      original match {
 
-      agent match {
-        case d: Agent =>
-          if (d.Drivers.lookup.get(Web).nonEmpty) {
+        case e: SpookyException.HasCoreDump =>
+          e // do nothing, already dumped
+        case _ =>
+          // execute core dump using snapshot & screenshot from the latest WebDriver
+          // even if the original exception doesn't contain any of them
+
+          var msg = original.getMessage_simple
+
+          val driverLookup = agent.getDriver.lookup
+
+          if (driverLookup.contains(Web)) {
+
+            val errorDump: Boolean = agent.spooky.conf.errorDump
+            val errorDumpScreenshot: Boolean = agent.spooky.conf.errorScreenshot
+
             if (errorDump) {
               val rawPage = Snapshot.ErrorDump.exe(agent).head.asInstanceOf[Doc]
-              message += "\nSnapshot: " + this.errorDump(message, rawPage, agent.spooky)
+              msg += "\nSnapshot: " + this.errorDump(rawPage, agent.spooky)
             }
             if (errorDumpScreenshot) {
               try {
                 val rawPage = Screenshot.ErrorScreenshot.exe(agent).head.asInstanceOf[Doc]
-                message += "\nScreenshot: " + this.errorDump(message, rawPage, agent.spooky)
+                msg += "\nScreenshot: " + this.errorDump(rawPage, agent.spooky)
               } catch {
                 case e: Exception =>
                   LoggerFactory.getLogger(this.getClass).error("Cannot take screenshot on ActionError:", e)
               }
             }
+
+            new ActionExceptionWithCoreDump(msg, original.getCause)
           } else {
-            docOpt.foreach { doc =>
-              if (errorDump) {
-                message += "\nSnapshot: " + this.errorDump(message, doc, agent.spooky)
-              }
-            }
+
+            original
           }
       }
-      message
     }
   }
 
@@ -82,7 +91,7 @@ trait Foundation extends Serializable {
   ) extends Interaction
       with BrowserTimeout {
 
-    import WebInteraction._
+    import WebInteraction.*
 
     override def doExe(agent: Agent): Seq[Doc] = {
 
@@ -97,7 +106,7 @@ trait Foundation extends Serializable {
 
     def webDriverActions(agent: Agent): interactions.Actions = {
 
-      new org.openqa.selenium.interactions.Actions(agent.driverOf(Web))
+      new org.openqa.selenium.interactions.Actions(agent.getDriver(Web))
     }
   }
 
@@ -132,7 +141,7 @@ trait Foundation extends Serializable {
   ) extends WebInteraction(cooldown, blocking) {
 
     override def exeNoOutput(agent: Agent): Unit = {
-      agent.driverOf(Web).get(uri)
+      agent.getDriver(Web).get(uri)
 
       //    if (hasTitle) {
       //      val wait = new WebDriverWait(session.driver, timeout(session).toSeconds)
@@ -227,7 +236,7 @@ trait Foundation extends Serializable {
 
       val elements = this.getElements(selector, agent)
 
-      import scala.jdk.CollectionConverters._
+      import scala.jdk.CollectionConverters.*
 
       elements.asScala.foreach { element =>
         {
@@ -239,7 +248,9 @@ trait Foundation extends Serializable {
           }
         }
       }
-      throw new ActionException("all elements has been clicked before")
+      throw new ActionException(
+        "all elements has been clicked before"
+      )
     }
   }
 
@@ -320,7 +331,7 @@ trait Foundation extends Serializable {
 
       val element = this.getElement(selector, agent)
 
-      agent.driverOf(Web).switchTo().frame(element)
+      agent.getDriver(Web).switchTo().frame(element)
     }
   }
 
@@ -347,7 +358,7 @@ trait Foundation extends Serializable {
           Some(element)
         }
 
-      agent.driverOf(Web) match {
+      agent.getDriver(Web) match {
         case d: JavascriptExecutor => d.executeScript(script, element.toArray: _*)
         case _ => throw new UnsupportedOperationException("this web browser driver is not supported")
       }

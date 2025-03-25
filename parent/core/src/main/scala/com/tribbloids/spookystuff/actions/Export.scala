@@ -1,9 +1,8 @@
 package com.tribbloids.spookystuff.actions
 
+import com.tribbloids.spookystuff.actions.HasTrace.NoStateChange
 import com.tribbloids.spookystuff.agent.Agent
 import com.tribbloids.spookystuff.doc.*
-import com.tribbloids.spookystuff.dsl.DocFilterImpl
-import com.tribbloids.spookystuff.actions.HasTrace.NoStateChange
 
 /**
   * Export a page from the browser or http client the page an be anything including HTML/XML file, image, PDF file or
@@ -14,21 +13,15 @@ abstract class Export extends MayExport.Named with NoStateChange {
 
   override def exportNames: Set[String] = Set(name)
 
-  def filter: DocFilter = DocFilterImpl.Bypass
+  def filter: DocFilter = DocFilter.Bypass
 
   final def doExe(agent: Agent): Seq[Observation] = {
     val results = doExeNoName(agent)
     results.map {
       case doc: Doc =>
-        try {
-          filter.apply(doc -> agent)
-        } catch {
-          case e: Exception =>
-            val message = getSessionExceptionMessage(agent, Some(doc))
-            val wrapped = FetchingError(doc, message, e)
+        val result = filter.apply(doc -> agent)
+        result
 
-            throw wrapped
-        }
       case other: Observation =>
         other
     }

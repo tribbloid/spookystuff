@@ -7,6 +7,7 @@ import com.tribbloids.spookystuff.*
 import com.tribbloids.spookystuff.caching.DocCacheLevel
 import com.tribbloids.spookystuff.commons.data.Magnets.AttrValueMag
 import com.tribbloids.spookystuff.doc.Content.InMemoryBlob
+import com.tribbloids.spookystuff.doc.Error.ConversionError
 import com.tribbloids.spookystuff.doc.Observation.DocUID
 import com.tribbloids.spookystuff.doc.Unstructured.Unrecognisable
 import com.tribbloids.spookystuff.io.ResourceMetadata
@@ -179,7 +180,7 @@ case class Doc(
     }
   }
 
-  @transient lazy val normalised: Observation = {
+  @transient lazy val converted: Observation = {
     Try(rootOpt) match {
       case Success(Some(_)) =>
         this
@@ -190,13 +191,13 @@ case class Doc(
           )
         } catch {
           case e: Throwable =>
-            ConversionError(this, e)
+            ConversionError(this, cause = e)
         }
     }
   }
 
   override type RootType = Unstructured
-  def root: Unstructured = normalised match {
+  def root: Unstructured = converted match {
     case d: Doc => d.rootOpt.getOrElse(Unrecognisable)
     case _      => Unrecognisable
   }
@@ -233,18 +234,24 @@ case class Doc(
       PathMagnet.URIPath(str)
     }
 
+    private def _errorDump(): Unit = {
+
+      val relative = {
+        spooky.conf.errorDumpFilePaths(Doc.this)
+      }
+
+      val path = errorDumpRoot :/ relative
+
+      save(path)
+    }
+
     // TODO: merge into cascade retries
     def errorDump(): Unit = {
-
-      save(errorDumpRoot :/ spooky.conf.errorDumpFilePaths(Doc.this))
-
+      _errorDump()
     }
 
     def errorDumpLocally(): Unit = {
-
-      save(
-        errorDumpRoot :/ spooky.conf.errorDumpFilePaths(Doc.this)
-      )
+      _errorDump()
     }
   }
 

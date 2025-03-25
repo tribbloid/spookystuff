@@ -11,15 +11,15 @@ object __DefineByRun {
     *
     *   - [[com.tribbloids.spookystuff.actions.Action]].interpolate will be gone, all their constructors only accept
     *     argument(s) with simple type
-    *   - [[com.tribbloids.spookystuff.dsl.DataView]].fetch now takes a function, which can be either applied to a
-    *     row with a real agent (in action), or applied to a row with a tracer (fake agent in dry-run-planning), the
-    *     tracer can only record agent actions & return data placeholder (which are also tracer themselves), but return
-    *     no real data
+    *   - [[com.tribbloids.spookystuff.dsl.DataView]].fetch now takes a function, which can be either applied to a row
+    *     with a real agent (in action), or applied to a row with a tracer (fake agent in dry-run-planning), the tracer
+    *     can only record agent actions & return data placeholder (which are also tracer themselves), but return no real
+    *     data
     *
     * Stage 1:
     *
-    *   - define-by-run API defined in [[com.tribbloids.spookystuff.dsl.DataView]].apply that supersedes both fetch
-    *     & extract
+    *   - define-by-run API defined in [[com.tribbloids.spookystuff.dsl.DataView]].apply that supersedes both fetch &
+    *     extract
     *   - extract will be gone, fetch now becomes an alias of apply
     *   - define-by-run API takes a function [[com.tribbloids.spookystuff.row.AgentState]] =>
     *     [[com.tribbloids.spookystuff.row.Lineage]] as its only argument

@@ -21,7 +21,6 @@ object PathPlanning_Simple {
         schema: SpookySchema
     ) extends Impl.CanPruneSelected[I, O] {
 
-
       class ReducerProto[T] extends Explore.ReducerK[T] {
         override def reduce(v1: Batch, v2: Batch): Batch = {
 

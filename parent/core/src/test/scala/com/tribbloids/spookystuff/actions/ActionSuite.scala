@@ -2,13 +2,13 @@ package com.tribbloids.spookystuff.actions
 
 import com.tribbloids.spookystuff.agent.Agent
 import com.tribbloids.spookystuff.commons.{CommonUtils, Timeout}
+import com.tribbloids.spookystuff.doc.Observation.DocUID
 import com.tribbloids.spookystuff.doc.{Doc, Observation}
 import com.tribbloids.spookystuff.testutils.SpookyBaseSpec
 import com.tribbloids.spookystuff.{ActionException, Const}
-import com.tribbloids.spookystuff.doc.Observation.DocUID
 
-import scala.concurrent.{duration, TimeoutException}
 import scala.concurrent.duration.Duration
+import scala.concurrent.{duration, TimeoutException}
 
 class ActionSuite extends SpookyBaseSpec {
 
@@ -76,13 +76,6 @@ object ActionSuite {
     override def doExeNoName(agent: Agent): Seq[Observation] = {
       Thread.sleep(120 * 1000)
       Nil
-    }
-  }
-
-  case object DefectiveExport extends Export {
-
-    override def doExeNoName(agent: Agent): Seq[Observation] = {
-      sys.error("error")
     }
   }
 

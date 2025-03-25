@@ -1,15 +1,35 @@
 package com.tribbloids.spookystuff
 
+import com.tribbloids.spookystuff.SpookyException.HasCoreDump
+import com.tribbloids.spookystuff.commons.TreeException
+import com.tribbloids.spookystuff.doc.Doc
+
 import java.io.IOException
 
-import com.tribbloids.spookystuff.commons.TreeException
-
 trait SpookyException extends TreeException {}
+
+object SpookyException {
+
+  trait HasDoc extends SpookyException {
+
+    val doc: Doc
+  }
+
+  trait HasCoreDump extends SpookyException {
+    // core dump becomes its own type as
+  }
+}
 
 class ActionException(
     override val getMessage_simple: String = "",
     override val getCause: Throwable = null
 ) extends SpookyException {}
+
+class ActionExceptionWithCoreDump(
+    override val getMessage_simple: String = "",
+    override val getCause: Throwable = null
+) extends ActionException(getMessage_simple, getCause)
+    with HasCoreDump
 
 class PyException(
     val code: String,
@@ -37,11 +57,6 @@ case class PyInterpretationException(
     override val historyCodeOpt: Option[String] = None
 ) extends PyException(code, output, getCause, historyCodeOpt)
 
-class RetryingException(
-    override val getMessage_simple: String = "",
-    override val getCause: Throwable = null
-) extends ActionException(getMessage_simple, getCause)
-
 class DFSReadException(
     override val getMessage_simple: String = "",
     override val getCause: Throwable = null
@@ -55,12 +70,12 @@ class DFSWriteException(
     with SpookyException
 
 //TODO: cause confusion! replace with IllegalArgumentException or use mixin
-class QueryException(
-    override val getMessage_simple: String = "",
-    override val getCause: Throwable = null
-) extends SpookyException
+//class QueryException(
+//    override val getMessage_simple: String = "",
+//    override val getCause: Throwable = null
+//) extends SpookyException
 
-class BrowserDeploymentException(
-    override val getMessage_simple: String = "",
-    override val getCause: Throwable = null
-) extends SpookyException
+//class BrowserDeploymentException(
+//    override val getMessage_simple: String = "",
+//    override val getCause: Throwable = null
+//) extends SpookyException

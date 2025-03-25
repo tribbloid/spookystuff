@@ -1,6 +1,5 @@
 package com.tribbloids.spookystuff.actions
 
-import com.tribbloids.spookystuff.*
 import com.tribbloids.spookystuff.agent.Agent
 import com.tribbloids.spookystuff.doc.{Doc, Observation}
 import com.tribbloids.spookystuff.utils.http.HttpUtils
@@ -11,7 +10,7 @@ case class OAuthV2(original: Wget) extends HttpMethod(original.uri) { // TODO: t
 
     val keys = agent.spooky.conf.oAuthKeysFactory.function0()
     if (keys == null) {
-      throw new QueryException("need to set SpookyConf.oAuthKeys first")
+      throw new IllegalArgumentException("need to set SpookyConf.oAuthKeys first")
     }
     val effectiveWget: Wget = original.uriOption match {
       case Some(uri) =>

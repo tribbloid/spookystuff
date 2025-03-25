@@ -1,12 +1,12 @@
 package com.tribbloids.spookystuff.web.conf
 
 import ai.acyclic.prover.commons.spark.TestHelper
+import com.tribbloids.spookystuff.SpookyContext
+import com.tribbloids.spookystuff.agent.Agent
 import com.tribbloids.spookystuff.conf.DriverFactory.Transient
 import com.tribbloids.spookystuff.conf.{DriverFactory, DriverSystem, Python, PythonDriverFactory}
-import com.tribbloids.spookystuff.agent.Agent
 import com.tribbloids.spookystuff.testutils.{FileDocsFixture, SpookyBaseSpec}
 import com.tribbloids.spookystuff.web.actions.Visit
-import com.tribbloids.spookystuff.SpookyContext
 
 class DriverFactorySpec extends SpookyBaseSpec with FileDocsFixture {
 
@@ -62,12 +62,12 @@ class DriverFactorySpec extends SpookyBaseSpec with FileDocsFixture {
 
     val session1 = new Agent(spooky)
     Visit(HTML_URL).apply(session1)
-    val driver1 = session1.driverOf(Web)
+    val driver1 = session1.getDriver(Web)
     session1.tryClean()
 
     val session2 = new Agent(spooky)
     Visit(HTML_URL).apply(session2)
-    val driver2 = session2.driverOf(Web)
+    val driver2 = session2.getDriver(Web)
     session2.tryClean()
 
     assert(driver1 eq driver2)

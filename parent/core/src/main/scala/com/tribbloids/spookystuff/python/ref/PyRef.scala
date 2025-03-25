@@ -2,11 +2,11 @@ package com.tribbloids.spookystuff.python.ref
 
 import ai.acyclic.prover.commons.util.Caching.ConcurrentMap
 import com.tribbloids.spookystuff.SpookyContext
+import com.tribbloids.spookystuff.agent.{Agent, PythonDriver}
+import com.tribbloids.spookystuff.commons.lifespan.Cleanable
+import com.tribbloids.spookystuff.commons.{DSLUtils, TreeException}
 import com.tribbloids.spookystuff.conf.Python
 import com.tribbloids.spookystuff.python.PyConverter
-import com.tribbloids.spookystuff.agent.{Agent, PythonDriver}
-import com.tribbloids.spookystuff.commons.{DSLUtils, TreeException}
-import com.tribbloids.spookystuff.commons.lifespan.Cleanable
 
 import scala.util.Try
 
@@ -96,7 +96,7 @@ trait PyRef extends Cleanable {
   }
 
   def Py(agent: Agent): Binding = {
-    _Py(agent.driverOf(Python), Some(agent.spooky))
+    _Py(agent.getDriver(Python), Some(agent.spooky))
   }
 
   override protected def cleanImpl(): Unit = {

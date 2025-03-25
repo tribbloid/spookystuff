@@ -18,7 +18,7 @@ trait BrowserTimeout extends WebAction with MayTimeout {
 
   def webDriverWait(agent: Agent): WebDriverWait = {
 
-    new WebDriverWait(agent.driverOf(Web), this.getTimeout(agent).max.toNanos)
+    new WebDriverWait(agent.getDriver(Web), this.getTimeout(agent).max.toNanos)
   }
 
   def getClickableElement(selector: Selector, agent: Agent): WebElement = {

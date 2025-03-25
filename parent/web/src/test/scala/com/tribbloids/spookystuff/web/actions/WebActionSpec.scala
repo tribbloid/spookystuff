@@ -1,6 +1,6 @@
 package com.tribbloids.spookystuff.web.actions
 
-import com.tribbloids.spookystuff.{ActionException, QueryException}
+import com.tribbloids.spookystuff.ActionException
 import com.tribbloids.spookystuff.actions.*
 import com.tribbloids.spookystuff.actions.ControlBlock.LocalRetry
 import com.tribbloids.spookystuff.agent.Agent
@@ -44,7 +44,7 @@ class WebActionSpec extends SpookyBaseSpec with FileDocsFixture {
 
     it("won't be triggered if no webDriver was initialized") {
       try {
-        DefectiveWebExport.fetch(spooky)
+        DefectiveExport.fetch(spooky)
         sys.error("impossible")
       } catch {
         case e: ActionException =>
@@ -60,8 +60,8 @@ class WebActionSpec extends SpookyBaseSpec with FileDocsFixture {
       } catch {
         case e: ActionException =>
           println(e)
-          assert(e.getMessage.contains("Snapshot/Bypass()/DefectiveWebExport"))
-          assert(e.getMessage.contains("Screenshot/Bypass()/DefectiveWebExport"))
+          assert(e.getMessage.contains("Snapshot/Bypass/DefectiveWebExport"))
+          assert(e.getMessage.contains("Screenshot/Bypass/DefectiveWebExport"))
       }
     }
 
@@ -75,8 +75,8 @@ class WebActionSpec extends SpookyBaseSpec with FileDocsFixture {
       } catch {
         case e: ActionException =>
           println(e)
-          assert(e.getMessage.contains("Delay/1_second/Snapshot/Bypass()/DefectiveWebExport"))
-          assert(e.getMessage.contains("Delay/1_second/Screenshot/Bypass()/DefectiveWebExport"))
+          assert(e.getMessage.contains("Delay/1_second/Snapshot/Bypass/DefectiveWebExport"))
+          assert(e.getMessage.contains("Delay/1_second/Screenshot/Bypass/DefectiveWebExport"))
       }
     }
   }
@@ -112,7 +112,7 @@ class WebActionSpec extends SpookyBaseSpec with FileDocsFixture {
 
       spooky.confUpdate(_.copy(remote = false))
 
-      intercept[QueryException] {
+      intercept[IllegalArgumentException] {
         (Delay(10.seconds)
           +> Visit(HTML_URL)
           +> Snapshot().waybackToTimeMillis(dates.head - 2000)).fetch(spooky)
@@ -146,7 +146,7 @@ class WebActionSpec extends SpookyBaseSpec with FileDocsFixture {
 
       spooky.confUpdate(_.copy(remote = false))
 
-      intercept[QueryException] {
+      intercept[IllegalArgumentException] {
         (Delay(10.seconds)
           +> Visit(HTML_URL)
           +> Screenshot().waybackToTimeMillis(dates.head - 2000)).fetch(spooky)
@@ -187,10 +187,17 @@ class WebActionSpec extends SpookyBaseSpec with FileDocsFixture {
 
 object WebActionSpec {
 
+  case object DefectiveExport extends Export {
+
+    override def doExeNoName(agent: Agent): Seq[Observation] = {
+      sys.error("error")
+    }
+  }
+
   case object DefectiveWebExport extends Export with WebAction {
 
     override def doExeNoName(agent: Agent): Seq[Observation] = {
-      agent.driverOf(Web)
+      agent.getDriver(Web)
       sys.error("error")
     }
   }

@@ -1,6 +1,6 @@
 package com.tribbloids.spookystuff.execution
 
-import com.tribbloids.spookystuff.dsl.{Locality, DataLocality}
+import com.tribbloids.spookystuff.dsl.{DataLocality, Locality}
 import com.tribbloids.spookystuff.row.{BeaconRDD, LocalityGroup}
 
 trait CanInjectBeaconRDD[O] extends ExecutionPlan[O] {

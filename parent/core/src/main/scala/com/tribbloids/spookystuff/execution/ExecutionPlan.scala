@@ -4,7 +4,6 @@ import com.tribbloids.spookystuff.SpookyContext
 import com.tribbloids.spookystuff.row.*
 import org.apache.spark.storage.StorageLevel
 
-
 object ExecutionPlan {
 
   trait CanChain[O] {
