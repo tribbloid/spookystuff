@@ -55,19 +55,39 @@ object WebDriverFactory {
   }
 
   case class PhantomJSDeployment(
-      override val targetPath: String = PhantomJS.defaultLocalPath,
-      override val repositoryURI: String = PhantomJS.defaultRemoteURL
+      override val targetPath: String = PhantomJS.DEFAULT_PATH,
+      override val repositoryURI: String = {
+
+        val os = System.getProperty("os.name").toLowerCase
+        //        val osVersion = System.getProperty("os.version")
+        val osArch = System.getProperty("os.arch")
+
+        (os, osArch) match {
+
+          case ("linux", "amd64") =>
+            PhantomJS.RepoURL.linux_amd64
+          case ("windows", "amd64") =>
+            PhantomJS.RepoURL.windows_amd64
+          case ("mac os x", _) =>
+            PhantomJS.RepoURL.apple
+        }
+      }
   ) extends BinaryDeployment {}
 
   object PhantomJS {
 
-    // TODO: separate win/mac/linux32/linux64 versions
-    final val defaultRemoteURL = "https://docs.google.com/uc?export=download&id=1tHWQTXy471_MTu5XBYwgvN6zEg741cD8"
+    object RepoURL {
 
-    final def DEFAULT_PATH: String = Envs.USER_HOME \\ ".spookystuff" \\ "phantomjs"
+      final val linux_amd64 = "https://storage.googleapis.com/ci_public/phantom_JS/Linux_amd64/phantomjs"
+      final val windows_amd64 = "https://storage.googleapis.com/ci_public/phantom_JS/MacOS/phantomjs"
+      final val apple = "https://storage.googleapis.com/ci_public/phantom_JS/Windows_amd64/phantomjs.exe"
+    }
 
-    def defaultLocalPath: String = {
-      ConfUtils.getOrDefault("phantomjs.path", DEFAULT_PATH)
+    @transient lazy val DEFAULT_PATH: String = {
+      ConfUtils.getOrDefault(
+        "phantomjs.path",
+        Envs.USER_HOME \\ ".spookystuff" \\ "phantomjs"
+      )
     }
 
     def forceDelete(dst: String): Unit = this.synchronized {
@@ -84,7 +104,9 @@ object WebDriverFactory {
   }
 
   case class PhantomJS(
-      deploy: SpookyContext => BinaryDeployment = _ => PhantomJSDeployment(),
+      deploy: SpookyContext => BinaryDeployment = { _ =>
+        PhantomJSDeployment()
+      },
       loadImages: Boolean = false
   ) extends WebDriverFactory {
 
