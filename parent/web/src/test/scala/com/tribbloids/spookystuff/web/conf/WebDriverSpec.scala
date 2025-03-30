@@ -46,42 +46,54 @@ class WebDriverSpec extends SpookyBaseSpec with FileDocsFixture {
     assert(loadedContent === raw)
   }
 
-  it("PhantomJS DriverFactory can degrade gracefully if remote URI is unreachable") {
+  describe("PhantomJS deployment") {
 
-    val dummyPhantomJS = WebDriverFactory.PhantomJS(_ =>
-      WebDriverFactory.PhantomJSDeployment(
-        "dummy/file",
-        "dummy.org/file"
-      )
-    )
+    it("can deploy normally") {
 
-    try {
+      val deployment: WebDriverFactory.PhantomJSDeployment = WebDriverFactory.PhantomJSDeployment()
 
-      val spooky = defaultCtx.copy()
+      val path = deployment.deploydPath
 
-      spooky(Web).confUpdate(
-        _.copy(
-          webDriverFactory = dummyPhantomJS
+      assert(path.endsWith("phantomjs") || path.endsWith("phantomjs.exe"))
+    }
+
+    it("can degrade gracefully if remote URI is unreachable") {
+
+      val dummyPhantomJS = WebDriverFactory.PhantomJS(_ =>
+        WebDriverFactory.PhantomJSDeployment(
+          "dummy/file",
+          "dummy.org/file"
         )
       )
 
-      spooky.confUpdate(
-        _.copy(
-          IgnoreCachedDocsBefore = Some(new Date())
+      try {
+
+        val spooky = defaultCtx.copy()
+
+        spooky(Web).confUpdate(
+          _.copy(
+            webDriverFactory = dummyPhantomJS
+          )
         )
-      )
 
-      Wget(HTML_URL)
-        .as("T")
-        .fetch(spooky) // deploy will fail, but PhantomJS won't be used
+        spooky.confUpdate(
+          _.copy(
+            IgnoreCachedDocsBefore = Some(new Date())
+          )
+        )
 
-      intercept[Exception] {
+        Wget(HTML_URL)
+          .as("T")
+          .fetch(spooky) // deploy will fail, but PhantomJS won't be used
 
-        (
-          Visit(HTML_URL) +>
-            Snapshot().as("T")
-        ).fetch(spooky)
-      }
-    } finally {}
+        intercept[Exception] {
+
+          (
+            Visit(HTML_URL) +>
+              Snapshot().as("T")
+          ).fetch(spooky)
+        }
+      } finally {}
+    }
   }
 }

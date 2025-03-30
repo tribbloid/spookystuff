@@ -64,7 +64,7 @@ trait BinaryDeployment extends Serializable {
     *   - if not eixsting, use SparkFiles.get to get a file replica and copy it to the path
     *   - if not possible, download it to the path
     */
-  @transient lazy val localFilePath: String =
+  @transient lazy val deploydPath: String =
     getLocalFilePath(true)
 
   object Local extends Serializable {

@@ -98,7 +98,13 @@ object WebDriverFactory {
     lazy val defaultBuilder: PhantomJSDriverService.Builder = {
 
       new PhantomJSDriverService.Builder()
-        .usingCommandLineArguments(Array("--webdriver-loglevel=WARN"))
+        .usingCommandLineArguments(
+          Array(
+            "--webdriver-loglevel=WARN",
+            "--verbose",
+            "--log-path=fuckyou.log"
+          )
+        )
 //        .usingCommandLineArguments(Array.empty)
     }
   }
@@ -121,13 +127,18 @@ object WebDriverFactory {
 
       val deployment: BinaryDeployment = deploy(agent.spooky)
 
-      val caps: DesiredCapabilitiesView = DesiredCapabilitiesView.default.Imported(agent.spooky).phantomJS
-      caps.setCapability(PhantomJSDriverService.PHANTOMJS_EXECUTABLE_PATH_PROPERTY, deployment.localFilePath)
+      private val browserPath = deployment.deploydPath
+
+      val caps: DesiredCapabilitiesView = {
+
+        val result = DesiredCapabilitiesView.default.Imported(agent.spooky).phantomJS
+        result.setCapability(PhantomJSDriverService.PHANTOMJS_EXECUTABLE_PATH_PROPERTY, browserPath)
+        result
+      }
 
       lazy val service: PhantomJSDriverService = {
 
         val deployment = deploy(agent.spooky)
-        val pathStr = deployment.localFilePath
 
         val proxyOpt = Option(agent.spooky.conf.webProxy(())).map { v =>
           asSeleniumProxy(v)
@@ -137,13 +148,14 @@ object WebDriverFactory {
 
         var builder = PhantomJS.defaultBuilder
           .usingAnyFreePort()
-          .usingPhantomJSExecutable(new File(pathStr))
+          .usingPhantomJSExecutable(new File(browserPath))
           .withEnvironment(
             Map(
               "OPENSSL_CONF" -> "/dev/null" // https://github.com/bazelbuild/rules_closure/issues/351
             ).asJava
           )
-          .withLogFile(new File(s"${agent.Log.dirPath}/PhantomJSDriver.log"))
+//          .withLogFile(new File(s"${agent.Log.dirPath}/PhantomJSDriver.log"))
+          .withLogFile(new File("PhantomJSDriver.log"))
           //        .withLogFile(new File("/dev/null"))
           .usingGhostDriverCommandLineArguments(
             Array(s"""service_log_path="${agent.Log.dirPath}/GhostDriver.log"""")
