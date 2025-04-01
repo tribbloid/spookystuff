@@ -20,7 +20,7 @@ include(
     ":repack:selenium"
 )
 
-include(":parent")
+include(":module")
 
 include(":prover-commons")
 project(":prover-commons").projectDir = file("prover-commons/module")
@@ -34,38 +34,38 @@ include(
 include(
 
     // uses unstable & experimental scala features, should be modified very slowly & carefully
-    ":parent:commons",
-//    ":parent:parsing", // obsolete, moving to inductive graph soon
-    ":parent:core",
+    ":module:commons",
+//    ":module:parsing", // obsolete, moving to inductive graph soon
+    ":module:core",
 
-    ":parent:linq", // Scala 3 will need a new impl
-    ":parent:web",
-//    ":parent:integration",
-//    ":parent:showcase",
+    ":module:linq", // Scala 3 will need a new impl
+    ":module:web",
+//    ":module:integration",
+    ":parent:showcase",
 )
 
 //if (!isEnabled(noAssembly)) {
 //    include(
-//        ":parent:assembly",
+//        ":module:assembly",
 //    )
 //}
 //
 //
 //if (!isEnabled(noBenchmark)) {
 //    include(
-//        ":parent:benchmark"
+//        ":module:benchmark"
 //    )
 //}
 //
 //if (!isEnabled(noUnused)) {
 //    include(
-//        ":parent:unused"
+//        ":module:unused"
 //    )
 //}
 //
 //if (!isEnabled(noUav)) {
 //    include(
-//        ":parent:uav"
+//        ":module:uav"
 //    )
 //}
 //
