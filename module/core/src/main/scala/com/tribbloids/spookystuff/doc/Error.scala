@@ -79,12 +79,7 @@ object Error {
 
     override def getMessage_simple: String = {
 
-      summary +
-        doc.root.formattedCode
-          .map(
-            "\n" + _
-          )
-          .getOrElse("")
+      summary
     }
 
     override def updated(

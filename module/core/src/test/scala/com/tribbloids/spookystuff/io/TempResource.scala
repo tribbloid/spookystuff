@@ -56,7 +56,7 @@ case class TempResource(
   }
 
   def requireRandomContent[T](length: Int = defaultRandomFileSize)(fn: => T): T = deleteBeforeAndAfter {
-    execution.output(WriteMode.CreateOnly) { out =>
+    execution.output(WriteMode.ErrorIfExists) { out =>
       val bytes = Array.ofDim[Byte](length)
       Random.nextBytes(bytes)
       out.stream.write(bytes)

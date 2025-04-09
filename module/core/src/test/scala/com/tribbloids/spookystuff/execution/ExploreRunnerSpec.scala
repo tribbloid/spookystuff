@@ -78,10 +78,10 @@ class ExploreRunnerSpec extends SpookyBaseSpec {
         .mkString("\n")
         .shouldBe(
           """
-            |(0,{ Wget(/testutils/dir,MustHaveTitle) },file:/testutils/dir/dir)
-            |(1,{ Wget(file:/testutils/dir/dir,MustHaveTitle) },file:/testutils/dir/dir/dir)
-            |(2,{ Wget(file:/testutils/dir/dir/dir,MustHaveTitle) },file:/testutils/dir/dir/dir/dir)
-            |(3,{ Wget(file:/testutils/dir/dir/dir/dir,MustHaveTitle) },)
+            |(0,{ Wget(/testutils/dir) },file:/testutils/dir/dir)
+            |(1,{ Wget(file:/testutils/dir/dir) },file:/testutils/dir/dir/dir)
+            |(2,{ Wget(file:/testutils/dir/dir/dir) },file:/testutils/dir/dir/dir/dir)
+            |(3,{ Wget(file:/testutils/dir/dir/dir/dir) },)
             |""".stripMargin
         )
     }
@@ -143,10 +143,10 @@ class ExploreRunnerSpec extends SpookyBaseSpec {
         .mkString("\n")
         .shouldBe(
           """
-            |(0,{ Wget(/testutils/dir,MustHaveTitle) },file:/testutils/dir/dir)
-            |(1,{ Wget(file:/testutils/dir/dir,MustHaveTitle) },file:/testutils/dir/dir/dir)
-            |(2,{ Wget(file:/testutils/dir/dir/dir,MustHaveTitle) },file:/testutils/dir/dir/dir/dir)
-            |(3,{ Wget(file:/testutils/dir/dir/dir/dir,MustHaveTitle) },)
+            |(0,{ Wget(/testutils/dir) },file:/testutils/dir/dir)
+            |(1,{ Wget(file:/testutils/dir/dir) },file:/testutils/dir/dir/dir)
+            |(2,{ Wget(file:/testutils/dir/dir/dir) },file:/testutils/dir/dir/dir/dir)
+            |(3,{ Wget(file:/testutils/dir/dir/dir/dir) },)
             |""".stripMargin
         )
     }

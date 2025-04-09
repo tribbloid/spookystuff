@@ -2,6 +2,7 @@ package com.tribbloids.spookystuff.doc
 
 import com.tribbloids.spookystuff.actions.Wget
 import com.tribbloids.spookystuff.commons.CommonUtils
+import com.tribbloids.spookystuff.io.WriteMode.Overwrite
 import com.tribbloids.spookystuff.testutils.{RemoteDocsFixture, SpookyBaseSpec}
 
 class DocSpec extends SpookyBaseSpec {
@@ -24,7 +25,7 @@ class DocSpec extends SpookyBaseSpec {
 
       val raw = page.blob.raw
 
-      page.prepareSave(spooky, overwrite = true).auditing()
+      page.prepareSave(spooky, Overwrite).auditing()
 
       val loadedContent = DocUtils.load(page.saved.head)(spooky)
 
@@ -45,7 +46,7 @@ class DocSpec extends SpookyBaseSpec {
       assert(page.\("notexist").isEmpty)
 
       val raw = page.blob.raw
-      page.prepareSave(spooky, overwrite = true).auditing()
+      page.prepareSave(spooky, Overwrite).auditing()
 
       val loadedContent = DocUtils.load(page.saved.head)(spooky)
 
@@ -64,7 +65,7 @@ class DocSpec extends SpookyBaseSpec {
       assert(page.findAll("title").text.get == "")
 
       val raw = page.blob.raw
-      page.prepareSave(spooky, overwrite = true).auditing()
+      page.prepareSave(spooky, Overwrite).auditing()
 
       val loadedContent = DocUtils.load(page.saved.head)(spooky)
 
@@ -83,7 +84,7 @@ class DocSpec extends SpookyBaseSpec {
       assert(page.findAll("title").text.get == "Microsoft Word - Document1")
 
       val raw = page.blob.raw
-      page.prepareSave(spooky, overwrite = true).auditing()
+      page.prepareSave(spooky, Overwrite).auditing()
 
       val loadedContent = DocUtils.load(page.saved.head)(spooky)
 
@@ -104,7 +105,7 @@ class DocSpec extends SpookyBaseSpec {
       assert(page.findAll("profiles > profile").size == 5)
 
       val raw = page.blob.raw
-      page.prepareSave(spooky, overwrite = true).auditing()
+      page.prepareSave(spooky, Overwrite).auditing()
 
       val loadedContent = DocUtils.load(page.saved.head)(spooky)
 
@@ -133,7 +134,7 @@ class DocSpec extends SpookyBaseSpec {
       assert(page.findAll("Name").size == 14)
 
       val raw = page.blob.raw
-      page.prepareSave(spooky, overwrite = true).auditing()
+      page.prepareSave(spooky, Overwrite).auditing()
 
       val loadedContent = DocUtils.load(page.saved.head)(spooky)
 

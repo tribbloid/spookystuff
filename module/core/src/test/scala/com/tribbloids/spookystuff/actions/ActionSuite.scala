@@ -6,6 +6,7 @@ import com.tribbloids.spookystuff.doc.Observation.DocUID
 import com.tribbloids.spookystuff.doc.{Doc, Observation}
 import com.tribbloids.spookystuff.testutils.SpookyBaseSpec
 import com.tribbloids.spookystuff.{ActionException, Const}
+import com.tribbloids.spookystuff.actions.Export.DocValidation.StatusCode2XX
 
 import scala.concurrent.duration.Duration
 import scala.concurrent.{duration, TimeoutException}
@@ -16,28 +17,32 @@ class ActionSuite extends SpookyBaseSpec {
 
   import duration.*
 
-  describe("Wget") {
-    val action = Wget("http://dummy.com")
+  describe("human readable SerDe") {
 
-    it("-> JSON") {
+    val action = Wget("http://dummy.com").accept(StatusCode2XX)
+
+    it("JSON") {
       val str = action.prettyJSON()
       str.shouldBe(
         """
           |{
-          |  "uri" : "http://dummy.com",
-          |  "filter" : { }
+          |  "original" : {
+          |    "uri" : "http://dummy.com"
+          |  },
+          |  "validation" : { }
           |}
         """.stripMargin
       )
     }
 
-    it("-> treeText") {
+    it("treeText") {
       val str = action.treeText
       str.shouldBe(
         """
-          |Wget
-          |  "http://dummy.com"
-          |  MustHaveTitle
+          |Accept
+          |  Wget
+          |    "http://dummy.com"
+          |  StatusCode2XX
         """.stripMargin
       )
     }
@@ -73,7 +78,7 @@ object ActionSuite {
 
   case object MockAlwaysTimeout extends Export with MayTimeout {
 
-    override def doExeNoName(agent: Agent): Seq[Observation] = {
+    override def doExe(agent: Agent): Seq[Observation] = {
       Thread.sleep(120 * 1000)
       Nil
     }
@@ -88,7 +93,7 @@ object ActionSuite {
 
   case class MockExport() extends Export {
 
-    override def doExeNoName(agent: Agent): Seq[Observation] = {
+    override def doExe(agent: Agent): Seq[Observation] = {
       Seq(
         Doc(
           DocUID(agent.backtrace.toSeq)(),

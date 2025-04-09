@@ -4,6 +4,7 @@ import ai.acyclic.prover.commons.debug.print_@
 import ai.acyclic.prover.commons.spark.Envs
 import com.tribbloids.spookystuff.actions.{NoOp, Wget}
 import com.tribbloids.spookystuff.execution.{ExplorePlan, FetchPlan, FlatMapPlan}
+import com.tribbloids.spookystuff.io.WriteMode.Overwrite
 import com.tribbloids.spookystuff.metrics.Acc
 import com.tribbloids.spookystuff.testutils.{FileDocsFixture, SpookyBaseSpec}
 
@@ -286,7 +287,7 @@ class DataViewSpec extends SpookyBaseSpec {
       spooky
         .fetch(_ => Wget(HTML_URL))
         .select { row =>
-          row.docs.save(s"file://${Envs.USER_DIR}/temp/dummy", overwrite = true)
+          row.docs.save(s"file://${Envs.USER_DIR}/temp/dummy", mode = Overwrite)
         }
         .collect()
 
@@ -302,7 +303,7 @@ class DataViewSpec extends SpookyBaseSpec {
       vv.collect()
 
       vv.select { row =>
-        row.docs.save(s"file://${Envs.USER_DIR}/temp/dummy", overwrite = true)
+        row.docs.save(s"file://${Envs.USER_DIR}/temp/dummy", mode = Overwrite)
       }.collect()
 
       assert(dummyFileExists())
@@ -314,7 +315,7 @@ class DataViewSpec extends SpookyBaseSpec {
       spooky
         .fetch(_ => Wget(HTML_URL))
         .select { row =>
-          row.docs.save(s"file://${Envs.USER_DIR}/temp/dummy", overwrite = true)
+          row.docs.save(s"file://${Envs.USER_DIR}/temp/dummy", mode = Overwrite)
         }
         .compute()
 

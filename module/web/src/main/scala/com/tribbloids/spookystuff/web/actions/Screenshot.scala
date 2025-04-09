@@ -1,19 +1,15 @@
 package com.tribbloids.spookystuff.web.actions
 
-import com.tribbloids.spookystuff.actions.{DocFilter, Export, Wayback}
+import com.tribbloids.spookystuff.actions.{DocValidation, Export, Wayback}
 import com.tribbloids.spookystuff.agent.Agent
 import com.tribbloids.spookystuff.doc.*
 import com.tribbloids.spookystuff.doc.Observation.DocUID
 import com.tribbloids.spookystuff.web.conf.Web
 import org.openqa.selenium.{OutputType, TakesScreenshot}
 
-case class Screenshot(
-    override val filter: DocFilter = DocFilter.defaultForImage
-) extends Export
-    with WebAction
-    with Wayback {
+case class Screenshot() extends Export with WebAction with Wayback {
 
-  override def doExeNoName(agent: Agent): Seq[Doc] = {
+  override def doExe(agent: Agent): Seq[Doc] = {
 
     val webDriver = agent.getDriver(Web)
 
@@ -35,6 +31,6 @@ case class Screenshot(
 
 object Screenshot {
 
-  object QuickScreenshot extends Screenshot(DocFilter.Bypass)
-  object ErrorScreenshot extends Screenshot(DocFilter.Bypass)
+  object QuickScreenshot extends Screenshot()
+  object ErrorScreenshot extends Screenshot()
 }

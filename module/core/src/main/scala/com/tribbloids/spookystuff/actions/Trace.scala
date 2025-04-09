@@ -10,6 +10,7 @@ import com.tribbloids.spookystuff.caching.{CacheKey, DFSDocCache, InMemoryDocCac
 import com.tribbloids.spookystuff.commons.CommonUtils
 import com.tribbloids.spookystuff.doc.{Doc, Observation}
 import com.tribbloids.spookystuff.{Const, SpookyContext}
+import com.tribbloids.spookystuff.io.WriteMode.Overwrite
 import org.slf4j.LoggerFactory
 
 import scala.collection.mutable.ArrayBuffer
@@ -179,7 +180,7 @@ case class Trace(
 
           observed.foreach { observed =>
             spooky.conf.auditing.apply(observed).map { doc =>
-              doc.prepareSave(spooky).auditing()
+              doc.prepareSave(spooky, Overwrite).auditing()
             }
             // TODO: doc.content can now use the file saved for auditing
           }

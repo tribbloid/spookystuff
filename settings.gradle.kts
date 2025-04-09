@@ -1,7 +1,15 @@
+
+// Check if the local settings file exists
+// TODO: anti-pattern, a local gradle.properties file should be used instead
+//val localSettingsFile = file("local.settings.gradle.kts") // this file should be ignored by git
+//
+//if (localSettingsFile.exists()) {
+//    apply(from = localSettingsFile)
+//}
+
 val noAssembly: String? by settings
 val noBenchmark: String? by settings
-val noUnused: String? by settings
-val noUav: String? by settings
+val notebook: String? by settings
 
 pluginManagement.repositories {
     gradlePluginPortal()
@@ -32,7 +40,6 @@ include(
 )
 
 include(
-
     // uses unstable & experimental scala features, should be modified very slowly & carefully
     ":module:commons",
 //    ":module:parsing", // obsolete, moving to inductive graph soon
@@ -41,7 +48,6 @@ include(
     ":module:linq", // Scala 3 will need a new impl
     ":module:web",
 //    ":module:integration",
-    ":parent:showcase",
 )
 
 //if (!isEnabled(noAssembly)) {
@@ -56,13 +62,12 @@ include(
 //        ":module:benchmark"
 //    )
 //}
-//
-//if (!isEnabled(noUnused)) {
-//    include(
-//        ":module:unused"
-//    )
-//}
-//
+
+if (isEnabled(notebook)) {
+
+    include(":notebook")
+}
+
 //if (!isEnabled(noUav)) {
 //    include(
 //        ":module:uav"

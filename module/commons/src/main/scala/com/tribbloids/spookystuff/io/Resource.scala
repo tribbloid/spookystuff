@@ -22,9 +22,9 @@ abstract class Resource extends LocalCleanable {
 
   protected def _newOStream: OutputStream
   protected def newOStream: OutputStream = mode match {
-    case WriteMode.ReadOnly => throw new UnsupportedOperationException("cannot write if mode is ReadOnly")
-    case WriteMode.Ignore   => NullOutputStream.NULL_OUTPUT_STREAM
-    case _                  => _newOStream
+    case WriteMode.Disabled_ReadOnly => throw new UnsupportedOperationException("cannot write if mode is ReadOnly")
+    case WriteMode.Ignore            => NullOutputStream.NULL_OUTPUT_STREAM
+    case _                           => _newOStream
   }
 
   case class _IOView[T](streamFactory: () => T) extends IOView {

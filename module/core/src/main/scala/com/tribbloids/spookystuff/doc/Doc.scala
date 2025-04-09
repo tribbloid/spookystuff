@@ -10,7 +10,7 @@ import com.tribbloids.spookystuff.doc.Content.InMemoryBlob
 import com.tribbloids.spookystuff.doc.Error.ConversionError
 import com.tribbloids.spookystuff.doc.Observation.DocUID
 import com.tribbloids.spookystuff.doc.Unstructured.Unrecognisable
-import com.tribbloids.spookystuff.io.ResourceMetadata
+import com.tribbloids.spookystuff.io.{ResourceMetadata, WriteMode}
 import org.apache.commons.csv.CSVFormat
 import org.apache.hadoop.shaded.org.apache.http.StatusLine
 import org.apache.hadoop.shaded.org.apache.http.entity.ContentType
@@ -206,7 +206,7 @@ case class Doc(
 
   case class prepareSave(
       spooky: SpookyContext,
-      overwrite: Boolean = false
+      mode: WriteMode
   ) {
 
     def save(
@@ -216,7 +216,7 @@ case class Doc(
 
       def wCtx = _content.withCtx(spooky)
 
-      val saved = wCtx.save1(path, extension, overwrite)
+      val saved = wCtx.save1(path, extension, mode)
       Doc.this._content = saved
     }
 

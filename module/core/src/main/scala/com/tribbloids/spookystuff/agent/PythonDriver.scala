@@ -46,7 +46,7 @@ object PythonDriver {
 
     exe.treeCopyTo(
       LocalResolver.default.on(pythonPath),
-      WriteMode.CreateOnly
+      WriteMode.ErrorIfExists
     )
 
     pythonPath

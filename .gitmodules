@@ -1,9 +1,9 @@
-[submodule "parent/showcase"]
-	path = parent/showcase
-	url = https://github.com/tribbloid/spookystuff-showcase
 [submodule "buildSrc"]
 	path = buildSrc
 	url = https://github.com/tribbloid/buildSrc
 [submodule "prover-commons"]
 	path = prover-commons
 	url = https://github.com/tribbloid/prover-commons
+[submodule "notebook"]
+	path = notebook
+	url = https://github.com/tribbloid/spookystuff-notebook

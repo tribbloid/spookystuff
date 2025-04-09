@@ -5,6 +5,7 @@ import com.tribbloids.spookystuff.agent.Agent
 import com.tribbloids.spookystuff.commons.CommonUtils
 import com.tribbloids.spookystuff.doc.{Doc, Observation}
 import com.tribbloids.spookystuff.{ActionException, ActionExceptionWithCoreDump, SpookyContext, SpookyException}
+import com.tribbloids.spookystuff.io.WriteMode.{ErrorIfExists, Overwrite}
 import org.apache.commons.lang3.SerializationUtils
 import org.apache.spark.sql.types.SQLUserDefinedType
 import org.slf4j.LoggerFactory
@@ -113,12 +114,12 @@ trait Action extends HasTrace {
     val uid = rawDoc.uid.copy(backtrace = backtrace)(nameOvrd = None)
     val doc = rawDoc.copy(uid = uid)(rawDoc.content)
     try {
-      doc.prepareSave(spooky).errorDump()
+      doc.prepareSave(spooky, Overwrite).errorDump()
       "saved to: " + doc.saved.last
     } catch {
       case e1: Exception =>
         try {
-          doc.prepareSave(spooky).errorDumpLocally()
+          doc.prepareSave(spooky, Overwrite).errorDumpLocally()
           s"DFS inaccessible (${e1.toString}) ......... saved to: " + doc.saved.last
         } catch {
           case e2: Exception =>

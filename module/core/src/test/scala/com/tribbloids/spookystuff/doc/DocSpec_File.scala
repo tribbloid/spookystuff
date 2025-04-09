@@ -1,6 +1,7 @@
 package com.tribbloids.spookystuff.doc
 
 import com.tribbloids.spookystuff.actions.Wget
+import com.tribbloids.spookystuff.io.WriteMode.Overwrite
 import com.tribbloids.spookystuff.testutils.FileDocsFixture
 
 class DocSpec_File extends DocSpec {
@@ -34,7 +35,7 @@ class DocSpec_File extends DocSpec {
         )
 
       val raw = page.content.blob.raw
-      page.prepareSave(spooky, overwrite = true).auditing()
+      page.prepareSave(spooky, Overwrite).auditing()
 
       val loadedContent = DocUtils.load(page.saved.head)(spooky)
 

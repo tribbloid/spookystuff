@@ -189,14 +189,14 @@ object WebActionSpec {
 
   case object DefectiveExport extends Export {
 
-    override def doExeNoName(agent: Agent): Seq[Observation] = {
+    override def doExe(agent: Agent): Seq[Observation] = {
       sys.error("error")
     }
   }
 
   case object DefectiveWebExport extends Export with WebAction {
 
-    override def doExeNoName(agent: Agent): Seq[Observation] = {
+    override def doExe(agent: Agent): Seq[Observation] = {
       agent.getDriver(Web)
       sys.error("error")
     }

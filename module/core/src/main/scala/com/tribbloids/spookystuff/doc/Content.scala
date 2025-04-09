@@ -4,7 +4,7 @@ import ai.acyclic.prover.commons.spark.serialization.NOTSerializable
 import ai.acyclic.prover.commons.util.PathMagnet.URIPath
 import com.tribbloids.spookystuff.SpookyContext
 import com.tribbloids.spookystuff.commons.TreeException
-import com.tribbloids.spookystuff.io.HDFSResolver
+import com.tribbloids.spookystuff.io.{HDFSResolver, WriteMode}
 import org.apache.commons.io.IOUtils
 import org.apache.hadoop.fs.{FSDataOutputStream, Path}
 import org.apache.hadoop.shaded.org.apache.http.entity.ContentType
@@ -88,58 +88,82 @@ sealed trait Content extends SpookyContext.Contextual with Serializable {
 
     private def doSave1(
         path: String,
-        overwrite: Boolean = false
+        mode: WriteMode
     ): Path = { // return absolute path
+
+      val _path = new Path(path)
+      val fs = _path.getFileSystem(ctx.hadoopConf)
 
       DocUtils.dfsWrite("save", path, ctx) { progress =>
         //          val resolver = ctx.pathResolver // TODO: simplify using this
 
-        val fullPath = new Path(path)
-        val fs = fullPath.getFileSystem(ctx.hadoopConf)
-        //      if (!overwrite && fs.exists(fullPath)) fullPath = new Path(path + "-" + UUID.randomUUID())
-        val (fos: FSDataOutputStream, actualPath: Path) =
+        val resolver = ctx.pathResolver
+
+        resolver.output(path, mode) { out =>
+          val os = progress.WrapOStream(out.stream)
+
           try {
-            fs.create(fullPath, overwrite) -> fullPath
-          } catch {
-            case _: Exception =>
-              val altPath = new Path(path + "-" + UUID.randomUUID())
-              fs.create(altPath, overwrite) -> altPath
+            os.write(raw) //       remember that apache IOUtils is defective for DFS!
+
+            val metrics = ctx.metrics
+            metrics.saved += 1
+            //        metrics.savedPath.add(path -> progress.indicator.longValue())
+
+            val absolutePath = fs.resolvePath(_path)
+            absolutePath
+
+          } finally {
+            os.close()
           }
-
-        val os = progress.WrapOStream(fos)
-
-        try {
-          os.write(raw) //       remember that apache IOUtils is defective for DFS!
-
-          val metrics = ctx.metrics
-          metrics.saved += 1
-          //        metrics.savedPath.add(path -> progress.indicator.longValue())
-
-          val absolutePath = fs.resolvePath(actualPath)
-          absolutePath
-
-        } finally {
-          os.close()
         }
+//
+//        //      if (!overwrite && fs.exists(fullPath)) fullPath = new Path(path + "-" + UUID.randomUUID())
+//        val (fos: FSDataOutputStream, actualPath: Path) =
+//          try {
+//            fs.create(fullPath, mode) -> fullPath
+//          } catch {
+//            case _: Exception =>
+//              val altPath = new Path(path + "-" + UUID.randomUUID())
+//              fs.create(altPath, mode) -> altPath
+//          }
+//
+//        val os = progress.WrapOStream(fos)
+//
+//        try {
+//          os.write(raw) //       remember that apache IOUtils is defective for DFS!
+//
+//          val metrics = ctx.metrics
+//          metrics.saved += 1
+//          //        metrics.savedPath.add(path -> progress.indicator.longValue())
+//
+//          val absolutePath = fs.resolvePath(actualPath)
+//          absolutePath
+//
+//        } finally {
+//          os.close()
+//        }
       }
     }
 
     def save1(
         path: URIPath,
-        extension: Option[String] = None,
-        overwrite: Boolean = false
+        extension: Option[String],
+        mode: WriteMode
     ): Content = {
 
-      val withExtension = extension
-        .orElse(
-          defaultFileExtension
-        )
-        .map { ext =>
-          path dot ext
-        }
-        .getOrElse(path)
+      val withExtension = {
 
-      val absolutePath = doSave1(withExtension, overwrite).toString
+        extension
+          .orElse(
+            defaultFileExtension
+          )
+          .map { ext =>
+            path dotIfNoExistingExtension ext
+          }
+          .getOrElse(path)
+      }
+
+      val absolutePath = doSave1(withExtension, mode).toString
 
       val newBlob = blob match {
         case v: InMemoryBlob =>

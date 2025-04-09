@@ -18,8 +18,7 @@ import org.apache.hadoop.shaded.org.apache.http.client.methods.HttpGet
   */
 @SerialVersionUID(-8687280136721213696L)
 case class Wget(
-    uri: String,
-    override val filter: DocFilter = DocFilter.default
+    uri: String
 ) extends HttpMethod(uri) {
 
   def getResolver(agent: Agent): OmniResolver = {
@@ -46,7 +45,7 @@ case class Wget(
     resolver
   }
 
-  override def doExeNoName(agent: Agent): Seq[Observation] = {
+  override def doExe(agent: Agent): Seq[Observation] = {
 
     val resolver = getResolver(agent)
 

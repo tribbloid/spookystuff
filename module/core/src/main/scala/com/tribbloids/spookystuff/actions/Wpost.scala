@@ -17,14 +17,12 @@ object Wpost {
 
   def apply(
       uri: String,
-      filter: DocFilter = DocFilter.defaultForImage,
       entity: HttpEntity = new StringEntity("")
-  ): WpostImpl = WpostImpl(uri, filter)(entity)
+  ): WpostImpl = WpostImpl(uri)(entity)
 
   @SerialVersionUID(2416628905154681500L)
   case class WpostImpl(
-      uri: String,
-      override val filter: DocFilter
+      uri: String
   )(
       entity: HttpEntity // TODO: cannot be dumped or serialized, fix it!
   ) extends HttpMethod(uri) {
@@ -66,7 +64,7 @@ object Wpost {
       resolver
     }
 
-    override def doExeNoName(agent: Agent): Seq[Observation] = {
+    override def doExe(agent: Agent): Seq[Observation] = {
 
       val resolver = getResolver(agent)
       val impl = resolver.getImpl(uri)

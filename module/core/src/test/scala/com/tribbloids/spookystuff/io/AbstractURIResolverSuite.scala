@@ -184,7 +184,7 @@ abstract class AbstractURIResolverSuite extends SparkEnvSpec {
 
       dir.requireVoid {
 
-        resolver.output(nonExistingSubFile.path, WriteMode.CreateOnly) { out =>
+        resolver.output(nonExistingSubFile.path, WriteMode.ErrorIfExists) { out =>
           out.stream
         }
 
@@ -200,7 +200,7 @@ abstract class AbstractURIResolverSuite extends SparkEnvSpec {
 
         for (i <- 1 to 3) {
           intercept[IOException] {
-            resolver.output(existingFile.path, WriteMode.CreateOnly) { out =>
+            resolver.output(existingFile.path, WriteMode.ErrorIfExists) { out =>
               out.stream
             }
           }
@@ -212,9 +212,9 @@ abstract class AbstractURIResolverSuite extends SparkEnvSpec {
 
       existingFile.requireVoid {
 
-        resolver.output(existingFile.path, WriteMode.CreateOnly) { out1 =>
+        resolver.output(existingFile.path, WriteMode.ErrorIfExists) { out1 =>
           out1.stream
-          resolver.output(existingFile.path, WriteMode.CreateOnly) { out2 =>
+          resolver.output(existingFile.path, WriteMode.ErrorIfExists) { out2 =>
             intercept[IOException] {
 
               out2.stream
@@ -231,7 +231,7 @@ abstract class AbstractURIResolverSuite extends SparkEnvSpec {
         existingFile.requireRandomContent(16) {
           nonExistingFile.requireVoid {
 
-            resolver.on(existingFile.path).copyTo(nonExistingFile.path, WriteMode.CreateOnly)
+            resolver.on(existingFile.path).copyTo(nonExistingFile.path, WriteMode.ErrorIfExists)
 
             val copied = resolver.input(nonExistingFile.path)(_.getLength == 16)
             assert(copied)
@@ -349,7 +349,7 @@ abstract class AbstractURIResolverSuite extends SparkEnvSpec {
               val src = resolver.on(pathStr + s"${Random.nextLong()}")
 
               try {
-                src.output(WriteMode.CreateOnly) { oo =>
+                src.output(WriteMode.ErrorIfExists) { oo =>
                   oo.stream.write(("" + i).getBytes)
                 }
                 src.moveTo(pathStr + ".moved")

@@ -69,7 +69,7 @@ abstract class URIResolver extends Serializable {
     private def create_simple(): Unit = {
 
       try {
-        this.output(WriteMode.CreateOnly) { out =>
+        this.output(WriteMode.ErrorIfExists) { out =>
           out.stream.write(zeroByte)
         }
 
@@ -109,7 +109,7 @@ abstract class URIResolver extends Serializable {
       fn(v.InputView)
     }
 
-    protected def doIO[T](mode: WriteMode = WriteMode.ReadOnly)(fn: _Resource => T): T = {
+    protected def doIO[T](mode: WriteMode = WriteMode.Disabled_ReadOnly)(fn: _Resource => T): T = {
 
       val resource = _Resource(mode)
 
@@ -121,7 +121,7 @@ abstract class URIResolver extends Serializable {
     }
 
 //     write an empty file even if stream is not used
-    final def output[T](mode: WriteMode = WriteMode.CreateOnly)(fn: _Resource#OutputView => T): T = doIO(mode) { v =>
+    final def output[T](mode: WriteMode = WriteMode.ErrorIfExists)(fn: _Resource#OutputView => T): T = doIO(mode) { v =>
       fn(v.OutputView)
     }
 

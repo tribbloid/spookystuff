@@ -6,7 +6,7 @@ import ai.acyclic.prover.commons.function.hom.Hom
 import com.tribbloids.spookystuff.linq.Record
 import shapeless.ops.hlist.Mapper
 
-class RowOrdering {
+class RowOrdering extends Serializable {
 
   trait Impl[T <: TupleX] extends Ordering[Record[T]]
 }
@@ -32,7 +32,7 @@ object RowOrdering {
     }
 
     def at[R <: TupleX] = new At[R]
-    class At[R <: TupleX] {
+    class At[R <: TupleX] extends Serializable {
 
       // applicable to all cases of Tuple, even without KeyTags
       case class Factory[

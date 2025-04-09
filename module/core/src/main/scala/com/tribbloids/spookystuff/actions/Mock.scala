@@ -9,7 +9,7 @@ case class Mock( // TODO: should be export
 ) extends Export
     with Driverless {
 
-  override def doExeNoName(agent: Agent): Seq[Observation] = {
+  override def doExe(agent: Agent): Seq[Observation] = {
 
     observations
   }

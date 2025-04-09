@@ -23,11 +23,11 @@ case class OAuthV2(original: Wget) extends HttpMethod(original.uri) { // TODO: t
     effectiveWget
   }
 
-  override def doExeNoName(agent: Agent): Seq[Observation] = {
+  override def doExe(agent: Agent): Seq[Observation] = {
 
     val temporary = this.temporaryDelegate(agent)
 
-    temporary.doExeNoName(agent).map {
+    temporary.doExe(agent).map {
       case doc: Doc =>
         doc.updated(uid = doc.uid.copy(backtrace = this.trace)(doc.uid.nameOvrd))
       case others =>

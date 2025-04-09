@@ -87,7 +87,7 @@ case class LocalResolver(
 
         val fos = (isExisting, mode) match {
 
-          case (true, WriteMode.CreateOnly) =>
+          case (true, WriteMode.ErrorIfExists) =>
             throw new FileAlreadyExistsException(s"$absolutePath already exists")
 
           case (true, WriteMode.Overwrite) =>

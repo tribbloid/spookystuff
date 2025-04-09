@@ -4,11 +4,14 @@ object WriteMode extends Enumeration {
 
   sealed abstract class Effective extends WriteMode
 
-  object CreateOnly extends Effective
-  object Overwrite extends Effective
-  object Append extends Effective
+  object Append extends Effective // cannot be used for binary file
 
-  object ReadOnly extends WriteMode
+  sealed abstract class Effective_Binary extends Effective
+
+  object ErrorIfExists extends Effective_Binary
+  object Overwrite extends Effective_Binary
+
+  object Disabled_ReadOnly extends WriteMode // TODO: do we need this?
 
   // TODO: add back with some high-level implementation using apache-io NullOutputStream
   object Ignore extends WriteMode

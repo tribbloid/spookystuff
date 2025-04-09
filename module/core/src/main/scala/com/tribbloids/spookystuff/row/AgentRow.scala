@@ -4,6 +4,7 @@ import ai.acyclic.prover.commons.util.PathMagnet
 import com.tribbloids.spookystuff.doc.*
 import com.tribbloids.spookystuff.doc.Observation.{DocUID, Error, Success}
 import com.tribbloids.spookystuff.execution.{ExecutionContext, FlatMapPlan}
+import com.tribbloids.spookystuff.io.WriteMode
 import com.tribbloids.spookystuff.row.AgentRow.ObservationsScaffold
 import com.tribbloids.spookystuff.row.AgentRow.ObservationsScaffold.SingletonScaffold
 import com.tribbloids.spookystuff.row.Data.Scope
@@ -79,13 +80,13 @@ object AgentRow {
       def save(
           path: PathMagnet.URIPath,
           extension: Option[String] = None,
-          overwrite: Boolean = false
+          mode: WriteMode = WriteMode.ErrorIfExists
       ): Unit = {
 
         self.zipWithIndex.foreach {
 
           case (doc, _) =>
-            doc.prepareSave(self.agentState.ctx, overwrite).save(path, extension)
+            doc.prepareSave(self.agentState.ctx, mode).save(path, extension)
         }
       }
     }

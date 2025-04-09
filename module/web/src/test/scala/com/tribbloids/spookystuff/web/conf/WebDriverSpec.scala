@@ -1,10 +1,12 @@
 package com.tribbloids.spookystuff.web.conf
 
-import com.tribbloids.spookystuff.actions.{DocFilter, Wget}
+import com.tribbloids.spookystuff.actions.{Export, Wget}
+import com.tribbloids.spookystuff.actions.Export.DocValidation.StatusCode2XX
 import com.tribbloids.spookystuff.agent.Agent
 import com.tribbloids.spookystuff.doc.{Doc, DocUtils}
-import com.tribbloids.spookystuff.testutils.SpookyEnvSpec.defaultCtx
+import com.tribbloids.spookystuff.io.WriteMode.Overwrite
 import com.tribbloids.spookystuff.testutils.{FileDocsFixture, SpookyBaseSpec}
+import com.tribbloids.spookystuff.testutils.SpookyEnvSpec.defaultCtx
 import com.tribbloids.spookystuff.web.actions.{Snapshot, Visit}
 
 import java.util.Date
@@ -19,7 +21,7 @@ class WebDriverSpec extends SpookyBaseSpec with FileDocsFixture {
       val agent = new Agent(spooky)
       agent.getDriver(Web)
 
-      Snapshot(DocFilter.AcceptStatusCode2XX).apply(agent).toList.head.asInstanceOf[Doc]
+      Snapshot().accept(StatusCode2XX).apply(agent).toList.head.asInstanceOf[Doc]
     }
 
     assert(emptyPage.findAll("div.dummy").attrs("href").isEmpty)
@@ -39,7 +41,7 @@ class WebDriverSpec extends SpookyBaseSpec with FileDocsFixture {
     val page = resultsList(0).asInstanceOf[Doc]
 
     val raw = page.blob.raw
-    page.prepareSave(spooky, overwrite = true).auditing()
+    page.prepareSave(spooky, Overwrite).auditing()
 
     val loadedContent = DocUtils.load(page.saved.head)(spooky)
 

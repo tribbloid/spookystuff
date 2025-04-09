@@ -78,14 +78,10 @@ object DocUtils {
   def cache[T](
       pageLikes: Seq[T],
       pathStr: String,
-      overwrite: Boolean = true
+      mode: WriteMode.Effective_Binary = WriteMode.Overwrite
   )(spooky: SpookyContext): Unit =
     dfsWrite("cache", pathStr, spooky) { progress =>
       val list = pageLikes.toList // Seq may be a stream that cannot be serialized
-
-      val mode =
-        if (overwrite) WriteMode.Overwrite
-        else WriteMode.CreateOnly
 
       spooky.pathResolver.output(pathStr, mode) { out =>
         val ser = SparkEnv.get.serializer.newInstance()

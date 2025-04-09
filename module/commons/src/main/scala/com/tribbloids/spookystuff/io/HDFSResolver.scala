@@ -138,7 +138,7 @@ case class HDFSResolver(
         mkParent(hdfsPath)
 
         val result = mode match {
-          case WriteMode.CreateOnly => fc.create(hdfsPath, util.EnumSet.of(CREATE))
+          case WriteMode.ErrorIfExists => fc.create(hdfsPath, util.EnumSet.of(CREATE))
           case WriteMode.Append     => fc.create(hdfsPath, util.EnumSet.of(CREATE, APPEND))
           case WriteMode.Overwrite  => fc.create(hdfsPath, util.EnumSet.of(CREATE, OVERWRITE))
         }
