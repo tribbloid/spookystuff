@@ -1,6 +1,6 @@
 package com.tribbloids.spookystuff.web.actions
 
-import com.tribbloids.spookystuff.actions.{DocValidation, Export, Wayback}
+import com.tribbloids.spookystuff.actions.{Export, Wayback}
 import com.tribbloids.spookystuff.agent.Agent
 import com.tribbloids.spookystuff.doc.*
 import com.tribbloids.spookystuff.doc.Observation.DocUID

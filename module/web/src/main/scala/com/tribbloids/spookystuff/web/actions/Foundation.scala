@@ -7,7 +7,7 @@ import com.tribbloids.spookystuff.doc.Doc
 import com.tribbloids.spookystuff.web.conf.Web
 import com.tribbloids.spookystuff.{ActionException, ActionExceptionWithCoreDump, Const, SpookyException}
 import org.openqa.selenium.support.ui.{ExpectedCondition, ExpectedConditions, Select}
-import org.openqa.selenium.{JavascriptExecutor, WebDriver, interactions}
+import org.openqa.selenium.{interactions, JavascriptExecutor, WebDriver}
 import org.slf4j.LoggerFactory
 
 import scala.collection.mutable

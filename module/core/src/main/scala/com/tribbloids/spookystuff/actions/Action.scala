@@ -5,7 +5,7 @@ import com.tribbloids.spookystuff.agent.Agent
 import com.tribbloids.spookystuff.commons.CommonUtils
 import com.tribbloids.spookystuff.doc.{Doc, Observation}
 import com.tribbloids.spookystuff.{ActionException, ActionExceptionWithCoreDump, SpookyContext, SpookyException}
-import com.tribbloids.spookystuff.io.WriteMode.{ErrorIfExists, Overwrite}
+import com.tribbloids.spookystuff.io.WriteMode.Overwrite
 import org.apache.commons.lang3.SerializationUtils
 import org.apache.spark.sql.types.SQLUserDefinedType
 import org.slf4j.LoggerFactory

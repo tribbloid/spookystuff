@@ -1,4 +1,9 @@
 
+val localSettings = file("settings-local.gradle.kts")
+if (localSettings.exists()) {
+    apply(from = localSettings)
+}
+
 // Check if the local settings file exists
 // TODO: anti-pattern, a local gradle.properties file should be used instead
 //val localSettingsFile = file("local.settings.gradle.kts") // this file should be ignored by git
@@ -9,7 +14,7 @@
 
 val noAssembly: String? by settings
 val noBenchmark: String? by settings
-val notebook: String? by settings
+// val notebook: String? by settings
 
 pluginManagement.repositories {
     gradlePluginPortal()
@@ -62,11 +67,6 @@ include(
 //        ":module:benchmark"
 //    )
 //}
-
-if (isEnabled(notebook)) {
-
-    include(":notebook")
-}
 
 //if (!isEnabled(noUav)) {
 //    include(

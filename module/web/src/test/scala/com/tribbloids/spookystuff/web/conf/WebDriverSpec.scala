@@ -1,6 +1,6 @@
 package com.tribbloids.spookystuff.web.conf
 
-import com.tribbloids.spookystuff.actions.{Export, Wget}
+import com.tribbloids.spookystuff.actions.Wget
 import com.tribbloids.spookystuff.actions.Export.DocValidation.StatusCode2XX
 import com.tribbloids.spookystuff.agent.Agent
 import com.tribbloids.spookystuff.doc.{Doc, DocUtils}

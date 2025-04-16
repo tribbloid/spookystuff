@@ -1,10 +1,8 @@
 package com.tribbloids.spookystuff.actions
 
-import ai.acyclic.prover.commons.function.hom.Hom
 import com.tribbloids.spookystuff.actions.HasTrace.NoStateChange
 import com.tribbloids.spookystuff.agent.Agent
-import com.tribbloids.spookystuff.doc.Error.ValidationError
-import com.tribbloids.spookystuff.doc.{Doc, Observation}
+import com.tribbloids.spookystuff.doc.Observation
 
 trait Foundation extends Serializable {
 
@@ -23,7 +21,6 @@ trait Foundation extends Serializable {
 
     def ||(other: HasTraceSet): Set[Trace] = traceSet ++ other.traceSet
   }
-
 
   case object NoOp extends HasTrace with NoStateChange {
     override def trace: Trace = Trace(Nil)

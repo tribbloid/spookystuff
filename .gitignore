@@ -12,6 +12,7 @@
 **/.gradle
 **/build
 **/bin
+settings-local.gradle.kts
 
 # sbt
 .cache/

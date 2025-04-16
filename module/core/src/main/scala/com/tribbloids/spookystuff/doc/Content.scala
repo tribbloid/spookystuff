@@ -6,7 +6,7 @@ import com.tribbloids.spookystuff.SpookyContext
 import com.tribbloids.spookystuff.commons.TreeException
 import com.tribbloids.spookystuff.io.{HDFSResolver, WriteMode}
 import org.apache.commons.io.IOUtils
-import org.apache.hadoop.fs.{FSDataOutputStream, Path}
+import org.apache.hadoop.fs.Path
 import org.apache.hadoop.shaded.org.apache.http.entity.ContentType
 import org.apache.tika.io.TikaInputStream
 import org.apache.tika.metadata.{HttpHeaders, Metadata}
@@ -15,7 +15,6 @@ import org.apache.tika.parser.{AutoDetectParser, ParseContext}
 import org.apache.tika.sax.ToHTMLContentHandler
 
 import java.nio.charset.Charset
-import java.util.UUID
 
 sealed trait Content extends SpookyContext.Contextual with Serializable {
 
