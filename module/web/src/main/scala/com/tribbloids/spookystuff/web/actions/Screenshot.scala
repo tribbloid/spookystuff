@@ -23,7 +23,6 @@ case class Screenshot() extends Export with WebAction with Wayback {
       webDriver.getCurrentUrl,
       Some("image/png")
     )().setRaw(raw)
-    page
 
     Seq(page)
   }

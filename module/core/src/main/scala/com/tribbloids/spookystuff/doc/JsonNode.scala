@@ -5,9 +5,9 @@ import org.json4s.{JArray, JField, JValue}
 
 import org.json4s.*
 
-object JsonElement {
+object JsonNode {
 
-  def apply(jsonStr: String, tag: String): Unstructured = {
+  def apply(jsonStr: String, tag: String): JsonNode = {
     val parsed: JValue =
       if (jsonStr.trim.isEmpty)
         JNull
@@ -15,71 +15,63 @@ object JsonElement {
         JsonMethods.parse(jsonStr)
       }
     parsed match {
-      case array: JArray =>
-        val res = array.arr.map { field =>
-          new JsonElement(tag -> field)
-        }
-        new Siblings(res)
+//      case array: JArray =>
+//        val res = array.arr.map { field =>
+//          new JsonPart(tag -> field)
+//        }
+//        res
       case _ =>
-        new JsonElement(tag -> parsed)
+        new JsonNode(tag -> parsed)
     }
   }
 }
 
-case class JsonElement private (
+case class JsonNode private (
     val field: JField
-) extends Unstructured {
+) extends Node {
 
-  override def findAll(selector: DocSelector): Elements[JsonElement] = {
-
+  override def findAll(selector: DocSelector): Seq[Node] = {
     val selected = field._2 \\ selector.toString
-
     jValueToElements(selector.toString, selected)
   }
 
-  // TODO: how to implement?
-  override def findAllWithSiblings(selector: DocSelector, range: Range): Elements[Siblings[JsonElement]] = {
-    val found = this.findAll(selector).unbox
-    Elements(found.map(unstructured => new Siblings(List(unstructured))))
+  override def findAllWithSiblings(selector: DocSelector, range: Range): Seq[Siblings[Node]] = {
+    val found = this.findAll(selector)
+    found.map(unstructured => new Siblings(List(unstructured)))
   }
 
-  private def jValueToElements(defaultFieldName: String, selected: JValue): Elements[JsonElement] = {
+  private def jValueToElements(defaultFieldName: String, selected: JValue): Seq[JsonNode] = {
     selected match {
       case obj: JObject =>
         if (obj.obj.map(_._1).distinct.size <= 1) { // if the JObject contains many fields with identical names they are combined from many different places
           val jsonElements = obj.obj.map { field =>
-            new JsonElement(field)
+            new JsonNode(field)
           }
-          Elements(jsonElements)
+          jsonElements
         } else { // otherwise its a single object from the beginning
-          Elements(
-            List(new JsonElement(defaultFieldName -> selected))
-          )
+          List(new JsonNode(defaultFieldName -> selected))
         }
 
       case array: JArray =>
         val res = array.arr.map { field =>
-          new JsonElement(defaultFieldName -> field)
+          new JsonNode(defaultFieldName -> field)
         }
-        new Siblings(res)
-      case JNothing => Elements(Nil)
-      case JNull    => Elements(Nil)
+        res
+      case JNothing => Nil
+      case JNull    => Nil
       case _ =>
-        Elements(
-          List(new JsonElement(defaultFieldName -> selected))
-        )
+        List(new JsonNode(defaultFieldName -> selected))
     }
   }
 
-  override def children(selector: DocSelector): Elements[Unstructured] = {
+  override def children(selector: DocSelector): Seq[Node] = {
     val selected = field._2 \ selector.toString
-
     jValueToElements(selector.toString, selected)
   }
 
-  override def childrenWithSiblings(selector: DocSelector, range: Range): Elements[Siblings[Unstructured]] = {
-    val found = this.children(selector).unbox
-    Elements(found.map(unstructured => new Siblings(List(unstructured))))
+  override def childrenWithSiblings(selector: DocSelector, range: Range): Seq[Siblings[Node]] = {
+    val found = this.children(selector)
+    found.map(unstructured => new Siblings(List(unstructured)))
   }
 
   override def code: Option[String] = Some(JsonMethods.compact(field._2))

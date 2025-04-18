@@ -1,7 +1,7 @@
 package com.tribbloids.spookystuff.row
 
 import com.tribbloids.spookystuff.actions.Wget
-import com.tribbloids.spookystuff.doc.{Elements, Unstructured}
+import com.tribbloids.spookystuff.doc.Node
 import com.tribbloids.spookystuff.testutils.{FileDocsFixture, SpookyBaseSpec}
 
 /**
@@ -16,11 +16,11 @@ class AgentRowSpec extends SpookyBaseSpec {
     val doc = Wget(HTML_URL).fetch(spooky).head
     val row = BuildRow((), Wget(HTML_URL)).fetched(spooky)
 
-    val page1 = row.docs.only
+    val page1 = row.trajectory.docs.only
     assert(page1.uid === doc.uid)
 
     val defaultName = Wget(HTML_URL).toString
-    val page2 = row.docs.byName("Wget").only
+    val page2 = row.trajectory.docs.byName("Wget").only
     assert(page2.uid === doc.uid)
   }
 
@@ -32,13 +32,13 @@ class AgentRowSpec extends SpookyBaseSpec {
     val row = {
       Seq(proto).select { row =>
         new Object {
-          val e1: Unstructured = row.docs.\("h1.central-textlogo img").head
-          val lang: Elements[Unstructured] = row.docs.\("label")
+          val e1: Node = row.trajectory.docs.\("h1.central-textlogo img").head
+          val lang: Node = row.trajectory.docs.findOnly("label")
         }
       }.head
     }
 
-    val doc2 = row.docs("pp").only
+    val doc2 = row.trajectory.docs.byName("pp").only
     assert(doc2.root === doc.root)
 
     val e1 = row.data.e1

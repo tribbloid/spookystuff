@@ -81,7 +81,7 @@ class DataViewSpec extends SpookyBaseSpec {
                 .selectMany { row =>
                   print_@("hit acc")
                   acc += 1
-                  row.docs.flatMap(_.saved.headOption)
+                  row.trajectory.docs.flatMap(_.saved.headOption)
                 }
               assert(acc.value == 0)
 
@@ -98,7 +98,7 @@ class DataViewSpec extends SpookyBaseSpec {
                 .fetch(_ => Wget(HTML_URL))
                 .selectMany { row =>
                   acc += 1
-                  row.docs.flatMap(_.saved.headOption)
+                  row.trajectory.docs.flatMap(_.saved.headOption)
 
                 }
               assert(acc.value == 0)
@@ -116,7 +116,7 @@ class DataViewSpec extends SpookyBaseSpec {
                 .fetch(_ => Wget(HTML_URL))
                 .selectMany { row =>
                   acc += 1
-                  row.docs.flatMap(_.saved.headOption)
+                  row.trajectory.docs.flatMap(_.saved.headOption)
                 }
 
               assert(acc.value == 0)
@@ -252,11 +252,11 @@ class DataViewSpec extends SpookyBaseSpec {
       val ds = entry
         .recursively()
         .explore { row =>
-          val docs = row.docs
+          val docs = row.trajectory.docs
 
           val dirs = docs.\("root directory")
 
-          val path = dirs.\("path").text
+          val path = dirs.findOnly("path").text
 
           val result = path match {
             case Some(p) => Wget(p)
@@ -287,7 +287,7 @@ class DataViewSpec extends SpookyBaseSpec {
       spooky
         .fetch(_ => Wget(HTML_URL))
         .select { row =>
-          row.docs.save(s"file://${Envs.USER_DIR}/temp/dummy", mode = Overwrite)
+          row.trajectory.docs.save(s"file://${Envs.USER_DIR}/temp/dummy", mode = Overwrite)
         }
         .collect()
 
@@ -303,7 +303,7 @@ class DataViewSpec extends SpookyBaseSpec {
       vv.collect()
 
       vv.select { row =>
-        row.docs.save(s"file://${Envs.USER_DIR}/temp/dummy", mode = Overwrite)
+        row.trajectory.docs.save(s"file://${Envs.USER_DIR}/temp/dummy", mode = Overwrite)
       }.collect()
 
       assert(dummyFileExists())
@@ -315,7 +315,7 @@ class DataViewSpec extends SpookyBaseSpec {
       spooky
         .fetch(_ => Wget(HTML_URL))
         .select { row =>
-          row.docs.save(s"file://${Envs.USER_DIR}/temp/dummy", mode = Overwrite)
+          row.trajectory.docs.save(s"file://${Envs.USER_DIR}/temp/dummy", mode = Overwrite)
         }
         .compute()
 

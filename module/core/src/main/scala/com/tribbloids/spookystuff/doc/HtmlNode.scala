@@ -7,7 +7,7 @@ import org.jsoup.nodes.Element
 /**
   * Created by peng on 11/30/14.
   */
-object HtmlElement {
+object HtmlNode {
 
   def breadcrumb(e: Element): Seq[String] = {
 
@@ -16,31 +16,42 @@ object HtmlElement {
     e.parents().asScala.toSeq.map(_.tagName()).reverse :+ e.tagName()
   }
 
-  def apply(html: String, uri: String): HtmlElement = new HtmlElement(null, html, None, uri)
+  def apply(html: String, uri: String): HtmlNode = new HtmlNode(null, html, None, uri)
 
+  // constructor for HtmlElement returned by .children()
+  def apply(_parsed: Element): HtmlNode = {
+    new HtmlNode(
+      _parsed, {
+        _parsed.ownerDocument().outputSettings().prettyPrint(false)
+        _parsed.outerHtml()
+      },
+      Some(_parsed.tagName()),
+      _parsed.baseUri()
+    )
+  }
 }
 
-class HtmlElement private (
+class HtmlNode private (
     @transient val _parsed: Element,
     val html: String,
     val tag: Option[String],
     val uri: String
-) extends Unstructured {
+) extends Node {
 
   import scala.jdk.CollectionConverters.*
 
   // constructor for HtmlElement returned by .children()
-  private def this(_parsed: Element) = this(
-    _parsed, {
-      _parsed.ownerDocument().outputSettings().prettyPrint(false)
-      _parsed.outerHtml()
-    },
-    Some(_parsed.tagName()),
-    _parsed.baseUri()
-  )
+//  private def this(_parsed: Element) = new this(
+//    _parsed, {
+//      _parsed.ownerDocument().outputSettings().prettyPrint(false)
+//      _parsed.outerHtml()
+//    },
+//    Some(_parsed.tagName()),
+//    _parsed.baseUri()
+//  )
 
   override def equals(obj: Any): Boolean = obj match {
-    case other: HtmlElement =>
+    case other: HtmlNode =>
       (this.html == other.html) && (this.uri == other.uri)
     case _ => false
   }
@@ -61,16 +72,14 @@ class HtmlElement private (
     }
   }
 
-  override def findAll(selector: DocSelector): Elements[HtmlElement] =
-    Elements(
-      parsed
-        .select(selector.toString)
-        .asScala
-        .map(new HtmlElement(_))
-        .toList
-    )
+  override def findAll(selector: DocSelector): Seq[HtmlNode] =
+    parsed
+      .select(selector.toString)
+      .asScala
+      .map(HtmlNode(_))
+      .toList
 
-  override def findAllWithSiblings(selector: DocSelector, range: Range): Elements[Siblings[HtmlElement]] = {
+  override def findAllWithSiblings(selector: DocSelector, range: Range): Seq[Siblings[HtmlNode]] = {
 
     val found = parsed.select(selector.toString).asScala.toSeq
     expand(found, range)
@@ -94,22 +103,22 @@ class HtmlElement private (
 
       val selected = siblings.slice(head, tail + 1)
 
-      new Siblings(selected.map(new HtmlElement(_)).toList)
+      new Siblings(selected.map(HtmlNode(_)).toList)
     }
-    Elements(colls.toList)
+    colls.toList
   }
 
-  override def children(selector: DocSelector): Elements[HtmlElement] = {
+  override def children(selector: DocSelector): Seq[HtmlNode] = {
 
     val found: Seq[Element] = parsed
       .select(selector.toString)
       .asScala
       .toSeq
       .filter(elem => parsed.children().contains(elem)) // TODO: switch to more efficient NodeFilter
-    Elements(found.map(new HtmlElement(_)).toList)
+    found.map(HtmlNode(_)).toList
   }
 
-  override def childrenWithSiblings(selector: DocSelector, range: Range): Elements[Siblings[Unstructured]] = {
+  override def childrenWithSiblings(selector: DocSelector, range: Range): Seq[Siblings[Node]] = {
 
     val found: Seq[Element] = parsed
       .select(selector.toString)
@@ -162,5 +171,5 @@ class HtmlElement private (
 
   override def toString: String = html
 
-  override def breadcrumb: Option[Seq[String]] = Some(HtmlElement.breadcrumb(this.parsed))
+  override def breadcrumb: Option[Seq[String]] = Some(HtmlNode.breadcrumb(this.parsed))
 }

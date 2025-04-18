@@ -9,7 +9,7 @@ import com.tribbloids.spookystuff.commons.data.Magnets.AttrValueMag
 import com.tribbloids.spookystuff.doc.Content.InMemoryBlob
 import com.tribbloids.spookystuff.doc.Error.ConversionError
 import com.tribbloids.spookystuff.doc.Observation.DocUID
-import com.tribbloids.spookystuff.doc.Unstructured.Unrecognisable
+import com.tribbloids.spookystuff.doc.Node.Unrecognisable
 import com.tribbloids.spookystuff.io.{ResourceMetadata, WriteMode}
 import org.apache.commons.csv.CSVFormat
 import org.apache.hadoop.shaded.org.apache.http.StatusLine
@@ -144,15 +144,15 @@ case class Doc(
   }
 
   // TODO: use compile-time summoning to find an element implementation that can resolve supplied MIME type
-  @transient lazy val rootOpt: Option[Unstructured] = {
+  @transient lazy val rootOpt: Option[Node] = {
 
     val content = this._content
     import content.*
 
-    if (mimeType.contains("html") || mimeType.contains("xml") || mimeType.contains("directory")) {
-      Some(HtmlElement(contentStr, uri)) // not serialize, parsing is faster
+    val result = if (mimeType.contains("html") || mimeType.contains("xml") || mimeType.contains("directory")) {
+      Some(HtmlNode(contentStr, uri)) // not serialize, parsing is faster
     } else if (mimeType.contains("json")) {
-      Some(JsonElement(contentStr, null)) // not serialize, parsing is faster
+      Some(JsonNode(contentStr, null)) // not serialize, parsing is faster
     }
 //    else if (mimeType.contains("csv")) {
     // TODO: disabled, will delegate to Univocity or Apache Tika later
@@ -174,13 +174,15 @@ case class Doc(
 //      Some(CSVElement.Block.apply(reader, uri, csvFormat)) // not serialize, parsing is faster
 //    }
     else if (mimeType.contains("plain") || mimeType.contains("text")) {
-      Some(PlainElement(contentStr)) // not serialize, parsing is faster
+      Some(PlainNode(contentStr)) // not serialize, parsing is faster
     } else {
       None
     }
+
+    result
   }
 
-  @transient lazy val converted: Observation = {
+  @transient lazy val normalised: Observation = {
     Try(rootOpt) match {
       case Success(Some(_)) =>
         this
@@ -196,8 +198,8 @@ case class Doc(
     }
   }
 
-  override type RootType = Unstructured
-  def root: Unstructured = converted match {
+  override type RootType = Node
+  def root: Node = normalised match {
     case d: Doc => d.rootOpt.getOrElse(Unrecognisable)
     case _      => Unrecognisable
   }

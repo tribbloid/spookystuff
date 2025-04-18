@@ -3,7 +3,7 @@ package com.tribbloids.spookystuff.utils
 import ai.acyclic.prover.commons.spark.serialization.AssertSerializable
 import com.tribbloids.spookystuff.actions.Action
 import com.tribbloids.spookystuff.commons.refl.{CatalystTypeOps, TypeUtils, UnreifiedObjectType}
-import com.tribbloids.spookystuff.doc.{Observation, Unstructured}
+import com.tribbloids.spookystuff.doc.{Node, Observation}
 import com.tribbloids.spookystuff.testutils.{BaseSpec, SpookyBaseSpec}
 import org.apache.spark.sql.types.DataType
 
@@ -68,7 +68,7 @@ class ScalaUDTSuite extends SpookyBaseSpec with BaseSpec with CatalystTypeOps.Im
 
   it("Unstructured has a datatype") {
 
-    val reified = getAndTestReifiedType[Unstructured]
+    val reified = getAndTestReifiedType[Node]
     reified.toString.shouldBe(
       """
         |UnstructuredUDT

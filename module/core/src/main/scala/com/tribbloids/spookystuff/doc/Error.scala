@@ -18,7 +18,7 @@ object Error {
     override def cacheLevel: DocCacheLevel.Value = doc.cacheLevel
 
     override type RootType = doc.RootType
-    override def root: Unstructured = doc.root
+    override def root: Node = doc.root
 
     override def metadata: ResourceMetadata = doc.metadata
 

@@ -4,6 +4,7 @@ import com.tribbloids.spookystuff.SpookyException
 import com.tribbloids.spookystuff.actions.{Export, Trace}
 import com.tribbloids.spookystuff.caching.DocCacheLevel
 import com.tribbloids.spookystuff.io.ResourceMetadata
+import com.tribbloids.spookystuff.row.AgentContext
 import org.apache.spark.sql.types.SQLUserDefinedType
 
 import java.sql.{Date, Time, Timestamp}
@@ -41,6 +42,12 @@ object Observation {
     // TODO: this should be a compile-time theorem
 
     def name: String = nameOvrd.getOrElse(`export`.name)
+  }
+
+  trait AgenticMixin {
+    self: Observation =>
+
+    def agentState: AgentContext
   }
 }
 

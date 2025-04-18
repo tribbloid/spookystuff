@@ -8,7 +8,7 @@ import com.tribbloids.spookystuff.commons.lifespan.Cleanable
 import com.tribbloids.spookystuff.commons.lifespan.Cleanable.Lifespan
 import com.tribbloids.spookystuff.commons.{CommonUtils, TreeException}
 import com.tribbloids.spookystuff.conf._
-import com.tribbloids.spookystuff.doc.{Doc, Unstructured}
+import com.tribbloids.spookystuff.doc.{Doc, Node}
 import com.tribbloids.spookystuff.execution.ExecutionContext
 import com.tribbloids.spookystuff.row.{SpookySchema, SquashedRow}
 import org.jutils.jprocesses.JProcesses
@@ -97,7 +97,7 @@ abstract class SpookyBaseSpec extends SpookyEnvSpec with BeforeAndAfterEach with
 
   implicit def rowWithCtx(row: SquashedRow[?]): row._WithCtx = row.withCtx(spooky)
 
-  implicit def doc2Root(doc: Doc): Unstructured = doc.root
+  implicit def doc2Root(doc: Doc): Node = doc.root
 
   override def withFixture(test: NoArgTest): Outcome = {
     if (isRetryable(test))

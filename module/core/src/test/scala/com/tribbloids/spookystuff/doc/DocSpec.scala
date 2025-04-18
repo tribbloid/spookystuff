@@ -62,7 +62,7 @@ class DocSpec extends SpookyBaseSpec {
 
       assert(page.mimeType == "image/png")
       assert(page.charsetOpt.map(_.name().toLowerCase).get == "utf-8")
-      assert(page.findAll("title").text.get == "")
+      assert(page.findOnly("title").text.get == "")
 
       val raw = page.blob.raw
       page.prepareSave(spooky, Overwrite).auditing()
@@ -81,7 +81,7 @@ class DocSpec extends SpookyBaseSpec {
 
       assert(page.mimeType == "application/pdf")
       assert(page.charsetOpt.map(_.name().toLowerCase).get == "utf-8")
-      assert(page.findAll("title").text.get == "Microsoft Word - Document1")
+      assert(page.findOnly("title").text.get == "Microsoft Word - Document1")
 
       val raw = page.blob.raw
       page.prepareSave(spooky, Overwrite).auditing()

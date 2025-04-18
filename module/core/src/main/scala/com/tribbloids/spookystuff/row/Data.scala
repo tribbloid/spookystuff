@@ -13,7 +13,7 @@ trait Data[+D] {
 
 object Data {
 
-  case class Scope(
+  case class ScopeRef(
       observationUIDs: Seq[DocUID],
       index: Int = 0
 
@@ -22,13 +22,13 @@ object Data {
 
   object Scoped {
 
-    def unscoped[D](data: D): Scoped[D] = Scoped(data, Scope(Nil))
+    def unscoped[D](data: D): Scoped[D] = Scoped(data, ScopeRef(Nil))
   }
 
   // TODO: can this be a dependent type since scopeUIDs has to be tied to a Rollout?
   case class Scoped[D](
       raw: D,
-      scope: Scope
+      scope: ScopeRef
       // if missing, always refers to all snapshoted observations in the trajectory
   ) extends Data[D] {}
 

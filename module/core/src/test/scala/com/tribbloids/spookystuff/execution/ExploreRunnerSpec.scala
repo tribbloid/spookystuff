@@ -21,9 +21,9 @@ class ExploreRunnerSpec extends SpookyBaseSpec {
       val ds = entry
         .recursively()
         .explore { row =>
-          val docs = row.docs
+          val docs = row.trajectory.docs
           val dirs = docs.\("root directory")
-          val path = dirs.\("path").text
+          val path = dirs.findOnly("path").text
 
           val action = path match {
             case Some(p) => Wget(p)
@@ -34,9 +34,9 @@ class ExploreRunnerSpec extends SpookyBaseSpec {
           action
         }
         .select { row =>
-          val docs = row.docs
+          val docs = row.trajectory.docs
           val dirs = docs.\("root directory")
-          dirs.\("path").text
+          dirs.findOnly("path").text
         }
 
       val plan = Option(ds.plan).collect {
@@ -91,9 +91,9 @@ class ExploreRunnerSpec extends SpookyBaseSpec {
       val ds = entry
         .recursively()
         .select { row =>
-          val docs = row.docs
+          val docs = row.trajectory.docs
           val dirs = docs.\("root directory")
-          dirs.\("path").text
+          dirs.findOnly("path").text
         }
         .explore { row =>
           val action = row.data.raw match {

@@ -9,7 +9,7 @@ package object conf {
 
   object Auditing extends Enumeration {
 
-    val fn: :=>.BuildDomains[Observation, Seq[Doc]] = :=>.at[Observation].to[Seq[Doc]]
+    val fn: :=>.DomainBuilder[Observation, Seq[Doc]] = :=>.at[Observation].to[Seq[Doc]]
 
     val disabled: fn._Impl = fn { _ =>
       Seq.empty
@@ -20,7 +20,7 @@ package object conf {
     }
 
     val normalised: fn._Impl = fn { v1 =>
-      v1.docForAuditing.flatMap(_.converted.docForAuditing).toSeq
+      v1.docForAuditing.flatMap(_.normalised.docForAuditing).toSeq
     }
 
     val originalAndNormalised: fn._Impl = fn { v1 =>

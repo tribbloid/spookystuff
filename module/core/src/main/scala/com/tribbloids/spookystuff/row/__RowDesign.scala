@@ -20,12 +20,12 @@ object __RowDesign {
     *
     * Assuming the following Conventions:
     *
-    *   - [[AgentState]] contains the the agent (initialized or inherited on demand, a.k.a
+    *   - [[AgentContext]] contains the the agent (initialized or inherited on demand, a.k.a
     *     [[com.tribbloids.spookystuff.agent.Agent]]), its backtrace (agent play history), and its latest trajectory
     *   - [[Lineage]] is a lightweight data structure that can be mapped to a Spark SQL row
     *   - [[Lineage.WithScope]] is a lightweight structure that contains a [[Lineage]] and pointers to parts of
     *     trajectory (namesake of "Scope")
-    *   - [[SquashedRow]] contains an [[AgentState]] and several [[Lineage.WithScope]]s
+    *   - [[SquashedRow]] contains an [[AgentContext]] and several [[Lineage.WithScope]]s
     *   - [[com.tribbloids.spookystuff.execution.Delta]] is a function: RowState => RowState
     *   - [[LocalityGroup]] contains a deterministic trace of agent actions shared by all
     *     [[com.tribbloids.spookystuff.execution.Delta]]s within a backbone row, as its name suggested, used to make
@@ -43,7 +43,7 @@ object __RowDesign {
     *     - Several RDDs consisting of SquashedRows that are identical in data but differs only in delta may be created.
     *       How would you decide which one to persist/checkpoint? Should they all be persisted?
     *   - \2. [[SquashedRow]]: consisting of a [[LocalityGroup]], modified [[Lineage.WithScope]]s, and an
-    *     [[AgentState]]. When [[AgentState]] is serialized, the trajectory can be discarded on demand, but the agent is
+    *     [[AgentContext]]. When [[AgentContext]] is serialized, the trajectory can be discarded on demand, but the agent is
     *     always discarded, recreated on deserialization, and replay all the backtrace to reach the same state
     *     - this has some weaknesses:
     *     - serialization of AgentState needs to be implemented, and it is not easy!

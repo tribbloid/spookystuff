@@ -77,7 +77,7 @@ abstract class ExecutionPlan[O](
 
     _prepared
       .map { row =>
-        row.localityGroup.withCtx(ctx).trajectory
+        row.localityGroup.withCtx(ctx).trajectoryBase
         // always run the agent to get observations before caching RDD
         row
       }

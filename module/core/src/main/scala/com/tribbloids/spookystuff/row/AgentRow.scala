@@ -1,13 +1,10 @@
 package com.tribbloids.spookystuff.row
 
-import ai.acyclic.prover.commons.util.PathMagnet
 import com.tribbloids.spookystuff.doc.*
-import com.tribbloids.spookystuff.doc.Observation.{DocUID, Error, Success}
+import com.tribbloids.spookystuff.doc.Observation.DocUID
 import com.tribbloids.spookystuff.execution.{ExecutionContext, FlatMapPlan}
-import com.tribbloids.spookystuff.io.WriteMode
-import com.tribbloids.spookystuff.row.AgentRow.ObservationsScaffold
-import com.tribbloids.spookystuff.row.AgentRow.ObservationsScaffold.SingletonScaffold
-import com.tribbloids.spookystuff.row.Data.Scope
+import com.tribbloids.spookystuff.row.AgentContext.Trajectory
+import com.tribbloids.spookystuff.row.Data.ScopeRef
 
 import scala.collection.mutable
 import scala.collection.mutable.ArrayBuffer
@@ -15,8 +12,6 @@ import scala.language.implicitConversions
 import scala.reflect.ClassTag
 
 object AgentRow {
-
-  implicit def asObservations[D](self: AgentRow[D]): self.Observations[Observation] = self.observations
 
   implicit class _seqView[D](self: Seq[AgentRow[D]]) {
 
@@ -56,49 +51,6 @@ object AgentRow {
 
   }
 
-  trait ObservationsScaffold[T <: Observation] {
-    def batch: Seq[T]
-    def agentState: AgentState
-  }
-
-  object ObservationsScaffold {
-
-    implicit def _asBatch[T <: Observation](v: ObservationsScaffold[T]): Seq[T] = v.batch
-
-    implicit class _asElements(
-        self: ObservationsScaffold[Doc]
-    ) extends Elements[Unstructured] {
-
-      override def unbox: Seq[Unstructured] = {
-
-        val seq = self.flatMap { doc =>
-          doc.rootOpt
-        }
-        Elements(seq)
-      }
-
-      def save(
-          path: PathMagnet.URIPath,
-          extension: Option[String] = None,
-          mode: WriteMode = WriteMode.ErrorIfExists
-      ): Unit = {
-
-        self.zipWithIndex.foreach {
-
-          case (doc, _) =>
-            doc.prepareSave(self.agentState.ctx, mode).save(path, extension)
-        }
-      }
-    }
-
-    trait SingletonScaffold[T <: Observation] extends ObservationsScaffold[T] {
-
-      def value: T
-    }
-
-    implicit def _asObservation[T <: Observation](v: ObservationsScaffold.SingletonScaffold[T]): T = v.value
-    implicit def _asContent[T <: Doc](v: ObservationsScaffold.SingletonScaffold[T]): Content = v.value.content
-  }
 }
 
 /**
@@ -113,24 +65,24 @@ case class AgentRow[D](
 ) {
 
   {
-    agentState.trajectory // by definition, always pre-fetched to serve multiple data in a squashed row
+    agentContext.trajectoryBase // by definition, always pre-fetched to serve multiple data in a squashed row
   }
 
-  @transient lazy val agentState: AgentState = {
-    AgentState.Impl(localityGroup, ec)
+  @transient lazy val agentContext: AgentContext = {
+    AgentContext.Static(localityGroup, ec)
     // will be discarded & recreated when being moved to another computer
     //  BUT NOT the already computed rollout trajectory!, they are carried within the localityGroup
   }
 
   @transient lazy val squash: SquashedRow[D] = SquashedRow(localityGroup, Seq(data -> index))
 
-  @transient lazy val effectiveScope: Scope = {
+  @transient lazy val effectiveScope: ScopeRef = {
 
     val result = data match {
       case v: Data.Scoped[_] => v.scope
       case _ =>
-        val uids = agentState.trajectory.map(_.uid)
-        Scope(uids)
+        val uids = agentContext.trajectoryBase.map(_.uid)
+        ScopeRef(uids)
     }
 
     result
@@ -168,85 +120,19 @@ case class AgentRow[D](
 
       outerBuffer.zipWithIndex.map {
         case (v, i) =>
-          Data.Scoped(raw = data, scope = Scope(v, i))
+          Data.Scoped(raw = data, scope = ScopeRef(v, i))
       }.toSeq
     }
   }
 
-  lazy val observations: Observations[Observation] = {
+  lazy val trajectory: Trajectory[Observation] = {
 
     val seq = effectiveScope.observationUIDs.map { uid =>
-      agentState.lookup(uid)
+      agentContext.trajectory.lookup(uid)
     }
 
-    new Observations(seq)
+    new Trajectory(seq, agentContext)
   }
 
-  type DocsVieq = Observations[Doc]
-
-//  lazy val docs: DocsVieq = observations.docs
-//  lazy val succeeded: Observations[Success] = observations.succeeded
-//  lazy val failed: Observations[Error] = observations.failed
-
-  class Observations[T <: Observation](override val batch: Seq[T]) extends ObservationsScaffold[T] {
-
-    override def agentState: AgentState = AgentRow.this.agentState
-
-    def collect[R <: Observation](fn: PartialFunction[T, R]): Observations[R] =
-      new Observations[R](batch.collect(fn))
-
-    @transient lazy val succeeded: Observations[Success] = collect {
-      case v: Success => v
-    }
-
-    @transient lazy val failed: Observations[Error] = collect {
-      case v: Error => v
-    }
-
-    @transient lazy val docs: Observations[Doc] = collect {
-      case v: Doc => v
-    }
-
-    def byName(name: String): Observations[T] = collect {
-      case v if v.name == name => v
-    }
-
-    def apply(name: String): Observations[T] = byName(name)
-
-    class Singleton(val value: T) extends Observations[T](Seq(value)) with SingletonScaffold[T] {}
-
-    @transient lazy val headOption: Option[Singleton] = batch.headOption.map { doc =>
-      new Singleton(doc)
-    }
-
-    def head: Singleton = headOption
-      .getOrElse(throw new UnsupportedOperationException("No doc found"))
-
-    @transient lazy val only: Singleton = {
-
-      if (batch.size > 1) throw new UnsupportedOperationException("Ambiguous key referring to multiple docs")
-      else head
-    }
-
-    @transient lazy val normalised: Observations[Observation] = docs.collect { doc =>
-      doc.converted
-    }
-
-    @transient lazy val forAuditing: Observations[Doc] = docs.collect {
-      Function.unlift { v =>
-        v.docForAuditing
-      }
-    }
-
-  }
-
-//  def getUnstructured(field: Field): Option[Unstructured] = {
-//
-//    val page = getDoc(field.name)
-//    val value = data.getTyped[Unstructured](field)
-//
-//    if (page.nonEmpty && value.nonEmpty)
-//      throw new UnsupportedOperationException("Ambiguous key referring to both pages and data")
-//    else page.map(_.root).orElse(value)
-//  }
+//  lazy val docs: Trajectory[Doc] = trajectory.docs
 }

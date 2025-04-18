@@ -21,9 +21,9 @@ object __DefineByRun {
     *   - define-by-run API defined in [[com.tribbloids.spookystuff.dsl.DataView]].apply that supersedes both fetch &
     *     extract
     *   - extract will be gone, fetch now becomes an alias of apply
-    *   - define-by-run API takes a function [[com.tribbloids.spookystuff.row.AgentState]] =>
+    *   - define-by-run API takes a function [[com.tribbloids.spookystuff.row.AgentContext]] =>
     *     [[com.tribbloids.spookystuff.row.Lineage]] as its only argument
-    *   - [[com.tribbloids.spookystuff.row.AgentState]] can read from state of
+    *   - [[com.tribbloids.spookystuff.row.AgentContext]] can read from state of
     *     [[com.tribbloids.spookystuff.agent.DriverLike]]s directly, there is no need for Snapshot/Screenshot
     *
     * Stage 2:

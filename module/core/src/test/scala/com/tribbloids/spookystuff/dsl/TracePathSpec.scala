@@ -24,7 +24,7 @@ class TracePathSpec extends SpookyBaseSpec {
           MockExport().as("A")
       )
       .rdd
-      .map(_.docs)
+      .map(_.trajectory.docs)
       .first()
       .head
 
@@ -35,7 +35,7 @@ class TracePathSpec extends SpookyBaseSpec {
           MockExport().as("A")
       )
       .rdd
-      .map(_.docs)
+      .map(_.trajectory.docs)
       .first()
       .head
 

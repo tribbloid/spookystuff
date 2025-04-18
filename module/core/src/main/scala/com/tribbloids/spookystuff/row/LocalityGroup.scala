@@ -37,7 +37,6 @@ case class LocalityGroup(
 
 ) extends Projection.Equals
     with SpookyContext.Contextual {
-  // TODO: should the name be "SIMDGroup/SPMDGroup"
 
   {
     canEqualProjections += CanEqual.Native.on(keyOvrd.getOrElse(trace))
@@ -48,10 +47,10 @@ case class LocalityGroup(
   def sameBy[T](fn: Trace => T): LocalityGroup =
     this.copy(keyOvrd = Option(fn(this.trace)))
 
-  type _WithCtx = AgentState
+  type _WithCtx = AgentContext
 
-  override protected def _WithCtx(v: SpookyContext): AgentState = {
+  override protected def _WithCtx(v: SpookyContext): AgentContext = {
 
-    AgentState.Impl(this, ExecutionContext(v))
+    AgentContext.Static(this, ExecutionContext(v))
   }
 }

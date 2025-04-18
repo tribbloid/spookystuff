@@ -29,8 +29,4 @@ object MayExport {
 
 trait MayExport extends Action {
   self: StateChangeTag =>
-
-//  def outputName: String = this.productPrefix
-//
-//  final override def outputNames: Set[String] = Set(outputName)
 }

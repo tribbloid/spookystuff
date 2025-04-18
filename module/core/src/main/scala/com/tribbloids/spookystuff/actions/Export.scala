@@ -31,7 +31,7 @@ object Export {
 
   case object DocValidation {
 
-    val domain: Hom.Fn.BuildDomains[(Doc, Agent), Doc] = Hom.Fn.at[(Doc, Agent)].to[Doc]
+    val domain: Hom.Fn.DomainBuilder[(Doc, Agent), Doc] = Hom.Fn.at[(Doc, Agent)].to[Doc]
 
     type Lemma = domain._Lemma
 
@@ -77,7 +77,7 @@ object Export {
         val doc = StatusCode2XX.applyNoErrorDump(v)
 
         if (doc.mimeType.contains("html")) {
-          if (doc.root.\("html").\("title").text.getOrElse("").isEmpty) {
+          if (doc.root.\("html").\("title").texts.mkString("\n").isEmpty) {
 
             throw ValidationError(
               s"Looking for <html>/<title> @ ${doc.uri} but can't find any",
@@ -95,7 +95,7 @@ object Export {
         val doc = StatusCode2XX.applyNoErrorDump(v)
 
         if (doc.mimeType.contains("html")) {
-          if (doc.root.\("html").\("head").text.getOrElse("").isEmpty) {
+          if (doc.root.\("html").\("head").texts.mkString("\n").isEmpty) {
 
             throw ValidationError(
               s"Looking for <html>/<head> @ ${doc.uri} but can't find any",

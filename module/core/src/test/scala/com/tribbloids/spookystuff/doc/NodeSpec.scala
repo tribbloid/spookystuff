@@ -7,7 +7,7 @@ import com.tribbloids.spookystuff.testutils.{FileDocsFixture, SpookyBaseSpec}
 /**
   * Created by peng on 11/30/14.
   */
-class UnstructuredSpec extends SpookyBaseSpec {
+class NodeSpec extends SpookyBaseSpec {
 
   val resources: FileDocsFixture.type = FileDocsFixture
   import resources.*
@@ -22,12 +22,12 @@ class UnstructuredSpec extends SpookyBaseSpec {
       assert(elements.size === 10)
 
       elements.foreach { element =>
-        AssertSerializable[Unstructured](element).on(
+        AssertSerializable[Node](element).on(
           condition = { (element, element2) =>
             assert(element === element2)
             assert(
-              element.asInstanceOf[HtmlElement].formattedCode.get.split("\n").map(_.trim) === element2
-                .asInstanceOf[HtmlElement]
+              element.asInstanceOf[HtmlNode].formattedCode.get.split("\n").map(_.trim) === element2
+                .asInstanceOf[HtmlNode]
                 .formattedCode
                 .get
                 .split("\n")

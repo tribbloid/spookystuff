@@ -3,20 +3,18 @@ package com.tribbloids.spookystuff.doc
 /**
   * Created by peng on 03/09/16.
   */
-case class PlainElement(
+case class PlainNode(
     v: String
 //    val uri: String
-) extends Unstructured {
+) extends Node {
 
-  override def findAll(selector: DocSelector): Elements[Unstructured] = Elements.empty
+  override def findAll(selector: DocSelector): Seq[Node] = Seq.empty
 
-  override def findAllWithSiblings(selector: DocSelector, range: Range): Elements[Siblings[Unstructured]] =
-    Elements.empty
+  override def findAllWithSiblings(selector: DocSelector, range: Range): Seq[Siblings[Node]] = Seq.empty
 
-  override def children(selector: DocSelector): Elements[Unstructured] = Elements.empty
+  override def children(selector: DocSelector): Seq[Node] = Seq.empty
 
-  override def childrenWithSiblings(selector: DocSelector, range: Range): Elements[Siblings[Unstructured]] =
-    Elements.empty
+  override def childrenWithSiblings(selector: DocSelector, range: Range): Seq[Siblings[Node]] = Seq.empty
 
   override def code: Option[String] = Some(v)
 

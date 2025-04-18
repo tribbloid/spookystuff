@@ -70,7 +70,7 @@ package object dsl {
 
   type DocPath = DocPath.build._Lemma
   object DocPath {
-    val build: :=>.BuildDomains[Doc, String] = :=>.at[Doc].to[String]
+    val build: :=>.DomainBuilder[Doc, String] = :=>.at[Doc].to[String]
 
     case class UUIDName(encoder: TracePath) extends build._Impl {
 
@@ -90,7 +90,7 @@ package object dsl {
 
   type WebProxyFactory = WebProxyFactory.build._Lemma
   object WebProxyFactory {
-    val build: :=>.BuildDomains[Unit, WebProxySetting] = :=>.at[Unit].to[WebProxySetting]
+    val build: :=>.DomainBuilder[Unit, WebProxySetting] = :=>.at[Unit].to[WebProxySetting]
     // TODO: should yield a OptionMagnet
 
     val NoProxy = build { _ =>
@@ -220,7 +220,7 @@ package object dsl {
   type PartitionerFactory = PartitionerFactory.build._Lemma
   object PartitionerFactory {
 
-    val build: :=>.BuildDomains[RDD[?], Partitioner] = :=>.at[RDD[?]].to[Partitioner]
+    val build: :=>.DomainBuilder[RDD[?], Partitioner] = :=>.at[RDD[?]].to[Partitioner]
 
     def PerCore(n: Int): build._Impl = build { rdd =>
       new HashPartitioner(rdd.sparkContext.defaultParallelism * n)

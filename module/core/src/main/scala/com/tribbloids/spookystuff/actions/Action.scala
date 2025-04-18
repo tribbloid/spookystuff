@@ -164,11 +164,16 @@ trait Action extends HasTrace {
 
 object Action {
 
+  trait Impure extends Action {
+    self: StateChangeTag => // TODO: can it be merged into StateChangeTag??
+
+  }
+
   trait Driverless extends Action with NoStateChange {
     // have not impact to driver, mutually exclusively with MayChangeState
   }
 
-  implicit class _actionOps[T <: Action with Serializable](self: T) {
+  implicit class _actionOps[T <: Action & Serializable](self: T) {
 
     def deepCopy(): T = {
       // this wastes a lot of memory, but DSL is not the bulk of memory consumption

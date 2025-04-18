@@ -4,14 +4,6 @@ if (localSettings.exists()) {
     apply(from = localSettings)
 }
 
-// Check if the local settings file exists
-// TODO: anti-pattern, a local gradle.properties file should be used instead
-//val localSettingsFile = file("local.settings.gradle.kts") // this file should be ignored by git
-//
-//if (localSettingsFile.exists()) {
-//    apply(from = localSettingsFile)
-//}
-
 val noAssembly: String? by settings
 val noBenchmark: String? by settings
 // val notebook: String? by settings
