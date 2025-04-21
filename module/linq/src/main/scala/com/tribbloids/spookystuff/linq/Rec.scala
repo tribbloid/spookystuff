@@ -11,26 +11,26 @@ import shapeless.RecordArgs
 
 import scala.language.dynamics
 
-object Record extends RecordArgs {
+object Rec extends RecordArgs {
 
-  def applyRecord[L <: TupleX](list: L): Record[L] = Record.ofTuple(list)
+  def applyRecord[L <: TupleX](list: L): Rec[L] = Rec.ofTuple(list)
 
   def ofTuple[L <: TupleX](
       data: L
-  ): linq.Record[L] = {
+  ): linq.Rec[L] = {
 
     val cells = data.runtimeList
 
-    new linq.Record[L](cells.to(Vector))
+    new linq.Rec[L](cells.to(Vector))
   }
 
   def ofTagged[K <: XStr, V](
       v: K := V
-  ): linq.Record[(K := V) *: T0] = ofTuple(v *: TupleX.T0)
+  ): linq.Rec[(K := V) *: T0] = ofTuple(v *: TupleX.T0)
 
   sealed protected trait OfData_Imp0 extends Hom.Poly {
 
-    implicit def fromValue[V]: V |- linq.Record[("value" := V) *: TupleX.T0] = at[V] { v =>
+    implicit def fromValue[V]: V |- linq.Rec[("value" := V) *: TupleX.T0] = at[V] { v =>
       ofTuple((Key["value"] := v) *: TupleX.T0)
     }
   }
@@ -38,13 +38,13 @@ object Record extends RecordArgs {
   object ofData extends OfData_Imp0 {
     // can be used to convert value of any type into a Record
 
-    implicit def id[L <: TupleX]: linq.Record[L] |- linq.Record[L] = at[linq.Record[L]] {
-      identity[linq.Record[L]]
+    implicit def id[L <: TupleX]: linq.Rec[L] |- linq.Rec[L] = at[linq.Rec[L]] {
+      identity[linq.Rec[L]]
     }
   }
 
   implicit class _rowSeqView[T <: TupleX](
-      val rows: Seq[Record[T]]
+      val rows: Seq[Rec[T]]
   ) extends Foundation.LeftOpsMixin[T]
       with KVBatch[T] {
 
@@ -62,7 +62,7 @@ object Record extends RecordArgs {
   * @tparam T
   *   Record type
   */
-final class Record[T <: TupleX](
+final class Rec[T <: TupleX](
     runtimeData: Vector[Any] // TODO: should use unboxed binary data structure, Java 21 or Apache Arrow maybe helpful
     // TODO: there should be a few 3rd party libraries in Scala 3
 ) extends Dynamic
@@ -116,8 +116,8 @@ final class Record[T <: TupleX](
       selector(_internal.repr)
     }
 
-    lazy val asRow: Record[(K := V) *: TupleX.T0] = {
-      Record.ofTuple((Key[K] := value_tagged) *: TupleX.T0)
+    lazy val asRow: Rec[(K := V) *: TupleX.T0] = {
+      Rec.ofTuple((Key[K] := value_tagged) *: TupleX.T0)
     }
 
     object remove {
@@ -125,12 +125,12 @@ final class Record[T <: TupleX](
       def apply[O2 <: TupleX]()(
           implicit
           exactRemover: FieldRemoverAux[O2]
-      ): Record[O2] = {
+      ): Rec[O2] = {
 
         val tuple = exactRemover.apply(_internal.repr)
         val after: O2 = tuple._2
 
-        Record.ofTuple(after)
+        Rec.ofTuple(after)
       }
 
       def asTuple()(
@@ -152,9 +152,9 @@ final class Record[T <: TupleX](
           ev: ElementWisePoly.preferRight.LemmaAtRows[T, (K := VV) *: TupleX.T0]
       ): ev.Out = {
 
-        val neo: Record[(K := VV) *: TupleX.T0] = Record.ofTuple((Key[K] := value) *: TupleX.T0)
+        val neo: Rec[(K := VV) *: TupleX.T0] = Rec.ofTuple((Key[K] := value) *: TupleX.T0)
 
-        val result = ev.apply(Record.this -> neo)
+        val result = ev.apply(Rec.this -> neo)
 
         result.asInstanceOf[ev.Out]
       }

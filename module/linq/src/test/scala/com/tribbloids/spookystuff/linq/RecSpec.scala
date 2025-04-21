@@ -5,7 +5,7 @@ import ai.acyclic.prover.commons.compat.TupleX.{*:, T0}
 import ai.acyclic.prover.commons.spark.TestHelper
 import ai.acyclic.prover.commons.testlib.BaseSpec
 import ai.acyclic.prover.commons.util.Summoner
-import com.tribbloids.spookystuff.linq.Record
+import com.tribbloids.spookystuff.linq.Rec
 import com.tribbloids.spookystuff.linq.Foundation.^
 import com.tribbloids.spookystuff.linq.RowFunctions.explode
 import frameless.{TypedDataset, TypedEncoder}
@@ -16,16 +16,16 @@ import shapeless.test.illTyped
 import scala.collection.immutable.ListMap
 import ai.acyclic.prover.commons.verification.Verify
 
-class RecordSpec extends BaseSpec {
+class RecSpec extends BaseSpec {
 
   implicit def session: SparkSession = TestHelper.TestSparkSession
 
   it("Encoder") {
 
-    implicitly[RecordSpec.RR <:< HList]
+    implicitly[RecSpec.RR <:< HList]
 
-    implicitly[TypedEncoder[Record[RecordSpec.RR]]]
-    Summoner.summon[TypedEncoder[Record[RecordSpec.RR]]]
+    implicitly[TypedEncoder[Rec[RecSpec.RR]]]
+    Summoner.summon[TypedEncoder[Rec[RecSpec.RR]]]
   }
 
   describe("construction") {
@@ -95,7 +95,7 @@ class RecordSpec extends BaseSpec {
 
         val merged = xy +<+ yz.y
 
-        merged: Record[("x" := Int) *: ("y" := Double) *: T0]
+        merged: Rec[("x" := Int) *: ("y" := Double) *: T0]
 
         assert(merged._internal.keys.runtimeList == List('x, 'y))
         assert(merged._internal.repr.runtimeList == List(1, 1.0))
@@ -140,7 +140,7 @@ class RecordSpec extends BaseSpec {
     }
 
     it("another record") {
-      val updated = xy.append(Record(z = "cd"))
+      val updated = xy.append(Rec(z = "cd"))
       assert(updated.x == 1)
       assert(updated.z == "cd")
 
@@ -374,7 +374,7 @@ class RecordSpec extends BaseSpec {
 
       val tx = ^(x = 1, y = "ab")
       val ty = ^(y = 1.0, z = 1.1)
-      val t1 = Record.ofTuple(tx._internal.repr ++ ty._internal.repr)
+      val t1 = Rec.ofTuple(tx._internal.repr ++ ty._internal.repr)
 
       val rdd = session.sparkContext.parallelize(Seq(t1))
       val ds = TypedDataset.create(rdd)
@@ -393,7 +393,7 @@ class RecordSpec extends BaseSpec {
 
 }
 
-object RecordSpec {
+object RecSpec {
 
   type RR = ("X" := Int) *: ("Y" := String) *: T0
 }

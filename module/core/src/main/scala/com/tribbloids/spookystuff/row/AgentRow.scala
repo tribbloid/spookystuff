@@ -37,13 +37,8 @@ object AgentRow {
 
       def apply[O: ClassTag](fn: FlatMapPlan.Map._Fn[D, O]): Seq[AgentRow[O]] = {
 
-        self.flatMap { v =>
-          val newData = FlatMapPlan.Map.normalise(fn).apply(v)
-
-          newData.map { datum =>
-            v.copy(data = datum)
-          }
-
+        flatMap { row =>
+          Seq(fn(row))
         }
       }
     }

@@ -1,7 +1,7 @@
 package com.tribbloids.spookystuff.linq.catalyst
 
 import ai.acyclic.prover.commons.compat.TupleX
-import com.tribbloids.spookystuff.linq.Record
+import com.tribbloids.spookystuff.linq.Rec
 import frameless.TypedEncoder
 import org.apache.spark.sql.FramelessInternals
 import org.apache.spark.sql.catalyst.expressions.*
@@ -48,8 +48,8 @@ object RowEncoder {
   )(
       implicit
       stage1: RowEncoderStage1[G, H],
-      classTag: ClassTag[Record[G]]
-  ) extends RowEncoder[Record[G], G, H] {
+      classTag: ClassTag[Rec[G]]
+  ) extends RowEncoder[Rec[G], G, H] {
 
     import stage1.*
 

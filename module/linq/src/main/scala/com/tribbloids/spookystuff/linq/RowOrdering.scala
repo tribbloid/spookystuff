@@ -3,12 +3,12 @@ package com.tribbloids.spookystuff.linq
 import ai.acyclic.prover.commons.cap.Capability.<>
 import ai.acyclic.prover.commons.compat.{TupleX, TupleXOrdering}
 import ai.acyclic.prover.commons.function.hom.Hom
-import com.tribbloids.spookystuff.linq.Record
+import com.tribbloids.spookystuff.linq.Rec
 import shapeless.ops.hlist.Mapper
 
 class RowOrdering extends Serializable {
 
-  trait Impl[T <: TupleX] extends Ordering[Record[T]]
+  trait Impl[T <: TupleX] extends Ordering[Rec[T]]
 }
 
 object RowOrdering {
@@ -42,7 +42,7 @@ object RowOrdering {
           mapper: Mapper.Aux[By.asTupleMapper.type, R, MO]
       ) {
 
-        lazy val fn: Record[R] => MO = { (row: Record[R]) =>
+        lazy val fn: Rec[R] => MO = { (row: Rec[R]) =>
           val mapped = mapper.apply(row._internal.repr)
 
           mapped
@@ -54,7 +54,7 @@ object RowOrdering {
         ): Impl[R] = {
 
           new Impl[R] {
-            override def compare(x: Record[R], y: Record[R]): Int = {
+            override def compare(x: Rec[R], y: Rec[R]): Int = {
               delegate.compare(fn(x), fn(y))
             }
           }

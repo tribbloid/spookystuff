@@ -3,7 +3,7 @@ package com.tribbloids.spookystuff.linq
 import ai.acyclic.prover.commons.compat.NamedTupleX.:=
 import ai.acyclic.prover.commons.compat.TupleX.{T0, T1}
 import ai.acyclic.prover.commons.compat.{Key, TupleX, XStr}
-import com.tribbloids.spookystuff.linq.Record
+import com.tribbloids.spookystuff.linq.Rec
 import com.tribbloids.spookystuff.linq.catalyst.{RowEncoder, RowEncoderStage1}
 import com.tribbloids.spookystuff.linq.internal.ElementWisePoly
 import frameless.TypedEncoder
@@ -18,11 +18,11 @@ object Foundation extends RowOrdering.Default.Giver {
   object KVBatchLike {
 
     implicit class TaggedValueAsCell[K <: XStr, V](self: K := V) extends CellLike[T1[K := V]] {
-      lazy val asRow: Record[T1[K := V]] = Record.ofTuple((Key[K] := self) *: T0)
+      lazy val asRow: Rec[T1[K := V]] = Rec.ofTuple((Key[K] := self) *: T0)
     }
   }
 
-  def unbox[T <: TupleX](v: KVBatchLike[T]): Seq[Record[T]] = v match {
+  def unbox[T <: TupleX](v: KVBatchLike[T]): Seq[Rec[T]] = v match {
     case v: KVBatch[T] => v.rows
     case v: KVPairs[T] => Seq(KVPairs.unbox(v))
   }
@@ -31,16 +31,16 @@ object Foundation extends RowOrdering.Default.Giver {
 
   object KVPairs {
 
-    def unbox[T <: TupleX](v: KVPairs[T]): Record[T] = v match {
+    def unbox[T <: TupleX](v: KVPairs[T]): Rec[T] = v match {
       case v: CellLike[T] => v.asRow
-      case v: Record[T]   => v
+      case v: Rec[T]   => v
     }
   }
 
   private[linq] trait CellLike[T <: TupleX] extends KVPairs[T] {
     // can also be used as an operand in merge, like Seq[TypedRow[T]]
 
-    def asRow: Record[T]
+    def asRow: Rec[T]
   }
 
   private[linq] trait RecordLike[T <: TupleX] extends KVPairs[T] with Foundation.LeftOpsMixin[T] {
@@ -49,7 +49,7 @@ object Foundation extends RowOrdering.Default.Giver {
     // merge (++) method can be called directly on it
     // plz avoid introducing too much protected/public member as it corrupts TypedRow selector
 
-    private val self: Record[T] = KVPairs.unbox(this)
+    private val self: Rec[T] = KVPairs.unbox(this)
 
     @transient lazy val +<+ : ElementWisePoly.preferRight.MergeMethod[T] =
       ElementWisePoly.preferRight.MergeMethod(self)
@@ -69,7 +69,7 @@ object Foundation extends RowOrdering.Default.Giver {
           lemma: ElementWisePoly.preferRight.LemmaAtRows[T, R]
       ): lemma.Out = {
 
-        val neo: Record[R] = Record.ofTuple(list)
+        val neo: Rec[R] = Rec.ofTuple(list)
         val result: lemma.Out = +<+(neo)
         result
       }
@@ -82,7 +82,7 @@ object Foundation extends RowOrdering.Default.Giver {
           lemma: ElementWisePoly.preferLeft.LemmaAtRows[T, R]
       ): lemma.Out = {
 
-        val neo: Record[R] = Record.ofTuple(list)
+        val neo: Rec[R] = Rec.ofTuple(list)
         val result: lemma.Out = +>+(neo)
         result
       }
@@ -95,7 +95,7 @@ object Foundation extends RowOrdering.Default.Giver {
           lemma: ElementWisePoly.ifNoConflict.LemmaAtRows[T, R]
       ): lemma.Out = {
 
-        val neo: Record[R] = Record.ofTuple(list)
+        val neo: Rec[R] = Rec.ofTuple(list)
         val result: lemma.Out = +!+(neo)
         result
       }
@@ -109,39 +109,39 @@ object Foundation extends RowOrdering.Default.Giver {
     object append {
 
       def apply[V, R](v: V)(
-          implicit
-          lemma1: Record.ofData.Lemma[V, R],
-          lemma2: ElementWisePoly.ifNoConflict.Lemma.At[(Record[T], R)]
+        implicit
+        lemma1: Rec.ofData.Lemma[V, R],
+        lemma2: ElementWisePoly.ifNoConflict.Lemma.At[(Rec[T], R)]
       ): lemma2.Out = {
 
         val right: R = lemma1.apply(v)
-        val result = lemma2((self -> right): (Record[T], R))
+        val result = lemma2((self -> right): (Rec[T], R))
 
         result
       }
     }
   }
 
-  lazy val empty: Record[TupleX.T0] = Record.ofTuple(TupleX.T0)
+  lazy val empty: Rec[TupleX.T0] = Rec.ofTuple(TupleX.T0)
 
   // TODO: should be %, as in record4s
   object ^ extends RecordArgs {
 
-    def applyRecord[L <: TupleX](list: L): Record[L] = Record.ofTuple(list)
+    def applyRecord[L <: TupleX](list: L): Rec[L] = Rec.ofTuple(list)
   }
 
   implicit def _getEncoder[G <: TupleX](
       implicit
       stage1: RowEncoderStage1[G, G],
-      classTag: ClassTag[Record[G]]
-  ): TypedEncoder[Record[G]] = RowEncoder.^[G, G]()
+      classTag: ClassTag[Rec[G]]
+  ): TypedEncoder[Rec[G]] = RowEncoder.^[G, G]()
 
   trait LeftOpsMixin[T <: TupleX] {
     raw: KVBatchLike[T] =>
     // Cartesian product (><) method can be called directly on it
     // plz avoid introducing too much protected/public member as it corrupts TypedRow selector
 
-    private val self: Seq[Record[T]] = Foundation.unbox(this)
+    private val self: Seq[Rec[T]] = Foundation.unbox(this)
 
     @transient lazy val ><< : ElementWisePoly.preferRight.CartesianProductMethod[T] =
       ElementWisePoly.preferRight.CartesianProductMethod(self)
@@ -158,7 +158,7 @@ object Foundation extends RowOrdering.Default.Giver {
   trait KVBatch[T <: TupleX] extends KVBatchLike[T] {
     // can be used as operand in Cartesian product, like Seq[TypedRow[T]]
 
-    def rows: Seq[Record[T]]
+    def rows: Seq[Rec[T]]
   }
 
 //  trait LeftElementView[T <: Tuple] extends LeftElementAPI[T] with ElementView[T] with LeftSeqView[T] {} // TOOD: remove, useless

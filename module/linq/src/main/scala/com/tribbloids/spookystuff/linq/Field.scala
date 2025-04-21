@@ -5,7 +5,7 @@ import ai.acyclic.prover.commons.cap.Capability.{<>, annotator}
 import ai.acyclic.prover.commons.compat.TupleX
 import ai.acyclic.prover.commons.function.hom.Hom
 import com.tribbloids.spookystuff.linq
-import com.tribbloids.spookystuff.linq.Record
+import com.tribbloids.spookystuff.linq.Rec
 import shapeless.ops.record.MapValues
 
 object Field {
@@ -39,14 +39,14 @@ object Field {
       v <> CanSort
     }
 
-    def row[L <: TupleX](row: Record[L])(
+    def row[L <: TupleX](row: Rec[L])(
         implicit
         ev: MapValues[Enable.asTupleMapper.type, L]
-    ): Record[ev.Out] = {
+    ): Rec[ev.Out] = {
 
       val mapped = row._internal.repr.mapValues(Enable.asTupleMapper)(ev)
 
-      linq.Record.ofTuple(mapped)
+      linq.Rec.ofTuple(mapped)
     }
 
     object Enable extends Hom.Poly {

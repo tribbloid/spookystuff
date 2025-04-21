@@ -43,9 +43,8 @@ case class RecordInternal[L <: TupleX](
   ) = {
 
     ListMap(
-      keys.runtimeList.zip(runtimeVector): _*
+      keys.runtimeList.zip(runtimeVector)*
     )
-
   }
 }
 

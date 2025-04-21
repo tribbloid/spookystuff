@@ -28,12 +28,12 @@ object FlatMapPlan extends CatalystTypeOps.ImplicitMixin {
 
     type _Fn[I, O] = AgentRow[I] => O
 
-    def normalise[I, O](
-        fn: _Fn[I, O]
-    ): FlatMapPlan.this.Fn[I, O] = { row =>
-      val result = fn(row)
-      Seq(result)
-    }
+//    def normalise[I, O](
+//        fn: _Fn[I, O]
+//    ): FlatMapPlan.this.Fn[I, O] = { row =>
+//      val result = fn(row)
+//      Seq(result)
+//    }
   }
 
 //  case class ExplodeScope[I](

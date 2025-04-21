@@ -14,18 +14,18 @@ trait ElementWisePoly extends Hom.Poly {
 
   val combineElements: Poly2
 
-  type LemmaAtRows[L <: TupleX, R <: TupleX] = Lemma.At[(linq.Record[L], linq.Record[R])]
+  type LemmaAtRows[L <: TupleX, R <: TupleX] = Lemma.At[(linq.Rec[L], linq.Rec[R])]
 
   implicit def only[L <: TupleX, R <: TupleX](
       implicit
       lemma: MergeWith[L, R, combineElements.type]
-  ): (linq.Record[L], linq.Record[R]) |- linq.Record[lemma.Out] = at[(linq.Record[L], linq.Record[R])] { TupleX =>
+  ): (linq.Rec[L], linq.Rec[R]) |- linq.Rec[lemma.Out] = at[(linq.Rec[L], linq.Rec[R])] { TupleX =>
     val (left, right) = TupleX
     val result = left._internal.repr.mergeWith(right._internal.repr)(combineElements)(lemma)
-    linq.Record.ofTuple(result)
+    linq.Rec.ofTuple(result)
   }
 
-  case class MergeMethod[L <: TupleX](left: linq.Record[L]) {
+  case class MergeMethod[L <: TupleX](left: linq.Rec[L]) {
 
     def apply[R <: TupleX](right: KVPairs[R])(
         implicit
@@ -50,7 +50,7 @@ trait ElementWisePoly extends Hom.Poly {
     * directly, consider use [[RowFunctions]].explode to explicitly convert it into Seq of [[Record]] instead
     */
 
-  abstract class CartesianProductMethod_Lvl0[L <: TupleX](left: Seq[linq.Record[L]]) {
+  abstract class CartesianProductMethod_Lvl0[L <: TupleX](left: Seq[linq.Rec[L]]) {
 
     def apply[R <: TupleX](right: Seq[KVPairs[R]])(
         implicit
@@ -77,7 +77,7 @@ trait ElementWisePoly extends Hom.Poly {
     }
   }
 
-  case class CartesianProductMethod[L <: TupleX](left: Seq[linq.Record[L]])
+  case class CartesianProductMethod[L <: TupleX](left: Seq[linq.Rec[L]])
       extends CartesianProductMethod_Lvl0[L](left) {
 
     def apply[R <: TupleX](right: KVBatchLike[R])(

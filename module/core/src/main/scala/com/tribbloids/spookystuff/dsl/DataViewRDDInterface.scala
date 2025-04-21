@@ -11,13 +11,6 @@ import org.apache.spark.storage.StorageLevel
 trait DataViewRDDInterface[D] {
   self: DataView[D] =>
 
-  //  def filter(f: SquashedPageRow => Boolean): PageRowRDD = selfRDD.filter(f)
-  //
-  //  def distinct(): PageRowRDD = selfRDD.distinct()
-  //
-  //  def distinct(numPartitions: Int)(implicit ord: Ordering[SquashedPageRow] = null): PageRowRDD =
-  //    selfRDD.distinct(numPartitions)(ord)
-
   // TODO: most of the following impl can be reduced to RDDPlan or LogicalPlan
 
   protected def _coalesce(
