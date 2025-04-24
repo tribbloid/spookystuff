@@ -11,6 +11,6 @@ source "${CRDIR}/.shared.sh"
 
 ${FWDIR}/gradlew clean
 
-source ${CRDIR}/tree.sh "${@}"
+source ${CRDIR}/tree.sh "${@}" > ${FWDIR}/logs/dependencyTree/"$DATE".log
 
 ${FWDIR}/gradlew classes testClasses assemble "${@}"

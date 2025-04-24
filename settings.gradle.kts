@@ -22,6 +22,7 @@ fun isEnabled(profile: String?): Boolean {
 include(
     // should be skipped on CI, contains local experiments only
     ":repack",
+    ":repack:tika",
     ":repack:selenium"
 )
 

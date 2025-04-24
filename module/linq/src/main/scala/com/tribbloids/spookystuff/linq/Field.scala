@@ -46,7 +46,7 @@ object Field {
 
       val mapped = row._internal.repr.mapValues(Enable.asTupleMapper)(ev)
 
-      linq.Rec.ofTuple(mapped)
+      linq.Rec.ofTupleX(mapped)
     }
 
     object Enable extends Hom.Poly {

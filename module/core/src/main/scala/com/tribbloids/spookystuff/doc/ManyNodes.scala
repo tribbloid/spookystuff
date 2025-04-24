@@ -34,29 +34,4 @@ trait ManyNodes[+T <: Node] extends NodeContainer[T] {
   def ownTexts: Seq[String] = nodeSeq.flatMap(_.ownText)
 
   def boilerPipes: Seq[String] = nodeSeq.flatMap(_.boilerPipe)
-
-  // TODO: the following headOption should become mkString
-//  override def text: Option[String] = texts.headOption
-//
-//  override def code: Option[String] = codes.headOption
-//
-//  override def formattedCode: Option[String] = formattedCodes.headOption
-//
-//
-//  override def childrenWithSiblings(selector: DocSelector, range: Range): Seq[Siblings[Part]] =
-//    unbox.flatMap(_.childrenWithSiblings(selector, range))
-//
-//  override def ownText: Option[String] = ownTexts.headOption
-//
-//  override def boilerPipe: Option[String] = boilerPipes.headOption
-//
-//  override def allAttr: Option[Map[String, String]] = allAttrs.headOption
-//
-//  override def attr(attr: String, noEmpty: Boolean): Option[String] = attrs(attr, noEmpty).headOption
-//
-//  override def href: Option[String] = hrefs.headOption
-//
-//  override def src: Option[String] = srcs.headOption
-//
-//  override def breadcrumb: Option[Seq[String]] = unbox.head.breadcrumb
 }

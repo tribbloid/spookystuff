@@ -115,32 +115,6 @@ sealed trait Content extends SpookyContext.Contextual with Serializable {
             os.close()
           }
         }
-//
-//        //      if (!overwrite && fs.exists(fullPath)) fullPath = new Path(path + "-" + UUID.randomUUID())
-//        val (fos: FSDataOutputStream, actualPath: Path) =
-//          try {
-//            fs.create(fullPath, mode) -> fullPath
-//          } catch {
-//            case _: Exception =>
-//              val altPath = new Path(path + "-" + UUID.randomUUID())
-//              fs.create(altPath, mode) -> altPath
-//          }
-//
-//        val os = progress.WrapOStream(fos)
-//
-//        try {
-//          os.write(raw) //       remember that apache IOUtils is defective for DFS!
-//
-//          val metrics = ctx.metrics
-//          metrics.saved += 1
-//          //        metrics.savedPath.add(path -> progress.indicator.longValue())
-//
-//          val absolutePath = fs.resolvePath(actualPath)
-//          absolutePath
-//
-//        } finally {
-//          os.close()
-//        }
       }
     }
 

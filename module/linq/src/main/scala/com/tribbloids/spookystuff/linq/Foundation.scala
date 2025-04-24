@@ -18,7 +18,7 @@ object Foundation extends RowOrdering.Default.Giver {
   object KVBatchLike {
 
     implicit class TaggedValueAsCell[K <: XStr, V](self: K := V) extends CellLike[T1[K := V]] {
-      lazy val asRow: Rec[T1[K := V]] = Rec.ofTuple((Key[K] := self) *: T0)
+      lazy val asRow: Rec[T1[K := V]] = Rec.ofTupleX((Key[K] := self) *: T0)
     }
   }
 
@@ -33,7 +33,7 @@ object Foundation extends RowOrdering.Default.Giver {
 
     def unbox[T <: TupleX](v: KVPairs[T]): Rec[T] = v match {
       case v: CellLike[T] => v.asRow
-      case v: Rec[T]   => v
+      case v: Rec[T]      => v
     }
   }
 
@@ -69,7 +69,7 @@ object Foundation extends RowOrdering.Default.Giver {
           lemma: ElementWisePoly.preferRight.LemmaAtRows[T, R]
       ): lemma.Out = {
 
-        val neo: Rec[R] = Rec.ofTuple(list)
+        val neo: Rec[R] = Rec.ofTupleX(list)
         val result: lemma.Out = +<+(neo)
         result
       }
@@ -82,7 +82,7 @@ object Foundation extends RowOrdering.Default.Giver {
           lemma: ElementWisePoly.preferLeft.LemmaAtRows[T, R]
       ): lemma.Out = {
 
-        val neo: Rec[R] = Rec.ofTuple(list)
+        val neo: Rec[R] = Rec.ofTupleX(list)
         val result: lemma.Out = +>+(neo)
         result
       }
@@ -95,7 +95,7 @@ object Foundation extends RowOrdering.Default.Giver {
           lemma: ElementWisePoly.ifNoConflict.LemmaAtRows[T, R]
       ): lemma.Out = {
 
-        val neo: Rec[R] = Rec.ofTuple(list)
+        val neo: Rec[R] = Rec.ofTupleX(list)
         val result: lemma.Out = +!+(neo)
         result
       }
@@ -109,9 +109,9 @@ object Foundation extends RowOrdering.Default.Giver {
     object append {
 
       def apply[V, R](v: V)(
-        implicit
-        lemma1: Rec.ofData.Lemma[V, R],
-        lemma2: ElementWisePoly.ifNoConflict.Lemma.At[(Rec[T], R)]
+          implicit
+          lemma1: Rec.ofData.Lemma[V, R],
+          lemma2: ElementWisePoly.ifNoConflict.Lemma.At[(Rec[T], R)]
       ): lemma2.Out = {
 
         val right: R = lemma1.apply(v)
@@ -122,12 +122,12 @@ object Foundation extends RowOrdering.Default.Giver {
     }
   }
 
-  lazy val empty: Rec[TupleX.T0] = Rec.ofTuple(TupleX.T0)
+  lazy val empty: Rec[TupleX.T0] = Rec.ofTupleX(TupleX.T0)
 
   // TODO: should be %, as in record4s
   object ^ extends RecordArgs {
 
-    def applyRecord[L <: TupleX](list: L): Rec[L] = Rec.ofTuple(list)
+    def applyRecord[L <: TupleX](list: L): Rec[L] = Rec.ofTupleX(list)
   }
 
   implicit def _getEncoder[G <: TupleX](

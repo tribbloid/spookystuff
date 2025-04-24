@@ -1,24 +1,19 @@
 package com.tribbloids.spookystuff.dsl
 
-import ai.acyclic.prover.commons.debug.print_@
-import com.tribbloids.spookystuff.actions.Wget
 import com.tribbloids.spookystuff.linq.Rec
 import com.tribbloids.spookystuff.testutils.SpookyEnvSpec
 
 class RecInterfaceSpec extends SpookyEnvSpec {
-
-  import DataViewSpec.resource.*
-  import Rec.*
 
   describe("withColumnsMany") {
 
     it("record + record") {
 
       val v = spooky
-        .select { row =>
+        .select { _ =>
           Rec(a = 1)
         }
-        .withColumnsMany { row =>
+        .withColumnsMany { _ =>
           Seq(Rec(b = 2), Rec(b = 3))
         }
 
@@ -37,10 +32,10 @@ class RecInterfaceSpec extends SpookyEnvSpec {
     it("value + record") {
 
       val v = spooky
-        .select { row =>
+        .select { _ =>
           "x"
         }
-        .withColumnsMany { row =>
+        .withColumnsMany { _ =>
           Seq(Rec(b = 2), Rec(b = 3))
         }
 
@@ -64,10 +59,10 @@ class RecInterfaceSpec extends SpookyEnvSpec {
     it("record + record") {
 
       val v = spooky
-        .select { row =>
+        .select { _ =>
           Rec(a = 1)
         }
-        .withColumns { row =>
+        .withColumns { _ =>
           Rec(b = 2, c = 3)
         }
 
@@ -85,10 +80,10 @@ class RecInterfaceSpec extends SpookyEnvSpec {
     it("value + record") {
 
       val v = spooky
-        .select { row =>
+        .select { _ =>
           "x"
         }
-        .withColumns { row =>
+        .withColumns { _ =>
           Rec(b = 2, c = 3)
         }
 

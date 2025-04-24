@@ -6,7 +6,7 @@ import org.openqa.selenium.Platform
 import org.openqa.selenium.htmlunit.HtmlUnitDriver
 import org.openqa.selenium.logging.LoggingPreferences
 import org.openqa.selenium.phantomjs.PhantomJSDriverService
-import org.openqa.selenium.remote.CapabilityType.{ACCEPT_SSL_CERTS, PROXY, SUPPORTS_ALERTS, TAKES_SCREENSHOT}
+//import org.openqa.selenium.remote.CapabilityType.{ACCEPT_SSL_CERTS, PROXY, SUPPORTS_ALERTS, TAKES_SCREENSHOT}
 import org.openqa.selenium.remote.{CapabilityType, DesiredCapabilities}
 
 import scala.language.implicitConversions
@@ -33,9 +33,9 @@ object DesiredCapabilitiesView {
 
       //      baseCaps.setCapability(CapabilityType.SUPPORTS_FINDING_BY_CSS, true)
       //      baseCaps.setCapability(CapabilityType.HAS_NATIVE_EVENTS, false)
-      caps.setCapability(TAKES_SCREENSHOT, true)
-      caps.setCapability(ACCEPT_SSL_CERTS, true)
-      caps.setCapability(SUPPORTS_ALERTS, true)
+      caps.setCapability(CapabilityType.TAKES_SCREENSHOT, true)
+      caps.setCapability(CapabilityType.ACCEPT_SSL_CERTS, true)
+      caps.setCapability(CapabilityType.SUPPORTS_ALERTS, true)
       caps
     }
   }
@@ -68,9 +68,8 @@ case class DesiredCapabilitiesView(
         }
 
         proxyOpt.foreach { proxy =>
-          caps.setCapability(PROXY, proxy)
+          caps.setCapability(CapabilityType.PROXY, proxy)
         }
-
       }
     }
 

@@ -1,6 +1,5 @@
 val vs = versions()
 
-val tikaV = "2.9.1"
 
 dependencies {
 
@@ -17,13 +16,12 @@ dependencies {
     // https://mvnrepository.com/artifact/org.typelevel/cats-effect
 //    implementation("org.typelevel:cats-effect_${vs.scalaBinaryV}:3.4.2")
 
-    api("org.apache.tika:tika-core:${tikaV}")
-//    testImplementation( "org.apache.tika:tika-parsers-standard-package:${tikaV}")
-    api("org.apache.tika:tika-parsers-standard-package:${tikaV}")
     api("com.googlecode.juniversalchardet:juniversalchardet:1.0.3")
 
     api("org.jsoup:jsoup:1.19.1")
     // TODO: why do I need this? Selenium HtmlUnitDriver should be enough
 
     api("com.syncthemall:boilerpipe:1.2.2")
+
+    api(project(":repack:tika", configuration = "shadow"))
 }

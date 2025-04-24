@@ -1,6 +1,5 @@
 package com.tribbloids.spookystuff.dsl
 
-import ai.acyclic.prover.commons.function.hom.Hom
 import com.tribbloids.spookystuff.execution.FlatMapPlan
 import com.tribbloids.spookystuff.linq.Rec
 import com.tribbloids.spookystuff.linq.internal.ElementWisePoly
@@ -71,4 +70,18 @@ trait DataViewRecInterface[D] { // TODO: should be mixed into DataView
       withColumnsMany.apply(row => Seq(fn(row)), downSampling)
     }
   }
+
+  object drop {
+
+    def apply[
+        T <: String,
+        O: ClassTag
+    ](name: T): Unit = {
+
+      ??? // TODO: do we need this?
+    }
+
+  }
+
+  // TODO: enable this for recursive exploration
 }

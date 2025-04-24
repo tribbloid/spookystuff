@@ -6,7 +6,7 @@ import shapeless.ops.record.Keys
 
 import scala.collection.immutable.ListMap
 
-case class RecordInternal[L <: TupleX](
+case class RecInternal[L <: TupleX](
     runtimeVector: Vector[Any]
 ) {
 
@@ -48,4 +48,4 @@ case class RecordInternal[L <: TupleX](
   }
 }
 
-object RecordInternal {}
+object RecInternal {}

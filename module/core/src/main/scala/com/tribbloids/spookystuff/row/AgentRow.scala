@@ -8,7 +8,6 @@ import com.tribbloids.spookystuff.row.Data.ScopeRef
 
 import scala.collection.mutable
 import scala.collection.mutable.ArrayBuffer
-import scala.language.implicitConversions
 import scala.reflect.ClassTag
 
 object AgentRow {

@@ -13,7 +13,6 @@ import org.apache.spark.sql.SparkSession
 import shapeless.HList
 import shapeless.test.illTyped
 
-import scala.collection.immutable.ListMap
 import ai.acyclic.prover.commons.verification.Verify
 
 class RecSpec extends BaseSpec {
@@ -290,58 +289,6 @@ class RecSpec extends BaseSpec {
   //
   //  }
 
-  describe("_fields") {
-
-    it("value") {
-
-      val t1 = ^(x = 1, y = "ab")
-      val col = t1._fields.y
-
-      assert(col.value == "ab")
-    }
-
-    it("as typed Row") {
-
-      val t1 = ^(x = 1, y = "ab")
-      val col = t1._fields.y
-
-      val colAsRow = col.asRow
-      val colAsRowGT = ^(y = "ab")
-
-      implicitly[colAsRow._internal.Repr =:= colAsRowGT._internal.Repr]
-
-    }
-
-    it("update") {
-
-      val t1 = ^(x = 1, y = "ab")
-      val col = t1._fields.y
-
-      val t2 = col := 1.0
-      val t2GT = t1 +<+ ^(y = 1.0)
-
-      implicitly[t2._internal.Repr =:= t2GT._internal.Repr]
-
-      assert(t2GT._internal.runtimeMap == ListMap('x -> 1, 'y -> 1.0))
-      assert(t2.y == 1.0)
-    }
-
-    it("remove") {
-
-      val t1 = ^(x = 1, y = "ab")
-      val col = t1._fields.y
-
-      val removedAsTuple = col.remove.asTuple()
-
-      assert(removedAsTuple == "ab" -> 1 *: T0)
-
-      val removed = col.remove()
-
-      assert(removed._internal.runtimeMap == ListMap('x -> 1))
-      assert(removed.x == 1)
-    }
-  }
-
   describe("in Dataset") {
 
     it("named columns") {
@@ -374,7 +321,7 @@ class RecSpec extends BaseSpec {
 
       val tx = ^(x = 1, y = "ab")
       val ty = ^(y = 1.0, z = 1.1)
-      val t1 = Rec.ofTuple(tx._internal.repr ++ ty._internal.repr)
+      val t1 = Rec.ofTupleX(tx._internal.repr ++ ty._internal.repr)
 
       val rdd = session.sparkContext.parallelize(Seq(t1))
       val ds = TypedDataset.create(rdd)

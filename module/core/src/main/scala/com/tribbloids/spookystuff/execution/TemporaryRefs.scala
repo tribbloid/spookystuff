@@ -8,9 +8,7 @@ import org.apache.spark.rdd.RDD
 import org.apache.spark.sql.Dataset
 import org.apache.spark.storage.StorageLevel
 
-import scala.collection.mutable
 import scala.collection.mutable.ArrayBuffer
-import scala.language.implicitConversions
 import scala.reflect.ClassTag
 import scala.util.Random
 

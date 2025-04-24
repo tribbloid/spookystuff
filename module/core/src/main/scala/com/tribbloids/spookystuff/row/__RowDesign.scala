@@ -43,8 +43,8 @@ object __RowDesign {
     *     - Several RDDs consisting of SquashedRows that are identical in data but differs only in delta may be created.
     *       How would you decide which one to persist/checkpoint? Should they all be persisted?
     *   - \2. [[SquashedRow]]: consisting of a [[LocalityGroup]], modified [[Lineage.WithScope]]s, and an
-    *     [[AgentContext]]. When [[AgentContext]] is serialized, the trajectory can be discarded on demand, but the agent is
-    *     always discarded, recreated on deserialization, and replay all the backtrace to reach the same state
+    *     [[AgentContext]]. When [[AgentContext]] is serialized, the trajectory can be discarded on demand, but the
+    *     agent is always discarded, recreated on deserialization, and replay all the backtrace to reach the same state
     *     - this has some weaknesses:
     *     - serialization of AgentState needs to be implemented, and it is not easy!
     *     - ScopedRow's pointers may become dangling after an agent replay, this problem doesn't exist in (1), because

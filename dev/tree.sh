@@ -8,4 +8,6 @@ FWDIR="$(cd "`dirname "$0"`"/..; pwd)"
 source "${CRDIR}/.shared.sh"
 
 mkdir -p ${FWDIR}/logs/dependencyTree
-${FWDIR}/gradlew -q dependencyTree -Dorg.gradle.parallel=false "${@}" > ${FWDIR}/logs/dependencyTree/"$DATE".log
+
+DATE=$(date +%Y_%m_%d_%H_%M_%S)
+${FWDIR}/gradlew -q dependencyTree -Dorg.gradle.parallel=false "${@}"

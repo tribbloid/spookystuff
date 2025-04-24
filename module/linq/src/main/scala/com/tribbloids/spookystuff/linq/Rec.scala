@@ -1,21 +1,21 @@
 package com.tribbloids.spookystuff.linq
 
 import ai.acyclic.prover.commons.compat.NamedTupleX.:=
-import ai.acyclic.prover.commons.compat.TupleX.{*:, T0, T1}
+import ai.acyclic.prover.commons.compat.TupleX.{*:, T0}
 import ai.acyclic.prover.commons.compat.{Key, TupleX, XStr}
 import ai.acyclic.prover.commons.function.hom.Hom
 import com.tribbloids.spookystuff.linq
-import com.tribbloids.spookystuff.linq.Foundation.{CellLike, KVBatch, RecordLike}
-import com.tribbloids.spookystuff.linq.internal.{ElementWisePoly, RecordInternal}
+import com.tribbloids.spookystuff.linq.Foundation.{KVBatch, RecordLike}
+import com.tribbloids.spookystuff.linq.internal.RecInternal
 import shapeless.RecordArgs
 
 import scala.language.dynamics
 
 object Rec extends RecordArgs {
 
-  def applyRecord[L <: TupleX](list: L): Rec[L] = Rec.ofTuple(list)
+  def applyRecord[L <: TupleX](list: L): Rec[L] = Rec.ofTupleX(list)
 
-  def ofTuple[L <: TupleX](
+  def ofTupleX[L <: TupleX](
       data: L
   ): linq.Rec[L] = {
 
@@ -26,16 +26,23 @@ object Rec extends RecordArgs {
 
   def ofTagged[K <: XStr, V](
       v: K := V
-  ): linq.Rec[(K := V) *: T0] = ofTuple(v *: TupleX.T0)
+  ): linq.Rec[(K := V) *: T0] = ofTupleX(v *: TupleX.T0)
 
   sealed protected trait OfData_Imp0 extends Hom.Poly {
 
     implicit def fromValue[V]: V |- linq.Rec[("value" := V) *: TupleX.T0] = at[V] { v =>
-      ofTuple((Key["value"] := v) *: TupleX.T0)
+      ofTupleX((Key["value"] := v) *: TupleX.T0)
     }
   }
 
-  object ofData extends OfData_Imp0 {
+  sealed protected trait OfData_Imp1 extends OfData_Imp0 {
+
+    // implicit def fromProduct[L <: Product] = {
+    //   ??? // TODO: impl after TupleX and Product/Tuple has been unified in Scala 3
+    // }
+  }
+
+  object ofData extends OfData_Imp1 {
     // can be used to convert value of any type into a Record
 
     implicit def id[L <: TupleX]: linq.Rec[L] |- linq.Rec[L] = at[linq.Rec[L]] {
@@ -86,7 +93,7 @@ final class Rec[T <: TupleX](
       //        remover: Remover[T, key.type]
   ): key.type := selector.Out = {
 
-    val value: selector.Out = _fields.selectDynamic(key).value
+    val value: selector.Out = FieldAccessor(this).selectDynamic(key).value
 
     Key[key.type] := value
 
@@ -96,104 +103,18 @@ final class Rec[T <: TupleX](
 
   @transient override lazy val toString: String = runtimeData.mkString("[", ",", "]")
 
-  type FieldSelectorAux[K, V] = Selector.Aux[T, Key.Tag[K], V]
+//  object _fields extends Dynamic {
+//
+//    def selectDynamic(key: XStr)(
+//        implicit
+//        selector: Selector[T, Key.Tag[key.type]]
+//        //          remover: Remover[T, key.type]
+//    ) = new FieldSelection[key.type, selector.Out]()(selector)
+//  }
 
-  sealed class FieldSelection[
-      K <: XStr, // index, CAUTION: this is neither a key nor a string, in shapeless record it is usually a Symbol defined by @@
-      V
-  ]()(
-      implicit
-      val selector: FieldSelectorAux[K, V]
-      //        val remover: FieldRemover[K]
-  ) extends CellLike[T1[K := V]] { // TODO: merge with RecordEntryAsCell
+  @transient lazy val _internal: RecInternal[T] = {
 
-    type FieldRemover = Remover[T, Key.Tag[K]]
-    type FieldRemoverAux[O2 <: TupleX] = Remover.Aux[T, Key.Tag[K], (V, O2)]
-
-    lazy val value_tagged: K := V = value.asInstanceOf[K := V]
-
-    lazy val value: V = {
-      selector(_internal.repr)
-    }
-
-    lazy val asRow: Rec[(K := V) *: TupleX.T0] = {
-      Rec.ofTuple((Key[K] := value_tagged) *: TupleX.T0)
-    }
-
-    object remove {
-
-      def apply[O2 <: TupleX]()(
-          implicit
-          exactRemover: FieldRemoverAux[O2]
-      ): Rec[O2] = {
-
-        val tuple = exactRemover.apply(_internal.repr)
-        val after: O2 = tuple._2
-
-        Rec.ofTuple(after)
-      }
-
-      def asTuple()(
-          implicit
-          remover: FieldRemover
-      ) = {
-
-        val tuple = remover.apply(_internal.repr)
-        tuple
-
-      }
-    }
-    def drop = remove
-
-    object set { // TODO: name usually associated with in-place update, should use copy() or update() instead
-
-      def apply[VV](value: VV)(
-          implicit
-          ev: ElementWisePoly.preferRight.LemmaAtRows[T, (K := VV) *: TupleX.T0]
-      ): ev.Out = {
-
-        val neo: Rec[(K := VV) *: TupleX.T0] = Rec.ofTuple((Key[K] := value) *: TupleX.T0)
-
-        val result = ev.apply(Rec.this -> neo)
-
-        result.asInstanceOf[ev.Out]
-      }
-    }
-
-    def := : set.type = set
-
-    /**
-      * To be used in [[org.apache.spark.sql.Dataset]].flatMap
-      */
-
-    //    def explode[R](
-    //        fn: V => Seq[R]
-    //    )(
-    //        implicit
-    //        ev1: Merge.keepRight.Theorem[L, (K ->> R) *: Tuple.Empty]
-    //    ): Seq[ev1.Out] = {
-    //
-    //      val results = valueWithField.map { v: V =>
-    //        val r = fn(v)
-    //        set(r)(ev1)
-    //      }
-    //      results
-    //    }
-
-  }
-
-  object _fields extends Dynamic {
-
-    def selectDynamic(key: XStr)(
-        implicit
-        selector: Selector[T, Key.Tag[key.type]]
-        //          remover: Remover[T, key.type]
-    ) = new FieldSelection[key.type, selector.Out]()(selector)
-  }
-
-  @transient lazy val _internal: RecordInternal[T] = {
-
-    RecordInternal(runtimeData)
+    RecInternal(runtimeData)
   }
 
 }

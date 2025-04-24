@@ -22,7 +22,7 @@ trait ElementWisePoly extends Hom.Poly {
   ): (linq.Rec[L], linq.Rec[R]) |- linq.Rec[lemma.Out] = at[(linq.Rec[L], linq.Rec[R])] { TupleX =>
     val (left, right) = TupleX
     val result = left._internal.repr.mergeWith(right._internal.repr)(combineElements)(lemma)
-    linq.Rec.ofTuple(result)
+    linq.Rec.ofTupleX(result)
   }
 
   case class MergeMethod[L <: TupleX](left: linq.Rec[L]) {
@@ -77,8 +77,7 @@ trait ElementWisePoly extends Hom.Poly {
     }
   }
 
-  case class CartesianProductMethod[L <: TupleX](left: Seq[linq.Rec[L]])
-      extends CartesianProductMethod_Lvl0[L](left) {
+  case class CartesianProductMethod[L <: TupleX](left: Seq[linq.Rec[L]]) extends CartesianProductMethod_Lvl0[L](left) {
 
     def apply[R <: TupleX](right: KVBatchLike[R])(
         implicit

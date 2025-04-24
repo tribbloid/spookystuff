@@ -1,6 +1,5 @@
 package com.tribbloids.spookystuff.dsl
 
-import ai.acyclic.prover.commons.function.hom.Hom
 import ai.acyclic.prover.commons.util.Magnet.OptionMagnet
 import com.tribbloids.spookystuff.SpookyContext
 import com.tribbloids.spookystuff.actions.*
@@ -9,7 +8,6 @@ import com.tribbloids.spookystuff.conf.SpookyConf
 import com.tribbloids.spookystuff.execution.*
 import com.tribbloids.spookystuff.execution.ExplorePlan.Params
 import com.tribbloids.spookystuff.execution.FetchPlan.Batch
-import com.tribbloids.spookystuff.linq.internal.ElementWisePoly
 import com.tribbloids.spookystuff.row.*
 import frameless.{TypedDataset, TypedEncoder}
 import org.apache.spark.SparkContext
@@ -18,7 +16,6 @@ import org.apache.spark.sql.{DataFrame, Dataset}
 
 import scala.language.implicitConversions
 import scala.reflect.ClassTag
-import com.tribbloids.spookystuff.linq.Rec
 
 object DataView extends DavaView_Imp0 {
 
