@@ -1,6 +1,6 @@
 package com.tribbloids.spookystuff.io
 
-import ai.acyclic.prover.commons.util.{PathMagnet, Retry}
+import ai.acyclic.prover.commons.util.{LazyVar, PathMagnet, Retry}
 import com.tribbloids.spookystuff.agent.WebProxySetting
 import com.tribbloids.spookystuff.utils.http.*
 import org.apache.hadoop.shaded.org.apache.http.client.HttpClient
@@ -12,7 +12,6 @@ import org.apache.hadoop.shaded.org.apache.http.conn.socket.ConnectionSocketFact
 import org.apache.hadoop.shaded.org.apache.http.impl.client.{CloseableHttpClient, HttpClients}
 import org.apache.hadoop.shaded.org.apache.http.impl.conn.PoolingHttpClientConnectionManager
 import org.apache.hadoop.shaded.org.apache.http.{HttpEntity, HttpHost, HttpResponse}
-import org.apache.spark.ml.dsl.utils.LazyVar
 
 import java.io.*
 import java.net.{InetSocketAddress, URI}

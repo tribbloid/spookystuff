@@ -141,9 +141,7 @@ abstract class DriverDependentTemplate extends SpookyBaseSpec with BaseSpec {
           |      "selector" : "By.sizzleCssSelector: o1",
           |      "cooldown" : "0 seconds",
           |      "blocking" : true
-          |    }, {
-          |      "filter" : { }
-          |    } ]
+          |    }, { } ]
           |  },
           |  "limit" : 16
           |}
@@ -165,7 +163,6 @@ abstract class DriverDependentTemplate extends SpookyBaseSpec with BaseSpec {
             |        0 seconds
             |        true
             |      Snapshot
-            |        MustHaveTitle
             |  16
           """.stripMargin
         )

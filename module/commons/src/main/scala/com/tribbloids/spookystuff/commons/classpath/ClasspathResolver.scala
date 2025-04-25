@@ -1,11 +1,10 @@
 package com.tribbloids.spookystuff.commons.classpath
 
-import ai.acyclic.prover.commons.util.PathMagnet
+import ai.acyclic.prover.commons.util.{LazyVar, PathMagnet}
 import com.tribbloids.spookystuff.commons.data.ReflCanUnapply
 import com.tribbloids.spookystuff.commons.lifespan.Cleanable
 import com.tribbloids.spookystuff.io.{Resource, ResourceMetadata, URIExecution, URIResolver, WriteMode}
 import io.github.classgraph.{ClassGraph, ResourceList, ScanResult}
-import org.apache.spark.ml.dsl.utils.LazyVar
 
 import java.io.{File, IOException, InputStream, OutputStream}
 import java.nio.file.{Files, NoSuchFileException}

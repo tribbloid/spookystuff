@@ -1,4 +1,4 @@
-package org.apache.spark.rdd.spookystuff
+package com.tribbloids.spookystuff.partition
 
 import com.tribbloids.spookystuff.commons.lifespan.LifespanContext
 import org.slf4j.LoggerFactory

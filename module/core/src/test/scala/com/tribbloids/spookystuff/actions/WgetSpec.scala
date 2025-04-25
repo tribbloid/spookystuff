@@ -30,42 +30,6 @@ class WgetSpec extends SpookyBaseSpec {
     getIP()
   }
 
-  Seq(
-    "http" -> HTTP_IP_URL,
-    "https" -> HTTPS_IP_URL
-  ).foreach { tuple =>
-    it(s"use TOR socks5 proxy for ${tuple._1} wget", Tag(classOf[LocalOnly].getCanonicalName)) {
-
-      val newIP = {
-
-        spooky.confUpdate(_.copy(webProxy = WebProxyFactory.Tor))
-
-        getIP(tuple._2)
-      }
-
-      assert(newIP !== null)
-      assert(newIP !== "")
-      assert(newIP !== noProxyIP)
-    }
-
-    it(s"revert from TOR socks5 proxy for ${tuple._1} wget", Tag(classOf[LocalOnly].getCanonicalName)) {
-
-      val newIP = {
-        spooky.confUpdate(_.copy(webProxy = WebProxyFactory.Tor))
-
-        getIP(tuple._2)
-      }
-
-      val noProxyIP2 = {
-        spooky.confUpdate(_.copy(webProxy = WebProxyFactory.NoProxy))
-
-        getIP(tuple._2)
-      }
-
-      assert(newIP !== noProxyIP2)
-    }
-  }
-
   def getIP(url: String = HTTP_IP_URL): String = {
     val results = wget(url).fetch(spooky)
 

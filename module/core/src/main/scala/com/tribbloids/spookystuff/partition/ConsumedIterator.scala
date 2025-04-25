@@ -1,4 +1,4 @@
-package org.apache.spark.rdd.spookystuff
+package com.tribbloids.spookystuff.partition
 
 import java.util.concurrent.atomic.AtomicInteger
 import scala.language.implicitConversions

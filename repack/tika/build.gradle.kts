@@ -1,8 +1,8 @@
 val vs = versions()
 
-plugins {
-    id("com.gradleup.shadow")
-}
+//plugins {
+//    id("com.gradleup.shadow")
+//}
 
 dependencies {
 
@@ -11,23 +11,15 @@ dependencies {
     api("org.apache.tika:tika-core:${tikaV}")
 //    testImplementation( "org.apache.tika:tika-parsers-standard-package:${tikaV}")
     api("org.apache.tika:tika-parsers-standard-package:${tikaV}")
+
+//    api("org.apache.tika:tika-parsers-pdf-module:${tikaV}")
 }
 
 tasks {
     shadowJar {
 
-        setExcludes(
-
-            listOf(
-                "META-INF/*.SF",
-                "META-INF/*.DSA",
-                "META-INF/*.RSA",
-
-                "**/scala/**"
-            )
-        )
-
-        relocate("org.apache.commons.io", "repacked.spookystuff.org.apache.commons.io")
-//        relocate("io.netty", "repacked.spookystuff.io.netty")
+        relocate("org.apache.commons.io", "repacked.tika.org.apache.commons.io")
+        relocate("org.apache.logging.log4j", "repacked.tika.org.apache.logging.log4j")
+        relocate("com.fasterxml.jackson", "repacked.tika.com.fasterxml.jackson")
     }
 }

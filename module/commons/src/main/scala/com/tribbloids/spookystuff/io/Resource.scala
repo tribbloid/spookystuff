@@ -1,9 +1,9 @@
 package com.tribbloids.spookystuff.io
 
+import ai.acyclic.prover.commons.util.LazyVar
 import com.tribbloids.spookystuff.commons.data.ReflCanUnapply
 import com.tribbloids.spookystuff.commons.lifespan.LocalCleanable
 import org.apache.commons.io.output.NullOutputStream
-import org.apache.spark.ml.dsl.utils.LazyVar
 
 import java.io.{IOException, InputStream, OutputStream}
 import scala.language.implicitConversions

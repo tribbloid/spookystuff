@@ -1,6 +1,6 @@
 package com.tribbloids.spookystuff.metrics
 
-import org.apache.spark.ml.dsl.utils.ClassOpsMixin
+import com.tribbloids.spookystuff.commons.refl.ClassOpsMixin
 
 trait MetricLike extends Product with ClassOpsMixin with Serializable {
 

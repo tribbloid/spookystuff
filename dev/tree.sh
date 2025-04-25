@@ -9,5 +9,4 @@ source "${CRDIR}/.shared.sh"
 
 mkdir -p ${FWDIR}/logs/dependencyTree
 
-DATE=$(date +%Y_%m_%d_%H_%M_%S)
 ${FWDIR}/gradlew -q dependencyTree -Dorg.gradle.parallel=false "${@}"

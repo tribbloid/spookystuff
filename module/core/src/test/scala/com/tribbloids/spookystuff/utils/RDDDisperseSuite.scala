@@ -3,9 +3,8 @@ package com.tribbloids.spookystuff.utils
 import ai.acyclic.prover.commons.spark.TestHelper
 import com.tribbloids.spookystuff.commons.CommonUtils
 import com.tribbloids.spookystuff.commons.collection.BufferedShuffleIteratorV1
+import com.tribbloids.spookystuff.commons.refl.ClassOpsMixin
 import com.tribbloids.spookystuff.testutils.SpookyBaseSpec
-import org.apache.spark.ml.dsl.utils.ClassOpsMixin
-import org.apache.spark.ml.dsl.utils.ClassOpsMixin.toClassOps
 import org.apache.spark.rdd.RDD
 import org.apache.spark.rdd.spookystuff.NarrowDispersedRDD
 import org.apache.spark.storage.StorageLevel

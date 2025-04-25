@@ -256,7 +256,7 @@ class DataViewSpec extends SpookyBaseSpec {
 
           val dirs = docs.\("root directory")
 
-          val path = dirs.findOnly("path").text
+          val path = dirs.findFirst("path").flatMap(_.text)
 
           val result = path match {
             case Some(p) => Wget(p)

@@ -1,5 +1,6 @@
-package org.apache.spark.ml.dsl.utils
+package com.tribbloids.spookystuff.refl
 
+import com.tribbloids.spookystuff.commons.refl.ClassOpsMixin
 import com.tribbloids.spookystuff.testutils.BaseSpec
 
 class ClassOpsMixinSpec extends BaseSpec {

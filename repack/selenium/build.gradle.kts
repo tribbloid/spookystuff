@@ -1,8 +1,8 @@
 val vs = versions()
 
-plugins {
-    id("com.gradleup.shadow")
-}
+//plugins {
+//    id("com.gradleup.shadow")
+//}
 
 dependencies {
 
@@ -40,30 +40,7 @@ dependencies {
 tasks {
     shadowJar {
 
-        // https://github.com/johnrengelman/shadow/issues/505
-//        minimize {
-//        exclude(
-//            listOf(
-//                "META-INF/*.SF",
-//                "META-INF/*.DSA",
-//                "META-INF/*.RSA",
-//
-//                "scala/*"
-//            )
-//        )
-//        }
-        setExcludes(
-
-            listOf(
-                "META-INF/*.SF",
-                "META-INF/*.DSA",
-                "META-INF/*.RSA",
-
-                "**/scala/**"
-            )
-        )
-
-        relocate("com.google.common", "repacked.spookystuff.com.google.common")
-        relocate("io.netty", "repacked.spookystuff.io.netty")
+        relocate("com.google.common", "repacked.selenium.com.google.common")
+        relocate("io.netty", "repacked.selenium.io.netty")
     }
 }

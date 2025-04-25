@@ -125,7 +125,7 @@ case class AgentRow[D](
       agentContext.trajectory.lookup(uid)
     }
 
-    new Trajectory(seq, agentContext)
+    Trajectory(seq, agentContext)
   }
 
 //  lazy val docs: Trajectory[Doc] = trajectory.docs
