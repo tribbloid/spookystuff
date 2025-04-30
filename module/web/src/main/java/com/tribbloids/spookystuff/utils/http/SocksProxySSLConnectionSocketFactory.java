@@ -1,7 +1,10 @@
 package com.tribbloids.spookystuff.utils.http;
 
-import org.apache.http.conn.ssl.SSLConnectionSocketFactory;
-import org.apache.http.protocol.HttpContext;
+//import org.apache.http.conn.ssl.SSLConnectionSocketFactory;
+//import org.apache.http.protocol.HttpContext;
+
+import org.apache.hadoop.shaded.org.apache.http.conn.ssl.SSLConnectionSocketFactory;
+import org.apache.hadoop.shaded.org.apache.http.protocol.HttpContext;
 
 import javax.net.ssl.SSLContext;
 import java.io.IOException;

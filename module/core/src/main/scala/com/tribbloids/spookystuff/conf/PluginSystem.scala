@@ -11,8 +11,7 @@ import scala.util.Try
 
 object PluginSystem {
 
-  lazy val emptySparkConf: SparkConf = new SparkConf(false)
-
+//  lazy val emptySparkConf: SparkConf = new SparkConf(false)
 }
 
 trait PluginSystem extends Serializable {

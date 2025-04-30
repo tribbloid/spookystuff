@@ -17,77 +17,67 @@ import java.net.URL;
  */
 public class HttpUtils {
 
-  private static URL dummyURL() {
-    try {
-      return new URL("http://www.dummy.com/");
-    } catch (MalformedURLException e) {
-      throw new RuntimeException(e);
-    }
-  }
+    private static URL dummyURL() {
 
-  private static URL dummyURL = dummyURL();
-
-  public static String uriStr(String s) throws URISyntaxException {
-    return uri(s).toString();
-  }
-
-  public static URI uri(String str) throws URISyntaxException {
-
-    String s = str.trim();
-
-    //this solution is abandoned as it cannot handle question mark
-//    URI uri;
-//    try {
-//      uri = new URI(s);
-//    }
-//    catch (URISyntaxException e) {
-//      uri = new URI(URIUtil.encodePath(s));
-//    }
-//
-//    return uri.normalize();
-
-    try {
-      return new URI(s);
-    }
-    catch (URISyntaxException e) {
-      try {
-        URL url = new URL(s);
-        return new URI(url.getProtocol(), url.getAuthority(), url.getPath(), url.getQuery(), null);
-      } catch (MalformedURLException ee) {
-        URL url;
         try {
-          url = new URL(dummyURL, s);
-        } catch (MalformedURLException eee) {
-          throw new RuntimeException(eee);
+            return new URL("http://www.dummy.com/");
+        } catch (MalformedURLException e) {
+            throw new RuntimeException("IMPOSSIBLE! " + e);
         }
-        return new URI(null, null, url.getPath(), url.getQuery(), null); //this will generate a relative URI the string itself is relative
-      }
+
     }
-  }
 
-  static PlainTextMessageSigner plainTextMessageSigner = new PlainTextMessageSigner();
-  static HmacSha1MessageSigner hmacSha1MessageSigner = new HmacSha1MessageSigner();
+    private static final URL dummyURL = dummyURL();
 
-  public static String OauthV2(
-          String uri,
-          String CONSUMER_KEY,
-          String CONSUMER_SECRET,
+    public static String uriStr(String s) throws URISyntaxException {
+        return uri(s).toString();
+    }
 
-          String ACCESS_TOKEN,
-          String TOKEN_SECRET
-          ) throws OAuthCommunicationException, OAuthExpectationFailedException, OAuthMessageSignerException {
+    public static URI uri(String str) throws URISyntaxException {
 
-    // create a consumer object and configure it with the access
-    // token and token secret obtained from the service provider
-    DefaultOAuthConsumer consumer = new DefaultOAuthConsumer(CONSUMER_KEY, CONSUMER_SECRET);
+        String s = str.trim();
 
-    consumer.setMessageSigner(hmacSha1MessageSigner);
+        try {
+            return new URI(s);
+        } catch (URISyntaxException e) {
+            try {
+                URL url = new URL(s);
+                return new URI(url.getProtocol(), url.getAuthority(), url.getPath(), url.getQuery(), null);
+            } catch (MalformedURLException ee) {
+                URL url;
+                try {
+                    url = new URL(dummyURL, s);
+                } catch (MalformedURLException eee) {
+                    throw new RuntimeException("IMPOSSIBLE! " + eee);
+                }
+                return new URI(null, null, url.getPath(), url.getQuery(), null); //this will generate a relative URI the string itself is relative
+            }
+        }
+    }
 
-    consumer.setSendEmptyTokens(true);
-    consumer.setTokenWithSecret(ACCESS_TOKEN, TOKEN_SECRET);
+    static PlainTextMessageSigner plainTextMessageSigner = new PlainTextMessageSigner();
+    static HmacSha1MessageSigner hmacSha1MessageSigner = new HmacSha1MessageSigner();
 
-    // sign the request
-    String result =  consumer.sign(uri);
-    return result;
-  }
+    public static String OauthV2(
+            String uri,
+            String CONSUMER_KEY,
+            String CONSUMER_SECRET,
+
+            String ACCESS_TOKEN,
+            String TOKEN_SECRET
+    ) throws OAuthCommunicationException, OAuthExpectationFailedException, OAuthMessageSignerException {
+
+        // create a consumer object and configure it with the access
+        // token and token secret obtained from the service provider
+        DefaultOAuthConsumer consumer = new DefaultOAuthConsumer(CONSUMER_KEY, CONSUMER_SECRET);
+
+        consumer.setMessageSigner(hmacSha1MessageSigner);
+
+        consumer.setSendEmptyTokens(true);
+        consumer.setTokenWithSecret(ACCESS_TOKEN, TOKEN_SECRET);
+
+        // sign the request
+        String result = consumer.sign(uri);
+        return result;
+    }
 }

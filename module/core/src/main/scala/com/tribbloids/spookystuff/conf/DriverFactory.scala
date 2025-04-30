@@ -30,6 +30,8 @@ import org.apache.spark.TaskContext
 //TODO: delay Future-based waiting control until asynchronous Action exe is implemented. Right now it works just fine
 sealed abstract class DriverFactory[D <: DriverLike] extends Serializable {
 
+  import DriverFactory.*
+
   // If get is called again before the previous driver is released, the old driver is destroyed to create a new one.
   // this is to facilitate multiple retries
 
@@ -42,6 +44,14 @@ sealed abstract class DriverFactory[D <: DriverLike] extends Serializable {
     Lifespan.TaskOrJVM(ctxFactory = () => agent.lifespan.ctx).forShipping
 
   def deployGlobally(spooky: SpookyContext): Unit = {}
+
+  final lazy val taskLocal: TaskLocal[D] = {
+
+    this match {
+      case v: Transient[_] => TaskLocal(v)
+      case v: TaskLocal[D] => v
+    }
+  }
 }
 
 object DriverFactory {
@@ -49,9 +59,7 @@ object DriverFactory {
   /**
     * session local
     */
-  abstract class Transient[D <: DriverLike] extends DriverFactory[D] with Product {
-
-    override lazy val toString: String = productPrefix
+  abstract class Transient[D <: DriverLike] extends DriverFactory[D] {
 
     // session -> driver
     // cleanup: this has no effect whatsoever
@@ -75,16 +83,15 @@ object DriverFactory {
     def release(agent: Agent): Unit = {
       val existingOpt = sessionLocals.remove(agent)
       existingOpt.foreach { driver =>
-        destroy(driver, agent.taskContextOpt)
+        clean(driver, agent.taskContextOpt)
       }
     }
 
-    final def destroy(driver: D, tcOpt: Option[TaskContext]): Unit = {
+    final def clean(driver: D, taskCtxOpt: Option[TaskContext]): Unit = {
 
       driver.clean()
     }
 
-    final lazy val taskLocal: TaskLocal[D] = TaskLocal(this)
   }
 
   /**
@@ -115,7 +122,7 @@ object DriverFactory {
       taskLocalOpt
         .map { status =>
           def recreateDriver: D = {
-            delegate.destroy(status.self, agent.taskContextOpt)
+            delegate.clean(status.self, agent.taskContextOpt)
             newDriver
           }
 

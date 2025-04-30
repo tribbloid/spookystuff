@@ -1,16 +1,52 @@
 package com.tribbloids.spookystuff.web.actions
 
+import ai.acyclic.prover.commons.spark.TestHelper
+import com.tribbloids.spookystuff.SpookyContext
 import com.tribbloids.spookystuff.actions.ControlBlock.Loop
+import com.tribbloids.spookystuff.actions.Export.DocValidation.StatusCode2XX
+import com.tribbloids.spookystuff.agent.Agent
 import com.tribbloids.spookystuff.conf.DriverFactory
-import com.tribbloids.spookystuff.doc.{Doc, Observation}
-import com.tribbloids.spookystuff.testutils.{BaseSpec, SpookyBaseSpec}
+import com.tribbloids.spookystuff.doc.{Doc, DocUtils, Observation}
+import com.tribbloids.spookystuff.io.WriteMode.Overwrite
+import com.tribbloids.spookystuff.testutils.{BaseSpec, FileURIDocsFixture}
 import com.tribbloids.spookystuff.web.agent.CleanWebDriver
+import com.tribbloids.spookystuff.web.conf.Web
 
-abstract class DriverDependentTemplate extends SpookyBaseSpec with BaseSpec {
+abstract class WebActionCase extends BaseSpec with FileURIDocsFixture {
 
   import scala.concurrent.duration.*
 
   def driverFactory: DriverFactory[CleanWebDriver]
+
+  lazy val spooky: SpookyContext = {
+
+    val webConf = Web.Conf(driverFactory)
+
+    new SpookyContext(
+      TestHelper.TestSparkSession
+    )
+      .setConf(webConf)
+  }
+
+  object TaskLocal extends WebActionCase {
+
+    override lazy val suiteName: String = WebActionCase.this.suiteName + "(Task Local)"
+
+    override lazy val driverFactory: DriverFactory.TaskLocal[CleanWebDriver] =
+      WebActionCase.this.driverFactory.taskLocal
+  }
+
+  it("empty page") {
+    val emptyPage: Doc = {
+      val agent = new Agent(spooky)
+
+      Snapshot().accept(StatusCode2XX).apply(agent).toList.head.asInstanceOf[Doc]
+    }
+
+    assert(emptyPage.findAll("div.dummy").attrs("href").isEmpty)
+    assert(emptyPage.findAll("div.dummy").codes.isEmpty)
+    assert(emptyPage.findAll("div.dummy").isEmpty)
+  }
 
   describe("Visit") {
 
@@ -167,5 +203,24 @@ abstract class DriverDependentTemplate extends SpookyBaseSpec with BaseSpec {
           """.stripMargin
         )
     }
+  }
+
+  it(" save and load") {
+
+    val results = (
+      Visit(HTML_URL) +>
+        Snapshot().as("T")
+    ).fetch(spooky)
+
+    val resultsList = results.toArray
+    assert(resultsList.length === 1)
+    val page = resultsList(0).asInstanceOf[Doc]
+
+    val raw = page.blob.raw
+    page.prepareSave(spooky, Overwrite).auditing()
+
+    val loadedContent = DocUtils.load(page.saved.head)(spooky)
+
+    assert(loadedContent === raw)
   }
 }

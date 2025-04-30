@@ -2,8 +2,7 @@ package com.tribbloids.spookystuff.actions
 
 import com.tribbloids.spookystuff.actions.Delay.RandomDelay
 import com.tribbloids.spookystuff.doc.Doc
-import com.tribbloids.spookystuff.testutils.{LocalOnly, RemoteDocsFixture, SpookyBaseSpec}
-import org.scalatest.Tag
+import com.tribbloids.spookystuff.testutils.{RemoteDocsFixture, SpookyBaseSpec}
 
 import java.sql.Timestamp
 import java.util.Date

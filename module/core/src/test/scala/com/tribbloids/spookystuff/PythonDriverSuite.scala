@@ -1,17 +1,18 @@
 package com.tribbloids.spookystuff
 
 import com.tribbloids.spookystuff.python.PyConverter
-import Python3DriverSuite.Runner
-import com.tribbloids.spookystuff.agent.PythonDriver
+import PythonDriverSuite.Runner
+import com.tribbloids.spookystuff.agent.{Agent, PythonDriver}
 import com.tribbloids.spookystuff.testutils.SpookyBaseSpec
 import com.tribbloids.spookystuff.commons.lifespan.Cleanable.Lifespan
 import com.tribbloids.spookystuff.commons.CommonUtils
+import com.tribbloids.spookystuff.conf.PythonDriverFactory
 import org.slf4j.LoggerFactory
 
 import scala.concurrent.Future
 import scala.util.Try
 
-object Python3DriverSuite {
+object PythonDriverSuite {
 
   case class Runner(pythonExec: String) {
     val onePlusX: Seq[Int] => Unit = { xs =>
@@ -48,7 +49,7 @@ object Python3DriverSuite {
 /**
   * Created by peng on 01/08/16.
   */
-class Python3DriverSuite extends SpookyBaseSpec {
+class PythonDriverSuite extends SpookyBaseSpec {
 
   import scala.concurrent.ExecutionContext.Implicits.global
   import scala.concurrent.duration.*
@@ -59,8 +60,17 @@ class Python3DriverSuite extends SpookyBaseSpec {
     super.afterAll()
   }
 
-  lazy val runner: Runner = Python3DriverSuite.Runner3
+  lazy val runner: Runner = PythonDriverSuite.Runner3
   import runner.*
+
+  it("factory reset") {
+
+    val agent = new Agent(spooky)
+    val driverFactory = PythonDriverFactory._3
+    val driver = driverFactory.dispatch(agent)
+    driverFactory.factoryReset(driver)
+    driverFactory.clean(driver, agent.taskContextOpt)
+  }
 
   it("sendAndGetResult should work in single thread") {
     onePlusX(1 to 100)

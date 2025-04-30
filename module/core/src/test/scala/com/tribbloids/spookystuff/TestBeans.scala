@@ -48,7 +48,7 @@ object TestBeans {
 
   class NOTSerializableID(_id: Int) extends WithID(_id) with NOTSerializable {
 
-    Assertions.intercept[Exception] {
+    Assertions.intercept[AssertionError] {
       AssertSerializable(this).weakly()
     }
   }

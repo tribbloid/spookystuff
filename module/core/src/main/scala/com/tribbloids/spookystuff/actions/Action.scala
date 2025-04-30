@@ -39,7 +39,7 @@ trait Action extends HasTrace {
 
       builder += {
         agent.backtrace.map { action =>
-          "| " + action.toString
+          "|  " + action.toString
         } ++
           Seq("+> " + this.detailedStr)
       }.mkString("\n")
@@ -69,7 +69,7 @@ trait Action extends HasTrace {
         }
 
       case e =>
-        val fullMsg = backtraceMsg + e.getMessage
+        val fullMsg = backtraceMsg + "\n" + e.getMessage
         new ActionException(fullMsg, e)
     }
   }

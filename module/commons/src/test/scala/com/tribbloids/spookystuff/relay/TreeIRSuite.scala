@@ -37,13 +37,13 @@ class TreeIRSuite extends BaseSpec {
 
       back.treeView.treeString.shouldBe(
         """
-          |MapTree
-          |:- MapTree
-          |:  :- Leaf 9223372036854775807
-          |:  +- MapTree
-          |:     :- Leaf 1
-          |:     +- Leaf 2.0
-          |+- Leaf FF
+          |+ Map
+          |!-+ Map
+          |: !-- BigInt 9223372036854775807
+          |: !-+ Map
+          |:   !-- BigInt 1
+          |:   !-- Double 2.0
+          |!-- String FF
           |""".stripMargin
       )
     }

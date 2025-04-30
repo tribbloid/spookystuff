@@ -1,5 +1,6 @@
 package com.tribbloids.spookystuff.commons
 
+import ai.acyclic.prover.commons.typesetting.TextBlock
 import ai.acyclic.prover.commons.util.Causes
 import ai.acyclic.prover.commons.util.Causes.Undefined
 
@@ -7,42 +8,35 @@ import scala.util.{Failure, Success, Try}
 
 object TreeException {
 
-  // TODO: rename to _TreeVew, keep consistency
-  case class TreeNodeView(self: Throwable) extends TreeView.Immutable[TreeNodeView] {
-    override def children: Seq[TreeNodeView] = {
-      val result = self match {
+  case class _TreeView(self: Throwable) extends TreeView {
+    override def children: Seq[_TreeView] = {
+      val result: Seq[_TreeView] = self match {
         case v: Causes.HasCauses[?] =>
-          v.causes.map(TreeNodeView.apply)
+          v.causes.map(_TreeView.apply)
         case _ =>
           val eOpt = Option(self).flatMap(v => Option(v.getCause))
-          eOpt.map(TreeNodeView.apply).toSeq
+          eOpt.map(_TreeView.apply).toSeq
       }
-      result.sortBy(_.simpleString(0))
+      result.sortBy(_.nodeText)
     }
 
-    override def simpleString(maxFields: Int): String = {
+    override def nodeText: String = {
       self match {
         case v: TreeException =>
-          v.getMessage_simple
+          val msgBlock = TextBlock(v.getMessage_simple)
+          msgBlock.build
+
+//          if (msgBlock.lines.size > 1) { TODO: remove, only useful if subgraph is required
+//            msgBlock.pad.left(Padding.leftSquare).build
+//          } else {
+//            msgBlock.build
+//          }
         case _ =>
           self.getClass.getName + ": " + self.getMessage
       }
     }
-  }
 
-  //  def aggregate(
-  //                 fn: Seq[Throwable] => Throwable,
-  //                 extra: Seq[Throwable] = Nil
-  //               )(seq: Seq[Throwable]): Throwable = {
-  //
-  //    val flat = seq.flatMap {
-  //      case Wrapper(causes) =>
-  //        causes
-  //      case v@_ => Seq(v)
-  //    }
-  //    val all = extra.flatMap(v => Option(v)) ++ flat
-  //    fn(all)
-  //  }
+  }
 
   def &&&[T](
       trials: Seq[Try[T]],
@@ -130,7 +124,7 @@ object TreeException {
 
 trait TreeException extends Causes.HasCauses[Throwable] {
 
-  import com.tribbloids.spookystuff.commons.TreeException.TreeNodeView
+  import com.tribbloids.spookystuff.commons.TreeException._TreeView
 
   override def getCause: Throwable = null
 
@@ -143,9 +137,9 @@ trait TreeException extends Causes.HasCauses[Throwable] {
         Option(cause).toSeq
     }
   }
-  lazy val treeNodeView: TreeNodeView = TreeNodeView(this)
+  lazy val treeView: _TreeView = _TreeView(this)
 
-  override def getMessage: String = treeNodeView.treeString(verbose = false)
+  override def getMessage: String = "\n" + treeView.treeString()
 
   def getMessage_simple: String
 }

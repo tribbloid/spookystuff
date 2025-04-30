@@ -11,7 +11,6 @@ import com.tribbloids.spookystuff.doc.Error.ConversionError
 import com.tribbloids.spookystuff.doc.Observation.DocUID
 import com.tribbloids.spookystuff.doc.Node.Unrecognisable
 import com.tribbloids.spookystuff.io.{ResourceMetadata, WriteMode}
-import org.apache.commons.csv.CSVFormat
 import org.apache.hadoop.shaded.org.apache.http.StatusLine
 import org.apache.hadoop.shaded.org.apache.http.entity.ContentType
 import org.apache.tika.io.TikaInputStream
@@ -24,14 +23,15 @@ import scala.util.{Success, Try}
 object Doc {
 
   val CONTENT_TYPE: String = "contentType"
-  val CSV_FORMAT: String = "csvFormat"
-
-  val defaultCSVFormat: CSVFormat = CSVFormat.DEFAULT
 
   implicit def _asContent(v: Doc): Content = v._content
+  implicit def _asRootNode(v: Doc): Node = v.root
 
   val defaultTextCharset: String = "ISO-8859-1"
   val defaultApplicationCharset: String = "UTF-8"
+
+  //  val CSV_FORMAT: String = "csvFormat"
+  //  val defaultCSVFormat: CSVFormat = CSVFormat.DEFAULT
 }
 
 @SerialVersionUID(94865098324L)

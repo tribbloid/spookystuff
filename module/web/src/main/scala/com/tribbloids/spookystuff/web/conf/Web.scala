@@ -9,15 +9,8 @@ import org.apache.spark.SparkConf
 
 object Web extends DriverSystem {
 
-  final val DEFAULT_WEBDRIVER_FACTORY = WebDriverFactory.PhantomJS().taskLocal
-
-  /**
-    * otherwise driver cannot do screenshot
-    */
-  final val TEST_WEBDRIVER_FACTORY = WebDriverFactory.PhantomJS(loadImages = true).taskLocal
-
   case class Conf(
-      webDriverFactory: DriverFactory[CleanWebDriver] = DEFAULT_WEBDRIVER_FACTORY
+      webDriverFactory: WebDriverFactory = WebDriverFactory.default
   ) extends ConfLike {
 
     override def importFrom(sparkConf: SparkConf): Conf = this.copy()

@@ -14,6 +14,8 @@ trait TreeIR[LEAF] extends IR with Product {
 
   def children: Seq[TreeIR[LEAF]]
 
+  def args: Seq[Any] = Nil
+
   def upcast[_LEAF >: LEAF]: TreeIR[_LEAF]
 
   class DepthFirstTransform[V1 >: LEAF, V2, RES <: TreeIR[V2]](
@@ -84,14 +86,14 @@ trait TreeIR[LEAF] extends IR with Product {
 
 object TreeIR {
 
-  case class _TreeView(self: TreeIR[?]) extends TreeView.Immutable[_TreeView] {
-    override lazy val nodeName: String = self.getClass.getSimpleName
+  case class _TreeView(self: TreeIR[?]) extends TreeView {
 
     override lazy val children: Seq[_TreeView] = self.children.map(_TreeView.apply)
 
-    override def stringArgs: Iterator[Any] =
-      if (children.isEmpty) self.productIterator
-      else Iterator.empty
+    override lazy val nodeText: String = {
+
+      (Seq(self.rootTag) ++ self.args).mkString(" ")
+    }
   }
 
   case class Leaf[LEAF](
@@ -100,6 +102,8 @@ object TreeIR {
   ) extends TreeIR[LEAF] {
 
     type Body = LEAF
+
+    override def args: Seq[Any] = Seq(body)
 
     override def rootTag: String = rootTagOvrd.getOrElse(RootTagged.Infer(body).default)
 

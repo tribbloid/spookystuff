@@ -1,7 +1,5 @@
 package com.tribbloids.spookystuff.commons.refl
 
-import scala.language.implicitConversions
-
 trait ClassOpsMixin {}
 
 object ClassOpsMixin {

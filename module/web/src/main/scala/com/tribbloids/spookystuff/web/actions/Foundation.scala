@@ -10,6 +10,7 @@ import org.openqa.selenium.support.ui.{ExpectedCondition, ExpectedConditions, Se
 import org.openqa.selenium.{interactions, JavascriptExecutor, WebDriver}
 import org.slf4j.LoggerFactory
 
+import java.net.URI
 import scala.collection.mutable
 import scala.concurrent.duration.Duration
 
@@ -141,12 +142,10 @@ trait Foundation extends Serializable {
   ) extends WebInteraction(cooldown, blocking) {
 
     override def exeNoOutput(agent: Agent): Unit = {
-      agent.getDriver(Web).get(uri)
+      val parsed = URI.create(uri)
+      require(parsed.getScheme != null && parsed.getScheme.nonEmpty, "URI without schema is invalid: " + uri)
 
-      //    if (hasTitle) {
-      //      val wait = new WebDriverWait(session.driver, timeout(session).toSeconds)
-      //      wait.until(ExpectedConditions.not(ExpectedConditions.titleIs("")))
-      //    }
+      agent.getDriver(Web).get(uri)
     }
   }
 

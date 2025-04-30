@@ -93,7 +93,7 @@ class ExploreRunnerSpec extends SpookyBaseSpec {
         .select { row =>
           val docs = row.trajectory.docs
           val dirs = docs.\("root directory")
-          dirs.findOnly("path").text
+          dirs.findFirst("path").flatMap(_.text)
         }
         .explore { row =>
           val action = row.data.raw match {

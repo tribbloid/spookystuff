@@ -1,4 +1,3 @@
-
 val localSettings = file("settings-local.gradle.kts")
 if (localSettings.exists()) {
     apply(from = localSettings)
@@ -23,7 +22,7 @@ include(
     // should be skipped on CI, contains local experiments only
     ":repack",
     ":repack:tika",
-    ":repack:selenium"
+    ":repack:selenium",
 )
 
 include(":module")
@@ -38,6 +37,7 @@ include(
 )
 
 include(
+    ":module:sanity",
     // uses unstable & experimental scala features, should be modified very slowly & carefully
     ":module:commons",
 //    ":module:parsing", // obsolete, moving to inductive graph soon

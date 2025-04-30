@@ -1,14 +1,8 @@
 package com.tribbloids.spookystuff.actions
 
-import com.tribbloids.spookystuff.actions.Delay.RandomDelay
 import com.tribbloids.spookystuff.doc.Doc
 import com.tribbloids.spookystuff.testutils.{LocalOnly, RemoteDocsFixture, SpookyBaseSpec}
 import org.scalatest.Tag
-
-import java.sql.Timestamp
-import java.util.Date
-import scala.concurrent.duration
-import scala.concurrent.duration.DurationInt
 
 object WgetWithTORSpec {}
 
