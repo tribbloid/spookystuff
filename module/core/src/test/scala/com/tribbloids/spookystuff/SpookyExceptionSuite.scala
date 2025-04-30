@@ -55,8 +55,8 @@ class SpookyExceptionSuite extends BaseSpec {
       ee_multipleLines.toString.shouldBe(
         """
           |com.tribbloids.spookystuff.DFSReadException:
-          |+ ┏ ee1
-          |: ┗ ee2
+          |+ ee1
+          |: ee2
           |!-- java.lang.AssertionError: 1
           |!-- java.lang.AssertionError: 2
         """.trim.stripMargin
