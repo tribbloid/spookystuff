@@ -1,3 +1,4 @@
+
 buildscript {
     repositories {
         // Add here whatever repositories you're already using
@@ -15,6 +16,13 @@ plugins {
 
     id("com.gradleup.shadow") version "8.3.6"
 }
+
+
+dependencies {
+
+    runtimeOnly("org.scalameta:scalafmt-interfaces:3.9.9")// only used for prompting upgrade
+}
+
 
 allprojects {
     idea {

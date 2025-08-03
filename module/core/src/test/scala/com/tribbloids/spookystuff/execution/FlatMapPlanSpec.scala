@@ -3,12 +3,15 @@ package com.tribbloids.spookystuff.execution
 import com.tribbloids.spookystuff.dsl.DataView
 import com.tribbloids.spookystuff.testutils.SpookyBaseSpec
 
+object FlatMapPlanSpec {}
+
 /**
   * Created by peng on 02/04/16.
   */
 class FlatMapPlanSpec extends SpookyBaseSpec {
 
-  import sql.implicits.*
+  val imp = sql.implicits
+  import imp.*
 
   lazy val df = sql.createDataset(Seq(1 -> "a", 2 -> "b"))
   lazy val src = spooky.create(df)
