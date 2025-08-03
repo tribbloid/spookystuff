@@ -14,7 +14,7 @@ plugins {
     id("ai.acyclic.scala2-conventions")
     id("ai.acyclic.publish-conventions")
 
-    id("com.gradleup.shadow") version "8.3.6"
+    id("com.gradleup.shadow") version "8.3.8"
 }
 
 
