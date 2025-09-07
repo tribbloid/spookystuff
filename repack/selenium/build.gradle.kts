@@ -2,7 +2,7 @@
 
 dependencies {
 
-    val seleniumV = "4.34.0"
+    val seleniumV = "4.35.0"
 
     api("org.seleniumhq.selenium:selenium-api:${seleniumV}")
 

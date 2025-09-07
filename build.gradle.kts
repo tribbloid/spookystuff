@@ -1,4 +1,3 @@
-
 buildscript {
     repositories {
         // Add here whatever repositories you're already using
@@ -14,7 +13,7 @@ plugins {
     id("ai.acyclic.scala2-conventions")
     id("ai.acyclic.publish-conventions")
 
-    id("com.gradleup.shadow") version "8.3.8"
+    id("com.gradleup.shadow") version "9.1.0"
 }
 
 

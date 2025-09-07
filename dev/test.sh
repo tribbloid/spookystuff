@@ -5,4 +5,4 @@ FWDIR="$(cd "`dirname "$0"`"/..; pwd)"
 
 source "${CRDIR}/.shared.sh"
 
-${FWDIR}/gradlew test --continue "-PnoUnused" "-Dorg.gradle.parallel=false" "${@}"
+${FWDIR}/gradlew test --rerun --continue "-PnoUnused" "-Dorg.gradle.parallel=false" "${@}"
