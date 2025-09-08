@@ -2,7 +2,7 @@
 
 CRDIR="$(cd "`dirname "$0"`"; pwd)"
 
-SPARK_V="${SPARK_V:-3.5.1}"
+SPARK_V="${SPARK_V:-3.5.6}"
 
 SPARK_NAME="${SPARK:-spark-${SPARK_V}}"
 
