@@ -29,7 +29,7 @@ jobs:
       - run:
           name: Run
           command: |
-            ./dev/CI-apache-latest.sh
+            ./dev/CI-apache-local.sh
 
 workflows:
   main:
