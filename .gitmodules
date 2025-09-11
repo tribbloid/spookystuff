@@ -4,6 +4,3 @@
 [submodule "prover-commons"]
 	path = prover-commons
 	url = https://github.com/tribbloid/prover-commons
-[submodule "notebook"]
-	path = notebook
-	url = https://github.com/tribbloid/spookystuff-notebook
