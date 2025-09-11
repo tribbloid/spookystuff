@@ -278,7 +278,7 @@ class PythonDriver(
 
     val splitterIndexOpt = rows.zipWithIndex.find(_._1 == ERROR_HEADER)
     splitterIndexOpt match {
-      case None =>
+      case None    =>
       case Some(i) =>
         val split = rows.splitAt(i._2)
         val e = PyInterpretationException(

@@ -87,7 +87,7 @@ object Element {
     def toLinked(graphOpt: Option[StaticGraph[T]]): _NodeTriplet = {
       this match {
         case v: _NodeTriplet => v
-        case v: _Node =>
+        case v: _Node        =>
           graphOpt match {
             case Some(graph) =>
               val result = graph.getLinkedNodes(Seq(v.samenessKey)).values.head

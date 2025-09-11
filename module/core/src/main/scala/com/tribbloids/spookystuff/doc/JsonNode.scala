@@ -59,7 +59,7 @@ case class JsonNode private (
         res
       case JNothing => Nil
       case JNull    => Nil
-      case _ =>
+      case _        =>
         List(new JsonNode(defaultFieldName -> selected))
     }
   }
@@ -95,7 +95,7 @@ case class JsonNode private (
     val result = foundOption.map(found => JsonMethods.compact(found._2))
 
     result match {
-      case None => None
+      case None      => None
       case Some(str) =>
         if (noEmpty && str.trim.replaceAll("\u00A0", "").isEmpty) None
         else result

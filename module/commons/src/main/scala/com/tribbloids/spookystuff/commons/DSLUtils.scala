@@ -3,7 +3,7 @@ package com.tribbloids.spookystuff.commons
 object DSLUtils {
 
   def cartesianProductSet[T](xss: Seq[Set[T]]): Set[List[T]] = xss match {
-    case Nil => Set(Nil)
+    case Nil    => Set(Nil)
     case h :: t =>
       for (
         xh <- h;
@@ -13,7 +13,7 @@ object DSLUtils {
   }
 
   def cartesianProductList[T](xss: Seq[Seq[T]]): Seq[List[T]] = xss match {
-    case Nil => List(Nil)
+    case Nil    => List(Nil)
     case h :: t =>
       for (
         xh <- h;

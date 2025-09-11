@@ -256,7 +256,7 @@ object ParsersBenchmark {
       val interpolated: Seq[String] = parsed.outputs.map {
         case v: String        => v
         case Some(vv: String) => replace(vv)
-        case v @ _ =>
+        case v @ _            =>
           sys.error(v.toString)
       }
       interpolated.mkString("")

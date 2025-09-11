@@ -74,7 +74,7 @@ case class AgentRow[D](
 
     val result = data match {
       case v: Data.Scoped[_] => v.scope
-      case _ =>
+      case _                 =>
         val uids = agentContext.trajectoryBase.map(_.uid)
         ScopeRef(uids)
     }

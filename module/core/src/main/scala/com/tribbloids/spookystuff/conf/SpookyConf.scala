@@ -77,7 +77,7 @@ case class SpookyConf(
 
     val earliestTimeFromDuration = cachedDocsLifeSpan match {
       case _: Infinite => Long.MinValue
-      case d =>
+      case d           =>
         nowMillis - d.toMillis
     }
     IgnoreCachedDocsBefore match {

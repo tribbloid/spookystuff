@@ -107,7 +107,7 @@ object CommonUtils {
       v.toLowerCase match {
         case "true" | "1" | ""    => Success(true)
         case "false" | "0" | "-1" => Success(false)
-        case _ =>
+        case _                    =>
           Failure(
             new UnsupportedOperationException(
               s"$v is not a boolean value"

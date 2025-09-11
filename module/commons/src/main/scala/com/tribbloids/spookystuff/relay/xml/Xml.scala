@@ -40,7 +40,7 @@ object Xml {
     def isLeaf(node: Node) = {
       def descendant(n: Node): List[Node] = n match {
         case g: Group => g.nodes.toList.flatMap(x => x :: descendant(x))
-        case _ =>
+        case _        =>
           n.child.toList.flatMap { x =>
             x :: descendant(x)
           }
@@ -64,7 +64,7 @@ object Xml {
     case class XArray(elems: List[XElem]) extends XElem
 
     def toJValue(x: XElem): JValue = x match {
-      case XValue(s) => JString(s.trim)
+      case XValue(s)                   => JString(s.trim)
       case XLeaf((name, value), attrs) =>
         (value, attrs) match {
           case (_, Nil)         => toJValue(value)

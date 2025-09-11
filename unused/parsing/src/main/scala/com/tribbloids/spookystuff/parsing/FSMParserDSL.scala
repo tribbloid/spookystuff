@@ -51,7 +51,7 @@ object FSMParserDSL extends _DSL {
 
       val topWithEntry: Operand[Module[FSMParserGraph]] = top match {
         case FINISH => FINISH
-        case _ =>
+        case _      =>
           top.entry.<<:(top)
 //          top <<: (top.entry) TODO: why this doesn't work?
       }

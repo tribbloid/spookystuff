@@ -280,7 +280,7 @@ case class Trace(
       if (child.hasExport) {
         val backtrace: Repr = child match {
           case _: Action.Driverless => child :: Nil
-          case _ =>
+          case _                    =>
             val preceding = trace.slice(0, i)
             preceding.flatMap(_.stateChangeOnly) :+ child
         }

@@ -89,7 +89,7 @@ object SpookyUtils {
     val canon: Iterable[Any] = obj match {
       case v: IterableOnce[Any] => v.iterator.to(Iterable)
       case v: Array[_]          => v.iterator.to(Iterable)
-      case _ =>
+      case _                    =>
         Iterable[Any](obj)
     }
 
