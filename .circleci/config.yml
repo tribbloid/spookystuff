@@ -17,13 +17,13 @@ jobs:
             echo "Starting ..."
       - restore_cache:
           keys:
-            - profile-{{ checksum "./dev/profiles/apache-latest/.common.sh" }}
+            - profile-{{ checksum "./dev/profiles/apache-local.sh" }}
       - run:
           name: Prepare
           command: |
-            ./dev/CI-apache-latest.sh prepare
+            ./dev/CI-apache-local.sh prepare
       - save_cache:
-          key: profile-{{ checksum "./dev/profiles/apache-latest/.common.sh" }}
+          key: profile-{{ checksum "./dev/profiles/apache-local.sh" }}
           paths:
             - ~/.ci
       - run:
