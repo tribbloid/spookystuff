@@ -277,21 +277,25 @@ class DataViewSpec extends SpookyBaseSpec {
   describe("savePage") {
 
     def dummyFileExists() = {
-      val file = new File(Envs.USER_DIR \\ "temp" \\ "dummy.html")
-      val exists_deleted = file.exists() -> file.delete()
-      exists_deleted._1 && exists_deleted._2
+      val fileExists = spooky.executeOnEveryExecutor { _ =>
+        val file = new File(Envs.USER_DIR \\ "temp" \\ "dummy.html")
+        val exists_deleted = file.exists() -> file.delete()
+        exists_deleted._1 && exists_deleted._2
+      }
+
+      fileExists.reduce(_ || _)
     }
 
     it("lazily") {
 
-      spooky
+      val rdd = spooky
         .fetch(_ => Wget(HTML_URL))
         .select { row =>
           row.trajectory.docs.save(s"file://${Envs.USER_DIR}/temp/dummy", mode = Overwrite)
         }
-        .collect()
 
-      assert(dummyFileExists())
+      assert(!dummyFileExists())
+      rdd.collect()
     }
 
     it("... on persisted RDD") {
@@ -305,19 +309,6 @@ class DataViewSpec extends SpookyBaseSpec {
       vv.select { row =>
         row.trajectory.docs.save(s"file://${Envs.USER_DIR}/temp/dummy", mode = Overwrite)
       }.collect()
-
-      assert(dummyFileExists())
-
-    }
-
-    it("eagerly") {
-
-      spooky
-        .fetch(_ => Wget(HTML_URL))
-        .select { row =>
-          row.trajectory.docs.save(s"file://${Envs.USER_DIR}/temp/dummy", mode = Overwrite)
-        }
-        .compute()
 
       assert(dummyFileExists())
     }

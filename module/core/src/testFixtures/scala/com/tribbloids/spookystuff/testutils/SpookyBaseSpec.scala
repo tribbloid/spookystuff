@@ -128,7 +128,7 @@ abstract class SpookyBaseSpec extends SpookyEnvSpec with BeforeAndAfterEach with
 
     val spooky = this.spooky
     val conditions = this.conditions
-    val result = sc.runEverywhere() { _ =>
+    val result = sc.executeEverywhere() { _ =>
       Try {
         CommonUtils.retry(3, 1000, silent = true) {
           SpookyBaseSpec.shouldBeClean(spooky, conditions)
@@ -173,7 +173,7 @@ abstract class SpookyBaseSpec extends SpookyEnvSpec with BeforeAndAfterEach with
 
   override def afterEach(): Unit = {
     val spooky = this.spooky
-    val result = sc.runEverywhere() { _ =>
+    val result = sc.executeEverywhere() { _ =>
       Try {
 
         CommonUtils.retry(3, 1000, silent = true) {

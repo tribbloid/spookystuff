@@ -134,11 +134,6 @@ case class DataView[D](
 //    */
 //  trait Cached {}
 
-  def compute(): this.type = {
-    this.rdd.foreach(_ => ())
-    this
-  }
-
   object flatMap {
 
     def apply[O: ClassTag](

@@ -21,7 +21,7 @@ class CleanableSuite extends SpookyBaseSpec {
 
   override def beforeEach(): Unit = {
     super.beforeEach()
-    sc.runEverywhere(alsoOnDriver = false) { _ =>
+    sc.executeEverywhere(alsoOnDriver = false) { _ =>
       Cleanable.All
         .filter {
           case _: DummyCleanable => true

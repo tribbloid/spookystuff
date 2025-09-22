@@ -42,6 +42,8 @@ idea {
     module {
 
         excludeDirs = excludeDirs + files(
+            "~unused",
+
             ".gradle",
 
             "prover-commons",

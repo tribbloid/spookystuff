@@ -171,7 +171,7 @@ class SpookyViewsSuite extends SpookyBaseSpec {
   }
 
   it("runEverywhere") {
-    val result = sc.runEverywhere(alsoOnDriver = false) { _ =>
+    val result = sc.executeEverywhere(alsoOnDriver = false) { _ =>
       LifespanContext()
     }
 
@@ -182,7 +182,7 @@ class SpookyViewsSuite extends SpookyBaseSpec {
   }
 
   it("runEverywhere (alsoOnDriver)") {
-    val result = sc.runEverywhere() { _ =>
+    val result = sc.executeEverywhere() { _ =>
       LifespanContext()
     }
     result.foreach(println)
