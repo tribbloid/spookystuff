@@ -1,32 +1,20 @@
-val vs = versions()
-
-plugins {
-    id("com.github.johnrengelman.shadow")
-}
+//val vs = versions()
 
 dependencies {
 
-//    constraints { // TODO: doesn't work, overriding is broken
-//
-//        runtimeOnly("${vs.scala.group}:scala-library:${vs.scala.v}")
-//        runtimeOnly("${vs.scala.group}:scala-reflect:${vs.scala.v}")
-//    }
+    val seleniumV = "4.35.0"
 
-    val seleniumV = "4.1.4"
-    val phantomJSV = "1.5.0"
-    val htmlUnitV = "3.61.0"
-
-    // Selenium
     api("org.seleniumhq.selenium:selenium-api:${seleniumV}")
-    api("org.seleniumhq.selenium:selenium-support:${seleniumV}")
+
+    api("org.seleniumhq.selenium:selenium-support:${seleniumV}") // TODO: why do I need this?
 
 //    "org.seleniumhq.selenium:selenium-firefox-driver" % seleniumV
 //    "org.seleniumhq.selenium:selenium-ie-driver" % seleniumV
+    api("org.seleniumhq.selenium:selenium-chrome-driver:${seleniumV}")
+//    api("org.seleniumhq.selenium:selenium-edge-driver:${seleniumV}")
+    api("org.seleniumhq.selenium:selenium-firefox-driver:${seleniumV}")
 
-    api("com.codeborne:phantomjsdriver:${phantomJSV}")
-
-    api("org.seleniumhq.selenium:htmlunit-driver:${htmlUnitV}")
-//    api("org.seleniumhq.selenium:selenium-support-htmlunit:${seleniumV}")
+    api("org.seleniumhq.selenium:selenium-manager:${seleniumV}")
 
 //    "org.seleniumhq.selenium:selenium-support-async" % seleniumV
 //    "org.seleniumhq.selenium:selenium-support-events" % seleniumV
@@ -40,30 +28,7 @@ dependencies {
 tasks {
     shadowJar {
 
-        // https://github.com/johnrengelman/shadow/issues/505
-//        minimize {
-//        exclude(
-//            listOf(
-//                "META-INF/*.SF",
-//                "META-INF/*.DSA",
-//                "META-INF/*.RSA",
-//
-//                "scala/*"
-//            )
-//        )
-//        }
-        setExcludes(
-
-            listOf(
-                "META-INF/*.SF",
-                "META-INF/*.DSA",
-                "META-INF/*.RSA",
-
-                "**/scala/**"
-            )
-        )
-
-        relocate("com.google.common", "repacked.spookystuff.com.google.common")
-        relocate("io.netty", "repacked.spookystuff.io.netty")
+        relocate("com.google.common", "repacked.selenium.com.google.common")
+        relocate("io.netty", "repacked.selenium.io.netty")
     }
 }

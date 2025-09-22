@@ -1,0 +1,95 @@
+package com.tribbloids.spookystuff.io.lock
+
+import ai.acyclic.prover.commons.util.Caching
+import com.tribbloids.spookystuff.commons.lifespan.Cleanable.Lifespan
+import com.tribbloids.spookystuff.commons.lifespan.LocalCleanable
+import com.tribbloids.spookystuff.io.{URIExecution, URIResolver}
+
+import java.io.FileNotFoundException
+import java.nio.file.NoSuchFileException
+
+case class Lock(
+    exe: URIExecution,
+    expired: LockExpired = URIResolver.default.lockExpired,
+    override val _lifespan: Lifespan = Lifespan.TaskOrJVM().forShipping
+) extends LockLike
+    with LocalCleanable {
+
+  @volatile var acquiredTimestamp: Long = -1
+
+  protected def acquire(): URIExecution = {
+
+    try {
+      exe.moveTo(Moved.locked.absolutePath)
+    } catch {
+      case ee @ (_: FileNotFoundException | _: NoSuchFileException) =>
+        val canBeUnlocked = expired.scanForUnlocking(Moved.dir)
+
+        canBeUnlocked match {
+          case Some(v) =>
+            v.exe.moveTo(Moved.locked.absolutePath)
+          case None =>
+            throw ee
+        }
+    }
+
+    logAcquire(exe)
+    Moved.locked
+  }
+
+  protected def release(): Unit = {
+
+    logRelease(Moved.locked)
+
+    if (exe.isExisting) {
+      exe.moveTo(PathStrs.old, force = true)
+    }
+
+    Moved.locked.moveTo(exe.absolutePath, force = true)
+  }
+
+  protected def duringOnce[T](fn: URIExecution => T): T = {
+    val acquired = acquire()
+    try {
+      fn(acquired)
+    } finally {
+
+      release()
+    }
+  }
+
+  final def during[T](fn: URIExecution => T): T = inMemory.synchronized {
+    resolver.retry {
+      duringOnce(fn)
+    }
+  }
+
+  /**
+    * unlock on cleanup
+    */
+  override protected def cleanImpl(): Unit = {
+
+    if (Moved.locked.isExisting) release()
+  }
+
+  def logAcquire(execution: URIExecution): Unit = {
+
+//    Lock.acquired += execution -> System.currentTimeMillis()
+
+    this.logPrefixed(s"=== ACQUIRED!: ${execution.absolutePath}")
+  }
+
+  def logRelease(execution: URIExecution): Unit = {
+//    Lock.acquired -= execution
+
+    this.logPrefixed(s"=== RELEASED! ${execution.absolutePath}")
+  }
+}
+
+object Lock {
+
+  case class InMemoryLock() {}
+
+  lazy val inMemoryLocks: Caching.ConcurrentCache[(Class[?], String), InMemoryLock] =
+    Caching.ConcurrentCache[(Class[?], String), InMemoryLock]()
+}

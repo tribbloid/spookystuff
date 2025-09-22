@@ -1,0 +1,94 @@
+package com.tribbloids.spookystuff.conf
+
+import com.tribbloids.spookystuff.SpookyContext
+import com.tribbloids.spookystuff.commons.lifespan.Cleanable
+import com.tribbloids.spookystuff.metrics.AbstractMetrics
+import com.tribbloids.spookystuff.relay.MessageAPI
+import com.tribbloids.spookystuff.utils.BroadcastWrapper
+import org.apache.spark.SparkConf
+
+import scala.util.Try
+
+object PluginSystem {
+
+//  lazy val emptySparkConf: SparkConf = new SparkConf(false)
+}
+
+trait PluginSystem extends Serializable {
+
+  {
+    enableOnce
+  }
+
+  type Conf <: ConfLike
+
+  trait Inner {
+    def pluginSystem: PluginSystem.this.type = PluginSystem.this
+  }
+
+  /**
+    * all subclasses have to define default() in their respective companion object.
+    */
+  trait ConfLike extends MessageAPI with Inner {
+
+    def importFrom(sparkConf: SparkConf): Conf // read from Spark options & env vars
+  }
+
+  type Metrics <: AbstractMetrics
+
+  type Plugin <: PluginLike
+
+  trait PluginLike extends Cleanable with Inner {
+
+    val spooky: SpookyContext
+
+    @transient def effectiveConf: Conf
+
+    /**
+      * only swap out configuration do not replace anything else
+      */
+    def withEffectiveConf(conf: Conf): Plugin
+
+    final def withConf(conf: Conf): Plugin = {
+
+      val v = conf.importFrom(spooky.sparkContext.getConf)
+      withEffectiveConf(v)
+    }
+
+    val confBroadcastW: BroadcastWrapper[Conf] = BroadcastWrapper(effectiveConf)(spooky.sparkContext)
+
+    def getConf: Conf = confBroadcastW.value
+
+    def metrics: Metrics
+
+    final def reset(): this.type = {
+      metrics.resetAll()
+      this
+    }
+
+    def tryDeploy(): Try[Unit] = {
+      Try(confBroadcastW.rebroadcast())
+    }
+
+    // end of definitions
+
+    final override def clone: Plugin = { // TODO: clean
+      getDefault(spooky).withEffectiveConf(getConf)
+    }
+
+    /**
+      * can only be called once
+      */
+    override protected def cleanImpl(): Unit = {
+      confBroadcastW.clean(true)
+    }
+  }
+
+  def getDefault(spooky: SpookyContext): Plugin
+
+  final def init(spooky: SpookyContext, conf: Conf): Plugin = {
+    getDefault(spooky).withConf(conf)
+  }
+
+  lazy val enableOnce: Unit = PluginRegistry.enable(this)
+}

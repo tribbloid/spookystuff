@@ -3,10 +3,9 @@
 CRDIR="$(cd "`dirname "$0"`"; pwd)"
 FWDIR="$(cd "`dirname "$0"`"/..; pwd)"
 
-#source "${CRDIR}/profiles/apache-latest/.common.sh"
-#source "${CRDIR}/.shared.sh"
-
 cd "${FWDIR}" || exit
+
+"${CRDIR}"/make-all.sh
 
 "${FWDIR}"/gradlew scalafix -Dorg.gradle.parallel=false "${BUILD_PROFILES[@]}"
  # consumes too much memory to run in parallel

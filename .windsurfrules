@@ -1,0 +1,16 @@
+1. The code is written in Scala 2.13
+
+2. The build system is gradle (kotlin dialect)
+
+3. all compilation errors are displayed in LSP
+
+4. do not run terminal command to check errors
+
+5. do not modify any gradle file, instead, add additional required dependencies in the comment
+
+
+When writing Scala 2.13 code:
+
+- do not use "???"
+
+- do not write empty body in function

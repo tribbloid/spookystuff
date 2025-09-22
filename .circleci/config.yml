@@ -3,7 +3,7 @@ version: 2.1
 executors:
   main:
     docker:
-      - image: cimg/openjdk:11.0
+      - image: cimg/openjdk:17.0
     resource_class: large
 
 jobs:
@@ -17,19 +17,19 @@ jobs:
             echo "Starting ..."
       - restore_cache:
           keys:
-            - profile-{{ checksum "./dev/profiles/apache-latest/.common.sh" }}
+            - profile-{{ checksum "./dev/profiles/apache-local.sh" }}
       - run:
           name: Prepare
           command: |
-            ./dev/CI-apache-latest.sh prepare
+            ./dev/CI-apache-local.sh prepare
       - save_cache:
-          key: profile-{{ checksum "./dev/profiles/apache-latest/.common.sh" }}
+          key: profile-{{ checksum "./dev/profiles/apache-local.sh" }}
           paths:
             - ~/.ci
       - run:
           name: Run
           command: |
-            ./dev/CI-apache-latest.sh
+            ./dev/CI-apache-local.sh
 
 workflows:
   main:

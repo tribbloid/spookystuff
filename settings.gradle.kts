@@ -1,8 +1,11 @@
+val localSettings = file("settings-local.gradle.kts")
+if (localSettings.exists()) {
+    apply(from = localSettings)
+}
 
 val noAssembly: String? by settings
 val noBenchmark: String? by settings
-val noUnused: String? by settings
-val noUav: String? by settings
+// val notebook: String? by settings
 
 pluginManagement.repositories {
     gradlePluginPortal()
@@ -18,52 +21,49 @@ fun isEnabled(profile: String?): Boolean {
 include(
     // should be skipped on CI, contains local experiments only
     ":repack",
-    ":repack:selenium"
+    ":repack:tika",
+    ":repack:selenium",
 )
 
-include(":parent")
+include(":module")
 
 include(":prover-commons")
 project(":prover-commons").projectDir = file("prover-commons/module")
 include(
+    ":prover-commons:infra",
     ":prover-commons:core",
     ":prover-commons:meta2",
     ":prover-commons:spark"
 )
 
 include(
-
+    ":module:sanity",
     // uses unstable & experimental scala features, should be modified very slowly & carefully
-    ":parent:commons",
-    ":parent:parsing",
-    ":parent:core",
-    ":parent:web",
-    ":parent:integration",
-    ":parent:showcase",
+    ":module:commons",
+//    ":module:parsing", // obsolete, moving to inductive graph soon
+    ":module:core",
+
+    ":module:linq", // Scala 3 will need a new impl
+    ":module:web",
+//    ":module:integration",
 )
 
-if (!isEnabled(noAssembly)) {
-    include(
-        ":parent:assembly",
-    )
-}
+//if (!isEnabled(noAssembly)) {
+//    include(
+//        ":module:assembly",
+//    )
+//}
+//
+//
+//if (!isEnabled(noBenchmark)) {
+//    include(
+//        ":module:benchmark"
+//    )
+//}
 
-
-if (!isEnabled(noBenchmark)) {
-    include(
-        ":parent:benchmark"
-    )
-}
-
-if (!isEnabled(noUnused)) {
-    include(
-        ":parent:unused"
-    )
-}
-
-if (!isEnabled(noUav)) {
-    include(
-        ":parent:uav"
-    )
-}
-
+//if (!isEnabled(noUav)) {
+//    include(
+//        ":module:uav"
+//    )
+//}
+//

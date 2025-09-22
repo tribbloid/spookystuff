@@ -1,9 +1,0 @@
-#!/usr/bin/env bash
-
-CRDIR="$(cd "`dirname "$0"`"; pwd)"
-
-TAR_NAME=linux-universal.zip
-
-wget -N https://github.com/udacity/FCND-Simulator-Releases/releases/download/v0.1.1-sim/${TAR_NAME} -P ${HOME}/tmp && \
-unzip -o ${HOME}/tmp/${TAR_NAME} -d ${HOME}/tmp && \
-exec ${HOME}/tmp/FCND-Sim_Linux_Universal.x86 --home 43.694195,-79.262262,136,353 -I 0 --speedup 5 -r 200 --model=quad
