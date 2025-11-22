@@ -206,7 +206,7 @@ object URIResolver {
 
     val retry: Retry = Retry(
       n = 16,
-      intervalFactory = { n =>
+      intervals = { n =>
         (10000.doubleValue() / Math.pow(1.2, n - 2)).asInstanceOf[Long] + Random.nextInt(1000).longValue()
       },
 //      silent = true

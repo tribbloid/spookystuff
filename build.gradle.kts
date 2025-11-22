@@ -5,7 +5,7 @@ buildscript {
     }
 
     dependencies {
-        classpath("ch.epfl.scala:gradle-bloop_2.12:1.6.3") // suffix is always 2.12, weird
+        classpath("ch.epfl.scala:gradle-bloop_2.12:1.6.4") // suffix is always 2.12, weird
     }
 }
 
@@ -14,13 +14,13 @@ plugins {
     id("ai.acyclic.scalatest-mixin")
     id("ai.acyclic.publish-conventions")
 
-    id("com.gradleup.shadow") version "9.1.0"
+    id("com.gradleup.shadow") version "9.3.0"
 }
 
 
 dependencies {
 
-    runtimeOnly("org.scalameta:scalafmt-interfaces:3.9.9")// only used for prompting upgrade
+//    runtimeOnly("org.scalameta:scalafmt-interfaces:3.9.9")// only used for prompting upgrade
 }
 
 

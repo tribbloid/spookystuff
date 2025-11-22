@@ -1,3 +1,29 @@
+import org.gradle.api.plugins.ExtraPropertiesExtension
+import java.util.Properties
+import kotlin.apply
+
+fun loadPropertiesTo(extras: ExtraPropertiesExtension, projectRootDir: File) {
+    val localPropertiesFile = File(projectRootDir, "gradle-local.properties")
+    if (localPropertiesFile.exists() && localPropertiesFile.isFile && localPropertiesFile.canRead()) {
+        localPropertiesFile.inputStream().use { inputStream ->
+            Properties().apply { load(inputStream) }
+                .forEach { key, value ->
+                    if (key != null && value != null) {
+                        extras[key.toString()] = value.toString()
+                    }
+                }
+        }
+    }
+}
+
+// 1. Load into the current context (Settings or Project)
+loadPropertiesTo(extra, rootDir)
+
+// 2. Propagate to projects (useful when applied in settings.gradle.kts)
+gradle.beforeProject {
+    loadPropertiesTo(extra, rootDir)
+}
+
 val localSettings = file("settings-local.gradle.kts")
 if (localSettings.exists()) {
     apply(from = localSettings)
@@ -5,7 +31,6 @@ if (localSettings.exists()) {
 
 val noAssembly: String? by settings
 val noBenchmark: String? by settings
-// val notebook: String? by settings
 
 pluginManagement.repositories {
     gradlePluginPortal()
@@ -48,22 +73,15 @@ include(
 //    ":module:integration",
 )
 
-//if (!isEnabled(noAssembly)) {
-//    include(
-//        ":module:assembly",
-//    )
-//}
-//
-//
-//if (!isEnabled(noBenchmark)) {
-//    include(
-//        ":module:benchmark"
-//    )
-//}
+if (!isEnabled(noAssembly)) {
+    include(
+        ":module:assembly",
+    )
+}
 
-//if (!isEnabled(noUav)) {
-//    include(
-//        ":module:uav"
-//    )
-//}
-//
+
+if (!isEnabled(noBenchmark)) {
+    include(
+        ":module:benchmark"
+    )
+}

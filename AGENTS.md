@@ -21,15 +21,18 @@ This file contains information for AI agents working on the SpookyStuff project.
 - **Main Technologies**: Apache Spark, Apache Tika, Selenium, PhantomJS
 - **Main Package**: `ai.acyclic` (likely based on build files)
 
+## Guardrails
+
+see @buildSrc/.agents/guardrails.md
+
 ## Frequently Used Commands
 
 ### Build & Compile
 
 ```bash
-./gradlew build                # Build all modules
+./gradlew build                # Build all production modules
+./gradlew testClasses          # Build all production and test modules
 ./gradlew clean                # Clean build directories
-./gradlew compileScala         # Compile main Scala sources
-./gradlew compileTestScala     # Compile test Scala sources
 ```
 
 ### Testing
@@ -91,15 +94,6 @@ This file contains information for AI agents working on the SpookyStuff project.
 - Test files: `module/{module-name}/src/test/scala/`
 - Test fixtures: `module/{module-name}/src/testFixtures/scala/`
 
-### Dependencies
-
-- **Apache Spark** - Core distributed computing framework
-- **Apache Tika** - Content analysis and metadata extraction
-- **Selenium** - Web browser automation
-- **PhantomJS** - Headless web browser (deprecated, likely legacy)
-- **Scalafmt** - Code formatting
-- **Shadow plugin** - Fat JAR creation
-
 ## Project Components
 
 ### Web Module (Beta)
@@ -154,3 +148,4 @@ This file contains information for AI agents working on the SpookyStuff project.
 - Uses Apache Spark for distributed processing
 - Has CI/CD integration with Codeship
 - Prover-commons is a Git submodule - changes there require separate commits
+

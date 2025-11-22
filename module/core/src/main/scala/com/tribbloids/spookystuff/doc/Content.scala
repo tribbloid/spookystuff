@@ -192,7 +192,7 @@ object Content {
         .map(_.raw)
         .getOrElse {
 
-          val trials = saved.map { path => () =>
+          val attempts = saved.map { path => () =>
             val result = pathResolver.input(path) { in =>
               IOUtils.toByteArray(in.stream)
             }
@@ -200,7 +200,7 @@ object Content {
             result
           }
 
-          val result = TreeException.|||^(trials)
+          val result = TreeException.|||^(attempts)
           result.get
         }
     }

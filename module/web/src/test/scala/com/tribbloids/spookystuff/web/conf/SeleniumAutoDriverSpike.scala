@@ -4,8 +4,10 @@ package com.tribbloids.spookystuff.web.conf
 // implementation("org.seleniumhq.selenium:selenium-java:4.9.1")
 
 import org.openqa.selenium.chrome.{ChromeDriver, ChromeDriverService, ChromeOptions}
+import org.scalatest.Ignore
 import org.scalatest.funspec.AnyFunSpec
 
+@Ignore
 class SeleniumAutoDriverSpike extends AnyFunSpec {
 
   import SeleniumAutoDriverSpike.*
@@ -18,7 +20,7 @@ class SeleniumAutoDriverSpike extends AnyFunSpec {
 
   ignore("resource cleanup stress test, memory consumption should be static") {
 
-    for (i <- 1 to 10000000) {
+    for (_ <- 1 to 10000000) {
 
       getAndClean(_ => {})
     }

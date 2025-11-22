@@ -6,6 +6,8 @@ import com.tribbloids.spookystuff.commons.AwaitWithHeartbeat.Heartbeat
 import org.slf4j.LoggerFactory
 
 import java.io.{File, PrintWriter, StringWriter}
+import java.net.URI
+import java.nio.file.Path
 import scala.collection.immutable.ListMap
 import scala.concurrent.TimeoutException
 import scala.reflect.ClassTag
@@ -32,19 +34,11 @@ object CommonUtils {
     else part + suffix
   }
 
-  def inferFileNameFromURI(uri: String): String = uri.split(File.separatorChar).last
+  def inferFileNameFromPath(path: Path): String = path.toString.split(File.separatorChar).last
+  def inferFileNameFromURI(uri: URI): String = uri.getPath.split('/').last
 
   // TODO: remove, use object API everywhere.
   def retry: Retry.FixedInterval.type = Retry.FixedInterval
-
-  protected def _callerShowStr: String = {
-    val result = CallStackRef
-      .below(
-        condition = _.isUnder(classes = Seq(classOf[CommonUtils.type]))
-      )
-      .showStr
-    result
-  }
 
   def withTimeout[T](
       timeout: Timeout,
@@ -74,6 +68,15 @@ object CommonUtils {
         LoggerFactory.getLogger(this.getClass).debug(TIMEOUT)
         throw e
     }
+  }
+
+  protected def _callerShowStr: String = {
+    val result = CallStackRef
+      .below(
+        condition = _.isUnder(classes = Seq(classOf[CommonUtils.type]))
+      )
+      .showStr
+    result
   }
 
   @scala.annotation.tailrec
@@ -117,14 +120,6 @@ object CommonUtils {
     }
   }
 
-  def orderedGroupBy[T, R](vs: Seq[T])(fn: T => R): Seq[(R, Seq[T])] = {
-
-    val keys = vs.map(fn).distinct
-    val grouped = vs.groupBy(fn)
-    val orderedGrouped = keys.map(key => key -> grouped(key))
-    orderedGrouped
-  }
-
   def mergePreserveOrder[K, V](
       x: Iterable[(K, V)],
       y: Iterable[(K, V)]
@@ -135,6 +130,14 @@ object CommonUtils {
       case (k, v) => k -> v.head._2
     }
     ListMap(proto2*)
+  }
+
+  def orderedGroupBy[T, R](vs: Seq[T])(fn: T => R): Seq[(R, Seq[T])] = {
+
+    val keys = vs.map(fn).distinct
+    val grouped = vs.groupBy(fn)
+    val orderedGrouped = keys.map(key => key -> grouped(key))
+    orderedGrouped
   }
 
   // copied from org.apache.spark.util.Utils

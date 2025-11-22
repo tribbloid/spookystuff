@@ -55,15 +55,15 @@ package object dsl {
           val last = actionStrs.last
           val omitted = (trace.length - 4) + "more" + File.separator
 
-          PathMagnet.URIPath(oneTwoThree*) :/ omitted :/ last
+          PathMagnet.URIPath(oneTwoThree.mkString("/")) :/ omitted :/ last
 
         } else {
-          PathMagnet.URIPath(actionStrs*)
+          PathMagnet.URIPath(actionStrs.mkString("/"))
         }
 
         val hash = "" + trace.hashCode
 
-        SpookyUtils.canonizeUrn(actionConcat :/ hash)
+        SpookyUtils.canonizeUrn(actionConcat + hash)
       }
     }
   }

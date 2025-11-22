@@ -5,6 +5,7 @@ import com.tribbloids.spookystuff.utils.http.HttpUtils
 
 import java.io.{InputStream, OutputStream}
 import java.net.{URI, URLConnection}
+import scala.concurrent.duration.DurationInt
 
 object URLConnectionResolver {
 
@@ -26,7 +27,7 @@ object URLConnectionResolver {
 
 case class URLConnectionResolver(
     input2Connection: URI => URLConnection,
-    override val retry: Retry = Retry.ExponentialBackoff(8, 16000)
+    override val retry: Retry = Retry.ExponentialBackoff(8, 16000.millis)
 ) extends URIResolver {
 
   import scala.jdk.CollectionConverters.*

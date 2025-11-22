@@ -6,7 +6,7 @@ val vs = versions()
 
 dependencies {
 
-    val tikaV = "3.2.2"
+    val tikaV = "3.2.3"
 
     api("org.apache.tika:tika-core:${tikaV}")
 //    testImplementation( "org.apache.tika:tika-parsers-standard-package:${tikaV}")

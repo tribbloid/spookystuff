@@ -8,6 +8,7 @@ import org.apache.spark.resource.ResourceInformation
 import org.apache.spark.shuffle.FetchFailedException
 import org.apache.spark.util.{AccumulatorV2, TaskCompletionListener, TaskFailureListener}
 
+import java.io.Closeable
 import java.util
 import java.util.EventListener
 
@@ -75,6 +76,17 @@ case class UncleanTaskContext(
   override private[spark] def fetchFailed = self.fetchFailed
 
   override private[spark] def getLocalProperties = self.getLocalProperties
+
+  override private[spark] def createResourceUninterruptibly[T <: Closeable](
+      resourceBuilder: => T
+  ): T = self.createResourceUninterruptibly(resourceBuilder)
+
+  override private[spark] def interruptible(): Boolean = self.interruptible()
+
+  override private[spark] def pendingInterrupt(
+      threadToInterrupt: Option[Thread],
+      reason: String
+  ): Unit = self.pendingInterrupt(threadToInterrupt, reason)
 
   override def close(): Unit = {
 

@@ -66,7 +66,7 @@ class Agent(
           p
       }
 
-      val trials = wDrivers.map { (p: DriverSystem#Plugin) =>
+      val attempts = wDrivers.map { (p: DriverSystem#Plugin) =>
         Try {
           p.driverFactoryOpt.foreach { v =>
             v.release(Agent.this)
@@ -79,16 +79,8 @@ class Agent(
 
       require(cached.lookup.isEmpty, "cache not empty")
 
-      TreeException.&&&(trials)
+      TreeException.&&&(attempts)
     }
-
-    /**
-      * all drivers will be terminated, not released (as in cleanImpl) currently useless
-      */
-//    def shutdownAll(): Unit = {
-//
-//      ???
-//    }
   }
 
   override def cleanImpl(): Unit = {
