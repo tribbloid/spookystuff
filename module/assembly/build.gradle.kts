@@ -1,4 +1,3 @@
-
 val vs = versions()
 
 //plugins {
@@ -7,7 +6,7 @@ val vs = versions()
 
 dependencies {
 
-    api(project(":parent:web"))
+    api(project(":module:web"))
 
     testImplementation("org.jhades:jhades:1.0.4")
 }

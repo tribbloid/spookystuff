@@ -1,0 +1,43 @@
+{
+  "mcpServers": {
+    "fetch": {
+      "command": "uvx",
+      "args": [
+        "mcp-server-fetch"
+      ]
+    },
+    "playwright": {
+      "command": "npx",
+      "args": [
+        "@playwright/mcp@latest"
+      ]
+    },
+    "memory": {
+      "command": "npx",
+      "args": [
+        "-y",
+        "@modelcontextprotocol/server-memory"
+      ],
+      "env": {
+        "MEMORY_FILE_PATH": ""
+      },
+      "disabled": false
+    },
+    "deepwiki": {
+      "command": "npx",
+      "args": [
+        "-y",
+        "mcp-remote",
+        "https://mcp.deepwiki.com/mcp"
+      ],
+      "type": "stdio"
+    },
+    "jetbrains": {
+      "type": "sse",
+      "url": "http://localhost:64342/sse",
+      "headers": {
+        "IJ_MCP_SERVER_PROJECT_PATH": "/home/peng/git/spookystuff"
+      }
+    }
+  }
+}

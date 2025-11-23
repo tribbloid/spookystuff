@@ -21,6 +21,10 @@ This file contains information for AI agents working on the SpookyStuff project.
 - **Main Technologies**: Apache Spark, Apache Tika, Selenium, PhantomJS
 - **Main Package**: `ai.acyclic` (likely based on build files)
 
+## Guardrails
+
+see @buildSrc/.agents/guardrails.md
+
 ## Frequently Used Commands
 
 ### Build & Compile
@@ -90,15 +94,6 @@ This file contains information for AI agents working on the SpookyStuff project.
 - Source files: `module/{module-name}/src/main/scala/`
 - Test files: `module/{module-name}/src/test/scala/`
 - Test fixtures: `module/{module-name}/src/testFixtures/scala/`
-
-### Dependencies
-
-- **Apache Spark** - Core distributed computing framework
-- **Apache Tika** - Content analysis and metadata extraction
-- **Selenium** - Web browser automation
-- **PhantomJS** - Headless web browser (deprecated, likely legacy)
-- **Scalafmt** - Code formatting
-- **Shadow plugin** - Fat JAR creation
 
 ## Project Components
 
