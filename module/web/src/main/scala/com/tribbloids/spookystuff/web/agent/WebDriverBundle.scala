@@ -25,7 +25,7 @@ object WebDriverBundle {
 
     override type Driver = ChromeDriver
 
-    override def driver: ChromeDriver = new ChromeDriver(service, option)
+    override lazy val driver: ChromeDriver = new ChromeDriver(service, option)
   }
 
   case class Firefox(
@@ -35,6 +35,6 @@ object WebDriverBundle {
 
     override type Driver = FirefoxDriver
 
-    override def driver: FirefoxDriver = new FirefoxDriver(service, option)
+    override lazy val driver: FirefoxDriver = new FirefoxDriver(service, option)
   }
 }
