@@ -9,7 +9,23 @@ import org.openqa.selenium.remote.service.DriverService
 
 import java.net.URI
 import java.nio.file.{Files, Path, StandardCopyOption}
-import scala.util.{Try, Success, Failure}
+import scala.util.{Failure, Success, Try}
+
+object WebDriverDeployment {
+
+  def fromRootDir(
+      executableDir: String,
+      option: Capabilities
+  ): WebDriverDeployment = {
+
+    val executablePath = Path.of(
+      executableDir,
+      option.getBrowserName
+    )
+
+    WebDriverDeployment(None, executablePath, option)
+  }
+}
 
 case class WebDriverDeployment(
     localSrc: Option[URI],
@@ -47,7 +63,7 @@ case class WebDriverDeployment(
 
   private def downloadDriver(): Unit = {
     val browserName = capabilities.getBrowserName.toLowerCase
-    
+
     val service: DriverService = browserName match {
       case "chrome" =>
         ChromeDriverService.createDefaultService()
@@ -61,17 +77,17 @@ case class WebDriverDeployment(
       // Starting the service triggers the driver discovery/download in Selenium 4.6+
       service.start()
       val exe = service.getExecutable
-      
+
       // Copy to target
       // Ensure parent dir exists
       if (target.getParent != null) {
         Files.createDirectories(target.getParent)
       }
-      
+
       // service.getExecutable might return File or String depending on Selenium version/bindings
       // The compiler said it is a String.
       val exePath = new java.io.File(exe.toString).toPath
-      
+
       Files.copy(exePath, target, StandardCopyOption.REPLACE_EXISTING)
     } finally {
       if (service.isRunning) {

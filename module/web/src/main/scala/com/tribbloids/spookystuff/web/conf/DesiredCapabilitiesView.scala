@@ -9,6 +9,7 @@ import org.openqa.selenium.remote.{CapabilityType, DesiredCapabilities}
 
 import scala.language.implicitConversions
 
+// TODO: mark for removal
 object DesiredCapabilitiesView {
 
   object Defaults {

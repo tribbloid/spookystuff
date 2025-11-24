@@ -2,15 +2,21 @@ package com.tribbloids.spookystuff.web
 
 import ai.acyclic.prover.commons.function.hom.Hom.:=>
 import ai.acyclic.prover.commons.multiverse.{CanEqual, Projection}
+import ai.acyclic.prover.commons.spark.Envs
+import ai.acyclic.prover.commons.util.PathMagnet
+import ai.acyclic.prover.commons.util.PathMagnet.LocalFSPath
+import com.tribbloids.spookystuff.SpookyContext
 import com.tribbloids.spookystuff.agent.{Agent, WebProxySetting}
 import com.tribbloids.spookystuff.commons.lifespan.Cleanable.Lifespan
 import com.tribbloids.spookystuff.conf.DriverFactory
-import com.tribbloids.spookystuff.web.agent.{CleanWebDriver, WebDriverBundle}
+import com.tribbloids.spookystuff.web.agent.WebDriverBundle.Lt
+import com.tribbloids.spookystuff.web.agent.{CleanWebDriver, WebDriverBundle, WebDriverDeployment}
 import org.openqa.selenium.chrome.{ChromeDriver, ChromeDriverService, ChromeOptions}
 import org.openqa.selenium.firefox.{FirefoxDriver, FirefoxOptions, GeckoDriverService}
 import org.openqa.selenium.remote.service.DriverService
-import org.openqa.selenium.{Proxy, WebDriver}
+import org.openqa.selenium.{Capabilities, Proxy, WebDriver}
 
+import java.nio.file.Path
 import scala.reflect.ClassTag
 
 package object conf {
@@ -18,6 +24,12 @@ package object conf {
   type WebDriverFactory = DriverFactory[CleanWebDriver]
 
   case object WebDriverFactory {
+
+    final val DEFAULT_DRIVER_DIR: LocalFSPath = Envs.USER_HOME \\ ".spookystuff" \\ "webdriver"
+
+    lazy val sharedArgs = Seq(
+      "--no-sandbox"
+    )
 
     abstract class Base extends DriverFactory.Transient[CleanWebDriver] {
 
@@ -28,17 +40,19 @@ package object conf {
       }
     }
 
-    class Impl[+T <: WebDriver: ClassTag](
-        builder: Unit :=> (DriverService, T)
-    ) extends Base
-        with Projection.Equals {
+    abstract class Typed[T <: WebDriver: ClassTag] extends Base {
 
-      {
-        canEqualProjections ++= Seq(
-          CanEqual.Native on implicitly[ClassTag[T]],
-          CanEqual.Native on builder.definedAt
-        )
-      }
+      lazy val executableDir: LocalFSPath = DEFAULT_DRIVER_DIR
+
+      def option: Capabilities
+
+      override def deployGlobally(spooky: SpookyContext): Unit =
+        super.deployGlobally(spooky) // TODO: need global deployment to minimise download time
+
+      @transient lazy val localDeployment: WebDriverDeployment =
+        WebDriverDeployment.fromRootDir(executableDir, option)
+
+      def getBundle: WebDriverBundle.Lt[T]
 
       final override lazy val toString: String = {
 
@@ -48,79 +62,76 @@ package object conf {
 
       override def _createImpl(agent: Agent, lifespan: Lifespan): CleanWebDriver = {
 
-        val (service, driver) = builder {}
-        val bundle = WebDriverBundle(service, driver)
+        val bundle = getBundle
+
+        try {
+          bundle.driver
+        } catch {
+          case e: IllegalStateException =>
+            // deploy web driver
+            localDeployment.deploy()
+            bundle.driver
+        }
 
         val result = new CleanWebDriver(bundle, _lifespan = lifespan)
         result
       }
     }
 
-    object Args {
+    case class Chrome(
+        option: ChromeOptions = {
+          val args = sharedArgs :+ "--headless=new"
 
-      lazy val shared = Seq(
-        "--no-sandbox"
-      )
+          new ChromeOptions()
+            .addArguments(args*)
+        }
+    ) extends Typed[ChromeDriver] {
+
+      override def getBundle: WebDriverBundle.Lt[ChromeDriver] = {
+
+        lazy val service: ChromeDriverService = new ChromeDriverService.Builder()
+          .usingDriverExecutable(localDeployment.target.toFile)
+          .usingAnyFreePort()
+          .build()
+
+        WebDriverBundle.Chrome(service, option)
+      }
     }
 
     case object Chrome {
 
-      def apply(
-          option: ChromeOptions = {
-            val args = Args.shared :+ "--headless=new"
+      lazy val default: Chrome = apply()
+    }
 
-            new ChromeOptions()
-              .addArguments(args*)
-          }
-      ): Impl[ChromeDriver] = {
+    case class Firefox(
+        option: FirefoxOptions = {
 
-        new Impl(() => {
+          val args = sharedArgs :+ "-headless"
 
-          val driverExecutable = new java.io.File("drivers/chromedriver-linux64/chromedriver")
-          lazy val service = new ChromeDriverService.Builder()
-            .usingDriverExecutable(driverExecutable)
-            .usingAnyFreePort()
-            .build()
+          new FirefoxOptions()
+            .addArguments(args*)
+        }
+    ) extends Typed[FirefoxDriver] {
 
-          val driver = new ChromeDriver(service, option)
-          service -> driver
+      override def getBundle: WebDriverBundle.Lt[FirefoxDriver] = {
 
-        })
+        val service = new GeckoDriverService.Builder()
+          .usingDriverExecutable(localDeployment.target.toFile)
+          .usingAnyFreePort()
+          .build()
 
+        WebDriverBundle.Firefox(service, option)
       }
-
-      lazy val default: Impl[ChromeDriver] = apply()
     }
 
     case object Firefox {
 
-      def apply(
-          option: FirefoxOptions = {
-
-            val args = Args.shared :+ "-headless"
-
-            new FirefoxOptions()
-              .addArguments(args*)
-          }
-      ): Impl[FirefoxDriver] = {
-
-        new Impl(() => {
-
-          val service = new GeckoDriverService.Builder()
-            .usingAnyFreePort()
-            .build()
-          val driver = new FirefoxDriver(service, option)
-          service -> driver
-        })
-      }
-
-      lazy val default: Impl[FirefoxDriver] = apply(
-      )
+      lazy val default: Firefox = apply()
     }
 
-    def default: Impl[ChromeDriver] = Chrome.default
+    def default: Base = Chrome.default
 
-    def asSeleniumProxy(s: WebProxySetting): Proxy = {
+    def asSeleniumProxy(s: WebProxySetting): Proxy = { // TODO: set this in browser capabilities
       val seleniumProxy: Proxy = new Proxy
       seleniumProxy.setProxyType(Proxy.ProxyType.MANUAL)
       val proxyStr: String = s"${s.addr}:${s.port}"
