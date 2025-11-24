@@ -1,7 +1,8 @@
 package com.tribbloids.spookystuff.web.agent
 
-import org.openqa.selenium.Capabilities
 import org.openqa.selenium.chrome.{ChromeDriver, ChromeOptions}
+import org.openqa.selenium.remote.service.DriverService
+import org.openqa.selenium.{Capabilities, WebDriver}
 
 import java.nio.file.{Path, Paths}
 
@@ -18,7 +19,7 @@ class ChromeWebDriverDeploymentSpec extends WebDriverDeploymentSpec {
     options
   }
 
-  override def verifyDriverUsable(path: Path): Unit = {
+  override def newDriver(path: Path): (WebDriver, DriverService) = {
     val service = new org.openqa.selenium.chrome.ChromeDriverService.Builder()
       .usingDriverExecutable(path.toFile)
       .usingAnyFreePort()
@@ -30,14 +31,6 @@ class ChromeWebDriverDeploymentSpec extends WebDriverDeploymentSpec {
     options.addArguments("--disable-dev-shm-usage")
 
     val driver = new ChromeDriver(service, options)
-
-    try {
-      driver.get(HTML_URL)
-      assert(driver.getTitle != null)
-      assert(driver.getTitle.nonEmpty)
-    } finally {
-      driver.quit()
-      service.stop()
-    }
+    (driver, service)
   }
 }

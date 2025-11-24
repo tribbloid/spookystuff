@@ -1,23 +1,16 @@
 package com.tribbloids.spookystuff.web
 
-import ai.acyclic.prover.commons.function.hom.Hom.:=>
-import ai.acyclic.prover.commons.multiverse.{CanEqual, Projection}
 import ai.acyclic.prover.commons.spark.Envs
-import ai.acyclic.prover.commons.util.PathMagnet
 import ai.acyclic.prover.commons.util.PathMagnet.LocalFSPath
 import com.tribbloids.spookystuff.SpookyContext
 import com.tribbloids.spookystuff.agent.{Agent, WebProxySetting}
 import com.tribbloids.spookystuff.commons.lifespan.Cleanable.Lifespan
 import com.tribbloids.spookystuff.conf.DriverFactory
-import com.tribbloids.spookystuff.web.agent.WebDriverBundle.Lt
 import com.tribbloids.spookystuff.web.agent.{CleanWebDriver, WebDriverBundle, WebDriverDeployment}
 import org.openqa.selenium.chrome.{ChromeDriver, ChromeDriverService, ChromeOptions}
 import org.openqa.selenium.firefox.{FirefoxDriver, FirefoxOptions, GeckoDriverService}
-import org.openqa.selenium.remote.NoSuchDriverException
-import org.openqa.selenium.remote.service.DriverService
 import org.openqa.selenium.{Capabilities, Proxy, WebDriver, WebDriverException}
 
-import java.nio.file.Path
 import scala.reflect.ClassTag
 
 package object conf {
@@ -68,7 +61,7 @@ package object conf {
         try {
           bundle.driver
         } catch {
-          case e: WebDriverException =>
+          case _: WebDriverException =>
             // deploy web driver
             localDeployment.deploy()
             bundle.driver

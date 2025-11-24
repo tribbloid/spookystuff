@@ -1,7 +1,8 @@
 package com.tribbloids.spookystuff.web.agent
 
-import org.openqa.selenium.Capabilities
 import org.openqa.selenium.firefox.{FirefoxDriver, FirefoxOptions, GeckoDriverService}
+import org.openqa.selenium.remote.service.DriverService
+import org.openqa.selenium.{Capabilities, WebDriver}
 
 import java.nio.file.{Path, Paths}
 
@@ -18,7 +19,7 @@ class FirefoxWebDriverDeploymentSpec extends WebDriverDeploymentSpec {
     options
   }
 
-  override def verifyDriverUsable(path: Path): Unit = {
+  override def newDriver(path: Path): (WebDriver, DriverService) = {
     val service = new GeckoDriverService.Builder()
       .usingDriverExecutable(path.toFile)
       .usingAnyFreePort()
@@ -28,14 +29,6 @@ class FirefoxWebDriverDeploymentSpec extends WebDriverDeploymentSpec {
     options.addArguments("-headless")
 
     val driver = new FirefoxDriver(service, options)
-
-    try {
-      driver.get(HTML_URL)
-      assert(driver.getTitle != null)
-      assert(driver.getTitle.nonEmpty)
-    } finally {
-      driver.quit()
-      service.stop()
-    }
+    (driver, service)
   }
 }

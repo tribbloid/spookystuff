@@ -1,14 +1,10 @@
 package com.tribbloids.spookystuff.web.actions
 
-import com.tribbloids.spookystuff.actions.HasTrace.StateChangeTag
-import com.tribbloids.spookystuff.actions.{Action, Interaction}
 import com.tribbloids.spookystuff.agent.Agent
-import com.tribbloids.spookystuff.doc.Doc
 import com.tribbloids.spookystuff.web.conf.Web
-import com.tribbloids.spookystuff.{ActionException, ActionExceptionWithCoreDump, Const, SpookyException}
-import org.openqa.selenium.support.ui.{ExpectedCondition, ExpectedConditions, Select}
-import org.openqa.selenium.{interactions, JavascriptExecutor, WebDriver}
-import org.slf4j.LoggerFactory
+import com.tribbloids.spookystuff.{ActionException, Const}
+import org.openqa.selenium.support.ui.{ExpectedConditions, Select}
+import org.openqa.selenium.JavascriptExecutor
 
 import java.net.URI
 import scala.collection.mutable
@@ -18,115 +14,6 @@ trait Foundation extends Serializable {
 
   {
     Web.enableOnce
-  }
-
-  object WebAction {}
-
-  trait WebAction extends Action {
-    self: StateChangeTag =>
-
-//    {
-//      Web.enableOnce
-//      // TODO: this no longer works after moving to define-by-run API
-//      //  as constructors are only executed in a function
-//      //  instead, Web module should be initialised in the package object
-//    }
-
-    // execute errorDumps as side effects
-    override protected def wrapException(
-        exception: Exception,
-        agent: Agent
-    ): ActionException = {
-
-      val original: ActionException = super.wrapException(exception, agent)
-
-      original match {
-
-        case e: SpookyException.HasCoreDump =>
-          e // do nothing, already dumped
-        case _ =>
-          // execute core dump using snapshot & screenshot from the latest WebDriver
-          // even if the original exception doesn't contain any of them
-
-          var msg = original.getMessage_simple
-
-          val driverLookup = agent.getDriver.lookup
-
-          if (driverLookup.contains(Web)) {
-
-            val errorDump: Boolean = agent.spooky.conf.errorDump
-            val errorDumpScreenshot: Boolean = agent.spooky.conf.errorScreenshot
-
-            if (errorDump) {
-              val rawPage = Snapshot.ErrorDump.exe(agent).head.asInstanceOf[Doc]
-              msg += "\nSnapshot: " + this.errorDump(rawPage, agent.spooky)
-            }
-            if (errorDumpScreenshot) {
-              try {
-                val rawPage = Screenshot.ErrorScreenshot.exe(agent).head.asInstanceOf[Doc]
-                msg += "\nScreenshot: " + this.errorDump(rawPage, agent.spooky)
-              } catch {
-                case e: Exception =>
-                  LoggerFactory.getLogger(this.getClass).error("Cannot take screenshot on ActionError:", e)
-              }
-            }
-
-            new ActionExceptionWithCoreDump(msg, original.getCause)
-          } else {
-
-            original
-          }
-      }
-    }
-  }
-
-  /**
-    * Interact with the browser (e.g. click a button or type into a search box) to reach the data page. these will be
-    * logged into target page's backtrace. failed interactive will trigger an error dump by snapshot. has an option to
-    * be delayed to
-    */
-  @SerialVersionUID(-6784287573066896999L)
-  abstract class WebInteraction(
-      override val cooldown: Duration,
-      val blocking: Boolean
-  ) extends Interaction
-      with BrowserTimeout {
-
-    import WebInteraction.*
-
-    override def doExe(agent: Agent): Seq[Doc] = {
-
-      super.doExe(agent)
-
-      if (blocking) {
-        webDriverWait(agent).until(DocumentReadyCondition)
-      }
-
-      Nil
-    }
-
-    def webDriverActions(agent: Agent): interactions.Actions = {
-
-      new org.openqa.selenium.interactions.Actions(agent.getDriver(Web))
-    }
-  }
-
-  object WebInteraction {
-
-    object DocumentReadyCondition extends ExpectedCondition[Boolean] {
-
-      final def script: String = "return document.readyState"
-
-      override def apply(input: WebDriver): Boolean = {
-
-        val result = input match {
-          case d: JavascriptExecutor => d.executeScript(script)
-          case _ => throw new UnsupportedOperationException("this web browser driver is not supported")
-        }
-
-        result == "complete"
-      }
-    }
   }
 
   /**

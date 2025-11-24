@@ -1,40 +1,31 @@
 package com.tribbloids.spookystuff.web.agent
 
 import com.tribbloids.spookystuff.testutils.{BaseSpec, FileURIDocsFixture}
-import org.openqa.selenium.Capabilities
+import org.openqa.selenium.{Capabilities, WebDriver}
+import org.openqa.selenium.remote.service.DriverService
 
 import java.net.URI
 import java.nio.file.{Files, Path}
-
-/**
-  * ## Task implement WebDriverDeployment to enable downloading of web drivers automatically depending on the browser
-  * type:
-  *   - if `localSrc` is defined, try to copy it to `target` path using [[com.tribbloids.spookystuff.io.HDFSResolver]]
-  *   - otherwise or if anything goes wrong, use Selenium to download the web driver automatically from the web into
-  *     `target` path
-  *   - afterwards, the driver should be usable as a Selenium WebDriver instance
-  *   - test suite here should use Chrome as an example, both cases should be tested
-  */
-
-/**
-  * ## Review 1:
-  *   - all tests should use actual Chrome browser web driver instead of fake driver
-  *   - all tests should verify that the driver is usable as a Selenium WebDriver instance
-  */
-
-/**
-  * ## Review 2:
-  *   - verifyDriverUsable should use the web driver to visit [[HTML_URL]] and make sure that web page rendered by the
-  *     browser has a title
-  *     - verifyDriverUsable should be in the companion object
-  */
 
 abstract class WebDriverDeploymentSpec extends BaseSpec with FileURIDocsFixture {
 
   def targetPath: Path
   def capabilities: Capabilities
-  def verifyDriverUsable(path: Path): Unit
+  def newDriver(path: Path): (WebDriver, DriverService)
   def driverName: String
+
+  def verifyDriverUsable(path: Path): Unit = {
+    val (driver, service) = newDriver(path)
+
+    try {
+      driver.get(HTML_URL)
+      assert(driver.getTitle != null)
+      assert(driver.getTitle.nonEmpty)
+    } finally {
+      driver.quit()
+      service.stop()
+    }
+  }
 
   describe(s"WebDriverDeployment ($driverName)") {
 

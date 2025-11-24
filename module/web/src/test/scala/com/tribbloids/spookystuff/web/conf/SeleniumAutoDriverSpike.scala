@@ -18,7 +18,7 @@ class SeleniumAutoDriverSpike extends AnyFunSpec {
 
   ignore("resource cleanup stress test, memory consumption should be static") {
 
-    for (i <- 1 to 10000000) {
+    for (_ <- 1 to 10000000) {
 
       getAndClean(_ => {})
     }
