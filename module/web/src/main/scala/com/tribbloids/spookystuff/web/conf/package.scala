@@ -59,7 +59,7 @@ package object conf {
     object Args {
 
       lazy val shared = Seq(
-//        "--no-sandbox"
+        "--no-sandbox"
       )
     }
 
@@ -76,7 +76,9 @@ package object conf {
 
         new Impl(() => {
 
+          val driverExecutable = new java.io.File("drivers/chromedriver-linux64/chromedriver")
           lazy val service = new ChromeDriverService.Builder()
+            .usingDriverExecutable(driverExecutable)
             .usingAnyFreePort()
             .build()
 

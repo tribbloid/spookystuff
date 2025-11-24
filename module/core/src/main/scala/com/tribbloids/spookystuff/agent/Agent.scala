@@ -81,14 +81,6 @@ class Agent(
 
       TreeException.&&&(trials)
     }
-
-    /**
-      * all drivers will be terminated, not released (as in cleanImpl) currently useless
-      */
-//    def shutdownAll(): Unit = {
-//
-//      ???
-//    }
   }
 
   override def cleanImpl(): Unit = {
