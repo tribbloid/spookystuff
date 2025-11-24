@@ -1,11 +1,14 @@
 package com.tribbloids.spookystuff.web.agent
 
 import com.tribbloids.spookystuff.testutils.{BaseSpec, FileURIDocsFixture}
-import org.openqa.selenium.{Capabilities, WebDriver}
+import com.tribbloids.spookystuff.web.actions.WebInteraction
 import org.openqa.selenium.remote.service.DriverService
+import org.openqa.selenium.support.ui.WebDriverWait
+import org.openqa.selenium.{Capabilities, WebDriver}
 
 import java.net.URI
 import java.nio.file.{Files, Path}
+import java.time.Duration
 
 abstract class WebDriverDeploymentSpec extends BaseSpec with FileURIDocsFixture {
 
@@ -21,6 +24,8 @@ abstract class WebDriverDeploymentSpec extends BaseSpec with FileURIDocsFixture 
       driver.get(HTML_URL)
       assert(driver.getTitle != null)
       assert(driver.getTitle.nonEmpty)
+
+      new WebDriverWait(driver, Duration.ofSeconds(5)).until(WebInteraction.DocumentReadyCondition)
     } finally {
       driver.quit()
       service.stop()
