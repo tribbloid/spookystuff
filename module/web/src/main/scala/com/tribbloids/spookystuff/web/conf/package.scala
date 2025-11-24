@@ -13,8 +13,9 @@ import com.tribbloids.spookystuff.web.agent.WebDriverBundle.Lt
 import com.tribbloids.spookystuff.web.agent.{CleanWebDriver, WebDriverBundle, WebDriverDeployment}
 import org.openqa.selenium.chrome.{ChromeDriver, ChromeDriverService, ChromeOptions}
 import org.openqa.selenium.firefox.{FirefoxDriver, FirefoxOptions, GeckoDriverService}
+import org.openqa.selenium.remote.NoSuchDriverException
 import org.openqa.selenium.remote.service.DriverService
-import org.openqa.selenium.{Capabilities, Proxy, WebDriver}
+import org.openqa.selenium.{Capabilities, Proxy, WebDriver, WebDriverException}
 
 import java.nio.file.Path
 import scala.reflect.ClassTag
@@ -67,7 +68,7 @@ package object conf {
         try {
           bundle.driver
         } catch {
-          case e: IllegalStateException =>
+          case e: WebDriverException =>
             // deploy web driver
             localDeployment.deploy()
             bundle.driver

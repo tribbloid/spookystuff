@@ -18,8 +18,25 @@ object WebDriverDeployment {
       option: Capabilities
   ): WebDriverDeployment = {
 
+    val osName = Option(System.getProperty("os.name")).getOrElse("Unknown")
+    val osBase =
+      if (osName.startsWith("Windows")) "Windows"
+      else if (osName.startsWith("Linux")) "Linux"
+      else if (osName.startsWith("Mac")) "MacOS"
+      else osName.replaceAll("\\s+", "")
+
+    val archRaw = Option(System.getProperty("os.arch")).getOrElse("unknown")
+    val archNorm = archRaw match {
+      case "x86_64" | "amd64" => "amd64"
+      case "aarch64" | "arm64" => "arm64"
+      case other => other
+    }
+
+    val qualifier = s"${osBase}_${archNorm}"
+
     val executablePath = Path.of(
       executableDir,
+      qualifier,
       option.getBrowserName
     )
 
