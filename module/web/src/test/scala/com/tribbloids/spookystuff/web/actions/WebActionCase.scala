@@ -53,7 +53,7 @@ abstract class WebActionCase extends BaseSpec with FileURIDocsFixture {
     it("+> Snapshot") {
 
       val results: Seq[Observation] = (
-        Visit(HTML_URL) +>
+        Visit("http://www.wikipedia.org") +>
           WaitFor("input#searchInput").in(40.seconds) +>
           Snapshot()
       ).fetch(spooky)
@@ -69,7 +69,7 @@ abstract class WebActionCase extends BaseSpec with FileURIDocsFixture {
 
     it("+> TextInput +> Snapshot") {
       val results: Seq[Observation] = (
-        Visit(HTML_URL) +>
+        Visit("http://www.wikipedia.org") +>
           WaitFor("input#searchInput").in(40.seconds) +>
           Snapshot().as("A") +>
           TextInput("input#searchInput", "Deep learning") +>
@@ -81,7 +81,7 @@ abstract class WebActionCase extends BaseSpec with FileURIDocsFixture {
       val result0 = results.head.asInstanceOf[Doc]
       val result1 = results(1).asInstanceOf[Doc]
 
-      val id1 = Visit(HTML_URL) ::
+      val id1 = Visit("http://www.wikipedia.org") ::
         WaitFor("input#searchInput") ::
         Snapshot().as("C") :: Nil
       assert(result0.uid.backtrace.repr === id1)
@@ -89,7 +89,7 @@ abstract class WebActionCase extends BaseSpec with FileURIDocsFixture {
       assert(result0.uri contains "//www.wikipedia.org")
       assert(result0.name === "A")
 
-      val id2 = Visit(HTML_URL) ::
+      val id2 = Visit("http://www.wikipedia.org") ::
         WaitFor("input#searchInput") ::
         TextInput("input#searchInput", "Deep learning") ::
         Submit("button.pure-button") ::
