@@ -25,7 +25,7 @@ class FirefoxWebDriverDeploymentSpec extends WebDriverDeploymentSpec {
       .usingAnyFreePort()
       .build()
 
-    val options = new FirefoxOptions()
+    val options = new FirefoxOptions().merge(capabilities)
     options.addArguments("-headless")
 
     val driver = new FirefoxDriver(service, options)

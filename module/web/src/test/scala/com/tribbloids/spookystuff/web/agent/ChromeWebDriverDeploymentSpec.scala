@@ -25,7 +25,7 @@ class ChromeWebDriverDeploymentSpec extends WebDriverDeploymentSpec {
       .usingAnyFreePort()
       .build()
 
-    val options = new ChromeOptions()
+    val options = new ChromeOptions().merge(capabilities)
     options.addArguments("--headless=new")
     options.addArguments("--no-sandbox")
     options.addArguments("--disable-dev-shm-usage")

@@ -3,9 +3,9 @@ package com.tribbloids.spookystuff.web.agent
 import com.tribbloids.spookystuff.io.{HDFSResolver, WriteMode}
 import org.apache.hadoop.conf.Configuration
 import org.openqa.selenium.Capabilities
-import org.openqa.selenium.chrome.ChromeDriverService
-import org.openqa.selenium.firefox.GeckoDriverService
-import org.openqa.selenium.remote.service.DriverService
+import org.openqa.selenium.chrome.{ChromeDriverService, ChromeOptions}
+import org.openqa.selenium.firefox.{FirefoxOptions, GeckoDriverService}
+import org.openqa.selenium.remote.service.{DriverFinder, DriverService}
 
 import java.net.URI
 import java.nio.file.{Files, Path, StandardCopyOption}
@@ -83,7 +83,7 @@ case class WebDriverDeployment(
 
     val service: DriverService = browserName match {
       case "chrome" =>
-        ChromeDriverService.createDefaultService()
+        new ChromeDriverService.Builder().build()
       case "firefox" =>
         new GeckoDriverService.Builder().build()
       case _ =>
@@ -91,9 +91,20 @@ case class WebDriverDeployment(
     }
 
     try {
-      // Starting the service triggers the driver discovery/download in Selenium 4.6+
-      service.start()
-      val exe = service.getExecutable
+      // Use DriverFinder to locate/download the driver without starting the service
+      val finder = new DriverFinder(service, capabilities)
+      val exePath = Path.of(finder.getDriverPath)
+
+      if (finder.hasBrowserPath) {
+        val browserPath = finder.getBrowserPath
+        capabilities match {
+          case v: ChromeOptions =>
+            v.setBinary(browserPath)
+          case v: FirefoxOptions =>
+            v.setBinary(browserPath)
+          case _ =>
+        }
+      }
 
       // Copy to target
       // Ensure parent dir exists
@@ -101,15 +112,10 @@ case class WebDriverDeployment(
         Files.createDirectories(target.getParent)
       }
 
-      // service.getExecutable might return File or String depending on Selenium version/bindings
-      // The compiler said it is a String.
-      val exePath = new java.io.File(exe.toString).toPath
-
       Files.copy(exePath, target, StandardCopyOption.REPLACE_EXISTING)
-    } finally {
-      if (service.isRunning) {
-        service.stop()
-      }
+    } catch {
+      case e: Exception =>
+        throw new RuntimeException(s"Failed to download driver for $browserName", e)
     }
   }
 }
