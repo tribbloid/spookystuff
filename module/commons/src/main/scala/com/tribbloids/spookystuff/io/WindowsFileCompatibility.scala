@@ -1,22 +1,22 @@
 package com.tribbloids.spookystuff.io
 
 import java.nio.file._
-import java.io.{IOException, File}
+import java.io.IOException
 import java.util.concurrent.atomic.AtomicBoolean
-import scala.util.{Try, Success, Failure}
+import scala.util.{Failure, Success, Try}
 import scala.concurrent.duration._
 import scala.annotation.tailrec
 import scala.collection.mutable
 
 /**
- * Windows-specific file compatibility utilities that handle the unique challenges
- * of file operations on Windows operating systems.
- */
+  * Windows-specific file compatibility utilities that handle the unique challenges of file operations on Windows
+  * operating systems.
+  */
 object WindowsFileCompatibility {
 
   /**
-   * Check if running on Windows
-   */
+    * Check if running on Windows
+    */
   def isWindows: Boolean = CrossPlatformFileUtils.isWindows
 
   // Windows-specific constants
@@ -28,22 +28,41 @@ object WindowsFileCompatibility {
   val FILE_LOCK_TIMEOUT: FiniteDuration = 10.seconds
 
   /**
-   * Windows-specific invalid filename characters
-   */
+    * Windows-specific invalid filename characters
+    */
   val invalidFileNameChars: Set[Char] = Set('<', '>', ':', '"', '|', '?', '*')
 
   /**
-   * Windows reserved filenames
-   */
+    * Windows reserved filenames
+    */
   val reservedFileNames: Set[String] = Set(
-    "CON", "PRN", "AUX", "NUL",
-    "COM1", "COM2", "COM3", "COM4", "COM5", "COM6", "COM7", "COM8", "COM9",
-    "LPT1", "LPT2", "LPT3", "LPT4", "LPT5", "LPT6", "LPT7", "LPT8", "LPT9"
+    "CON",
+    "PRN",
+    "AUX",
+    "NUL",
+    "COM1",
+    "COM2",
+    "COM3",
+    "COM4",
+    "COM5",
+    "COM6",
+    "COM7",
+    "COM8",
+    "COM9",
+    "LPT1",
+    "LPT2",
+    "LPT3",
+    "LPT4",
+    "LPT5",
+    "LPT6",
+    "LPT7",
+    "LPT8",
+    "LPT9"
   )
 
   /**
-   * Registry for tracking files that need cleanup on JVM exit
-   */
+    * Registry for tracking files that need cleanup on JVM exit
+    */
   private val cleanupRegistry = mutable.Set[Path]()
   private val cleanupRegistered = new AtomicBoolean(false)
 
@@ -74,8 +93,8 @@ object WindowsFileCompatibility {
   }
 
   /**
-   * Registers a path for cleanup on JVM exit
-   */
+    * Registers a path for cleanup on JVM exit
+    */
   def registerForCleanup(path: Path): Unit = {
     if (isWindows) {
       cleanupRegistry += path
@@ -84,8 +103,8 @@ object WindowsFileCompatibility {
   }
 
   /**
-   * Unregisters a path from cleanup on JVM exit
-   */
+    * Unregisters a path from cleanup on JVM exit
+    */
   def unregisterFromCleanup(path: Path): Unit = {
     if (isWindows) {
       cleanupRegistry -= path
@@ -93,8 +112,8 @@ object WindowsFileCompatibility {
   }
 
   /**
-   * Validates a filename for Windows compatibility
-   */
+    * Validates a filename for Windows compatibility
+    */
   def validateFileName(fileName: String): Try[Unit] = {
     if (!isWindows) {
       Success(())
@@ -120,8 +139,8 @@ object WindowsFileCompatibility {
   }
 
   /**
-   * Sanitizes a filename for Windows compatibility
-   */
+    * Sanitizes a filename for Windows compatibility
+    */
   def sanitizeFileName(fileName: String): String = {
     if (!isWindows) {
       fileName
@@ -154,8 +173,8 @@ object WindowsFileCompatibility {
   }
 
   /**
-   * Checks if a path exceeds Windows path length limitations
-   */
+    * Checks if a path exceeds Windows path length limitations
+    */
   def checkPathLength(path: Path): Try[Unit] = {
     if (!isWindows) {
       Success(())
@@ -166,7 +185,7 @@ object WindowsFileCompatibility {
           // Suggest using extended-length path syntax
           throw new IOException(
             s"Path exceeds Windows MAX_PATH limit of $MAX_PATH characters. " +
-            s"Consider using extended-length path syntax (\\\\?\\ prefix) or shorten the path: $pathString"
+              s"Consider using extended-length path syntax (\\\\?\\ prefix) or shorten the path: $pathString"
           )
         }
       }
@@ -174,8 +193,8 @@ object WindowsFileCompatibility {
   }
 
   /**
-   * Converts a regular path to extended-length path format for Windows
-   */
+    * Converts a regular path to extended-length path format for Windows
+    */
   def toExtendedPath(path: Path): Path = {
     if (!isWindows) {
       path
@@ -195,22 +214,22 @@ object WindowsFileCompatibility {
   }
 
   /**
-   * Windows-specific retry logic with exponential backoff
-   */
+    * Windows-specific retry logic with exponential backoff
+    */
   def retryWithBackoff[T](
-    operation: () => Try[T],
-    maxRetries: Int = DEFAULT_RETRY_COUNT,
-    initialDelay: FiniteDuration = DEFAULT_RETRY_DELAY,
-    maxDelay: FiniteDuration = MAX_RETRY_DELAY,
-    isRecoverable: Throwable => Boolean = isWindowsRecoverableError
+      operation: () => Try[T],
+      maxRetries: Int = DEFAULT_RETRY_COUNT,
+      initialDelay: FiniteDuration = DEFAULT_RETRY_DELAY,
+      maxDelay: FiniteDuration = MAX_RETRY_DELAY,
+      isRecoverable: Throwable => Boolean = isWindowsRecoverableError
   ): Try[T] = {
 
     @tailrec
     def attempt(attemptNum: Int, currentDelay: FiniteDuration): Try[T] = {
       operation() match {
-        case success @ Success(_) => success
-        case failure @ Failure(ex) if attemptNum >= maxRetries => failure
-        case failure @ Failure(ex) =>
+        case success @ Success(_)                             => success
+        case failure @ Failure(_) if attemptNum >= maxRetries => failure
+        case failure @ Failure(ex)                            =>
           if (isRecoverable(ex)) {
             Thread.sleep(currentDelay.toMillis)
             val nextDelay = (currentDelay * 2).min(maxDelay)
@@ -225,38 +244,38 @@ object WindowsFileCompatibility {
   }
 
   /**
-   * Determines if an exception is recoverable on Windows
-   */
+    * Determines if an exception is recoverable on Windows
+    */
   def isWindowsRecoverableError(ex: Throwable): Boolean = {
     if (!isWindows) {
       false
     } else {
       ex match {
-        case _: java.nio.file.AccessDeniedException => true
-        case _: java.nio.file.FileSystemException => true
+        case _: java.nio.file.AccessDeniedException                         => true
+        case _: java.nio.file.FileSystemException                           => true
         case _: java.io.IOException if ex.getMessage.contains("being used") => true
-        case _: java.io.IOException if ex.getMessage.contains("locked") => true
-        case _: java.io.IOException if ex.getMessage.contains("process") => true
-        case _: java.nio.file.NoSuchFileException => false // Not recoverable
-        case _: SecurityException => false // Not recoverable
-        case _ => false // Default to not recoverable
+        case _: java.io.IOException if ex.getMessage.contains("locked")     => true
+        case _: java.io.IOException if ex.getMessage.contains("process")    => true
+        case _: java.nio.file.NoSuchFileException                           => false // Not recoverable
+        case _: SecurityException                                           => false // Not recoverable
+        case _                                                              => false // Default to not recoverable
       }
     }
   }
 
   /**
-   * Creates a temporary file with Windows-specific considerations
-   */
+    * Creates a temporary file with Windows-specific considerations
+    */
   def createWindowsCompatibleTempFile(
-    prefix: String = "spooky",
-    suffix: String = ".tmp",
-    directory: Option[Path] = None,
-    registerForCleanup: Boolean = true
+      prefix: String = "spooky",
+      suffix: String = ".tmp",
+      directory: Option[Path] = None,
+      registerForCleanup: Boolean = true
   ): Try[Path] = {
     if (!isWindows) {
       Success(CrossPlatformFileUtils.createTempFile(prefix, suffix, directory))
     } else {
-      retryWithBackoff({ () =>
+      retryWithBackoff { () =>
         Try {
           // Ensure directory exists
           val tempDir = directory.getOrElse(Paths.get(System.getProperty("java.io.tmpdir")))
@@ -274,22 +293,22 @@ object WindowsFileCompatibility {
 
           tempFile
         }
-      })
+      }
     }
   }
 
   /**
-   * Creates a temporary directory with Windows-specific considerations
-   */
+    * Creates a temporary directory with Windows-specific considerations
+    */
   def createWindowsCompatibleTempDirectory(
-    prefix: String = "spooky",
-    directory: Option[Path] = None,
-    registerForCleanup: Boolean = true
+      prefix: String = "spooky",
+      directory: Option[Path] = None,
+      registerForCleanup: Boolean = true
   ): Try[Path] = {
     if (!isWindows) {
       Success(CrossPlatformFileUtils.createTempDirectory(prefix, directory))
     } else {
-      retryWithBackoff({ () =>
+      retryWithBackoff { () =>
         Try {
           // Ensure directory exists
           val tempDir = directory.getOrElse(Paths.get(System.getProperty("java.io.tmpdir")))
@@ -306,17 +325,17 @@ object WindowsFileCompatibility {
 
           tempDirectory
         }
-      })
+      }
     }
   }
 
   /**
-   * Waits for a file to become available for operation on Windows
-   */
+    * Waits for a file to become available for operation on Windows
+    */
   def waitForFileAvailability(
-    path: Path,
-    timeout: FiniteDuration = FILE_LOCK_TIMEOUT,
-    checkInterval: FiniteDuration = 100.milliseconds
+      path: Path,
+      timeout: FiniteDuration = FILE_LOCK_TIMEOUT,
+      checkInterval: FiniteDuration = 100.milliseconds
   ): Try[Boolean] = {
     if (!isWindows) {
       Success(Files.exists(path))
@@ -337,7 +356,7 @@ object WindowsFileCompatibility {
             channel.close()
             true // File is available
           } match {
-            case Success(true) => Success(true)
+            case Success(true)                     => Success(true)
             case Failure(_: AccessDeniedException) => // File is locked, wait
               Thread.sleep(checkInterval.toMillis)
               checkAvailability()
@@ -353,8 +372,8 @@ object WindowsFileCompatibility {
   }
 
   /**
-   * Safely closes all resources associated with a file before deletion
-   */
+    * Safely closes all resources associated with a file before deletion
+    */
   def safeFileDelete(path: Path, timeout: FiniteDuration = FILE_LOCK_TIMEOUT): Try[Boolean] = {
     if (!isWindows) {
       CrossPlatformFileUtils.deleteFileWithRetry(path)
@@ -367,8 +386,8 @@ object WindowsFileCompatibility {
   }
 
   /**
-   * Gets information about Windows file locking
-   */
+    * Gets information about Windows file locking
+    */
   def getWindowsFileLockInfo(path: Path): Try[String] = {
     if (!isWindows) {
       Success("Not running on Windows")
@@ -384,7 +403,7 @@ object WindowsFileCompatibility {
             "File is not locked"
           } catch {
             case _: AccessDeniedException => "File is locked (access denied)"
-            case ex: IOException => s"File may be locked: ${ex.getMessage}"
+            case ex: IOException          => s"File may be locked: ${ex.getMessage}"
           }
         }
       }

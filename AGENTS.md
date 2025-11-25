@@ -30,10 +30,9 @@ see @buildSrc/.agents/guardrails.md
 ### Build & Compile
 
 ```bash
-./gradlew build                # Build all modules
+./gradlew build                # Build all production modules
+./gradlew testClasses          # Build all production and test modules
 ./gradlew clean                # Clean build directories
-./gradlew compileScala         # Compile main Scala sources
-./gradlew compileTestScala     # Compile test Scala sources
 ```
 
 ### Testing

@@ -297,7 +297,6 @@ abstract class AbstractURIResolverSuite extends SparkEnvSpec {
               } else {
                 Thread.sleep(Random.nextInt(maxSleepDelay))
               }
-
               val r2 = ss.release().failed.toOption.toSeq
 
               resolver
@@ -354,7 +353,6 @@ abstract class AbstractURIResolverSuite extends SparkEnvSpec {
               } else {
                 Thread.sleep(Random.nextInt(maxSleepDelay))
               }
-
               val r2 = ss.release().failed.toOption.toSeq
 
               resolver

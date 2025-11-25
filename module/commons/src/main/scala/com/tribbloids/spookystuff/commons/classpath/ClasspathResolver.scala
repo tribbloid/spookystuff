@@ -20,9 +20,9 @@ case class ClasspathResolver(
   import ClasspathResolver.*
 
   /**
-   * Normalizes a path to use forward slashes for ClassGraph operations.
-   * ClassGraph always expects forward slashes regardless of OS.
-   */
+    * Normalizes a path to use forward slashes for ClassGraph operations. ClassGraph always expects forward slashes
+    * regardless of OS.
+    */
   private def normalizeForClassGraph(path: String): String = {
     path.replace(java.io.File.separatorChar, '/')
   }

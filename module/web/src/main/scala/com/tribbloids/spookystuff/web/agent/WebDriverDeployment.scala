@@ -1,15 +1,12 @@
 package com.tribbloids.spookystuff.web.agent
 
-import com.tribbloids.spookystuff.io.{HDFSResolver, WriteMode}
-import org.apache.hadoop.conf.Configuration
+import com.tribbloids.spookystuff.dsl.BinaryDeployment
 import org.openqa.selenium.Capabilities
-import org.openqa.selenium.chrome.{ChromeDriverService, ChromeOptions}
-import org.openqa.selenium.firefox.{FirefoxOptions, GeckoDriverService}
+import org.openqa.selenium.chrome.ChromeDriverService
+import org.openqa.selenium.firefox.GeckoDriverService
 import org.openqa.selenium.remote.service.{DriverFinder, DriverService}
 
-import java.net.URI
 import java.nio.file.{Files, Path, StandardCopyOption}
-import scala.util.{Failure, Success, Try}
 
 object WebDriverDeployment {
 
@@ -40,71 +37,85 @@ object WebDriverDeployment {
       option.getBrowserName
     )
 
-    WebDriverDeployment(None, executablePath, option)
-  }
-}
-
-case class WebDriverDeployment(
-    localSrc: Option[URI],
-    target: Path,
-    capabilities: Capabilities
-) {
-
-  def deploy(): Unit = {
-    val tryLocal = Try {
-      localSrc match {
-        case Some(src) =>
-          val resolver = HDFSResolver(() => new Configuration())
-          val srcExe = resolver.on(src.toString)
-          // HDFSResolver requires target to be a URI string
-          val targetUri = target.toAbsolutePath.toUri.toString
-          srcExe.copyTo(targetUri, WriteMode.Overwrite)
-        case None =>
-          throw new RuntimeException("No local source defined")
-      }
-    }
-
-    tryLocal match {
-      case Success(_) => // Done
-      case Failure(_) =>
-        // Fallback to Selenium download
-        downloadDriver()
-    }
-
-    // Ensure executable
-    val targetFile = target.toFile
-    if (targetFile.exists()) {
-      targetFile.setExecutable(true)
-    }
+    WebDriverDeployment(executablePath, option)
   }
 
-  private def downloadDriver(): Unit = {
+  /**
+    * Use Selenium Manager (via DriverFinder) to resolve both driver and browser paths for the given capabilities. This
+    * will trigger downloads if needed but will not start a real browser session.
+    */
+  def resolvePaths(
+      capabilities: Capabilities
+  ): (Path, Path) = {
     val browserName = capabilities.getBrowserName.toLowerCase
+    val service: DriverService = createService(browserName)
 
-    val service: DriverService = browserName match {
+    try {
+      val finder = new DriverFinder(service, capabilities)
+
+      val driverPath = Path.of(finder.getDriverPath)
+
+      val browserPathStr = Option(finder.getBrowserPath)
+        .filter(_.nonEmpty)
+        .getOrElse {
+          throw new RuntimeException(
+            s"Selenium Manager did not return a browser path for capabilities: $capabilities"
+          )
+        }
+      val browserPath = Path.of(browserPathStr)
+
+      val userHome = System.getProperty("user.home")
+      val cacheRoot = Path.of(userHome, ".cache", "selenium").toAbsolutePath.normalize()
+      val normalizedBrowserPath = browserPath.toAbsolutePath.normalize()
+
+      if (!normalizedBrowserPath.startsWith(cacheRoot)) {
+        throw new UnsupportedOperationException(
+          s"Using system-installed browser is forbidden. " +
+            s"Resolved browser path: '$normalizedBrowserPath'. Expected path under '$cacheRoot'. " +
+            "Configure Selenium Manager to download and manage browsers."
+        )
+      }
+
+      driverPath -> normalizedBrowserPath
+    } catch {
+      case e: UnsupportedOperationException =>
+        throw e
+      case e: Exception =>
+        throw new RuntimeException(s"Failed to resolve driver/browser for $browserName", e)
+    } finally {
+      service.close() // service is only used for downloading
+    }
+  }
+
+  private def createService(browserName: String): DriverService = {
+    browserName.toLowerCase match {
       case "chrome" =>
         new ChromeDriverService.Builder().build()
       case "firefox" =>
         new GeckoDriverService.Builder().build()
-      case _ =>
-        throw new UnsupportedOperationException(s"Browser $browserName not supported for auto-download")
+      case other =>
+        throw new UnsupportedOperationException(s"Browser $other not supported for auto-download")
+    }
+  }
+}
+
+case class WebDriverDeployment(
+    targetPath: Path,
+    capabilities: Capabilities // TODO: remove, should be a constructor of WebDriverService
+) extends BinaryDeployment {
+  // TODO: this can only distribute driver, not browser (which contains mutliple files)
+  //  also: downloaded driver is only compatible with OS of the driver, if worker OS is different then it will be useless
+  //  BinaryDepolyment logic will need major overhaul to facilitate them
+
+  override protected def downloadWithoutVerify(): Unit = {
+    val (driverPath, _) = WebDriverDeployment.resolvePaths(capabilities)
+
+    // Copy to target
+    // Ensure parent dir exists
+    if (targetPath.getParent != null) {
+      Files.createDirectories(targetPath.getParent)
     }
 
-    try {
-      // Use DriverFinder to locate/download the driver without starting the service
-      val finder = new DriverFinder(service, capabilities)
-      val exePath = Path.of(finder.getDriverPath)
-
-      // Copy to target
-      // Ensure parent dir exists
-      if (target.getParent != null) {
-        Files.createDirectories(target.getParent)
-      }
-
-      Files.copy(exePath, target, StandardCopyOption.REPLACE_EXISTING)
-    } catch {
-      case e: Exception =>
-        throw new RuntimeException(s"Failed to download driver for $browserName", e)
-    }
+    Files.copy(driverPath, targetPath, StandardCopyOption.REPLACE_EXISTING)
   }
 }

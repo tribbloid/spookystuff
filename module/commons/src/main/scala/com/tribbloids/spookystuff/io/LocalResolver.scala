@@ -8,10 +8,9 @@ import java.io.{File, InputStream, OutputStream}
 import java.nio.file.*
 import java.nio.file.attribute.{DosFileAttributeView, PosixFilePermission}
 
-
 case class LocalResolver(
-                          override val retry: Retry = URIResolver.default.retry,
-                          writePermission: Set[FilePermissionType] = Set()
+    override val retry: Retry = URIResolver.default.retry,
+    writePermission: Set[FilePermissionType] = Set()
 ) extends URIResolver {
   import LocalResolver.*
 
@@ -136,8 +135,8 @@ case class LocalResolver(
     }
 
     /**
-     * Apply file permissions in a cross-platform way
-     */
+      * Apply file permissions in a cross-platform way
+      */
     private def applyCrossPlatformPermissions(path: Path, permissions: Set[FilePermissionType]): Unit = {
       if (permissions.isEmpty) return
 
@@ -151,37 +150,40 @@ case class LocalResolver(
         }
       } catch {
         case _: UnsupportedOperationException =>
-          // Permissions not supported on this platform, ignore
+        // Permissions not supported on this platform, ignore
         case _: java.nio.file.FileSystemException =>
-          // Filesystem doesn't support these permissions, ignore
+        // Filesystem doesn't support these permissions, ignore
         case _: Exception =>
-          // Other errors (like insufficient privileges), ignore gracefully
+        // Other errors (like insufficient privileges), ignore gracefully
       }
     }
 
     /**
-     * Apply permissions on Unix-like systems using POSIX attributes
-     */
+      * Apply permissions on Unix-like systems using POSIX attributes
+      */
     private def applyPosixPermissions(path: Path, permissions: Set[FilePermissionType]): Unit = {
       try {
         val currentPermissions = Files.getPosixFilePermissions(path)
 
         val posixPermissions = permissions.flatMap {
-          case FilePermissionType.Executable => Set(
-            PosixFilePermission.OWNER_EXECUTE,
-            PosixFilePermission.GROUP_EXECUTE,
-            PosixFilePermission.OTHERS_EXECUTE
-          )
-          case FilePermissionType.Writable => Set(
-            PosixFilePermission.OWNER_WRITE,
-            PosixFilePermission.GROUP_WRITE,
-            PosixFilePermission.OTHERS_WRITE
-          )
-          case FilePermissionType.Readable => Set(
-            PosixFilePermission.OWNER_READ,
-            PosixFilePermission.GROUP_READ,
-            PosixFilePermission.OTHERS_READ
-          )
+          case FilePermissionType.Executable =>
+            Set(
+              PosixFilePermission.OWNER_EXECUTE,
+              PosixFilePermission.GROUP_EXECUTE,
+              PosixFilePermission.OTHERS_EXECUTE
+            )
+          case FilePermissionType.Writable =>
+            Set(
+              PosixFilePermission.OWNER_WRITE,
+              PosixFilePermission.GROUP_WRITE,
+              PosixFilePermission.OTHERS_WRITE
+            )
+          case FilePermissionType.Readable =>
+            Set(
+              PosixFilePermission.OWNER_READ,
+              PosixFilePermission.GROUP_READ,
+              PosixFilePermission.OTHERS_READ
+            )
         }
 
         currentPermissions.addAll(posixPermissions.asJava)
@@ -194,21 +196,21 @@ case class LocalResolver(
     }
 
     /**
-     * Apply basic Unix permissions when POSIX is not available
-     */
+      * Apply basic Unix permissions when POSIX is not available
+      */
     private def applyBasicUnixPermissions(path: Path, permissions: Set[FilePermissionType]): Unit = {
       val file = path.toFile
 
       permissions.foreach {
         case FilePermissionType.Executable => file.setExecutable(true)
-        case FilePermissionType.Writable => file.setWritable(true)
-        case FilePermissionType.Readable => file.setReadable(true)
+        case FilePermissionType.Writable   => file.setWritable(true)
+        case FilePermissionType.Readable   => file.setReadable(true)
       }
     }
 
     /**
-     * Apply permissions on Windows using DOS file attributes
-     */
+      * Apply permissions on Windows using DOS file attributes
+      */
     private def applyDosPermissions(path: Path, permissions: Set[FilePermissionType]): Unit = {
       val currentAttrs = Files.getFileAttributeView(path, classOf[DosFileAttributeView])
 
@@ -241,8 +243,8 @@ case class LocalResolver(
       // Fallback to basic File methods if DOS attributes don't work
       val file = path.toFile
       permissions.foreach {
-        case FilePermissionType.Writable => file.setWritable(true)
-        case FilePermissionType.Readable => file.setReadable(true)
+        case FilePermissionType.Writable   => file.setWritable(true)
+        case FilePermissionType.Readable   => file.setReadable(true)
         case FilePermissionType.Executable => file.setExecutable(true) // May not work on Windows but won't hurt
       }
     }

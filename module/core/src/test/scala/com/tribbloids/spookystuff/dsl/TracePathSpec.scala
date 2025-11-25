@@ -11,7 +11,8 @@ class TracePathSpec extends SpookyBaseSpec with FileURIDocsFixture {
   import scala.concurrent.duration.*
 
   {
-    val htmlUrl = HTML_URL
+    // FileURIDocsFixture is mixed in as a trait, so HTML_URL is available directly
+    val htmlUrl: String = HTML_URL
 
     // TODO: add more non-primary-construtor params
     // TODO: move to core module
@@ -73,8 +74,10 @@ class TracePathSpec extends SpookyBaseSpec with FileURIDocsFixture {
         val separator = CrossPlatformFileUtils.fileSeparator
         val path1Components = CrossPlatformFileUtils.splitPath(encoded1).toSeq.slice(0, -1)
         val path2Components = CrossPlatformFileUtils.splitPath(encoded2).toSeq.slice(0, -1)
-        assert(path1Components == path2Components,
-          s"Path components differ:\nPath1: $path1Components\nPath2: $path2Components\nOriginal1: $encoded1\nOriginal2: $encoded2")
+        assert(
+          path1Components == path2Components,
+          s"Path components differ:\nPath1: $path1Components\nPath2: $path2Components\nOriginal1: $encoded1\nOriginal2: $encoded2"
+        )
       }
 
       it(s"${byDoc.getClass.getSimpleName} should not yield string containing new line character") {

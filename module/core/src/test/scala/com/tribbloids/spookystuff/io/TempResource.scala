@@ -4,9 +4,8 @@ import ai.acyclic.prover.commons.util.PathMagnet
 import com.tribbloids.spookystuff.commons.lifespan.LocalCleanable
 import com.tribbloids.spookystuff.io.{CrossPlatformFileUtils, WindowsFileCompatibility}
 
-import java.nio.file.{Files, Paths}
+import java.nio.file.Paths
 import scala.util.Random
-import scala.util.{Try, Success, Failure}
 
 case class TempResource(
     resolver: URIResolver,

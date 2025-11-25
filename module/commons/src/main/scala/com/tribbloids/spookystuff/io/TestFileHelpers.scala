@@ -1,18 +1,19 @@
 package com.tribbloids.spookystuff.io
 
 import java.nio.file._
-import java.nio.file.attribute.{BasicFileAttributes, FileTime}
+import java.nio.file.attribute.BasicFileAttributes
 import java.io.IOException
 import java.util.concurrent.atomic.AtomicLong
-import scala.util.{Try, Success, Failure}
+import scala.util.{Failure, Success, Try}
 import scala.collection.mutable
 import scala.concurrent.duration._
 import java.time.Instant
+import ai.acyclic.prover.commons.util.Retry
 
 /**
- * Specialized file handling utilities designed for test scenarios.
- * Provides robust temporary file management and cross-platform test support.
- */
+  * Specialized file handling utilities designed for test scenarios. Provides robust temporary file management and
+  * cross-platform test support.
+  */
 object TestFileHelpers {
 
   // Counter for generating unique test file names
@@ -25,31 +26,31 @@ object TestFileHelpers {
   private var testTempDir: Option[Path] = None
 
   /**
-   * Represents a test resource that needs cleanup
-   */
+    * Represents a test resource that needs cleanup
+    */
   case class TestResource(
-    path: Path,
-    resourceType: String,
-    createdAt: Instant = Instant.now(),
-    autoCleanup: Boolean = true
+      path: Path,
+      resourceType: String,
+      createdAt: Instant = Instant.now(),
+      autoCleanup: Boolean = true
   ) {
     def cleanup(): Try[Boolean] = {
       resourceType.toLowerCase match {
-        case "file" => TestFileHelpers.safeDeleteFile(path)
+        case "file"      => TestFileHelpers.safeDeleteFile(path)
         case "directory" => TestFileHelpers.safeDeleteDirectory(path)
-        case _ => TestFileHelpers.safeDeleteFile(path)
+        case _           => TestFileHelpers.safeDeleteFile(path)
       }
     }
   }
 
   /**
-   * Gets or creates the test-wide temporary directory
-   */
+    * Gets or creates the test-wide temporary directory
+    */
   def getTestTempDirectory(): Path = {
     testTempDir.synchronized {
       testTempDir match {
         case Some(dir) if Files.exists(dir) => dir
-        case _ =>
+        case _                              =>
           val newDir = CrossPlatformFileUtils.createTempDirectory(
             prefix = s"spooky-test-${System.currentTimeMillis()}"
           )
@@ -61,62 +62,66 @@ object TestFileHelpers {
   }
 
   /**
-   * Creates a test-specific temporary file
-   */
+    * Creates a test-specific temporary file
+    */
   def createTestTempFile(
-    prefix: String = "test",
-    suffix: String = ".tmp",
-    content: Option[String] = None,
-    registerForCleanup: Boolean = true
+      prefix: String = "test",
+      suffix: String = ".tmp",
+      content: Option[String] = None,
+      registerForCleanup: Boolean = true
   ): Try[Path] = {
     val uniquePrefix = s"$prefix-${testCounter.incrementAndGet()}"
 
-    WindowsFileCompatibility.createWindowsCompatibleTempFile(
-      prefix = uniquePrefix,
-      suffix = suffix,
-      directory = Some(getTestTempDirectory())
-    ).map { path =>
-      // Write content if provided
-      content.foreach { content =>
-        Files.writeString(path, content)
-      }
+    WindowsFileCompatibility
+      .createWindowsCompatibleTempFile(
+        prefix = uniquePrefix,
+        suffix = suffix,
+        directory = Some(getTestTempDirectory())
+      )
+      .map { path =>
+        // Write content if provided
+        content.foreach { content =>
+          Files.writeString(path, content)
+        }
 
-      if (registerForCleanup) {
-        registerTestResource(path, "file")
-      }
+        if (registerForCleanup) {
+          registerTestResource(path, "file")
+        }
 
-      path
-    }
+        path
+      }
   }
 
   /**
-   * Creates a test-specific temporary directory
-   */
+    * Creates a test-specific temporary directory
+    */
   def createTestTempDirectory(
-    prefix: String = "test",
-    registerForCleanup: Boolean = true
+      prefix: String = "test",
+      registerForCleanup: Boolean = true
   ): Try[Path] = {
     val uniquePrefix = s"$prefix-${testCounter.incrementAndGet()}"
 
-    WindowsFileCompatibility.createWindowsCompatibleTempDirectory(
-      prefix = uniquePrefix,
-      directory = Some(getTestTempDirectory())
-    ).map { path =>
-      if (registerForCleanup) {
-        registerTestResource(path, "directory")
-      }
+    WindowsFileCompatibility
+      .createWindowsCompatibleTempDirectory(
+        prefix = uniquePrefix,
+        directory = Some(getTestTempDirectory())
+      )
+      .map { path =>
+        if (registerForCleanup) {
+          registerTestResource(path, "directory")
+        }
 
-      path
-    }
+        path
+      }
   }
 
   /**
-   * Creates a test file with specific content
-   */
+    * Creates a test file with specific content
+    */
   def createTestFile(
-    fileName: String,
-    content: String,
-    directory: Option[Path] = None
+      fileName: String,
+      content: String,
+      directory: Option[Path] = None
   ): Try[Path] = {
     val targetDir = directory.getOrElse(getTestTempDirectory())
     val filePath = targetDir.resolve(WindowsFileCompatibility.sanitizeFileName(fileName))
@@ -130,11 +135,11 @@ object TestFileHelpers {
   }
 
   /**
-   * Creates a test directory structure
-   */
+    * Creates a test directory structure
+    */
   def createTestDirectoryStructure(
-    basePath: Path,
-    structure: Map[String, Either[String, Map[String, Any]]]
+      basePath: Path,
+      structure: Map[String, Either[String, Map[String, Any]]]
   ): Try[Path] = {
     Try {
       Files.createDirectories(basePath)
@@ -154,12 +159,12 @@ object TestFileHelpers {
 
             // Convert sub-structure to proper format
             val subItems = subStructure.collect {
-              case (k, v: String) => k -> Left(v)
+              case (k, v: String)    => k -> Left(v)
               case (k, v: Map[_, _]) =>
                 k -> Right(v.map {
-                  case (kk: String, vv: String) => kk -> Left(vv)
+                  case (kk: String, vv: String)    => kk -> Left(vv)
                   case (kk: String, vv: Map[_, _]) => kk -> Right(vv.asInstanceOf[Map[String, Any]])
-                  case (kk, vv) => kk.toString -> Left(vv.toString)
+                  case (kk, vv)                    => kk.toString -> Left(vv.toString)
                 })
             }
             createStructure(dirPath, subItems)
@@ -172,22 +177,22 @@ object TestFileHelpers {
   }
 
   /**
-   * Registers a test resource for cleanup
-   */
+    * Registers a test resource for cleanup
+    */
   def registerTestResource(path: Path, resourceType: String): Unit = {
     testResourceRegistry += TestResource(path, resourceType)
   }
 
   /**
-   * Unregisters a test resource from cleanup
-   */
+    * Unregisters a test resource from cleanup
+    */
   def unregisterTestResource(path: Path): Unit = {
     testResourceRegistry --= testResourceRegistry.filter(_.path == path)
   }
 
   /**
-   * Safely deletes a file with Windows-specific considerations
-   */
+    * Safely deletes a file with Windows-specific considerations
+    */
   def safeDeleteFile(path: Path): Try[Boolean] = {
     if (!Files.exists(path)) {
       Success(true) // Already deleted
@@ -199,8 +204,8 @@ object TestFileHelpers {
   }
 
   /**
-   * Safely deletes a directory with all its contents
-   */
+    * Safely deletes a directory with all its contents
+    */
   def safeDeleteDirectory(path: Path): Try[Boolean] = {
     if (!Files.exists(path)) {
       Success(true) // Already deleted
@@ -208,26 +213,29 @@ object TestFileHelpers {
       Success(false) // Not a directory
     } else {
       Try {
-        Files.walkFileTree(path, new SimpleFileVisitor[Path] {
-          override def visitFile(file: Path, attrs: BasicFileAttributes): FileVisitResult = {
-            safeDeleteFile(file).get
-            FileVisitResult.CONTINUE
-          }
+        Files.walkFileTree(
+          path,
+          new SimpleFileVisitor[Path] {
+            override def visitFile(file: Path, attrs: BasicFileAttributes): FileVisitResult = {
+              safeDeleteFile(file).get
+              FileVisitResult.CONTINUE
+            }
 
-          override def postVisitDirectory(dir: Path, exc: IOException): FileVisitResult = {
-            if (exc != null) throw exc
-            Files.deleteIfExists(dir)
-            FileVisitResult.CONTINUE
+            override def postVisitDirectory(dir: Path, exc: IOException): FileVisitResult = {
+              if (exc != null) throw exc
+              Files.deleteIfExists(dir)
+              FileVisitResult.CONTINUE
+            }
           }
-        })
+        )
         true
       }
     }
   }
 
   /**
-   * Cleans up all registered test resources
-   */
+    * Cleans up all registered test resources
+    */
   def cleanupTestResources(): Unit = {
     val resources = testResourceRegistry.toSet
     testResourceRegistry.clear()
@@ -253,8 +261,8 @@ object TestFileHelpers {
   }
 
   /**
-   * Executes a test with automatic resource cleanup
-   */
+    * Executes a test with automatic resource cleanup
+    */
   def withTestResources[T](testBody: => T): Try[T] = {
     try {
       val result = testBody
@@ -267,8 +275,8 @@ object TestFileHelpers {
   }
 
   /**
-   * Executes a test with automatic resource cleanup in a Try context
-   */
+    * Executes a test with automatic resource cleanup in a Try context
+    */
   def withTestResourcesTry[T](testBody: => Try[T]): Try[T] = {
     try {
       val result = testBody
@@ -279,8 +287,8 @@ object TestFileHelpers {
   }
 
   /**
-   * Asserts file exists with cross-platform considerations
-   */
+    * Asserts file exists with cross-platform considerations
+    */
   def assertFileExists(path: Path): Unit = {
     if (!CrossPlatformFileUtils.pathExists(path)) {
       throw new AssertionError(s"File does not exist: $path")
@@ -288,8 +296,8 @@ object TestFileHelpers {
   }
 
   /**
-   * Asserts file does not exist with cross-platform considerations
-   */
+    * Asserts file does not exist with cross-platform considerations
+    */
   def assertFileNotExists(path: Path): Unit = {
     if (CrossPlatformFileUtils.pathExists(path)) {
       throw new AssertionError(s"File unexpectedly exists: $path")
@@ -297,8 +305,8 @@ object TestFileHelpers {
   }
 
   /**
-   * Asserts file content matches expected string
-   */
+    * Asserts file content matches expected string
+    */
   def assertFileContent(path: Path, expectedContent: String): Unit = {
     assertFileExists(path)
     val actualContent = Files.readString(path)
@@ -308,8 +316,8 @@ object TestFileHelpers {
   }
 
   /**
-   * Asserts file content contains expected substring
-   */
+    * Asserts file content contains expected substring
+    */
   def assertFileContains(path: Path, expectedSubstring: String): Unit = {
     assertFileExists(path)
     val content = Files.readString(path)
@@ -319,25 +327,32 @@ object TestFileHelpers {
   }
 
   /**
-   * Creates a file with Windows-compatible path handling
-   */
+    * Creates a file with Windows-compatible path handling
+    */
   def createFileWithWindowsCompatibility(
-    path: Path,
-    content: String = "",
-    overwrite: Boolean = false
+      path: Path,
+      content: String = "",
+      overwrite: Boolean = false
   ): Try[Path] = {
     if (CrossPlatformFileUtils.isWindows) {
-      WindowsFileCompatibility.retryWithBackoff({ () =>
+      WindowsFileCompatibility.retryWithBackoff { () =>
         Try {
-          if (Files.exists(path) && !overwrite) {
-            throw new FileAlreadyExistsException(s"File already exists: $path")
-          }
+          Retry.ExponentialBackoff(
+            n = 10,
+            longestInterval = 2000L, // 2 seconds max
+            expBase = 2.0,
+            silent = false
+          ) {
+            if (Files.exists(path) && !overwrite) {
+              throw new FileAlreadyExistsException(s"File already exists: $path")
+            }
 
-          Files.createDirectories(path.getParent)
-          Files.writeString(path, content)
-          path
+            Files.createDirectories(path.getParent)
+            Files.writeString(path, content)
+            path
+          }
         }
-      })
+      }
     } else {
       Try {
         Files.createDirectories(path.getParent)
@@ -350,12 +365,12 @@ object TestFileHelpers {
   }
 
   /**
-   * Waits for file operations to complete on Windows
-   */
+    * Waits for file operations to complete on Windows
+    */
   def waitForFileOperation(
-    path: Path,
-    timeout: FiniteDuration = 5.seconds,
-    checkInterval: FiniteDuration = 100.milliseconds
+      path: Path,
+      timeout: FiniteDuration = 5.seconds,
+      checkInterval: FiniteDuration = 100.milliseconds
   ): Try[Boolean] = {
     if (CrossPlatformFileUtils.isWindows) {
       WindowsFileCompatibility.waitForFileAvailability(path, timeout, checkInterval)
@@ -365,8 +380,8 @@ object TestFileHelpers {
   }
 
   /**
-   * Gets detailed information about a test resource
-   */
+    * Gets detailed information about a test resource
+    */
   def getResourceInfo(path: Path): Try[String] = {
     Try {
       if (!Files.exists(path)) {

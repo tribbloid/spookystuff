@@ -1,10 +1,11 @@
 package com.tribbloids.spookystuff.utils
 
 import com.tribbloids.spookystuff.commons.{CommonUtils, UnsafeReflections}
-import com.tribbloids.spookystuff.io.{LocalResolver, CrossPlatformFileUtils, WindowsFileCompatibility}
+import com.tribbloids.spookystuff.io.{CrossPlatformFileUtils, LocalResolver, WindowsFileCompatibility}
 import org.apache.commons.io.IOUtils
 import org.apache.spark.rdd.RDD
 import org.slf4j.LoggerFactory
+import ai.acyclic.prover.commons.util.Retry
 
 import java.io.File
 import java.net.*
@@ -180,7 +181,14 @@ object SpookyUtils {
 
     // Apply Windows-specific retry logic if running on Windows
     if (CrossPlatformFileUtils.isWindows) {
-      WindowsFileCompatibility.retryWithBackoff(() => Try(operation), maxRetries = 8).get
+      Retry.ExponentialBackoff(
+        n = 8,
+        longestInterval = 2000L, // 2 seconds max
+        expBase = 2.0,
+        silent = false
+      ) {
+        operation()
+      }
     } else {
       operation()
     }
@@ -195,8 +203,8 @@ object SpookyUtils {
       new CopyDirectoryFileVisitor(srcPath, dstPath)
     )
   }
-  def ifFileNotExist[T](dst: String)(f: => T): Option[T] = this.synchronized {
-    val dstFile = new File(dst)
+  def ifFileNotExist[T](dst: Path)(f: => T): Option[T] = this.synchronized {
+    val dstFile = dst.toFile
     if (!dstFile.exists()) {
       Some(f)
     } else {

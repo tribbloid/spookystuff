@@ -95,12 +95,20 @@ package object conf {
 
       override def getBundle: WebDriverBundle.Lt[ChromeDriver] = {
 
+        val browserBinary = WebDriverDeployment.resolvePaths(option)._2.toString
+
+        val optionsWithBinary = {
+          val opts = option
+          opts.setBinary(browserBinary)
+          opts
+        }
+
         lazy val service: ChromeDriverService = new ChromeDriverService.Builder()
-          .usingDriverExecutable(localDeployment.target.toFile)
+          .usingDriverExecutable(localDeployment.targetPath.toFile)
           .usingAnyFreePort()
           .build()
 
-        WebDriverBundle.Chrome(service, option)
+        WebDriverBundle.Chrome(service, optionsWithBinary)
       }
     }
 
@@ -116,12 +124,20 @@ package object conf {
 
       override def getBundle: WebDriverBundle.Lt[FirefoxDriver] = {
 
+        val browserBinary = WebDriverDeployment.resolvePaths(option)._2.toString
+
+        val optionsWithBinary = {
+          val opts = option
+          opts.setBinary(browserBinary)
+          opts
+        }
+
         val service = new GeckoDriverService.Builder()
-          .usingDriverExecutable(localDeployment.target.toFile)
+          .usingDriverExecutable(localDeployment.targetPath.toFile)
           .usingAnyFreePort()
           .build()
 
-        WebDriverBundle.Firefox(service, option)
+        WebDriverBundle.Firefox(service, optionsWithBinary)
       }
     }
 
