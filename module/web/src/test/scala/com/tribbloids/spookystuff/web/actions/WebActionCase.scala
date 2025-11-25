@@ -53,7 +53,7 @@ abstract class WebActionCase extends BaseSpec with FileURIDocsFixture {
     it("+> Snapshot") {
 
       val results: Seq[Observation] = (
-        Visit("http://www.wikipedia.org") +>
+        Visit("https://www.wikipedia.org") +>
           WaitFor("input#searchInput").in(40.seconds) +>
           Snapshot()
       ).fetch(spooky)
@@ -69,11 +69,12 @@ abstract class WebActionCase extends BaseSpec with FileURIDocsFixture {
 
     it("+> TextInput +> Snapshot") {
       val results: Seq[Observation] = (
-        Visit("http://www.wikipedia.org") +>
+        Visit("https://www.wikipedia.org") +>
           WaitFor("input#searchInput").in(40.seconds) +>
           Snapshot().as("A") +>
           TextInput("input#searchInput", "Deep learning") +>
           Submit("button.pure-button") +>
+          WaitFor("h1#firstHeading").in(40.seconds) +>
           Snapshot().as("B")
       ).fetch(spooky)
 
@@ -81,7 +82,7 @@ abstract class WebActionCase extends BaseSpec with FileURIDocsFixture {
       val result0 = results.head.asInstanceOf[Doc]
       val result1 = results(1).asInstanceOf[Doc]
 
-      val id1 = Visit("http://www.wikipedia.org") ::
+      val id1 = Visit("https://www.wikipedia.org") ::
         WaitFor("input#searchInput") ::
         Snapshot().as("C") :: Nil
       assert(result0.uid.backtrace.repr === id1)
@@ -89,10 +90,11 @@ abstract class WebActionCase extends BaseSpec with FileURIDocsFixture {
       assert(result0.uri contains "//www.wikipedia.org")
       assert(result0.name === "A")
 
-      val id2 = Visit("http://www.wikipedia.org") ::
+      val id2 = Visit("https://www.wikipedia.org") ::
         WaitFor("input#searchInput") ::
         TextInput("input#searchInput", "Deep learning") ::
         Submit("button.pure-button") ::
+        WaitFor("h1#firstHeading") ::
         Snapshot().as("D") :: Nil
       assert(result1.uid.backtrace.repr === id2)
       assert(result1.code.get.split('\n').map(_.trim).mkString.contains("<title>Deep learning"))
@@ -106,7 +108,7 @@ abstract class WebActionCase extends BaseSpec with FileURIDocsFixture {
     it("sizzle selector") {
 
       val results = (
-        Visit("http://www.wikipedia.org/") +>
+        Visit("https://www.wikipedia.org/") +>
           WaitFor("a.link-box:contains(English)") +>
           Snapshot()
       ).fetch(spooky)
@@ -119,7 +121,7 @@ abstract class WebActionCase extends BaseSpec with FileURIDocsFixture {
     it("css selector") {
 
       val results = (
-        Visit("http://www.wikipedia.org/") +>
+        Visit("https://www.wikipedia.org/") +>
           WaitFor("cssSelector: a.link-box") +>
           Snapshot()
       ).fetch(spooky)

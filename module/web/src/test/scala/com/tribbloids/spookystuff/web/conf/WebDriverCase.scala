@@ -19,18 +19,18 @@ trait WebDriverCase extends SpookyBaseSpec with FileURIDocsFixture {
     AssertSerializable(transientDriverFactory.taskLocal).weakly()
   }
 
-//  it("factoryReset") {
-//    val agent = new Agent(spooky)
-//    val driver = transientDriverFactory.dispatch(agent)
-//
-////    driver.get("https://www.selenium.dev/documentation/selenium_manager/")
-//    driver.get(HTML_URL)
-//
-//    transientDriverFactory.factoryReset(driver)
-//    assert(driver.getTitle == "")
-//
-//    driver.clean(false)
-//  }
+  it("factoryReset") {
+    val agent = new Agent(spooky)
+    val driver = transientDriverFactory.dispatch(agent)
+
+//    driver.get("https://www.selenium.dev/documentation/selenium_manager/")
+    driver.get(HTML_URL)
+
+    transientDriverFactory.factoryReset(driver)
+    assert(driver.getTitle == "")
+
+    driver.clean(false)
+  }
 
   it("If a taskLocal driver is released, it can be reused") {
     val conf = Web.Conf(transientDriverFactory.taskLocal)
