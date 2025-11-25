@@ -6,5 +6,12 @@
     ],
     "deny": [],
     "ask": []
-  }
+  },
+  "enabledMcpjsonServers": [
+    "fetch",
+    "playwright",
+    "memory",
+    "deepwiki",
+    "jetbrains"
+  ]
 }
