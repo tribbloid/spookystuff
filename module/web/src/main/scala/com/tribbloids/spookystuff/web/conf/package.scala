@@ -25,6 +25,18 @@ package object conf {
       "--no-sandbox"
     )
 
+    def default: Base = Chrome.default
+
+    def asSeleniumProxy(s: WebProxySetting): Proxy = { // TODO: set this in browser capabilities
+      val seleniumProxy: Proxy = new Proxy
+      seleniumProxy.setProxyType(Proxy.ProxyType.MANUAL)
+      val proxyStr: String = s"${s.addr}:${s.port}"
+      seleniumProxy.setHttpProxy(proxyStr)
+      seleniumProxy.setSslProxy(proxyStr)
+      seleniumProxy.setSocksProxy(proxyStr)
+      seleniumProxy
+    }
+
     abstract class Base extends DriverFactory.Transient[CleanWebDriver] {
 
       Web.enableOnce
@@ -36,34 +48,34 @@ package object conf {
 
     abstract class Typed[T <: WebDriver: ClassTag] extends Base {
 
+      final override lazy val toString: String = {
+
+        val driverName = implicitly[ClassTag[T]].runtimeClass.getSimpleName
+        s"WebDriverFactory[$driverName]"
+      }
       lazy val executableDir: LocalFSPath = DEFAULT_DRIVER_DIR
+      @transient lazy val localDeployment: WebDriverDeployment =
+        WebDriverDeployment.fromRootDir(executableDir, option)
 
       def option: Capabilities
 
       override def deployGlobally(spooky: SpookyContext): Unit =
         super.deployGlobally(spooky) // TODO: need global deployment to minimise download time
 
-      @transient lazy val localDeployment: WebDriverDeployment =
-        WebDriverDeployment.fromRootDir(executableDir, option)
-
       def getBundle: WebDriverBundle.Lt[T]
-
-      final override lazy val toString: String = {
-
-        val driverName = implicitly[ClassTag[T]].runtimeClass.getSimpleName
-        s"WebDriverFactory[$driverName]"
-      }
 
       override def _createImpl(agent: Agent, lifespan: Lifespan): CleanWebDriver = {
 
-        val bundle = getBundle
+        var bundle = getBundle
 
         try {
           bundle.driver
         } catch {
           case _: WebDriverException =>
+            bundle.service.close()
             // deploy web driver
             localDeployment.deploy()
+            bundle = getBundle
             bundle.driver
         }
 
@@ -92,11 +104,6 @@ package object conf {
       }
     }
 
-    case object Chrome {
-
-      lazy val default: Chrome = apply()
-    }
-
     case class Firefox(
         option: FirefoxOptions = {
 
@@ -118,21 +125,14 @@ package object conf {
       }
     }
 
+    case object Chrome {
+
+      lazy val default: Chrome = apply()
+    }
+
     case object Firefox {
 
       lazy val default: Firefox = apply()
-    }
-
-    def default: Base = Chrome.default
-
-    def asSeleniumProxy(s: WebProxySetting): Proxy = { // TODO: set this in browser capabilities
-      val seleniumProxy: Proxy = new Proxy
-      seleniumProxy.setProxyType(Proxy.ProxyType.MANUAL)
-      val proxyStr: String = s"${s.addr}:${s.port}"
-      seleniumProxy.setHttpProxy(proxyStr)
-      seleniumProxy.setSslProxy(proxyStr)
-      seleniumProxy.setSocksProxy(proxyStr)
-      seleniumProxy
     }
   }
 
