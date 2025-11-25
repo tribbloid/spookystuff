@@ -27,9 +27,9 @@ object WebDriverDeployment {
 
     val archRaw = Option(System.getProperty("os.arch")).getOrElse("unknown")
     val archNorm = archRaw match {
-      case "x86_64" | "amd64" => "amd64"
+      case "x86_64" | "amd64"  => "amd64"
       case "aarch64" | "arm64" => "arm64"
-      case other => other
+      case other               => other
     }
 
     val qualifier = s"${osBase}_${archNorm}"
@@ -94,17 +94,6 @@ case class WebDriverDeployment(
       // Use DriverFinder to locate/download the driver without starting the service
       val finder = new DriverFinder(service, capabilities)
       val exePath = Path.of(finder.getDriverPath)
-
-      if (finder.hasBrowserPath) {
-        val browserPath = finder.getBrowserPath
-        capabilities match {
-          case v: ChromeOptions =>
-            v.setBinary(browserPath)
-          case v: FirefoxOptions =>
-            v.setBinary(browserPath)
-          case _ =>
-        }
-      }
 
       // Copy to target
       // Ensure parent dir exists
