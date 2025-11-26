@@ -1,7 +1,7 @@
 package com.tribbloids.spookystuff.utils
 
 import com.tribbloids.spookystuff.commons.{CommonUtils, UnsafeReflections}
-import com.tribbloids.spookystuff.io.LocalResolver
+import com.tribbloids.spookystuff.io.{LocalResolver, CrossPlatformFileUtils, WindowsFileCompatibility}
 import org.apache.commons.io.IOUtils
 import org.apache.spark.rdd.RDD
 import org.slf4j.LoggerFactory
@@ -9,9 +9,11 @@ import org.slf4j.LoggerFactory
 import java.io.File
 import java.net.*
 import java.nio.file.*
+import java.util.regex.Pattern
 import scala.collection.mutable
 import scala.language.implicitConversions
 import scala.reflect.ClassTag
+import scala.util.Try
 
 object SpookyUtils {
 
@@ -34,18 +36,20 @@ object SpookyUtils {
   }
 
   def canonizeUrn(name: String): String = {
+    // Use platform-agnostic path separator for internal processing
+    val pathSeparator = CrossPlatformFileUtils.pathSeparator
 
-    var result = name.replaceAll("[ ]", "_").replaceAll("""[^0-9a-zA-Z!_.*'()-]+""", "/")
+    var result = name.replaceAll("[ ]", "_").replaceAll("""[^0-9a-zA-Z!_.*'()-]+""", pathSeparator)
 
     result = result
-      .split("/")
+      .split(Pattern.quote(pathSeparator))
       .map { part =>
         {
           if (part.length > 255) part.substring(0, 255)
           else part
         }
       }
-      .mkString("/")
+      .mkString(pathSeparator)
 
     result
   }
@@ -123,10 +127,11 @@ object SpookyUtils {
   }
 
   def addCPResource(urlStr: String): Unit = {
+    // Normalize the path using cross-platform utilities
+    val normalizedPath = CrossPlatformFileUtils.normalizePath(urlStr).stripSuffix(CrossPlatformFileUtils.pathSeparator)
+    val url = scala.reflect.io.File(normalizedPath).toAbsolute.toURL
 
-    val url = scala.reflect.io.File(urlStr.stripSuffix("/")).toAbsolute.toURL
-
-    assert(url.toString.startsWith("file"))
+    assert(url.toString.startsWith("file"), s"URL must start with 'file://', got: $url")
 
     UnsafeReflections.invoke(
       classOf[URLClassLoader],
@@ -139,38 +144,45 @@ object SpookyUtils {
   }
 
   def resilientCopy(src: Path, dst: Path, options: Array[CopyOption]): Unit = {
-    CommonUtils.retry(5, 1000) {
+    // Use Windows-specific retry logic if needed
+    val operation = () => {
+      CommonUtils.retry(5, 1000) {
+        val pathsStr = src.toString + " => " + dst
 
-      val pathsStr = src.toString + " => " + dst
+        if (Files.isDirectory(src)) {
+          try {
+            Files.copy(src, dst, options*)
+          } catch {
+            case _: DirectoryNotEmptyException =>
+          }
 
-      if (Files.isDirectory(src)) {
-        try {
-          Files.copy(src, dst, options*)
-          // TODO: how to flush dst?
-        } catch {
-          case _: DirectoryNotEmptyException =>
+          val dstFile = new File(dst.toString)
+          assert(dstFile.isDirectory)
+
+          LoggerFactory.getLogger(this.getClass).debug(pathsStr + " no need to copy directory")
+        } else {
+          Files.copy(
+            src,
+            dst,
+            options*
+          )
+
+          // assert(Files.exists(dst))
+          // NIO copy should use non-NIO for validation to eliminate stream caching
+          val dstContent = LocalResolver.default.input(dst.toString) { in =>
+            IOUtils.toByteArray(in.stream)
+          }
+          //      assert(srcContent.length == dstContent.length, pathsStr + " copy failed")
+          LoggerFactory.getLogger(this.getClass).debug(pathsStr + s" ${dstContent.length} byte(s) copied")
         }
-
-        val dstFile = new File(dst.toString)
-        assert(dstFile.isDirectory)
-
-        LoggerFactory.getLogger(this.getClass).debug(pathsStr + " no need to copy directory")
-      } else {
-        Files.copy(
-          src,
-          dst,
-          options*
-        ) // this will either 1. copy file if src is a file. 2. create empty dir if src is a dir.
-        // TODO: how to flush dst?
-
-        // assert(Files.exists(dst))
-        // NIO copy should use non-NIO for validation to eliminate stream caching
-        val dstContent = LocalResolver.default.input(dst.toString) { in =>
-          IOUtils.toByteArray(in.stream)
-        }
-        //      assert(srcContent.length == dstContent.length, pathsStr + " copy failed")
-        LoggerFactory.getLogger(this.getClass).debug(pathsStr + s" ${dstContent.length} byte(s) copied")
       }
+    }
+
+    // Apply Windows-specific retry logic if running on Windows
+    if (CrossPlatformFileUtils.isWindows) {
+      WindowsFileCompatibility.retryWithBackoff(() => Try(operation), maxRetries = 8).get
+    } else {
+      operation()
     }
   }
 

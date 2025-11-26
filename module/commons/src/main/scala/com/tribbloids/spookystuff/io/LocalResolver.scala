@@ -107,9 +107,19 @@ case class LocalResolver(
             Files.newOutputStream(nioPath, StandardOpenOption.CREATE_NEW, StandardOpenOption.SYNC)
         }
 
-        val permissions = Files.getPosixFilePermissions(nioPath)
-        permissions.addAll(extraPermissions.asJava)
-        Files.setPosixFilePermissions(nioPath, permissions)
+        // Only set POSIX permissions on systems that support them (not Windows)
+        if (CrossPlatformFileUtils.isUnix && extraPermissions.nonEmpty) {
+          try {
+            val permissions = Files.getPosixFilePermissions(nioPath)
+            permissions.addAll(extraPermissions.asJava)
+            Files.setPosixFilePermissions(nioPath, permissions)
+          } catch {
+            case _: UnsupportedOperationException =>
+              // POSIX permissions not supported on this platform (e.g., Windows), ignore
+            case _: java.nio.file.FileSystemException =>
+              // Filesystem doesn't support POSIX permissions, ignore
+          }
+        }
 
         fos
       }

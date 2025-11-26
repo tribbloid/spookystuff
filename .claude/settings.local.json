@@ -7,7 +7,12 @@
       "WebFetch(domain:stackoverflow.com)",
       "WebFetch(domain:commons.apache.org)",
       "WebFetch(domain:javadoc.io)",
-      "WebFetch(domain:github.com)"
+      "WebFetch(domain:github.com)",
+      "Bash(comm:*)",
+      "Bash(getfacl:*)",
+      "Bash(icacls:*)",
+      "Bash(wait:*)",
+      "Bash(xargs:*)"
     ],
     "deny": [],
     "ask": []
@@ -18,5 +23,6 @@
     "memory",
     "deepwiki",
     "jetbrains"
-  ]
+  ],
+  "outputStyle": "default"
 }

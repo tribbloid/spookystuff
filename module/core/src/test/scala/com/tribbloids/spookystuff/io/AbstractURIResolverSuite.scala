@@ -4,6 +4,7 @@ import ai.acyclic.prover.commons.spark.serialization.AssertSerializable
 import ai.acyclic.prover.commons.spark.{Envs, SparkEnvSpec}
 import com.tribbloids.spookystuff.io.AbstractURIResolverSuite.SequentialCheck
 import com.tribbloids.spookystuff.testutils.FileDocsFixture
+import com.tribbloids.spookystuff.io.{CrossPlatformFileUtils, WindowsFileCompatibility}
 import org.apache.commons.io.IOUtils
 import org.apache.spark.SparkContext
 import org.apache.spark.broadcast.Broadcast
@@ -11,6 +12,7 @@ import org.apache.spark.broadcast.Broadcast
 import java.io.IOException
 import java.util.concurrent.atomic.AtomicInteger
 import scala.util.{Random, Try}
+import scala.concurrent.duration._
 
 object AbstractURIResolverSuite {
 
@@ -266,20 +268,38 @@ abstract class AbstractURIResolverSuite extends SparkEnvSpec {
 
         val ss = SequentialCheck(sc)
 
+        // Use platform-appropriate sleep delays
+        val maxSleepDelay = if (CrossPlatformFileUtils.isWindows) 100 else 10
+
         val errors = rdd
           .map { _ =>
             resolver.retry {
+              // Use cross-platform path building for moved file
+              val movedPath = CrossPlatformFileUtils.buildPath(pathStr, "moved").toString
 
               resolver
                 .on(pathStr)
-                .moveTo(pathStr + ".moved")
+                .moveTo(movedPath)
 
               val r1 = ss.acquire().failed.toOption.toSeq
-              Thread.sleep(Random.nextInt(10))
+
+              // Apply Windows-specific file wait and retry logic
+              if (CrossPlatformFileUtils.isWindows) {
+                val waitTime = Random.nextInt(maxSleepDelay) + 50 // Minimum 50ms on Windows
+                WindowsFileCompatibility.waitForFileAvailability(
+                  java.nio.file.Paths.get(movedPath),
+                  timeout = 2.seconds,
+                  checkInterval = 100.milliseconds
+                ).get
+                Thread.sleep(waitTime)
+              } else {
+                Thread.sleep(Random.nextInt(maxSleepDelay))
+              }
+
               val r2 = ss.release().failed.toOption.toSeq
 
               resolver
-                .on(pathStr + ".moved")
+                .on(movedPath)
                 .moveTo(pathStr)
 
               r1 ++ r2
@@ -303,20 +323,38 @@ abstract class AbstractURIResolverSuite extends SparkEnvSpec {
 
         val ss = SequentialCheck(sc)
 
+        // Use platform-appropriate sleep delays
+        val maxSleepDelay = if (CrossPlatformFileUtils.isWindows) 100 else 10
+
         val errors = rdd
           .map { i =>
             resolver.retry {
+              // Use cross-platform path building for moved file
+              val movedPath = CrossPlatformFileUtils.buildPath(pathStr, s"${i}.moved").toString
 
               resolver
                 .on(pathStr)
-                .moveTo(pathStr + i + ".moved")
+                .moveTo(movedPath)
 
               val r1 = ss.acquire().failed.toOption.toSeq
-              Thread.sleep(Random.nextInt(10))
+
+              // Apply Windows-specific file wait and retry logic
+              if (CrossPlatformFileUtils.isWindows) {
+                val waitTime = Random.nextInt(maxSleepDelay) + 50 // Minimum 50ms on Windows
+                WindowsFileCompatibility.waitForFileAvailability(
+                  java.nio.file.Paths.get(movedPath),
+                  timeout = 2.seconds,
+                  checkInterval = 100.milliseconds
+                ).get
+                Thread.sleep(waitTime)
+              } else {
+                Thread.sleep(Random.nextInt(maxSleepDelay))
+              }
+
               val r2 = ss.release().failed.toOption.toSeq
 
               resolver
-                .on(pathStr + i + ".moved")
+                .on(movedPath)
                 .moveTo(pathStr)
 
               r1 ++ r2
