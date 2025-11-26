@@ -2,7 +2,12 @@
   "permissions": {
     "allow": [
       "Bash(./gradlew:*)",
-      "Bash(find:*)"
+      "Bash(find:*)",
+      "WebSearch",
+      "WebFetch(domain:stackoverflow.com)",
+      "WebFetch(domain:commons.apache.org)",
+      "WebFetch(domain:javadoc.io)",
+      "WebFetch(domain:github.com)"
     ],
     "deny": [],
     "ask": []

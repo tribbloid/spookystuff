@@ -19,6 +19,14 @@ case class ClasspathResolver(
   import scala.jdk.CollectionConverters.*
   import ClasspathResolver.*
 
+  /**
+   * Normalizes a path to use forward slashes for ClassGraph operations.
+   * ClassGraph always expects forward slashes regardless of OS.
+   */
+  private def normalizeForClassGraph(path: String): String = {
+    path.replace(java.io.File.separatorChar, '/')
+  }
+
   lazy val graph: ClassGraph = {
     var base = new ClassGraph() // .enableClassInfo.ignoreClassVisibility
 
@@ -74,11 +82,13 @@ case class ClasspathResolver(
       override protected def _outer: URIExecution = _Execution.this
 
       lazy val _refs: LazyVar[ResourceList] = LazyVar {
-        val v = scanResult.getResourcesWithPath(path)
+        val v = scanResult.getResourcesWithPath(normalizeForClassGraph(path))
         v
       }
       def firstRefOpt: Option[io.github.classgraph.Resource] = _refs.value.asScala.headOption
-      def firstRef: io.github.classgraph.Resource = firstRefOpt.getOrElse(???)
+      def firstRef: io.github.classgraph.Resource = firstRefOpt.getOrElse {
+        throw new NoSuchFileException(s"Resource not found: $path")
+      }
 
       override lazy val getURI: String = firstRef.getURI.toString
 
@@ -89,9 +99,10 @@ case class ClasspathResolver(
         else if (children.nonEmpty) Resource.DIR
         else throw new NoSuchFileException(s"File $path doesn't exist")
 
-      def find(wildcard: String): Seq[_Execution] = {
+      def find(pattern: String): Seq[_Execution] = {
+        val normalized = normalizeForClassGraph(pattern)
         val list = scanResult
-          .getResourcesMatchingWildcard(wildcard)
+          .getResourcesMatchingWildcard(normalized)
           .asScala
           .map { v =>
             v.getPath
@@ -99,7 +110,7 @@ case class ClasspathResolver(
           .distinct
 
         val result = list.map { v =>
-          _Execution(v)
+          _Execution(PathMagnet.URIPath(v))
         }
         result.toSeq
       }
