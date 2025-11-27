@@ -6,11 +6,12 @@ import org.apache.commons.io.FileUtils
 
 import java.io.{File, InputStream, OutputStream}
 import java.nio.file.*
-import java.nio.file.attribute.PosixFilePermission
+import java.nio.file.attribute.{DosFileAttributeView, PosixFilePermission}
+
 
 case class LocalResolver(
-    override val retry: Retry = URIResolver.default.retry,
-    extraPermissions: Set[PosixFilePermission] = Set()
+                          override val retry: Retry = URIResolver.default.retry,
+                          writePermission: Set[FilePermissionType] = Set()
 ) extends URIResolver {
   import LocalResolver.*
 
@@ -107,19 +108,8 @@ case class LocalResolver(
             Files.newOutputStream(nioPath, StandardOpenOption.CREATE_NEW, StandardOpenOption.SYNC)
         }
 
-        // Only set POSIX permissions on systems that support them (not Windows)
-        if (CrossPlatformFileUtils.isUnix && extraPermissions.nonEmpty) {
-          try {
-            val permissions = Files.getPosixFilePermissions(nioPath)
-            permissions.addAll(extraPermissions.asJava)
-            Files.setPosixFilePermissions(nioPath, permissions)
-          } catch {
-            case _: UnsupportedOperationException =>
-              // POSIX permissions not supported on this platform (e.g., Windows), ignore
-            case _: java.nio.file.FileSystemException =>
-              // Filesystem doesn't support POSIX permissions, ignore
-          }
-        }
+        // Apply file permissions in a cross-platform way
+        applyCrossPlatformPermissions(nioPath, writePermission)
 
         fos
       }
@@ -143,6 +133,118 @@ case class LocalResolver(
         Files.move(absoluteNioPath, newPath, StandardCopyOption.ATOMIC_MOVE, StandardCopyOption.REPLACE_EXISTING)
       else
         Files.move(absoluteNioPath, newPath, StandardCopyOption.ATOMIC_MOVE)
+    }
+
+    /**
+     * Apply file permissions in a cross-platform way
+     */
+    private def applyCrossPlatformPermissions(path: Path, permissions: Set[FilePermissionType]): Unit = {
+      if (permissions.isEmpty) return
+
+      try {
+        if (CrossPlatformFileUtils.isUnix) {
+          // On Unix/Linux/macOS, use POSIX permissions
+          applyPosixPermissions(path, permissions)
+        } else if (CrossPlatformFileUtils.isWindows) {
+          // On Windows, use DOS file attributes
+          applyDosPermissions(path, permissions)
+        }
+      } catch {
+        case _: UnsupportedOperationException =>
+          // Permissions not supported on this platform, ignore
+        case _: java.nio.file.FileSystemException =>
+          // Filesystem doesn't support these permissions, ignore
+        case _: Exception =>
+          // Other errors (like insufficient privileges), ignore gracefully
+      }
+    }
+
+    /**
+     * Apply permissions on Unix-like systems using POSIX attributes
+     */
+    private def applyPosixPermissions(path: Path, permissions: Set[FilePermissionType]): Unit = {
+      try {
+        val currentPermissions = Files.getPosixFilePermissions(path)
+
+        val posixPermissions = permissions.flatMap {
+          case FilePermissionType.Executable => Set(
+            PosixFilePermission.OWNER_EXECUTE,
+            PosixFilePermission.GROUP_EXECUTE,
+            PosixFilePermission.OTHERS_EXECUTE
+          )
+          case FilePermissionType.Writable => Set(
+            PosixFilePermission.OWNER_WRITE,
+            PosixFilePermission.GROUP_WRITE,
+            PosixFilePermission.OTHERS_WRITE
+          )
+          case FilePermissionType.Readable => Set(
+            PosixFilePermission.OWNER_READ,
+            PosixFilePermission.GROUP_READ,
+            PosixFilePermission.OTHERS_READ
+          )
+        }
+
+        currentPermissions.addAll(posixPermissions.asJava)
+        Files.setPosixFilePermissions(path, currentPermissions)
+      } catch {
+        case _: UnsupportedOperationException =>
+          // POSIX permissions not supported, fall back to basic file permissions
+          applyBasicUnixPermissions(path, permissions)
+      }
+    }
+
+    /**
+     * Apply basic Unix permissions when POSIX is not available
+     */
+    private def applyBasicUnixPermissions(path: Path, permissions: Set[FilePermissionType]): Unit = {
+      val file = path.toFile
+
+      permissions.foreach {
+        case FilePermissionType.Executable => file.setExecutable(true)
+        case FilePermissionType.Writable => file.setWritable(true)
+        case FilePermissionType.Readable => file.setReadable(true)
+      }
+    }
+
+    /**
+     * Apply permissions on Windows using DOS file attributes
+     */
+    private def applyDosPermissions(path: Path, permissions: Set[FilePermissionType]): Unit = {
+      val currentAttrs = Files.getFileAttributeView(path, classOf[DosFileAttributeView])
+
+      if (currentAttrs != null) {
+        val currentDosAttrs = currentAttrs.readAttributes()
+
+        var isReadOnly = currentDosAttrs.isReadOnly
+        var isHidden = currentDosAttrs.isHidden
+        var isSystem = currentDosAttrs.isSystem
+        var isArchive = currentDosAttrs.isArchive
+
+        permissions.foreach {
+          case FilePermissionType.Writable =>
+            isReadOnly = false // Ensure file is writable
+          case FilePermissionType.Readable =>
+            isReadOnly = false // Ensure file is readable (not read-only)
+          case FilePermissionType.Executable =>
+            // On Windows, executability is typically determined by file extension
+            // We can't easily set executable bit, but we ensure it's not read-only
+            isReadOnly = false
+        }
+
+        // Update the attributes
+        currentAttrs.setReadOnly(isReadOnly)
+        currentAttrs.setHidden(isHidden)
+        currentAttrs.setSystem(isSystem)
+        currentAttrs.setArchive(isArchive)
+      }
+
+      // Fallback to basic File methods if DOS attributes don't work
+      val file = path.toFile
+      permissions.foreach {
+        case FilePermissionType.Writable => file.setWritable(true)
+        case FilePermissionType.Readable => file.setReadable(true)
+        case FilePermissionType.Executable => file.setExecutable(true) // May not work on Windows but won't hurt
+      }
     }
   }
 }

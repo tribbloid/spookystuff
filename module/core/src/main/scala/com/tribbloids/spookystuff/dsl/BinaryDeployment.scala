@@ -10,7 +10,7 @@ import org.apache.spark.{SparkContext, SparkFiles}
 import org.slf4j.LoggerFactory
 
 import java.io.File
-import java.nio.file.attribute.PosixFilePermission
+import com.tribbloids.spookystuff.io.{FilePermissionType, LocalResolver}
 import java.util.UUID
 import scala.util.Try
 
@@ -131,7 +131,7 @@ trait BinaryDeployment extends Serializable {
 
 object BinaryDeployment {
 
-  object LocalExeResolver extends LocalResolver(extraPermissions = Set(PosixFilePermission.OWNER_EXECUTE))
+  object LocalExeResolver extends LocalResolver(writePermission = Set(FilePermissionType.Executable))
 
   val MIN_SIZE_K: Double = 1024.0 * 60
 

@@ -25,17 +25,21 @@ object CrossPlatformFileUtils {
   /**
    * Platform-specific path separator
    */
-  def pathSeparator: String = FileSystems.getDefault.getSeparator
+  lazy val pathSeparator: String = FileSystems.getDefault.getSeparator
+  /**
+   * Platform-specific path separator
+   */
+  lazy val pathSeparatorEscaped: String = pathSeparator.replace("\\", "\\\\")
 
   /**
    * Platform-specific file separator (for paths, not classpath)
    */
-  def fileSeparator: String = java.io.File.separator
+  lazy val fileSeparator: String = java.io.File.separator
 
   /**
    * Default timeout for file operations on different platforms
    */
-  def defaultFileOperationTimeout: FiniteDuration = if (isWindows) 5.seconds else 2.seconds
+  lazy val defaultFileOperationTimeout: FiniteDuration = if (isWindows) 5.seconds else 2.seconds
 
   /**
    * Default retry count for file operations on Windows

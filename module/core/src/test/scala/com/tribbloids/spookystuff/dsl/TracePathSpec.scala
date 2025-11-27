@@ -2,19 +2,16 @@ package com.tribbloids.spookystuff.dsl
 
 import com.tribbloids.spookystuff.actions.ActionSuite.{MockExport, MockInteraction}
 import com.tribbloids.spookystuff.io.CrossPlatformFileUtils
-import com.tribbloids.spookystuff.testutils.{FileDocsFixture, SpookyBaseSpec}
+import com.tribbloids.spookystuff.testutils.{FileDocsFixture, FileURIDocsFixture, SpookyBaseSpec}
 
 import java.io.File
 
-class TracePathSpec extends SpookyBaseSpec {
+class TracePathSpec extends SpookyBaseSpec with FileURIDocsFixture {
 
   import scala.concurrent.duration.*
 
-  val resources: FileDocsFixture.type = FileDocsFixture
-
   {
-    val r = resources
-    import r.*
+    // FileURIDocsFixture is mixed in as a trait, so HTML_URL is available directly
 
     // TODO: add more non-primary-construtor params
     // TODO: move to core module
