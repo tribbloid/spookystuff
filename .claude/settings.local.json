@@ -12,11 +12,20 @@
       "Bash(getfacl:*)",
       "Bash(icacls:*)",
       "Bash(wait:*)",
-      "Bash(xargs:*)"
+      "Bash(xargs:*)",
+      "Bash(echo:*)",
+      "Bash(dir:*)",
+      "Bash(findstr:*)",
+      "mcp__jetbrains__list_directory_tree",
+      "Bash(lsof:*)",
+      "Bash(git add:*)",
+      "Bash(git commit:*)",
+      "Bash(ls:*)"
     ],
     "deny": [],
     "ask": []
   },
+  "enableAllProjectMcpServers": true,
   "enabledMcpjsonServers": [
     "fetch",
     "playwright",
