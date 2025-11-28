@@ -11,13 +11,13 @@ class TracePathSpec extends SpookyBaseSpec with FileURIDocsFixture {
   import scala.concurrent.duration.*
 
   {
-    // FileURIDocsFixture is mixed in as a trait, so HTML_URL is available directly
+    val htmlUrl = HTML_URL
 
     // TODO: add more non-primary-construtor params
     // TODO: move to core module
     val doc1 = spooky
       .fetch(_ =>
-        MockInteraction(HTML_URL) +>
+        MockInteraction(htmlUrl) +>
           MockInteraction("input#searchInput") +>
           MockExport().as("A")
       )
@@ -28,7 +28,7 @@ class TracePathSpec extends SpookyBaseSpec with FileURIDocsFixture {
 
     val doc2 = spooky
       .fetch(_ =>
-        MockInteraction(HTML_URL) +>
+        MockInteraction(htmlUrl) +>
           MockInteraction("input#searchInput").in(40.seconds) +>
           MockExport().as("A")
       )

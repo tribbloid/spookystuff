@@ -9,7 +9,7 @@ import org.slf4j.LoggerFactory
 import java.io.File
 import java.net.*
 import java.nio.file.*
-import java.util.regex.Pattern
+import java.util.regex.{Matcher, Pattern}
 import scala.collection.mutable
 import scala.language.implicitConversions
 import scala.reflect.ClassTag
@@ -39,7 +39,7 @@ object SpookyUtils {
     // Use platform-agnostic path separator for internal processing
     val pathSeparator = CrossPlatformFileUtils.pathSeparator
 
-    var result = name.replaceAll("[ ]", "_").replaceAll("""[^0-9a-zA-Z!_.*'()-]+""", pathSeparator)
+    var result = name.replaceAll("[ ]", "_").replaceAll("""[^0-9a-zA-Z!_.*'()-]+""", Matcher.quoteReplacement(pathSeparator))
 
     result = result
       .split(Pattern.quote(pathSeparator))
