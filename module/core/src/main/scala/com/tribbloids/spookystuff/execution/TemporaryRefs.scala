@@ -197,7 +197,7 @@ case class TemporaryRefs( // TODO: should be "RefCounting"
 
   def dropTempViews(): Unit = {
     tempTables.foreach { tuple =>
-      tuple._2.sqlContext.dropTempTable(tuple._1)
+      tuple._2.sparkSession.catalog.dropTempView(tuple._1)
     }
     tempTables.clear()
   }

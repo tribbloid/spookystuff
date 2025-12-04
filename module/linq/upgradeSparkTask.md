@@ -6,3 +6,7 @@ Your task is to upgrade the following dependencies:
 Then make necessary changes to ensure compilation is successful
 
 Then apply necessary fixes to ensure that all tests are successful
+
+Then fix compilation for the whole project
+
+Then fix tests for the whole project
