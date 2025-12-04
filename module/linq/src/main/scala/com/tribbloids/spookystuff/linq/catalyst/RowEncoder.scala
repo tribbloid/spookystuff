@@ -3,7 +3,6 @@ package com.tribbloids.spookystuff.linq.catalyst
 import ai.acyclic.prover.commons.compat.TupleX
 import com.tribbloids.spookystuff.linq.Rec
 import frameless.TypedEncoder
-import org.apache.spark.sql.FramelessInternals
 import org.apache.spark.sql.catalyst.expressions.*
 import org.apache.spark.sql.catalyst.expressions.objects.Invoke
 import org.apache.spark.sql.types.*
@@ -20,7 +19,7 @@ abstract class RowEncoder[F, G <: TupleX, H <: TupleX](
 
   def nullable: Boolean = false
 
-  lazy val jvmRepr: DataType = FramelessInternals.objectTypeFor[F]
+  lazy val jvmRepr: DataType = ObjectType(classTag.runtimeClass)
 
   lazy val catalystRepr: DataType = {
     val structFields = fields.value.value.map { field =>

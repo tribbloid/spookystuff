@@ -5,6 +5,6 @@ dependencies {
     api(project(":module:commons"))
     testFixturesApi(testFixtures(project(":module:commons")))
 
-// https://mvnrepository.com/artifact/org.typelevel/frameless-dataset
-    api("org.typelevel:frameless-dataset_${vs.scala.binaryV}:0.16.0")
+// https://mvnrepository.com/artifact/com.sparkutils/frameless-dataset_4.0
+    api("com.sparkutils:frameless-dataset_${vs.spark.binaryV}_${vs.scala.binaryV}:1.0.0")
 }

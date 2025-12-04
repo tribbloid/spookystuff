@@ -34,7 +34,7 @@ object XMLCompat {
       override def getMessage: String = detailedStr
     }
 
-    class XMLParsingException(
+    case class XMLParsingException(
         override val shortStr: String,
         override val cause: Exception,
         metadata: ExceptionMetadata
