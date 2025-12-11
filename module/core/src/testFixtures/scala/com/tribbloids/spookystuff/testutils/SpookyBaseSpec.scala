@@ -7,7 +7,7 @@ import com.tribbloids.spookystuff.agent.DriverLike
 import com.tribbloids.spookystuff.commons.lifespan.Cleanable
 import com.tribbloids.spookystuff.commons.lifespan.Cleanable.Lifespan
 import com.tribbloids.spookystuff.commons.{CommonUtils, TreeException}
-import com.tribbloids.spookystuff.conf._
+import com.tribbloids.spookystuff.conf.*
 import com.tribbloids.spookystuff.doc.{Doc, Node}
 import com.tribbloids.spookystuff.execution.ExecutionContext
 import com.tribbloids.spookystuff.row.{SpookySchema, SquashedRow}
@@ -20,7 +20,7 @@ import scala.util.Try
 
 object SpookyBaseSpec {
 
-  import scala.jdk.CollectionConverters._
+  import scala.jdk.CollectionConverters.*
 
   @volatile var firstRun: Boolean = true
 
@@ -52,8 +52,8 @@ object SpookyBaseSpec {
       }
   }
 
-  def getProcesses: Seq[ProcessInfo] = Retry.FixedInterval(5, 1000) {
-    JProcesses.getProcessList().asScala.toSeq
+  def getProcesses: List[ProcessInfo] = Retry.FixedInterval(5, 1000) {
+    JProcesses.getProcessList().asScala.toList
   }
 
   /**
@@ -106,7 +106,7 @@ abstract class SpookyBaseSpec extends SpookyEnvSpec with BeforeAndAfterEach with
       super.withFixture(test)
   }
 
-  import com.tribbloids.spookystuff.utils.RDDImplicits._
+  import com.tribbloids.spookystuff.utils.RDDImplicits.*
 
   def _externalProcessNames: Seq[String] = Seq("phantomjs", s"${PythonDriverFactory.python3} -iu")
   val exitingPIDs: Set[String] = SpookyBaseSpec.getProcesses.map(_.getPid).toSet

@@ -1,12 +1,12 @@
 package com.tribbloids.spookystuff.io
 
-import java.nio.file._
+import java.nio.file.*
 import java.io.IOException
 import java.net.URI
 import java.util.concurrent.TimeUnit
 import java.util.regex.Pattern
 import scala.util.{Try, Success, Failure}
-import scala.concurrent.duration._
+import scala.concurrent.duration.*
 import scala.annotation.tailrec
 
 /**
