@@ -335,14 +335,14 @@ object TestFileHelpers {
       overwrite: Boolean = false
   ): Try[Path] = {
     if (CrossPlatformFileUtils.isWindows) {
-      WindowsFileCompatibility.retryWithBackoff { () =>
-        Try {
-          Retry.ExponentialBackoff(
-            n = 10,
-            longestInterval = 2000L, // 2 seconds max
-            expBase = 2.0,
-            silent = false
-          ) {
+      Try {
+        Retry.ExponentialBackoff(
+          n = 10,
+          longestInterval = 2000L, // 2 seconds max
+          expBase = 2.0,
+          silent = false
+        ) {
+          Try {
             if (Files.exists(path) && !overwrite) {
               throw new FileAlreadyExistsException(s"File already exists: $path")
             }
@@ -350,6 +350,11 @@ object TestFileHelpers {
             Files.createDirectories(path.getParent)
             Files.writeString(path, content)
             path
+          } match {
+            case Success(v) => v
+            case Failure(ex) =>
+              if (WindowsFileCompatibility.isWindowsRecoverableError(ex)) throw ex
+              else throw Retry.BypassingRule.NoRetry.apply(ex)
           }
         }
       }

@@ -1,5 +1,7 @@
 package com.tribbloids.spookystuff.io
 
+import ai.acyclic.prover.commons.util.Retry
+
 import java.nio.file._
 import java.io.IOException
 import java.util.concurrent.atomic.AtomicBoolean
@@ -26,6 +28,35 @@ object WindowsFileCompatibility {
   val DEFAULT_RETRY_DELAY: FiniteDuration = 100.milliseconds
   val MAX_RETRY_DELAY: FiniteDuration = 2.seconds
   val FILE_LOCK_TIMEOUT: FiniteDuration = 10.seconds
+
+  private def retryWindowsRecoverable[T](
+      operation: => Try[T],
+      maxRetries: Int = DEFAULT_RETRY_COUNT,
+      initialDelay: FiniteDuration = DEFAULT_RETRY_DELAY,
+      maxDelay: FiniteDuration = MAX_RETRY_DELAY,
+      isRecoverable: Throwable => Boolean = isWindowsRecoverableError
+  ): Try[T] = {
+    Try {
+      val retry = Retry(
+        n = maxRetries,
+        intervalFactory = { nRemaining =>
+          val attemptNum = maxRetries - nRemaining + 1
+          val delayMs = (initialDelay.toMillis.toDouble * math.pow(2.0, attemptNum - 1)).toLong
+          math.min(delayMs, maxDelay.toMillis)
+        },
+        silent = true
+      )
+
+      retry {
+        operation match {
+          case Success(v) => v
+          case Failure(ex) =>
+            if (isRecoverable(ex)) throw ex
+            else throw Retry.BypassingRule.NoRetry.apply(ex)
+        }
+      }
+    }
+  }
 
   /**
     * Windows-specific invalid filename characters
@@ -214,36 +245,6 @@ object WindowsFileCompatibility {
   }
 
   /**
-    * Windows-specific retry logic with exponential backoff
-    */
-  def retryWithBackoff[T](
-      operation: () => Try[T],
-      maxRetries: Int = DEFAULT_RETRY_COUNT,
-      initialDelay: FiniteDuration = DEFAULT_RETRY_DELAY,
-      maxDelay: FiniteDuration = MAX_RETRY_DELAY,
-      isRecoverable: Throwable => Boolean = isWindowsRecoverableError
-  ): Try[T] = {
-
-    @tailrec
-    def attempt(attemptNum: Int, currentDelay: FiniteDuration): Try[T] = {
-      operation() match {
-        case success @ Success(_)                             => success
-        case failure @ Failure(_) if attemptNum >= maxRetries => failure
-        case failure @ Failure(ex)                            =>
-          if (isRecoverable(ex)) {
-            Thread.sleep(currentDelay.toMillis)
-            val nextDelay = (currentDelay * 2).min(maxDelay)
-            attempt(attemptNum + 1, nextDelay)
-          } else {
-            failure
-          }
-      }
-    }
-
-    attempt(1, initialDelay)
-  }
-
-  /**
     * Determines if an exception is recoverable on Windows
     */
   def isWindowsRecoverableError(ex: Throwable): Boolean = {
@@ -275,7 +276,7 @@ object WindowsFileCompatibility {
     if (!isWindows) {
       Success(CrossPlatformFileUtils.createTempFile(prefix, suffix, directory))
     } else {
-      retryWithBackoff { () =>
+      retryWindowsRecoverable {
         Try {
           // Ensure directory exists
           val tempDir = directory.getOrElse(Paths.get(System.getProperty("java.io.tmpdir")))
@@ -308,7 +309,7 @@ object WindowsFileCompatibility {
     if (!isWindows) {
       Success(CrossPlatformFileUtils.createTempDirectory(prefix, directory))
     } else {
-      retryWithBackoff { () =>
+      retryWindowsRecoverable {
         Try {
           // Ensure directory exists
           val tempDir = directory.getOrElse(Paths.get(System.getProperty("java.io.tmpdir")))

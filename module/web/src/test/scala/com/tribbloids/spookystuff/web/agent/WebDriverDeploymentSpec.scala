@@ -8,7 +8,9 @@ import org.openqa.selenium.support.ui.WebDriverWait
 
 import java.nio.file.{Files, Path}
 import java.time.Duration
-import scala.util.Try
+import ai.acyclic.prover.commons.util.Retry
+
+import scala.util.{Failure, Success, Try}
 
 abstract class WebDriverDeploymentSpec extends BaseSpec with FileURIDocsFixture {
 
@@ -53,7 +55,23 @@ abstract class WebDriverDeploymentSpec extends BaseSpec with FileURIDocsFixture 
 
         // Apply Windows-specific retry logic for deployment
         if (WindowsFileCompatibility.isWindows) {
-          WindowsFileCompatibility.retryWithBackoff(() => Try(deployment.deploy()), maxRetries = 3).get
+          val maxRetries = 3
+          Retry(
+            n = maxRetries,
+            intervalFactory = { nRemaining =>
+              val attemptNum = maxRetries - nRemaining + 1
+              val delayMs = (WindowsFileCompatibility.DEFAULT_RETRY_DELAY.toMillis.toDouble * math.pow(2.0, attemptNum - 1)).toLong
+              math.min(delayMs, WindowsFileCompatibility.MAX_RETRY_DELAY.toMillis)
+            },
+            silent = true
+          ) {
+            Try(deployment.deploy()) match {
+              case Success(v) => v
+              case Failure(ex) =>
+                if (WindowsFileCompatibility.isWindowsRecoverableError(ex)) throw ex
+                else throw Retry.BypassingRule.NoRetry.apply(ex)
+            }
+          }
         } else {
           deployment.deploy()
         }
@@ -72,7 +90,23 @@ abstract class WebDriverDeploymentSpec extends BaseSpec with FileURIDocsFixture 
 
         // Apply Windows-specific retry logic for copy deployment
         if (WindowsFileCompatibility.isWindows) {
-          WindowsFileCompatibility.retryWithBackoff(() => Try(copyDeployment.deploy()), maxRetries = 3).get
+          val maxRetries = 3
+          Retry(
+            n = maxRetries,
+            intervalFactory = { nRemaining =>
+              val attemptNum = maxRetries - nRemaining + 1
+              val delayMs = (WindowsFileCompatibility.DEFAULT_RETRY_DELAY.toMillis.toDouble * math.pow(2.0, attemptNum - 1)).toLong
+              math.min(delayMs, WindowsFileCompatibility.MAX_RETRY_DELAY.toMillis)
+            },
+            silent = true
+          ) {
+            Try(copyDeployment.deploy()) match {
+              case Success(v) => v
+              case Failure(ex) =>
+                if (WindowsFileCompatibility.isWindowsRecoverableError(ex)) throw ex
+                else throw Retry.BypassingRule.NoRetry.apply(ex)
+            }
+          }
         } else {
           copyDeployment.deploy()
         }
@@ -97,7 +131,23 @@ abstract class WebDriverDeploymentSpec extends BaseSpec with FileURIDocsFixture 
 
         // Apply Windows-specific retry logic for deployment
         if (WindowsFileCompatibility.isWindows) {
-          WindowsFileCompatibility.retryWithBackoff(() => Try(deployment.deploy()), maxRetries = 3).get
+          val maxRetries = 3
+          Retry(
+            n = maxRetries,
+            intervalFactory = { nRemaining =>
+              val attemptNum = maxRetries - nRemaining + 1
+              val delayMs = (WindowsFileCompatibility.DEFAULT_RETRY_DELAY.toMillis.toDouble * math.pow(2.0, attemptNum - 1)).toLong
+              math.min(delayMs, WindowsFileCompatibility.MAX_RETRY_DELAY.toMillis)
+            },
+            silent = true
+          ) {
+            Try(deployment.deploy()) match {
+              case Success(v) => v
+              case Failure(ex) =>
+                if (WindowsFileCompatibility.isWindowsRecoverableError(ex)) throw ex
+                else throw Retry.BypassingRule.NoRetry.apply(ex)
+            }
+          }
         } else {
           deployment.deploy()
         }
@@ -122,7 +172,23 @@ abstract class WebDriverDeploymentSpec extends BaseSpec with FileURIDocsFixture 
 
         // Apply Windows-specific retry logic for deployment
         if (WindowsFileCompatibility.isWindows) {
-          WindowsFileCompatibility.retryWithBackoff(() => Try(deployment.deploy()), maxRetries = 3).get
+          val maxRetries = 3
+          Retry(
+            n = maxRetries,
+            intervalFactory = { nRemaining =>
+              val attemptNum = maxRetries - nRemaining + 1
+              val delayMs = (WindowsFileCompatibility.DEFAULT_RETRY_DELAY.toMillis.toDouble * math.pow(2.0, attemptNum - 1)).toLong
+              math.min(delayMs, WindowsFileCompatibility.MAX_RETRY_DELAY.toMillis)
+            },
+            silent = true
+          ) {
+            Try(deployment.deploy()) match {
+              case Success(v) => v
+              case Failure(ex) =>
+                if (WindowsFileCompatibility.isWindowsRecoverableError(ex)) throw ex
+                else throw Retry.BypassingRule.NoRetry.apply(ex)
+            }
+          }
         } else {
           deployment.deploy()
         }
