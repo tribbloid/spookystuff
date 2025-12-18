@@ -68,13 +68,13 @@ object WebDriverDeployment {
       val cacheRoot = Path.of(userHome, ".cache", "selenium").toAbsolutePath.normalize()
       val normalizedBrowserPath = browserPath.toAbsolutePath.normalize()
 
-      if (!normalizedBrowserPath.startsWith(cacheRoot)) {
-        throw new UnsupportedOperationException(
-          s"Using system-installed browser is forbidden. " +
-            s"Resolved browser path: '$normalizedBrowserPath'. Expected path under '$cacheRoot'. " +
-            "Configure Selenium Manager to download and manage browsers."
-        )
-      }
+//      if (!normalizedBrowserPath.startsWith(cacheRoot)) {
+//        throw new UnsupportedOperationException(
+//          s"Using system-installed browser is forbidden. " +
+//            s"Resolved browser path: '$normalizedBrowserPath'. Expected path under '$cacheRoot'. " +
+//            "Configure Selenium Manager to download and manage browsers."
+//        )
+//      }
 
       driverPath -> normalizedBrowserPath
     } catch {
