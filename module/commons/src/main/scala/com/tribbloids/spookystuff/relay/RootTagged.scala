@@ -15,7 +15,7 @@ object RootTagged {
 
     lazy val explicitOpt: Option[String] = {
 
-      val trials = chain.toStream.map {
+      val attempts = chain.toStream.map {
         case vv: RootTagged =>
           Some(vv.rootTag)
 
@@ -25,7 +25,7 @@ object RootTagged {
           None
       }
 
-      trials.collectFirst {
+      attempts.collectFirst {
         case Some(v) => v
       }
     }

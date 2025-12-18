@@ -55,7 +55,7 @@ trait PluginRegistry {
     def registerEnabled(): Unit = {
       // ahead-of-time initialization based on enabled plugins
       // may take a long time then fail, only attempted once
-      val trials = enabled.flatMap {
+      val attempts = enabled.flatMap {
         case v: P =>
           val result = scala.util.Try {
             cached.apply(v)
@@ -65,7 +65,7 @@ trait PluginRegistry {
           None
       }.toSeq
 
-      TreeException.&&&(trials)
+      TreeException.&&&(attempts)
     }
 
     implicit def asCached(v: this.type): cached.type = v.cached

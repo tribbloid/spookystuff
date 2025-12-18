@@ -84,8 +84,8 @@ case class PreemptiveLocalOps(capacity: Int)(
           case Failure(EOFMark) => false
           case _                => true
         }
-        .map { trial =>
-          val exe = trial.get
+        .map { attempt =>
+          val exe = attempt.get
 
           val array = exe.AsArray.get
           LoggerFactory.getLogger(this.getClass).debug(s"Collected :\t [$exe]")
