@@ -2,7 +2,6 @@ package com.tribbloids.spookystuff.commons
 
 import ai.acyclic.prover.commons.typesetting.TextBlock
 import ai.acyclic.prover.commons.util.Causes
-import ai.acyclic.prover.commons.util.Causes.Undefined
 
 import scala.util.{Failure, Success, Try}
 

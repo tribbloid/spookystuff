@@ -1,6 +1,6 @@
 package com.tribbloids.spookystuff.web.agent
 
-import com.tribbloids.spookystuff.io.{TestFileHelpers, WindowsFileCompatibility}
+import com.tribbloids.spookystuff.io.{TempFile, TestFileHelpers, WindowsFileCompatibility}
 import com.tribbloids.spookystuff.testutils.{BaseSpec, FileURIDocsFixture}
 import com.tribbloids.spookystuff.web.actions.WebInteraction
 import org.openqa.selenium.Capabilities
@@ -8,9 +8,8 @@ import org.openqa.selenium.support.ui.WebDriverWait
 
 import java.nio.file.{Files, Path}
 import java.time.Duration
-import ai.acyclic.prover.commons.util.Retry
 
-import scala.util.{Failure, Success, Try}
+import scala.util.Try
 
 abstract class WebDriverDeploymentSpec extends BaseSpec with FileURIDocsFixture {
 
@@ -39,7 +38,7 @@ abstract class WebDriverDeploymentSpec extends BaseSpec with FileURIDocsFixture 
     it("should copy driver from localSrc if defined") {
       TestFileHelpers.withTestResources {
         // 1. Acquire a real driver first to use as localSrc using cross-platform temp file creation
-        val tempDriverPath = WindowsFileCompatibility
+        val tempDriverPath = TempFile
           .createWindowsCompatibleTempFile(
             prefix = s"real_${driverName}_src",
             suffix = "",
@@ -53,28 +52,12 @@ abstract class WebDriverDeploymentSpec extends BaseSpec with FileURIDocsFixture 
           capabilities = capabilities
         )
 
-        // Apply Windows-specific retry logic for deployment
-        if (WindowsFileCompatibility.isWindows) {
-          val maxRetries = 3
-          Retry(
-            n = maxRetries,
-            intervalFactory = { nRemaining =>
-              val attemptNum = maxRetries - nRemaining + 1
-              val delayMs = (WindowsFileCompatibility.DEFAULT_RETRY_DELAY.toMillis.toDouble * math.pow(2.0, attemptNum - 1)).toLong
-              math.min(delayMs, WindowsFileCompatibility.MAX_RETRY_DELAY.toMillis)
-            },
-            silent = true
-          ) {
-            Try(deployment.deploy()) match {
-              case Success(v) => v
-              case Failure(ex) =>
-                if (WindowsFileCompatibility.isWindowsRecoverableError(ex)) throw ex
-                else throw Retry.BypassingRule.NoRetry.apply(ex)
-            }
-          }
-        } else {
-          deployment.deploy()
-        }
+        WindowsFileCompatibility
+          .retryWindowsRecoverable(
+            operation = Try(deployment.deploy()),
+            maxRetries = 3
+          )
+          .get
 
         assert(Files.exists(tempDriverPath))
         assert(Files.isExecutable(tempDriverPath))
@@ -88,28 +71,12 @@ abstract class WebDriverDeploymentSpec extends BaseSpec with FileURIDocsFixture 
           capabilities = capabilities
         )
 
-        // Apply Windows-specific retry logic for copy deployment
-        if (WindowsFileCompatibility.isWindows) {
-          val maxRetries = 3
-          Retry(
-            n = maxRetries,
-            intervalFactory = { nRemaining =>
-              val attemptNum = maxRetries - nRemaining + 1
-              val delayMs = (WindowsFileCompatibility.DEFAULT_RETRY_DELAY.toMillis.toDouble * math.pow(2.0, attemptNum - 1)).toLong
-              math.min(delayMs, WindowsFileCompatibility.MAX_RETRY_DELAY.toMillis)
-            },
-            silent = true
-          ) {
-            Try(copyDeployment.deploy()) match {
-              case Success(v) => v
-              case Failure(ex) =>
-                if (WindowsFileCompatibility.isWindowsRecoverableError(ex)) throw ex
-                else throw Retry.BypassingRule.NoRetry.apply(ex)
-            }
-          }
-        } else {
-          copyDeployment.deploy()
-        }
+        WindowsFileCompatibility
+          .retryWindowsRecoverable(
+            operation = Try(copyDeployment.deploy()),
+            maxRetries = 3
+          )
+          .get
 
         assert(Files.exists(targetPath))
         assert(Files.isExecutable(targetPath))
@@ -129,28 +96,12 @@ abstract class WebDriverDeploymentSpec extends BaseSpec with FileURIDocsFixture 
           capabilities = capabilities
         )
 
-        // Apply Windows-specific retry logic for deployment
-        if (WindowsFileCompatibility.isWindows) {
-          val maxRetries = 3
-          Retry(
-            n = maxRetries,
-            intervalFactory = { nRemaining =>
-              val attemptNum = maxRetries - nRemaining + 1
-              val delayMs = (WindowsFileCompatibility.DEFAULT_RETRY_DELAY.toMillis.toDouble * math.pow(2.0, attemptNum - 1)).toLong
-              math.min(delayMs, WindowsFileCompatibility.MAX_RETRY_DELAY.toMillis)
-            },
-            silent = true
-          ) {
-            Try(deployment.deploy()) match {
-              case Success(v) => v
-              case Failure(ex) =>
-                if (WindowsFileCompatibility.isWindowsRecoverableError(ex)) throw ex
-                else throw Retry.BypassingRule.NoRetry.apply(ex)
-            }
-          }
-        } else {
-          deployment.deploy()
-        }
+        WindowsFileCompatibility
+          .retryWindowsRecoverable(
+            operation = Try(deployment.deploy()),
+            maxRetries = 3
+          )
+          .get
 
         assert(Files.exists(targetPath))
         assert(Files.isExecutable(targetPath))
@@ -171,27 +122,12 @@ abstract class WebDriverDeploymentSpec extends BaseSpec with FileURIDocsFixture 
         )
 
         // Apply Windows-specific retry logic for deployment
-        if (WindowsFileCompatibility.isWindows) {
-          val maxRetries = 3
-          Retry(
-            n = maxRetries,
-            intervalFactory = { nRemaining =>
-              val attemptNum = maxRetries - nRemaining + 1
-              val delayMs = (WindowsFileCompatibility.DEFAULT_RETRY_DELAY.toMillis.toDouble * math.pow(2.0, attemptNum - 1)).toLong
-              math.min(delayMs, WindowsFileCompatibility.MAX_RETRY_DELAY.toMillis)
-            },
-            silent = true
-          ) {
-            Try(deployment.deploy()) match {
-              case Success(v) => v
-              case Failure(ex) =>
-                if (WindowsFileCompatibility.isWindowsRecoverableError(ex)) throw ex
-                else throw Retry.BypassingRule.NoRetry.apply(ex)
-            }
-          }
-        } else {
-          deployment.deploy()
-        }
+        WindowsFileCompatibility
+          .retryWindowsRecoverable(
+            operation = Try(deployment.deploy()),
+            maxRetries = 3
+          )
+          .get
 
         assert(Files.exists(targetPath))
         assert(Files.isExecutable(targetPath))

@@ -2,7 +2,6 @@ package com.tribbloids.spookystuff.testutils
 
 import ai.acyclic.prover.commons.spark.RDDImplicits._rddView
 import ai.acyclic.prover.commons.spark.TestHelper
-import com.tribbloids.spookystuff.utils.RDDImplicits.sparkContextView
 import com.tribbloids.spookystuff.utils.SpookyUtils
 import org.apache.spark.rdd.RDD
 
@@ -12,8 +11,6 @@ import scala.util.Random
   * Created by peng on 11/1/14.
   */
 class SpookyUtilsSuite extends BaseSpec {
-
-  import scala.concurrent.duration.*
 
   it("canonizeUrn should clean ?:$&#") {
     val url = SpookyUtils.canonizeUrn("http://abc.com?re#k2$si")
@@ -32,7 +29,6 @@ class SpookyUtilsSuite extends BaseSpec {
     assert(SpookyUtils.asIterable[Int](Seq(1, 2.2, "b")).toSeq == Iterable(1))
   }
 
-  
   it("RDDs.batchReduce yield the same results as RDDs.map(_.reduce)") {
     val src = TestHelper.TestSC.parallelize(1 to 10)
     val rdds: Seq[RDD[Int]] = (1 to 10).map { _ =>

@@ -2,9 +2,7 @@ package com.tribbloids.spookystuff.dsl
 
 import com.tribbloids.spookystuff.actions.ActionSuite.{MockExport, MockInteraction}
 import com.tribbloids.spookystuff.io.CrossPlatformFileUtils
-import com.tribbloids.spookystuff.testutils.{FileDocsFixture, FileURIDocsFixture, SpookyBaseSpec}
-
-import java.io.File
+import com.tribbloids.spookystuff.testutils.{FileURIDocsFixture, SpookyBaseSpec}
 
 class TracePathSpec extends SpookyBaseSpec with FileURIDocsFixture {
 

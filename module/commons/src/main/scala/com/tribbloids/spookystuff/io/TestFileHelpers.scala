@@ -8,7 +8,6 @@ import scala.util.{Failure, Success, Try}
 import scala.collection.mutable
 import scala.concurrent.duration._
 import java.time.Instant
-import ai.acyclic.prover.commons.util.Retry
 
 /**
   * Specialized file handling utilities designed for test scenarios. Provides robust temporary file management and
@@ -72,7 +71,7 @@ object TestFileHelpers {
   ): Try[Path] = {
     val uniquePrefix = s"$prefix-${testCounter.incrementAndGet()}"
 
-    WindowsFileCompatibility
+    TempFile
       .createWindowsCompatibleTempFile(
         prefix = uniquePrefix,
         suffix = suffix,
@@ -101,7 +100,7 @@ object TestFileHelpers {
   ): Try[Path] = {
     val uniquePrefix = s"$prefix-${testCounter.incrementAndGet()}"
 
-    WindowsFileCompatibility
+    TempFile
       .createWindowsCompatibleTempDirectory(
         prefix = uniquePrefix,
         directory = Some(getTestTempDirectory())
@@ -335,29 +334,19 @@ object TestFileHelpers {
       overwrite: Boolean = false
   ): Try[Path] = {
     if (CrossPlatformFileUtils.isWindows) {
-      Try {
-        Retry.ExponentialBackoff(
-          n = 10,
-          longestInterval = 2000L, // 2 seconds max
-          expBase = 2.0,
-          silent = false
-        ) {
-          Try {
-            if (Files.exists(path) && !overwrite) {
-              throw new FileAlreadyExistsException(s"File already exists: $path")
-            }
-
-            Files.createDirectories(path.getParent)
-            Files.writeString(path, content)
-            path
-          } match {
-            case Success(v) => v
-            case Failure(ex) =>
-              if (WindowsFileCompatibility.isWindowsRecoverableError(ex)) throw ex
-              else throw Retry.BypassingRule.NoRetry.apply(ex)
+      WindowsFileCompatibility.retryWindowsRecoverable(
+        operation = Try {
+          if (Files.exists(path) && !overwrite) {
+            throw new FileAlreadyExistsException(s"File already exists: $path")
           }
-        }
-      }
+
+          Files.createDirectories(path.getParent)
+          Files.writeString(path, content)
+          path
+        },
+        maxRetries = 10,
+        maxDelay = 2.seconds
+      )
     } else {
       Try {
         Files.createDirectories(path.getParent)

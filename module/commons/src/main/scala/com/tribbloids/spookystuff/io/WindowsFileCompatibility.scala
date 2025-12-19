@@ -4,11 +4,9 @@ import ai.acyclic.prover.commons.util.Retry
 
 import java.nio.file._
 import java.io.IOException
-import java.util.concurrent.atomic.AtomicBoolean
 import scala.util.{Failure, Success, Try}
 import scala.concurrent.duration._
 import scala.annotation.tailrec
-import scala.collection.mutable
 
 /**
   * Windows-specific file compatibility utilities that handle the unique challenges of file operations on Windows
@@ -29,12 +27,12 @@ object WindowsFileCompatibility {
   val MAX_RETRY_DELAY: FiniteDuration = 2.seconds
   val FILE_LOCK_TIMEOUT: FiniteDuration = 10.seconds
 
-  private def retryWindowsRecoverable[T](
+  def retryWindowsRecoverable[T](
       operation: => Try[T],
       maxRetries: Int = DEFAULT_RETRY_COUNT,
       initialDelay: FiniteDuration = DEFAULT_RETRY_DELAY,
       maxDelay: FiniteDuration = MAX_RETRY_DELAY,
-      isRecoverable: Throwable => Boolean = isWindowsRecoverableError
+      isRecoverable: Throwable => Boolean = defaultWindowsRecoverable
   ): Try[T] = {
     Try {
       val retry = Retry(
@@ -49,7 +47,7 @@ object WindowsFileCompatibility {
 
       retry {
         operation match {
-          case Success(v) => v
+          case Success(v)  => v
           case Failure(ex) =>
             if (isRecoverable(ex)) throw ex
             else throw Retry.BypassingRule.NoRetry.apply(ex)
@@ -92,54 +90,17 @@ object WindowsFileCompatibility {
   )
 
   /**
-    * Registry for tracking files that need cleanup on JVM exit
-    */
-  private val cleanupRegistry = mutable.Set[Path]()
-  private val cleanupRegistered = new AtomicBoolean(false)
-
-  // Register shutdown hook if needed
-  private def ensureCleanupHookRegistered(): Unit = {
-    if (!cleanupRegistered.get()) {
-      synchronized {
-        if (!cleanupRegistered.getAndSet(true)) {
-          sys.addShutdownHook {
-            performCleanup()
-          }
-        }
-      }
-    }
-  }
-
-  private def performCleanup(): Unit = {
-    val paths = cleanupRegistry.toSet
-    cleanupRegistry.clear()
-
-    paths.foreach { path =>
-      try {
-        CrossPlatformFileUtils.forceDeleteFileWithRetry(path, timeout = 3.seconds).get
-      } catch {
-        case _: Exception => // Ignore cleanup errors
-      }
-    }
-  }
-
-  /**
     * Registers a path for cleanup on JVM exit
     */
   def registerForCleanup(path: Path): Unit = {
-    if (isWindows) {
-      cleanupRegistry += path
-      ensureCleanupHookRegistered()
-    }
+    TempFile.registerForCleanup(path)
   }
 
   /**
     * Unregisters a path from cleanup on JVM exit
     */
   def unregisterFromCleanup(path: Path): Unit = {
-    if (isWindows) {
-      cleanupRegistry -= path
-    }
+    TempFile.unregisterFromCleanup(path)
   }
 
   /**
@@ -173,34 +134,30 @@ object WindowsFileCompatibility {
     * Sanitizes a filename for Windows compatibility
     */
   def sanitizeFileName(fileName: String): String = {
-    if (!isWindows) {
-      fileName
-    } else {
-      // Replace invalid characters with underscores
-      var sanitized = fileName.map { char =>
-        if (invalidFileNameChars.contains(char)) '_' else char
-      }
-
-      // Handle reserved names by prefixing with underscore
-      val baseName = sanitized.split("\\.").head
-      if (reservedFileNames.contains(baseName.toUpperCase)) {
-        sanitized = "_" + sanitized
-      }
-
-      // Truncate if too long
-      if (sanitized.length > 255) {
-        val dotIndex = sanitized.lastIndexOf('.')
-        if (dotIndex > 0 && sanitized.length - dotIndex <= 5) {
-          // Keep extension, truncate base name
-          val ext = sanitized.substring(dotIndex)
-          sanitized = sanitized.substring(0, Math.min(255 - ext.length, dotIndex)) + ext
-        } else {
-          sanitized = sanitized.take(255)
-        }
-      }
-
-      sanitized
+    // Replace invalid characters with underscores
+    var sanitized = fileName.map { char =>
+      if (invalidFileNameChars.contains(char)) '_' else char
     }
+
+    // Handle reserved names by prefixing with underscore
+    val baseName = sanitized.split("\\.").head
+    if (reservedFileNames.contains(baseName.toUpperCase)) {
+      sanitized = "_" + sanitized
+    }
+
+    // Truncate if too long
+    if (sanitized.length > 255) {
+      val dotIndex = sanitized.lastIndexOf('.')
+      if (dotIndex > 0 && sanitized.length - dotIndex <= 5) {
+        // Keep extension, truncate base name
+        val ext = sanitized.substring(dotIndex)
+        sanitized = sanitized.substring(0, Math.min(255 - ext.length, dotIndex)) + ext
+      } else {
+        sanitized = sanitized.take(255)
+      }
+    }
+
+    sanitized
   }
 
   /**
@@ -247,7 +204,7 @@ object WindowsFileCompatibility {
   /**
     * Determines if an exception is recoverable on Windows
     */
-  def isWindowsRecoverableError(ex: Throwable): Boolean = {
+  private def defaultWindowsRecoverable(ex: Throwable): Boolean = {
     if (!isWindows) {
       false
     } else {
@@ -273,29 +230,7 @@ object WindowsFileCompatibility {
       directory: Option[Path] = None,
       registerForCleanup: Boolean = true
   ): Try[Path] = {
-    if (!isWindows) {
-      Success(CrossPlatformFileUtils.createTempFile(prefix, suffix, directory))
-    } else {
-      retryWindowsRecoverable {
-        Try {
-          // Ensure directory exists
-          val tempDir = directory.getOrElse(Paths.get(System.getProperty("java.io.tmpdir")))
-          Files.createDirectories(tempDir)
-
-          // Sanitize prefix for Windows
-          val safePrefix = sanitizeFileName(prefix).take(8) // Short prefix for safety
-          val safeSuffix = sanitizeFileName(suffix).take(5) // Short suffix for safety
-
-          val tempFile = Files.createTempFile(tempDir, safePrefix, safeSuffix)
-
-          if (registerForCleanup) {
-            this.registerForCleanup(tempFile)
-          }
-
-          tempFile
-        }
-      }
-    }
+    TempFile.createWindowsCompatibleTempFile(prefix, suffix, directory, registerForCleanup)
   }
 
   /**
@@ -306,28 +241,7 @@ object WindowsFileCompatibility {
       directory: Option[Path] = None,
       registerForCleanup: Boolean = true
   ): Try[Path] = {
-    if (!isWindows) {
-      Success(CrossPlatformFileUtils.createTempDirectory(prefix, directory))
-    } else {
-      retryWindowsRecoverable {
-        Try {
-          // Ensure directory exists
-          val tempDir = directory.getOrElse(Paths.get(System.getProperty("java.io.tmpdir")))
-          Files.createDirectories(tempDir)
-
-          // Sanitize prefix for Windows
-          val safePrefix = sanitizeFileName(prefix).take(8)
-
-          val tempDirectory = Files.createTempDirectory(tempDir, safePrefix)
-
-          if (registerForCleanup) {
-            this.registerForCleanup(tempDirectory)
-          }
-
-          tempDirectory
-        }
-      }
-    }
+    TempFile.createWindowsCompatibleTempDirectory(prefix, directory, registerForCleanup)
   }
 
   /**

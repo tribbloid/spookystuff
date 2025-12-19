@@ -1,7 +1,7 @@
 package com.tribbloids.spookystuff.utils
 
 import com.tribbloids.spookystuff.commons.{CommonUtils, UnsafeReflections}
-import com.tribbloids.spookystuff.io.{CrossPlatformFileUtils, LocalResolver, WindowsFileCompatibility}
+import com.tribbloids.spookystuff.io.{CrossPlatformFileUtils, LocalResolver}
 import org.apache.commons.io.IOUtils
 import org.apache.spark.rdd.RDD
 import org.slf4j.LoggerFactory
@@ -14,7 +14,6 @@ import java.util.regex.{Matcher, Pattern}
 import scala.collection.mutable
 import scala.language.implicitConversions
 import scala.reflect.ClassTag
-import scala.util.Try
 
 object SpookyUtils {
 
@@ -40,7 +39,8 @@ object SpookyUtils {
     // Use platform-agnostic path separator for internal processing
     val pathSeparator = CrossPlatformFileUtils.pathSeparator
 
-    var result = name.replaceAll("[ ]", "_").replaceAll("""[^0-9a-zA-Z!_.*'()-]+""", Matcher.quoteReplacement(pathSeparator))
+    var result =
+      name.replaceAll("[ ]", "_").replaceAll("""[^0-9a-zA-Z!_.*'()-]+""", Matcher.quoteReplacement(pathSeparator))
 
     result = result
       .split(Pattern.quote(pathSeparator))

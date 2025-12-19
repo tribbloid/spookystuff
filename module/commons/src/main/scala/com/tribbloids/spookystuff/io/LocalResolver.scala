@@ -1,5 +1,6 @@
 package com.tribbloids.spookystuff.io
 
+import ai.acyclic.prover.commons.util.PathMagnet.URIPath
 import ai.acyclic.prover.commons.util.{PathMagnet, Retry}
 import com.tribbloids.spookystuff.commons.data.ReflCanUnapply
 import org.apache.commons.io.FileUtils
@@ -23,10 +24,10 @@ case class LocalResolver(
 
     val nioPath: Path = Paths.get(originalPath.normaliseToLocal)
 
-    val absoluteNioPath = nioPath.toAbsolutePath
+    val absoluteNioPath: Path = nioPath.toAbsolutePath
 
     // CAUTION: resolving is different on each driver or executors
-    override val absolutePath = PathMagnet.URIPath(absoluteNioPath.toString)
+    override val absolutePath: URIPath = PathMagnet.URIPath(absoluteNioPath.toString)
 
     // this is an old IO object, usage should be minimised
     // TODO: should embrace NIO 100%?
