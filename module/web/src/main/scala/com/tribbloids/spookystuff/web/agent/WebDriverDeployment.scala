@@ -1,12 +1,17 @@
 package com.tribbloids.spookystuff.web.agent
 
+import ai.acyclic.prover.commons.util.Causes
+import com.tribbloids.spookystuff.commons.TreeException
 import com.tribbloids.spookystuff.dsl.BinaryDeployment
 import org.openqa.selenium.Capabilities
 import org.openqa.selenium.chrome.ChromeDriverService
 import org.openqa.selenium.firefox.GeckoDriverService
+import org.openqa.selenium.manager.SeleniumManager
 import org.openqa.selenium.remote.service.{DriverFinder, DriverService}
 
 import java.nio.file.{Files, Path, StandardCopyOption}
+import java.util
+import scala.util.Try
 
 object WebDriverDeployment {
 
@@ -41,49 +46,120 @@ object WebDriverDeployment {
   }
 
   /**
-    * Use Selenium Manager (via DriverFinder) to resolve both driver and browser paths for the given capabilities. This
-    * will trigger downloads if needed but will not start a real browser session.
+    * Use Selenium Manager to resolve both driver and browser paths for the given capabilities. This will trigger
+    * downloads if needed but will not start a real browser session.
     */
-  def resolvePaths(
-      capabilities: Capabilities
-  ): (Path, Path) = {
-    val browserName = capabilities.getBrowserName.toLowerCase
-    val service: DriverService = createService(browserName)
+  object resolvePaths {
 
-    try {
-      val finder = new DriverFinder(service, capabilities)
+    def apply(
+        capabilities: Capabilities
+    ): (Path, Path) = {
+      val browserName = capabilities.getBrowserName.toLowerCase
 
-      val driverPath = Path.of(finder.getDriverPath)
+      // TODO: unfortuantely Selenium have 2 competing APIs that are both unreliable, can it be simplified?
+      val resultOpt = TreeException.GetFirstSuccess(
+        attempts = Seq(
+          () => usingSeleniumManager(browserName, capabilities),
+          () => usingDriverFinder(browserName, capabilities)
+        ),
+        agg = { seq =>
+          new RuntimeException(
+            s"Failed to resolve driver/browser for $browserName",
+            Causes.combine(seq)
+          )
+        }
+      )
 
-      val browserPathStr = Option(finder.getBrowserPath)
+      resultOpt.get
+    }
+
+    private def usingSeleniumManager(
+        browserName: String,
+        capabilities: Capabilities
+    ): (Path, Path) = {
+
+      val args = new util.ArrayList[String]()
+      args.add("--browser")
+      args.add(browserName)
+
+      Option(capabilities.getBrowserVersion)
+        .filter(_.nonEmpty)
+        .foreach { v =>
+          args.add("--browser-version")
+          args.add(v)
+        }
+
+      args.add("--skip-driver-in-path")
+
+      val result = SeleniumManager.getInstance.getBinaryPaths(args)
+
+      val driverPathStr = Option(result.getDriverPath)
+        .filter(_.nonEmpty)
+        .getOrElse {
+          throw new RuntimeException(
+            s"Selenium Manager did not return a driver path for capabilities: $capabilities"
+          )
+        }
+      val browserPathStr = Option(result.getBrowserPath)
         .filter(_.nonEmpty)
         .getOrElse {
           throw new RuntimeException(
             s"Selenium Manager did not return a browser path for capabilities: $capabilities"
           )
         }
-      val browserPath = Path.of(browserPathStr)
 
-      val userHome = System.getProperty("user.home")
-      val cacheRoot = Path.of(userHome, ".cache", "selenium").toAbsolutePath.normalize()
-      val normalizedBrowserPath = browserPath.toAbsolutePath.normalize()
+      val normalizedDriverPath = Path.of(driverPathStr).toAbsolutePath.normalize()
+      val normalizedBrowserPath = Path.of(browserPathStr).toAbsolutePath.normalize()
 
-//      if (!normalizedBrowserPath.startsWith(cacheRoot)) {
-//        throw new UnsupportedOperationException(
-//          s"Using system-installed browser is forbidden. " +
-//            s"Resolved browser path: '$normalizedBrowserPath'. Expected path under '$cacheRoot'. " +
-//            "Configure Selenium Manager to download and manage browsers."
-//        )
-//      }
+      val resolvedDriverPath = Try(normalizedDriverPath.toRealPath()).getOrElse(normalizedDriverPath)
+      if (isShellScript(resolvedDriverPath)) {
+        throw new RuntimeException(
+          s"Selenium Manager resolved driver to a shell script (likely a snap shim): $resolvedDriverPath"
+        )
+      }
 
-      driverPath -> normalizedBrowserPath
-    } catch {
-      case e: UnsupportedOperationException =>
-        throw e
-      case e: Exception =>
-        throw new RuntimeException(s"Failed to resolve driver/browser for $browserName", e)
-    } finally {
-      service.close() // service is only used for downloading
+      resolvedDriverPath -> normalizedBrowserPath
+    }
+
+    private def usingDriverFinder(
+        browserName: String,
+        capabilities: Capabilities
+    ): (Path, Path) = {
+
+      val service: DriverService = createService(browserName)
+      try {
+        val finder = new DriverFinder(service, capabilities)
+
+        val driverPathStr = Option(finder.getDriverPath)
+          .filter(_.nonEmpty)
+          .getOrElse {
+            throw new RuntimeException(
+              s"DriverFinder did not return a driver path for capabilities: $capabilities"
+            )
+          }
+
+        val browserPathStr = Option(finder.getBrowserPath)
+          .filter(_.nonEmpty)
+          .getOrElse {
+            throw new RuntimeException(
+              s"DriverFinder did not return a browser path for capabilities: $capabilities"
+            )
+          }
+
+        val normalizedDriverPath = Path.of(driverPathStr).toAbsolutePath.normalize()
+        val normalizedBrowserPath = Path.of(browserPathStr).toAbsolutePath.normalize()
+
+        val resolvedDriverPath = Try(normalizedDriverPath.toRealPath()).getOrElse(normalizedDriverPath)
+        if (isShellScript(resolvedDriverPath)) {
+          throw new RuntimeException(
+            s"DriverFinder resolved driver to a shell script: $resolvedDriverPath"
+          )
+        }
+
+        resolvedDriverPath -> normalizedBrowserPath
+      } finally {
+        service.close()
+      }
     }
   }
 
@@ -95,6 +171,23 @@ object WebDriverDeployment {
         new GeckoDriverService.Builder().build()
       case other =>
         throw new UnsupportedOperationException(s"Browser $other not supported for auto-download")
+    }
+  }
+
+  private def isShellScript(path: Path): Boolean = {
+    val fileName = Option(path.getFileName).map(_.toString.toLowerCase).getOrElse("")
+    if (
+      fileName.endsWith(".sh") || fileName.endsWith(".bash") || fileName.endsWith(".cmd") || fileName.endsWith(".bat")
+    ) true
+    else if (!Files.isRegularFile(path)) false
+    else {
+      val in = Files.newInputStream(path)
+      try {
+        val bytes = in.readNBytes(2)
+        bytes.length == 2 && bytes(0) == '#'.toByte && bytes(1) == '!'.toByte
+      } finally {
+        in.close()
+      }
     }
   }
 }

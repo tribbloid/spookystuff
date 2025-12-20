@@ -18,6 +18,17 @@ abstract class WebDriverDeploymentSpec extends BaseSpec with FileURIDocsFixture 
   def verifyDriverPath(path: Path): WebDriverBundle
   def driverName: String
 
+  private def assertNotShellScript(path: Path): Unit = {
+    assert(Files.isRegularFile(path))
+    val in = Files.newInputStream(path)
+    try {
+      val bytes = in.readNBytes(2)
+      assert(!(bytes.length == 2 && bytes(0) == '#'.toByte && bytes(1) == '!'.toByte))
+    } finally {
+      in.close()
+    }
+  }
+
   def verifyDriverUsable(path: Path): Unit = {
     val bundle = verifyDriverPath(path)
     val driver = bundle.driver
@@ -39,7 +50,7 @@ abstract class WebDriverDeploymentSpec extends BaseSpec with FileURIDocsFixture 
       TestFileHelpers.withTestResources {
         // 1. Acquire a real driver first to use as localSrc using cross-platform temp file creation
         val tempDriverPath = TempFile
-          .createWindowsCompatibleTempFile(
+          .createFile(
             prefix = s"real_${driverName}_src",
             suffix = "",
             registerForCleanup = true
@@ -53,7 +64,7 @@ abstract class WebDriverDeploymentSpec extends BaseSpec with FileURIDocsFixture 
         )
 
         WindowsFileCompatibility
-          .retryWindowsRecoverable(
+          .retryIfRecoverable(
             operation = Try(deployment.deploy()),
             maxRetries = 3
           )
@@ -61,6 +72,7 @@ abstract class WebDriverDeploymentSpec extends BaseSpec with FileURIDocsFixture 
 
         assert(Files.exists(tempDriverPath))
         assert(Files.isExecutable(tempDriverPath))
+        assertNotShellScript(tempDriverPath)
 
         // 2. Now test copying this real driver to the target path
         Files.createDirectories(targetPath.getParent)
@@ -72,7 +84,7 @@ abstract class WebDriverDeploymentSpec extends BaseSpec with FileURIDocsFixture 
         )
 
         WindowsFileCompatibility
-          .retryWindowsRecoverable(
+          .retryIfRecoverable(
             operation = Try(copyDeployment.deploy()),
             maxRetries = 3
           )
@@ -81,6 +93,7 @@ abstract class WebDriverDeploymentSpec extends BaseSpec with FileURIDocsFixture 
         assert(Files.exists(targetPath))
         assert(Files.isExecutable(targetPath))
         assert(Files.size(targetPath) == Files.size(tempDriverPath))
+        assertNotShellScript(targetPath)
 
         verifyDriverUsable(targetPath)
       }.get
@@ -97,7 +110,7 @@ abstract class WebDriverDeploymentSpec extends BaseSpec with FileURIDocsFixture 
         )
 
         WindowsFileCompatibility
-          .retryWindowsRecoverable(
+          .retryIfRecoverable(
             operation = Try(deployment.deploy()),
             maxRetries = 3
           )
@@ -106,6 +119,7 @@ abstract class WebDriverDeploymentSpec extends BaseSpec with FileURIDocsFixture 
         assert(Files.exists(targetPath))
         assert(Files.isExecutable(targetPath))
         assert(Files.size(targetPath) > 0)
+        assertNotShellScript(targetPath)
 
         verifyDriverUsable(targetPath)
       }.get
@@ -123,7 +137,7 @@ abstract class WebDriverDeploymentSpec extends BaseSpec with FileURIDocsFixture 
 
         // Apply Windows-specific retry logic for deployment
         WindowsFileCompatibility
-          .retryWindowsRecoverable(
+          .retryIfRecoverable(
             operation = Try(deployment.deploy()),
             maxRetries = 3
           )
@@ -132,6 +146,7 @@ abstract class WebDriverDeploymentSpec extends BaseSpec with FileURIDocsFixture 
         assert(Files.exists(targetPath))
         assert(Files.isExecutable(targetPath))
         assert(Files.size(targetPath) > 0)
+        assertNotShellScript(targetPath)
 
         verifyDriverUsable(targetPath)
       }.get

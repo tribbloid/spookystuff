@@ -72,7 +72,7 @@ object TestFileHelpers {
     val uniquePrefix = s"$prefix-${testCounter.incrementAndGet()}"
 
     TempFile
-      .createWindowsCompatibleTempFile(
+      .createFile(
         prefix = uniquePrefix,
         suffix = suffix,
         directory = Some(getTestTempDirectory())
@@ -101,7 +101,7 @@ object TestFileHelpers {
     val uniquePrefix = s"$prefix-${testCounter.incrementAndGet()}"
 
     TempFile
-      .createWindowsCompatibleTempDirectory(
+      .createDirectory(
         prefix = uniquePrefix,
         directory = Some(getTestTempDirectory())
       )
@@ -334,7 +334,7 @@ object TestFileHelpers {
       overwrite: Boolean = false
   ): Try[Path] = {
     if (CrossPlatformFileUtils.isWindows) {
-      WindowsFileCompatibility.retryWindowsRecoverable(
+      WindowsFileCompatibility.retryIfRecoverable(
         operation = Try {
           if (Files.exists(path) && !overwrite) {
             throw new FileAlreadyExistsException(s"File already exists: $path")

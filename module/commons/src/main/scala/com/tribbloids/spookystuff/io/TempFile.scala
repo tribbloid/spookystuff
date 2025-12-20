@@ -46,13 +46,13 @@ object TempFile {
     cleanupRegistry -= path
   }
 
-  def createWindowsCompatibleTempFile(
+  def createFile(
       prefix: String = "spooky",
       suffix: String = ".tmp",
       directory: Option[Path] = None,
       registerForCleanup: Boolean = true
   ): Try[Path] = {
-    WindowsFileCompatibility.retryWindowsRecoverable {
+    WindowsFileCompatibility.retryIfRecoverable {
       Try {
         val tempDir = directory.getOrElse(Paths.get(System.getProperty("java.io.tmpdir")))
         Files.createDirectories(tempDir)
@@ -71,12 +71,12 @@ object TempFile {
     }
   }
 
-  def createWindowsCompatibleTempDirectory(
+  def createDirectory(
       prefix: String = "spooky",
       directory: Option[Path] = None,
       registerForCleanup: Boolean = true
   ): Try[Path] = {
-    WindowsFileCompatibility.retryWindowsRecoverable {
+    WindowsFileCompatibility.retryIfRecoverable {
       Try {
         val tempDir = directory.getOrElse(Paths.get(System.getProperty("java.io.tmpdir")))
         Files.createDirectories(tempDir)

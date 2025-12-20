@@ -27,7 +27,7 @@ object WindowsFileCompatibility {
   val MAX_RETRY_DELAY: FiniteDuration = 2.seconds
   val FILE_LOCK_TIMEOUT: FiniteDuration = 10.seconds
 
-  def retryWindowsRecoverable[T](
+  def retryIfRecoverable[T](
       operation: => Try[T],
       maxRetries: Int = DEFAULT_RETRY_COUNT,
       initialDelay: FiniteDuration = DEFAULT_RETRY_DELAY,
@@ -226,7 +226,7 @@ object WindowsFileCompatibility {
       directory: Option[Path] = None,
       registerForCleanup: Boolean = true
   ): Try[Path] = {
-    TempFile.createWindowsCompatibleTempFile(prefix, suffix, directory, registerForCleanup)
+    TempFile.createFile(prefix, suffix, directory, registerForCleanup)
   }
 
   /**
@@ -237,7 +237,7 @@ object WindowsFileCompatibility {
       directory: Option[Path] = None,
       registerForCleanup: Boolean = true
   ): Try[Path] = {
-    TempFile.createWindowsCompatibleTempDirectory(prefix, directory, registerForCleanup)
+    TempFile.createDirectory(prefix, directory, registerForCleanup)
   }
 
   /**

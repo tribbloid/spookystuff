@@ -58,10 +58,11 @@ trait BinaryDeployment extends Serializable {
     val result: Option[String] = TreeException.|||^(
       allAttempts,
       agg = { seq =>
+        val causes = Causes.combine(seq)
         new UnsupportedOperationException(
           s"${this.getClass.getSimpleName} cannot find resource for deployment, " +
             s"please provide Internet Connection or deploy manually",
-          Causes.combine(seq)
+          causes
         )
       }
     )
