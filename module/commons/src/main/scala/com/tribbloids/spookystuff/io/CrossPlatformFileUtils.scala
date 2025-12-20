@@ -154,7 +154,7 @@ object CrossPlatformFileUtils {
       retryCount: Int,
       forceDelete: Boolean
   ): Try[Boolean] = {
-    Try(Retry.ExponentialBackoff(n = retryCount) {
+    Try(Retry.ExponentialBackoff(retryCount) {
       if (!Files.exists(path)) {
         true // Already deleted
       } else if (Files.isDirectory(path) && forceDelete) {
@@ -242,7 +242,7 @@ object CrossPlatformFileUtils {
       timeout: FiniteDuration = defaultFileOperationTimeout,
       retryCount: Int = defaultRetryCount
   ): Try[Path] = {
-    Try(Retry.ExponentialBackoff(n = retryCount) {
+    Try(Retry.ExponentialBackoff(retryCount) {
       if (!Files.exists(source)) {
         throw new NoSuchFileException(s"Source file does not exist: $source")
       }

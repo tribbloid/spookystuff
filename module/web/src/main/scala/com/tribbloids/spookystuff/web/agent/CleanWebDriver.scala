@@ -6,6 +6,7 @@ import com.tribbloids.spookystuff.commons.lifespan.Cleanable.Lifespan
 import com.tribbloids.spookystuff.commons.{CommonUtils, TreeException}
 import org.openqa.selenium.{NoSuchSessionException, WebDriver, WebDriverException}
 
+import scala.concurrent.duration.DurationInt
 import scala.language.implicitConversions
 import scala.util.Try
 
@@ -25,7 +26,7 @@ class CleanWebDriver(
 
   override def cleanImpl(): Unit = {
 
-    CommonUtils.retry(CommonConst.driverClosingRetries, interval = 1000L) {
+    CommonUtils.retry(CommonConst.driverClosingRetries, delay = 1000.millis) {
       CommonUtils.withTimeout(CommonConst.driverClosingTimeout, interrupt = false) {
 
         val toBeExecuted = Seq(

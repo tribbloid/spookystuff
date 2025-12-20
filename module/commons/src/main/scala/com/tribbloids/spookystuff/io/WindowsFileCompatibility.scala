@@ -35,14 +35,10 @@ object WindowsFileCompatibility {
       isRecoverable: Throwable => Boolean = defaultWindowsRecoverable
   ): Try[T] = {
     Try {
-      val retry = Retry(
-        n = maxRetries,
-        intervalFactory = { nRemaining =>
-          val attemptNum = maxRetries - nRemaining + 1
-          val delayMs = (initialDelay.toMillis.toDouble * math.pow(2.0, attemptNum - 1)).toLong
-          math.min(delayMs, maxDelay.toMillis)
-        },
-        silent = true
+      val retry = Retry.LinearBackoff(
+        maxRetries = maxRetries,
+        initialDelay = initialDelay,
+        maxDelay = maxDelay
       )
 
       retry {
@@ -50,7 +46,7 @@ object WindowsFileCompatibility {
           case Success(v)  => v
           case Failure(ex) =>
             if (isRecoverable(ex)) throw ex
-            else throw Retry.BypassingRule.NoRetry.apply(ex)
+            else throw Retry.BypassingRule.NoRetry(ex)
         }
       }
     }

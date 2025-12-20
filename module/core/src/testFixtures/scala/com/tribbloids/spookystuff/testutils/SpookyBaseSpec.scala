@@ -15,6 +15,7 @@ import org.jutils.jprocesses.JProcesses
 import org.jutils.jprocesses.model.ProcessInfo
 import org.scalatest.{BeforeAndAfterEach, Outcome, Retries}
 
+import scala.concurrent.duration.DurationInt
 import scala.language.implicitConversions
 import scala.util.Try
 
@@ -52,7 +53,7 @@ object SpookyBaseSpec {
       }
   }
 
-  def getProcesses: List[ProcessInfo] = Retry.FixedInterval(5, 1000) {
+  def getProcesses: List[ProcessInfo] = Retry.FixedInterval(5, 1000.millis) {
     JProcesses.getProcessList().asScala.toList
   }
 
@@ -130,7 +131,7 @@ abstract class SpookyBaseSpec extends SpookyEnvSpec with BeforeAndAfterEach with
     val conditions = this.conditions
     val result = sc.executeEverywhere() { _ =>
       Try {
-        CommonUtils.retry(3, 1000, silent = true) {
+        CommonUtils.retry(3, 1000.millis, silent = true) {
           SpookyBaseSpec.shouldBeClean(spooky, conditions)
         }
       }
@@ -156,7 +157,7 @@ abstract class SpookyBaseSpec extends SpookyEnvSpec with BeforeAndAfterEach with
 
   }
 
-  override def beforeEach(): Unit = CommonUtils.retry(3, 1000, silent = true) {
+  override def beforeEach(): Unit = CommonUtils.retry(3, 1000.millis, silent = true) {
     //    SpookyEnvFixture.cleanDriverInstances()
     spooky.metrics.resetAll()
 
@@ -176,7 +177,7 @@ abstract class SpookyBaseSpec extends SpookyEnvSpec with BeforeAndAfterEach with
     val result = sc.executeEverywhere() { _ =>
       Try {
 
-        CommonUtils.retry(3, 1000, silent = true) {
+        CommonUtils.retry(3, 1000.millis, silent = true) {
           SpookyBaseSpec.instancesShouldBeClean(spooky)
         }
       }

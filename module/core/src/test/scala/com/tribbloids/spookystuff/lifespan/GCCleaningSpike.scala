@@ -7,6 +7,7 @@ import org.scalatest.funspec.AnyFunSpec
 import java.lang.ref.Cleaner
 import java.util.concurrent.atomic.AtomicInteger
 import scala.concurrent.{ExecutionContext, ExecutionContextExecutor, Future}
+import scala.concurrent.duration.DurationInt
 import scala.ref.{PhantomReference, ReferenceQueue, WeakReference}
 
 @Ignore
@@ -155,7 +156,7 @@ object GCCleaningSpike {
 
     deRef()
 
-    Retry.FixedInterval(10, 1000) {
+    Retry.FixedInterval(10, 1000.millis) {
 
       System.gc()
 

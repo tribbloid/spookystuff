@@ -16,6 +16,7 @@ import org.apache.hadoop.shaded.org.apache.http.{HttpEntity, HttpHost, HttpRespo
 import java.io.*
 import java.net.{InetSocketAddress, URI}
 import javax.net.ssl.SSLContext
+import scala.concurrent.duration.DurationInt
 
 object HTTPResolver {
 
@@ -111,7 +112,7 @@ case class HTTPResolver(
     //                           v =>
     //                             new HttpPost(v)
     //                         }
-    override val retry: Retry = Retry.ExponentialBackoff(8, 16000)
+    override val retry: Retry = Retry.ExponentialBackoff(8, 16000.millis)
 ) extends URIResolver {
 
 //  val currentReq = context.getAttribute(HttpCoreContext.HTTP_REQUEST).asInstanceOf[HttpUriRequest]

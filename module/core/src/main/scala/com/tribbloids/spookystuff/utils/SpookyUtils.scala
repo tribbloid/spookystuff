@@ -12,6 +12,7 @@ import java.net.*
 import java.nio.file.*
 import java.util.regex.{Matcher, Pattern}
 import scala.collection.mutable
+import scala.concurrent.duration.DurationInt
 import scala.language.implicitConversions
 import scala.reflect.ClassTag
 
@@ -147,7 +148,7 @@ object SpookyUtils {
   def resilientCopy(src: Path, dst: Path, options: Array[CopyOption]): Unit = {
     // Use Windows-specific retry logic if needed
     val operation = () => {
-      CommonUtils.retry(5, 1000) {
+      CommonUtils.retry(5, 1000.millis) {
         val pathsStr = src.toString + " => " + dst
 
         if (Files.isDirectory(src)) {
@@ -182,8 +183,8 @@ object SpookyUtils {
     // Apply Windows-specific retry logic if running on Windows
     if (CrossPlatformFileUtils.isWindows) {
       Retry.ExponentialBackoff(
-        n = 8,
-        longestInterval = 2000L, // 2 seconds max
+        maxRetries = 8,
+        longestDelay = 2000.millis, // 2 seconds max
         expBase = 2.0,
         silent = false
       ) {
