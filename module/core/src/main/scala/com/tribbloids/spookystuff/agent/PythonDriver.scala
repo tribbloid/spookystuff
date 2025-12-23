@@ -9,7 +9,7 @@ import com.tribbloids.spookystuff.commons.lifespan.Cleanable.Lifespan
 import com.tribbloids.spookystuff.commons.{CommonUtils, DSLUtils}
 import com.tribbloids.spookystuff.io.{LocalResolver, WriteMode}
 import com.tribbloids.spookystuff.utils.SpookyUtils
-import com.tribbloids.spookystuff.{CommonConst, PyException, PyInterpretationException, SpookyContext}
+import com.tribbloids.spookystuff.{CommonConst, PyInterpretationException, PythonException, SpookyContext}
 import org.apache.commons.io.FileUtils
 import org.slf4j.LoggerFactory
 
@@ -151,7 +151,7 @@ class PythonDriver(
               try {
                 this._interpret("exit()")
               } catch {
-                case _: PyException =>
+                case _: PythonException =>
               }
             }
             Thread.sleep(1000)
@@ -221,7 +221,7 @@ class PythonDriver(
               )
             return Array.empty[String]
           } else {
-            val ee = new PyException(
+            val ee = new PyInterpretationException(
               indentedCode,
               this.outputBuffer,
               cause,
@@ -258,9 +258,9 @@ class PythonDriver(
   }
 
   private def _interpretCaptureError(
-      preamble: String = "",
-      code: String = "",
-      spookyOpt: Option[SpookyContext] = None
+      preamble: String,
+      code: String,
+      spookyOpt: Option[SpookyContext]
   ): Array[String] = {
 
     val codeTryExcept =

@@ -17,7 +17,7 @@ import scala.util.Try
 /**
   * the only implementation should be manually cleaned By ActionLike, so don't set lifespan unless absolutely necessary
   */
-class Agent(
+class Agent( // TODO: this is actually the harness, not the agent
     val spooky: SpookyContext,
     override val _lifespan: Lifespan = Lifespan.TaskOrJVM().forShipping
 ) extends LocalCleanable {

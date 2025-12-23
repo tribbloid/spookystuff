@@ -52,6 +52,10 @@ object Observation {
 }
 
 // all subclasses should be small, will be shipped around by Spark
+
+/**
+  * always indexed by its UID
+  */
 @SQLUserDefinedType(udt = classOf[FetchedUDT])
 sealed trait Observation extends Serializable {
 

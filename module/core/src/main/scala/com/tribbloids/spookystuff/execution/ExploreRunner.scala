@@ -98,7 +98,6 @@ case class ExploreRunner[I, O](
       val newVs = reducer(effective, oldVs)
       open += group -> newVs
 
-      open
     }
 
     def intoVisited(
@@ -125,7 +124,6 @@ case class ExploreRunner[I, O](
 
 //      val __DEBUG = newVs.map(v => v._1.depth)
 
-      visited
     }
   }
 

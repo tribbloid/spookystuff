@@ -39,7 +39,7 @@ class ExploreRunnerSpec extends SpookyBaseSpec {
           dirs.findFirst("path").flatMap(_.text)
         }
 
-      val plan = Option(ds.plan).collect {
+      val plan: ExplorePlan[Data.Exploring[Unit], Option[String]] = Option(ds.plan).collect {
         case v: ExplorePlan[Data.Exploring[Unit], Option[String]] => v
       }.get
 
@@ -104,7 +104,7 @@ class ExploreRunnerSpec extends SpookyBaseSpec {
           action
         }
 
-      val plan = Option(ds.plan).collect {
+      val plan: ExplorePlan[Data.Exploring[Unit], Data.Exploring[Option[String]]] = Option(ds.plan).collect {
         case v: ExplorePlan[Data.Exploring[Unit], Data.Exploring[Option[String]]] => v
       }.get
 

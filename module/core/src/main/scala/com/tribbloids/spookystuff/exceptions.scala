@@ -31,12 +31,14 @@ class ActionExceptionWithCoreDump(
 ) extends ActionException(getMessage_simple, getCause)
     with HasCoreDump
 
-class PyException(
-    val code: String,
-    val output: String,
+trait PythonException extends SpookyException {}
+
+case class PyInterpretationException(
+    code: String,
+    output: String,
     override val getCause: Throwable = null,
-    val historyCodeOpt: Option[String] = None
-) extends SpookyException {
+    historyCodeOpt: Option[String] = None
+) extends PythonException {
 
   override def getMessage_simple: String =
     s"""
@@ -50,18 +52,11 @@ class PyException(
      """.stripMargin.trim
 }
 
-case class PyInterpretationException(
-    override val code: String,
-    override val output: String,
-    override val getCause: Throwable = null,
-    override val historyCodeOpt: Option[String] = None
-) extends PyException(code, output, getCause, historyCodeOpt)
-
 class DFSReadException(
     override val getMessage_simple: String = "",
     override val getCause: Throwable = null
 ) extends IOException(getMessage_simple, getCause)
-    with SpookyException
+    with SpookyException {}
 
 class DFSWriteException(
     override val getMessage_simple: String = "",
