@@ -14,13 +14,13 @@ plugins {
     id("ai.acyclic.scalatest-mixin")
     id("ai.acyclic.publish-conventions")
 
-    id("com.gradleup.shadow") version "9.2.2"
+    id("com.gradleup.shadow") version "9.3.0"
 }
 
 
 dependencies {
 
-    runtimeOnly("org.scalameta:scalafmt-interfaces:3.9.9")// only used for prompting upgrade
+//    runtimeOnly("org.scalameta:scalafmt-interfaces:3.9.9")// only used for prompting upgrade
 }
 
 
