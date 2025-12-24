@@ -10,6 +10,44 @@ import org.apache.commons.lang3.SerializationUtils
 import org.apache.spark.sql.types.SQLUserDefinedType
 import org.slf4j.LoggerFactory
 
+trait Tool[
+    R // result
+] extends HasTrace {
+  self: StateChangeTag =>
+
+  protected[actions] def withTimeoutDuring[T](agent: Agent)(f: => T): T = {
+
+    var baseStr = s"[${agent.taskContextOpt.map(_.partitionId()).getOrElse(0)}]+> ${this.toString}"
+    this match {
+      case timed: MayTimeout =>
+        val timeout = timed.getTimeout(agent)
+
+        baseStr = baseStr + s" in ${timeout}"
+        LoggerFactory.getLogger(this.getClass).info(this.withDetail(baseStr))
+
+        agent.progress.ping()
+
+        // the following execute f in a different thread, thus `timed` has to be declared as `ThreadSafe`
+        CommonUtils.withTimeout(timeout.hardTerimination)(
+          f,
+          agent.progress.defaultHeartbeat
+        )
+      case _ =>
+        LoggerFactory.getLogger(this.getClass).info(this.withDetail(baseStr))
+
+        f
+    }
+  }
+
+  final def exe(agent: Agent): Seq[Observation] = {
+    withTimeoutDuring(agent) {
+      doExe(agent)
+    }
+  }
+
+  protected[actions] def doExe(agent: Agent): Seq[Observation]
+}
+
 /**
   * These are the same actions a human would do to get to the data page, their order of execution is identical to that
   * they are defined. Many supports **Cell Interpolation**: you can embed cell reference in their constructor by
@@ -18,7 +56,7 @@ import org.slf4j.LoggerFactory
   * make sure all subclasses are case classes
   */
 @SQLUserDefinedType(udt = classOf[ActionUDT])
-trait Action extends HasTrace {
+trait Action extends Tool[Seq[Observation]] {
   self: StateChangeTag =>
 
   @transient private lazy val _trace = List(this)
@@ -34,18 +72,21 @@ trait Action extends HasTrace {
 
     lazy val backtraceMsg: String = {
 
-      var builder: String = "\n{\n"
-      // TODO: this is not an actual builder
+      var builder: StringBuilder = new StringBuilder("\n{\n")
 
-      builder += {
-        agent.backtrace.map { action =>
-          "|  " + action.toString
-        } ++
-          Seq("+> " + this.detailedStr)
-      }.mkString("\n")
-
-      builder += "\n}"
       builder
+        .append(
+          {
+            agent.backtrace.map { action =>
+              "|  " + action.toString
+            } ++
+              Seq("+> " + this.detailedStr)
+          }
+            .mkString("\n")
+        )
+
+      builder.append("\n}")
+      builder.toString()
     }
 
     exception match {
@@ -128,46 +169,9 @@ trait Action extends HasTrace {
     }
   }
 
-  protected[actions] def withTimeoutDuring[T](agent: Agent)(f: => T): T = {
-
-    var baseStr = s"[${agent.taskContextOpt.map(_.partitionId()).getOrElse(0)}]+> ${this.toString}"
-    this match {
-      case timed: MayTimeout =>
-        val timeout = timed.getTimeout(agent)
-
-        baseStr = baseStr + s" in ${timeout}"
-        LoggerFactory.getLogger(this.getClass).info(this.withDetail(baseStr))
-
-        agent.progress.ping()
-
-        // the following execute f in a different thread, thus `timed` has to be declared as `ThreadSafe`
-        CommonUtils.withTimeout(timeout.hardTerimination)(
-          f,
-          agent.progress.defaultHeartbeat
-        )
-      case _ =>
-        LoggerFactory.getLogger(this.getClass).info(this.withDetail(baseStr))
-
-        f
-    }
-  }
-
-  final def exe(agent: Agent): Seq[Observation] = {
-    withTimeoutDuring(agent) {
-      doExe(agent)
-    }
-  }
-
-  protected[actions] def doExe(agent: Agent): Seq[Observation]
-
 }
 
 object Action {
-
-  trait Impure extends Action {
-    self: StateChangeTag => // TODO: can it be merged into StateChangeTag??
-
-  }
 
   trait Driverless extends Action with NoStateChange {
     // have not impact to driver, mutually exclusively with MayChangeState

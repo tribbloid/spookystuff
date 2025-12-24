@@ -63,12 +63,12 @@ object DriverFactory {
 
     // session -> driver
     // cleanup: this has no effect whatsoever
-    @transient lazy val sessionLocals: ConcurrentMap[Agent, D] = ConcurrentMap()
+    @transient lazy val localDrivers: ConcurrentMap[Agent, D] = ConcurrentMap()
 
     def dispatch(agent: Agent): D = {
       release(agent)
       val driver = create(agent)
-      sessionLocals += agent -> driver
+      localDrivers += agent -> driver
       driver
     }
 
@@ -81,7 +81,7 @@ object DriverFactory {
     def factoryReset(driver: D): Unit
 
     def release(agent: Agent): Unit = {
-      val existingOpt = sessionLocals.remove(agent)
+      val existingOpt = localDrivers.remove(agent)
       existingOpt.foreach { driver =>
         clean(driver, agent.taskContextOpt)
       }
