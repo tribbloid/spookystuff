@@ -1,8 +1,6 @@
 package com.tribbloids.spookystuff.actions
 
-import com.tribbloids.spookystuff.actions.HasTrace.MayChangeState
-
-trait Actions extends HasTrace with MayChangeState {
+trait Actions extends HasTrace {
 
   final override def exportNames: Set[String] = {
     val names = trace.map(_.exportNames)

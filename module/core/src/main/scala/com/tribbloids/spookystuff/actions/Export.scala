@@ -1,7 +1,6 @@
 package com.tribbloids.spookystuff.actions
 
 import ai.acyclic.prover.commons.function.hom.Hom
-import com.tribbloids.spookystuff.actions.HasTrace.NoStateChange
 import com.tribbloids.spookystuff.agent.Agent
 import com.tribbloids.spookystuff.doc.*
 import com.tribbloids.spookystuff.doc.Error.ValidationError
@@ -11,9 +10,11 @@ import com.tribbloids.spookystuff.doc.Error.ValidationError
   * JSON string.
   */
 @SerialVersionUID(564570120183654L)
-abstract class Export extends MayExport.Named with NoStateChange {
+abstract class Export extends MayExport.Named {
 
   import Export.*
+
+  override val isStateful: Boolean = false
 
   override def exportNames: Set[String] = Set(name)
 

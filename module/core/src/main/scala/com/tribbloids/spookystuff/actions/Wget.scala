@@ -3,7 +3,7 @@ package com.tribbloids.spookystuff.actions
 import com.tribbloids.spookystuff.agent.Agent
 import com.tribbloids.spookystuff.caching.DocCacheLevel
 import com.tribbloids.spookystuff.doc.*
-import com.tribbloids.spookystuff.doc.Observation.DocUID
+import com.tribbloids.spookystuff.doc.Observation.ReplayUID
 import com.tribbloids.spookystuff.io.CompoundResolver.OmniResolver
 import org.apache.commons.io.IOUtils
 import org.apache.hadoop.shaded.org.apache.http.client.methods.HttpGet
@@ -55,7 +55,7 @@ case class Wget(
         val xmlStr = in.metadata.all.toXMLStr()
 
         Doc(
-          uid = DocUID(List(this))(),
+          uid = ReplayUID(List(this))(),
           uri = in.getURI,
           declaredContentType = Some("inode/directory; charset=UTF-8"),
           cacheLevel = cacheLevel,
@@ -66,7 +66,7 @@ case class Wget(
         val raw = IOUtils.toByteArray(in.stream)
 
         Doc(
-          uid = DocUID(List(this))(),
+          uid = ReplayUID(List(this))(),
           uri = in.getURI,
           cacheLevel = cacheLevel,
           metadata = in.metadata.root

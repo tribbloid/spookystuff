@@ -1,6 +1,5 @@
 package com.tribbloids.spookystuff.actions
 
-import com.tribbloids.spookystuff.actions.HasTrace.NoStateChange
 import com.tribbloids.spookystuff.agent.Agent
 import com.tribbloids.spookystuff.doc.Observation
 
@@ -22,8 +21,10 @@ trait Foundation extends Serializable {
     def ||(other: HasTraceSet): Set[Trace] = traceSet ++ other.traceSet
   }
 
-  case object NoOp extends HasTrace with NoStateChange {
+  case object NoOp extends HasTrace {
     override def trace: Trace = Trace(Nil)
+
+    override val isStateful: Boolean = false
 
     override def apply(agent: Agent): Seq[Observation] = Nil
   }

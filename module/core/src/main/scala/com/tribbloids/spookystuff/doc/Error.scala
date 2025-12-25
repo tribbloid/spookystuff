@@ -2,7 +2,7 @@ package com.tribbloids.spookystuff.doc
 
 import com.tribbloids.spookystuff.SpookyException
 import com.tribbloids.spookystuff.caching.DocCacheLevel
-import com.tribbloids.spookystuff.doc.Observation.DocUID
+import com.tribbloids.spookystuff.doc.Observation.ReplayUID
 import com.tribbloids.spookystuff.io.ResourceMetadata
 
 object Error {
@@ -13,7 +13,7 @@ object Error {
 
     override def timeMillis: Long = doc.timeMillis
 
-    override def uid: DocUID = doc.uid
+    override def uid: ReplayUID = doc.uid
 
     override def cacheLevel: DocCacheLevel.Value = doc.cacheLevel
 
@@ -63,7 +63,7 @@ object Error {
     }
 
     override def updated(
-        uid: DocUID = this.uid,
+        uid: ReplayUID = this.uid,
         cacheLevel: DocCacheLevel.Value = this.cacheLevel
     ): ConversionError = {
       this.copy(doc = doc.updated(uid, cacheLevel))
@@ -83,7 +83,7 @@ object Error {
     }
 
     override def updated(
-        uid: DocUID = this.uid,
+        uid: ReplayUID = this.uid,
         cacheLevel: DocCacheLevel.Value = this.cacheLevel
     ): ValidationError = {
       this.copy(doc = doc.updated(uid, cacheLevel))

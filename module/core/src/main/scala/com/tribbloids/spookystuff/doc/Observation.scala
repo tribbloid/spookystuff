@@ -20,7 +20,7 @@ object Observation {
     */
   // use to genterate a lookup key for each observation
   @SerialVersionUID(612503421395L)
-  case class DocUID(
+  case class ReplayUID(
       backtrace: Trace,
       //                    sessionStartTime: Long,
       blockIndex: Int = 0, // TODO: remove, useless
@@ -61,9 +61,9 @@ sealed trait Observation extends Serializable {
 
   import Observation.*
 
-  def uid: DocUID
+  def uid: ReplayUID
   def updated(
-      uid: DocUID = this.uid,
+      uid: ReplayUID = this.uid,
       cacheLevel: DocCacheLevel.Value = this.cacheLevel
   ): Observation
 

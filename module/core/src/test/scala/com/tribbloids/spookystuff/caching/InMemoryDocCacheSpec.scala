@@ -3,7 +3,7 @@ package com.tribbloids.spookystuff.caching
 import com.tribbloids.spookystuff.actions.{Trace, Wget}
 import com.tribbloids.spookystuff.conf.Core
 import com.tribbloids.spookystuff.doc.Doc
-import com.tribbloids.spookystuff.doc.Observation.DocUID
+import com.tribbloids.spookystuff.doc.Observation.ReplayUID
 import com.tribbloids.spookystuff.testutils.{FileDocsFixture, SpookyBaseSpec}
 
 import scala.concurrent.duration.*
@@ -36,7 +36,7 @@ class InMemoryDocCacheSpec extends SpookyBaseSpec with FileDocsFixture {
 
       spooky(Core).confUpdate(_.copy(cachedDocsLifeSpan = shortLifeSpan))
 
-      assert(doc.head.uid === DocUID(Wget(HTML_URL) :: Nil)())
+      assert(doc.head.uid === ReplayUID(Wget(HTML_URL) :: Nil)())
 
       cache.put(action, doc, spooky)
 

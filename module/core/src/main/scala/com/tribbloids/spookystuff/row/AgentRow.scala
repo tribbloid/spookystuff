@@ -1,7 +1,7 @@
 package com.tribbloids.spookystuff.row
 
 import com.tribbloids.spookystuff.doc.*
-import com.tribbloids.spookystuff.doc.Observation.DocUID
+import com.tribbloids.spookystuff.doc.Observation.ReplayUID
 import com.tribbloids.spookystuff.execution.{ExecutionContext, FlatMapPlan}
 import com.tribbloids.spookystuff.row.AgentContext.Trajectory
 import com.tribbloids.spookystuff.row.Data.ScopeRef
@@ -86,13 +86,13 @@ case class AgentRow[D](
 
     // make sure no pages with identical name can appear in the same group.
     lazy val byDistinctNames: Seq[Data.Scoped[D]] = {
-      val outerBuffer: ArrayBuffer[Seq[DocUID]] = ArrayBuffer()
+      val outerBuffer: ArrayBuffer[Seq[ReplayUID]] = ArrayBuffer()
 
       object innerBuffer {
-        val refs: mutable.ArrayBuffer[DocUID] = ArrayBuffer()
+        val refs: mutable.ArrayBuffer[ReplayUID] = ArrayBuffer()
         val names: mutable.HashSet[String] = mutable.HashSet[String]()
 
-        def add(uid: DocUID): Unit = {
+        def add(uid: ReplayUID): Unit = {
           refs += uid
           names += uid.name
         }

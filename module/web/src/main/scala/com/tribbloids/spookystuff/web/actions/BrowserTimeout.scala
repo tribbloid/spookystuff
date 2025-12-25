@@ -1,6 +1,5 @@
 package com.tribbloids.spookystuff.web.actions
 
-import com.tribbloids.spookystuff.actions.HasTrace.StateChangeTag
 import com.tribbloids.spookystuff.actions.MayTimeout
 import com.tribbloids.spookystuff.agent.Agent
 import com.tribbloids.spookystuff.web.conf.Web
@@ -12,8 +11,6 @@ import java.util
 import scala.language.implicitConversions
 
 trait BrowserTimeout extends WebAction with MayTimeout {
-  self: StateChangeTag =>
-
   implicit def nanos2JDuration(v: Long): Duration = java.time.Duration.ofNanos(v)
 
   def webDriverWait(agent: Agent): WebDriverWait = {

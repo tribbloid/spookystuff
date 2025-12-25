@@ -1,7 +1,6 @@
 package com.tribbloids.spookystuff.web.actions
 
 import com.tribbloids.spookystuff.actions.Action
-import com.tribbloids.spookystuff.actions.HasTrace.StateChangeTag
 import com.tribbloids.spookystuff.agent.Agent
 import com.tribbloids.spookystuff.doc.Doc
 import com.tribbloids.spookystuff.web.conf.Web
@@ -11,8 +10,6 @@ import org.slf4j.LoggerFactory
 object WebAction {}
 
 trait WebAction extends Action {
-  self: StateChangeTag =>
-
   //    {
   //      Web.enableOnce
   //      // TODO: this no longer works after moving to define-by-run API

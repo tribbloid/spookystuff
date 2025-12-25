@@ -67,9 +67,9 @@ object AgentContext {
       @transient val agentState: AgentContext
   ) extends ManyNodes[Node] {
 
-    lazy val lookup: MapView[Observation.DocUID, Observation] = {
+    lazy val lookup: MapView[Observation.ReplayUID, Observation] = {
 
-      lazy val lookup_multi: Map[Observation.DocUID, Seq[Observation]] = {
+      lazy val lookup_multi: Map[Observation.ReplayUID, Seq[Observation]] = {
 
         base.groupBy { oo =>
           oo.uid

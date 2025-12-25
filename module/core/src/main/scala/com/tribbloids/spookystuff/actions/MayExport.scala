@@ -1,12 +1,8 @@
 package com.tribbloids.spookystuff.actions
 
-import com.tribbloids.spookystuff.actions.HasTrace.StateChangeTag
-
 object MayExport {
 
   trait Named extends MayExport {
-    self: StateChangeTag =>
-
     private var _nameOvrd: String = _
 
     protected def originalName: String = this.productPrefix
@@ -28,5 +24,4 @@ object MayExport {
 }
 
 trait MayExport extends Action {
-  self: StateChangeTag =>
 }

@@ -3,7 +3,6 @@ package com.tribbloids.spookystuff.actions
 import ai.acyclic.prover.commons.cap.Capability
 import ai.acyclic.prover.commons.cap.Capability.<>
 import ai.acyclic.prover.commons.spark.serialization.NOTSerializable
-import com.tribbloids.spookystuff.actions.HasTrace.MayChangeState
 import com.tribbloids.spookystuff.actions.Trace.Repr
 import com.tribbloids.spookystuff.agent.Agent
 import com.tribbloids.spookystuff.caching.{CacheKey, DFSDocCache, InMemoryDocCache}
@@ -128,7 +127,7 @@ case class Trace(
     repr: Repr = Nil
     // TODO: this should be gone, delegating to Same.By.Wrapper
 ) extends Actions
-    with MayChangeState { // remember trace is not a block! its the super container that cannot be wrapped
+    { // remember trace is not a block! its the super container that cannot be wrapped
 
   import Trace.*
 
@@ -172,7 +171,7 @@ case class Trace(
 
       _children.flatMap { action =>
         val observed: Seq[Observation] = action.apply(agent)
-        agent.backtrace ++= action.stateChangeOnly
+        agent.backtrace ++= action.stateChangeOnly.trace
 
         if (action.hasExport) {
 
@@ -282,7 +281,7 @@ case class Trace(
           case _: Action.Driverless => child :: Nil
           case _                    =>
             val preceding = trace.slice(0, i)
-            preceding.flatMap(_.stateChangeOnly) :+ child
+            preceding.flatMap(_.stateChangeOnly.trace) :+ child
         }
         result += backtrace
       }
@@ -296,9 +295,8 @@ case class Trace(
 
     repr.flatMap {
 
-      case child: Action with MayChangeState =>
+      case child: Action if child.isStateful =>
         val result = child.stateChangeOnly.trace
-
         result
       case _ => Nil
     }

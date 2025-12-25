@@ -3,7 +3,7 @@ package com.tribbloids.spookystuff.web.actions
 import com.tribbloids.spookystuff.actions.{Export, Wayback}
 import com.tribbloids.spookystuff.agent.Agent
 import com.tribbloids.spookystuff.doc.*
-import com.tribbloids.spookystuff.doc.Observation.DocUID
+import com.tribbloids.spookystuff.doc.Observation.ReplayUID
 import com.tribbloids.spookystuff.web.conf.Web
 
 /**
@@ -19,7 +19,7 @@ case class Snapshot() extends Export with WebAction with Wayback {
     val webDriver = agent.getDriver(Web)
 
     val doc = Doc(
-      DocUID((agent.backtrace :+ this).toList)(),
+      ReplayUID((agent.backtrace :+ this).toList)(),
       webDriver.getCurrentUrl,
       Some("text/html; charset=UTF-8")
       //      serializableCookies

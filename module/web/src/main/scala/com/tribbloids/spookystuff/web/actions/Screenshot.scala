@@ -3,7 +3,7 @@ package com.tribbloids.spookystuff.web.actions
 import com.tribbloids.spookystuff.actions.{Export, Wayback}
 import com.tribbloids.spookystuff.agent.Agent
 import com.tribbloids.spookystuff.doc.*
-import com.tribbloids.spookystuff.doc.Observation.DocUID
+import com.tribbloids.spookystuff.doc.Observation.ReplayUID
 import com.tribbloids.spookystuff.web.agent.CleanWebDriver
 import com.tribbloids.spookystuff.web.conf.Web
 import org.openqa.selenium.{OutputType, TakesScreenshot}
@@ -20,7 +20,7 @@ case class Screenshot() extends Export with WebAction with Wayback {
     }
 
     val page = Doc(
-      DocUID((agent.backtrace :+ this).toList)(),
+      ReplayUID((agent.backtrace :+ this).toList)(),
       webDriver.getCurrentUrl,
       Some("image/png")
     )().setRaw(raw)

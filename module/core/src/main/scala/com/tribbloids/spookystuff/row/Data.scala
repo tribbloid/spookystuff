@@ -1,6 +1,6 @@
 package com.tribbloids.spookystuff.row
 
-import com.tribbloids.spookystuff.doc.Observation.DocUID
+import com.tribbloids.spookystuff.doc.Observation.ReplayUID
 
 import java.util.UUID
 
@@ -14,7 +14,7 @@ trait Data[+D] {
 object Data {
 
   case class ScopeRef(
-      observationUIDs: Seq[DocUID],
+      observationUIDs: Seq[ReplayUID],
       index: Int = 0
 
       // a list of DocUIDs that can be found in associated Rollout, DocUID has small serialized form

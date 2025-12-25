@@ -6,7 +6,7 @@ import com.tribbloids.spookystuff.agent.Agent
 import scala.concurrent.duration.Duration
 
 @SerialVersionUID(-98257039403274083L) // TODO: should be "DriverInteraction"
-abstract class Interaction extends Action with HasTrace.MayChangeState {
+abstract class Interaction extends Action {
 
   def cooldown: Duration
 

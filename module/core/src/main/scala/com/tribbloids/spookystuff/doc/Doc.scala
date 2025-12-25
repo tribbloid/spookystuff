@@ -8,7 +8,7 @@ import com.tribbloids.spookystuff.caching.DocCacheLevel
 import com.tribbloids.spookystuff.commons.data.Magnets.AttrValueMag
 import com.tribbloids.spookystuff.doc.Content.InMemoryBlob
 import com.tribbloids.spookystuff.doc.Error.ConversionError
-import com.tribbloids.spookystuff.doc.Observation.DocUID
+import com.tribbloids.spookystuff.doc.Observation.ReplayUID
 import com.tribbloids.spookystuff.doc.Node.Unrecognisable
 import com.tribbloids.spookystuff.io.{ResourceMetadata, WriteMode}
 import org.apache.hadoop.shaded.org.apache.http.StatusLine
@@ -36,7 +36,7 @@ object Doc {
 
 @SerialVersionUID(94865098324L)
 case class Doc(
-    override val uid: DocUID,
+    override val uid: ReplayUID,
     uri: String, // redirected
     declaredContentType: Option[String] = None,
     //                 cookie: Seq[SerializableCookie] = Nil,
@@ -56,7 +56,7 @@ case class Doc(
   def content: Content = _content
 
   override def updated(
-      uid: DocUID = this.uid,
+      uid: ReplayUID = this.uid,
       cacheLevel: DocCacheLevel.Value = this.cacheLevel
   ): Doc = this.copy(uid = uid, cacheLevel = cacheLevel)(_content)
 

@@ -3,7 +3,7 @@ package com.tribbloids.spookystuff.actions
 import com.tribbloids.spookystuff.agent.Agent
 import com.tribbloids.spookystuff.caching.DocCacheLevel
 import com.tribbloids.spookystuff.doc.*
-import com.tribbloids.spookystuff.doc.Observation.DocUID
+import com.tribbloids.spookystuff.doc.Observation.ReplayUID
 import com.tribbloids.spookystuff.io.CompoundResolver.OmniResolver
 import com.tribbloids.spookystuff.io.{HTTPResolver, ResourceMetadata, WriteMode}
 import org.apache.commons.io.IOUtils
@@ -76,7 +76,7 @@ object Wpost {
             val cacheLevel = DocCacheLevel.getDefault(uriOption)
 
             Doc(
-              uid = DocUID(List(this))(),
+              uid = ReplayUID(List(this))(),
               uri = in.getURI,
               cacheLevel = cacheLevel,
               metadata = md

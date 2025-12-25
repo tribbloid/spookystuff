@@ -1,7 +1,5 @@
 package com.tribbloids.spookystuff.actions
 
-import com.tribbloids.spookystuff.actions.HasTrace.StateChangeTag
-
 import java.util.Date
 
 object Wayback {
@@ -23,8 +21,6 @@ object Wayback {
 }
 
 trait Wayback extends Action {
-  self: StateChangeTag =>
-
   // TODO change to better time repr
   private var _waybackOvrd: Option[Long] = None
 

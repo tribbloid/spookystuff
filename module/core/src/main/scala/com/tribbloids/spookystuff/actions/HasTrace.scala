@@ -1,6 +1,5 @@
 package com.tribbloids.spookystuff.actions
 
-import com.tribbloids.spookystuff.actions.HasTrace.StateChangeTag
 import com.tribbloids.spookystuff.agent.Agent
 import com.tribbloids.spookystuff.commons.Verbose
 import com.tribbloids.spookystuff.doc.Observation
@@ -10,52 +9,48 @@ import scala.language.implicitConversions
 
 object HasTrace extends AutomaticRelay[HasTrace] {
 
-  implicit def asTrace(v: HasTrace): Trace = v.trace
-
-  // TODO: aggregate all object that has children
-//  case class TreeNodeView(
-//      actionLike: HasTrace
-//  ) extends TreeView.Immutable[TreeNodeView] {
-//
-//    override def children: Seq[TreeNodeView] = actionLike.trace.map {
-//      TreeNodeView.apply
-//    }
-//  }
-
-  sealed trait StateChangeTag extends HasTrace
-  trait MayChangeState extends StateChangeTag {
-
-    // the minimally required state changes that can be put into backtrace
-    def stateChangeOnly: HasTrace
-  }
-  trait NoStateChange extends StateChangeTag
+  implicit def unbox(v: HasTrace): Trace = v.trace
 }
 
 @SerialVersionUID(8566489926281786854L)
 trait HasTrace extends HasTraceSet with Product with Serializable with Verbose {
-  self: StateChangeTag =>
 
   def trace: Trace
 
+  val isStateful: Boolean = true
+  val isDeteriministic: Boolean = true
+
+  /**
+    * 4 combinations:
+    *   - stateless, deterministic (pure): result can be cached by the invocation along
+    *   - stateful, deterministic: result can be cached by [[com.tribbloids.spookystuff.doc.Observation.ReplayUID]]
+    *   - stateless, non-deterministic: result should not be cached
+    *   - stateful, non-deterministic: all results from it and other invocations executed after on the same harness also
+    *     should not be cached, most viral
+    * they are usually variables but can also be constants at type-level, in which case they can participate in static
+    * verification & optimisation
+    */
+  def stateChangeOnly: HasTrace = if (isStateful) this else NoOp
+
   @transient final override lazy val traceSet: Set[Trace] = Set(trace)
 
-  // many-to-one
-  //  def +>(another: Action): Trace = Trace(asTrace :+ another)
-  def +>(that: HasTrace): Trace = {
+  object append {
 
-    //      (this, that) match {
-    //        case (NoOp, _) => NoOp
-    //        case (_, NoOp) => NoOp // TODO: should this be changed to EndOfStream?
-    //        case _         => Trace(asTrace ++ that.asTrace)
-    //      }
+    // many-to-one
+    //  def +>(another: Action): Trace = Trace(asTrace :+ another)
+    def apply(that: HasTrace): Trace = {
 
-    Trace(trace ++ that.trace)
+      //      (this, that) match {
+      //        case (NoOp, _) => NoOp
+      //        case (_, NoOp) => NoOp // TODO: should this be changed to EndOfStream?
+      //        case _         => Trace(asTrace ++ that.asTrace)
+      //      }
+
+      Trace(trace ++ that.trace)
+    }
   }
 
-//  lazy val TreeNode: ActionLike.TreeNodeView = ActionLike.TreeNodeView(this)
-
-//  def injectFrom(same: ActionLike): Unit = {}
-  // TODO: remove, use Ser/De deep copy in case all variables needs to be copied
+  def +> : append.type = append
 
   // used to determine if snapshot needs to be appended or if possible to be executed lazily
   final def hasExport: Boolean = exportNames.nonEmpty

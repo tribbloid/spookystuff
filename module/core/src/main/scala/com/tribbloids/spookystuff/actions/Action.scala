@@ -1,23 +1,22 @@
 package com.tribbloids.spookystuff.actions
 
-import com.tribbloids.spookystuff.actions.HasTrace.{NoStateChange, StateChangeTag}
 import com.tribbloids.spookystuff.agent.Agent
 import com.tribbloids.spookystuff.commons.CommonUtils
 import com.tribbloids.spookystuff.doc.{Doc, Observation}
 import com.tribbloids.spookystuff.{ActionException, ActionExceptionWithCoreDump, SpookyContext, SpookyException}
 import com.tribbloids.spookystuff.io.WriteMode.Overwrite
+import com.tribbloids.spookystuff.tool.Invocation
 import org.apache.commons.lang3.SerializationUtils
 import org.apache.spark.sql.types.SQLUserDefinedType
 import org.slf4j.LoggerFactory
 
 trait Tool[
     R // result
-] extends HasTrace {
-  self: StateChangeTag =>
+] extends Invocation[R] {
 
   protected[actions] def withTimeoutDuring[T](agent: Agent)(f: => T): T = {
 
-    var baseStr = s"[${agent.taskContextOpt.map(_.partitionId()).getOrElse(0)}]+> ${this.toString}"
+    var baseStr: String = LoggerPrefix(agent)
     this match {
       case timed: MayTimeout =>
         val timeout = timed.getTimeout(agent)
@@ -57,7 +56,6 @@ trait Tool[
   */
 @SQLUserDefinedType(udt = classOf[ActionUDT])
 trait Action extends Tool[Seq[Observation]] {
-  self: StateChangeTag =>
 
   @transient private lazy val _trace = List(this)
   override def trace: Trace = _trace
@@ -173,8 +171,10 @@ trait Action extends Tool[Seq[Observation]] {
 
 object Action {
 
-  trait Driverless extends Action with NoStateChange {
+  trait Driverless extends Action {
     // have not impact to driver, mutually exclusively with MayChangeState
+
+    override val isStateful: Boolean = false
   }
 
   implicit class _actionOps[T <: Action & Serializable](self: T) {

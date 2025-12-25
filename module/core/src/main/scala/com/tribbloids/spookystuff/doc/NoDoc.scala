@@ -2,7 +2,7 @@ package com.tribbloids.spookystuff.doc
 
 import com.tribbloids.spookystuff.actions.*
 import com.tribbloids.spookystuff.caching.DocCacheLevel
-import com.tribbloids.spookystuff.doc.Observation.DocUID
+import com.tribbloids.spookystuff.doc.Observation.ReplayUID
 import com.tribbloids.spookystuff.io.ResourceMetadata
 
 //Merely a placeholder if a conditional block is not applicable
@@ -14,10 +14,10 @@ case class NoDoc(
 ) extends Serializable
     with Observation.Success {
 
-  @transient override lazy val uid: DocUID = DocUID(backtrace)()
+  @transient override lazy val uid: ReplayUID = ReplayUID(backtrace)()
 
   override def updated(
-      uid: DocUID = this.uid,
+      uid: ReplayUID = this.uid,
       cacheLevel: DocCacheLevel.Value = this.cacheLevel
   ): NoDoc = this.copy(backtrace = uid.backtrace, cacheLevel = cacheLevel)
 

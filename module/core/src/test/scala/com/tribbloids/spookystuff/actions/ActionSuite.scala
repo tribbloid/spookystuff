@@ -2,7 +2,7 @@ package com.tribbloids.spookystuff.actions
 
 import com.tribbloids.spookystuff.agent.Agent
 import com.tribbloids.spookystuff.commons.{CommonUtils, Timeout}
-import com.tribbloids.spookystuff.doc.Observation.DocUID
+import com.tribbloids.spookystuff.doc.Observation.ReplayUID
 import com.tribbloids.spookystuff.doc.{Doc, Observation}
 import com.tribbloids.spookystuff.testutils.SpookyBaseSpec
 import com.tribbloids.spookystuff.{ActionException, Const}
@@ -96,7 +96,7 @@ object ActionSuite {
     override def doExe(agent: Agent): Seq[Observation] = {
       Seq(
         Doc(
-          DocUID(agent.backtrace.toSeq)(),
+          ReplayUID(agent.backtrace.toSeq)(),
           "http://dummy.com",
           Some("text/html; charset=UTF-8")
         )().setRaw("<html></html>".getBytes("UTF8"))
