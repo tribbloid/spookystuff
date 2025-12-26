@@ -1,5 +1,7 @@
 package com.tribbloids.spookystuff.actions
 
+import com.tribbloids.spookystuff.execution.ExecutionContext
+
 import com.tribbloids.spookystuff.actions.Delay.RandomDelay
 import com.tribbloids.spookystuff.doc.Doc
 import com.tribbloids.spookystuff.testutils.{RemoteDocsFixture, SpookyBaseSpec}
@@ -30,7 +32,7 @@ class WgetSpec extends SpookyBaseSpec {
   }
 
   def getIP(url: String = HTTP_IP_URL): String = {
-    val results = wget(url).fetch(spooky)
+    val results = wget(url).fetch(ExecutionContext(spooky))
 
     results.head.asInstanceOf[Doc].code.get
   }
@@ -39,7 +41,7 @@ class WgetSpec extends SpookyBaseSpec {
   it("wget should encode malformed url") {
     spooky.confUpdate(_.copy(webProxy = WebProxyFactory.NoProxy))
 
-    val results = wget("https://www.google.com/?q=giant robot").fetch(spooky)
+    val results = wget("https://www.google.com/?q=giant robot").fetch(ExecutionContext(spooky))
 
     assert(results.size === 1)
     val doc = results.head.asInstanceOf[Doc]
@@ -55,7 +57,7 @@ class WgetSpec extends SpookyBaseSpec {
   //
   //    val results = (
   //      Wget(url) :: Nil
-  //      ).fetch(spooky)
+  //      ).fetch(ExecutionContext(spooky))
   //
   //    assert(results.size === 1)
   //    val page = results.head.asInstanceOf[Page]
@@ -68,7 +70,7 @@ class WgetSpec extends SpookyBaseSpec {
   //
   //    val results = (
   //      wget("http://www.sigmaaldrich.com/etc/controller/controller-page.html?TablePage=17193175") :: Nil
-  //      ).fetch(spooky)
+  //      ).fetch(ExecutionContext(spooky))
   //
   //    assert(results.size === 1)
   //    val page = results.head.asInstanceOf[Page]
@@ -82,7 +84,7 @@ class WgetSpec extends SpookyBaseSpec {
   //
   //    val results = (
   //      wget("http://www.perkinelmer.ca/en-ca/products/consumables-accessories/integrated-solutions/for-thermo-scientific-gcs/default.xhtml") :: Nil
-  //      ).fetch(spooky)
+  //      ).fetch(ExecutionContext(spooky))
   //
   //    assert(results.size === 1)
   //    assert(results.head.isInstanceOf[NoPage])
@@ -95,7 +97,7 @@ class WgetSpec extends SpookyBaseSpec {
 
     val results = (
       RandomDelay(1.seconds, 2.seconds) +> wget(HTML_URL)
-    ).fetch(spooky)
+    ).fetch(ExecutionContext(spooky))
 
     assert(results.size === 1)
     assert(results.head.uid.backtrace.last == wget(HTML_URL))
@@ -125,7 +127,7 @@ class WgetSpec extends SpookyBaseSpec {
       )
 
       val dates: Seq[Long] = (0 to 2).map { _ =>
-        val pages = (Delay(5.seconds) +> Wget(HTML_URL)).fetch(spooky) // 5s is long enough
+        val pages = (Delay(5.seconds) +> Wget(HTML_URL)).fetch(ExecutionContext(spooky)) // 5s is long enough
         assert(pages.size == 1)
         pages.head.timeMillis
       }
@@ -133,7 +135,7 @@ class WgetSpec extends SpookyBaseSpec {
       spooky.confUpdate(_.copy(cacheRead = true))
 
       val cachedPages = (Delay(5.seconds)
-        +> Wget(HTML_URL).waybackToTimeMillis(dates(1) + 2000)).fetch(spooky)
+        +> Wget(HTML_URL).waybackToTimeMillis(dates(1) + 2000)).fetch(ExecutionContext(spooky))
 
       assert(cachedPages.size == 1)
       assert(cachedPages.head.timeMillis == dates(1))
@@ -142,7 +144,7 @@ class WgetSpec extends SpookyBaseSpec {
 
       intercept[IllegalArgumentException] {
         (Delay(10.seconds)
-          +> Wget(HTML_URL).waybackToTimeMillis(dates.head - 2000)).fetch(spooky)
+          +> Wget(HTML_URL).waybackToTimeMillis(dates.head - 2000)).fetch(ExecutionContext(spooky))
       }
     }
   }

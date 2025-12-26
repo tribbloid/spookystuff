@@ -2,6 +2,7 @@ package com.tribbloids.spookystuff.row
 
 import com.tribbloids.spookystuff.actions.Wget
 import com.tribbloids.spookystuff.doc.Node
+import com.tribbloids.spookystuff.execution.ExecutionContext
 import com.tribbloids.spookystuff.testutils.{FileDocsFixture, SpookyBaseSpec}
 
 /**
@@ -13,7 +14,7 @@ class AgentRowSpec extends SpookyBaseSpec {
   import resources.*
 
   it("get only doc") {
-    val doc = Wget(HTML_URL).fetch(spooky).head
+    val doc = Wget(HTML_URL).fetch(ExecutionContext(spooky)).head
     val row = BuildRow((), Wget(HTML_URL)).fetched(spooky)
 
     val page1 = row.trajectory.docs.only
@@ -26,7 +27,7 @@ class AgentRowSpec extends SpookyBaseSpec {
 
   it("get unstructured") {
     val wget = Wget(HTML_URL) as "pp"
-    val doc = wget.fetch(spooky).head
+    val doc = wget.fetch(ExecutionContext(spooky)).head
     val proto = BuildRow((), wget).fetched(spooky)
 
     val row = {

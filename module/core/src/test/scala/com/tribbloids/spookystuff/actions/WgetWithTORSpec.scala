@@ -1,5 +1,7 @@
 package com.tribbloids.spookystuff.actions
 
+import com.tribbloids.spookystuff.execution.ExecutionContext
+
 import com.tribbloids.spookystuff.doc.Doc
 import com.tribbloids.spookystuff.testutils.{LocalOnly, RemoteDocsFixture, SpookyBaseSpec}
 import org.scalatest.Tag
@@ -60,7 +62,7 @@ class WgetWithTORSpec extends SpookyBaseSpec {
   }
 
   def getIP(url: String = HTTP_IP_URL): String = {
-    val results = wget(url).fetch(spooky)
+    val results = wget(url).fetch(ExecutionContext(spooky))
 
     results.head.asInstanceOf[Doc].code.get
   }

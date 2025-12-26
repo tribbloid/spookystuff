@@ -1,10 +1,8 @@
 package com.tribbloids.spookystuff
 
 import ai.acyclic.prover.commons.function.hom.Hom
-import ai.acyclic.prover.commons.function.hom.Hom.:=>
 import ai.acyclic.prover.commons.spark.SparkContextView
 import ai.acyclic.prover.commons.spark.serialization.{NOTSerializable, SerializerOverride}
-import com.tribbloids.spookystuff.agent.Harness
 import com.tribbloids.spookystuff.commons.TreeException
 import com.tribbloids.spookystuff.conf.*
 import com.tribbloids.spookystuff.io.HDFSResolver

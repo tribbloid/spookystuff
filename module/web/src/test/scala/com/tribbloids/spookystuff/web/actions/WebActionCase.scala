@@ -1,5 +1,7 @@
 package com.tribbloids.spookystuff.web.actions
 
+import com.tribbloids.spookystuff.execution.ExecutionContext
+
 import ai.acyclic.prover.commons.spark.TestHelper
 import com.tribbloids.spookystuff.SpookyContext
 import com.tribbloids.spookystuff.actions.ControlBlock.Loop
@@ -38,7 +40,7 @@ abstract class WebActionCase extends BaseSpec with FileURIDocsFixture {
 
   it("empty page") {
     val emptyPage: Doc = {
-      val agent = new Harness(spooky)
+      val agent = new Harness(ExecutionContext(spooky))
 
       Snapshot().accept(StatusCode2XX).apply(agent).toList.head.asInstanceOf[Doc]
     }
@@ -56,7 +58,7 @@ abstract class WebActionCase extends BaseSpec with FileURIDocsFixture {
         Visit("https://www.wikipedia.org") +>
           WaitFor("input#searchInput").in(40.seconds) +>
           Snapshot()
-      ).fetch(spooky)
+      ).fetch(ExecutionContext(spooky))
 
       assert(results.size == 1)
       val page = results.head.asInstanceOf[Doc]
@@ -76,7 +78,7 @@ abstract class WebActionCase extends BaseSpec with FileURIDocsFixture {
           Submit("button.pure-button") +>
           WaitFor("h1#firstHeading").in(40.seconds) +>
           Snapshot().as("B")
-      ).fetch(spooky)
+      ).fetch(ExecutionContext(spooky))
 
       assert(results.length === 2)
       val result0 = results.head.asInstanceOf[Doc]
@@ -111,7 +113,7 @@ abstract class WebActionCase extends BaseSpec with FileURIDocsFixture {
         Visit("https://www.wikipedia.org/") +>
           WaitFor("a.link-box:contains(English)") +>
           Snapshot()
-      ).fetch(spooky)
+      ).fetch(ExecutionContext(spooky))
 
       val code = results.head.asInstanceOf[Doc].code.get.split('\n').map(_.trim).mkString
       assert(code.contains("Wikipedia"))
@@ -124,7 +126,7 @@ abstract class WebActionCase extends BaseSpec with FileURIDocsFixture {
         Visit("https://www.wikipedia.org/") +>
           WaitFor("cssSelector: a.link-box") +>
           Snapshot()
-      ).fetch(spooky)
+      ).fetch(ExecutionContext(spooky))
 
       val code = results.head.asInstanceOf[Doc].code.get.split('\n').map(_.trim).mkString
       assert(code.contains("Wikipedia"))
@@ -212,7 +214,7 @@ abstract class WebActionCase extends BaseSpec with FileURIDocsFixture {
     val results = (
       Visit(HTML_URL) +>
         Snapshot().as("T")
-    ).fetch(spooky)
+    ).fetch(ExecutionContext(spooky))
 
     val resultsList = results.toArray
     assert(resultsList.length === 1)

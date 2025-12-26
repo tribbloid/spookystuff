@@ -1,5 +1,7 @@
 package com.tribbloids.spookystuff.web.actions
 
+import com.tribbloids.spookystuff.execution.ExecutionContext
+
 import ai.acyclic.prover.commons.debug.print_@
 import com.tribbloids.spookystuff.ActionException
 import com.tribbloids.spookystuff.actions.*
@@ -45,7 +47,7 @@ class WebActionSpec extends SpookyBaseSpec with FileURIDocsFixture {
 
     it("won't be triggered if no webDriver was initialized") {
       try {
-        DefectiveExport.fetch(spooky)
+        DefectiveExport.fetch(ExecutionContext(spooky))
         sys.error("impossible")
       } catch {
         case e: ActionException =>
@@ -56,7 +58,7 @@ class WebActionSpec extends SpookyBaseSpec with FileURIDocsFixture {
 
     it("will be triggered if webDriver is initialized, it should not be blocked by DocFilter") {
       try {
-        DefectiveWebExport.fetch(spooky)
+        DefectiveWebExport.fetch(ExecutionContext(spooky))
         sys.error("impossible")
       } catch {
         case e: ActionException =>
@@ -71,7 +73,7 @@ class WebActionSpec extends SpookyBaseSpec with FileURIDocsFixture {
         (
           Delay(1.seconds) +>
             DefectiveWebExport
-        ).fetch(spooky)
+        ).fetch(ExecutionContext(spooky))
         sys.error("impossible")
       } catch {
         case e: ActionException =>
@@ -98,7 +100,7 @@ class WebActionSpec extends SpookyBaseSpec with FileURIDocsFixture {
           Delay(10.seconds)
             +> Visit(HTML_URL)
             +> Snapshot()
-        ).fetch(spooky) // 5s is long enough
+        ).fetch(ExecutionContext(spooky)) // 5s is long enough
         assert(pages.size == 1)
         pages.head.timeMillis
       }
@@ -107,7 +109,7 @@ class WebActionSpec extends SpookyBaseSpec with FileURIDocsFixture {
 
       val cachedPages = (Delay(10.seconds)
         +> Visit(HTML_URL)
-        +> Snapshot().waybackToTimeMillis(dates(1) + 2000)).fetch(spooky)
+        +> Snapshot().waybackToTimeMillis(dates(1) + 2000)).fetch(ExecutionContext(spooky))
       assert(cachedPages.size == 1)
       assert(cachedPages.head.timeMillis == dates(1))
 
@@ -116,7 +118,7 @@ class WebActionSpec extends SpookyBaseSpec with FileURIDocsFixture {
       intercept[IllegalArgumentException] {
         (Delay(10.seconds)
           +> Visit(HTML_URL)
-          +> Snapshot().waybackToTimeMillis(dates.head - 2000)).fetch(spooky)
+          +> Snapshot().waybackToTimeMillis(dates.head - 2000)).fetch(ExecutionContext(spooky))
       }
     }
 
@@ -132,7 +134,7 @@ class WebActionSpec extends SpookyBaseSpec with FileURIDocsFixture {
       val dates: Seq[Long] = (0 to 2).map { _ =>
         val pages = (Delay(10.seconds)
           +> Visit(HTML_URL)
-          +> Screenshot()).fetch(spooky) // 5s is long enough
+          +> Screenshot()).fetch(ExecutionContext(spooky)) // 5s is long enough
         assert(pages.size == 1)
         pages.head.timeMillis
       }
@@ -141,7 +143,7 @@ class WebActionSpec extends SpookyBaseSpec with FileURIDocsFixture {
 
       val cachedPages = (Delay(10.seconds)
         +> Visit(HTML_URL)
-        +> Screenshot().waybackToTimeMillis(dates(1) + 2000)).fetch(spooky)
+        +> Screenshot().waybackToTimeMillis(dates(1) + 2000)).fetch(ExecutionContext(spooky))
       assert(cachedPages.size == 1)
       assert(cachedPages.head.timeMillis == dates(1))
 
@@ -150,7 +152,7 @@ class WebActionSpec extends SpookyBaseSpec with FileURIDocsFixture {
       intercept[IllegalArgumentException] {
         (Delay(10.seconds)
           +> Visit(HTML_URL)
-          +> Screenshot().waybackToTimeMillis(dates.head - 2000)).fetch(spooky)
+          +> Screenshot().waybackToTimeMillis(dates.head - 2000)).fetch(ExecutionContext(spooky))
       }
     }
   }

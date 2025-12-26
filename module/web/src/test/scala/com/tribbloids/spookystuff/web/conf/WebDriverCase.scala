@@ -1,5 +1,7 @@
 package com.tribbloids.spookystuff.web.conf
 
+import com.tribbloids.spookystuff.execution.ExecutionContext
+
 import ai.acyclic.prover.commons.spark.TestHelper
 import ai.acyclic.prover.commons.spark.serialization.AssertSerializable
 import com.tribbloids.spookystuff.SpookyContext
@@ -20,7 +22,7 @@ trait WebDriverCase extends SpookyBaseSpec with FileURIDocsFixture {
   }
 
   it("factoryReset") {
-    val agent = new Harness(spooky)
+    val agent = new Harness(ExecutionContext(spooky))
     val driver = transientDriverFactory.dispatch(agent)
 
 //    driver.get("https://www.selenium.dev/documentation/selenium_manager/")
@@ -38,12 +40,12 @@ trait WebDriverCase extends SpookyBaseSpec with FileURIDocsFixture {
     val spooky = new SpookyContext(TestHelper.TestSparkSession)
     spooky.setConf(conf)
 
-    val a1 = new Harness(spooky)
+    val a1 = new Harness(ExecutionContext(spooky))
     Visit(HTML_URL).apply(a1)
     val driver1 = a1.getDriver(Web)
     a1.tryClean()
 
-    val a2 = new Harness(spooky)
+    val a2 = new Harness(ExecutionContext(spooky))
     Visit(HTML_URL).apply(a2)
     val driver2 = a2.getDriver(Web)
     a2.tryClean()

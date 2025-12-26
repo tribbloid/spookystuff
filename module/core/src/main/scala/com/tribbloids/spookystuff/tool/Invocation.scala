@@ -2,7 +2,6 @@ package com.tribbloids.spookystuff.tool
 
 import com.tribbloids.spookystuff.agent.Harness
 import com.tribbloids.spookystuff.tool.HasTrace
-import com.tribbloids.spookystuff.doc.Observation
 
 object Invocation {}
 

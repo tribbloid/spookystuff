@@ -1,5 +1,7 @@
 package com.tribbloids.spookystuff.caching
 
+import com.tribbloids.spookystuff.execution.ExecutionContext
+
 import com.tribbloids.spookystuff.actions.{Trace, Wget}
 import com.tribbloids.spookystuff.conf.Core
 import com.tribbloids.spookystuff.doc.Doc
@@ -18,7 +20,7 @@ class InMemoryDocCacheSpec extends SpookyBaseSpec with FileDocsFixture {
   val action = Wget(HTML_URL).as("old")
   def execute: Seq[Doc] = {
     val fetched = action
-      .fetch(spooky)
+      .fetch(ExecutionContext(spooky))
 
     fetched
       .map(

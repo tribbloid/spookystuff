@@ -1,5 +1,7 @@
 package com.tribbloids.spookystuff.actions
 
+import com.tribbloids.spookystuff.execution.ExecutionContext
+
 import com.tribbloids.spookystuff.agent.{Harness, OAuthKeys}
 import com.tribbloids.spookystuff.conf.Core
 import org.scalatest.tags.Retryable
@@ -12,7 +14,7 @@ class WgetOAuthSpec extends WgetSpec {
 
   override def wget(uri: String): Action = {
     val action: OAuthV2 = OAuthV2(Wget(uri))
-    val session = new Harness(spooky)
+    val session = new Harness(ExecutionContext(spooky))
     val effective = action.temporaryDelegate(session)
     assert(effective.uri !== uri)
     action

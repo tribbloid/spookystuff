@@ -1,5 +1,7 @@
 package com.tribbloids.spookystuff.doc
 
+import com.tribbloids.spookystuff.execution.ExecutionContext
+
 import ai.acyclic.prover.commons.spark.serialization.AssertSerializable
 import com.tribbloids.spookystuff.actions.*
 import com.tribbloids.spookystuff.testutils.{FileDocsFixture, SpookyBaseSpec}
@@ -12,7 +14,7 @@ class NodeSpec extends SpookyBaseSpec {
   val resources: FileDocsFixture.type = FileDocsFixture
   import resources.*
 
-  @transient lazy val page: Doc = Wget(HTML_URL).as("old").fetch(spooky).head.asInstanceOf[Doc]
+  @transient lazy val page: Doc = Wget(HTML_URL).as("old").fetch(ExecutionContext(spooky)).head.asInstanceOf[Doc]
 
   describe("is serializable for") {
 

@@ -1,5 +1,7 @@
 package com.tribbloids.spookystuff.doc
 
+import com.tribbloids.spookystuff.execution.ExecutionContext
+
 import com.tribbloids.spookystuff.actions.Wget
 import com.tribbloids.spookystuff.io.WriteMode.Overwrite
 import com.tribbloids.spookystuff.testutils.FileDocsFixture
@@ -12,7 +14,7 @@ class DocSpec_File extends DocSpec {
   describe("wget, save, load") {
 
     it("flat dir") {
-      val results = Wget(DIR_URL).fetch(spooky)
+      val results = Wget(DIR_URL).fetch(ExecutionContext(spooky))
 
       val resultsList = results.toArray
       assert(resultsList.length === 1)
@@ -43,7 +45,7 @@ class DocSpec_File extends DocSpec {
     }
 
     it("deep dir") {
-      val results = Wget(DEEP_DIR_URL).fetch(spooky)
+      val results = Wget(DEEP_DIR_URL).fetch(ExecutionContext(spooky))
 
       val resultsList = results.toArray
       assert(resultsList.length === 1)

@@ -9,7 +9,7 @@ import com.tribbloids.spookystuff.caching.{CacheKey, DFSDocCache, InMemoryDocCac
 import com.tribbloids.spookystuff.commons.CommonUtils
 import com.tribbloids.spookystuff.doc.{Doc, Observation}
 import com.tribbloids.spookystuff.execution.ExecutionContext
-import com.tribbloids.spookystuff.{Const, SpookyContext}
+import com.tribbloids.spookystuff.Const
 import com.tribbloids.spookystuff.io.WriteMode.Overwrite
 import com.tribbloids.spookystuff.tool.HasTraceSet
 import org.slf4j.LoggerFactory

@@ -1,5 +1,7 @@
 package com.tribbloids.spookystuff.doc
 
+import com.tribbloids.spookystuff.execution.ExecutionContext
+
 import com.tribbloids.spookystuff.actions.Wget
 import com.tribbloids.spookystuff.commons.CommonUtils
 import com.tribbloids.spookystuff.io.WriteMode.Overwrite
@@ -14,7 +16,7 @@ class DocSpec extends SpookyBaseSpec {
 
     it("html") {
 
-      val results = CommonUtils.retry(5)(Wget(HTML_URL).fetch(spooky))
+      val results = CommonUtils.retry(5)(Wget(HTML_URL).fetch(ExecutionContext(spooky)))
 
       assert(results.length === 1)
       val page = results.head.asInstanceOf[Doc]
@@ -34,7 +36,7 @@ class DocSpec extends SpookyBaseSpec {
 
     it("json") {
 
-      val results = Wget(JSON_URL).fetch(spooky)
+      val results = Wget(JSON_URL).fetch(ExecutionContext(spooky))
 
       assert(results.length === 1)
       val page = results.head.asInstanceOf[Doc]
@@ -55,7 +57,7 @@ class DocSpec extends SpookyBaseSpec {
 
     it("image") {
 
-      val results = Wget(PNG_URL).fetch(spooky)
+      val results = Wget(PNG_URL).fetch(ExecutionContext(spooky))
 
       assert(results.length === 1)
       val page = results.head.asInstanceOf[Doc]
@@ -74,7 +76,7 @@ class DocSpec extends SpookyBaseSpec {
 
     it("pdf") {
 
-      val results = Wget(PDF_URL).fetch(spooky)
+      val results = Wget(PDF_URL).fetch(ExecutionContext(spooky))
 
       assert(results.length === 1)
       val page = results.head.asInstanceOf[Doc]
@@ -93,7 +95,7 @@ class DocSpec extends SpookyBaseSpec {
 
     it("xml") {
 
-      val results = Wget(XML_URL).fetch(spooky)
+      val results = Wget(XML_URL).fetch(ExecutionContext(spooky))
 
       assert(results.length === 1)
       val page = results.head.asInstanceOf[Doc]
@@ -114,7 +116,7 @@ class DocSpec extends SpookyBaseSpec {
 
     ignore("csv") {
 
-      val results = Wget(CSV_URL).fetch(spooky)
+      val results = Wget(CSV_URL).fetch(ExecutionContext(spooky))
 
       assert(results.length === 1)
       val page =
@@ -143,7 +145,7 @@ class DocSpec extends SpookyBaseSpec {
   }
 
   it("childrenWithSiblings") {
-    val page = CommonUtils.retry(5)(Wget(HTML_URL).fetch(spooky)).head.asInstanceOf[Doc]
+    val page = CommonUtils.retry(5)(Wget(HTML_URL).fetch(ExecutionContext(spooky))).head.asInstanceOf[Doc]
 
     val ranges = page.findAllWithSiblings("a.link-box em", -2 to 1)
     assert(ranges.size === 10)
@@ -156,7 +158,7 @@ class DocSpec extends SpookyBaseSpec {
   }
 
   it("... overlapping elimiation") {
-    val page = CommonUtils.retry(5)(Wget(HTML_URL).fetch(spooky)).head.asInstanceOf[Doc]
+    val page = CommonUtils.retry(5)(Wget(HTML_URL).fetch(ExecutionContext(spooky))).head.asInstanceOf[Doc]
 
     val ranges = page.findAllWithSiblings("div.central-featured-lang[lang^=e]", -2 to 2)
     assert(ranges.size === 2)
