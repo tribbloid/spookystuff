@@ -2,7 +2,8 @@ package com.tribbloids.spookystuff.row
 
 import ai.acyclic.prover.commons.multiverse.{CanEqual, Projection}
 import com.tribbloids.spookystuff.SpookyContext
-import com.tribbloids.spookystuff.actions.{NoOp, Trace}
+import com.tribbloids.spookystuff.actions.Trace
+import com.tribbloids.spookystuff.tool.NoOp
 import com.tribbloids.spookystuff.actions.Trace.Rollout
 import com.tribbloids.spookystuff.execution.ExecutionContext
 

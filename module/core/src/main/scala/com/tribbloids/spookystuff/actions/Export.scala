@@ -1,7 +1,7 @@
 package com.tribbloids.spookystuff.actions
 
 import ai.acyclic.prover.commons.function.hom.Hom
-import com.tribbloids.spookystuff.agent.Agent
+import com.tribbloids.spookystuff.agent.Harness
 import com.tribbloids.spookystuff.doc.*
 import com.tribbloids.spookystuff.doc.Error.ValidationError
 
@@ -18,7 +18,7 @@ abstract class Export extends MayExport.Named {
 
   override def exportNames: Set[String] = Set(name)
 
-  def doExe(agent: Agent): Seq[Observation]
+  def doExe(agent: Harness): Seq[Observation]
 
   def accept(validation: DocValidation): Export.Accept = {
 
@@ -32,7 +32,7 @@ object Export {
 
   case object DocValidation {
 
-    val domain: Hom.Fn.DomainBuilder[(Doc, Agent), Doc] = Hom.Fn.at[(Doc, Agent)].to[Doc]
+    val domain: Hom.Fn.DomainBuilder[(Doc, Harness), Doc] = Hom.Fn.at[(Doc, Harness)].to[Doc]
 
     type Lemma = domain._Lemma
 
@@ -42,17 +42,17 @@ object Export {
     // TODO: support chaining & extends ExpressionLike/TreeNode
     sealed trait Impl extends domain._Impl {
 
-      final override def apply(v: (Doc, Agent)): Doc = {
+      final override def apply(v: (Doc, Harness)): Doc = {
 
         applyNoErrorDump(v)
       }
 
-      def applyNoErrorDump(v: (Doc, Agent)): Doc
+      def applyNoErrorDump(v: (Doc, Harness)): Doc
     }
 
     case object Bypass extends Impl {
 
-      override def applyNoErrorDump(v: (Doc, Agent)): Doc = {
+      override def applyNoErrorDump(v: (Doc, Harness)): Doc = {
         v._1
       }
     }
@@ -65,7 +65,7 @@ object Export {
         }
       }
 
-      override def applyNoErrorDump(v: (Doc, Agent)): Doc = {
+      override def applyNoErrorDump(v: (Doc, Harness)): Doc = {
         val result = v._1
         assertStatusCode(result)
         result
@@ -74,7 +74,7 @@ object Export {
 
     case object HasTitle extends Impl {
 
-      override def applyNoErrorDump(v: (Doc, Agent)): Doc = {
+      override def applyNoErrorDump(v: (Doc, Harness)): Doc = {
         val doc = StatusCode2XX.applyNoErrorDump(v)
 
         if (doc.mimeType.contains("html")) {
@@ -92,7 +92,7 @@ object Export {
 
     case object HasHead extends Impl {
 
-      override def applyNoErrorDump(v: (Doc, Agent)): Doc = {
+      override def applyNoErrorDump(v: (Doc, Harness)): Doc = {
         val doc = StatusCode2XX.applyNoErrorDump(v)
 
         if (doc.mimeType.contains("html")) {
@@ -114,7 +114,7 @@ object Export {
       validation: DocValidation
   ) extends Export {
 
-    override def doExe(agent: Agent): Seq[Observation] = {
+    override def doExe(agent: Harness): Seq[Observation] = {
 
       val results = original.doExe(agent)
       results.map {

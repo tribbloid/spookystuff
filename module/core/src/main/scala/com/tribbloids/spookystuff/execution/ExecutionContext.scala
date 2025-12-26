@@ -1,6 +1,7 @@
 package com.tribbloids.spookystuff.execution
 
 import com.tribbloids.spookystuff.SpookyContext
+import com.tribbloids.spookystuff.agent.Harness
 import org.apache.spark.rdd.RDD
 import org.apache.spark.storage.StorageLevel
 import org.slf4j.LoggerFactory
@@ -9,7 +10,7 @@ import scala.util.Try
 
 case class ExecutionContext(
     ctx: SpookyContext,
-    @transient tempRefs: TemporaryRefs = TemporaryRefs()
+    @transient tempRefs: TemporaryRefs = TemporaryRefs() // Not available on executor
 ) {
 
   lazy val deployPluginsOnce: Unit = {
@@ -43,5 +44,16 @@ case class ExecutionContext(
   ): RDD[T] = {
 
     tempRefs.persist(rdd, storageLevel)
+  }
+
+  def withHarness[T](fn: Harness => T): T = {
+
+    val session = new Harness(this)
+
+    try {
+      fn(session)
+    } finally {
+      session.tryClean()
+    }
   }
 }

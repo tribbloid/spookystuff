@@ -30,7 +30,7 @@ object __DefineByRun {
     *
     *   - (optional) [[ExecutionPlan]] API can be merged into [[com.tribbloids.spookystuff.dsl.DataView]]
     *   - native soft/multi-pass execution mode: [[ExecutionPlan]]s can read from a Dataset, which represents result of
-    *     a previous execution that partially succeeded: Each [[com.tribbloids.spookystuff.agent.Agent]] & extraction
+    *     a previous execution that partially succeeded: Each [[com.tribbloids.spookystuff.agent.Harness]] & extraction
     *     may fail for any reason (e.g. service unavailable, API or robot.txt quota exceeded, reached designated *
     *     sampling ratio).
     *     - As a result, [[ExecutionPlan]].run() should yields another [[ExecutionPlan]] of the same type, but with

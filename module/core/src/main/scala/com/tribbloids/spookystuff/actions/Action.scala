@@ -1,51 +1,12 @@
 package com.tribbloids.spookystuff.actions
 
-import com.tribbloids.spookystuff.agent.Agent
-import com.tribbloids.spookystuff.commons.CommonUtils
+import com.tribbloids.spookystuff.agent.Harness
 import com.tribbloids.spookystuff.doc.{Doc, Observation}
 import com.tribbloids.spookystuff.{ActionException, ActionExceptionWithCoreDump, SpookyContext, SpookyException}
 import com.tribbloids.spookystuff.io.WriteMode.Overwrite
-import com.tribbloids.spookystuff.tool.Invocation
+import com.tribbloids.spookystuff.tool.Tool
 import org.apache.commons.lang3.SerializationUtils
 import org.apache.spark.sql.types.SQLUserDefinedType
-import org.slf4j.LoggerFactory
-
-trait Tool[
-    R // result
-] extends Invocation[R] {
-
-  protected[actions] def withTimeoutDuring[T](agent: Agent)(f: => T): T = {
-
-    var baseStr: String = LoggerPrefix(agent)
-    this match {
-      case timed: MayTimeout =>
-        val timeout = timed.getTimeout(agent)
-
-        baseStr = baseStr + s" in ${timeout}"
-        LoggerFactory.getLogger(this.getClass).info(this.withDetail(baseStr))
-
-        agent.progress.ping()
-
-        // the following execute f in a different thread, thus `timed` has to be declared as `ThreadSafe`
-        CommonUtils.withTimeout(timeout.hardTerimination)(
-          f,
-          agent.progress.defaultHeartbeat
-        )
-      case _ =>
-        LoggerFactory.getLogger(this.getClass).info(this.withDetail(baseStr))
-
-        f
-    }
-  }
-
-  final def exe(agent: Agent): Seq[Observation] = {
-    withTimeoutDuring(agent) {
-      doExe(agent)
-    }
-  }
-
-  protected[actions] def doExe(agent: Agent): Seq[Observation]
-}
 
 /**
   * These are the same actions a human would do to get to the data page, their order of execution is identical to that
@@ -65,7 +26,7 @@ trait Action extends Tool[Seq[Observation]] {
   // execute errorDumps as side effects
   protected def wrapException(
       exception: Exception,
-      agent: Agent
+      agent: Harness
   ): ActionException = {
 
     lazy val backtraceMsg: String = {
@@ -115,7 +76,7 @@ trait Action extends Tool[Seq[Observation]] {
 
   // also handle auditing, cache and errorDump
   // TODO: according to RL convention, should only return 1 Observation
-  final override def apply(agent: Agent): Seq[Observation] = {
+  final override def apply(agent: Harness): Seq[Observation] = {
 
     val results = {
       try {

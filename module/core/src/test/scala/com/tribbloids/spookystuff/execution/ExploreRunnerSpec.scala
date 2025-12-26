@@ -1,9 +1,10 @@
 package com.tribbloids.spookystuff.execution
 
-import com.tribbloids.spookystuff.actions.{NoOp, Wget}
+import com.tribbloids.spookystuff.actions.Wget
 import com.tribbloids.spookystuff.row.Data
 import com.tribbloids.spookystuff.testutils.{SpookyBaseSpec, UnpackResources}
 import com.tribbloids.spookystuff.dsl.DataView
+import com.tribbloids.spookystuff.tool.NoOp
 
 class ExploreRunnerSpec extends SpookyBaseSpec {
 

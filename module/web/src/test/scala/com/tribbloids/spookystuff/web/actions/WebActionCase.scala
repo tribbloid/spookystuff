@@ -4,7 +4,7 @@ import ai.acyclic.prover.commons.spark.TestHelper
 import com.tribbloids.spookystuff.SpookyContext
 import com.tribbloids.spookystuff.actions.ControlBlock.Loop
 import com.tribbloids.spookystuff.actions.Export.DocValidation.StatusCode2XX
-import com.tribbloids.spookystuff.agent.Agent
+import com.tribbloids.spookystuff.agent.Harness
 import com.tribbloids.spookystuff.conf.DriverFactory
 import com.tribbloids.spookystuff.doc.{Doc, DocUtils, Observation}
 import com.tribbloids.spookystuff.io.WriteMode.Overwrite
@@ -38,7 +38,7 @@ abstract class WebActionCase extends BaseSpec with FileURIDocsFixture {
 
   it("empty page") {
     val emptyPage: Doc = {
-      val agent = new Agent(spooky)
+      val agent = new Harness(spooky)
 
       Snapshot().accept(StatusCode2XX).apply(agent).toList.head.asInstanceOf[Doc]
     }

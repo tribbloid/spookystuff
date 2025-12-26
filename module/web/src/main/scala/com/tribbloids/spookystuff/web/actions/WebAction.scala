@@ -1,7 +1,7 @@
 package com.tribbloids.spookystuff.web.actions
 
 import com.tribbloids.spookystuff.actions.Action
-import com.tribbloids.spookystuff.agent.Agent
+import com.tribbloids.spookystuff.agent.Harness
 import com.tribbloids.spookystuff.doc.Doc
 import com.tribbloids.spookystuff.web.conf.Web
 import com.tribbloids.spookystuff.{ActionException, ActionExceptionWithCoreDump, SpookyException}
@@ -20,7 +20,7 @@ trait WebAction extends Action {
   // execute errorDumps as side effects
   override protected def wrapException(
       exception: Exception,
-      agent: Agent
+      agent: Harness
   ): ActionException = {
 
     val original: ActionException = super.wrapException(exception, agent)

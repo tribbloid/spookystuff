@@ -2,7 +2,7 @@ package com.tribbloids.spookystuff
 
 import com.tribbloids.spookystuff.python.PyConverter
 import PythonDriverSuite.Runner
-import com.tribbloids.spookystuff.agent.{Agent, PythonDriver}
+import com.tribbloids.spookystuff.agent.{Harness, PythonDriver}
 import com.tribbloids.spookystuff.testutils.SpookyBaseSpec
 import com.tribbloids.spookystuff.commons.lifespan.Cleanable.Lifespan
 import com.tribbloids.spookystuff.commons.CommonUtils
@@ -65,7 +65,7 @@ class PythonDriverSuite extends SpookyBaseSpec {
 
   it("factory reset") {
 
-    val agent = new Agent(spooky)
+    val agent = new Harness(spooky)
     val driverFactory = PythonDriverFactory._3
     val driver = driverFactory.dispatch(agent)
     driverFactory.factoryReset(driver)

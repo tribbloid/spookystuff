@@ -1,6 +1,6 @@
 package com.tribbloids.spookystuff.web.actions
 
-import com.tribbloids.spookystuff.agent.Agent
+import com.tribbloids.spookystuff.agent.Harness
 import com.tribbloids.spookystuff.web.conf.Web
 import com.tribbloids.spookystuff.{ActionException, Const}
 import org.openqa.selenium.support.ui.{ExpectedConditions, Select}
@@ -28,7 +28,7 @@ trait Foundation extends Serializable {
       override val blocking: Boolean = Const.Interaction.blocking
   ) extends WebInteraction(cooldown, blocking) {
 
-    override def exeNoOutput(agent: Agent): Unit = {
+    override def exeNoOutput(agent: Harness): Unit = {
       val parsed = URI.create(uri)
       require(parsed.getScheme != null && parsed.getScheme.nonEmpty, "URI without schema is invalid: " + uri)
 
@@ -44,14 +44,14 @@ trait Foundation extends Serializable {
     */
   case class WaitFor(selector: Selector) extends WebInteraction(null, false) {
 
-    override def exeNoOutput(agent: Agent): Unit = {
+    override def exeNoOutput(agent: Harness): Unit = {
       this.getElement(selector, agent)
     }
   }
 
   case object WaitForDocumentReady extends WebInteraction(null, true) {
 
-    override def exeNoOutput(agent: Agent): Unit = {
+    override def exeNoOutput(agent: Harness): Unit = {
       // do nothing
     }
   }
@@ -95,7 +95,7 @@ trait Foundation extends Serializable {
       override val cooldown: Duration = Const.Interaction.delayMin,
       override val blocking: Boolean = Const.Interaction.blocking
   ) extends WebInteraction(cooldown, blocking) {
-    override def exeNoOutput(agent: Agent): Unit = {
+    override def exeNoOutput(agent: Harness): Unit = {
       val element = this.getClickableElement(selector, agent)
 
       element.click()
@@ -118,7 +118,7 @@ trait Foundation extends Serializable {
 
     @transient lazy val clicked: mutable.HashSet[String] = mutable.HashSet(exclude: _*)
 
-    override def exeNoOutput(agent: Agent): Unit = {
+    override def exeNoOutput(agent: Harness): Unit = {
 
       val elements = this.getElements(selector, agent)
 
@@ -151,7 +151,7 @@ trait Foundation extends Serializable {
       override val cooldown: Duration = Const.Interaction.delayMin,
       override val blocking: Boolean = Const.Interaction.blocking
   ) extends WebInteraction(cooldown, blocking) {
-    override def exeNoOutput(agent: Agent): Unit = {
+    override def exeNoOutput(agent: Harness): Unit = {
 
       val element = this.getElement(selector, agent)
 
@@ -173,7 +173,7 @@ trait Foundation extends Serializable {
       override val cooldown: Duration = Const.Interaction.delayMin,
       override val blocking: Boolean = Const.Interaction.blocking
   ) extends WebInteraction(cooldown, blocking) {
-    override def exeNoOutput(agent: Agent): Unit = {
+    override def exeNoOutput(agent: Harness): Unit = {
 
       val element = this.getElement(selector, agent)
 
@@ -195,7 +195,7 @@ trait Foundation extends Serializable {
       override val cooldown: Duration = Const.Interaction.delayMin,
       override val blocking: Boolean = Const.Interaction.blocking
   ) extends WebInteraction(cooldown, blocking) {
-    override def exeNoOutput(agent: Agent): Unit = {
+    override def exeNoOutput(agent: Harness): Unit = {
 
       val element = this.getElement(selector, agent)
 
@@ -213,7 +213,7 @@ trait Foundation extends Serializable {
     */
   // TODO: not possible to switch back, need a better abstraction
   case class ToFrame(selector: Selector) extends WebInteraction(null, false) {
-    override def exeNoOutput(agent: Agent): Unit = {
+    override def exeNoOutput(agent: Harness): Unit = {
 
       val element = this.getElement(selector, agent)
 
@@ -235,7 +235,7 @@ trait Foundation extends Serializable {
       override val cooldown: Duration = Const.Interaction.delayMin,
       override val blocking: Boolean = Const.Interaction.blocking
   ) extends WebInteraction(cooldown, blocking) {
-    override def exeNoOutput(agent: Agent): Unit = {
+    override def exeNoOutput(agent: Harness): Unit = {
 
       val element =
         if (selector == null) None
@@ -267,7 +267,7 @@ trait Foundation extends Serializable {
       override val blocking: Boolean = Const.Interaction.blocking
   ) extends WebInteraction(cooldown, blocking) {
 
-    override def exeNoOutput(agent: Agent): Unit = {
+    override def exeNoOutput(agent: Harness): Unit = {
 
       val element = this.getElement(selector, agent)
 

@@ -1,6 +1,6 @@
 package com.tribbloids.spookystuff.actions
 
-import com.tribbloids.spookystuff.agent.Agent
+import com.tribbloids.spookystuff.agent.Harness
 import com.tribbloids.spookystuff.caching.DocCacheLevel
 import com.tribbloids.spookystuff.doc.*
 import com.tribbloids.spookystuff.doc.Observation.ReplayUID
@@ -39,7 +39,7 @@ object Wpost {
       txt + "\n"
     }
 
-    def getResolver(agent: Agent): OmniResolver = {
+    def getResolver(agent: Harness): OmniResolver = {
 
       val timeout = this.getTimeout(agent).max.toMillis.toInt
       val hadoopConf = agent.spooky.hadoopConf
@@ -64,7 +64,7 @@ object Wpost {
       resolver
     }
 
-    override def doExe(agent: Agent): Seq[Observation] = {
+    override def doExe(agent: Harness): Seq[Observation] = {
 
       val resolver = getResolver(agent)
       val impl = resolver.getImpl(uri)

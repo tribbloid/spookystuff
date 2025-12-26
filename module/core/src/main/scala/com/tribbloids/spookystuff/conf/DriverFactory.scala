@@ -17,7 +17,7 @@ package com.tribbloids.spookystuff.conf
 
 import ai.acyclic.prover.commons.util.Caching.ConcurrentMap
 import com.tribbloids.spookystuff.SpookyContext
-import com.tribbloids.spookystuff.agent.{Agent, DriverLike, DriverStatus}
+import com.tribbloids.spookystuff.agent.{DriverLike, DriverStatus, Harness}
 import com.tribbloids.spookystuff.commons.lifespan.Cleanable.{BatchID, Lifespan}
 import org.apache.spark.TaskContext
 
@@ -35,12 +35,12 @@ sealed abstract class DriverFactory[D <: DriverLike] extends Serializable {
   // If get is called again before the previous driver is released, the old driver is destroyed to create a new one.
   // this is to facilitate multiple retries
 
-  def dispatch(agent: Agent): D
+  def dispatch(agent: Harness): D
 
   // release all Drivers that belong to a session
-  def release(agent: Agent): Unit
+  def release(agent: Harness): Unit
 
-  def driverLifespan(agent: Agent): Lifespan =
+  def driverLifespan(agent: Harness): Lifespan =
     Lifespan.TaskOrJVM(ctxFactory = () => agent.lifespan.ctx).forShipping
 
   def deployGlobally(spooky: SpookyContext): Unit = {}
@@ -63,24 +63,24 @@ object DriverFactory {
 
     // session -> driver
     // cleanup: this has no effect whatsoever
-    @transient lazy val localDrivers: ConcurrentMap[Agent, D] = ConcurrentMap()
+    @transient lazy val localDrivers: ConcurrentMap[Harness, D] = ConcurrentMap()
 
-    def dispatch(agent: Agent): D = {
+    def dispatch(agent: Harness): D = {
       release(agent)
       val driver = create(agent)
       localDrivers += agent -> driver
       driver
     }
 
-    final def create(agent: Agent): D = {
+    final def create(agent: Harness): D = {
       _createImpl(agent, driverLifespan(agent))
     }
 
-    def _createImpl(agent: Agent, lifespan: Lifespan): D
+    def _createImpl(agent: Harness, lifespan: Lifespan): D
 
     def factoryReset(driver: D): Unit
 
-    def release(agent: Agent): Unit = {
+    def release(agent: Harness): Unit = {
       val existingOpt = localDrivers.remove(agent)
       existingOpt.foreach { driver =>
         clean(driver, agent.taskContextOpt)
@@ -108,7 +108,7 @@ object DriverFactory {
       ConcurrentMap()
     }
 
-    override def dispatch(agent: Agent): D = {
+    override def dispatch(agent: Harness): D = {
 
       val ls = driverLifespan(agent)
       val taskLocalOpt = taskLocals.get(ls.registeredIDs)
@@ -145,7 +145,7 @@ object DriverFactory {
         }
     }
 
-    override def release(agent: Agent): Unit = {
+    override def release(agent: Harness): Unit = {
 
       val ls = driverLifespan(agent)
       val statusOpt = taskLocals.get(ls.registeredIDs)

@@ -1,12 +1,12 @@
 package com.tribbloids.spookystuff.actions
 
-import com.tribbloids.spookystuff.agent.Agent
+import com.tribbloids.spookystuff.agent.Harness
 import com.tribbloids.spookystuff.doc.{Doc, Observation}
 import com.tribbloids.spookystuff.utils.http.HttpUtils
 
 case class OAuthV2(original: Wget) extends HttpMethod(original.uri) { // TODO: this should be an HTTP method
 
-  def temporaryDelegate(agent: Agent): Wget = { // this is not normal form as the delegate Wget won't last long, should not be cached
+  def temporaryDelegate(agent: Harness): Wget = { // this is not normal form as the delegate Wget won't last long, should not be cached
 
     val keys = agent.spooky.conf.oAuthKeysFactory.function0()
     if (keys == null) {
@@ -23,7 +23,7 @@ case class OAuthV2(original: Wget) extends HttpMethod(original.uri) { // TODO: t
     effectiveWget
   }
 
-  override def doExe(agent: Agent): Seq[Observation] = {
+  override def doExe(agent: Harness): Seq[Observation] = {
 
     val temporary = this.temporaryDelegate(agent)
 

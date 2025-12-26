@@ -26,7 +26,7 @@ object AgentContext {
 
     @transient lazy val trajectoryBase: Seq[Observation] = {
 
-      rollout.withCtx.apply(ec.ctx).trajectory
+      rollout.withCtx(ec).trajectory
     }
 
     def rollout: Trace.Rollout = localityGroup.rollout
@@ -149,11 +149,11 @@ object AgentContext {
 }
 
 /**
-  * [[com.tribbloids.spookystuff.agent.Agent]]'s interactive API, one of the two APIs [[Delta]] can interact with
+  * [[com.tribbloids.spookystuff.agent.Harness]]'s interactive API, one of the two APIs [[Delta]] can interact with
   *
   * always contains a [[LocalityGroup]] for efficient [[Delta]] execution
   *
-  * always bind to exactly one [[com.tribbloids.spookystuff.agent.Agent]]
+  * always bind to exactly one [[com.tribbloids.spookystuff.agent.Harness]]
   *
   * @param group
   *   shared agent interaction that improves efficiency

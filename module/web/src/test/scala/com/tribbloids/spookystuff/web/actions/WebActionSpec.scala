@@ -4,7 +4,7 @@ import ai.acyclic.prover.commons.debug.print_@
 import com.tribbloids.spookystuff.ActionException
 import com.tribbloids.spookystuff.actions.*
 import com.tribbloids.spookystuff.actions.ControlBlock.LocalRetry
-import com.tribbloids.spookystuff.agent.Agent
+import com.tribbloids.spookystuff.agent.Harness
 import com.tribbloids.spookystuff.doc.Observation
 import com.tribbloids.spookystuff.testutils.{FileURIDocsFixture, SpookyBaseSpec}
 import com.tribbloids.spookystuff.web.conf.{Web, WebDriverFactory}
@@ -182,14 +182,14 @@ object WebActionSpec {
 
   case object DefectiveExport extends Export {
 
-    override def doExe(agent: Agent): Seq[Observation] = {
+    override def doExe(agent: Harness): Seq[Observation] = {
       sys.error("error")
     }
   }
 
   case object DefectiveWebExport extends Export with WebAction {
 
-    override def doExe(agent: Agent): Seq[Observation] = {
+    override def doExe(agent: Harness): Seq[Observation] = {
       agent.getDriver(Web)
       sys.error("error")
     }

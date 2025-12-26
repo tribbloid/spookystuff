@@ -1,9 +1,9 @@
 package com.tribbloids.spookystuff.actions
 
 import com.tribbloids.spookystuff.*
-import com.tribbloids.spookystuff.actions.HasTrace
+import com.tribbloids.spookystuff.tool.HasTrace
 import com.tribbloids.spookystuff.actions.Wayback
-import com.tribbloids.spookystuff.agent.Agent
+import com.tribbloids.spookystuff.agent.Harness
 import com.tribbloids.spookystuff.commons.CommonUtils
 import com.tribbloids.spookystuff.doc.Observation
 import org.slf4j.LoggerFactory
@@ -33,7 +33,7 @@ abstract class ControlBlock(
         _.wayback
       }
 
-  final override def doExe(agent: Agent): Seq[Observation] = {
+  final override def doExe(agent: Harness): Seq[Observation] = {
 
     val doc = this.doExeNoUID(agent)
 
@@ -60,7 +60,7 @@ abstract class ControlBlock(
     result
   }
 
-  def doExeNoUID(agent: Agent): Seq[Observation]
+  def doExeNoUID(agent: Harness): Seq[Observation]
 }
 
 object ControlBlock {
@@ -92,7 +92,7 @@ object ControlBlock {
         this.copy(trace = trace.stateChangeOnly)(retries)
       }
 
-      override def doExeNoUID(agent: Agent): Seq[Observation] = {
+      override def doExeNoUID(agent: Harness): Seq[Observation] = {
 
         val pages = new ArrayBuffer[Observation]()
 
@@ -137,7 +137,7 @@ object ControlBlock {
 
     assert(limit > 0)
 
-    override def doExeNoUID(agent: Agent): Seq[Observation] = {
+    override def doExeNoUID(agent: Harness): Seq[Observation] = {
 
       val pages = new ArrayBuffer[Observation]()
 

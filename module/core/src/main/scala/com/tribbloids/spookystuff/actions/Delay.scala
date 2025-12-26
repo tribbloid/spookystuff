@@ -1,7 +1,7 @@
 package com.tribbloids.spookystuff.actions
 
 import com.tribbloids.spookystuff.Const
-import com.tribbloids.spookystuff.agent.Agent
+import com.tribbloids.spookystuff.agent.Harness
 
 import scala.concurrent.duration.Duration
 import scala.util.Random
@@ -17,7 +17,7 @@ case class Delay(
     override val cooldown: Duration = Const.Interaction.delayMax
 ) extends Interaction {
 
-  override def exeNoOutput(agent: Agent): Unit = {
+  override def exeNoOutput(agent: Harness): Unit = {
     // do nothing
   }
 
@@ -39,7 +39,7 @@ object Delay {
 
     assert(maxDelay >= cooldown)
 
-    override def exeNoOutput(agent: Agent): Unit = {
+    override def exeNoOutput(agent: Harness): Unit = {
       Thread.sleep(Random.nextInt((maxDelay - cooldown).toMillis.toInt))
     }
   }

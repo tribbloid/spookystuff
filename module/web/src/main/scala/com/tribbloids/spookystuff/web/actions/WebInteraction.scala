@@ -1,7 +1,7 @@
 package com.tribbloids.spookystuff.web.actions
 
 import com.tribbloids.spookystuff.actions.Interaction
-import com.tribbloids.spookystuff.agent.Agent
+import com.tribbloids.spookystuff.agent.Harness
 import com.tribbloids.spookystuff.doc.Doc
 import com.tribbloids.spookystuff.web.conf.Web
 import org.openqa.selenium.support.ui.ExpectedCondition
@@ -24,7 +24,7 @@ abstract class WebInteraction(
 
   import WebInteraction.*
 
-  override def doExe(agent: Agent): Seq[Doc] = {
+  override def doExe(agent: Harness): Seq[Doc] = {
 
     super.doExe(agent)
 
@@ -35,7 +35,7 @@ abstract class WebInteraction(
     Nil
   }
 
-  def webDriverActions(agent: Agent): interactions.Actions = {
+  def webDriverActions(agent: Harness): interactions.Actions = {
 
     new org.openqa.selenium.interactions.Actions(agent.getDriver(Web))
   }

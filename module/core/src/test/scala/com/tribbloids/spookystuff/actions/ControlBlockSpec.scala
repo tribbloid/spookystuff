@@ -1,7 +1,7 @@
 package com.tribbloids.spookystuff.actions
 
 import com.tribbloids.spookystuff.actions.ControlBlock.{LocalRetry, Loop}
-import com.tribbloids.spookystuff.agent.Agent
+import com.tribbloids.spookystuff.agent.Harness
 import com.tribbloids.spookystuff.testutils.{FileDocsFixture, SpookyBaseSpec}
 
 import java.util.Date
@@ -16,7 +16,7 @@ class ControlBlockSpec extends SpookyBaseSpec with FileDocsFixture {
       Delay(1.seconds) +> Wget(HTML_URL)
     )
 
-    val agent = new Agent(
+    val agent = new Harness(
       this.spooky
     )
     loop.exe(agent)
@@ -32,7 +32,7 @@ class ControlBlockSpec extends SpookyBaseSpec with FileDocsFixture {
       Delay(1.seconds) +> Wget(HTML_URL)
     )
 
-    val agent = new Agent(
+    val agent = new Harness(
       this.spooky
     )
     retry.exe(agent)
@@ -48,7 +48,7 @@ class ControlBlockSpec extends SpookyBaseSpec with FileDocsFixture {
       Delay(1.seconds) +> Wget(HTML_URL)
     )
 
-    val agent = new Agent(
+    val agent = new Harness(
       this.spooky
     )
     retry.exe(agent)

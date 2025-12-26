@@ -21,7 +21,7 @@ object __RowDesign {
     * Assuming the following Conventions:
     *
     *   - [[AgentContext]] contains the the agent (initialized or inherited on demand, a.k.a
-    *     [[com.tribbloids.spookystuff.agent.Agent]]), its backtrace (agent play history), and its latest trajectory
+    *     [[com.tribbloids.spookystuff.agent.Harness]]), its backtrace (agent play history), and its latest trajectory
     *   - [[Lineage]] is a lightweight data structure that can be mapped to a Spark SQL row
     *   - [[Lineage.WithScope]] is a lightweight structure that contains a [[Lineage]] and pointers to parts of
     *     trajectory (namesake of "Scope")

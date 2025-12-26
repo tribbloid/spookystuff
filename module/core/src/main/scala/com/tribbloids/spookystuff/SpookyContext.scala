@@ -4,7 +4,7 @@ import ai.acyclic.prover.commons.function.hom.Hom
 import ai.acyclic.prover.commons.function.hom.Hom.:=>
 import ai.acyclic.prover.commons.spark.SparkContextView
 import ai.acyclic.prover.commons.spark.serialization.{NOTSerializable, SerializerOverride}
-import com.tribbloids.spookystuff.agent.Agent
+import com.tribbloids.spookystuff.agent.Harness
 import com.tribbloids.spookystuff.commons.TreeException
 import com.tribbloids.spookystuff.conf.*
 import com.tribbloids.spookystuff.io.HDFSResolver
@@ -57,18 +57,13 @@ object SpookyContext {
 
     // cached results will be dropped for being NOTSerializable
     @transient final lazy val withCtxFn: Hom.Fn.CachedLazy[SpookyContext, _WithCtx] =
-      :=>.at[SpookyContext] { v =>
-        assert(
-          withCtxFn.lookup.isEmpty, {
-            s"fuck you: ${v} ${withCtxFn.lookup.keys.mkString}"
-          }
-        )
-
-        _WithCtx(v)
-      }
+      Hom
+        .at[SpookyContext] { v =>
+          _WithCtx(v)
+        }
         .cached()
 
-    def withCtx(v: SpookyContext) = {
+    def withCtx(v: SpookyContext): _WithCtx = {
 
       withCtxFn.apply(v)
     }
@@ -241,17 +236,6 @@ case class SpookyContext(
   def fromDataset[D](ds: Dataset[D]): DataView[D] = {
 
     fromRDD(ds.rdd)
-  }
-
-  def withSession[T](fn: Agent => T): T = {
-
-    val session = new Agent(this)
-
-    try {
-      fn(session)
-    } finally {
-      session.tryClean()
-    }
   }
 
   def createBlank: DataView[Unit] = {

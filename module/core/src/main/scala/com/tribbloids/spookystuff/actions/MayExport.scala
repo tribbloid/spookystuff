@@ -23,5 +23,4 @@ object MayExport {
   }
 }
 
-trait MayExport extends Action {
-}
+trait MayExport extends Action {}

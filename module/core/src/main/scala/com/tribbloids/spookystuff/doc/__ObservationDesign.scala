@@ -14,7 +14,7 @@ object __ObservationDesign {
     *     [[com.tribbloids.spookystuff.io.ResourceMetadata]] etc.): describes the observation process, usually small in
     *     size and can be easily serialized
     *
-    * Content can be Raw or Parsed (by Apache Tika), [[com.tribbloids.spookystuff.agent.Agent]] is only capable of
+    * Content can be Raw or Parsed (by Apache Tika), [[com.tribbloids.spookystuff.agent.Harness]] is only capable of
     * observing Raw content, if it has an unsupported format, Apache Tika will be used to convert it into Parsed. Both
     * can be optionally converted into Saved by [[com.tribbloids.spookystuff.caching.DFSDocCache]], which has a minimal
     * but slower serialized form, as the actual content is saved as a file on DFS that can be opened for inspection.

@@ -1,7 +1,7 @@
 package com.tribbloids.spookystuff.web.actions
 
 import com.tribbloids.spookystuff.actions.{Export, Wayback}
-import com.tribbloids.spookystuff.agent.Agent
+import com.tribbloids.spookystuff.agent.Harness
 import com.tribbloids.spookystuff.doc.*
 import com.tribbloids.spookystuff.doc.Observation.ReplayUID
 import com.tribbloids.spookystuff.web.conf.Web
@@ -13,7 +13,7 @@ import com.tribbloids.spookystuff.web.conf.Web
 case class Snapshot() extends Export with WebAction with Wayback {
 
   // all other fields are empty
-  override def doExe(agent: Agent): Seq[Doc] = {
+  override def doExe(agent: Harness): Seq[Doc] = {
     // no effect if WebDriver is missing
 
     val webDriver = agent.getDriver(Web)

@@ -1,6 +1,6 @@
 package com.tribbloids.spookystuff.actions
 
-import com.tribbloids.spookystuff.agent.Agent
+import com.tribbloids.spookystuff.agent.Harness
 import com.tribbloids.spookystuff.commons.{CommonUtils, Timeout}
 import com.tribbloids.spookystuff.doc.Observation.ReplayUID
 import com.tribbloids.spookystuff.doc.{Doc, Observation}
@@ -51,7 +51,7 @@ class ActionSuite extends SpookyBaseSpec {
   it("Timed mixin can terminate execution if it takes too long") {
 
     val a = MockAlwaysTimeout
-    val session = new Agent(this.spooky)
+    val session = new Harness(this.spooky)
     assert(
       a.getTimeout(session).hardTerimination == spookyConf.remoteResourceTimeout.max + Timeout.hardTerminateOverhead
     )
@@ -78,7 +78,7 @@ object ActionSuite {
 
   case object MockAlwaysTimeout extends Export with MayTimeout {
 
-    override def doExe(agent: Agent): Seq[Observation] = {
+    override def doExe(agent: Harness): Seq[Observation] = {
       Thread.sleep(120 * 1000)
       Nil
     }
@@ -88,12 +88,12 @@ object ActionSuite {
 
     override def cooldown: Duration = Duration.Zero
 
-    override def exeNoOutput(agent: Agent): Unit = {}
+    override def exeNoOutput(agent: Harness): Unit = {}
   }
 
   case class MockExport() extends Export {
 
-    override def doExe(agent: Agent): Seq[Observation] = {
+    override def doExe(agent: Harness): Seq[Observation] = {
       Seq(
         Doc(
           ReplayUID(agent.backtrace.toSeq)(),

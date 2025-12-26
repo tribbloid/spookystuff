@@ -1,6 +1,7 @@
-package com.tribbloids.spookystuff.actions
+package com.tribbloids.spookystuff.tool
 
-import com.tribbloids.spookystuff.agent.Agent
+import com.tribbloids.spookystuff.actions.Trace
+import com.tribbloids.spookystuff.agent.Harness
 import com.tribbloids.spookystuff.commons.Verbose
 import com.tribbloids.spookystuff.doc.Observation
 import com.tribbloids.spookystuff.relay.AutomaticRelay
@@ -57,5 +58,5 @@ trait HasTrace extends HasTraceSet with Product with Serializable with Verbose {
 
   def exportNames: Set[String] = Set.empty
 
-  def apply(agent: Agent): Seq[Observation]
+  def apply(agent: Harness): Seq[Observation]
 }

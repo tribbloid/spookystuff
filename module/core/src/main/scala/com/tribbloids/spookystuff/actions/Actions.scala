@@ -1,5 +1,7 @@
 package com.tribbloids.spookystuff.actions
 
+import com.tribbloids.spookystuff.tool.HasTrace
+
 trait Actions extends HasTrace {
 
   final override def exportNames: Set[String] = {

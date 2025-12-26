@@ -6,6 +6,7 @@ import com.tribbloids.spookystuff.commons.TreeException
 import com.tribbloids.spookystuff.commons.lifespan.Cleanable.Lifespan
 import com.tribbloids.spookystuff.commons.lifespan.LocalCleanable
 import com.tribbloids.spookystuff.conf.{Core, DriverSystem, PluginRegistry}
+import com.tribbloids.spookystuff.execution.ExecutionContext
 import com.tribbloids.spookystuff.io.Progress
 import com.tribbloids.spookystuff.utils.SpookyUtils
 import org.apache.spark.TaskContext
@@ -17,12 +18,12 @@ import scala.util.Try
 /**
   * the only implementation should be manually cleaned By ActionLike, so don't set lifespan unless absolutely necessary
   */
-class Agent( // TODO: this is actually the harness, not the agent
-    val spooky: SpookyContext,
+class Harness( // TODO: this is actually the harness, not the agent
+    val ec: ExecutionContext,
     override val _lifespan: Lifespan = Lifespan.TaskOrJVM().forShipping
 ) extends LocalCleanable {
 
-  spooky.metrics.sessionInitialized += 1
+  ec.ctx.metrics.sessionInitialized += 1
   val startTimeMillis: Long = new Date().getTime
   val backtrace: ArrayBuffer[Action] = ArrayBuffer()
 
@@ -35,6 +36,8 @@ class Agent( // TODO: this is actually the harness, not the agent
     lazy val dirPath: String = s"logs/$level1/$level2"
   }
 
+  lazy val spooky: SpookyContext = ec.ctx
+
   def taskContextOpt: Option[TaskContext] = lifespan.ctx.taskOpt
 
   lazy val progress: Progress = Progress()
@@ -46,20 +49,20 @@ class Agent( // TODO: this is actually the harness, not the agent
     override def init: Impl = new Impl {
 
       override def apply[V <: DriverSystem](v: V): this.Out[V] = {
-        val plugin: V#Plugin = spooky.Plugins.apply(v)
+        val plugin: V#Plugin = ec.ctx.Plugins.apply(v)
 
         progress.ping()
-        val result = plugin.driverFactory.dispatch(Agent.this)
+        val result = plugin.driverFactory.dispatch(Harness.this)
         progress.ping()
 
-        spooky.apply(Core).metric.driverDispatched.add(plugin.driverFactory.toString -> 1L)
+        ec.ctx.apply(Core).metric.driverDispatched.add(plugin.driverFactory.toString -> 1L)
 
         result
       }
     }
 
     def releaseAll(): Unit = {
-      val plugins = spooky.Plugins.lookup.values.toList
+      val plugins = ec.ctx.Plugins.lookup.values.toList
 
       val wDrivers = plugins.collect {
         case p: DriverSystem#Plugin =>
@@ -69,10 +72,10 @@ class Agent( // TODO: this is actually the harness, not the agent
       val attempts = wDrivers.map { (p: DriverSystem#Plugin) =>
         Try {
           p.driverFactoryOpt.foreach { v =>
-            v.release(Agent.this)
+            v.release(Harness.this)
             cached.lookup remove p.pluginSystem
 
-            spooky(Core).metric.driverReleased.add(v.toString -> 1L)
+            ec.ctx.apply(Core).metric.driverReleased.add(v.toString -> 1L)
           }
         }
       }
@@ -86,6 +89,6 @@ class Agent( // TODO: this is actually the harness, not the agent
   override def cleanImpl(): Unit = {
     getDriver.releaseAll()
 
-    spooky.metrics.sessionReclaimed += 1
+    ec.ctx.metrics.sessionReclaimed += 1
   }
 }

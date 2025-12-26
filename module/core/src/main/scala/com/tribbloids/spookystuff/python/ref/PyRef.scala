@@ -2,7 +2,7 @@ package com.tribbloids.spookystuff.python.ref
 
 import ai.acyclic.prover.commons.util.Caching.ConcurrentMap
 import com.tribbloids.spookystuff.SpookyContext
-import com.tribbloids.spookystuff.agent.{Agent, PythonDriver}
+import com.tribbloids.spookystuff.agent.{Harness, PythonDriver}
 import com.tribbloids.spookystuff.commons.lifespan.Cleanable
 import com.tribbloids.spookystuff.commons.{DSLUtils, TreeException}
 import com.tribbloids.spookystuff.conf.Python
@@ -95,7 +95,7 @@ trait PyRef extends Cleanable {
     new PyBinding(this, driver, spookyOpt)
   }
 
-  def Py(agent: Agent): Binding = {
+  def Py(agent: Harness): Binding = {
     _Py(agent.getDriver(Python), Some(agent.spooky))
   }
 

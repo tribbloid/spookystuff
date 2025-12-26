@@ -1,6 +1,6 @@
 package com.tribbloids.spookystuff.actions
 
-import com.tribbloids.spookystuff.agent.Agent
+import com.tribbloids.spookystuff.agent.Harness
 import com.tribbloids.spookystuff.commons.Timeout
 
 trait MayTimeout {
@@ -8,7 +8,7 @@ trait MayTimeout {
 
   var _timeout: Timeout = _ // TODO: how to make it immutable?
 
-  def getTimeout(agent: Agent): Timeout =
+  def getTimeout(agent: Harness): Timeout =
     Option(MayTimeout.this._timeout).getOrElse(agent.spooky.conf.remoteResourceTimeout)
 
 //  override def injectFrom(same: ActionLike): Unit = {

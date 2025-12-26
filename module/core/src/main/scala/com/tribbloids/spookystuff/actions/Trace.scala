@@ -4,12 +4,14 @@ import ai.acyclic.prover.commons.cap.Capability
 import ai.acyclic.prover.commons.cap.Capability.<>
 import ai.acyclic.prover.commons.spark.serialization.NOTSerializable
 import com.tribbloids.spookystuff.actions.Trace.Repr
-import com.tribbloids.spookystuff.agent.Agent
+import com.tribbloids.spookystuff.agent.Harness
 import com.tribbloids.spookystuff.caching.{CacheKey, DFSDocCache, InMemoryDocCache}
 import com.tribbloids.spookystuff.commons.CommonUtils
 import com.tribbloids.spookystuff.doc.{Doc, Observation}
+import com.tribbloids.spookystuff.execution.ExecutionContext
 import com.tribbloids.spookystuff.{Const, SpookyContext}
 import com.tribbloids.spookystuff.io.WriteMode.Overwrite
+import com.tribbloids.spookystuff.tool.HasTraceSet
 import org.slf4j.LoggerFactory
 
 import scala.collection.mutable.ArrayBuffer
@@ -45,7 +47,7 @@ object Trace {
     //      }
   }
 
-  case class Rollout(trace: Trace) extends SpookyContext.Contextual {
+  case class Rollout(trace: Trace) {
     // unlike trace, it is always executed by the agent from scratch
     // thus, execution result can be cached, as replaying it will most likely have the same result (if the trace is deterministic)
 
@@ -79,10 +81,10 @@ object Trace {
       this.disableCached
     }
 
-    implicit class _WithCtx(spooky: SpookyContext) extends NOTSerializable {
+    implicit class withCtx(ec: ExecutionContext) extends NOTSerializable {
 
       def play(): Seq[Observation] = {
-        val result = trace.fetch(spooky)
+        val result = trace.fetch(ec)
         Rollout.this._cached = result
         result
       }
@@ -126,8 +128,7 @@ object Trace {
 case class Trace(
     repr: Repr = Nil
     // TODO: this should be gone, delegating to Same.By.Wrapper
-) extends Actions
-    { // remember trace is not a block! its the super container that cannot be wrapped
+) extends Actions { // remember trace is not a block! its the super container that cannot be wrapped
 
   import Trace.*
 
@@ -151,14 +152,14 @@ case class Trace(
     CacheKey.NormalFormKey(trace)
   }
 
-  override def apply(agent: Agent): Seq[Observation] = {
+  override def apply(agent: Harness): Seq[Observation] = {
     // the state of the agent is unknown, cannot cache result so far
 
     val result = doFetch(agent)
     result
   }
 
-  protected[actions] def doFetch(agent: Agent, lazyExe: Boolean = false): Seq[Observation] = {
+  protected[actions] def doFetch(agent: Harness, lazyExe: Boolean = false): Seq[Observation] = {
 
     val results: Seq[Observation] = if (this.isEmpty) {
       Nil
@@ -210,60 +211,60 @@ case class Trace(
     results
   }
 
-  def fetch(spooky: SpookyContext): Seq[Observation] = {
+  def fetch(ec: ExecutionContext): Seq[Observation] = {
 
     val results = CommonUtils.retry(Const.remoteResourceLocalRetries) {
-      fetchOnce(spooky)
+      fetchOnce(ec)
     }
     val numPages = results.count(_.isInstanceOf[Doc])
-    spooky.metrics.pagesFetched += numPages
+    ec.ctx.metrics.pagesFetched += numPages
 
     results
   }
 
-  def fetchOnce(spooky: SpookyContext): Seq[Observation] = {
+  def fetchOnce(ec: ExecutionContext): Seq[Observation] = {
 
     if (!this.hasExport) return Nil
 
     val pagesFromCache: Seq[Option[Seq[Observation]]] =
-      if (!spooky.conf.cacheRead) Seq(None)
+      if (!ec.ctx.conf.cacheRead) Seq(None)
       else
         dryRun.map { dry =>
           val view = Trace(dry)
           InMemoryDocCache
-            .get(view, spooky)
+            .get(view, ec.ctx)
             .orElse {
-              DFSDocCache.get(view, spooky)
+              DFSDocCache.get(view, ec.ctx)
             }
         }
 
     if (!pagesFromCache.contains(None)) {
       // cache incomplete, dryrun yields some backtraces that cannot be found, a new fetch from scratch is necessary
-      spooky.metrics.fetchFromCacheSuccess += 1
+      ec.ctx.metrics.fetchFromCacheSuccess += 1
 
       val results = pagesFromCache.flatMap(v => v.get)
-      spooky.metrics.pagesFetchedFromCache += results.count(_.isInstanceOf[Doc])
+      ec.ctx.metrics.pagesFetchedFromCache += results.count(_.isInstanceOf[Doc])
       this.trace.foreach { action =>
         LoggerFactory.getLogger(this.getClass).info(s"(cached)+> ${action.toString}")
       }
 
       results
     } else {
-      spooky.metrics.fetchFromCacheFailure += 1
+      ec.ctx.metrics.fetchFromCacheFailure += 1
 
-      if (!spooky.conf.remote)
+      if (!ec.ctx.conf.remote)
         throw new IllegalArgumentException(
           "Resource is not cached and not allowed to be fetched remotely, " +
             "the later can be enabled by setting SpookyContext.conf.remote=true"
         )
-      spooky.withSession { session =>
+      ec.withHarness { session =>
         try {
           val result = this.apply(session)
-          spooky.metrics.fetchFromRemoteSuccess += 1
+          ec.ctx.metrics.fetchFromRemoteSuccess += 1
           result
         } catch {
           case e: Exception =>
-            spooky.metrics.fetchFromRemoteFailure += 1
+            ec.ctx.metrics.fetchFromRemoteFailure += 1
             session.getDriver.releaseAll()
             throw e
         }

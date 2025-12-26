@@ -2,11 +2,12 @@ package com.tribbloids.spookystuff.dsl
 
 import ai.acyclic.prover.commons.debug.print_@
 import ai.acyclic.prover.commons.spark.Envs
-import com.tribbloids.spookystuff.actions.{NoOp, Wget}
+import com.tribbloids.spookystuff.actions.Wget
 import com.tribbloids.spookystuff.execution.{ExplorePlan, FetchPlan, FlatMapPlan}
 import com.tribbloids.spookystuff.io.WriteMode.Overwrite
 import com.tribbloids.spookystuff.metrics.Acc
 import com.tribbloids.spookystuff.testutils.{FileDocsFixture, SpookyBaseSpec}
+import com.tribbloids.spookystuff.tool.NoOp
 
 import java.io.File
 import scala.reflect.ClassTag

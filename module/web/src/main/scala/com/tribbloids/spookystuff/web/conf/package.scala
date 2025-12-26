@@ -3,7 +3,7 @@ package com.tribbloids.spookystuff.web
 import ai.acyclic.prover.commons.spark.Envs
 import ai.acyclic.prover.commons.util.PathMagnet.LocalFSPath
 import com.tribbloids.spookystuff.SpookyContext
-import com.tribbloids.spookystuff.agent.{Agent, WebProxySetting}
+import com.tribbloids.spookystuff.agent.{Harness, WebProxySetting}
 import com.tribbloids.spookystuff.commons.lifespan.Cleanable.Lifespan
 import com.tribbloids.spookystuff.conf.DriverFactory
 import com.tribbloids.spookystuff.web.agent.{CleanWebDriver, WebDriverBundle, WebDriverDeployment}
@@ -64,7 +64,7 @@ package object conf {
 
       def getBundle: WebDriverBundle.Lt[T]
 
-      override def _createImpl(agent: Agent, lifespan: Lifespan): CleanWebDriver = {
+      override def _createImpl(agent: Harness, lifespan: Lifespan): CleanWebDriver = {
 
         var bundle = getBundle
 

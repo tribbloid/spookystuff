@@ -2,6 +2,7 @@ package com.tribbloids.spookystuff.caching
 
 import com.tribbloids.spookystuff.SpookyContext
 import com.tribbloids.spookystuff.actions.*
+import com.tribbloids.spookystuff.tool.HasTrace
 import com.tribbloids.spookystuff.doc.Observation
 
 import java.util.Date

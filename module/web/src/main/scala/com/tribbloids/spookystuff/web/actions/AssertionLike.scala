@@ -2,7 +2,7 @@ package com.tribbloids.spookystuff.web.actions
 
 import com.tribbloids.spookystuff.actions.Action
 import com.tribbloids.spookystuff.doc.Doc
-import com.tribbloids.spookystuff.agent.Agent
+import com.tribbloids.spookystuff.agent.Harness
 
 /**
   * Created by peng on 1/21/15.
@@ -12,12 +12,12 @@ abstract class AssertionLike extends Action {
 
   override val isStateful: Boolean = false
 
-  final override def doExe(agent: Agent): Seq[Doc] = {
+  final override def doExe(agent: Harness): Seq[Doc] = {
 
-    exeNoOutput(agent: Agent)
+    exeNoOutput(agent: Harness)
 
     Nil
   }
 
-  def exeNoOutput(agent: Agent): Unit
+  def exeNoOutput(agent: Harness): Unit
 }

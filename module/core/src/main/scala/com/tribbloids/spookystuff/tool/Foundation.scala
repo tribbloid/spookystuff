@@ -1,6 +1,7 @@
-package com.tribbloids.spookystuff.actions
+package com.tribbloids.spookystuff.tool
 
-import com.tribbloids.spookystuff.agent.Agent
+import com.tribbloids.spookystuff.actions.Trace
+import com.tribbloids.spookystuff.agent.Harness
 import com.tribbloids.spookystuff.doc.Observation
 
 trait Foundation extends Serializable {
@@ -26,6 +27,6 @@ trait Foundation extends Serializable {
 
     override val isStateful: Boolean = false
 
-    override def apply(agent: Agent): Seq[Observation] = Nil
+    override def apply(agent: Harness): Seq[Observation] = Nil
   }
 }
