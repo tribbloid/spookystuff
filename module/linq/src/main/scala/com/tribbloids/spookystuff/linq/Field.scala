@@ -1,7 +1,7 @@
 package com.tribbloids.spookystuff.linq
 
 import ai.acyclic.prover.commons.tag.Tag
-import ai.acyclic.prover.commons.tag._
+import ai.acyclic.prover.commons.tag.*
 import ai.acyclic.prover.commons.compat.TupleX
 import ai.acyclic.prover.commons.function.hom.Hom
 import com.tribbloids.spookystuff.linq
