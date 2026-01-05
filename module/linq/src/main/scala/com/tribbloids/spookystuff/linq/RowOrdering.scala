@@ -1,6 +1,6 @@
 package com.tribbloids.spookystuff.linq
 
-import ai.acyclic.prover.commons.cap.Capability.<>
+import ai.acyclic.prover.commons.tag._
 import ai.acyclic.prover.commons.compat.{TupleX, TupleXOrdering}
 import ai.acyclic.prover.commons.function.hom.Hom
 import com.tribbloids.spookystuff.linq.Rec

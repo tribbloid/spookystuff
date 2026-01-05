@@ -1,7 +1,7 @@
 package com.tribbloids.spookystuff.actions
 
-import ai.acyclic.prover.commons.cap.Capability
-import ai.acyclic.prover.commons.cap.Capability.<>
+import ai.acyclic.prover.commons.tag.Tag
+import ai.acyclic.prover.commons.tag._
 import ai.acyclic.prover.commons.spark.serialization.NOTSerializable
 import com.tribbloids.spookystuff.actions.Trace.Repr
 import com.tribbloids.spookystuff.agent.Harness
@@ -68,7 +68,7 @@ object Trace {
 
     def cachedOpt: Option[Seq[Observation]] = Option(_cached)
 
-    def enableCached: Rollout <> Cached = Capability(this) <> Cached
+    def enableCached: Rollout <> Cached = Tag(this) <> Cached
     def disableCached: Rollout = this.asInstanceOf[Rollout]
 
     def cache(vs: Seq[Observation]): Rollout <> Cached = {
@@ -112,7 +112,7 @@ object Trace {
 
   object Rollout {
 
-    object Cached extends Capability
+    object Cached extends Tag
     type Cached = Cached.type
 
     implicit def fromTrace(v: Trace): Rollout = Rollout(v)

@@ -1,7 +1,7 @@
 package com.tribbloids.spookystuff.linq
 
-import ai.acyclic.prover.commons.cap.Capability
-import ai.acyclic.prover.commons.cap.Capability.{<>, annotator}
+import ai.acyclic.prover.commons.tag.Tag
+import ai.acyclic.prover.commons.tag._
 import ai.acyclic.prover.commons.compat.TupleX
 import ai.acyclic.prover.commons.function.hom.Hom
 import com.tribbloids.spookystuff.linq
@@ -32,11 +32,11 @@ object Field {
 //    implicit def asCell[K <: XStr, V](self: V <> Named[K, V]): Cell[K, V] = Cell(self)
 //  }
 
-  object CanSort extends Capability {
+  object CanSort extends Tag {
 
     import shapeless.record.*
     def apply[V](v: V): V <> CanSort.type = {
-      v <> CanSort
+      Tag(v).<>[CanSort.type]
     }
 
     def row[L <: TupleX](row: Rec[L])(
@@ -60,7 +60,7 @@ object Field {
   /**
     * define whether to evict old values that has identical field name in previous table
     */
-  sealed abstract class ConflictResolving extends Capability
+  sealed abstract class ConflictResolving extends Tag
   // TODO: it is useless right now, precedence of fields in merging are totally determined by whether to use ++< or >++
   //  may be enabled later for fine-grained control
 
